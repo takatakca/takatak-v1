@@ -1,0 +1,251 @@
+@theme inline {
+    --color-background:
+      var(--background);
+  
+    --color-foreground:
+      var(--foreground);
+  
+    --color-card:
+      var(--card);
+  
+    --color-card-foreground:
+      var(--card-foreground);
+  
+    --color-popover:
+      var(--popover);
+  
+    --color-popover-foreground:
+      var(--popover-foreground);
+  
+    --color-primary:
+      var(--primary);
+  
+    --color-primary-foreground:
+      var(--primary-foreground);
+  
+    --color-secondary:
+      var(--secondary);
+  
+    --color-secondary-foreground:
+      var(--secondary-foreground);
+  
+    --color-muted:
+      var(--muted);
+  
+    --color-muted-foreground:
+      var(--muted-foreground);
+  
+    --color-accent:
+      var(--accent);
+  
+    --color-accent-foreground:
+      var(--accent-foreground);
+  
+    --color-destructive:
+      var(--destructive);
+  
+    --color-destructive-foreground:
+      var(--destructive-foreground);
+  
+    --color-border:
+      var(--border);
+  
+    --color-input:
+      var(--input);
+  
+    --color-ring:
+      var(--ring);
+  }
+  
+  .website-surface {
+    --radius: 0.625rem;
+  
+    --background:
+      oklch(1 0 0);
+  
+    --foreground:
+      oklch(0.18 0.01 260);
+  
+    --card:
+      oklch(1 0 0);
+  
+    --card-foreground:
+      oklch(0.18 0.01 260);
+  
+    --popover:
+      oklch(1 0 0);
+  
+    --popover-foreground:
+      oklch(0.18 0.01 260);
+  
+    --primary:
+      oklch(0.52 0.16 152);
+  
+    --primary-foreground:
+      oklch(1 0 0);
+  
+    --secondary:
+      oklch(0.97 0.003 250);
+  
+    --secondary-foreground:
+      oklch(0.22 0.01 260);
+  
+    --muted:
+      oklch(0.965 0.003 250);
+  
+    --muted-foreground:
+      oklch(0.48 0.01 260);
+  
+    --accent:
+      oklch(0.55 0.17 152);
+  
+    --accent-foreground:
+      oklch(1 0 0);
+  
+    --destructive:
+      oklch(0.6 0.22 25);
+  
+    --destructive-foreground:
+      oklch(1 0 0);
+  
+    --border:
+      oklch(0.91 0.004 250);
+  
+    --input:
+      oklch(0.94 0.004 250);
+  
+    --ring:
+      oklch(0.52 0.16 152);
+  
+    --gradient-hero:
+      linear-gradient(
+        135deg,
+        oklch(0.52 0.16 152) 0%,
+        oklch(0.6 0.17 175) 100%
+      );
+  
+    --shadow-glow:
+      0 16px 48px -20px
+        oklch(0.52 0.16 152 / 0.35);
+  
+    --shadow-card:
+      0 1px 2px
+        oklch(0.18 0.01 260 / 0.04),
+      0 8px 24px -14px
+        oklch(0.18 0.01 260 / 0.1);
+  
+    --font-display:
+      var(--font-website-display),
+      "Space Grotesk",
+      system-ui,
+      sans-serif;
+  
+    --font-body:
+      var(--font-website-body),
+      Inter,
+      system-ui,
+      sans-serif;
+  
+    --brand-dark:
+      oklch(0.18 0.03 260);
+  
+    --brand-dark-2:
+      oklch(0.22 0.035 260);
+  
+    --brand-dark-foreground:
+      oklch(0.985 0.003 250);
+  
+    --brand-dark-muted:
+      oklch(0.72 0.02 260);
+  
+    --brand-dark-border:
+      oklch(1 0 0 / 0.1);
+  
+    --brand-accent-cyan:
+      oklch(0.78 0.13 200);
+  
+    --brand-accent-violet:
+      oklch(0.72 0.15 290);
+  
+    min-height: 100vh;
+    background-color:
+      var(--background);
+  
+    color:
+      var(--foreground);
+  
+    font-family:
+      var(--font-body);
+  }
+  
+  .website-surface *,
+  .website-surface *::before,
+  .website-surface *::after {
+    border-color:
+      var(--border);
+  }
+  
+  .website-surface h1,
+  .website-surface h2,
+  .website-surface h3,
+  .website-surface h4,
+  .website-surface h5,
+  .website-surface h6 {
+    font-family:
+      var(--font-display);
+  
+    letter-spacing:
+      -0.02em;
+  }
+  
+  .website-surface .brand-dark {
+    --background:
+      var(--brand-dark);
+  
+    --foreground:
+      var(--brand-dark-foreground);
+  
+    --card:
+      var(--brand-dark-2);
+  
+    --card-foreground:
+      var(--brand-dark-foreground);
+  
+    --popover:
+      var(--brand-dark-2);
+  
+    --popover-foreground:
+      var(--brand-dark-foreground);
+  
+    --secondary:
+      oklch(0.26 0.035 260);
+  
+    --secondary-foreground:
+      var(--brand-dark-foreground);
+  
+    --muted:
+      oklch(0.26 0.035 260);
+  
+    --muted-foreground:
+      var(--brand-dark-muted);
+  
+    --border:
+      var(--brand-dark-border);
+  
+    --input:
+      var(--brand-dark-border);
+  
+    background-color:
+      var(--brand-dark);
+  
+    color:
+      var(--brand-dark-foreground);
+  }
+  
+  .website-surface ::selection {
+    background:
+      oklch(0.52 0.16 152 / 0.22);
+  
+    color:
+      oklch(0.18 0.01 260);
+  }

@@ -1,0 +1,664 @@
+"use client";
+
+import Link from "next/link";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
+import {
+  type FormEvent,
+  useEffect,
+  useState,
+} from "react";
+import {
+  Check,
+  Save,
+  ShieldCheck,
+} from "lucide-react";
+
+import { FileUploadPanel } from "@/components/website/marketplace/file-upload-panel";
+import {
+  getMarketplacePackage,
+  MARKETPLACE_CATEGORIES,
+} from "@/lib/website/marketplace-catalog";
+import {
+  clearQuotePrefill,
+  readQuotePrefill,
+} from "@/lib/website/marketplace-storage";
+
+type Visibility =
+  | "private"
+  | "invite_only"
+  | "open_to_takatak";
+
+const draftKey =
+  "takatak.project.draft.v1";
+
+const submittedKey =
+  "takatak.project.submitted.v1";
+
+export function PostProjectForm({
+  isAuthenticated,
+}: {
+  isAuthenticated: boolean;
+}) {
+  const router = useRouter();
+
+  const searchParams =
+    useSearchParams();
+
+  const searchQuery =
+    searchParams.toString();
+
+  const [title, setTitle] =
+    useState("");
+
+  const [
+    businessName,
+    setBusinessName,
+  ] = useState("");
+
+  const [category, setCategory] =
+    useState(
+      MARKETPLACE_CATEGORIES[0]
+        .slug,
+    );
+
+  const [brief, setBrief] =
+    useState("");
+
+  const [budget, setBudget] =
+    useState("");
+
+  const [timeline, setTimeline] =
+    useState("2_4_weeks");
+
+  const [skills, setSkills] =
+    useState("");
+
+  const [
+    visibility,
+    setVisibility,
+  ] =
+    useState<Visibility>(
+      "open_to_takatak",
+    );
+
+  const [
+    submitting,
+    setSubmitting,
+  ] = useState(false);
+
+  const [draftSaved, setDraftSaved] =
+    useState(false);
+
+  const [
+    prefillMessage,
+    setPrefillMessage,
+  ] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timeoutId =
+      window.setTimeout(() => {
+        const currentParams =
+          new URLSearchParams(
+            searchQuery,
+          );
+
+        const packageId =
+          currentParams.get(
+            "package",
+          );
+
+        const categoryParam =
+          currentParams.get(
+            "category",
+          );
+
+        if (
+          categoryParam &&
+          MARKETPLACE_CATEGORIES.some(
+            (item) =>
+              item.slug ===
+              categoryParam,
+          )
+        ) {
+          setCategory(
+            categoryParam,
+          );
+        }
+
+        if (packageId) {
+          const packageItem =
+            getMarketplacePackage(
+              packageId,
+            );
+
+          if (packageItem) {
+            setTitle(
+              `Quote: ${packageItem.title}`,
+            );
+
+            setCategory(
+              packageItem.category,
+            );
+
+            setBrief(
+              `Reference package: ${packageItem.title}\n\nWhat I need:\n`,
+            );
+
+            setBudget(
+              String(
+                Math.round(
+                  Math.min(
+                    ...packageItem.tiers.map(
+                      (item) =>
+                        item.priceCents,
+                    ),
+                  ) / 100,
+                ),
+              ),
+            );
+
+            setPrefillMessage(
+              `Prefilled from “${packageItem.title}”.`,
+            );
+
+            return;
+          }
+        }
+
+        const prefill =
+          readQuotePrefill();
+
+        if (!prefill) {
+          return;
+        }
+
+        setTitle(
+          `Quote: ${prefill.title} (${prefill.tierName})`,
+        );
+
+        setCategory(
+          prefill.category,
+        );
+
+        setBrief(
+          `Reference package: ${prefill.title}\nTier: ${prefill.tierName}\nAdd-ons: ${
+            prefill.addons
+              .map(
+                (item) =>
+                  item.label,
+              )
+              .join(", ") ||
+            "None"
+          }\nEstimated total: $${Math.round(
+            prefill.totalCents /
+              100,
+          )}\n\nWhat I need:\n`,
+        );
+
+        setBudget(
+          String(
+            Math.round(
+              prefill.totalCents /
+                100,
+            ),
+          ),
+        );
+
+        setPrefillMessage(
+          `Prefilled from “${prefill.title}”.`,
+        );
+      }, 0);
+
+    return () => {
+      window.clearTimeout(
+        timeoutId,
+      );
+    };
+  }, [searchQuery]);
+
+  function projectPayload() {
+    return {
+      title,
+      businessName,
+      category,
+      brief,
+      budget,
+      timeline,
+      skills,
+      visibility,
+      savedAt:
+        new Date().toISOString(),
+    };
+  }
+
+  function saveDraft() {
+    window.localStorage.setItem(
+      draftKey,
+      JSON.stringify(
+        projectPayload(),
+      ),
+    );
+
+    setDraftSaved(true);
+
+    window.setTimeout(
+      () =>
+        setDraftSaved(false),
+      2500,
+    );
+  }
+
+  function submit(
+    event: FormEvent<HTMLFormElement>,
+  ) {
+    event.preventDefault();
+
+    setSubmitting(true);
+
+    window.localStorage.setItem(
+      submittedKey,
+      JSON.stringify(
+        projectPayload(),
+      ),
+    );
+
+    window.localStorage.removeItem(
+      draftKey,
+    );
+
+    clearQuotePrefill();
+
+    const destination =
+      "/dashboard/marketplace";
+
+    if (isAuthenticated) {
+      router.push(destination);
+      return;
+    }
+
+    router.push(
+      `/register?next=${encodeURIComponent(
+        destination,
+      )}&projectDraft=1`,
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-12">
+      <Link
+        href="/marketplace"
+        className="text-xs text-slate-500 transition hover:text-slate-950"
+      >
+        ← Back to marketplace
+      </Link>
+
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-950">
+            Post a project
+          </h1>
+
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+            Tell TAKATAK what you need. We
+            organize the brief, scope,
+            communication, milestones, and
+            delivery process.
+          </p>
+        </div>
+
+        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          <ShieldCheck size={14} />
+          TAKATAK-managed engagement
+        </div>
+      </div>
+
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1.6fr_1fr]">
+        <form
+          onSubmit={submit}
+          className="space-y-6"
+        >
+          {prefillMessage ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+              {prefillMessage}
+            </div>
+          ) : null}
+
+          <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="font-semibold text-slate-950">
+              1. Project basics
+            </h2>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Project title
+              </label>
+
+              <input
+                value={title}
+                onChange={(event) =>
+                  setTitle(
+                    event.target.value,
+                  )
+                }
+                required
+                maxLength={200}
+                placeholder="e.g. Build a 5-page website for my bakery"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Business name
+                </label>
+
+                <input
+                  value={businessName}
+                  onChange={(event) =>
+                    setBusinessName(
+                      event.target.value,
+                    )
+                  }
+                  maxLength={120}
+                  placeholder="Optional"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Category
+                </label>
+
+                <select
+                  value={category}
+                  onChange={(event) =>
+                    setCategory(
+                      event.target.value,
+                    )
+                  }
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                >
+                  {MARKETPLACE_CATEGORIES.map(
+                    (item) => (
+                      <option
+                        key={item.slug}
+                        value={item.slug}
+                      >
+                        {item.name}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </div>
+            </div>
+          </section>
+
+          <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="font-semibold text-slate-950">
+              2. Describe what you need
+            </h2>
+
+            <textarea
+              value={brief}
+              onChange={(event) =>
+                setBrief(
+                  event.target.value,
+                )
+              }
+              required
+              rows={7}
+              maxLength={5000}
+              placeholder="Goals, target audience, references, must-haves and deadlines…"
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+            />
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Reference files
+              </label>
+
+              <FileUploadPanel />
+            </div>
+          </section>
+
+          <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="font-semibold text-slate-950">
+              3. Budget and timeline
+            </h2>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Budget (CAD)
+                </label>
+
+                <input
+                  value={budget}
+                  onChange={(event) =>
+                    setBudget(
+                      event.target.value,
+                    )
+                  }
+                  type="number"
+                  min="0"
+                  step="1"
+                  placeholder="e.g. 500"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                />
+
+                <p className="mt-1 text-xs text-slate-500">
+                  Leave blank to request a quote.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Timeline
+                </label>
+
+                <select
+                  value={timeline}
+                  onChange={(event) =>
+                    setTimeline(
+                      event.target.value,
+                    )
+                  }
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="urgent">
+                    Urgent — under 1 week
+                  </option>
+
+                  <option value="1_2_weeks">
+                    1–2 weeks
+                  </option>
+
+                  <option value="2_4_weeks">
+                    2–4 weeks
+                  </option>
+
+                  <option value="1_3_months">
+                    1–3 months
+                  </option>
+
+                  <option value="flexible">
+                    Flexible
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">
+                Required skills
+              </label>
+
+              <input
+                value={skills}
+                onChange={(event) =>
+                  setSkills(
+                    event.target.value,
+                  )
+                }
+                maxLength={200}
+                placeholder="e.g. WordPress, SEO, French copywriting"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+              />
+            </div>
+          </section>
+
+          <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="font-semibold text-slate-950">
+              4. Visibility
+            </h2>
+
+            {[
+              {
+                value:
+                  "open_to_takatak" as const,
+                label:
+                  "Open to TAKATAK",
+                description:
+                  "TAKATAK reviews and organizes the project.",
+              },
+              {
+                value:
+                  "invite_only" as const,
+                label: "Invite only",
+                description:
+                  "Share the project privately with selected participants.",
+              },
+              {
+                value:
+                  "private" as const,
+                label: "Private",
+                description:
+                  "Visible only to your account until published.",
+              },
+            ].map((option) => (
+              <label
+                key={option.value}
+                className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 text-sm ${
+                  visibility ===
+                  option.value
+                    ? "border-emerald-600 bg-emerald-50"
+                    : "border-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                <input
+                  type="radio"
+                  checked={
+                    visibility ===
+                    option.value
+                  }
+                  onChange={() =>
+                    setVisibility(
+                      option.value,
+                    )
+                  }
+                  className="mt-1"
+                />
+
+                <span>
+                  <span className="font-medium text-slate-950">
+                    {option.label}
+                  </span>
+
+                  <span className="mt-0.5 block text-xs text-slate-500">
+                    {option.description}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </section>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              disabled={submitting}
+              type="submit"
+              className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+            >
+              {submitting
+                ? "Saving…"
+                : "Submit project to TAKATAK"}
+            </button>
+
+            <button
+              type="button"
+              onClick={saveDraft}
+              className="inline-flex items-center gap-2 rounded-md border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              <Save size={14} />
+              Save draft
+            </button>
+
+            {draftSaved ? (
+              <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+                <Check size={12} />
+                Draft saved
+              </span>
+            ) : null}
+          </div>
+        </form>
+
+        <aside className="h-fit space-y-4 lg:sticky lg:top-24">
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
+            <h3 className="flex items-center gap-2 font-semibold text-slate-950">
+              <ShieldCheck
+                size={16}
+                className="text-emerald-700"
+              />
+
+              How TAKATAK organizes delivery
+            </h3>
+
+            <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+              {[
+                "The project brief remains connected to your account.",
+                "Files and messages remain inside the workspace.",
+                "Milestones and revisions remain organized.",
+                "The completed delivery requires client review.",
+                "Support can assist when a project needs attention.",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="flex items-start gap-2"
+                >
+                  <Check
+                    size={14}
+                    className="mt-1 shrink-0 text-emerald-700"
+                  />
+
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-6">
+            <h3 className="font-semibold text-slate-950">
+              Prefer a fixed package?
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Browse ready-made packages with
+              clear deliverables and pricing.
+            </p>
+
+            <Link
+              href="/marketplace"
+              className="mt-3 inline-flex text-sm font-semibold text-emerald-700"
+            >
+              Browse packages →
+            </Link>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}

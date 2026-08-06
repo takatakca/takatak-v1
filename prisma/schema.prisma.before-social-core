@@ -1,0 +1,1980 @@
+// TAKATAK User Official Dashboard V1 — Phase 4 core schema.
+// 12 core SaaS models (of the 30 planned). Remaining models arrive with
+// their module phases. Supabase-style pooled + direct URLs.
+//
+// HONESTY RULES (enforced in seed + app code):
+// - IntegrationAccount.status is never seeded as "connected".
+// - ServiceInstance.provider never implies a connected integration.
+// - No credentials, tokens, or realistic external IDs in seed data.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ── Enums ───────────────────────────────────────────────────
+
+enum PlatformRole {
+  user
+  admin
+  owner
+}
+
+enum WorkspaceRole {
+  owner
+  admin
+  manager
+  editor
+  staff
+  viewer
+}
+
+enum ProfileStatus {
+  active
+  invited
+  disabled
+}
+
+enum InvitationStatus {
+  pending
+  accepted
+  expired
+  revoked
+}
+
+enum MembershipStatus {
+  active
+  suspended
+}
+
+enum PermissionKey {
+  view_dashboard
+  manage_clients
+  manage_brands
+  manage_services
+  manage_integrations
+  manage_jobs
+  view_team
+  invite_users
+  manage_users
+  suspend_users
+  delete_users
+  manage_roles
+  manage_permissions
+  view_activity_log
+  view_admin
+  manage_settings
+  create_content
+  edit_content
+  approve_content
+  view_reports
+}
+
+enum ClientStatus {
+  prospect
+  active
+  paused
+  archived
+}
+
+enum BrandStatus {
+  draft
+  active
+  paused
+  archived
+}
+
+enum LocationStatus {
+  draft
+  active
+  paused
+  archived
+}
+
+enum ServiceType {
+  social_media
+  web_hosting
+  domain
+  local_listings
+  leads
+  ai_studio
+  reports
+  billing
+  support
+  custom
+}
+
+enum Provider {
+  metricool
+  upmind
+  tryholo
+  openai
+  qmaps
+  flexs
+  stripe
+  supabase
+  internal
+}
+
+enum ServiceStatus {
+  planned
+  pending_setup
+  active
+  paused
+  failed
+  cancelled
+}
+
+enum IntegrationStatus {
+  not_connected
+  planned
+  disabled
+  pending_credentials
+  connected
+  error
+  expired
+}
+
+enum IntegrationEventStatus {
+  received
+  processed
+  failed
+  ignored
+}
+
+enum JobType {
+  create_campaign
+  generate_content
+  approve_post
+  send_to_metricool
+  sync_analytics
+  generate_report
+  send_notification
+  provision_hosting
+  sync_domain_status
+  retry_integration_task
+}
+
+enum JobStatus {
+  queued
+  running
+  completed
+  failed
+  cancelled
+  retrying
+  planned
+}
+
+enum JobLogLevel {
+  info
+  warning
+  error
+  debug
+}
+
+enum ReportType {
+  social_media
+  web_hosting
+  local_listings
+  leads
+  monthly_business
+  client_summary
+}
+
+enum ReportStatus {
+  draft
+  ready
+  sent
+  archived
+}
+
+enum NotificationType {
+  approval_needed
+  report_ready
+  invoice_due
+  integration_error
+  job_failed
+  support_reply
+  service_renewal
+  system
+}
+
+enum NotificationStatus {
+  unread
+  read
+  archived
+}
+
+// ── Models ──────────────────────────────────────────────────
+
+/// App profile mapped to a Supabase Auth user (does NOT replace Supabase Auth).
+model Profile {
+  id          String        @id @default(uuid()) @db.Uuid
+  authUserId  String        @unique @db.Uuid
+  email       String        @unique
+  firstName   String?
+  lastName    String?
+  displayName String?
+  role        PlatformRole  @default(user)
+  status      ProfileStatus @default(invited)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  memberships        ClientMembership[]
+  sentInvitations    UserInvitation[]   @relation("InvitedByProfile")
+  assignedClients    Client[]           @relation("AssignedAdmin")
+  notifications      Notification[]
+  auditLogs          AuditLog[]
+  requestedApprovals Approval[]         @relation("RequestedApprovals")
+  reviewedApprovals  Approval[]         @relation("ReviewedApprovals")
+  assignedLeads      Lead[]             @relation("AssignedLeads")
+
+  @@map("profiles")
+}
+
+/// A TAKATAK client account (tenant root).
+model Client {
+  id                String       @id @default(uuid()) @db.Uuid
+  name              String
+  email             String?
+  phone             String?
+  companyName       String?
+  status            ClientStatus @default(prospect)
+  planName          String?
+  timezone          String       @default("America/Toronto")
+  assignedProfileId String?      @db.Uuid
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  assignedProfile      Profile?                  @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
+  memberships          ClientMembership[]
+  userInvitations      UserInvitation[]
+  businessBrands       BusinessBrand[]
+  serviceInstances     ServiceInstance[]
+  integrationAccounts  IntegrationAccount[]
+  jobs                 Job[]
+  reports              Report[]
+  notifications        Notification[]
+  auditLogs            AuditLog[]
+  socialAccounts       SocialAccount[]
+  campaigns            Campaign[]
+  socialPosts          SocialPost[]
+  approvals            Approval[]
+  socialAnalyticsDaily SocialAnalyticsDaily[]
+  domainAssets         DomainAsset[]
+  hostingServices      HostingService[]
+  provisioningSteps    ProvisioningStep[]
+  brandVoices          BrandVoice[]
+  aiContentJobs        AiContentJob[]
+  savedAiOutputs       SavedAiOutput[]
+  reportSchedules      ReportSchedule[]
+  reportShares         ReportShare[]
+  localListings        LocalListing[]
+  listingCitations     ListingCitation[]
+  listingReviews       ListingReview[]
+  listingPhotos        ListingPhoto[]
+  visibilitySnapshots  LocalVisibilitySnapshot[]
+  leadSources          LeadSource[]
+  leadCampaigns        LeadCampaign[]
+  leads                Lead[]
+  leadPipelineStages   LeadPipelineStage[]
+  leadActivities       LeadActivity[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("clients")
+}
+
+/// Connects profiles/users to clients (future multi-client permissions).
+model ClientMembership {
+  id                String           @id @default(uuid()) @db.Uuid
+  profileId         String           @db.Uuid
+  clientId          String           @db.Uuid
+  role              WorkspaceRole    @default(viewer)
+  status            MembershipStatus @default(active)
+  customPermissions PermissionKey[]  @default([])
+  deniedPermissions PermissionKey[]  @default([])
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, clientId])
+  @@index([clientId, status])
+  @@index([profileId, status])
+  @@map("client_memberships")
+}
+
+model UserInvitation {
+  id                 String           @id @default(uuid()) @db.Uuid
+  clientId           String           @db.Uuid
+  email              String
+  role               WorkspaceRole    @default(viewer)
+  status             InvitationStatus @default(pending)
+  tokenHash          String           @unique
+  customPermissions  PermissionKey[]  @default([])
+  deniedPermissions  PermissionKey[]  @default([])
+  invitedByProfileId String?          @db.Uuid
+  expiresAt          DateTime
+  acceptedAt         DateTime?
+  revokedAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invitedBy Profile? @relation("InvitedByProfile", fields: [invitedByProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, email])
+  @@index([clientId, status])
+  @@index([email, status])
+  @@index([expiresAt])
+  @@map("user_invitations")
+}
+
+/// Business or brand owned by a client.
+model BusinessBrand {
+  id           String      @id @default(uuid()) @db.Uuid
+  clientId     String      @db.Uuid
+  name         String
+  legalName    String?
+  category     String?
+  website      String?
+  phone        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  region       String?
+  postalCode   String?
+  country      String      @default("Canada")
+  timezone     String      @default("America/Toronto")
+  status       BrandStatus @default(draft)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  client               Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceInstances     ServiceInstance[]
+  integrationAccounts  IntegrationAccount[]
+  jobs                 Job[]
+  reports              Report[]
+  socialAccounts       SocialAccount[]
+  campaigns            Campaign[]
+  socialPosts          SocialPost[]
+  approvals            Approval[]
+  socialAnalyticsDaily SocialAnalyticsDaily[]
+  domainAssets         DomainAsset[]
+  hostingServices      HostingService[]
+  provisioningSteps    ProvisioningStep[]
+  brandVoices          BrandVoice[]
+  aiContentJobs        AiContentJob[]
+  savedAiOutputs       SavedAiOutput[]
+  reportSchedules      ReportSchedule[]
+  localListings        LocalListing[]
+  listingCitations     ListingCitation[]
+  listingReviews       ListingReview[]
+  listingPhotos        ListingPhoto[]
+  visibilitySnapshots  LocalVisibilitySnapshot[]
+  leadSources          LeadSource[]
+  leadCampaigns        LeadCampaign[]
+  leads                Lead[]
+  leadPipelineStages   LeadPipelineStage[]
+  leadActivities       LeadActivity[]
+  businessLocations    BusinessLocation[]
+
+  @@unique([id, clientId])
+  @@index([clientId])
+  @@index([status])
+  @@map("business_brands")
+}
+
+/// Physical business location owned by one workspace and one brand.
+/// This becomes the location boundary for Google Business, listings,
+/// location-specific social accounts, and future local reporting.
+model BusinessLocation {
+  id              String         @id @default(uuid()) @db.Uuid
+  clientId        String         @db.Uuid
+  businessBrandId String         @db.Uuid
+  name            String
+  phone           String?
+  website         String?
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  region          String?
+  postalCode      String?
+  country         String         @default("Canada")
+  timezone        String         @default("America/Toronto")
+  latitude        Float?
+  longitude       Float?
+  isPrimary       Boolean        @default(false)
+  status          LocationStatus @default(active)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  businessBrand BusinessBrand @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Cascade)
+
+  @@index([clientId, status])
+  @@index([businessBrandId, status])
+  @@index([city])
+  @@index([isPrimary])
+  @@map("business_locations")
+}
+
+/// Any service TAKATAK sells/manages. Provider here never implies connection.
+model ServiceInstance {
+  id              String        @id @default(uuid()) @db.Uuid
+  clientId        String        @db.Uuid
+  businessBrandId String?       @db.Uuid
+  serviceType     ServiceType
+  provider        Provider?
+  name            String
+  status          ServiceStatus @default(planned)
+  priceCents      Int?
+  currency        String        @default("CAD")
+  renewalDate     DateTime?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand     BusinessBrand?     @relation(fields: [businessBrandId], references: [id])
+  jobs              Job[]
+  campaigns         Campaign[]
+  domainAssets      DomainAsset[]
+  hostingServices   HostingService[]
+  provisioningSteps ProvisioningStep[]
+  localListings     LocalListing[]
+  leadCampaigns     LeadCampaign[]
+
+  @@unique([clientId, businessBrandId, serviceType])
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([serviceType])
+  @@index([status])
+  @@index([provider])
+  @@map("service_instances")
+}
+
+/// Provider account/configuration status per client/business.
+/// Provider secrets are never stored in this table.
+model IntegrationAccount {
+  id                String            @id @default(uuid()) @db.Uuid
+  clientId          String            @db.Uuid
+  businessBrandId   String?           @db.Uuid
+  provider          Provider
+  externalAccountId String?
+  displayName       String?
+  status            IntegrationStatus @default(not_connected)
+  lastSyncAt        DateTime?
+  lastError         String?
+  connectedAt       DateTime?
+  disconnectedAt    DateTime?
+  metadata          Json?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  client         Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand  BusinessBrand?     @relation(fields: [businessBrandId], references: [id])
+  events         IntegrationEvent[]
+  socialAccounts SocialAccount[]
+
+  @@unique([clientId, businessBrandId, provider])
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([provider])
+  @@index([status])
+  @@map("integration_accounts")
+}
+
+/// Future webhooks/events from providers.
+model IntegrationEvent {
+  id                   String                 @id @default(uuid()) @db.Uuid
+  integrationAccountId String?                @db.Uuid
+  provider             Provider
+  eventType            String
+  status               IntegrationEventStatus @default(received)
+  payload              Json?
+  errorMessage         String?
+  createdAt            DateTime               @default(now())
+  processedAt          DateTime?
+
+  integrationAccount IntegrationAccount? @relation(fields: [integrationAccountId], references: [id])
+
+  @@index([provider])
+  @@index([status])
+  @@index([createdAt])
+  @@map("integration_events")
+}
+
+/// Tracks any automation/workflow job.
+model Job {
+  id                String    @id @default(uuid()) @db.Uuid
+  clientId          String?   @db.Uuid
+  businessBrandId   String?   @db.Uuid
+  serviceInstanceId String?   @db.Uuid
+  type              JobType
+  status            JobStatus @default(planned)
+  provider          Provider?
+  attempts          Int       @default(0)
+  maxAttempts       Int       @default(3)
+  scheduledFor      DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  errorMessage      String?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  client          Client?          @relation(fields: [clientId], references: [id])
+  businessBrand   BusinessBrand?   @relation(fields: [businessBrandId], references: [id])
+  serviceInstance ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
+  logs            JobLog[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([status])
+  @@index([type])
+  @@index([provider])
+  @@index([createdAt])
+  @@map("jobs")
+}
+
+/// Job history entries.
+model JobLog {
+  id        String      @id @default(uuid()) @db.Uuid
+  jobId     String      @db.Uuid
+  level     JobLogLevel @default(info)
+  message   String
+  metadata  Json?
+  createdAt DateTime    @default(now())
+
+  job Job @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
+  @@index([createdAt])
+  @@map("job_logs")
+}
+
+/// Client/business report record.
+model Report {
+  id              String       @id @default(uuid()) @db.Uuid
+  clientId        String       @db.Uuid
+  businessBrandId String?      @db.Uuid
+  type            ReportType
+  title           String
+  status          ReportStatus @default(draft)
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  summary         String?
+  metadata        Json?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  client        Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?  @relation(fields: [businessBrandId], references: [id])
+  sections      ReportSection[]
+  metrics       ReportMetric[]
+  shares        ReportShare[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([status])
+  @@index([type])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+/// User/client notification center.
+model Notification {
+  id                String             @id @default(uuid()) @db.Uuid
+  clientId          String?            @db.Uuid
+  profileId         String?            @db.Uuid
+  type              NotificationType   @default(system)
+  title             String
+  message           String
+  status            NotificationStatus @default(unread)
+  relatedEntityType String?
+  relatedEntityId   String?
+  createdAt         DateTime           @default(now())
+  readAt            DateTime?
+
+  client  Client?  @relation(fields: [clientId], references: [id])
+  profile Profile? @relation(fields: [profileId], references: [id])
+
+  @@index([clientId])
+  @@index([profileId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+/// Security and admin action history.
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  profileId  String?  @db.Uuid
+  clientId   String?  @db.Uuid
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  profile Profile? @relation(fields: [profileId], references: [id])
+  client  Client?  @relation(fields: [clientId], references: [id])
+
+  @@index([clientId])
+  @@index([profileId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ════════════════════════════════════════════════════════════
+// Phase 5 — Social Media Module Foundation
+// Metricool is NOT connected; these models are internal structure.
+// ════════════════════════════════════════════════════════════
+
+enum SocialPlatform {
+  facebook
+  instagram
+  threads
+  tiktok
+  google_business
+  linkedin
+  x
+  youtube
+  pinterest
+  bluesky
+  twitch
+}
+
+enum SocialAccountStatus {
+  not_connected
+  pending_connection
+  connected
+  expired
+  error
+  disabled
+}
+
+enum CampaignStatus {
+  draft
+  planned
+  active
+  paused
+  completed
+  archived
+}
+
+enum PostStatus {
+  draft
+  pending_approval
+  approved
+  scheduled
+  published
+  failed
+}
+
+enum ApprovalStatus {
+  pending
+  approved
+  rejected
+  changes_requested
+  cancelled
+}
+
+enum AnalyticsSource {
+  manual
+  metricool
+  provider_api
+  internal_mock
+}
+
+/// Social platform account imported from an integration provider.
+/// Tokens and provider credentials are never stored here.
+model SocialAccount {
+  id                   String              @id @default(uuid()) @db.Uuid
+  clientId             String              @db.Uuid
+  businessBrandId      String?             @db.Uuid
+  integrationAccountId String?             @db.Uuid
+  externalAccountId    String?
+  platform             SocialPlatform
+  handle               String?
+  displayName          String?
+  profileUrl           String?
+  accountType          String?
+  status               SocialAccountStatus @default(not_connected)
+  lastSyncAt           DateTime?
+  metadata             Json?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  client             Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand?         @relation(fields: [businessBrandId], references: [id])
+  integrationAccount IntegrationAccount?    @relation(fields: [integrationAccountId], references: [id])
+  posts              SocialPost[]
+  analytics          SocialAnalyticsDaily[]
+
+  @@unique([integrationAccountId, platform, externalAccountId])
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([integrationAccountId])
+  @@index([platform])
+  @@index([status])
+  @@map("social_accounts")
+}
+
+/// Social media campaign owned by a client/brand.
+model Campaign {
+  id                String         @id @default(uuid()) @db.Uuid
+  clientId          String         @db.Uuid
+  businessBrandId   String?        @db.Uuid
+  serviceInstanceId String?        @db.Uuid
+  name              String
+  goal              String?
+  description       String?
+  status            CampaignStatus @default(draft)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  metadata          Json?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  client          Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand   BusinessBrand?         @relation(fields: [businessBrandId], references: [id])
+  serviceInstance ServiceInstance?       @relation(fields: [serviceInstanceId], references: [id])
+  posts           SocialPost[]
+  analytics       SocialAnalyticsDaily[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([status])
+  @@index([startsAt])
+  @@index([createdAt])
+  @@map("campaigns")
+}
+
+/// Internal TAKATAK post draft/approval/scheduling record.
+/// Status machine: draft → pending_approval → approved → scheduled →
+/// published/failed. Publishing is NOT implemented until Metricool (Phase 6).
+model SocialPost {
+  id              String         @id @default(uuid()) @db.Uuid
+  clientId        String         @db.Uuid
+  businessBrandId String?        @db.Uuid
+  campaignId      String?        @db.Uuid
+  socialAccountId String?        @db.Uuid
+  platform        SocialPlatform
+  caption         String
+  status          PostStatus     @default(draft)
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  mediaUrls       Json?
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  campaign      Campaign?      @relation(fields: [campaignId], references: [id])
+  socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id])
+  approvals     Approval[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([campaignId])
+  @@index([socialAccountId])
+  @@index([platform])
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([createdAt])
+  @@map("social_posts")
+}
+
+/// Client approval workflow for social posts.
+model Approval {
+  id                   String         @id @default(uuid()) @db.Uuid
+  clientId             String         @db.Uuid
+  businessBrandId      String?        @db.Uuid
+  socialPostId         String         @db.Uuid
+  requestedByProfileId String?        @db.Uuid
+  reviewedByProfileId  String?        @db.Uuid
+  status               ApprovalStatus @default(pending)
+  comments             String?
+  requestedAt          DateTime       @default(now())
+  reviewedAt           DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  socialPost    SocialPost     @relation(fields: [socialPostId], references: [id], onDelete: Cascade)
+  requestedBy   Profile?       @relation("RequestedApprovals", fields: [requestedByProfileId], references: [id])
+  reviewedBy    Profile?       @relation("ReviewedApprovals", fields: [reviewedByProfileId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([socialPostId])
+  @@index([status])
+  @@index([requestedAt])
+  @@map("approvals")
+}
+
+/// Future daily analytics (Metricool/provider sync in Phase 6+).
+/// Nothing here is ever seeded as metricool data before real sync exists.
+model SocialAnalyticsDaily {
+  id              String          @id @default(uuid()) @db.Uuid
+  clientId        String          @db.Uuid
+  businessBrandId String?         @db.Uuid
+  socialAccountId String?         @db.Uuid
+  campaignId      String?         @db.Uuid
+  platform        SocialPlatform
+  date            DateTime        @db.Date
+  reach           Int             @default(0)
+  impressions     Int             @default(0)
+  engagement      Int             @default(0)
+  clicks          Int             @default(0)
+  followers       Int             @default(0)
+  source          AnalyticsSource @default(manual)
+  metadata        Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id])
+  campaign      Campaign?      @relation(fields: [campaignId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([platform])
+  @@index([date])
+  @@index([source])
+  @@map("social_analytics_daily")
+}
+
+// ════════════════════════════════════════════════════════════
+// Phase 7 — Web / Domain / Hosting Module Foundation
+// Upmind is NOT connected; these models are internal structure.
+// "active_internal" / "completed_internal" / "internal_demo" never
+// imply real provider provisioning.
+// ════════════════════════════════════════════════════════════
+
+enum DomainStatus {
+  planned
+  pending_connection
+  tracked
+  expiring_soon
+  expired
+  cancelled
+}
+
+enum DnsStatus {
+  unknown
+  not_configured
+  pending
+  valid
+  warning
+  error
+}
+
+enum SslStatus {
+  unknown
+  not_configured
+  pending
+  valid
+  expiring_soon
+  expired
+  error
+}
+
+enum HostingStatus {
+  planned
+  pending_setup
+  active_internal
+  paused
+  failed
+  cancelled
+}
+
+enum ServerStatus {
+  unknown
+  pending
+  healthy
+  warning
+  error
+}
+
+enum DnsRecordType {
+  A
+  AAAA
+  CNAME
+  MX
+  TXT
+  NS
+  SRV
+  CAA
+}
+
+enum DnsRecordStatus {
+  planned
+  pending
+  valid
+  warning
+  error
+}
+
+enum WebAssetSource {
+  internal_demo
+  upmind
+  manual
+  provider_api
+}
+
+enum SslCertStatus {
+  planned
+  pending
+  valid
+  expiring_soon
+  expired
+  error
+}
+
+enum ProvisioningStepType {
+  order_received
+  payment_confirmed
+  hosting_created
+  domain_connected
+  dns_checked
+  ssl_requested
+  ssl_ready
+  website_live
+}
+
+enum ProvisioningStepStatus {
+  planned
+  pending
+  in_progress
+  completed_internal
+  failed
+  skipped
+}
+
+/// Domain managed/tracked by TAKATAK for a client/brand.
+model DomainAsset {
+  id                String       @id @default(uuid()) @db.Uuid
+  clientId          String       @db.Uuid
+  businessBrandId   String?      @db.Uuid
+  serviceInstanceId String?      @db.Uuid
+  domainName        String
+  registrar         String?
+  status            DomainStatus @default(planned)
+  dnsStatus         DnsStatus    @default(unknown)
+  sslStatus         SslStatus    @default(unknown)
+  autoRenew         Boolean      @default(false)
+  expiresAt         DateTime?
+  metadata          Json?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand   BusinessBrand?   @relation(fields: [businessBrandId], references: [id])
+  serviceInstance ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
+  dnsRecords      DnsRecord[]
+  sslCertificates SslCertificate[]
+  hostingPrimary  HostingService[] @relation("PrimaryDomain")
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([serviceInstanceId])
+  @@index([domainName])
+  @@index([status])
+  @@index([dnsStatus])
+  @@index([sslStatus])
+  @@index([expiresAt])
+  @@map("domain_assets")
+}
+
+/// Hosting service tracked by TAKATAK. "active_internal" is internal
+/// database status only — it never implies Upmind provisioning.
+model HostingService {
+  id                String        @id @default(uuid()) @db.Uuid
+  clientId          String        @db.Uuid
+  businessBrandId   String?       @db.Uuid
+  serviceInstanceId String?       @db.Uuid
+  primaryDomainId   String?       @db.Uuid
+  planName          String
+  status            HostingStatus @default(planned)
+  serverStatus      ServerStatus  @default(unknown)
+  usageSummary      Json?
+  renewalDate       DateTime?
+  metadata          Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  client            Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand     BusinessBrand?     @relation(fields: [businessBrandId], references: [id])
+  serviceInstance   ServiceInstance?   @relation(fields: [serviceInstanceId], references: [id])
+  primaryDomain     DomainAsset?       @relation("PrimaryDomain", fields: [primaryDomainId], references: [id])
+  provisioningSteps ProvisioningStep[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([serviceInstanceId])
+  @@index([primaryDomainId])
+  @@index([status])
+  @@index([serverStatus])
+  @@index([renewalDate])
+  @@map("hosting_services")
+}
+
+/// DNS record tracking for a domain. Seeded rows use source internal_demo only.
+model DnsRecord {
+  id            String          @id @default(uuid()) @db.Uuid
+  domainAssetId String          @db.Uuid
+  type          DnsRecordType
+  name          String
+  value         String
+  ttl           Int?
+  status        DnsRecordStatus @default(planned)
+  source        WebAssetSource  @default(internal_demo)
+  metadata      Json?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  domainAsset DomainAsset @relation(fields: [domainAssetId], references: [id], onDelete: Cascade)
+
+  @@index([domainAssetId])
+  @@index([type])
+  @@index([status])
+  @@index([source])
+  @@map("dns_records")
+}
+
+/// SSL certificate tracking. Seeded rows use source internal_demo only.
+model SslCertificate {
+  id            String         @id @default(uuid()) @db.Uuid
+  domainAssetId String         @db.Uuid
+  status        SslCertStatus  @default(planned)
+  issuer        String?
+  validFrom     DateTime?
+  expiresAt     DateTime?
+  autoRenew     Boolean        @default(false)
+  source        WebAssetSource @default(internal_demo)
+  metadata      Json?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  domainAsset DomainAsset @relation(fields: [domainAssetId], references: [id], onDelete: Cascade)
+
+  @@index([domainAssetId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([source])
+  @@map("ssl_certificates")
+}
+
+/// Setup/provisioning timeline step. "completed_internal" is internal/demo
+/// completion only — it never means real Upmind provisioning.
+model ProvisioningStep {
+  id                String                 @id @default(uuid()) @db.Uuid
+  clientId          String                 @db.Uuid
+  businessBrandId   String?                @db.Uuid
+  serviceInstanceId String?                @db.Uuid
+  hostingServiceId  String?                @db.Uuid
+  type              ProvisioningStepType
+  title             String
+  status            ProvisioningStepStatus @default(planned)
+  order             Int                    @default(0)
+  plannedAt         DateTime?
+  startedAt         DateTime?
+  completedAt       DateTime?
+  errorMessage      String?
+  metadata          Json?
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand   BusinessBrand?   @relation(fields: [businessBrandId], references: [id])
+  serviceInstance ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
+  hostingService  HostingService?  @relation(fields: [hostingServiceId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([serviceInstanceId])
+  @@index([hostingServiceId])
+  @@index([type])
+  @@index([status])
+  @@index([order])
+  @@map("provisioning_steps")
+}
+
+// ════════════════════════════════════════════════════════════
+// Phase 9 — AI Studio Foundation
+// OpenAI and TryHolo are NOT connected; no generation runs.
+// SavedAiOutput.origin "foundation_template" marks non-AI template
+// content; nothing is ever claimed as AI-generated in Phase 9.
+// ════════════════════════════════════════════════════════════
+
+enum AiProvider {
+  openai
+  tryholo
+  internal
+}
+
+enum AiContentKind {
+  caption
+  hashtags
+  hook
+  cta
+  post_long
+  campaign_plan
+  video_idea
+  video_script
+  creative_brief
+  report_summary
+}
+
+enum AiJobStatus {
+  planned
+  queued
+  running
+  completed
+  failed
+  cancelled
+}
+
+enum AiOutputOrigin {
+  foundation_template // hand-written template seeded by TAKATAK — NOT AI
+  ai_generated // reserved: only after a real provider call succeeds
+  manual // typed by a user
+}
+
+enum AiOutputStatus {
+  draft
+  saved
+  sent_to_approval
+  archived
+}
+
+/// Brand voice profile feeding future AI generation prompts.
+model BrandVoice {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  name            String
+  tone            String?
+  audience        String?
+  language        String   @default("en")
+  keywords        Json?
+  bannedPhrases   Json?
+  sampleCaption   String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?  @relation(fields: [businessBrandId], references: [id])
+  aiContentJobs AiContentJob[]
+  savedOutputs  SavedAiOutput[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("brand_voices")
+}
+
+/// A requested/planned AI generation job. Never executed in Phase 9.
+model AiContentJob {
+  id              String        @id @default(uuid()) @db.Uuid
+  clientId        String        @db.Uuid
+  businessBrandId String?       @db.Uuid
+  brandVoiceId    String?       @db.Uuid
+  provider        AiProvider?
+  kind            AiContentKind
+  status          AiJobStatus   @default(planned)
+  promptSummary   String?
+  errorMessage    String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  metadata        Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  client        Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?  @relation(fields: [businessBrandId], references: [id])
+  brandVoice    BrandVoice?     @relation(fields: [brandVoiceId], references: [id])
+  outputs       SavedAiOutput[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([provider])
+  @@index([kind])
+  @@index([status])
+  @@index([createdAt])
+  @@map("ai_content_jobs")
+}
+
+/// Saved AI Studio output. origin declares provenance honestly:
+/// foundation_template (seeded, NOT AI) / manual / ai_generated (future).
+model SavedAiOutput {
+  id              String         @id @default(uuid()) @db.Uuid
+  clientId        String         @db.Uuid
+  businessBrandId String?        @db.Uuid
+  brandVoiceId    String?        @db.Uuid
+  aiContentJobId  String?        @db.Uuid
+  kind            AiContentKind
+  title           String
+  content         String
+  origin          AiOutputOrigin @default(foundation_template)
+  status          AiOutputStatus @default(saved)
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  brandVoice    BrandVoice?    @relation(fields: [brandVoiceId], references: [id])
+  aiContentJob  AiContentJob?  @relation(fields: [aiContentJobId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([kind])
+  @@index([origin])
+  @@index([status])
+  @@index([createdAt])
+  @@map("saved_ai_outputs")
+}
+
+/// Provider-level AI events (future real calls, tests, errors).
+model AiProviderEvent {
+  id        String     @id @default(uuid()) @db.Uuid
+  provider  AiProvider
+  eventType String
+  status    String     @default("recorded")
+  message   String?
+  metadata  Json?
+  createdAt DateTime   @default(now())
+
+  @@index([provider])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("ai_provider_events")
+}
+
+// ════════════════════════════════════════════════════════════
+// Phase 10 — Reporting Engine Foundation
+// No export, delivery, sharing, AI summaries, or provider sync
+// runs. "active_internal" / "shared_internal" are internal record
+// states only. Nothing is ever marked sent/delivered/exported.
+// ════════════════════════════════════════════════════════════
+
+enum ReportTemplateStatus {
+  draft
+  active
+  archived
+}
+
+enum ReportPeriod {
+  weekly
+  monthly
+  quarterly
+  custom
+}
+
+enum ReportSectionType {
+  summary
+  metrics
+  chart_placeholder
+  social_posts
+  campaign_performance
+  hosting_status
+  domain_status
+  leads_summary
+  recommendations
+  notes
+}
+
+enum ReportSectionStatus {
+  draft
+  ready
+  hidden
+}
+
+enum ReportMetricSource {
+  internal
+  social_foundation
+  web_hosting_foundation
+  ai_foundation
+  manual
+  future_provider
+}
+
+enum ReportScheduleFrequency {
+  weekly
+  monthly
+  quarterly
+  manual
+}
+
+enum ReportScheduleStatus {
+  planned
+  active_internal
+  paused
+  archived
+}
+
+enum ReportShareStatus {
+  draft
+  ready_to_share
+  shared_internal
+  revoked
+}
+
+/// Reusable template for future report generation.
+model ReportTemplate {
+  id            String               @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  type          ReportType
+  status        ReportTemplateStatus @default(draft)
+  defaultPeriod ReportPeriod?
+  sectionsJson  Json?
+  metadata      Json?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  schedules ReportSchedule[]
+
+  @@index([type])
+  @@index([status])
+  @@index([defaultPeriod])
+  @@index([createdAt])
+  @@map("report_templates")
+}
+
+/// Structured section inside a report. Content is foundation/internal
+/// preview text — never a fake AI summary.
+model ReportSection {
+  id        String              @id @default(uuid()) @db.Uuid
+  reportId  String              @db.Uuid
+  title     String
+  type      ReportSectionType
+  order     Int                 @default(0)
+  content   String?
+  dataJson  Json?
+  status    ReportSectionStatus @default(draft)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  report  Report         @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  metrics ReportMetric[]
+
+  @@index([reportId])
+  @@index([type])
+  @@index([status])
+  @@index([order])
+  @@index([createdAt])
+  @@map("report_sections")
+}
+
+/// Report metric snapshot. Source declares provenance honestly.
+model ReportMetric {
+  id        String             @id @default(uuid()) @db.Uuid
+  reportId  String             @db.Uuid
+  sectionId String?            @db.Uuid
+  key       String
+  label     String
+  value     String
+  unit      String?
+  source    ReportMetricSource @default(internal)
+  metadata  Json?
+  createdAt DateTime           @default(now())
+
+  report  Report         @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  section ReportSection? @relation(fields: [sectionId], references: [id])
+
+  @@index([reportId])
+  @@index([sectionId])
+  @@index([key])
+  @@index([source])
+  @@index([createdAt])
+  @@map("report_metrics")
+}
+
+/// Foundation for recurring reports. "active_internal" means the record
+/// exists only — no background worker runs.
+model ReportSchedule {
+  id               String                  @id @default(uuid()) @db.Uuid
+  clientId         String                  @db.Uuid
+  businessBrandId  String?                 @db.Uuid
+  reportTemplateId String?                 @db.Uuid
+  name             String
+  frequency        ReportScheduleFrequency @default(manual)
+  status           ReportScheduleStatus    @default(planned)
+  nextRunAt        DateTime?
+  lastRunAt        DateTime?
+  metadata         Json?
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+
+  client         Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand  BusinessBrand?  @relation(fields: [businessBrandId], references: [id])
+  reportTemplate ReportTemplate? @relation(fields: [reportTemplateId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([reportTemplateId])
+  @@index([frequency])
+  @@index([status])
+  @@index([nextRunAt])
+  @@index([createdAt])
+  @@map("report_schedules")
+}
+
+/// Future report sharing/delivery tracking. "shared_internal" is internal
+/// tracking only — never email delivery or public sharing.
+model ReportShare {
+  id              String            @id @default(uuid()) @db.Uuid
+  reportId        String            @db.Uuid
+  clientId        String            @db.Uuid
+  sharedWithEmail String?
+  status          ReportShareStatus @default(draft)
+  shareUrl        String?
+  expiresAt       DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  report Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([reportId])
+  @@index([clientId])
+  @@index([status])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@map("report_shares")
+}
+
+// ════════════════════════════════════════════════════════════
+// Phase 11 — Local Listings / QMAPS Module Foundation
+// QMAPS and Google Business are NOT connected. All "internal"
+// statuses are foundation records only — nothing is synced,
+// published, imported, verified, or replied via any provider.
+// ════════════════════════════════════════════════════════════
+
+enum ListingProvider {
+  qmaps
+  google_business
+  manual
+  internal_demo
+  future_provider
+}
+
+enum LocalListingStatus {
+  planned
+  draft
+  pending_review
+  active_internal
+  needs_update
+  error
+  archived
+}
+
+enum NapStatus {
+  unknown
+  consistent_internal
+  needs_review
+  inconsistent
+  missing
+}
+
+enum CitationStatus {
+  planned
+  found_internal
+  missing
+  needs_update
+  error
+  archived
+}
+
+enum CitationSource {
+  internal_demo
+  manual
+  qmaps
+  provider_api
+  future_provider
+}
+
+enum ListingReviewStatus {
+  planned
+  internal_demo
+  needs_review
+  archived
+}
+
+enum ReviewReplyStatus {
+  not_replied
+  draft_reply
+  replied_internal
+  not_applicable
+}
+
+enum ReviewSentiment {
+  unknown
+  positive
+  neutral
+  negative
+}
+
+enum ListingPhotoStatus {
+  planned
+  internal_demo
+  needs_upload
+  approved_internal
+  archived
+}
+
+enum ListingPhotoSource {
+  internal_demo
+  manual
+  qmaps
+  google_business
+  future_provider
+}
+
+enum VisibilitySource {
+  internal_foundation
+  qmaps
+  google_business
+  manual
+  future_provider
+}
+
+/// Business listing/profile tracked by TAKATAK. "active_internal" is an
+/// internal foundation record only — never live provider sync.
+model LocalListing {
+  id                String             @id @default(uuid()) @db.Uuid
+  clientId          String             @db.Uuid
+  businessBrandId   String?            @db.Uuid
+  serviceInstanceId String?            @db.Uuid
+  provider          ListingProvider    @default(internal_demo)
+  name              String
+  platformName      String
+  category          String?
+  phone             String?
+  website           String?
+  addressLine1      String?
+  city              String?
+  region            String?
+  country           String             @default("Canada")
+  postalCode        String?
+  status            LocalListingStatus @default(planned)
+  napStatus         NapStatus          @default(unknown)
+  lastCheckedAt     DateTime?
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  client              Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand       BusinessBrand?            @relation(fields: [businessBrandId], references: [id])
+  serviceInstance     ServiceInstance?          @relation(fields: [serviceInstanceId], references: [id])
+  citations           ListingCitation[]
+  reviews             ListingReview[]
+  photos              ListingPhoto[]
+  visibilitySnapshots LocalVisibilitySnapshot[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([serviceInstanceId])
+  @@index([provider])
+  @@index([status])
+  @@index([napStatus])
+  @@index([city])
+  @@index([createdAt])
+  @@map("local_listings")
+}
+
+/// Citation/directory tracking for NAP consistency.
+model ListingCitation {
+  id              String         @id @default(uuid()) @db.Uuid
+  clientId        String         @db.Uuid
+  businessBrandId String?        @db.Uuid
+  localListingId  String?        @db.Uuid
+  directoryName   String
+  url             String?
+  status          CitationStatus @default(planned)
+  napStatus       NapStatus      @default(unknown)
+  lastCheckedAt   DateTime?
+  source          CitationSource @default(internal_demo)
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  localListing  LocalListing?  @relation(fields: [localListingId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([localListingId])
+  @@index([directoryName])
+  @@index([status])
+  @@index([napStatus])
+  @@index([source])
+  @@index([createdAt])
+  @@map("listing_citations")
+}
+
+/// Review tracking for future reputation management. Seeded rows are
+/// internal_demo only — never claimed as imported from any provider.
+model ListingReview {
+  id              String              @id @default(uuid()) @db.Uuid
+  clientId        String              @db.Uuid
+  businessBrandId String?             @db.Uuid
+  localListingId  String?             @db.Uuid
+  provider        ListingProvider     @default(internal_demo)
+  reviewerName    String?
+  rating          Int?
+  title           String?
+  body            String?
+  status          ListingReviewStatus @default(planned)
+  replyStatus     ReviewReplyStatus   @default(not_replied)
+  sentiment       ReviewSentiment     @default(unknown)
+  reviewedAt      DateTime?
+  metadata        Json?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  localListing  LocalListing?  @relation(fields: [localListingId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([localListingId])
+  @@index([provider])
+  @@index([status])
+  @@index([replyStatus])
+  @@index([sentiment])
+  @@index([rating])
+  @@index([reviewedAt])
+  @@index([createdAt])
+  @@map("listing_reviews")
+}
+
+/// Listing photo asset tracking for future profile optimization.
+model ListingPhoto {
+  id              String             @id @default(uuid()) @db.Uuid
+  clientId        String             @db.Uuid
+  businessBrandId String?            @db.Uuid
+  localListingId  String?            @db.Uuid
+  title           String?
+  imageUrl        String?
+  status          ListingPhotoStatus @default(planned)
+  source          ListingPhotoSource @default(internal_demo)
+  metadata        Json?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  localListing  LocalListing?  @relation(fields: [localListingId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([localListingId])
+  @@index([status])
+  @@index([source])
+  @@index([createdAt])
+  @@map("listing_photos")
+}
+
+/// Local visibility snapshot. Seeded rows use internal_foundation only —
+/// never a real local SEO score from any provider.
+model LocalVisibilitySnapshot {
+  id              String           @id @default(uuid()) @db.Uuid
+  clientId        String           @db.Uuid
+  businessBrandId String?          @db.Uuid
+  localListingId  String?          @db.Uuid
+  source          VisibilitySource @default(internal_foundation)
+  score           Int?
+  listingsCount   Int              @default(0)
+  citationsCount  Int              @default(0)
+  reviewsCount    Int              @default(0)
+  averageRating   Float?
+  notes           String?
+  capturedAt      DateTime
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  localListing  LocalListing?  @relation(fields: [localListingId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([localListingId])
+  @@index([source])
+  @@index([capturedAt])
+  @@index([createdAt])
+  @@map("local_visibility_snapshots")
+}
+
+// ════════════════════════════════════════════════════════════
+// Phase 12 — Leads / FLEXS Module Foundation
+// FLEXS is NOT connected. Every "_internal" status is internal
+// foundation tracking only — no lead was really imported,
+// contacted, converted, or won via any provider or automation.
+// ════════════════════════════════════════════════════════════
+
+enum LeadSourceType {
+  website_form
+  social_media
+  local_listing
+  referral
+  phone_call
+  email
+  paid_ads
+  flexs
+  manual
+  internal_demo
+  future_provider
+}
+
+enum LeadProvider {
+  flexs
+  qmaps
+  metricool
+  google_business
+  manual
+  internal_demo
+  future_provider
+}
+
+enum LeadSourceStatus {
+  planned
+  active_internal
+  paused
+  disabled
+  archived
+}
+
+enum LeadCampaignStatus {
+  draft
+  planned
+  active_internal
+  paused
+  completed_internal
+  archived
+}
+
+enum LeadStatus {
+  new_internal
+  follow_up_planned
+  contacted_internal
+  qualified_internal
+  proposal_planned
+  won_internal
+  lost_internal
+  archived
+}
+
+enum LeadPriority {
+  low
+  normal
+  high
+  urgent
+}
+
+enum PipelineStageStatus {
+  active_internal
+  paused
+  archived
+}
+
+enum LeadActivityType {
+  note
+  follow_up
+  call
+  email
+  meeting
+  proposal
+  status_change
+  internal_reminder
+}
+
+enum LeadActivityStatus {
+  planned
+  completed_internal
+  cancelled
+  archived
+}
+
+/// Where leads come from. "active_internal" = internal foundation source
+/// only, never real provider sync.
+model LeadSource {
+  id              String           @id @default(uuid()) @db.Uuid
+  clientId        String           @db.Uuid
+  businessBrandId String?          @db.Uuid
+  name            String
+  type            LeadSourceType   @default(manual)
+  provider        LeadProvider     @default(internal_demo)
+  status          LeadSourceStatus @default(planned)
+  metadata        Json?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  leads         Lead[]
+  leadCampaigns LeadCampaign[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([type])
+  @@index([provider])
+  @@index([status])
+  @@index([createdAt])
+  @@map("lead_sources")
+}
+
+/// Lead generation campaign. No real ad spend or paid sync exists.
+model LeadCampaign {
+  id                String             @id @default(uuid()) @db.Uuid
+  clientId          String             @db.Uuid
+  businessBrandId   String?            @db.Uuid
+  leadSourceId      String?            @db.Uuid
+  serviceInstanceId String?            @db.Uuid
+  name              String
+  goal              String?
+  status            LeadCampaignStatus @default(draft)
+  startsAt          DateTime?
+  endsAt            DateTime?
+  budgetCents       Int?
+  currency          String             @default("CAD")
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand   BusinessBrand?   @relation(fields: [businessBrandId], references: [id])
+  leadSource      LeadSource?      @relation(fields: [leadSourceId], references: [id])
+  serviceInstance ServiceInstance? @relation(fields: [serviceInstanceId], references: [id])
+  leads           Lead[]
+  activities      LeadActivity[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([leadSourceId])
+  @@index([serviceInstanceId])
+  @@index([status])
+  @@index([startsAt])
+  @@index([createdAt])
+  @@map("lead_campaigns")
+}
+
+/// A lead/contact opportunity. All "_internal" statuses are internal
+/// foundation tracking — no external contact or real conversion happened.
+model Lead {
+  id                String       @id @default(uuid()) @db.Uuid
+  clientId          String       @db.Uuid
+  businessBrandId   String?      @db.Uuid
+  leadSourceId      String?      @db.Uuid
+  leadCampaignId    String?      @db.Uuid
+  name              String?
+  email             String?
+  phone             String?
+  company           String?
+  message           String?
+  status            LeadStatus   @default(new_internal)
+  priority          LeadPriority @default(normal)
+  valueCents        Int?
+  currency          String       @default("CAD")
+  assignedProfileId String?      @db.Uuid
+  followUpAt        DateTime?
+  metadata          Json?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  client          Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand   BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  leadSource      LeadSource?    @relation(fields: [leadSourceId], references: [id])
+  leadCampaign    LeadCampaign?  @relation(fields: [leadCampaignId], references: [id])
+  assignedProfile Profile?       @relation("AssignedLeads", fields: [assignedProfileId], references: [id])
+  activities      LeadActivity[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([leadSourceId])
+  @@index([leadCampaignId])
+  @@index([assignedProfileId])
+  @@index([status])
+  @@index([priority])
+  @@index([followUpAt])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+/// Pipeline stage configuration per client/brand. Foundation config only.
+model LeadPipelineStage {
+  id              String              @id @default(uuid()) @db.Uuid
+  clientId        String              @db.Uuid
+  businessBrandId String?             @db.Uuid
+  name            String
+  status          PipelineStageStatus @default(active_internal)
+  order           Int                 @default(0)
+  color           String?
+  metadata        Json?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([status])
+  @@index([order])
+  @@index([createdAt])
+  @@map("lead_pipeline_stages")
+}
+
+/// Lead activity/follow-up history. "completed_internal" is internal
+/// tracking only — no real call, email, or automation ran.
+model LeadActivity {
+  id              String             @id @default(uuid()) @db.Uuid
+  clientId        String             @db.Uuid
+  businessBrandId String?            @db.Uuid
+  leadId          String?            @db.Uuid
+  leadCampaignId  String?            @db.Uuid
+  type            LeadActivityType   @default(note)
+  status          LeadActivityStatus @default(planned)
+  title           String
+  note            String?
+  dueAt           DateTime?
+  completedAt     DateTime?
+  metadata        Json?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
+  lead          Lead?          @relation(fields: [leadId], references: [id])
+  leadCampaign  LeadCampaign?  @relation(fields: [leadCampaignId], references: [id])
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([leadId])
+  @@index([leadCampaignId])
+  @@index([type])
+  @@index([status])
+  @@index([dueAt])
+  @@index([createdAt])
+  @@map("lead_activities")
+}

@@ -1,0 +1,44 @@
+# Phase 14 — TAKATAK V1 CI. No secrets, no live DB, no seed, no deploy.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies (lockfile)
+        run: npm ci
+
+      - name: Prisma generate
+        run: npm run db:generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Secret scan
+        run: npm run qa:secrets
+
+      - name: Access-control matrix (pure logic, no DB)
+        run: npm run qa:access
+
+      - name: Readiness report (static, no secrets)
+        run: npm run qa:readiness

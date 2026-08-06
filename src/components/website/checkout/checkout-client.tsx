@@ -1,0 +1,206 @@
+"use client";
+
+import Link from "next/link";
+import {
+  useEffect,
+  useState,
+} from "react";
+import {
+  Check,
+  ShieldCheck,
+} from "lucide-react";
+
+import { UpmindDomainSearch } from "@/components/website/domain/upmind-domain-search";
+import {
+  clearCheckoutSelection,
+  readCheckoutSelection,
+  type CheckoutSelection,
+} from "@/lib/website/marketplace-storage";
+
+function dollars(
+  cents: number,
+): string {
+  return `$${(
+    cents / 100
+  ).toLocaleString("en-CA", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function CheckoutClient() {
+  const [
+    selection,
+    setSelection,
+  ] =
+    useState<CheckoutSelection | null>(
+      null,
+    );
+
+  useEffect(() => {
+    const timeoutId =
+      window.setTimeout(() => {
+        setSelection(
+          readCheckoutSelection(),
+        );
+      }, 0);
+
+    return () => {
+      window.clearTimeout(
+        timeoutId,
+      );
+    };
+  }, []);
+
+  if (!selection) {
+    return (
+      <section className="mx-auto max-w-5xl px-4 py-16">
+        <h1 className="text-center text-3xl font-bold text-slate-950 md:text-4xl">
+          Power your online success
+        </h1>
+
+        <p className="mt-3 text-center text-slate-600">
+          Secure your domain, hosting, and
+          supported add-ons in one flow.
+        </p>
+
+        <div className="mt-10 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6">
+          <UpmindDomainSearch />
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="mx-auto max-w-5xl px-4 py-16">
+      <div className="mx-auto max-w-2xl">
+        <h1 className="text-3xl font-bold text-slate-950 md:text-4xl">
+          Review your TAKATAK order
+        </h1>
+
+        <p className="mt-2 text-slate-600">
+          Confirm the selected package before
+          continuing inside your TAKATAK
+          dashboard.
+        </p>
+
+        <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="flex items-center justify-between bg-[#090a1a] px-6 py-4 text-white">
+            <span className="inline-flex items-center gap-2 font-semibold">
+              <ShieldCheck
+                size={17}
+                className="text-emerald-400"
+              />
+
+              TAKATAK order summary
+            </span>
+
+            <span className="text-xs text-slate-400">
+              CAD
+            </span>
+          </div>
+
+          <div className="p-6">
+            <p className="text-xs uppercase tracking-wider text-slate-500">
+              {selection.category}
+            </p>
+
+            <h2 className="mt-1 text-xl font-semibold text-slate-950">
+              {selection.title}
+            </h2>
+
+            <p className="mt-1 text-sm text-slate-600">
+              {selection.tierName} tier ·{" "}
+              {selection.deliveryDays}-day
+              delivery
+            </p>
+
+            <div className="mt-6 space-y-3 border-y border-slate-200 py-5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-600">
+                  Package
+                </span>
+
+                <span className="font-medium text-slate-950">
+                  {dollars(
+                    selection.tierPriceCents,
+                  )}
+                </span>
+              </div>
+
+              {selection.addons.map(
+                (item) => (
+                  <div
+                    key={item.label}
+                    className="flex justify-between"
+                  >
+                    <span className="inline-flex items-center gap-2 text-slate-600">
+                      <Check
+                        size={13}
+                        className="text-emerald-700"
+                      />
+
+                      {item.label}
+                    </span>
+
+                    <span className="font-medium text-slate-950">
+                      {dollars(
+                        item.priceCents,
+                      )}
+                    </span>
+                  </div>
+                ),
+              )}
+
+              {selection.discountCents >
+              0 ? (
+                <div className="flex justify-between text-emerald-700">
+                  <span>
+                    FIRST10 discount
+                  </span>
+
+                  <span>
+                    -
+                    {dollars(
+                      selection.discountCents,
+                    )}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="mt-5 flex items-end justify-between">
+              <span className="font-medium text-slate-700">
+                Total
+              </span>
+
+              <span className="text-3xl font-bold text-slate-950">
+                {dollars(
+                  selection.finalTotalCents,
+                )}
+              </span>
+            </div>
+
+            <Link
+              href="/dashboard/marketplace"
+              className="mt-6 inline-flex w-full justify-center rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white"
+            >
+              Continue in dashboard
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                clearCheckoutSelection();
+                setSelection(null);
+              }}
+              className="mt-2 w-full rounded-lg border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+            >
+              Remove package
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
