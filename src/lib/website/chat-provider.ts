@@ -86,12 +86,24 @@ function contextMessage(ctx: ChatContext): string {
   return bits.join(" · ");
 }
 
+type ChatHostWindow = Window & {
+  tidioChatApi?: {
+    open: () => void;
+    messageFromVisitor?: (message: string) => void;
+  };
+  $crisp?: unknown[];
+  Intercom?: (command: string, message?: string) => void;
+  HubSpotConversations?: {
+    widget?: { open: () => void };
+  };
+};
+
 /** Opens the active chat surface with prefilled context. Always safe to call. */
 export function openLiveChat(ctx: ChatContext = {}): void {
   if (typeof window === "undefined") return;
   const provider = loadLiveChat();
   const message = contextMessage(ctx);
-  const w = window as unknown as Record<string, any>;
+  const w = window as ChatHostWindow;
 
   try {
     if (!failed) {

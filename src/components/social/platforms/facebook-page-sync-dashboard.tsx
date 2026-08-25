@@ -96,21 +96,6 @@ function formatUpdatedAt(value: string | null): string | null {
   });
 }
 
-function sumMetric(
-  rows: MetricRow[],
-  key: "reach" | "impressions" | "engagement",
-): number | null {
-  let total = 0;
-  let seen = false;
-  for (const row of rows) {
-    const value = row[key];
-    if (value === null || value === undefined) continue;
-    total += value;
-    seen = true;
-  }
-  return seen ? total : null;
-}
-
 function statusLabel(
   status: SyncStatus,
   rangeDisplayStatus?: string | null,
@@ -214,7 +199,7 @@ export function FacebookPageSyncDashboard({
         }
       : null,
   );
-  const [metrics, setMetrics] = useState<MetricRow[]>([]);
+  const [, setMetrics] = useState<MetricRow[]>([]);
   const [, setCompareMetrics] = useState<MetricRow[]>([]);
   const [lifetimeFollowersSnapshot, setLifetimeFollowersSnapshot] = useState<{
     value: number;
@@ -547,7 +532,6 @@ export function FacebookPageSyncDashboard({
       lifetimeFollowersSnapshot?.value ??
       null)
     : null;
-  const coverageStart = activeRange?.start ?? sync?.rangeStart ?? null;
   const coverageEnd =
     sync?.coverageEnd ??
     sync?.lastConfirmedDate ??

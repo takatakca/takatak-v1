@@ -688,7 +688,7 @@ export async function processFacebookOAuthCallback(options: {
         await import(
           "@/lib/social/connections/social-facebook-page-service"
         );
-      let preserve =
+      const preserve =
         await preserveSelectedFacebookPageAfterReauthorization({
           clientId: oauthState.clientId,
           profileId: options.profileId,

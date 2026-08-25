@@ -1,5 +1,4 @@
 import {
-  NextRequest,
   NextResponse,
 } from "next/server";
 
@@ -19,9 +18,7 @@ export const dynamic = "force-dynamic";
  * Omits Page IDs, connection IDs, tokens, and provider secrets.
  * Coalescing + short cache live inside loadBrandSelectorSnapshots.
  */
-export async function GET(
-  _request: NextRequest,
-): Promise<NextResponse> {
+export async function GET(): Promise<NextResponse> {
   const gate = await requireWorkspaceApiPermission(
     "view_social",
   );

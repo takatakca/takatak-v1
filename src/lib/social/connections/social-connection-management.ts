@@ -1,6 +1,5 @@
 import "server-only";
 
-import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import { assertProfileCanManageSocialAccounts } from "@/lib/social/connections/social-connection-auth";
 import { deactivateAssignmentsForConnection } from "@/lib/social/connections/social-brand-assignment";
