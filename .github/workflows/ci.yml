@@ -11,34 +11,39 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: 10
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
-          cache: npm
+          cache: pnpm
 
       - name: Install dependencies (lockfile)
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Prisma generate
-        run: npm run db:generate
+        run: pnpm run db:generate
 
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
 
       - name: Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Build
-        run: npm run build
+        run: pnpm run build
 
       - name: Secret scan
-        run: npm run qa:secrets
+        run: pnpm run qa:secrets
 
       - name: Access-control matrix (pure logic, no DB)
-        run: npm run qa:access
+        run: pnpm run qa:access
 
       - name: Readiness report (static, no secrets)
-        run: npm run qa:readiness
+        run: pnpm run qa:readiness
