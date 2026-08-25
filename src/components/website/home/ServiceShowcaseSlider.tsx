@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/website/nav";
 import { ArrowRight, BadgeCheck, ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
@@ -109,12 +110,13 @@ export function ServiceShowcaseSlider() {
               </Link>
             </div>
             <div className="order-1 relative min-h-[220px] overflow-hidden border-b border-border lg:order-2 lg:border-b-0 lg:border-l">
-              <img
+              <Image
                 key={slide.image}
                 src={slide.image}
                 alt={t("home.slider.sample", { label: slideTitle })}
-                loading="lazy"
-                className="animate-fade-in h-full w-full object-cover"
+                fill
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                className="animate-fade-in object-cover"
               />
             </div>
           </div>

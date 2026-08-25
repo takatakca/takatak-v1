@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 type Kind =
   | "website" | "mobile" | "logo" | "branding" | "social" | "seo"
   | "data" | "menu" | "flyer" | "ecommerce" | "automation" | "ai";
@@ -43,14 +45,12 @@ export function ServiceThumbnail({ kind }: { kind: Kind }) {
   return (
     <div className="relative aspect-[5/3] w-full overflow-hidden border-b border-border bg-gradient-to-br from-secondary to-background">
       {src ? (
-        <img
+        <Image
           src={src}
           alt={ALT[kind]}
-          loading="lazy"
-          decoding="async"
-          width={1280}
-          height={800}
-          className="absolute inset-0 w-full h-full object-cover"
+          fill
+          sizes="(min-width: 768px) 50vw, 100vw"
+          className="object-cover"
         />
       ) : (
         <div className="absolute inset-0 flex items-center justify-center p-4">

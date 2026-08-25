@@ -2,11 +2,7 @@
 
 import {
   CalendarDays,
-  Columns3,
-  Download,
   GitCompareArrows,
-  Plus,
-  Search,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -119,88 +115,6 @@ function GreyStatCard({
         {label}
       </p>
     </div>
-  );
-}
-
-function EmptyListState({ title }: { title: string }) {
-  return (
-    <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
-      <h2 className="text-[18px] font-semibold text-[#20242A]">{title}</h2>
-
-      <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center">
-        <label className="relative min-w-0 flex-1">
-          <span className="sr-only">Search</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa1a9]" />
-          <input
-            placeholder="Search"
-            className="h-11 w-full rounded-[10px] border border-[#d7dbe0] bg-white pl-10 pr-3 text-sm text-[#30343a] outline-none focus:border-[#8996F6] focus:ring-2 focus:ring-[#EEF0FF]"
-          />
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d7dbe0] bg-white px-3.5 text-sm font-medium text-[#30343a]"
-          >
-            <Columns3 className="h-4 w-4" />
-            Columns
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d7dbe0] bg-white px-3.5 text-sm font-medium text-[#30343a]"
-          >
-            <Download className="h-4 w-4" />
-            Download CSV
-          </button>
-          <button
-            type="button"
-            disabled
-            className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d7dbe0] bg-[#f3f4f6] px-3.5 text-sm font-medium text-[#9aa1a9]"
-          >
-            <Plus className="h-4 w-4" />
-            Add to dashboard
-            <span className="rounded bg-[#ddff35] px-1.5 py-0.5 text-[10px] font-bold text-[#2c1929]">
-              New
-            </span>
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-10 flex flex-col items-center px-4 py-10 text-center">
-        <svg
-          width="88"
-          height="72"
-          viewBox="0 0 88 72"
-          fill="none"
-          aria-hidden="true"
-          className="mb-5"
-        >
-          <rect x="18" y="18" width="44" height="36" rx="6" fill="#e8eaed" />
-          <rect x="26" y="28" width="28" height="4" rx="2" fill="#c5cad1" />
-          <rect x="26" y="36" width="20" height="4" rx="2" fill="#c5cad1" />
-          <circle
-            cx="62"
-            cy="48"
-            r="14"
-            fill="#dfe3e8"
-            stroke="#b8bec6"
-            strokeWidth="3"
-          />
-          <path
-            d="M71 57 L79 65"
-            stroke="#b8bec6"
-            strokeWidth="4"
-            strokeLinecap="round"
-          />
-        </svg>
-        <p className="text-[16px] font-semibold text-[#30343a]">
-          Oops! Nothing found, try another search
-        </p>
-        <p className="mt-2 max-w-md text-sm leading-6 text-[#6b7280]">
-          You can use the filter tools to narrow down your search. Check if the
-          current date range suits your needs.
-        </p>
-      </div>
-    </section>
   );
 }
 
@@ -567,36 +481,6 @@ function OverviewSection({
         ]}
       />
     </div>
-  );
-}
-
-function TypesAndViews() {
-  return (
-    <section className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-5">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-[16px] font-semibold text-[#20242A]">Types</h3>
-          <button
-            type="button"
-            className="text-xs font-semibold text-[#566DF1]"
-          >
-            View table
-          </button>
-        </div>
-        <div className="flex min-h-[120px] items-center justify-center text-sm text-[#6b7280]">
-          No post types in this period.
-        </div>
-      </div>
-      <div className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-5">
-        <h3 className="mb-3 text-[16px] font-semibold text-[#20242A]">Views</h3>
-        <div className="flex items-start gap-2.5 rounded-[10px] border border-[#f0d48a] bg-[#fff8e6] px-4 py-3 text-sm text-[#6b5400]">
-          <span aria-hidden="true" className="mt-0.5 text-[#d4a017]">
-            ▲
-          </span>
-          <p>Impressions data is not available for the current period.</p>
-        </div>
-      </div>
-    </section>
   );
 }
 

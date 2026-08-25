@@ -109,7 +109,7 @@ export function UniversalSearchPanel({ compact = false }: { compact?: boolean })
       window.removeEventListener("mousedown", onDown);
       window.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, setOpen]);
 
   const match = submitted ? resolveIntent(submitted) : null;
 
@@ -152,8 +152,11 @@ export function UniversalSearchPanel({ compact = false }: { compact?: boolean })
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setOpen(true)}
           placeholder={query ? t("search.placeholder") : examples[exampleIdx]}
-          aria-label={t("search.aria")}
+          role="combobox"
+          aria-autocomplete="list"
           aria-expanded={open}
+          aria-controls="universal-search-panel"
+          aria-label={t("search.aria")}
           className="flex-1 bg-transparent outline-none px-3.5 py-2.5 text-sm min-w-0 text-foreground placeholder:text-muted-foreground"
         />
         {voiceSupported && (
@@ -176,7 +179,10 @@ export function UniversalSearchPanel({ compact = false }: { compact?: boolean })
       </form>
 
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-popover p-4 shadow-2xl animate-scale-in">
+        <div
+          id="universal-search-panel"
+          className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-popover p-4 shadow-2xl animate-scale-in"
+        >
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
               {match ? t("searchPanel.match", { query: submitted ?? "" }) : t("searchPanel.suggested")}

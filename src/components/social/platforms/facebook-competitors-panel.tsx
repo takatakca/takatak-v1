@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 function formatMetric(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
@@ -83,7 +83,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!liveMode) {
       setCapability(null);
       setCompetitors([]);
@@ -116,11 +116,11 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [liveMode]);
 
   useEffect(() => {
     void load();
-  }, [liveMode]);
+  }, [load]);
 
   const unavailable =
     capability &&
