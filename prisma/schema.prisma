@@ -8,7 +8,16 @@
 // - No credentials, tokens, or realistic external IDs in seed data.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+// MochaHost runtime client: no Rust query engine (CloudLinux panics with
+// "timer has gone away" and cannot fork prisma generate).
+generator mochaClient {
+  provider   = "prisma-client-js"
+  output     = "./generated"
+  engineType = "client"
 }
 
 datasource db {
@@ -82,6 +91,14 @@ enum ClientStatus {
   active
   paused
   archived
+}
+
+enum SubscriptionStatus {
+  trial
+  active
+  past_due
+  canceled
+  expired
 }
 
 enum BrandStatus {
@@ -266,6 +283,7 @@ model Profile {
   assignedLeads            Lead[]                     @relation("AssignedLeads")
   createdSocialConnections SocialProviderConnection[] @relation("SocialConnectionCreatedBy")
   createdSocialOAuthStates SocialOAuthState[]         @relation("SocialOAuthCreatedBy")
+  socialBrandAssignments   SocialBrandAccountAssignment[] @relation("SocialBrandAssignmentAssignedBy")
   socialOnboarding         SocialOnboarding?
 
   @@map("profiles")
@@ -307,6 +325,7 @@ model Client {
 
   assignedProfile           Profile?                   @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
+  subscription              ClientSubscription?
   userInvitations           UserInvitation[]
   businessBrands            BusinessBrand[]
   serviceInstances          ServiceInstance[]
@@ -317,9 +336,14 @@ model Client {
   auditLogs                 AuditLog[]
   socialAccounts            SocialAccount[]
   socialProviderConnections SocialProviderConnection[]
+  socialBrandAssignments    SocialBrandAccountAssignment[]
   socialOAuthStates         SocialOAuthState[]
+  socialAccountSyncStates   SocialAccountSyncState[]
   campaigns                 Campaign[]
   socialPosts               SocialPost[]
+  socialContentItems        SocialContentItem[]
+  socialCompetitorTracks    SocialCompetitorTrack[]
+  socialCompetitorSnapshots SocialCompetitorSnapshot[]
   approvals                 Approval[]
   socialAnalyticsDaily      SocialAnalyticsDaily[]
   socialAdAccounts          SocialAdAccount[]
@@ -346,6 +370,31 @@ model Client {
   @@index([status])
   @@index([createdAt])
   @@map("clients")
+}
+
+/// Billing/subscription state for a TAKATAK client workspace.
+/// Premium access must be derived from this record — never from frontend helpers.
+model ClientSubscription {
+  id                     String             @id @default(uuid()) @db.Uuid
+  clientId               String             @unique @db.Uuid
+  status                 SubscriptionStatus @default(trial)
+  planCode               String?
+  planName               String?
+  provider               String?
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  /// Dev-only bypass. Must remain false in production.
+  developmentBypass      Boolean            @default(false)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@map("client_subscriptions")
 }
 
 /// Connects profiles/users to clients (future multi-client permissions).
@@ -411,6 +460,11 @@ model BusinessBrand {
   postalCode   String?
   country      String      @default("Canada")
   timezone     String      @default("America/Toronto")
+  /// Explicitly uploaded brand/workspace image. Never overwritten by social connect.
+  imageUrl     String?
+  /// Set by migration/runtime when Meta connection/Page identity was ambiguous.
+  /// UI must force reconnect + Page reselection; never guess a canonical Page.
+  requiresMetaPageReselection Boolean @default(false)
   status       BrandStatus @default(draft)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -423,8 +477,12 @@ model BusinessBrand {
   socialAccounts            SocialAccount[]
   campaigns                 Campaign[]
   socialPosts               SocialPost[]
+  socialContentItems        SocialContentItem[]
+  socialCompetitorTracks    SocialCompetitorTrack[]
+  socialCompetitorSnapshots SocialCompetitorSnapshot[]
   approvals                 Approval[]
   socialAnalyticsDaily      SocialAnalyticsDaily[]
+  socialAccountSyncStates   SocialAccountSyncState[]
   socialAdAccounts          SocialAdAccount[]
   socialAdAnalyticsDaily    SocialAdAnalyticsDaily[]
   domainAssets              DomainAsset[]
@@ -447,6 +505,7 @@ model BusinessBrand {
   businessLocations         BusinessLocation[]
   socialProviderConnections SocialProviderConnection[]
   socialOAuthStates         SocialOAuthState[]
+  socialBrandAssignments    SocialBrandAccountAssignment[]
 
   @@unique([id, clientId])
   @@index([clientId])
@@ -589,6 +648,10 @@ model Job {
   startedAt         DateTime?
   completedAt       DateTime?
   errorMessage      String?
+  /// Opaque worker lease token — only the lease owner may finalize/extend.
+  leaseOwner        String?   @db.Uuid
+  /// When the running lease expires, another worker may reclaim.
+  leaseExpiresAt    DateTime?
   metadata          Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -604,6 +667,8 @@ model Job {
   @@index([type])
   @@index([provider])
   @@index([createdAt])
+  @@index([leaseOwner])
+  @@index([type, status, scheduledFor, leaseExpiresAt])
   @@map("jobs")
 }
 
@@ -726,6 +791,15 @@ enum SocialAccountStatus {
   disabled
 }
 
+/// Page/account eligibility relative to the current provider authorization.
+enum SocialAccountAccessStatus {
+  available
+  selected
+  permission_lost
+  removed
+  reauthorization_required
+}
+
 enum SocialConnectionProvider {
   meta
   google
@@ -742,14 +816,56 @@ enum SocialConnectionStatus {
   pending_authorization
   authorized
   connected
+  /// Credential expired/revoked/invalid or missing required permissions.
+  reauthorization_required
+  disconnected
+  /// Setup failed and cannot currently continue.
+  failed
+  /// Legacy/general error bucket retained for existing rows and jobs.
   expired
   error
-  disconnected
   disabled
+}
+
+/// Brand ↔ discovered social account (Facebook Page) assignment.
+enum SocialBrandAssignmentStatus {
+  active
+  inactive
+  permission_lost
+}
+
+/// Lifecycle of the encrypted credential row for one provider connection.
+enum SocialCredentialStatus {
+  active
+  expired
+  revoked
+  invalid
+  superseded
+}
+
+/// Data synchronization state for a selected social account.
+/// Kept separate from SocialConnectionStatus (authorized vs connected).
+enum SocialSyncStatus {
+  /// Selected Page exists but initial sync has not started.
+  idle
+  /// Initial or resume sync is running.
+  syncing
+  /// Usable metrics synchronized for the requested range.
+  ready
+  /// Sync succeeded but Meta returned no data for the range.
+  empty
+  /// Partial data synchronized (pagination/partial provider failure).
+  degraded
+  /// Credential, permission, or Page access requires user action.
+  action_required
+  /// Retryable or non-auth synchronization failure.
+  failed
 }
 
 enum SocialOAuthStateStatus {
   pending
+  /// Claimed by a callback worker; not reusable and not yet completed.
+  processing
   completed
   failed
   expired
@@ -791,24 +907,32 @@ enum AnalyticsSource {
 
 /// Social platform account imported from an integration provider.
 /// Tokens and provider credentials are never stored here.
+/// Facebook Pages discovered via Meta are represented as platform=facebook
+/// with accountType="facebook_page".
 model SocialAccount {
-  id                   String              @id @default(uuid()) @db.Uuid
-  clientId             String              @db.Uuid
-  businessBrandId      String?             @db.Uuid
-  integrationAccountId String?             @db.Uuid
-  providerConnectionId String?             @db.Uuid
-  businessLocationId   String?             @db.Uuid
+  id                   String                    @id @default(uuid()) @db.Uuid
+  clientId             String                    @db.Uuid
+  businessBrandId      String?                   @db.Uuid
+  integrationAccountId String?                   @db.Uuid
+  providerConnectionId String?                   @db.Uuid
+  businessLocationId   String?                   @db.Uuid
   externalAccountId    String?
   platform             SocialPlatform
   handle               String?
   displayName          String?
   profileUrl           String?
+  profileImageUrl      String?
+  category             String?
   accountType          String?
-  status               SocialAccountStatus @default(not_connected)
+  status               SocialAccountStatus       @default(not_connected)
+  accessStatus         SocialAccountAccessStatus @default(available)
+  isAvailableThroughAuth Boolean                 @default(true)
+  firstDiscoveredAt    DateTime?
+  lastDiscoveredAt     DateTime?
   lastSyncAt           DateTime?
   metadata             Json?
-  createdAt            DateTime            @default(now())
-  updatedAt            DateTime            @updatedAt
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
 
   client             Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   businessBrand      BusinessBrand?            @relation(fields: [businessBrandId], references: [id])
@@ -816,10 +940,17 @@ model SocialAccount {
   providerConnection SocialProviderConnection? @relation(fields: [providerConnectionId], references: [id], onDelete: SetNull)
   businessLocation   BusinessLocation?         @relation(fields: [businessLocationId], references: [id], onDelete: SetNull)
   posts              SocialPost[]
+  contentItems       SocialContentItem[]
   analytics          SocialAnalyticsDaily[]
+  brandAssignments   SocialBrandAccountAssignment[]
+  syncState          SocialAccountSyncState?
 
   @@unique([integrationAccountId, platform, externalAccountId])
   @@unique([providerConnectionId, platform, externalAccountId])
+  /// Partial unique: one connected Facebook Page per Client
+  /// (see migration sa_one_connected_facebook_page_per_client_key).
+  /// Partial unique: one connected Facebook Page per provider connection
+  /// (see migration sa_one_connected_facebook_per_connection_key).
   @@index([clientId])
   @@index([businessBrandId])
   @@index([integrationAccountId])
@@ -827,7 +958,73 @@ model SocialAccount {
   @@index([businessLocationId])
   @@index([platform])
   @@index([status])
+  @@index([accessStatus])
+  @@index([clientId, platform, externalAccountId])
+  @@index([isAvailableThroughAuth])
   @@map("social_accounts")
+}
+
+/// Sync lifecycle for one selected social account (Facebook Page).
+/// Connection status stays on SocialProviderConnection; this row tracks data sync only.
+model SocialAccountSyncState {
+  id                   String           @id @default(uuid()) @db.Uuid
+  clientId             String           @db.Uuid
+  businessBrandId      String           @db.Uuid
+  socialAccountId      String           @unique @db.Uuid
+  providerConnectionId String           @db.Uuid
+  status               SocialSyncStatus @default(idle)
+  lastAttemptAt        DateTime?
+  lastSuccessAt        DateTime?
+  /// Sanitized category only — never raw Meta payloads.
+  lastErrorCategory    String?
+  lastErrorMessage     String?
+  retryCount           Int              @default(0)
+  /// Monotonic job ownership key — stale jobs must not overwrite a newer claim.
+  syncGeneration       Int              @default(0)
+  /// Durable Job.id for the in-flight sync_analytics worker (nullable).
+  dispatchJobId        String?          @db.Uuid
+  /// Opaque pagination/resume cursor (never a token).
+  syncCursor           String?
+  rangeStart           DateTime?        @db.Date
+  rangeEnd             DateTime?        @db.Date
+  timezone             String           @default("UTC")
+  partialData          Boolean          @default(false)
+  /// Provider-reported data freshness when known.
+  providerSyncedAt     DateTime?
+  /// Last YYYY-MM-DD that was successfully confirmed from Meta (watermark).
+  lastConfirmedDate    DateTime?        @db.Date
+  /// Days re-fetched on incremental runs for delayed Meta corrections.
+  overlapDays          Int              @default(2)
+  /// idle | running | complete | partial | unavailable
+  backfillStatus       String           @default("idle")
+  /// Next older day still needing historical backfill.
+  backfillCursorDate   DateTime?        @db.Date
+  /// Earliest day this Page will attempt to backfill.
+  backfillHorizonStart DateTime?        @db.Date
+  /// When the durable scheduler may enqueue the next incremental job.
+  nextIncrementalAt    DateTime?
+  /// initial | incremental | backfill
+  lastSyncMode         String?
+  /// unknown | complete | partial | unavailable | backfilling
+  dataCompleteness     String           @default("unknown")
+  graphApiVersion      String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  client             Client                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand            @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+  socialAccount      SocialAccount            @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  providerConnection SocialProviderConnection @relation(fields: [providerConnectionId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, status])
+  @@index([businessBrandId, status])
+  @@index([providerConnectionId, status])
+  @@index([lastAttemptAt])
+  @@index([dispatchJobId])
+  @@index([nextIncrementalAt])
+  @@index([backfillStatus])
+  @@index([clientId, status, nextIncrementalAt])
+  @@map("social_account_sync_states")
 }
 
 /// One native OAuth/provider authorization owned by a TAKATAK
@@ -835,7 +1032,7 @@ model SocialAccount {
 ///
 /// A connection is not marked connected merely because credentials
 /// exist. The provider adapter must authorize successfully and at
-/// least one real external account must be imported.
+/// least one real external account must be assigned to the Brand.
 model SocialProviderConnection {
   id                    String                   @id @default(uuid()) @db.Uuid
   clientId              String                   @db.Uuid
@@ -847,10 +1044,12 @@ model SocialProviderConnection {
   scopes                String[]                 @default([])
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
+  authorizedAt          DateTime?
   lastValidatedAt       DateTime?
   lastSyncAt            DateTime?
   lastErrorCode         String?
   lastErrorMessage      String?
+  lastErrorAt           DateTime?
   connectedAt           DateTime?
   disconnectedAt        DateTime?
   createdByProfileId    String?                  @db.Uuid
@@ -866,15 +1065,27 @@ model SocialProviderConnection {
   oauthStates    SocialOAuthState[]
   socialAccounts SocialAccount[]
   adAccounts     SocialAdAccount[]
+  syncStates     SocialAccountSyncState[]
 
-  @@unique([clientId, businessBrandId, provider])
+  /// Partial unique: at most one live shell
+  /// (pending_authorization|authorized|connected) per Brand+provider
+  /// — see migration spc_one_live_per_brand_provider_key.
+  /// Partial unique: at most one pending_authorization per Brand+provider
+  /// (spc_one_pending_per_brand_provider_key; subset of live unique).
+  @@index([clientId, businessBrandId, provider])
+  /// Same Meta user MAY authorize multiple Brands in one Client.
+  /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
   @@unique([id, clientId], map: "spc_id_client_key")
   @@unique([id, clientId, businessBrandId, provider], map: "spc_oauth_scope_key")
   @@index([clientId, status])
   @@index([businessBrandId, status])
   @@index([provider, status])
+  @@index([clientId, provider, externalSubjectId])
+  @@index([externalSubjectId])
   @@index([createdByProfileId])
   @@index([accessTokenExpiresAt])
+  @@index([authorizedAt])
+  @@index([lastErrorAt])
   @@map("social_provider_connections")
 }
 
@@ -882,26 +1093,65 @@ model SocialProviderConnection {
 ///
 /// The encryptedPayload column contains an AES-256-GCM encrypted JSON
 /// payload. Plain access tokens and refresh tokens are never stored.
+/// tokenType (when present) lives inside encryptedPayload, not plaintext.
 model SocialCredential {
-  id               String    @id @default(uuid()) @db.Uuid
-  clientId         String    @db.Uuid
-  connectionId     String    @unique @db.Uuid
+  id               String                 @id @default(uuid()) @db.Uuid
+  clientId         String                 @db.Uuid
+  connectionId     String                 @unique @db.Uuid
+  status           SocialCredentialStatus @default(active)
   encryptedPayload String
   iv               String
   authTag          String
-  keyVersion       Int       @default(1)
+  keyVersion       Int                    @default(1)
   tokenExpiresAt   DateTime?
   refreshExpiresAt DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  lastValidatedAt  DateTime?
+  statusChangedAt  DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
 
   connection SocialProviderConnection @relation(fields: [connectionId, clientId], references: [id, clientId], onDelete: Cascade)
 
   @@unique([connectionId, clientId], map: "social_credentials_connection_client_key")
   @@index([clientId])
+  @@index([status])
   @@index([tokenExpiresAt])
   @@index([refreshExpiresAt])
+  @@index([lastValidatedAt])
   @@map("social_credentials")
+}
+
+/// Assigns a discovered social account (e.g. Facebook Page) to a Brand.
+/// Provider authorization stays on SocialProviderConnection; this row is
+/// the Brand selection record. Tokens are never stored here.
+model SocialBrandAccountAssignment {
+  id                 String                      @id @default(uuid()) @db.Uuid
+  clientId           String                      @db.Uuid
+  businessBrandId    String                      @db.Uuid
+  socialAccountId    String                      @db.Uuid
+  status             SocialBrandAssignmentStatus @default(active)
+  assignedAt         DateTime                    @default(now())
+  assignedByProfileId String?                    @db.Uuid
+  unassignedAt       DateTime?
+  createdAt          DateTime                    @default(now())
+  updatedAt          DateTime                    @updatedAt
+
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  assignedBy    Profile?      @relation("SocialBrandAssignmentAssignedBy", fields: [assignedByProfileId], references: [id], onDelete: SetNull)
+
+  /// One Brand ↔ Page pair row (status flips preserve history fields).
+  @@unique([businessBrandId, socialAccountId])
+  /// Partial unique: one active assignment per socialAccountId
+  /// (sbaa_one_active_account_key).
+  /// Partial unique: one active assignment per brand
+  /// (sbaa_one_active_per_brand_key) — selected Facebook Page is canonical.
+  @@index([clientId, status])
+  @@index([businessBrandId, status])
+  @@index([socialAccountId, status])
+  @@index([assignedByProfileId])
+  @@map("social_brand_account_assignments")
 }
 
 /// One short-lived OAuth authorization attempt.
@@ -1008,6 +1258,143 @@ model SocialPost {
   @@map("social_posts")
 }
 
+/// Synced Facebook Page content (posts, reels, stories) from Meta.
+/// Provider object IDs stay server-side only — never returned to UI/logs.
+model SocialContentItem {
+  id                   String               @id @default(uuid()) @db.Uuid
+  clientId             String               @db.Uuid
+  businessBrandId      String               @db.Uuid
+  socialAccountId      String               @db.Uuid
+  /// post | reel | story
+  contentType          String
+  /// Opaque stable hash of provider object id (not reversible in UI).
+  externalIdHash       String
+  /// Encrypted/provider-only; never select in client APIs.
+  externalObjectId     String
+  publishedAt          DateTime
+  captionExcerpt       String?
+  permalinkUrl         String?
+  thumbnailUrl         String?
+  /// available | deleted | expired | unknown
+  availability         String               @default("available")
+  /// Confirmed metrics — null means unavailable (—), 0 means confirmed zero.
+  reach                Int?
+  views                Int?
+  reactions            Int?
+  comments             Int?
+  shares               Int?
+  engagement           Int?
+  /// Per-metric provenance/status JSON (confirmed|unavailable|partial|permission_denied|privacy_threshold).
+  metricStatus         Json?
+  graphApiVersion      String?
+  retrievedAt          DateTime?
+  firstSeenAt          DateTime             @default(now())
+  lastSeenAt           DateTime             @default(now())
+  deletedAt            DateTime?
+  expiredAt            DateTime?
+  metadata             Json?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand  @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount  @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([socialAccountId, contentType, externalIdHash], map: "sci_account_type_hash_key")
+  @@index([clientId, businessBrandId, contentType, publishedAt])
+  @@index([socialAccountId, publishedAt])
+  @@index([socialAccountId, availability])
+  @@index([clientId, publishedAt])
+  @@map("social_content_items")
+}
+
+/// Brand-scoped Facebook competitor Page track (public Meta data only).
+/// Never stores private insights. Provider Page IDs stay server-only.
+model SocialCompetitorTrack {
+  id                 String    @id @default(uuid()) @db.Uuid
+  clientId           String    @db.Uuid
+  businessBrandId    String    @db.Uuid
+  /// Client-facing opaque ref — never the provider Page ID.
+  publicRef          String
+  /// Opaque hash of provider Page id (not reversible in UI).
+  externalPageIdHash String
+  /// Provider Page id — server-only; never select in client APIs.
+  externalPageId     String
+  usernameCanonical  String?
+  /// Local rename; does not alter Meta identity.
+  displayLabel       String?
+  pageName           String?
+  profileImageUrl    String?
+  category           String?
+  /// active | removed
+  status             String    @default("active")
+  /// available | stale | unavailable | permission_denied | rate_limited | failed | pending
+  availability       String    @default("pending")
+  /// ready | feature_required | permission_denied | unavailable | unknown
+  capabilityStatus   String    @default("unknown")
+  lastAttemptAt      DateTime?
+  lastSuccessAt      DateTime?
+  lastErrorCategory  String?
+  lastErrorMessage   String?
+  nextRefreshAt      DateTime?
+  dispatchJobId      String?   @db.Uuid
+  syncGeneration     Int       @default(0)
+  graphApiVersion    String?
+  metadata           Json?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  client        Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand              @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+  snapshots     SocialCompetitorSnapshot[]
+
+  @@unique([clientId, businessBrandId, publicRef], map: "sct_brand_public_ref_key")
+  @@unique([clientId, businessBrandId, externalPageIdHash], map: "sct_brand_page_hash_key")
+  @@index([clientId, businessBrandId, status])
+  @@index([nextRefreshAt])
+  @@index([dispatchJobId])
+  @@map("social_competitor_tracks")
+}
+
+/// Dated public snapshot for one competitor track (separate from private Page analytics).
+model SocialCompetitorSnapshot {
+  id                   String   @id @default(uuid()) @db.Uuid
+  clientId             String   @db.Uuid
+  businessBrandId      String   @db.Uuid
+  competitorTrackId    String   @db.Uuid
+  snapshotAt           DateTime
+  /// Calendar day of the snapshot (UTC) for idempotent upserts.
+  snapshotDate         DateTime @db.Date
+  followerCount        Int?
+  /// followers_count | fan_count | null when unavailable
+  followerFieldSource  String?
+  pageName             String?
+  category             String?
+  profileImageUrl      String?
+  /// Public feed post count in probe window when PPCA permits; else null.
+  publicPostCount      Int?
+  publicReactionsSum   Int?
+  publicCommentsSum    Int?
+  publicSharesSum      Int?
+  /// confirmed | partial | stale | unavailable | permission_denied | rate_limited | failed
+  availability         String   @default("unavailable")
+  metricStatus         Json?
+  graphApiVersion      String?
+  retrievedAt          DateTime
+  metadata             Json?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  client           Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand    BusinessBrand         @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+  competitorTrack  SocialCompetitorTrack @relation(fields: [competitorTrackId], references: [id], onDelete: Cascade)
+
+  @@unique([competitorTrackId, snapshotDate], map: "scs_track_date_key")
+  @@index([clientId, businessBrandId, snapshotDate])
+  @@index([competitorTrackId, snapshotAt])
+  @@map("social_competitor_snapshots")
+}
+
 /// Client approval workflow for social posts.
 model Approval {
   id                   String         @id @default(uuid()) @db.Uuid
@@ -1062,6 +1449,8 @@ model SocialAnalyticsDaily {
   socialAccount SocialAccount? @relation(fields: [socialAccountId], references: [id])
   campaign      Campaign?      @relation(fields: [campaignId], references: [id])
 
+  /// Idempotent provider sync upserts — one daily row per account+date+source.
+  @@unique([socialAccountId, date, source], map: "sad_account_date_source_key")
   @@index([clientId])
   @@index([businessBrandId])
   @@index([platform])

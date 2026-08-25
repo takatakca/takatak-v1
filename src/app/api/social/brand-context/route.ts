@@ -7,6 +7,7 @@ import {
 import { getPrisma } from "@/lib/db/prisma";
 import {
   ACTIVE_BRAND_COOKIE,
+  invalidateBrandSelectorCache,
 } from "@/lib/security/brand-context";
 import {
   handleApiError,
@@ -113,6 +114,8 @@ export async function POST(
         "layout",
       );
 
+      invalidateBrandSelectorCache(gate.access.activeClientId);
+
       return response;
     }
 
@@ -189,6 +192,8 @@ export async function POST(
       "/dashboard/social",
       "layout",
     );
+
+    invalidateBrandSelectorCache(gate.access.activeClientId);
 
     return response;
   } catch (error) {

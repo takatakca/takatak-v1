@@ -5,7 +5,7 @@ import {
   Star,
 } from "lucide-react";
 
-import { ServiceThumbnail } from "@/components/website/marketplace/service-thumbnail";
+import { ServiceThumbnail } from "@/components/website/marketplace/ServiceThumbnail";
 import {
   formatStartingPrice,
   shortestDelivery,

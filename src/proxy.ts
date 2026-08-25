@@ -4,6 +4,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "@/lib/auth/env";
+import { originFromRequest } from "@/lib/config/app-origin";
 
 export default async function proxy(request: NextRequest) {
   const env = getSupabaseEnv();
@@ -34,17 +35,15 @@ export default async function proxy(request: NextRequest) {
   const isDashboard = path.startsWith("/dashboard");
   const isLogin = path === "/login";
 
+  const origin = originFromRequest(request);
+
   if (isDashboard && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
+    const url = new URL("/login", origin);
     url.searchParams.set("next", path);
     return NextResponse.redirect(url);
   }
   if (isLogin && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    url.search = "";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(new URL("/dashboard", origin));
   }
   return response;
 }

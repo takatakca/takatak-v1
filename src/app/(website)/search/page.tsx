@@ -57,16 +57,16 @@ export default async function SearchPage({
     );
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-6xl space-y-8 px-4 py-10">
         <header>
-          <h1 className="text-3xl font-bold text-slate-950">
+          <h1 className="text-3xl font-bold text-foreground">
             {query
               ? `Results for “${query}”`
               : "Search TAKATAK"}
           </h1>
 
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             Search marketplace packages,
             domains, hosting, and public
             TAKATAK services.
@@ -74,7 +74,7 @@ export default async function SearchPage({
 
           <form
             method="get"
-            className="mt-5 flex max-w-xl overflow-hidden rounded-lg border border-slate-200"
+            className="mt-5 flex max-w-xl overflow-hidden rounded-lg border border-border"
           >
             <input
               name="q"
@@ -85,7 +85,7 @@ export default async function SearchPage({
 
             <button
               type="submit"
-              className="bg-emerald-600 px-5 text-sm font-semibold text-white"
+              className="bg-primary px-5 text-sm font-semibold text-primary-foreground"
             >
               Search
             </button>
@@ -95,11 +95,11 @@ export default async function SearchPage({
         {normalized.includes(
           "domain",
         ) ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-slate-700">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
             Looking for a domain?{" "}
             <Link
               href="/domain"
-              className="font-semibold text-emerald-700"
+              className="font-semibold text-primary"
             >
               Search domains →
             </Link>
@@ -109,11 +109,11 @@ export default async function SearchPage({
         {normalized.includes(
           "hosting",
         ) ? (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-slate-700">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-foreground">
             Looking for hosting?{" "}
             <Link
               href="/hosting"
-              className="font-semibold text-emerald-700"
+              className="font-semibold text-primary"
             >
               View hosting plans →
             </Link>
@@ -122,7 +122,7 @@ export default async function SearchPage({
 
         <section>
           <div className="flex items-end justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               Marketplace packages{" "}
               {packages.length > 0
                 ? `(${packages.length})`
@@ -131,26 +131,26 @@ export default async function SearchPage({
 
             <Link
               href="/marketplace"
-              className="text-xs font-medium text-emerald-700"
+              className="text-xs font-medium text-primary"
             >
               Browse marketplace
             </Link>
           </div>
 
           {packages.length === 0 ? (
-            <div className="mt-4 rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center">
-              <h3 className="font-semibold text-slate-950">
+            <div className="mt-4 rounded-xl border border-dashed border-border bg-card p-8 text-center">
+              <h3 className="font-semibold text-foreground">
                 No matching package yet
               </h3>
 
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Post a custom project to
                 continue.
               </p>
 
               <Link
                 href="/marketplace/post-project"
-                className="mt-4 inline-flex rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+                className="mt-4 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
               >
                 Post a project
               </Link>
@@ -169,31 +169,31 @@ export default async function SearchPage({
 
         {services.length > 0 ? (
           <section>
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               TAKATAK services
             </h2>
 
-            <ul className="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200 bg-white">
+            <ul className="mt-3 divide-y divide-border rounded-xl border border-border bg-card">
               {services.map(
                 (service) => (
                   <li key={service.slug}>
                     <Link
                       href={`/services/${service.slug}`}
-                      className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-slate-50"
+                      className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-secondary"
                     >
                       <div>
-                        <p className="text-sm font-medium text-slate-950">
+                        <p className="text-sm font-medium text-foreground">
                           {service.title}
                         </p>
 
-                        <p className="mt-0.5 text-xs text-slate-500">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           {
                             service.shortDescription
                           }
                         </p>
                       </div>
 
-                      <span className="shrink-0 text-xs text-emerald-700">
+                      <span className="shrink-0 text-xs text-primary">
                         Open →
                       </span>
                     </Link>

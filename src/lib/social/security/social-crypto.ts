@@ -30,6 +30,121 @@ export type SocialTokenPayload = {
   metadata?: Record<string, unknown>;
 };
 
+/** Typed Page credential nested under the user token payload (never overwrites user accessToken). */
+export const META_FACEBOOK_PAGE_CREDENTIAL_PURPOSE =
+  "meta_facebook_page" as const;
+
+export type MetaFacebookPageCredential = {
+  purpose: typeof META_FACEBOOK_PAGE_CREDENTIAL_PURPOSE;
+  pageId: string;
+  accessToken: string;
+  obtainedAt: string;
+};
+
+export function readMetaFacebookPageCredential(
+  payload: SocialTokenPayload,
+): MetaFacebookPageCredential | null {
+  const raw = payload.metadata?.pageCredential;
+
+  if (
+    typeof raw !== "object" ||
+    raw === null ||
+    Array.isArray(raw)
+  ) {
+    return null;
+  }
+
+  const record = raw as Record<string, unknown>;
+
+  if (
+    record.purpose !== META_FACEBOOK_PAGE_CREDENTIAL_PURPOSE ||
+    typeof record.pageId !== "string" ||
+    !record.pageId.trim() ||
+    typeof record.accessToken !== "string" ||
+    !record.accessToken.trim() ||
+    typeof record.obtainedAt !== "string" ||
+    !record.obtainedAt.trim()
+  ) {
+    return null;
+  }
+
+  return {
+    purpose: META_FACEBOOK_PAGE_CREDENTIAL_PURPOSE,
+    pageId: record.pageId.trim(),
+    accessToken: record.accessToken,
+    obtainedAt: record.obtainedAt.trim(),
+  };
+}
+
+/**
+ * Preserve the authorized Meta user token and attach/replace the Page
+ * credential under metadata.pageCredential only.
+ */
+export function withMetaFacebookPageCredential(
+  payload: SocialTokenPayload,
+  options: {
+    pageId: string;
+    accessToken: string;
+    obtainedAt?: string;
+  },
+): SocialTokenPayload {
+  if (!payload.accessToken.trim()) {
+    throw new Error(
+      "An access token is required.",
+    );
+  }
+
+  if (!options.pageId.trim() || !options.accessToken.trim()) {
+    throw new Error(
+      "A Facebook Page id and Page access token are required.",
+    );
+  }
+
+  const pageCredential: MetaFacebookPageCredential = {
+    purpose: META_FACEBOOK_PAGE_CREDENTIAL_PURPOSE,
+    pageId: options.pageId.trim(),
+    accessToken: options.accessToken.trim(),
+    obtainedAt:
+      options.obtainedAt?.trim() ||
+      new Date().toISOString(),
+  };
+
+  return {
+    ...payload,
+    metadata: {
+      ...(payload.metadata ?? {}),
+      pageCredential,
+    },
+  };
+}
+
+/**
+ * Keep the authorized Meta user token and remove any nested Page credential.
+ * Used when the user clears the selected Facebook Page to pick another.
+ */
+export function clearMetaFacebookPageCredential(
+  payload: SocialTokenPayload,
+): SocialTokenPayload {
+  if (!payload.accessToken.trim()) {
+    throw new Error(
+      "An access token is required.",
+    );
+  }
+
+  const metadata = {
+    ...(payload.metadata ?? {}),
+  };
+  delete metadata.pageCredential;
+
+  return {
+    ...payload,
+    metadata:
+      Object.keys(metadata).length > 0
+        ? metadata
+        : undefined,
+  };
+}
+
 type SocialEncryptionKey = {
   version: number;
   key: Buffer;
@@ -148,6 +263,7 @@ function getEncryptionKey(
 export function encryptSocialValue(
   plaintext: string,
   keyVersion?: number,
+  authenticatedContext?: string,
 ): EncryptedSocialValue {
   if (!plaintext) {
     throw new Error(
@@ -165,6 +281,15 @@ export function encryptSocialValue(
     encryptionKey.key,
     iv,
   );
+
+  if (authenticatedContext) {
+    cipher.setAAD(
+      Buffer.from(
+        authenticatedContext,
+        "utf8",
+      ),
+    );
+  }
 
   const ciphertext = Buffer.concat([
     cipher.update(
@@ -189,6 +314,7 @@ export function encryptSocialValue(
 
 export function decryptSocialValue(
   value: EncryptedSocialValue,
+  authenticatedContext?: string,
 ): string {
   const encryptionKey =
     getEncryptionKey(value.keyVersion);
@@ -198,6 +324,15 @@ export function decryptSocialValue(
     encryptionKey.key,
     Buffer.from(value.iv, "base64"),
   );
+
+  if (authenticatedContext) {
+    decipher.setAAD(
+      Buffer.from(
+        authenticatedContext,
+        "utf8",
+      ),
+    );
+  }
 
   decipher.setAuthTag(
     Buffer.from(
@@ -219,8 +354,24 @@ export function decryptSocialValue(
   return plaintext.toString("utf8");
 }
 
+export function buildSocialCredentialAad(
+  options: {
+    clientId: string;
+    connectionId: string;
+    provider: string;
+  },
+): string {
+  return [
+    "takatak-social-credential",
+    options.clientId,
+    options.connectionId,
+    options.provider,
+  ].join(":");
+}
+
 export function encryptSocialTokenPayload(
   payload: SocialTokenPayload,
+  authenticatedContext?: string,
 ): EncryptedSocialValue {
   if (!payload.accessToken.trim()) {
     throw new Error(
@@ -230,14 +381,20 @@ export function encryptSocialTokenPayload(
 
   return encryptSocialValue(
     JSON.stringify(payload),
+    undefined,
+    authenticatedContext,
   );
 }
 
 export function decryptSocialTokenPayload(
   value: EncryptedSocialValue,
+  authenticatedContext?: string,
 ): SocialTokenPayload {
   const plaintext =
-    decryptSocialValue(value);
+    decryptSocialValue(
+      value,
+      authenticatedContext,
+    );
 
   const parsed = JSON.parse(
     plaintext,

@@ -55,6 +55,12 @@
   
     --color-ring:
       var(--ring);
+  
+    --color-success:
+      var(--success);
+  
+    --color-warning:
+      var(--warning);
   }
   
   .website-surface {
@@ -107,6 +113,12 @@
   
     --destructive-foreground:
       oklch(1 0 0);
+  
+    --success:
+      oklch(0.55 0.16 152);
+  
+    --warning:
+      oklch(0.75 0.15 75);
   
     --border:
       oklch(0.91 0.004 250);
@@ -249,3 +261,327 @@
     color:
       oklch(0.18 0.01 260);
   }
+
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fade-in {
+  animation: fade-in 0.2s ease both;
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.96) translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-scale-in {
+  animation: scale-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-scale-in { animation: none; }
+}
+
+/* Decorative node pulse used by the hero infrastructure map. */
+@keyframes tk-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.9); }
+  50%      { opacity: 0.75; transform: scale(1.15); }
+}
+.tk-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tk-pulse 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-pulse { animation: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* ---------- TAKATAK premium motion layer ---------- */
+
+/* Scroll reveal — element starts offset, `data-shown` flips it in. */
+.tk-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.tk-reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* Slowly drifting technical grid for dark bands. */
+@keyframes tk-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to   { background-position: 48px 48px, 48px 48px; }
+}
+.tk-grid-drift { animation: tk-grid-drift 22s linear infinite; }
+
+/* Animated gradient border used on premium CTAs. */
+@keyframes tk-glow-sweep {
+  from { background-position: 0% 50%; }
+  to   { background-position: 200% 50%; }
+}
+.tk-glow-cta {
+  position: relative;
+  isolation: isolate;
+}
+.tk-glow-cta::before {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border-radius: inherit;
+  z-index: -1;
+  background: linear-gradient(
+    90deg,
+    var(--brand-accent-cyan),
+    var(--brand-accent-violet),
+    var(--brand-accent-cyan)
+  );
+  background-size: 200% 100%;
+  animation: tk-glow-sweep 6s linear infinite;
+  opacity: 0.85;
+}
+
+/* Soft light sheen that crosses a card on hover. */
+.tk-sheen { position: relative; overflow: hidden; }
+.tk-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  translate: -120% 0;
+  background: linear-gradient(105deg, transparent 35%, color-mix(in oklab, var(--primary) 12%, transparent) 50%, transparent 65%);
+  transition: translate 0.75s ease;
+  pointer-events: none;
+}
+.tk-sheen:hover::after { translate: 120% 0; }
+
+/* Live status dot. */
+@keyframes tk-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+.tk-blink { animation: tk-blink 2.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-reveal { opacity: 1; transform: none; }
+  .tk-grid-drift, .tk-glow-cta::before, .tk-blink { animation: none; }
+  .tk-sheen::after { display: none; }
+}
+
+/* ---------- TAKATAK 3D / depth layer ---------- */
+
+/* Parent that establishes perspective for tilting children. */
+.tk-scene { perspective: 1200px; perspective-origin: 50% 50%; }
+
+/* Card that tilts toward the pointer. Angles come from JS custom props. */
+.tk-tilt {
+  transform: perspective(1100px)
+             rotateX(var(--tk-rx, 0deg))
+             rotateY(var(--tk-ry, 0deg))
+             translateZ(0);
+  transform-style: preserve-3d;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+  will-change: transform;
+}
+.tk-tilt-layer { transform: translateZ(38px); }
+
+/* Static angled mockup panels used in showcase scenes. */
+.tk-panel-3d {
+  transform: perspective(1400px) rotateY(-14deg) rotateX(6deg) translateZ(0);
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.tk-panel-3d:hover { transform: perspective(1400px) rotateY(-6deg) rotateX(2deg) scale(1.015); }
+
+/* Slow float for depth accents. */
+@keyframes tk-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+.tk-float { animation: tk-float 7s ease-in-out infinite; }
+.tk-float-slow { animation: tk-float 11s ease-in-out infinite; }
+
+/* Promo invite entrance. */
+@keyframes tk-rise-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+.tk-rise-in { animation: tk-rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-tilt, .tk-panel-3d { transform: none !important; }
+  .tk-float, .tk-float-slow, .tk-rise-in { animation: none; }
+}
+
+/* ---------- TAKATAK signature hero / motion system ---------- */
+
+/* Reveal variants (shared Reveal component). */
+.tk-reveal[data-variant="fade-in"]     { transform: none; }
+.tk-reveal[data-variant="slide-left"]  { transform: translateX(24px); }
+.tk-reveal[data-variant="slide-right"] { transform: translateX(-24px); }
+.tk-reveal[data-variant="scale-in"]    { transform: scale(0.96); }
+.tk-reveal[data-shown="true"]          { transform: none; }
+
+/* Travelling pulse along an active FlowLine connection. */
+@keyframes tk-flow-dash {
+  from { stroke-dashoffset: 234; }
+  to   { stroke-dashoffset: 0; }
+}
+.tk-flow-dash { animation: tk-flow-dash 1.9s linear infinite; }
+
+/* Pointer-following ambient light on dark surfaces. */
+.tk-pointer-glow { position: relative; isolation: isolate; }
+.tk-pointer-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    320px circle at var(--tk-gx, 70%) var(--tk-gy, 20%),
+    color-mix(in oklab, var(--primary) 12%, transparent),
+    transparent 70%
+  );
+  transition: opacity 0.3s ease;
+}
+
+/* Clean angled edge between the light header and the dark hero. */
+.tk-section-edge {
+  height: 26px;
+  pointer-events: none;
+}
+.tk-section-edge[data-direction="to-dark"] {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--brand-dark) 0%, transparent), transparent);
+  border-top: 1px solid color-mix(in oklab, var(--primary) 25%, transparent);
+}
+
+/* Ecosystem node depth + selection lift. */
+.tk-eco-node { transform-origin: center; }
+.tk-eco-node[data-state="selected"] { z-index: 5; }
+.tk-eco-node:hover { border-color: color-mix(in oklab, var(--primary) 55%, transparent); }
+
+/* Pass 2 — flagship hero scene */
+.tk-hero-scene { --tk-px: 0; --tk-py: 0; }
+.tk-hero-object {
+  position: relative;
+  transition:
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 300ms ease,
+    box-shadow 300ms ease,
+    background-color 300ms ease;
+}
+.tk-hero-object:hover,
+.tk-hero-object:focus-visible,
+.tk-hero-object[data-state="selected"] {
+  border-color: color-mix(in oklab, var(--primary) 55%, transparent);
+}
+.tk-hero-object[data-state="selected"] { z-index: 40; }
+.tk-hero-anchor::after {
+  content: "";
+  position: absolute;
+  inset: auto 8% -14px 8%;
+  height: 26px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.55), transparent);
+  filter: blur(6px);
+  pointer-events: none;
+}
+.tk-hero-console {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 30px 70px -40px rgba(0, 0, 0, 0.95);
+}
+.tk-hero-console:focus-within {
+  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 0 0 1px color-mix(in oklab, var(--primary) 25%, transparent),
+    0 34px 80px -40px color-mix(in oklab, var(--primary) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-flow-dash { animation: none; }
+  .tk-pointer-glow::before { display: none; }
+  .tk-hero-object { transform: none !important; transition: none; }
+}
+
+/* Package 3 — homepage rhythm utilities */
+@utility tk-no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+/* ── Package 4: one-shot service scene choreography ─────────────────── */
+@keyframes tk-step-in {
+  from { opacity: 0; transform: translateY(7px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes tk-dash-move { to { stroke-dashoffset: -24; } }
+@keyframes tk-pin-pulse {
+  0%   { transform: scale(1);   opacity: 0.85; }
+  50%  { transform: scale(1.9); opacity: 0.12; }
+  100% { transform: scale(1);   opacity: 0.85; }
+}
+@keyframes tk-sweep { from { transform: translateX(-110%); } to { transform: translateX(210%); } }
+
+.tk-step { opacity: 1; }
+.tk-play .tk-step { opacity: 0; animation: tk-step-in 520ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.tk-play .tk-dash { stroke-dasharray: 4 8; animation: tk-dash-move 1.6s linear infinite; }
+.tk-play .tk-pin { animation: tk-pin-pulse 1.5s ease-out 700ms 2; }
+.tk-play .tk-sweep { animation: tk-sweep 2.6s cubic-bezier(0.22, 1, 0.36, 1) 400ms 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-play .tk-step,
+  .tk-play .tk-dash,
+  .tk-play .tk-pin,
+  .tk-play .tk-sweep { animation: none !important; opacity: 1; }
+}
+
+/* ---- Site menu drawer motion ---- */
+@keyframes tk-menu-slide {
+  from { opacity: 0; transform: translateX(24px) scale(0.985); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes tk-menu-group-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.tk-menu-in { animation: tk-menu-slide 300ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+.tk-menu-group { animation: tk-menu-group-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .tk-menu-in, .tk-menu-group { animation: none; opacity: 1; transform: none; }
+}
+
+/* Pass 4 — transformation stage worlds */
+.tk-stage-word {
+  color: transparent;
+  -webkit-text-stroke: 1px color-mix(in oklab, var(--primary) 26%, transparent);
+  opacity: 0.16;
+  mask-image: radial-gradient(ellipse at 50% 50%, black 20%, transparent 78%);
+  animation: tk-stage-word-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes tk-stage-word-in {
+  from { opacity: 0; letter-spacing: 0.12em; }
+  to { opacity: 0.16; letter-spacing: -0.03em; }
+}
+.tk-stage-plane {
+  transition:
+    opacity 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 600ms ease;
+}
+.tk-stage-plane[data-shown="false"] {
+  opacity: 0;
+  filter: blur(3px);
+  pointer-events: none;
+}
+.tk-stage-plane[data-shown="false"][data-depth="0"] { transform: translate3d(0, 10px, 0) scale(0.985); }
+.tk-stage-plane[data-shown="false"][data-depth="1"] { transform: translate3d(0, 18px, 0) scale(0.975); }
+.tk-stage-plane[data-shown="false"][data-depth="2"] { transform: translate3d(0, 26px, 0) scale(0.965); }
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-stage-word { animation: none; }
+  .tk-stage-plane { transition: none; transform: none !important; filter: none; }
+}

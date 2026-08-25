@@ -12,11 +12,13 @@ import { resolveBrandSessionContext } from "@/lib/security/brand-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { getSocialConnectionsData } from "@/lib/social/connections/social-connection-data";
+import { pickConnectedPlatformAccount } from "@/lib/social/connections/social-selected-page-identity";
 import {
   getSocialProviderDefinition,
   listSocialProviderReadiness,
 } from "@/lib/social/providers/registry";
 import { getPrisma } from "@/lib/db/prisma";
+import { toAccountPictureSrc, toClientSocialImageUrl } from "@/lib/social/media/remote-image";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +97,8 @@ export default async function SocialLayout({
             readiness.connectable,
           configured:
             readiness.configured,
+          supportsMultipleAccounts:
+            readiness.supportsMultipleAccounts,
           state: readiness.state,
         };
       },
@@ -127,20 +131,61 @@ export default async function SocialLayout({
           brandName:
             connection.brandName,
           accounts:
-            connection.accounts,
+            connection.accounts.map(
+              (account) => ({
+                id: account.id,
+                platform:
+                  account.platform,
+                // Page IDs stay server-side; UI uses name/handle only.
+                externalAccountId: null,
+                handle: account.handle,
+                displayName:
+                  account.displayName,
+                status: account.status,
+                accessStatus:
+                  account.accessStatus,
+                profileImageUrl:
+                  account.platform === "facebook"
+                    ? toAccountPictureSrc(account.id)
+                    : toClientSocialImageUrl(account.profileImageUrl),
+              }),
+            ),
+          lastErrorCode:
+            connection.lastErrorCode,
           lastErrorMessage:
             connection.lastErrorMessage,
         }),
       );
 
-      accounts = records.flatMap(
+      const connectedAccounts = records.flatMap(
         (connection) =>
           connection.accounts
-            .filter(
-              (account) =>
-                account.externalAccountId !==
-                null,
-            )
+            .filter((account) => {
+              if (
+                account.status !== "connected" ||
+                account.externalAccountId === null
+              ) {
+                return false;
+              }
+
+              if (connection.status === "connected") {
+                return true;
+              }
+
+              // Keep selected Facebook Page visible when Meta shell needs
+              // reconnect attention — matches brand selector + projection.
+              return (
+                connection.provider === "meta" &&
+                account.platform === "facebook" &&
+                account.accessStatus === "selected" &&
+                (connection.status ===
+                  "reauthorization_required" ||
+                  connection.status === "authorized" ||
+                  connection.status === "failed" ||
+                  connection.status === "expired" ||
+                  connection.status === "error")
+              );
+            })
             .map((account) => ({
               id: account.id,
               platform:
@@ -149,8 +194,46 @@ export default async function SocialLayout({
               displayName:
                 account.displayName,
               status: account.status,
+              accessStatus:
+                account.accessStatus,
+              profileImageUrl:
+                account.profileImageUrl,
             })),
       );
+
+      // One identity per platform from the persisted selected/connected Page.
+      const platforms = [
+        ...new Set(
+          connectedAccounts.map(
+            (account) => account.platform,
+          ),
+        ),
+      ];
+      accounts = platforms
+        .map((platform) =>
+          pickConnectedPlatformAccount(
+            connectedAccounts,
+            platform,
+          ),
+        )
+        .filter(
+          (
+            account,
+          ): account is NonNullable<
+            typeof account
+          > => account !== null,
+        )
+        .map((account) => ({
+          id: account.id,
+          platform: account.platform,
+          handle: account.handle,
+          displayName: account.displayName,
+          status: account.status,
+          profileImageUrl:
+            account.platform === "facebook"
+              ? toAccountPictureSrc(account.id)
+              : toClientSocialImageUrl(account.profileImageUrl),
+        }));
     } catch (error) {
       dataUnavailable = true;
 
@@ -172,6 +255,12 @@ export default async function SocialLayout({
         activeBrandName:
           brandContext.activeBrandName,
 
+        activeBrandDisplayLabel:
+          brandContext.activeBrandDisplayLabel,
+
+        activeBrandDisplayImageUrl:
+          brandContext.activeBrandDisplayImageUrl,
+
         brands:
           brandContext.availableBrands,
 
@@ -183,6 +272,12 @@ export default async function SocialLayout({
           hasEffectivePermission(
             access,
             "manage_social_accounts",
+          ),
+
+        canManageBrands:
+          hasEffectivePermission(
+            access,
+            "manage_brands",
           ),
 
         planName,

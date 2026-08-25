@@ -349,10 +349,10 @@ export function RegistrationForm() {
   ];
 
   const inputClassName =
-    "w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
+    "w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
 
   const passwordInputClassName =
-    "w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
+    "w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-11 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground";
 
   return (
     <form
@@ -366,7 +366,7 @@ export function RegistrationForm() {
         <div>
           <label
             htmlFor="firstName"
-            className="mb-1.5 block text-xs font-semibold text-slate-700"
+            className="mb-1.5 block text-xs font-semibold text-foreground"
           >
             First Name
           </label>
@@ -416,7 +416,7 @@ export function RegistrationForm() {
         <div>
           <label
             htmlFor="lastName"
-            className="mb-1.5 block text-xs font-semibold text-slate-700"
+            className="mb-1.5 block text-xs font-semibold text-foreground"
           >
             Last Name
           </label>
@@ -467,7 +467,7 @@ export function RegistrationForm() {
       <div>
         <label
           htmlFor="email"
-          className="mb-1.5 block text-xs font-semibold text-slate-700"
+          className="mb-1.5 block text-xs font-semibold text-foreground"
         >
           Email
         </label>
@@ -513,7 +513,7 @@ export function RegistrationForm() {
       <div>
         <label
           htmlFor="password"
-          className="mb-1.5 block text-xs font-semibold text-slate-700"
+          className="mb-1.5 block text-xs font-semibold text-foreground"
         >
           Password
         </label>
@@ -554,7 +554,7 @@ export function RegistrationForm() {
                 (currentValue) => !currentValue,
               )
             }
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed"
             aria-label={
               showPassword
                 ? "Hide password"
@@ -583,15 +583,15 @@ export function RegistrationForm() {
 
         <div
           id="password-requirements"
-          className="mt-3 rounded-lg bg-slate-50 p-3 ring-1 ring-inset ring-slate-200"
+          className="mt-3 rounded-lg bg-muted/60 p-3 ring-1 ring-inset ring-border"
         >
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-slate-700">
+            <p className="text-xs font-semibold text-foreground">
               Password strength
             </p>
 
             <p
-              className="text-xs font-medium text-slate-600"
+              className="text-xs font-medium text-muted-foreground"
               aria-live="polite"
             >
               {passwordStrength.label}
@@ -646,7 +646,7 @@ export function RegistrationForm() {
       <div>
         <label
           htmlFor="confirmPassword"
-          className="mb-1.5 block text-xs font-semibold text-slate-700"
+          className="mb-1.5 block text-xs font-semibold text-foreground"
         >
           Confirm Password
         </label>
@@ -693,7 +693,7 @@ export function RegistrationForm() {
                 (currentValue) => !currentValue,
               )
             }
-            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed"
+            className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed"
             aria-label={
               showConfirmPassword
                 ? "Hide confirmed password"
@@ -744,24 +744,24 @@ export function RegistrationForm() {
                 event.target.checked,
               )
             }
-            className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-0.5 h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
           />
 
           <label
             htmlFor="acceptedTerms"
-            className="text-xs leading-5 text-slate-600"
+            className="text-xs leading-5 text-muted-foreground"
           >
             I agree to the{" "}
             <Link
               href="/terms"
-              className="font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               Terms
             </Link>{" "}
             and{" "}
             <Link
               href="/privacy"
-              className="font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               Privacy Policy
             </Link>
@@ -800,7 +800,8 @@ export function RegistrationForm() {
         disabled={loading}
         aria-disabled={loading}
         aria-busy={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        style={{ backgroundImage: "var(--gradient-hero)" }}
       >
         {loading ? (
           <Loader2
@@ -812,11 +813,11 @@ export function RegistrationForm() {
         {loading ? "Creating account…" : "Create Account"}
       </button>
 
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-muted-foreground">
         Already have an account?{" "}
         <Link
           href="/login"
-          className="font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           Go to Login
         </Link>

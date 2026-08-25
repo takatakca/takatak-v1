@@ -42,6 +42,9 @@ export async function POST(
     );
   }
 
+  // Subscription / paid access is decided only in assertClientCanConnectSocial
+  // (ClientSubscription + trusted server env). Browser preview helpers and any
+  // client-supplied bypass fields are never authorization inputs.
   const validation =
     validateCreateSocialOAuthState(
       bodyResult.body,
@@ -88,14 +91,25 @@ export async function POST(
       "/dashboard/social/accounts",
     );
 
+    // Established browser flow: return the Meta destination URL only.
+    // Raw OAuth state / PKCE verifier material is never included here.
     return jsonResponse(
       {
         ok: true,
 
         message:
-          "The social authorization request was created.",
+          "Continue to Facebook to authorize this brand.",
 
-        authorization,
+        authorization: {
+          authorizationUrl:
+            authorization.authorizationUrl,
+          expiresAt:
+            authorization.expiresAt,
+          provider:
+            authorization.provider,
+          connectionId:
+            authorization.connectionId,
+        },
       },
       201,
     );

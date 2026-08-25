@@ -1,15 +1,14 @@
-import { Prisma } from "@prisma/client";
-
 import type {
   ClientCreateInput,
   ClientUpdateInput,
 } from "@/lib/clients/client-validation";
+import { isPrismaKnownRequestError } from "@/lib/db/prisma-errors";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 
-function prismaTargetText(
-  error: Prisma.PrismaClientKnownRequestError,
-): string {
+function prismaTargetText(error: {
+  meta?: { target?: unknown };
+}): string {
   const target = error.meta?.target;
 
   if (Array.isArray(target)) {
@@ -27,11 +26,7 @@ function prismaTargetText(
 function handleClientWriteError(
   error: unknown,
 ): never {
-  if (
-    error instanceof
-      Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2002"
-  ) {
+  if (isPrismaKnownRequestError(error) && error.code === "P2002") {
     const target = prismaTargetText(error);
 
     if (target.includes("email")) {

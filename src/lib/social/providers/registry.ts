@@ -21,13 +21,17 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
       "threads",
     ],
     authorizationType:
-      "oauth2",
+      "oauth2_pkce",
     requiredEnvironment: [
       "META_APP_ID",
       "META_APP_SECRET",
     ],
-    implemented: false,
-    connectable: false,
+    // Step 3 start-OAuth + Step 4 callback/token exchange.
+    // Facebook is the primary OAuth card; Instagram/Threads are
+    // represented through Meta and are not independent providers.
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
   },
 
   google: {
@@ -47,6 +51,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     ],
     implemented: false,
     connectable: false,
+    supportsMultipleAccounts: false,
   },
 
   linkedin: {
@@ -63,6 +68,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     ],
     implemented: false,
     connectable: false,
+    supportsMultipleAccounts: false,
   },
 
   tiktok: {
@@ -79,6 +85,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     ],
     implemented: false,
     connectable: false,
+    supportsMultipleAccounts: false,
   },
 
   pinterest: {
@@ -95,6 +102,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     ],
     implemented: false,
     connectable: false,
+    supportsMultipleAccounts: false,
   },
 
   x: {
@@ -111,6 +119,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     ],
     implemented: false,
     connectable: false,
+    supportsMultipleAccounts: false,
   },
 
   bluesky: {
@@ -126,6 +135,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     ],
     implemented: false,
     connectable: false,
+    supportsMultipleAccounts: false,
   },
 
   twitch: {
@@ -142,6 +152,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     ],
     implemented: false,
     connectable: false,
+    supportsMultipleAccounts: false,
   },
 };
 
@@ -186,6 +197,7 @@ export function getSocialProviderReadiness(
       configured:
         missingEnvironment.length ===
         0,
+      supportsMultipleAccounts: false,
       missingEnvironment,
       state: "planned",
     };
@@ -200,6 +212,8 @@ export function getSocialProviderReadiness(
       implemented: true,
       connectable: false,
       configured: false,
+      supportsMultipleAccounts:
+        definition.supportsMultipleAccounts,
       missingEnvironment,
       state: "not_configured",
     };
@@ -212,6 +226,8 @@ export function getSocialProviderReadiness(
     connectable:
       definition.connectable,
     configured: true,
+    supportsMultipleAccounts:
+      definition.supportsMultipleAccounts,
     missingEnvironment: [],
     state:
       "ready_for_authorization",

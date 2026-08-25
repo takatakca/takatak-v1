@@ -59,6 +59,9 @@ export async function GET(): Promise<NextResponse> {
           configured:
             readiness.configured,
 
+          supportsMultipleAccounts:
+            readiness.supportsMultipleAccounts,
+
           state:
             readiness.state,
         };
@@ -68,6 +71,25 @@ export async function GET(): Promise<NextResponse> {
       {
         ok: true,
         providers,
+        metaPlatformRepresentation:
+          // Facebook / Instagram / Threads are not independent providers.
+          {
+            facebook: {
+              independentlyImplemented: false,
+              representedThrough: "meta",
+              role: "primary_oauth_card",
+            },
+            instagram: {
+              independentlyImplemented: false,
+              representedThrough: "meta",
+              role: "represented_through_meta",
+            },
+            threads: {
+              independentlyImplemented: false,
+              representedThrough: "meta",
+              role: "represented_through_meta",
+            },
+          },
       },
       200,
     );

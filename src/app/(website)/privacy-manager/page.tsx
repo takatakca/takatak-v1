@@ -2,97 +2,89 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title:
-    "Privacy Manager — TAKATAK",
+  title: "Privacy Manager",
   description:
-    "Review the data TAKATAK uses across its services and exercise your privacy rights.",
+    "Review the data TAKATAK collects across domains, hosting, marketplace, QMAPS, FLEXS, AI tools and notifications, and exercise your privacy rights.",
 };
 
 const services = [
   {
     name: "Domains",
     description:
-      "Registrant contact data and DNS configuration required to manage domain services.",
+      "Registrant contact data and DNS configuration handled with our registrar partner.",
   },
   {
     name: "Hosting",
     description:
-      "Account, technical, and billing information required to provision and renew hosting.",
+      "Account and billing data needed to provision and renew managed hosting plans.",
   },
   {
     name: "Service marketplace",
     description:
-      "Project briefs, files, messages, selections, and project history.",
+      "Project briefs, files, messages and order history for marketplace packages.",
   },
   {
-    name: "QMAPS",
+    name: "QMAPS — Local listings",
     description:
-      "Business profile, location, listing, and visibility information.",
+      "Business profile data published to Google Business, maps and directories on your behalf.",
   },
   {
-    name: "FLEXS",
+    name: "FLEXS — Lead generation",
     description:
-      "Lead forms, lead-routing details, campaign information, and related analytics.",
+      "Lead capture forms, outreach lists and campaign analytics.",
   },
   {
     name: "AI tools",
     description:
-      "Prompts and approved files processed to provide requested AI-assisted services.",
+      "Prompts and uploads processed to deliver AI-assisted business automation.",
   },
   {
-    name: "Payments and orders",
+    name: "Payments & orders",
     description:
-      "Order, invoice, discount, payment-status, and accounting records.",
+      "Order, invoice and payment status records held for accounting and compliance.",
   },
   {
     name: "Notifications",
     description:
-      "Transactional messages and notification preferences related to your account.",
+      "Transactional emails and in-app notifications about your services and projects.",
   },
 ];
 
 const rights = [
-  "Access a copy of the personal information TAKATAK holds about you.",
-  "Correct inaccurate or incomplete personal information.",
-  "Request account deletion, subject to legal retention requirements.",
+  "Access a copy of the personal data we hold about you.",
+  "Correct inaccurate or incomplete personal data.",
+  "Delete your TAKATAK account and associated personal data, subject to legal retention.",
   "Restrict or object to certain processing activities.",
-  "Withdraw consent for optional marketing communications.",
-  "Request an export of supported account information.",
+  "Withdraw consent for marketing communications at any time.",
+  "Export your data in a portable, machine-readable format.",
 ];
 
 export default function PrivacyManagerPage() {
   return (
     <section className="mx-auto max-w-4xl px-4 py-16">
       <header>
-        <h1 className="text-3xl font-bold text-slate-950 md:text-4xl">
+        <h1 className="text-3xl font-bold text-foreground md:text-4xl">
           Privacy Manager
         </h1>
-
-        <p className="mt-3 leading-7 text-slate-600">
-          TAKATAK is committed to transparency
-          about information used across its
-          services. This page explains the main
-          categories and how to exercise a
-          privacy right.
+        <p className="mt-3 text-muted-foreground">
+          TAKATAK is committed to transparency about the data we collect across
+          every service we operate. Use this page to understand what is collected
+          and how to exercise your privacy rights.
         </p>
       </header>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold text-slate-950">
-          Services and information used
+        <h2 className="text-xl font-semibold text-foreground">
+          Services and data collected
         </h2>
-
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {services.map((service) => (
             <article
               key={service.name}
-              className="rounded-xl border border-slate-200 bg-white p-5"
+              className="rounded-xl border border-border bg-card p-5"
             >
-              <h3 className="font-semibold text-slate-950">
-                {service.name}
-              </h3>
-
-              <p className="mt-1 text-sm leading-6 text-slate-600">
+              <h3 className="font-semibold text-foreground">{service.name}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
                 {service.description}
               </p>
             </article>
@@ -101,48 +93,39 @@ export default function PrivacyManagerPage() {
       </section>
 
       <section className="mt-10">
-        <h2 className="text-xl font-semibold text-slate-950">
-          Your rights
-        </h2>
-
-        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-600">
+        <h2 className="text-xl font-semibold text-foreground">Your rights</h2>
+        <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-muted-foreground">
           {rights.map((right) => (
-            <li key={right}>
-              {right}
-            </li>
+            <li key={right}>{right}</li>
           ))}
         </ul>
       </section>
 
-      <section className="mt-10 rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-slate-950">
+      <section className="mt-10 rounded-xl border border-border bg-card p-6">
+        <h2 className="text-lg font-semibold text-foreground">
           Exercise a privacy right
         </h2>
-
-        <p className="mt-1 text-sm leading-6 text-slate-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           Email{" "}
           <a
             href="mailto:support@takatak.ca"
-            className="font-medium text-emerald-700"
+            className="text-primary hover:underline"
           >
             support@takatak.ca
           </a>{" "}
-          from the email address associated with
-          your account and describe your
-          request.
+          from the address associated with your TAKATAK account and describe the
+          request. We respond within 30 days.
         </p>
-
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
-            href="/dashboard/account"
-            className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+            href="/dashboard/profile"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             Manage account
           </Link>
-
           <Link
             href="/dashboard/notifications"
-            className="rounded-md border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="rounded-md border border-border px-4 py-2 text-sm font-semibold hover:bg-secondary"
           >
             Notification preferences
           </Link>

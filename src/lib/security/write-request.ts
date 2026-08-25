@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 
+import { getApplicationOrigin } from "@/lib/config/app-origin";
+
 export type JsonBodyResult =
   | {
       ok: true;
@@ -16,18 +18,8 @@ function getAllowedOrigins(
 ): Set<string> {
   const origins = new Set<string>([
     request.nextUrl.origin,
+    getApplicationOrigin(request.nextUrl.origin),
   ]);
-
-  const configuredUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-
-  if (configuredUrl) {
-    try {
-      origins.add(new URL(configuredUrl).origin);
-    } catch {
-      // Invalid configuration is handled by readiness checks.
-    }
-  }
 
   return origins;
 }

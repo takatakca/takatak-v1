@@ -13,6 +13,7 @@ import {
   useSearchParams,
 } from "next/navigation";
 import {
+  useEffect,
   useRef,
   useState,
 } from "react";
@@ -21,6 +22,25 @@ import {
   SocialPlatformIcon,
   type SocialPlatformKey,
 } from "@/components/social/navigation/social-platform-icon";
+import { FacebookPageSelectionPanel } from "@/components/social/connections/facebook-page-selection-panel";
+import { requestSocialBrandSelectorRefresh } from "@/components/social/navigation/social-brand-selector-events";
+import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import {
+  pickCanonicalProviderConnection,
+  pickMetaSurfaceConnection,
+  pickSelectedFacebookAccount,
+} from "@/lib/social/connections/social-canonical-identity";
+import { projectMetaBrandSurface } from "@/lib/social/connections/meta-brand-projection";
+import {
+  canAddAnotherAccount,
+  canCancelPendingConnection,
+  canContinueAuthorization,
+  canStartProviderConnect,
+  isProviderPlatformConnected,
+  META_PLATFORM_REPRESENTATION,
+  resolveConnectedAccountLabel,
+  resolveProviderCardLabel,
+} from "@/lib/social/connections/social-connection-lifecycle-policy";
 
 export type ManageConnectionsProvider = {
   provider:
@@ -39,6 +59,7 @@ export type ManageConnectionsProvider = {
   implemented: boolean;
   connectable: boolean;
   configured: boolean;
+  supportsMultipleAccounts: boolean;
 
   state:
     | "planned"
@@ -53,6 +74,8 @@ export type ManageConnectionsAccount = {
   handle: string | null;
   displayName: string | null;
   status: string;
+  accessStatus?: string | null;
+  profileImageUrl?: string | null;
 };
 
 export type ManageConnectionsConnection = {
@@ -62,6 +85,7 @@ export type ManageConnectionsConnection = {
   brandId: string;
   brandName: string;
   accounts: ManageConnectionsAccount[];
+  lastErrorCode: string | null;
   lastErrorMessage: string | null;
 };
 
@@ -135,6 +159,8 @@ const CONNECTION_CARDS: ConnectionCard[] = [
     backgroundClassName:
       "bg-[#ff0064] hover:bg-[#e9005b]",
     textClassName: "text-white",
+    hoverMessage:
+      "Instagram connects through Facebook Meta authorization. Use Connect a Facebook page first.",
   },
   {
     key: "threads",
@@ -146,6 +172,8 @@ const CONNECTION_CARDS: ConnectionCard[] = [
     backgroundClassName:
       "bg-black hover:bg-[#181818]",
     textClassName: "text-white",
+    hoverMessage:
+      "Threads connects through Facebook Meta authorization. Use Connect a Facebook page first.",
   },
   {
     key: "x",
@@ -320,7 +348,23 @@ type ApiResult = {
   authorization?: {
     authorizationUrl?: string;
   };
+
+  connection?: {
+    id?: string;
+    provider?: string;
+    status?: string;
+  };
 };
+
+function pickConnectionForProvider(
+  provider: string,
+  connections: ManageConnectionsConnection[],
+): ManageConnectionsConnection | null {
+  if (provider === "meta") {
+    return pickMetaSurfaceConnection(connections, provider);
+  }
+  return pickCanonicalProviderConnection(connections, provider);
+}
 
 async function readApiResult(
   response: Response,
@@ -343,6 +387,115 @@ function connectionIsActive(
     status === "connected" ||
     status === "authorized"
   );
+}
+
+function mapApiConnections(
+  rows: unknown,
+): ManageConnectionsConnection[] {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+
+  return rows.flatMap((row) => {
+    if (!row || typeof row !== "object") {
+      return [];
+    }
+
+    const item = row as Record<string, unknown>;
+    const id = typeof item.id === "string" ? item.id : "";
+    const provider =
+      typeof item.provider === "string" ? item.provider : "";
+    const status =
+      typeof item.status === "string" ? item.status : "";
+    const brandId =
+      typeof item.brandId === "string" ? item.brandId : "";
+    const brandName =
+      typeof item.brandName === "string" ? item.brandName : "";
+
+    if (!id || !provider || !status || !brandId) {
+      return [];
+    }
+
+    const accountsRaw = Array.isArray(item.accounts)
+      ? item.accounts
+      : [];
+
+    const accounts: ManageConnectionsAccount[] =
+      accountsRaw.flatMap((accountRow) => {
+        if (
+          !accountRow ||
+          typeof accountRow !== "object"
+        ) {
+          return [];
+        }
+
+        const account = accountRow as Record<
+          string,
+          unknown
+        >;
+        const accountId =
+          typeof account.id === "string"
+            ? account.id
+            : "";
+        const platform =
+          typeof account.platform === "string"
+            ? account.platform
+            : "";
+        const accountStatus =
+          typeof account.status === "string"
+            ? account.status
+            : "";
+
+        if (!accountId || !platform) {
+          return [];
+        }
+
+        return [
+          {
+            id: accountId,
+            platform,
+            // Never surface Facebook Page IDs in client connection state.
+            externalAccountId: null,
+            handle:
+              typeof account.handle === "string"
+                ? account.handle
+                : null,
+            displayName:
+              typeof account.displayName === "string"
+                ? account.displayName
+                : null,
+            status: accountStatus,
+            accessStatus:
+              typeof account.accessStatus === "string"
+                ? account.accessStatus
+                : null,
+            profileImageUrl:
+              typeof account.profileImageUrl === "string"
+                ? account.profileImageUrl
+                : null,
+          },
+        ];
+      });
+
+    return [
+      {
+        id,
+        provider,
+        status,
+        brandId,
+        brandName,
+        accounts,
+        lastErrorCode:
+          typeof item.lastErrorCode === "string"
+            ? item.lastErrorCode
+            : null,
+        lastErrorMessage:
+          typeof item.lastErrorMessage === "string"
+            ? item.lastErrorMessage
+            : null,
+      },
+    ];
+  });
 }
 
 export function ManageConnectionsModal({
@@ -369,8 +522,12 @@ export function ManageConnectionsModal({
   const [connections, setConnections] =
     useState(initialConnections);
 
-  const [busyProvider, setBusyProvider] =
-    useState<ProviderName | null>(null);
+  /** Card being started (e.g. "facebook"), NOT shared provider id like "meta". */
+  const [busyCardKey, setBusyCardKey] =
+    useState<string | null>(null);
+
+  const connectInFlightRef =
+    useRef(false);
 
   const [
     busyConnectionId,
@@ -383,10 +540,75 @@ export function ManageConnectionsModal({
   const [outsidePulse, setOutsidePulse] =
     useState(false);
 
+  const [
+    pageSelectionConnectionId,
+    setPageSelectionConnectionId,
+  ] = useState<string | null>(null);
+
   const pulseTimeoutRef =
     useRef<ReturnType<
       typeof setTimeout
     > | null>(null);
+
+  const connectionsFetchGenerationRef =
+    useRef(0);
+
+  async function refreshConnectionsFromServer() {
+    if (!activeBrandId) {
+      return;
+    }
+
+    const generation =
+      ++connectionsFetchGenerationRef.current;
+
+    try {
+      const response = await fetch(
+        `/api/social/connections?brandId=${encodeURIComponent(
+          activeBrandId,
+        )}`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        },
+      );
+      const body = (await response.json()) as {
+        ok?: boolean;
+        connections?: unknown;
+      };
+
+      if (
+        generation !==
+        connectionsFetchGenerationRef.current
+      ) {
+        return;
+      }
+
+      if (!response.ok || !body.ok) {
+        return;
+      }
+
+      setConnections(
+        mapApiConnections(body.connections),
+      );
+    } catch {
+      // Keep existing local state; router.refresh still reconciles RSC.
+    }
+  }
+
+  useEffect(() => {
+    setConnections(initialConnections);
+  }, [initialConnections]);
+
+  useEffect(() => {
+    if (!open || !activeBrandId) {
+      return;
+    }
+
+    void refreshConnectionsFromServer();
+    // Refetch whenever Manage connections opens so status/Page identity is live.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, activeBrandId]);
 
   function closeModal() {
     const params = new URLSearchParams(
@@ -423,9 +645,86 @@ export function ManageConnectionsModal({
   }
 
   async function connectProvider(
-    provider: ProviderName,
-    platform: string | null,
+    card: ConnectionCard,
   ) {
+    if (!card.provider) {
+      return;
+    }
+
+    // Only the primary card for a provider may start OAuth.
+    // Facebook owns Meta; Instagram/Threads must not create attempts.
+    if (
+      PRIMARY_CARD_BY_PROVIDER[
+        card.provider
+      ] !== card.key
+    ) {
+      setNotice({
+        tone: "info",
+        message:
+          card.provider === "meta"
+            ? "Connect Facebook first. Instagram and Threads are linked through the Meta authorization."
+            : "This network is started from its primary connect card.",
+      });
+
+      return;
+    }
+
+    if (
+      connectInFlightRef.current ||
+      busyCardKey !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
+    const providerMeta = providers.find(
+      (item) => item.provider === card.provider,
+    );
+
+    if (!providerMeta) {
+      setNotice({
+        tone: "error",
+        message:
+          "This provider is not available in the workspace registry.",
+      });
+
+      return;
+    }
+
+    const startDecision = canStartProviderConnect({
+      implemented:
+        providerMeta.implemented && !card.planned,
+      connectable: providerMeta.connectable,
+      providerState: providerMeta.state,
+      connectionStatus:
+        connections.find(
+          (item) =>
+            item.provider === card.provider,
+        )?.status ?? null,
+      isPrimaryStartCard: true,
+    });
+
+    if (!startDecision.allowed) {
+      setNotice({
+        tone: "info",
+        message:
+          startDecision.reason === "coming_soon"
+            ? `${providerMeta.label} is coming soon.`
+            : startDecision.reason ===
+                "pending_authorization"
+              ? "An authorization is already pending. Cancel it before starting again."
+              : startDecision.reason ===
+                  "already_connected"
+                ? "This provider is already connected."
+                : startDecision.reason ===
+                    "already_authorized"
+                  ? "This provider is already authorized."
+                  : `${providerMeta.label} cannot start authorization right now.`,
+      });
+
+      return;
+    }
+
     if (!activeBrandId) {
       setNotice({
         tone: "error",
@@ -446,17 +745,22 @@ export function ManageConnectionsModal({
       return;
     }
 
-    setBusyProvider(provider);
+    connectInFlightRef.current = true;
+    setBusyCardKey(card.key);
     setNotice(null);
 
+    let redirected = false;
+
     try {
-      const returnPath =
+      const returnPath = withSocialPreview(
         "/dashboard/social?connections=open" +
-        (platform
-          ? `&platform=${encodeURIComponent(
-              platform,
-            )}`
-          : "");
+          (card.accountPlatform
+            ? `&platform=${encodeURIComponent(
+                card.accountPlatform,
+              )}`
+            : ""),
+        searchParams,
+      );
 
       const response = await fetch(
         "/api/social/connections/start",
@@ -471,7 +775,7 @@ export function ManageConnectionsModal({
           },
 
           body: JSON.stringify({
-            provider,
+            provider: card.provider,
             businessBrandId:
               activeBrandId,
             returnPath,
@@ -498,6 +802,7 @@ export function ManageConnectionsModal({
           ?.authorizationUrl;
 
       if (authorizationUrl) {
+        redirected = true;
         window.location.assign(
           authorizationUrl,
         );
@@ -520,7 +825,493 @@ export function ManageConnectionsModal({
           "A network error occurred while starting the connection.",
       });
     } finally {
-      setBusyProvider(null);
+      if (!redirected) {
+        connectInFlightRef.current =
+          false;
+        setBusyCardKey(null);
+      }
+    }
+  }
+
+  async function cancelPendingProvider(
+    connection: ManageConnectionsConnection,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to manage social connections.",
+      });
+
+      return;
+    }
+
+    const decision = canCancelPendingConnection(
+      connection.status,
+    );
+
+    if (!decision.allowed) {
+      setNotice({
+        tone: "error",
+        message: decision.reason,
+      });
+
+      return;
+    }
+
+    if (busyConnectionId !== null) {
+      return;
+    }
+
+    setBusyConnectionId(connection.id);
+    setNotice(null);
+
+    try {
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(
+          connection.id,
+        )}/cancel-pending?provider=${encodeURIComponent(
+          connection.provider,
+        )}`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const result =
+        await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "The pending authorization could not be cancelled.",
+        });
+
+        return;
+      }
+
+      setConnections((current) =>
+        current.map((item) =>
+          item.id === connection.id
+            ? {
+                ...item,
+                status:
+                  result.connection
+                    ?.status ??
+                  "not_connected",
+                accounts: [],
+                lastErrorMessage: null,
+              }
+            : item,
+        ),
+      );
+
+      setNotice({
+        tone: "success",
+        message:
+          result.message ??
+          "Pending authorization cancelled. You can connect again.",
+      });
+
+      router.refresh();
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while cancelling the pending authorization.",
+      });
+    } finally {
+      setBusyConnectionId(null);
+    }
+  }
+
+  async function continuePendingProvider(
+    connection: ManageConnectionsConnection,
+    card: ConnectionCard,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to manage social connections.",
+      });
+
+      return;
+    }
+
+    if (
+      connectInFlightRef.current ||
+      busyCardKey !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
+    const providerMeta = providers.find(
+      (item) => item.provider === connection.provider,
+    );
+
+    if (!providerMeta) {
+      return;
+    }
+
+    const decision = canContinueAuthorization({
+      implemented: providerMeta.implemented,
+      connectable: providerMeta.connectable,
+      providerState: providerMeta.state,
+      connectionStatus: connection.status,
+      isPrimaryStartCard: true,
+    });
+
+    if (!decision.allowed) {
+      setNotice({
+        tone: "error",
+        message: decision.reason,
+      });
+
+      return;
+    }
+
+    connectInFlightRef.current = true;
+    setBusyConnectionId(connection.id);
+    setBusyCardKey(card.key);
+    setNotice(null);
+
+    let redirected = false;
+
+    try {
+      const returnPath = withSocialPreview(
+        "/dashboard/social?connections=open" +
+          (card.accountPlatform
+            ? `&platform=${encodeURIComponent(
+                card.accountPlatform,
+              )}`
+            : ""),
+        searchParams,
+      );
+
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(
+          connection.id,
+        )}/continue?provider=${encodeURIComponent(
+          connection.provider,
+        )}`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ returnPath }),
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "The pending authorization could not be continued.",
+        });
+
+        return;
+      }
+
+      const authorizationUrl =
+        result.authorization?.authorizationUrl;
+
+      if (authorizationUrl) {
+        redirected = true;
+        window.location.assign(authorizationUrl);
+        return;
+      }
+
+      setNotice({
+        tone: "info",
+        message:
+          result.message ??
+          "Continue prepared, but no authorization URL is available.",
+      });
+
+      router.refresh();
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while continuing authorization.",
+      });
+    } finally {
+      if (!redirected) {
+        connectInFlightRef.current = false;
+        setBusyConnectionId(null);
+        setBusyCardKey(null);
+      }
+    }
+  }
+
+  async function addAnotherAccount(
+    connection: ManageConnectionsConnection,
+    card: ConnectionCard,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to manage social connections.",
+      });
+
+      return;
+    }
+
+    if (
+      connectInFlightRef.current ||
+      busyCardKey !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
+    const providerMeta = providers.find(
+      (item) => item.provider === connection.provider,
+    );
+
+    if (!providerMeta) {
+      return;
+    }
+
+    const hasPending = connections.some(
+      (item) =>
+        item.provider === connection.provider &&
+        item.status === "pending_authorization",
+    );
+
+    const decision = canAddAnotherAccount({
+      implemented: providerMeta.implemented,
+      connectable: providerMeta.connectable,
+      providerState: providerMeta.state,
+      supportsMultipleAccounts:
+        providerMeta.supportsMultipleAccounts,
+      sourceConnectionStatus: connection.status,
+      isPrimaryStartCard: true,
+      hasPendingForProviderBrand: hasPending,
+    });
+
+    if (!decision.allowed) {
+      setNotice({
+        tone: "info",
+        message:
+          decision.reason === "multiple_accounts_unsupported"
+            ? `${providerMeta.label} does not support adding another account yet.`
+            : decision.reason,
+      });
+
+      return;
+    }
+
+    connectInFlightRef.current = true;
+    setBusyConnectionId(connection.id);
+    setBusyCardKey(card.key);
+    setNotice(null);
+
+    let redirected = false;
+
+    try {
+      const returnPath = withSocialPreview(
+        "/dashboard/social?connections=open" +
+          (card.accountPlatform
+            ? `&platform=${encodeURIComponent(
+                card.accountPlatform,
+              )}`
+            : ""),
+        searchParams,
+      );
+
+      const response = await fetch(
+        "/api/social/connections/add-another",
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sourceConnectionId: connection.id,
+            provider: connection.provider,
+            returnPath,
+          }),
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "Another account authorization could not be started.",
+        });
+
+        return;
+      }
+
+      const authorizationUrl =
+        result.authorization?.authorizationUrl;
+
+      if (authorizationUrl) {
+        redirected = true;
+        window.location.assign(authorizationUrl);
+        return;
+      }
+
+      setNotice({
+        tone: "info",
+        message:
+          result.message ??
+          "Another account request was prepared, but no authorization URL is available.",
+      });
+
+      router.refresh();
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while starting another account.",
+      });
+    } finally {
+      if (!redirected) {
+        connectInFlightRef.current = false;
+        setBusyConnectionId(null);
+        setBusyCardKey(null);
+      }
+    }
+  }
+
+  async function clearFacebookPageForReselect(
+    connection: ManageConnectionsConnection,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to change Facebook Pages.",
+      });
+      return;
+    }
+
+    if (connection.provider !== "meta") {
+      return;
+    }
+
+    if (connection.status !== "connected") {
+      setNotice({
+        tone: "info",
+        message:
+          "Select a Facebook Page to finish setup.",
+      });
+      setPageSelectionConnectionId(connection.id);
+      return;
+    }
+
+    const pageLabel =
+      resolveConnectedAccountLabel({
+        displayName:
+          pickSelectedFacebookAccount(connection.accounts)
+            ?.displayName ?? null,
+        handle: null,
+      }) ?? "this Facebook Page";
+
+    const confirmed = window.confirm(
+      `Remove ${pageLabel}? You can pick another Facebook Page without reconnecting Meta.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    if (busyConnectionId !== null) {
+      return;
+    }
+
+    setBusyConnectionId(connection.id);
+    setNotice(null);
+
+    try {
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(
+          connection.id,
+        )}/pages/select`,
+        {
+          method: "DELETE",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "The Facebook Page could not be removed.",
+        });
+        return;
+      }
+
+      setConnections((current) =>
+        current.map((item) =>
+          item.id === connection.id
+            ? {
+                ...item,
+                status: "authorized",
+                accounts: item.accounts.map((account) =>
+                  account.status === "connected" ||
+                  account.accessStatus === "selected"
+                    ? {
+                        ...account,
+                        status: "not_connected",
+                        accessStatus: "available",
+                      }
+                    : account,
+                ),
+                lastErrorMessage: null,
+              }
+            : item,
+        ),
+      );
+
+      setNotice({
+        tone: "success",
+        message:
+          result.message ??
+          "Facebook Page removed. Select another Page to finish setup.",
+      });
+
+      requestSocialBrandSelectorRefresh();
+      router.refresh();
+      setPageSelectionConnectionId(connection.id);
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while removing the Facebook Page.",
+      });
+    } finally {
+      setBusyConnectionId(null);
     }
   }
 
@@ -538,12 +1329,29 @@ export function ManageConnectionsModal({
       return;
     }
 
+    if (
+      connection.status ===
+      "pending_authorization"
+    ) {
+      setNotice({
+        tone: "info",
+        message:
+          "Use Cancel pending authorization to abandon an unfinished connect without disconnecting a live account.",
+      });
+
+      return;
+    }
+
     const confirmed =
       window.confirm(
         `Disconnect ${connection.provider} from ${connection.brandName}? This disconnects all imported accounts belonging to this provider.`,
       );
 
     if (!confirmed) {
+      return;
+    }
+
+    if (busyConnectionId !== null) {
       return;
     }
 
@@ -557,6 +1365,8 @@ export function ManageConnectionsModal({
       const response = await fetch(
         `/api/social/connections/${encodeURIComponent(
           connection.id,
+        )}?provider=${encodeURIComponent(
+          connection.provider,
         )}`,
         {
           method: "DELETE",
@@ -602,6 +1412,7 @@ export function ManageConnectionsModal({
           "The provider was disconnected successfully.",
       });
 
+      requestSocialBrandSelectorRefresh();
       router.refresh();
     } catch {
       setNotice({
@@ -719,22 +1530,26 @@ export function ManageConnectionsModal({
 
                 const connection =
                   card.provider
-                    ? connections.find(
-                        (item) =>
-                          item.provider ===
-                          card.provider,
-                      ) ?? null
+                    ? pickConnectionForProvider(
+                        card.provider,
+                        connections,
+                      )
                     : null;
 
                 const account =
-                  card.accountPlatform &&
+                  card.accountPlatform === "facebook" &&
                   connection
-                    ? connection.accounts.find(
-                        (item) =>
-                          item.platform ===
-                          card.accountPlatform,
-                      ) ?? null
-                    : null;
+                    ? pickSelectedFacebookAccount(
+                        connection.accounts,
+                      )
+                    : card.accountPlatform && connection
+                      ? connection.accounts.find(
+                          (item) =>
+                            item.platform ===
+                              card.accountPlatform &&
+                            item.status === "connected",
+                        ) ?? null
+                      : null;
 
                 const activeConnection =
                   connection
@@ -744,80 +1559,125 @@ export function ManageConnectionsModal({
                     : false;
 
                 const platformConnected =
-                  activeConnection &&
-                  account !== null;
+                  isProviderPlatformConnected({
+                    connectionStatus:
+                      connection?.status ?? null,
+                    accountStatus:
+                      account?.status ?? null,
+                    requiresConnectedAccount:
+                      card.accountPlatform !==
+                      null,
+                  });
 
-                const providerPending =
-                  connection?.status ===
-                  "pending_authorization";
+                const connectedAccountLabel =
+                  account &&
+                  account.status === "connected"
+                    ? resolveConnectedAccountLabel({
+                        displayName:
+                          account.displayName,
+                        handle: account.handle,
+                      })
+                    : null;
 
-                const needsReconnect =
-                  connection?.status ===
-                    "expired" ||
-                  connection?.status ===
-                    "error" ||
-                  connection?.status ===
-                    "disconnected";
+                const isPrimaryStartCard =
+                  card.provider !==
+                    null &&
+                  PRIMARY_CARD_BY_PROVIDER[
+                    card.provider
+                  ] === card.key;
+
+                const startDecision =
+                  card.provider !== null &&
+                  provider !== null
+                    ? canStartProviderConnect({
+                        implemented:
+                          provider.implemented &&
+                          !card.planned,
+                        connectable:
+                          provider.connectable,
+                        providerState:
+                          provider.state,
+                        connectionStatus:
+                          connection?.status ??
+                          null,
+                        isPrimaryStartCard,
+                      })
+                    : {
+                        allowed: false as const,
+                        reason:
+                          "unavailable",
+                      };
+
+                const metaProjection =
+                  card.provider === "meta" && connection
+                    ? projectMetaBrandSurface({
+                        connection: {
+                          id: connection.id,
+                          status: connection.status,
+                          lastErrorCode: connection.lastErrorCode,
+                        },
+                        selectedPage:
+                          account
+                            ? {
+                                id: account.id,
+                                status: account.status,
+                                accessStatus: account.accessStatus,
+                                displayName: account.displayName,
+                                profileImageUrl: account.profileImageUrl,
+                              }
+                            : null,
+                        hasPendingOAuthAttempt:
+                          connection.lastErrorCode ===
+                          "reauthorization_pending",
+                      })
+                    : null;
+
+                // Reconnect / retry for Meta attention states — never claim "Connect".
+                const shouldReconnectMeta =
+                  Boolean(metaProjection) &&
+                  (metaProjection!.state === "action_required" ||
+                    metaProjection!.state === "refresh_failed" ||
+                    metaProjection!.state === "reauthorization_pending");
 
                 const canStart =
-                  card.provider !== null &&
-                  !card.planned &&
+                  startDecision.allowed &&
                   Boolean(activeBrandId) &&
                   canManage &&
-                  provider !== null &&
-                  provider.connectable &&
-                  !activeConnection &&
-                  !providerPending;
+                  busyCardKey === null &&
+                  busyConnectionId === null &&
+                  !shouldReconnectMeta;
 
                 const busy =
-                  card.provider !== null &&
-                  busyProvider ===
-                    card.provider;
+                  busyCardKey ===
+                  card.key;
 
-                let buttonLabel =
-                  card.actionLabel;
-
-                if (busy) {
-                  buttonLabel =
-                    "Starting authorization...";
-                } else if (
-                  platformConnected
-                ) {
-                  buttonLabel = "Connected";
-                } else if (
-                  activeConnection
-                ) {
-                  buttonLabel =
-                    "Provider connected";
-                } else if (
-                  providerPending
-                ) {
-                  buttonLabel =
-                    "Authorization pending";
-                } else if (
-                  needsReconnect
-                ) {
-                  buttonLabel = "Reconnect";
-                } else if (
-                  card.planned ||
-                  provider?.state ===
-                    "planned"
-                ) {
-                  buttonLabel = "Planned";
-                } else if (
-                  !activeBrandId
-                ) {
-                  buttonLabel =
-                    "Select a brand";
-                } else if (!canManage) {
-                  buttonLabel = "View only";
-                } else if (
-                  provider?.state ===
-                  "not_configured"
-                ) {
-                  buttonLabel =
-                    "Not configured";
-                }
+                const buttonLabel =
+                  metaProjection?.manageLabel ??
+                  resolveProviderCardLabel({
+                    implemented:
+                      provider?.implemented !==
+                        false &&
+                      !card.planned,
+                    connectable:
+                      provider?.connectable ??
+                      false,
+                    providerState:
+                      provider?.state ??
+                      "planned",
+                    connectionStatus:
+                      platformConnected
+                        ? "connected"
+                        : connection?.status ??
+                          null,
+                    isPrimaryStartCard,
+                    busy,
+                    defaultActionLabel:
+                      !activeBrandId
+                        ? "Select a brand"
+                        : !canManage
+                          ? "View only"
+                          : card.actionLabel,
+                  });
 
                 const primaryProviderCard =
                   provider !== null &&
@@ -825,15 +1685,111 @@ export function ManageConnectionsModal({
                     provider.provider
                   ] === card.key;
 
+                const canCancelPending =
+                  primaryProviderCard &&
+                  connection !== null &&
+                  canManage &&
+                  canCancelPendingConnection(
+                    connection.status,
+                  ).allowed;
+
+                const canContinuePending =
+                  primaryProviderCard &&
+                  connection !== null &&
+                  canManage &&
+                  provider !== null &&
+                  canContinueAuthorization({
+                    implemented:
+                      provider.implemented &&
+                      !card.planned,
+                    connectable:
+                      provider.connectable,
+                    providerState: provider.state,
+                    connectionStatus:
+                      connection.status,
+                    isPrimaryStartCard: true,
+                  }).allowed &&
+                  busyCardKey === null &&
+                  busyConnectionId === null;
+
+                const canAddAnother =
+                  primaryProviderCard &&
+                  connection !== null &&
+                  canManage &&
+                  provider !== null &&
+                  canAddAnotherAccount({
+                    implemented:
+                      provider.implemented &&
+                      !card.planned,
+                    connectable:
+                      provider.connectable,
+                    providerState: provider.state,
+                    supportsMultipleAccounts:
+                      provider.supportsMultipleAccounts,
+                    sourceConnectionStatus:
+                      connection.status,
+                    isPrimaryStartCard: true,
+                    hasPendingForProviderBrand:
+                      connections.some(
+                        (item) =>
+                          item.provider ===
+                            provider.provider &&
+                          item.status ===
+                            "pending_authorization",
+                      ),
+                  }).allowed &&
+                  busyCardKey === null &&
+                  busyConnectionId === null;
+
+                const representedThroughMeta =
+                  card.accountPlatform ===
+                    "instagram" ||
+                  card.accountPlatform ===
+                    "threads";
+
                 const iconIsWhite =
                   card.textClassName ===
                     "text-white" ||
                   platformConnected;
 
+                const hasSelectedFacebookPage =
+                  Boolean(connectedAccountLabel) &&
+                  account?.status === "connected" &&
+                  (account.accessStatus === "selected" ||
+                    account.accessStatus == null);
+
+                const showConnectedPageCard =
+                  (platformConnected ||
+                    shouldReconnectMeta ||
+                    hasSelectedFacebookPage) &&
+                  Boolean(connectedAccountLabel) &&
+                  primaryProviderCard &&
+                  connection !== null &&
+                  canManage;
+
+                const showMetaAttention =
+                  shouldReconnectMeta &&
+                  Boolean(connectedAccountLabel) &&
+                  connection !== null &&
+                  primaryProviderCard;
+
+                const showSelectFacebookPage =
+                  primaryProviderCard &&
+                  connection !== null &&
+                  connection.provider === "meta" &&
+                  connection.status === "authorized" &&
+                  canManage &&
+                  !hasSelectedFacebookPage &&
+                  !shouldReconnectMeta;
+
                 return (
                   <article
                     key={card.key}
-                    className="group relative min-w-0 rounded-xl border border-slate-200 bg-white p-3 transition-[border-color,box-shadow,transform] duration-150 hover:z-40 hover:border-slate-300 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] focus-within:z-40 focus-within:border-slate-300 focus-within:shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
+                    className={
+                      showConnectedPageCard
+                        ? "group relative min-w-0 rounded-xl bg-transparent p-1"
+                        : "group relative min-w-0 rounded-xl border border-slate-200 bg-white p-3 transition-[border-color,box-shadow,transform] duration-150 hover:z-40 hover:border-slate-300 hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)] focus-within:z-40 focus-within:border-slate-300 focus-within:shadow-[0_8px_24px_rgba(15,23,42,0.08)]"
+                    }
                   >
                     <div className="mb-3 flex items-center gap-3 px-1">
                       <SocialPlatformIcon
@@ -848,43 +1804,278 @@ export function ManageConnectionsModal({
                       </h3>
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={!canStart}
-                      onClick={() => {
-                        if (
-                          card.provider
-                        ) {
-                          void connectProvider(
-                            card.provider,
-                            card.accountPlatform,
-                          );
-                        }
-                      }}
-                      className={`flex min-h-13 w-full items-center justify-between rounded-md px-5 py-3.5 text-[15px] font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-100 ${
-                        platformConnected
-                          ? "bg-emerald-600 text-white"
-                          : `${card.backgroundClassName} ${card.textClassName}`
-                      }`}
-                    >
-                      <span className="truncate pr-4">
-                        {buttonLabel}
-                      </span>
+                    {showConnectedPageCard ? (
+                      <div className="relative flex min-h-13 w-full items-center gap-3 rounded-md border border-slate-200 bg-white px-3 py-2.5 shadow-[0_8px_24px_rgba(15,23,42,0.06)]">
+                        {account?.profileImageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={account.profileImageUrl}
+                            alt=""
+                            referrerPolicy="no-referrer"
+                            className="h-10 w-10 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-sm font-medium text-slate-600">
+                            {connectedAccountLabel
+                              ?.slice(0, 1)
+                              .toUpperCase()}
+                          </span>
+                        )}
 
-                      {busy ? (
-                        <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
-                      ) : (
-                        <SocialPlatformIcon
-                          platform={
-                            card.platform
+                        <div className="min-w-0 flex-1 pr-6">
+                          <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+                            {card.accountPlatform ===
+                            "facebook"
+                              ? "Page"
+                              : "Account"}
+                          </p>
+                          <p className="truncate text-[14px] font-medium text-slate-950">
+                            {connectedAccountLabel}
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled={
+                            busyConnectionId ===
+                            connection.id
                           }
-                          className="h-6 w-6 shrink-0"
-                          inverse={
-                            iconIsWhite
+                          onClick={() => {
+                            if (
+                              connection.provider ===
+                                "meta" &&
+                              card.accountPlatform ===
+                                "facebook"
+                            ) {
+                              void clearFacebookPageForReselect(
+                                connection,
+                              );
+                              return;
+                            }
+
+                            void disconnectProvider(
+                              connection,
+                            );
+                          }}
+                          className="absolute right-2 top-2 rounded p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
+                          aria-label={
+                            connection.provider ===
+                              "meta" &&
+                            card.accountPlatform ===
+                              "facebook"
+                              ? "Remove Facebook Page to pick another"
+                              : `Disconnect ${card.label}`
                           }
-                        />
-                      )}
-                    </button>
+                          title={
+                            connection.provider ===
+                              "meta" &&
+                            card.accountPlatform ===
+                              "facebook"
+                              ? "Remove Page to pick another"
+                              : "Disconnect"
+                          }
+                        >
+                          {busyConnectionId ===
+                          connection.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <X className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={
+                          !canStart || busy
+                        }
+                        aria-busy={busy}
+                        onClick={() => {
+                          void connectProvider(
+                            card,
+                          );
+                        }}
+                        className={`flex min-h-13 w-full items-center justify-between rounded-md px-5 py-3.5 text-[15px] font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-100 ${
+                          platformConnected
+                            ? "bg-emerald-600 text-white"
+                            : `${card.backgroundClassName} ${card.textClassName}`
+                        }`}
+                      >
+                        <span className="truncate pr-4">
+                          {buttonLabel}
+                        </span>
+
+                        {busy ? (
+                          <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
+                        ) : (
+                          <SocialPlatformIcon
+                            platform={
+                              card.platform
+                            }
+                            className="h-6 w-6 shrink-0"
+                            inverse={
+                              iconIsWhite
+                            }
+                          />
+                        )}
+                      </button>
+                    )}
+
+                    {showMetaAttention ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-3 px-1">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800">
+                          <CircleAlert className="h-3.5 w-3.5" />
+                          {metaProjection?.manageLabel ??
+                            "Reconnect Facebook"}
+                        </span>
+                        <button
+                          type="button"
+                          disabled={
+                            busyCardKey !== null ||
+                            busyConnectionId !== null
+                          }
+                          onClick={() => {
+                            void (async () => {
+                              if (!activeBrandId || !canManage) {
+                                return;
+                              }
+                              setBusyCardKey(card.key);
+                              setNotice(null);
+                              try {
+                                const response = await fetch(
+                                  "/api/social/facebook/reconnect",
+                                  {
+                                    method: "POST",
+                                    credentials: "same-origin",
+                                    headers: {
+                                      Accept: "application/json",
+                                      "Content-Type":
+                                        "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      returnPath: withSocialPreview(
+                                        "/dashboard/social/facebook?connections=open",
+                                        searchParams,
+                                      ),
+                                    }),
+                                  },
+                                );
+                                const result =
+                                  await readApiResult(response);
+                                const authorizationUrl =
+                                  result.authorization
+                                    ?.authorizationUrl;
+                                if (
+                                  !response.ok ||
+                                  !result.ok ||
+                                  !authorizationUrl
+                                ) {
+                                  setNotice({
+                                    tone: "error",
+                                    message:
+                                      result.message ??
+                                      "Facebook could not be reconnected.",
+                                  });
+                                  return;
+                                }
+                                window.location.assign(
+                                  authorizationUrl,
+                                );
+                              } catch {
+                                setNotice({
+                                  tone: "error",
+                                  message:
+                                    "Facebook could not be reached; reconnect again.",
+                                });
+                              } finally {
+                                setBusyCardKey(null);
+                              }
+                            })();
+                          }}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 transition hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {busyCardKey === card.key ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : null}
+                          {metaProjection?.state === "refresh_failed"
+                            ? "Try again"
+                            : metaProjection?.state ===
+                                "reauthorization_pending"
+                              ? "Continue on Facebook"
+                              : "Reconnect Facebook"}
+                        </button>
+                        {metaProjection?.state ===
+                        "reauthorization_pending" ? (
+                          <button
+                            type="button"
+                            disabled={
+                              busyCardKey !== null ||
+                              busyConnectionId !== null
+                            }
+                            onClick={() => {
+                              void (async () => {
+                                if (!activeBrandId || !canManage) {
+                                  return;
+                                }
+                                setBusyCardKey(card.key);
+                                setNotice(null);
+                                try {
+                                  const response = await fetch(
+                                    "/api/social/facebook/reconnect/cancel",
+                                    {
+                                      method: "POST",
+                                      credentials: "same-origin",
+                                      headers: {
+                                        Accept: "application/json",
+                                      },
+                                    },
+                                  );
+                                  const result =
+                                    await readApiResult(response);
+                                  if (!response.ok || !result.ok) {
+                                    setNotice({
+                                      tone: "error",
+                                      message:
+                                        result.message ??
+                                        "Reconnect could not be cancelled.",
+                                    });
+                                    return;
+                                  }
+                                  setConnections((current) =>
+                                    current.map((item) =>
+                                      item.id === connection?.id
+                                        ? {
+                                            ...item,
+                                            lastErrorCode: null,
+                                            lastErrorMessage: null,
+                                          }
+                                        : item,
+                                    ),
+                                  );
+                                  setNotice({
+                                    tone: "info",
+                                    message:
+                                      result.message ??
+                                      "Facebook reconnect cancelled.",
+                                  });
+                                } catch {
+                                  setNotice({
+                                    tone: "error",
+                                    message:
+                                      "Reconnect could not be cancelled.",
+                                  });
+                                } finally {
+                                  setBusyCardKey(null);
+                                }
+                              })();
+                            }}
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Cancel reconnect
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     {card.hoverMessage ? (
                       <div
@@ -893,14 +2084,133 @@ export function ManageConnectionsModal({
                       >
                         {card.hoverMessage}
                       </div>
+                    ) : representedThroughMeta ? (
+                      <div
+                        role="tooltip"
+                        className="pointer-events-none absolute left-0 right-0 top-full z-50 mt-3 translate-y-1 rounded-2xl border border-slate-100 bg-white px-5 py-3 text-center text-[15px] text-[#2a1728] opacity-0 shadow-lg transition-all duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
+                      >
+                        {
+                          META_PLATFORM_REPRESENTATION[
+                            card.accountPlatform as
+                              | "instagram"
+                              | "threads"
+                          ].note
+                        }
+                      </div>
                     ) : null}
 
-                    {account ? (
+                    {connectedAccountLabel &&
+                    !showConnectedPageCard ? (
                       <p className="mt-2 truncate px-1 text-xs text-slate-500">
-                        {account.displayName ||
-                          account.handle ||
-                          account.externalAccountId}
+                        {connectedAccountLabel}
                       </p>
+                    ) : null}
+
+                    {primaryProviderCard &&
+                    connection &&
+                    connection.status ===
+                      "pending_authorization" &&
+                    canManage ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-3 px-1">
+                        <span className="text-xs font-medium text-slate-600">
+                          Authorization pending
+                        </span>
+
+                        {canContinuePending ? (
+                          <button
+                            type="button"
+                            disabled={
+                              busyConnectionId ===
+                              connection.id
+                            }
+                            onClick={() =>
+                              void continuePendingProvider(
+                                connection,
+                                card,
+                              )
+                            }
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 transition hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {busyConnectionId ===
+                              connection.id &&
+                            busyCardKey ===
+                              card.key ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : null}
+                            Continue
+                          </button>
+                        ) : null}
+
+                        {canCancelPending ? (
+                          <button
+                            type="button"
+                            disabled={
+                              busyConnectionId ===
+                              connection.id
+                            }
+                            onClick={() =>
+                              void cancelPendingProvider(
+                                connection,
+                              )
+                            }
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {showSelectFacebookPage ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-3 px-1">
+                        <span className="text-xs font-medium text-amber-700">
+                          Select a Facebook Page to finish setup
+                        </span>
+                        <button
+                          type="button"
+                          disabled={
+                            busyConnectionId ===
+                              connection.id ||
+                            pageSelectionConnectionId !==
+                              null
+                          }
+                          onClick={() =>
+                            setPageSelectionConnectionId(
+                              connection.id,
+                            )
+                          }
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 transition hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Select Facebook Page
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {primaryProviderCard &&
+                    connection &&
+                    canAddAnother ? (
+                      <button
+                        type="button"
+                        disabled={
+                          busyConnectionId ===
+                          connection.id
+                        }
+                        onClick={() =>
+                          void addAnotherAccount(
+                            connection,
+                            card,
+                          )
+                        }
+                        className="mt-2 inline-flex items-center gap-2 px-1 text-xs font-medium text-indigo-700 transition hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {busyConnectionId ===
+                          connection.id &&
+                        busyCardKey ===
+                          card.key ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : null}
+                        Add another account
+                      </button>
                     ) : null}
 
                     {primaryProviderCard &&
@@ -938,6 +2248,68 @@ export function ManageConnectionsModal({
         </div>
         </div>
       </section>
+
+      {pageSelectionConnectionId ? (
+        <FacebookPageSelectionPanel
+          connectionId={pageSelectionConnectionId}
+          onClose={() =>
+            setPageSelectionConnectionId(null)
+          }
+          onConnected={(selection) => {
+            const connectionId =
+              pageSelectionConnectionId;
+
+            setPageSelectionConnectionId(null);
+            setNotice({
+              tone: "success",
+              message: `${selection.pageName} is connected.`,
+            });
+
+            // Optimistic local consistency from the selection response only —
+            // never invent identity from discovery list order.
+            setConnections((current) =>
+              current.map((item) =>
+                item.id === connectionId
+                  ? {
+                      ...item,
+                      status: "connected",
+                      accounts: [
+                        {
+                          id:
+                            selection.socialAccountId ??
+                            item.accounts.find(
+                              (account) =>
+                                account.status ===
+                                  "connected" &&
+                                account.platform ===
+                                  "facebook",
+                            )?.id ??
+                            item.accounts[0]?.id ??
+                            connectionId,
+                          platform: "facebook",
+                          externalAccountId: null,
+                          handle: null,
+                          displayName: selection.pageName,
+                          status: "connected",
+                          accessStatus: "selected",
+                          profileImageUrl:
+                            selection.profileImageUrl,
+                        },
+                      ],
+                      lastErrorMessage: null,
+                    }
+                  : item,
+              ),
+            );
+
+            void (async () => {
+              await refreshConnectionsFromServer();
+              requestSocialBrandSelectorRefresh();
+              router.refresh();
+            })();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

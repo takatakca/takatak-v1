@@ -1,9 +1,10 @@
-import {
+import type {
     Prisma,
-    type BusinessLocation,
+    BusinessLocation,
   } from "@prisma/client";
   
   import type { LocationInput } from "@/lib/locations/location-validation";
+  import { isPrismaKnownRequestError } from "@/lib/db/prisma-errors";
   import { getPrisma } from "@/lib/db/prisma";
   import { ServiceError } from "@/lib/services/service-error";
   
@@ -13,10 +14,7 @@ import {
   function handleLocationWriteError(
     error: unknown,
   ): never {
-    if (
-      error instanceof
-        Prisma.PrismaClientKnownRequestError
-    ) {
+    if (isPrismaKnownRequestError(error)) {
       if (error.code === "P2002") {
         throw new ServiceError(
           "conflict",
@@ -334,9 +332,7 @@ import {
           return location;
         },
         {
-          isolationLevel:
-            Prisma.TransactionIsolationLevel
-              .Serializable,
+          isolationLevel: "Serializable",
         },
       );
     } catch (error) {
@@ -570,9 +566,7 @@ import {
           return finalLocation;
         },
         {
-          isolationLevel:
-            Prisma.TransactionIsolationLevel
-              .Serializable,
+          isolationLevel: "Serializable",
         },
       );
     } catch (error) {

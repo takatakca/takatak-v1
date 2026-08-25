@@ -10,6 +10,8 @@ export type SocialConnectionAccountSummary = {
   handle: string | null;
   displayName: string | null;
   status: string;
+  accessStatus: string;
+  profileImageUrl: string | null;
 };
 
 export type SocialConnectionSummary = {
@@ -111,6 +113,8 @@ export async function getSocialConnectionsData(
             handle: true,
             displayName: true,
             status: true,
+            accessStatus: true,
+            profileImageUrl: true,
           },
         },
       },
@@ -148,20 +152,35 @@ export async function getSocialConnectionsData(
       accountCount:
         connection.socialAccounts.length,
 
-      accounts:
-        connection.socialAccounts.map(
-          (account) => ({
-            id: account.id,
-            platform:
-              account.platform,
-            externalAccountId:
-              account.externalAccountId,
-            handle: account.handle,
-            displayName:
-              account.displayName,
-            status: account.status,
-          }),
-        ),
+      accounts: [...connection.socialAccounts]
+        .sort((a, b) => {
+          // Persisted selected/connected Page first — never alphabetical
+          // discovery order for identity surfaces.
+          const score = (row: {
+            status: string;
+            accessStatus: string;
+          }) => {
+            let value = 0;
+            if (row.status === "connected") value += 100;
+            if (row.accessStatus === "selected") value += 50;
+            return value;
+          };
+          const delta = score(b) - score(a);
+          if (delta !== 0) return delta;
+          return (a.displayName ?? "").localeCompare(
+            b.displayName ?? "",
+          );
+        })
+        .map((account) => ({
+          id: account.id,
+          platform: account.platform,
+          externalAccountId: account.externalAccountId,
+          handle: account.handle,
+          displayName: account.displayName,
+          status: account.status,
+          accessStatus: account.accessStatus,
+          profileImageUrl: account.profileImageUrl,
+        })),
 
       connectedAt:
         connection.connectedAt?.toISOString() ??

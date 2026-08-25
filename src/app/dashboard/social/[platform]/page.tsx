@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { FacebookConnectPage } from "@/components/social/platforms/facebook-connect-page";
+import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
+import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
+import { resolveCanonicalFacebookDashboard } from "@/lib/social/connections/facebook-dashboard-resolve";
+import { getSelectedFacebookPageSyncSnapshot } from "@/lib/social/sync/facebook-page-initial-sync";
+
 const SOCIAL_PLATFORMS = {
   instagram: {
     name: "Instagram",
@@ -59,45 +66,98 @@ const SOCIAL_PLATFORMS = {
   },
 } as const;
 
-type PlatformKey =
-  keyof typeof SOCIAL_PLATFORMS;
+type PlatformKey = keyof typeof SOCIAL_PLATFORMS;
 
 export default async function SocialPlatformPage({
   params,
-  searchParams,
 }: {
   params: Promise<{
     platform: string;
   }>;
-  searchParams: Promise<{
-    accountId?: string;
-  }>;
 }) {
   const { platform } = await params;
 
-  const { accountId } =
-    await searchParams;
-
   const configuration =
-    SOCIAL_PLATFORMS[
-      platform as PlatformKey
-    ];
+    SOCIAL_PLATFORMS[platform as PlatformKey];
 
   if (!configuration) {
     notFound();
   }
 
-  const connectionHref =
-    `/dashboard/social/${encodeURIComponent(
-      platform,
-    )}?connections=open`;
+  if (platform === "facebook") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/facebook",
+    );
+    const brand = await resolveBrandSessionContext(access);
+
+    let isConnected = false;
+    let connectedLabel: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+    let syncStatus:
+      | "idle"
+      | "syncing"
+      | "ready"
+      | "empty"
+      | "degraded"
+      | "action_required"
+      | "failed"
+      | null = null;
+
+    try {
+      const resolved = await resolveCanonicalFacebookDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (resolved.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (resolved.kind === "ready") {
+        isConnected = true;
+        connectedLabel = resolved.pageName;
+        profileImageUrl = resolved.profileImageUrl;
+
+        if (brand.activeBrandId) {
+          const sync = await getSelectedFacebookPageSyncSnapshot({
+            clientId: access.activeClientId,
+            businessBrandId: brand.activeBrandId,
+          });
+          syncStatus = sync?.status ?? "idle";
+        }
+      }
+    } catch (error) {
+      console.error(
+        "[social-facebook] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <FacebookConnectPage
+        activeBrandId={brand.activeBrandId}
+        activeBrandName={brand.activeBrandName}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        connectedLabel={connectedLabel}
+        profileImageUrl={profileImageUrl}
+        initialSyncStatus={syncStatus}
+        resolutionIssue={resolutionIssue}
+      />
+    );
+  }
+
+  const connectionHref = `/dashboard/social/${encodeURIComponent(
+    platform,
+  )}?connections=open`;
 
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-sm font-medium text-slate-500">
-          Analytics
-        </p>
+        <p className="text-sm font-medium text-slate-500">Analytics</p>
 
         <h1 className="mt-1 text-3xl font-semibold text-slate-950">
           {configuration.name}
@@ -110,24 +170,19 @@ export default async function SocialPlatformPage({
 
       <section className="rounded-2xl border border-[#b8c1ff] bg-[#f0f1ff] px-6 py-7">
         <h2 className="text-xl font-semibold text-slate-950">
-          {accountId
-            ? `${configuration.name} account`
-            : `Connect your ${configuration.name} account`}
+          {`Connect your ${configuration.name} account`}
         </h2>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          {accountId
-            ? "This page will display real analytics after the provider account has completed a successful synchronization. No sample analytics are being shown."
-            : "Authorize and import a real provider account before analytics can be displayed."}
+          Authorize and import a real provider account before analytics can be
+          displayed.
         </p>
 
         <Link
           href={connectionHref}
           className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-[#4934d4] px-5 text-sm font-semibold text-white transition hover:bg-[#3e2bc0]"
         >
-          {accountId
-            ? "Manage connection"
-            : `Connect ${configuration.name}`}
+          {`Connect ${configuration.name}`}
         </Link>
       </section>
 
@@ -137,9 +192,8 @@ export default async function SocialPlatformPage({
         </h2>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          TAKATAK will populate this page only
-          with real information received from
-          the official provider API.
+          TAKATAK will populate this page only with real information received
+          from the official provider API.
         </p>
       </section>
     </div>

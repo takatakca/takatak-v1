@@ -4,6 +4,7 @@ import {
   isServiceError,
   type ServiceError,
 } from "@/lib/services/service-error";
+import { redactSecrets } from "@/lib/security/redact";
 
 export function jsonResponse(
   body: Record<string, unknown>,
@@ -46,9 +47,11 @@ export function handleApiError(
 
   console.error(
     `[${scope}] Request failed:`,
-    error instanceof Error
-      ? error.message
-      : "Unknown error",
+    redactSecrets(
+      error instanceof Error
+        ? error.message
+        : "Unknown error",
+    ),
   );
 
   return jsonResponse(

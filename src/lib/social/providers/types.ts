@@ -41,6 +41,8 @@ export type SocialProviderDefinition = {
   requiredEnvironment: ProviderEnvironmentName[];
   implemented: boolean;
   connectable: boolean;
+  /** When true, Add another account may create a separate connection shell. */
+  supportsMultipleAccounts: boolean;
 };
 
 export type SocialProviderReadiness = {
@@ -49,6 +51,7 @@ export type SocialProviderReadiness = {
   implemented: boolean;
   connectable: boolean;
   configured: boolean;
+  supportsMultipleAccounts: boolean;
   missingEnvironment: ProviderEnvironmentName[];
   state:
     | "planned"

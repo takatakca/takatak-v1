@@ -1,13 +1,12 @@
 import type { MetadataRoute } from "next";
 
+import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { MARKETPLACE_CATEGORIES } from "@/lib/website/marketplace-catalog";
 import { MARKETPLACE_PACKAGES } from "@/lib/website/marketplace-catalog";
-import { PUBLIC_SERVICES } from "@/lib/website/public-services";
+import { servicePages } from "@/lib/website/service-pages";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    "https://takatak.ca";
+  const baseUrl = getApplicationOrigin();
 
   const paths = [
     "",
@@ -17,6 +16,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/domain",
     "/hosting",
     "/deals",
+    "/pricing",
+    "/services",
     "/privacy-manager",
     "/search",
   ];
@@ -33,15 +34,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
         path === "" ? 1 : 0.8,
     })),
 
-    ...PUBLIC_SERVICES.map(
-      (service) => ({
-        url: `${baseUrl}/services/${service.slug}`,
-        lastModified: new Date(),
-        changeFrequency:
-          "monthly" as const,
-        priority: 0.7,
-      }),
-    ),
+    ...servicePages.map((service) => ({
+      url: `${baseUrl}/services/${service.slug}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.7,
+    })),
 
     ...MARKETPLACE_CATEGORIES.map(
       (category) => ({

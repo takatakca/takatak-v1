@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 
-import { DomainRequestFallback } from "@/components/website/domain/domain-request-fallback";
+import { DomainRequestFallback } from "@/components/website/domain/DomainRequestFallback";
 import { UpmindScripts } from "@/components/website/domain/upmind-scripts";
 import {
   UPMIND_ACCOUNT_ID,

@@ -95,7 +95,7 @@ export function VerificationPanel() {
       </span>
 
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
           Check your email
         </h1>
 
@@ -147,7 +147,8 @@ export function VerificationPanel() {
           onClick={resendVerificationEmail}
           disabled={!email || loading}
           aria-busy={loading}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+          style={{ backgroundImage: "var(--gradient-hero)" }}
         >
           {loading ? (
             <Loader2
@@ -170,7 +171,7 @@ export function VerificationPanel() {
 
         <Link
           href="/login"
-          className="block rounded-md text-xs font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="block rounded-md text-xs font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
         >
           Go to Login
         </Link>

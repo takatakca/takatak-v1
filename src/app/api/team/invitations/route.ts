@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
+import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
@@ -37,28 +38,8 @@ function jsonResponse(
   return response;
 }
 
-function getApplicationOrigin(request: NextRequest): string {
-  const configuredApplicationUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-
-  if (configuredApplicationUrl) {
-    try {
-      const configuredUrl = new URL(
-        configuredApplicationUrl,
-      );
-
-      if (
-        configuredUrl.protocol === "https:" ||
-        configuredUrl.hostname === "localhost"
-      ) {
-        return configuredUrl.origin;
-      }
-    } catch {
-      // Fall back to the verified request origin.
-    }
-  }
-
-  return request.nextUrl.origin;
+function getApplicationOriginFromRequest(request: NextRequest): string {
+  return getApplicationOrigin(request.nextUrl.origin);
 }
 
 function containsPermissionEscalation(
@@ -347,7 +328,7 @@ export async function POST(
 
       const callbackUrl = new URL(
         `/auth/callback/invite/${encodeURIComponent(token)}`,
-        getApplicationOrigin(request),
+        getApplicationOriginFromRequest(request),
       );
       
       callbackUrl.searchParams.set(

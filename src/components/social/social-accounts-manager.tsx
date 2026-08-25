@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -16,9 +17,17 @@ import {
   ShieldCheck,
   Unplug,
   Users,
+  X,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import {
+  canAddAnotherAccount,
+  canCancelPendingConnection,
+  canContinueAuthorization,
+  canStartProviderConnect,
+  resolveProviderCardLabel,
+} from "@/lib/social/connections/social-connection-lifecycle-policy";
 
 type ProviderKey =
   | "meta"
@@ -47,6 +56,7 @@ export type SocialAccountsProvider = {
   implemented: boolean;
   connectable: boolean;
   configured: boolean;
+  supportsMultipleAccounts: boolean;
   state: ProviderState;
 };
 
@@ -110,6 +120,7 @@ type ApiResult = {
     id?: string;
     status?: string;
     disconnectedAt?: string;
+    cancelledAt?: string;
   };
 };
 
@@ -315,6 +326,9 @@ export function SocialAccountsManager({
     ProviderKey | null
   >(null);
 
+  const connectInFlightRef =
+    useRef(false);
+
   const [
     busyConnectionId,
     setBusyConnectionId,
@@ -374,6 +388,14 @@ export function SocialAccountsManager({
   async function connectProvider(
     provider: ProviderKey,
   ) {
+    if (
+      connectInFlightRef.current ||
+      busyProvider !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
     if (!selectedBrandId) {
       setNotice({
         tone: "error",
@@ -394,8 +416,51 @@ export function SocialAccountsManager({
       return;
     }
 
+    const providerMeta = providers.find(
+      (item) => item.provider === provider,
+    );
+
+    if (!providerMeta) {
+      setNotice({
+        tone: "error",
+        message:
+          "This provider is not available in the workspace registry.",
+      });
+
+      return;
+    }
+
+    const existing =
+      connectionForProvider(provider);
+
+    const startDecision = canStartProviderConnect({
+      implemented: providerMeta.implemented,
+      connectable: providerMeta.connectable,
+      providerState: providerMeta.state,
+      connectionStatus: existing?.status ?? null,
+      isPrimaryStartCard: true,
+    });
+
+    if (!startDecision.allowed) {
+      setNotice({
+        tone: "info",
+        message:
+          startDecision.reason === "coming_soon"
+            ? `${providerMeta.label} is coming soon.`
+            : startDecision.reason ===
+                "pending_authorization"
+              ? "An authorization is already pending. Cancel it before starting again."
+              : `${providerMeta.label} cannot start authorization right now.`,
+      });
+
+      return;
+    }
+
+    connectInFlightRef.current = true;
     setBusyProvider(provider);
     setNotice(null);
+
+    let redirected = false;
 
     try {
       const response =
@@ -449,6 +514,7 @@ export function SocialAccountsManager({
           ?.authorizationUrl;
 
       if (authorizationUrl) {
+        redirected = true;
         window.location.assign(
           authorizationUrl,
         );
@@ -471,7 +537,355 @@ export function SocialAccountsManager({
           "A network error occurred while starting the provider connection.",
       });
     } finally {
-      setBusyProvider(null);
+      if (!redirected) {
+        connectInFlightRef.current = false;
+        setBusyProvider(null);
+      }
+    }
+  }
+
+  async function cancelPendingProvider(
+    connection: SocialAccountsConnection,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to manage social connections.",
+      });
+
+      return;
+    }
+
+    const decision = canCancelPendingConnection(
+      connection.status,
+    );
+
+    if (!decision.allowed) {
+      setNotice({
+        tone: "error",
+        message: decision.reason,
+      });
+
+      return;
+    }
+
+    if (busyConnectionId !== null) {
+      return;
+    }
+
+    setBusyConnectionId(connection.id);
+    setNotice(null);
+
+    try {
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(
+          connection.id,
+        )}/cancel-pending?provider=${encodeURIComponent(
+          connection.provider,
+        )}`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "The pending authorization could not be cancelled.",
+        });
+
+        return;
+      }
+
+      setConnections((current) =>
+        current.map((item) =>
+          item.id === connection.id
+            ? {
+                ...item,
+                status:
+                  result.connection?.status ??
+                  "not_connected",
+                hasCredential: false,
+                accountCount: 0,
+                accounts: [],
+                lastErrorMessage: null,
+              }
+            : item,
+        ),
+      );
+
+      setNotice({
+        tone: "success",
+        message:
+          result.message ??
+          "Pending authorization cancelled. You can connect again.",
+      });
+
+      router.refresh();
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while cancelling the pending authorization.",
+      });
+    } finally {
+      setBusyConnectionId(null);
+    }
+  }
+
+  async function continuePendingProvider(
+    connection: SocialAccountsConnection,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to manage social connections.",
+      });
+
+      return;
+    }
+
+    if (
+      connectInFlightRef.current ||
+      busyProvider !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
+    const providerMeta = providers.find(
+      (item) => item.provider === connection.provider,
+    );
+
+    if (!providerMeta) {
+      return;
+    }
+
+    const decision = canContinueAuthorization({
+      implemented: providerMeta.implemented,
+      connectable: providerMeta.connectable,
+      providerState: providerMeta.state,
+      connectionStatus: connection.status,
+      isPrimaryStartCard: true,
+    });
+
+    if (!decision.allowed) {
+      setNotice({
+        tone: "error",
+        message: decision.reason,
+      });
+
+      return;
+    }
+
+    connectInFlightRef.current = true;
+    setBusyConnectionId(connection.id);
+    setBusyProvider(connection.provider as ProviderKey);
+    setNotice(null);
+
+    let redirected = false;
+
+    try {
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(
+          connection.id,
+        )}/continue?provider=${encodeURIComponent(
+          connection.provider,
+        )}`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            returnPath: "/dashboard/social/accounts",
+          }),
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "The pending authorization could not be continued.",
+        });
+
+        return;
+      }
+
+      const authorizationUrl =
+        result.authorization?.authorizationUrl;
+
+      if (authorizationUrl) {
+        redirected = true;
+        window.location.assign(authorizationUrl);
+        return;
+      }
+
+      setNotice({
+        tone: "info",
+        message:
+          result.message ??
+          "Continue prepared, but no authorization URL is available.",
+      });
+
+      router.refresh();
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while continuing authorization.",
+      });
+    } finally {
+      if (!redirected) {
+        connectInFlightRef.current = false;
+        setBusyConnectionId(null);
+        setBusyProvider(null);
+      }
+    }
+  }
+
+  async function addAnotherAccount(
+    connection: SocialAccountsConnection,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to manage social connections.",
+      });
+
+      return;
+    }
+
+    if (
+      connectInFlightRef.current ||
+      busyProvider !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
+    const providerMeta = providers.find(
+      (item) => item.provider === connection.provider,
+    );
+
+    if (!providerMeta) {
+      return;
+    }
+
+    const hasPending = connections.some(
+      (item) =>
+        item.brandId === connection.brandId &&
+        item.provider === connection.provider &&
+        item.status === "pending_authorization",
+    );
+
+    const decision = canAddAnotherAccount({
+      implemented: providerMeta.implemented,
+      connectable: providerMeta.connectable,
+      providerState: providerMeta.state,
+      supportsMultipleAccounts:
+        providerMeta.supportsMultipleAccounts,
+      sourceConnectionStatus: connection.status,
+      isPrimaryStartCard: true,
+      hasPendingForProviderBrand: hasPending,
+    });
+
+    if (!decision.allowed) {
+      setNotice({
+        tone: "info",
+        message:
+          decision.reason === "multiple_accounts_unsupported"
+            ? `${providerMeta.label} does not support adding another account yet.`
+            : decision.reason,
+      });
+
+      return;
+    }
+
+    connectInFlightRef.current = true;
+    setBusyConnectionId(connection.id);
+    setBusyProvider(connection.provider as ProviderKey);
+    setNotice(null);
+
+    let redirected = false;
+
+    try {
+      const response = await fetch(
+        "/api/social/connections/add-another",
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            sourceConnectionId: connection.id,
+            provider: connection.provider,
+            returnPath: "/dashboard/social/accounts",
+          }),
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "Another account authorization could not be started.",
+        });
+
+        return;
+      }
+
+      const authorizationUrl =
+        result.authorization?.authorizationUrl;
+
+      if (authorizationUrl) {
+        redirected = true;
+        window.location.assign(authorizationUrl);
+        return;
+      }
+
+      setNotice({
+        tone: "info",
+        message:
+          result.message ??
+          "Another account request was prepared, but no authorization URL is available.",
+      });
+
+      router.refresh();
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while starting another account.",
+      });
+    } finally {
+      if (!redirected) {
+        connectInFlightRef.current = false;
+        setBusyConnectionId(null);
+        setBusyProvider(null);
+      }
     }
   }
 
@@ -489,6 +903,19 @@ export function SocialAccountsManager({
       return;
     }
 
+    if (
+      connection.status ===
+      "pending_authorization"
+    ) {
+      setNotice({
+        tone: "info",
+        message:
+          "Use Cancel pending to abandon an unfinished authorization without disconnecting a live account.",
+      });
+
+      return;
+    }
+
     const confirmed =
       window.confirm(
         `Disconnect ${connection.provider} from ${connection.brandName}? Encrypted credentials will be removed.`,
@@ -498,39 +925,35 @@ export function SocialAccountsManager({
       return;
     }
 
+    if (busyConnectionId !== null) {
+      return;
+    }
+
     setBusyConnectionId(
       connection.id,
     );
-
     setNotice(null);
 
     try {
-      const response =
-        await fetch(
-          `/api/social/connections/${encodeURIComponent(
-            connection.id,
-          )}`,
-          {
-            method: "DELETE",
-            credentials:
-              "same-origin",
-
-            headers: {
-              Accept:
-                "application/json",
-            },
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(
+          connection.id,
+        )}?provider=${encodeURIComponent(
+          connection.provider,
+        )}`,
+        {
+          method: "DELETE",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
           },
-        );
+        },
+      );
 
       const result =
-        await readApiResult(
-          response,
-        );
+        await readApiResult(response);
 
-      if (
-        !response.ok ||
-        !result.ok
-      ) {
+      if (!response.ok || !result.ok) {
         setNotice({
           tone: "error",
           message:
@@ -541,50 +964,23 @@ export function SocialAccountsManager({
         return;
       }
 
-      setConnections(
-        (current) =>
-          current.map(
-            (item) =>
-              item.id ===
-              connection.id
-                ? {
-                    ...item,
-                    status:
-                      "disconnected",
-
-                    hasCredential:
-                      false,
-
-                    accountCount:
-                      0,
-
-                    accounts: [],
-
-                    disconnectedAt:
-                      result.connection
-                        ?.disconnectedAt ??
-                      new Date().toISOString(),
-
-                    lastSyncAt:
-                      null,
-
-                    lastValidatedAt:
-                      null,
-
-                    accessTokenExpiresAt:
-                      null,
-
-                    refreshTokenExpiresAt:
-                      null,
-
-                    lastErrorCode:
-                      null,
-
-                    lastErrorMessage:
-                      null,
-                  }
-                : item,
-          ),
+      setConnections((current) =>
+        current.map((item) =>
+          item.id === connection.id
+            ? {
+                ...item,
+                status: "disconnected",
+                hasCredential: false,
+                accountCount: 0,
+                accounts: [],
+                disconnectedAt:
+                  result.connection
+                    ?.disconnectedAt ??
+                  new Date().toISOString(),
+                lastErrorMessage: null,
+              }
+            : item,
+        ),
       );
 
       setNotice({
@@ -602,9 +998,7 @@ export function SocialAccountsManager({
           "A network error occurred while disconnecting the provider.",
       });
     } finally {
-      setBusyConnectionId(
-        null,
-      );
+      setBusyConnectionId(null);
     }
   }
 
@@ -760,59 +1154,51 @@ export function SocialAccountsManager({
                   provider.provider,
                 );
 
-              const connectionActive =
-                connection?.status ===
-                  "connected" ||
-                connection?.status ===
-                  "authorized" ||
-                connection?.status ===
-                  "pending_authorization";
-
               const busy =
                 busyProvider ===
                 provider.provider;
+
+              const startDecision =
+                canStartProviderConnect({
+                  implemented:
+                    provider.implemented,
+                  connectable:
+                    provider.connectable,
+                  providerState:
+                    provider.state,
+                  connectionStatus:
+                    connection?.status ??
+                    null,
+                  isPrimaryStartCard: true,
+                });
 
               const disabled =
                 busy ||
                 !canManage ||
                 !selectedBrandId ||
-                connectionActive;
+                !startDecision.allowed ||
+                busyConnectionId !== null;
 
-              let actionLabel =
-                connection
-                  ? "Reconnect"
-                  : "Connect";
-
-              if (!canManage) {
-                actionLabel =
-                  "View only";
-              } else if (
-                !selectedBrandId
-              ) {
-                actionLabel =
-                  "Select brand";
-              } else if (
-                connection
-                  ?.status ===
-                "connected"
-              ) {
-                actionLabel =
-                  "Connected";
-              } else if (
-                connection
-                  ?.status ===
-                "authorized"
-              ) {
-                actionLabel =
-                  "Authorized";
-              } else if (
-                connection
-                  ?.status ===
-                "pending_authorization"
-              ) {
-                actionLabel =
-                  "Pending";
-              }
+              const actionLabel =
+                resolveProviderCardLabel({
+                  implemented:
+                    provider.implemented,
+                  connectable:
+                    provider.connectable,
+                  providerState:
+                    provider.state,
+                  connectionStatus:
+                    connection?.status ??
+                    null,
+                  isPrimaryStartCard: true,
+                  busy,
+                  defaultActionLabel:
+                    !canManage
+                      ? "View only"
+                      : !selectedBrandId
+                        ? "Select brand"
+                        : "Connect",
+                });
 
               return (
                 <article
@@ -841,9 +1227,11 @@ export function SocialAccountsManager({
                         ? connectionStatusLabel(
                             connection.status,
                           )
-                        : providerStateLabel(
-                            provider.state,
-                          )}
+                        : provider.implemented
+                          ? providerStateLabel(
+                              provider.state,
+                            )
+                          : "Coming soon"}
                     </Badge>
                   </div>
 
@@ -918,6 +1306,9 @@ export function SocialAccountsManager({
                   >
                     {busy ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : connection?.status ===
+                      "pending_authorization" ? (
+                      <Loader2 className="h-4 w-4" />
                     ) : connection ? (
                       <RefreshCw className="h-4 w-4" />
                     ) : (
@@ -928,6 +1319,35 @@ export function SocialAccountsManager({
                       ? "Checking…"
                       : actionLabel}
                   </button>
+
+                  {canManage &&
+                  connection &&
+                  canCancelPendingConnection(
+                    connection.status,
+                  ).allowed ? (
+                    <button
+                      type="button"
+                      disabled={
+                        busyConnectionId ===
+                        connection.id
+                      }
+                      onClick={() =>
+                        void cancelPendingProvider(
+                          connection,
+                        )
+                      }
+                      className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {busyConnectionId ===
+                      connection.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+
+                      Cancel pending
+                    </button>
+                  ) : null}
                 </article>
               );
             },
@@ -1087,8 +1507,87 @@ export function SocialAccountsManager({
                       </div>
 
                       {canManage &&
+                      connection.status ===
+                        "pending_authorization" ? (
+                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+                          <button
+                            type="button"
+                            disabled={
+                              disconnecting ||
+                              busyProvider !== null
+                            }
+                            onClick={() =>
+                              void continuePendingProvider(
+                                connection,
+                              )
+                            }
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-indigo-200 px-3.5 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {disconnecting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : null}
+                            Continue
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={
+                              disconnecting
+                            }
+                            onClick={() =>
+                              void cancelPendingProvider(
+                                connection,
+                              )
+                            }
+                            className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {disconnecting ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <X className="h-4 w-4" />
+                            )}
+
+                            {disconnecting
+                              ? "Cancelling…"
+                              : "Cancel pending"}
+                          </button>
+                        </div>
+                      ) : null}
+
+                      {canManage &&
+                      (connection.status ===
+                        "authorized" ||
+                        connection.status ===
+                          "connected") &&
+                      providers.find(
+                        (item) =>
+                          item.provider ===
+                          connection.provider,
+                      )?.supportsMultipleAccounts ? (
+                        <button
+                          type="button"
+                          disabled={
+                            disconnecting ||
+                            busyProvider !== null
+                          }
+                          onClick={() =>
+                            void addAnotherAccount(
+                              connection,
+                            )
+                          }
+                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-indigo-200 px-3.5 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Add another account
+                        </button>
+                      ) : null}
+
+                      {canManage &&
                       connection.status !==
-                        "disconnected" ? (
+                        "disconnected" &&
+                      connection.status !==
+                        "pending_authorization" &&
+                      connection.status !==
+                        "not_connected" ? (
                         <button
                           type="button"
                           disabled={

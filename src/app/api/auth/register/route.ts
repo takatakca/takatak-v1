@@ -7,6 +7,10 @@ import {
   validateRegistrationInput,
 } from "@/lib/auth/registration-validation";
 import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
+import {
+  getApplicationOrigin,
+  originFromRequest,
+} from "@/lib/config/app-origin";
 import { getPrisma } from "@/lib/db/prisma";
 
 export const runtime = "nodejs";
@@ -66,35 +70,14 @@ function isTrustedRequestOrigin(request: NextRequest): boolean {
 
   const allowedOrigins = new Set<string>();
 
-  allowedOrigins.add(new URL(request.url).origin);
-
-  const configuredApplicationUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-
-  if (configuredApplicationUrl) {
-    const configuredOrigin = normalizeOrigin(configuredApplicationUrl);
-
-    if (configuredOrigin) {
-      allowedOrigins.add(configuredOrigin);
-    }
-  }
+  allowedOrigins.add(originFromRequest(request));
+  allowedOrigins.add(getApplicationOrigin(new URL(request.url).origin));
 
   return allowedOrigins.has(requestOrigin);
 }
 
-function getApplicationOrigin(request: NextRequest): string {
-  const configuredApplicationUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-
-  if (configuredApplicationUrl) {
-    const configuredOrigin = normalizeOrigin(configuredApplicationUrl);
-
-    if (configuredOrigin) {
-      return configuredOrigin;
-    }
-  }
-
-  return new URL(request.url).origin;
+function getApplicationOriginFromRequest(request: NextRequest): string {
+  return originFromRequest(request);
 }
 
 function getFriendlySupabaseError(
@@ -321,7 +304,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const applicationOrigin = getApplicationOrigin(request);
+  const applicationOrigin = getApplicationOriginFromRequest(request);
   const emailRedirectTo = `${applicationOrigin}/auth/callback`;
 
   try {

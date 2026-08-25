@@ -8,6 +8,7 @@ import {
   type ProfileSyncOutcome,
 } from "@/lib/auth/profile-sync";
 import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
+import { originFromRequest } from "@/lib/config/app-origin";
 import {
   ACTIVE_CLIENT_COOKIE,
 } from "@/lib/security/access-context";
@@ -26,19 +27,8 @@ const SUPPORTED_EMAIL_OTP_TYPES: EmailOtpType[] = [
   "email",
 ];
 
-function getApplicationOrigin(request: NextRequest): string {
-  const configuredApplicationUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.trim();
-
-  if (configuredApplicationUrl) {
-    try {
-      return new URL(configuredApplicationUrl).origin;
-    } catch {
-      return new URL(request.url).origin;
-    }
-  }
-
-  return new URL(request.url).origin;
+function getApplicationOriginFromRequest(request: NextRequest): string {
+  return originFromRequest(request);
 }
 
 function isSupportedEmailOtpType(
@@ -92,7 +82,7 @@ function redirectWithoutCache(
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
-  const applicationOrigin = getApplicationOrigin(request);
+  const applicationOrigin = getApplicationOriginFromRequest(request);
 
   const code = requestUrl.searchParams.get("code");
   const tokenHash =

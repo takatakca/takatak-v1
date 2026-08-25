@@ -9,14 +9,15 @@ import {
   jsonResponse,
 } from "@/lib/security/api-response";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
-import { disconnectSocialConnection } from "@/lib/social/connections/social-connection-management";
+import { disconnectScopedSocialConnection } from "@/lib/social/connections/social-connection-lifecycle";
+import { isSocialConnectionProvider } from "@/lib/social/providers/registry";
 import { isUuid } from "@/lib/validation/common";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   context: {
     params: Promise<{
       connectionId: string;
@@ -46,38 +47,58 @@ export async function DELETE(
     );
   }
 
+  const providerParam =
+    request.nextUrl.searchParams
+      .get("provider")
+      ?.trim() ?? "";
+
+  const provider =
+    providerParam &&
+    isSocialConnectionProvider(providerParam)
+      ? providerParam
+      : undefined;
+
+  if (providerParam && !provider) {
+    return jsonResponse(
+      {
+        ok: false,
+        message:
+          "The selected social provider is invalid.",
+      },
+      400,
+    );
+  }
+
   try {
     const connection =
-      await disconnectSocialConnection({
+      await disconnectScopedSocialConnection({
         clientId:
           gate.access.activeClientId,
-
-        profileId:
-          gate.access.profileId,
-
+        profileId: gate.access.profileId,
         connectionId,
+        provider,
       });
 
-    revalidatePath(
-      "/dashboard/social",
-    );
-
+    revalidatePath("/dashboard/social");
     revalidatePath(
       "/dashboard/social/accounts",
     );
-
-    revalidatePath(
-      "/dashboard/activity",
-    );
+    revalidatePath("/dashboard/activity");
 
     return jsonResponse(
       {
         ok: true,
-
         message:
           "The social provider was disconnected successfully.",
-
-        connection,
+        connection: {
+          id: connection.id,
+          provider: connection.provider,
+          status: connection.status,
+          businessBrandId:
+            connection.businessBrandId,
+          disconnectedAt:
+            connection.disconnectedAt,
+        },
       },
       200,
     );

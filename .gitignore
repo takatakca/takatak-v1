@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# cloned public-site source used for landing design port
+.tmp-takatak-automate
+
+# Prisma client generated for MochaHost upload (includes Linux engines)
+/prisma/generated

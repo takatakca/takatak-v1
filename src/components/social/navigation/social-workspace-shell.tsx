@@ -25,7 +25,7 @@ import {
   Share2,
   ShieldCheck,
   Check,
-  // ShieldCheck,
+  Tag,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -52,14 +52,26 @@ import {
   SocialPlatformIcon,
   type SocialPlatformKey,
 } from "@/components/social/navigation/social-platform-icon";
+import { SOCIAL_BRAND_SELECTOR_REFRESH_EVENT } from "@/components/social/navigation/social-brand-selector-events";
 import { FaLinkedin } from "react-icons/fa";
+import { brandInitials as resolveBrandInitials } from "@/lib/brands/brand-display-image";
+import { pickConnectedPlatformAccount } from "@/lib/social/connections/social-selected-page-identity";
 import { SocialOnboardingModal } from "@/components/social/onboarding/social-onboarding-modal";
+import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { SocialPreviewSwitcher } from "@/components/social/preview/social-preview-switcher";
 
 export interface SocialShellBrand {
   id: string;
   name: string;
   status: string;
+  /** Explicit uploaded brand image; null if none. */
+  imageUrl: string | null;
+  /** Resolved display image (uploaded → social → null). */
+  displayImageUrl: string | null;
+  /** Page name when connected, else brand name. */
+  displayLabel: string;
+  /** Connected platform keys for icon row (no IDs). */
+  connectedPlatforms: string[];
 }
 
 export interface SocialShellAccount {
@@ -68,16 +80,21 @@ export interface SocialShellAccount {
   handle: string | null;
   displayName: string | null;
   status: string;
+  profileImageUrl: string | null;
 }
 
 export interface SocialShellData {
   activeBrandId: string | null;
   activeBrandName: string | null;
+  /** Prefer connected Facebook Page name over demo brand name. */
+  activeBrandDisplayLabel: string | null;
+  activeBrandDisplayImageUrl: string | null;
   brands: SocialShellBrand[];
   accounts: SocialShellAccount[];
   providers: ManageConnectionsProvider[];
   connections: ManageConnectionsConnection[];
   canManageSocialAccounts: boolean;
+  canManageBrands: boolean;
 
   /*
    * Optional for now so the shell continues to work
@@ -238,25 +255,110 @@ function platformPageHref(
 function brandInitials(
   name: string,
 ): string {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(
-      (part) =>
-        part[0]?.toUpperCase() ?? "",
-    )
-    .join("");
+  return resolveBrandInitials(name);
 }
 
-function TakatakMark() {
+function toPlatformIconKey(
+  platform: string,
+): SocialPlatformKey | null {
+  const key = platform.trim().toLowerCase();
+  const allowed: SocialPlatformKey[] = [
+    "web",
+    "blog",
+    "facebook",
+    "instagram",
+    "threads",
+    "x",
+    "bluesky",
+    "linkedin",
+    "pinterest",
+    "tiktok",
+    "tiktok_business",
+    "google_business",
+    "youtube",
+    "twitch",
+    "meta_ads",
+    "google_ads",
+    "tiktok_ads",
+    "looker_studio",
+  ];
+
+  return allowed.includes(key as SocialPlatformKey)
+    ? (key as SocialPlatformKey)
+    : null;
+}
+
+function BrandAvatar({
+  name,
+  imageUrl,
+  empty = false,
+  sizeClassName = "h-8 w-8",
+  roundedClassName = "rounded-full",
+}: {
+  name: string;
+  imageUrl: string | null | undefined;
+  empty?: boolean;
+  sizeClassName?: string;
+  roundedClassName?: string;
+}) {
+  const [broken, setBroken] = useState(false);
+  const showImage = Boolean(imageUrl) && !broken;
+
+  // Metricool empty brands use a soft tag glyph, not initials.
+  if (empty && !showImage) {
+    return (
+      <span
+        className={`relative flex shrink-0 items-center justify-center border border-slate-300 bg-white text-slate-400 ${sizeClassName} ${roundedClassName}`}
+        aria-hidden="true"
+      >
+        <Tag className="h-[18px] w-[18px]" strokeWidth={1.75} />
+      </span>
+    );
+  }
+
   return (
     <span
-      className="relative flex h-9 w-12 items-center justify-center"
+      className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-slate-200 text-xs font-bold text-slate-600 ${sizeClassName} ${roundedClassName}`}
       aria-hidden="true"
     >
-      <span className="absolute left-1.5 h-4 w-6 rotate-[-35deg] rounded-full border-[5px] border-white" />
-      <span className="absolute right-1.5 h-4 w-6 rotate-[35deg] rounded-full border-[5px] border-white" />
+      {showImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl!}
+          alt=""
+          referrerPolicy="no-referrer"
+          className="h-full w-full object-cover"
+          onError={() => setBroken(true)}
+        />
+      ) : (
+        brandInitials(name) || "—"
+      )}
+    </span>
+  );
+}
+
+function ConnectedPlatformIcons({
+  platforms,
+}: {
+  platforms: string[];
+}) {
+  if (platforms.length === 0) {
+    return null;
+  }
+
+  return (
+    <span className="mt-1 flex flex-wrap items-center gap-1">
+      {platforms.map((platform) => {
+        const key = toPlatformIconKey(platform);
+        if (!key) return null;
+        return (
+          <SocialPlatformIcon
+            key={platform}
+            platform={key}
+            className="h-3.5 w-3.5"
+          />
+        );
+      })}
     </span>
   );
 }
@@ -267,87 +369,269 @@ function BrandSelector({
   data: SocialShellData;
 }) {
   const router = useRouter();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const nameRef = useRef<HTMLSpanElement>(null);
 
-  const [open, setOpen] =
-    useState(false);
+  const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+  const [brands, setBrands] = useState(data.brands);
+  const [activeBrandId, setActiveBrandId] = useState(
+    data.activeBrandId,
+  );
+  const [activeDisplayLabel, setActiveDisplayLabel] = useState(
+    data.activeBrandDisplayLabel ?? data.activeBrandName,
+  );
+  const [activeDisplayImageUrl, setActiveDisplayImageUrl] =
+    useState(data.activeBrandDisplayImageUrl);
+  const [loadingBrands, setLoadingBrands] = useState(false);
+  const [truncated, setTruncated] = useState(false);
+  const [showTip, setShowTip] = useState(false);
+  const [tipPos, setTipPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
-  const [isPending, startTransition] =
-    useTransition();
+  useEffect(() => {
+    setBrands(data.brands);
+    setActiveBrandId(data.activeBrandId);
+    setActiveDisplayLabel(
+      data.activeBrandDisplayLabel ?? data.activeBrandName,
+    );
+    setActiveDisplayImageUrl(data.activeBrandDisplayImageUrl);
+  }, [
+    data.brands,
+    data.activeBrandId,
+    data.activeBrandName,
+    data.activeBrandDisplayLabel,
+    data.activeBrandDisplayImageUrl,
+  ]);
 
-  const [message, setMessage] =
-    useState<string | null>(null);
+  useEffect(() => {
+    const node = nameRef.current;
+    if (!node) return;
 
-  async function updateBrand(
-    brandId: string,
-  ) {
+    const measure = () => {
+      setTruncated(node.scrollWidth > node.clientWidth + 1);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [activeDisplayLabel]);
+
+  function updateTooltipPosition() {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    // Metricool: white tip sits to the LEFT of the trigger, vertically centered.
+    setTipPos({
+      top: rect.top + rect.height / 2,
+      left: Math.max(8, rect.left - 10),
+    });
+  }
+
+  function isNameTruncated() {
+    const node = nameRef.current;
+    if (!node) return truncated;
+    return node.scrollWidth > node.clientWidth + 1;
+  }
+
+  function openTooltip() {
+    const overflow = isNameTruncated();
+    setTruncated(overflow);
+    if (!overflow) return;
+    updateTooltipPosition();
+    setShowTip(true);
+  }
+
+  function closeTooltip() {
+    setShowTip(false);
+  }
+
+  async function refreshBrandSnapshot(force = false) {
+    if (!force) {
+      const cachedAt = (refreshBrandSnapshot as { _at?: number })._at;
+      if (cachedAt && Date.now() - cachedAt < 8_000) {
+        return;
+      }
+    }
+
+    if ((refreshBrandSnapshot as { _inflight?: Promise<void> })._inflight) {
+      await (refreshBrandSnapshot as { _inflight?: Promise<void> })._inflight;
+      return;
+    }
+
+    setLoadingBrands(true);
+    const work = (async () => {
+      try {
+        const response = await fetch("/api/social/brand-selector", {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        const body = (await response.json().catch(() => null)) as {
+          ok?: boolean;
+          brands?: SocialShellBrand[];
+        } | null;
+
+        if (!response.ok || !body?.ok || !Array.isArray(body.brands)) {
+          return;
+        }
+
+        setBrands(body.brands);
+        (refreshBrandSnapshot as { _at?: number })._at = Date.now();
+        const active =
+          body.brands.find((brand) => brand.id === activeBrandId) ??
+          body.brands.find(
+            (brand) => brand.id === data.activeBrandId,
+          ) ??
+          null;
+        if (active) {
+          setActiveBrandId(active.id);
+          setActiveDisplayLabel(active.displayLabel || active.name);
+          setActiveDisplayImageUrl(active.displayImageUrl);
+        }
+      } catch {
+        // Keep last known snapshot; router.refresh still reconciles.
+      } finally {
+        setLoadingBrands(false);
+      }
+    })();
+
+    (refreshBrandSnapshot as { _inflight?: Promise<void> })._inflight = work;
+    try {
+      await work;
+    } finally {
+      delete (refreshBrandSnapshot as { _inflight?: Promise<void> })._inflight;
+    }
+  }
+
+  useEffect(() => {
+    function onRefresh() {
+      void refreshBrandSnapshot();
+    }
+
+    window.addEventListener(
+      SOCIAL_BRAND_SELECTOR_REFRESH_EVENT,
+      onRefresh,
+    );
+    return () => {
+      window.removeEventListener(
+        SOCIAL_BRAND_SELECTOR_REFRESH_EVENT,
+        onRefresh,
+      );
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeBrandId, data.activeBrandId]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    void refreshBrandSnapshot();
+
+    function onPointerDown(event: MouseEvent) {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  async function updateBrand(brandId: string) {
     setMessage(null);
 
     try {
-      const response = await fetch(
-        "/api/social/brand-context",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            brandId,
-          }),
-        },
-      );
+      const response = await fetch("/api/social/brand-context", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brandId }),
+      });
 
-      const result = (await response
-        .json()
-        .catch(() => null)) as {
+      const result = (await response.json().catch(() => null)) as {
         message?: string;
       } | null;
 
       if (!response.ok) {
         setMessage(
-          result?.message ??
-            "The brand could not be changed.",
+          result?.message ?? "The brand could not be changed.",
         );
-
         return;
+      }
+
+      const next = brands.find((brand) => brand.id === brandId);
+      if (next) {
+        setActiveBrandId(next.id);
+        setActiveDisplayLabel(next.displayLabel || next.name);
+        setActiveDisplayImageUrl(next.displayImageUrl);
       }
 
       setOpen(false);
       router.refresh();
     } catch {
-      setMessage(
-        "The brand could not be changed.",
-      );
+      setMessage("The brand could not be changed.");
     }
   }
 
+  const collapsedName =
+    activeDisplayLabel ?? "Empty brand";
+  const activeBrand = brands.find(
+    (brand) => brand.id === activeBrandId,
+  );
+  const activeIsEmpty =
+    (activeBrand?.connectedPlatforms.length ?? 0) === 0 &&
+    !activeDisplayImageUrl;
+
   return (
-    <div className="relative">
+    <div className="relative" ref={rootRef}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => {
-          setOpen(
-            (current) => !current,
-          );
+          setOpen((current) => !current);
         }}
+        onMouseEnter={openTooltip}
+        onMouseLeave={closeTooltip}
+        onFocus={openTooltip}
+        onBlur={closeTooltip}
         aria-expanded={open}
-        className={`flex h-11 min-w-48 items-center gap-2 rounded-xl border px-2.5 text-left transition ${
+        aria-haspopup="listbox"
+        aria-label={collapsedName}
+        title={truncated ? collapsedName : undefined}
+        className={`flex h-11 min-w-[200px] max-w-[260px] items-center gap-2.5 rounded-lg border px-2 text-left transition ${
           open
             ? "border-white/30 bg-[#766f75]"
             : "border-white/10 bg-white/10 hover:bg-white/15"
         }`}
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-xs font-bold text-slate-600">
-          {data.activeBrandName
-            ? brandInitials(
-                data.activeBrandName,
-              )
-            : "—"}
-        </span>
+        <BrandAvatar
+          name={collapsedName}
+          imageUrl={activeDisplayImageUrl}
+          empty={activeIsEmpty}
+          sizeClassName="h-8 w-8"
+          roundedClassName="rounded-full"
+        />
 
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-white">
-          {data.activeBrandName ??
-            "No active brand"}
+        <span
+          ref={nameRef}
+          className="min-w-0 flex-1 truncate text-sm font-medium text-white"
+        >
+          {collapsedName}
         </span>
 
         <ChevronDown
@@ -357,68 +641,107 @@ function BrandSelector({
         />
       </button>
 
+      {showTip && tipPos && typeof document !== "undefined"
+        ? createPortal(
+            <span
+              role="tooltip"
+              className="pointer-events-none fixed z-[300] max-w-[280px] -translate-x-full -translate-y-1/2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium leading-snug text-slate-900 shadow-[0_8px_24px_rgba(15,23,42,0.18)]"
+              style={{
+                top: tipPos.top,
+                left: tipPos.left,
+              }}
+            >
+              {collapsedName}
+            </span>,
+            document.body,
+          )
+        : null}
+
       {open ? (
-        <div className="absolute right-0 top-[52px] z-50 w-80 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-          <Link
-            href="/dashboard/brands"
-            onClick={() => {
-              setOpen(false);
-            }}
-            className="flex items-center gap-3 border-b border-slate-200 px-4 py-4 text-base font-medium text-slate-900 transition hover:bg-[#f7fadf]"
-          >
-            <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-900">
-              <Plus className="h-5 w-5" />
-            </span>
+        <div
+          role="listbox"
+          aria-label="Brands"
+          className="absolute right-0 top-[52px] z-50 w-[300px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
+        >
+          {data.canManageBrands ? (
+            <Link
+              href="/dashboard/brands"
+              onClick={() => {
+                setOpen(false);
+              }}
+              className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-[15px] font-medium text-slate-900 transition hover:bg-slate-50"
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 bg-white text-slate-800">
+                <Plus className="h-5 w-5" strokeWidth={2} />
+              </span>
+              Add brand
+            </Link>
+          ) : null}
 
-            Add brand
-          </Link>
-
-          <div className="max-h-72 overflow-y-auto py-2">
-            {data.brands.map(
-              (brand) => {
-                const selected =
-                  brand.id ===
-                  data.activeBrandId;
-
-                return (
-                  <button
-                    key={brand.id}
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => {
-                      startTransition(
-                        () => {
-                          void updateBrand(
-                            brand.id,
-                          );
-                        },
-                      );
-                    }}
-                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition disabled:cursor-wait ${
-                      selected
-                        ? "bg-slate-200"
-                        : "hover:bg-slate-100"
-                    }`}
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-600">
-                      {brandInitials(
-                        brand.name,
-                      )}
-                    </span>
-
-                    <span className="truncate text-sm font-medium text-slate-900">
-                      {brand.name}
-                    </span>
-                  </button>
-                );
-              },
-            )}
-
-            {data.brands.length ===
-            0 ? (
+          <div className="max-h-80 overflow-y-auto py-1">
+            {loadingBrands && brands.length === 0 ? (
               <p className="px-4 py-5 text-sm text-slate-500">
-                No brands are available
-                in this workspace.
+                Loading brands…
+              </p>
+            ) : null}
+
+            {brands.map((brand) => {
+              const selected = brand.id === activeBrandId;
+              const isEmpty = brand.connectedPlatforms.length === 0;
+              const label = isEmpty
+                ? "Empty brand"
+                : brand.displayLabel || brand.name;
+
+              return (
+                <button
+                  key={brand.id}
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  disabled={isPending}
+                  onClick={() => {
+                    startTransition(() => {
+                      void updateBrand(brand.id);
+                    });
+                  }}
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition disabled:cursor-wait ${
+                    selected
+                      ? "bg-[#ececee]"
+                      : "hover:bg-slate-50"
+                  }`}
+                >
+                  <BrandAvatar
+                    name={label}
+                    imageUrl={brand.displayImageUrl}
+                    empty={isEmpty}
+                    sizeClassName="h-10 w-10"
+                    roundedClassName="rounded-full"
+                  />
+
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-medium text-slate-900">
+                      {label}
+                    </span>
+                    <ConnectedPlatformIcons
+                      platforms={brand.connectedPlatforms}
+                    />
+                  </span>
+
+                  {selected ? (
+                    <Check
+                      className="h-4 w-4 shrink-0 text-slate-600"
+                      aria-label="Selected"
+                    />
+                  ) : (
+                    <span className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  )}
+                </button>
+              );
+            })}
+
+            {brands.length === 0 && !loadingBrands ? (
+              <p className="px-4 py-5 text-sm text-slate-500">
+                No brands are available in this workspace.
               </p>
             ) : null}
           </div>
@@ -431,6 +754,18 @@ function BrandSelector({
         </p>
       ) : null}
     </div>
+  );
+}
+
+function TakatakMark() {
+  return (
+    <span
+      className="relative flex h-9 w-12 items-center justify-center"
+      aria-hidden="true"
+    >
+      <span className="absolute left-1.5 h-4 w-6 rotate-[-35deg] rounded-full border-[5px] border-white" />
+      <span className="absolute right-1.5 h-4 w-6 rotate-[35deg] rounded-full border-[5px] border-white" />
+    </span>
   );
 }
 
@@ -830,6 +1165,7 @@ function ModuleDrawer({
   onClose: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (!open) {
     return null;
@@ -948,7 +1284,10 @@ function ModuleDrawer({
 
             <DrawerRow
               label="Connections"
-              href="/dashboard/social?connections=open"
+              href={withSocialPreview(
+                "/dashboard/social?connections=open",
+                searchParams,
+              )}
               icon={Share2}
               onClose={onClose}
             />
@@ -1182,10 +1521,25 @@ function AccountAvatar({
 }: {
   account: SocialShellAccount;
 }) {
+  const [broken, setBroken] = useState(false);
   const label =
     account.displayName ||
     account.handle ||
     platformLabel(account.platform);
+
+  if (account.profileImageUrl && !broken) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={account.profileImageUrl}
+        alt=""
+        title={label}
+        referrerPolicy="no-referrer"
+        className="h-7 w-7 shrink-0 rounded-full border border-slate-200 object-cover"
+        onError={() => setBroken(true)}
+      />
+    );
+  }
 
   return (
     <span
@@ -1269,7 +1623,7 @@ function SocialSidebarContent({
     <div className="flex h-full flex-col bg-white">
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
         <Link
-          href="/dashboard/social"
+          href={withSocialPreview("/dashboard/social", searchParams)}
           onClick={onNavigate}
           title={
             collapsed
@@ -1293,11 +1647,10 @@ function SocialSidebarContent({
           {STARTER_PLATFORMS.map(
             (item) => {
               const account =
-                data.accounts.find(
-                  (candidate) =>
-                    candidate.platform ===
-                    item.accountPlatform,
-                ) ?? null;
+                pickConnectedPlatformAccount(
+                  data.accounts,
+                  item.accountPlatform,
+                );
 
               const active =
                 pathname === item.href ||
@@ -1305,11 +1658,10 @@ function SocialSidebarContent({
                   `${item.href}/`,
                 );
 
-              const href = account
-                ? `${item.href}?accountId=${encodeURIComponent(
-                    account.id,
-                  )}`
-                : item.href;
+              const href = withSocialPreview(
+                item.href,
+                searchParams,
+              );
 
               return (
                 <Link
@@ -1391,18 +1743,16 @@ function SocialSidebarContent({
                 );
 
               const active =
-                pathname ===
-                  platformHref &&
-                searchParams.get(
-                  "accountId",
-                ) === account.id;
+                pathname === platformHref ||
+                pathname.startsWith(`${platformHref}/`);
 
               return (
                 <Link
-                  key={account.id}
-                  href={`${platformHref}?accountId=${encodeURIComponent(
-                    account.id,
-                  )}`}
+                  key={`${platform}:${account.displayName ?? account.handle ?? "account"}`}
+                  href={withSocialPreview(
+                    platformHref,
+                    searchParams,
+                  )}
                   onClick={onNavigate}
                   title={
                     collapsed
@@ -1442,7 +1792,10 @@ function SocialSidebarContent({
         </div>
 
         <Link
-          href="/dashboard/social?connections=open"
+          href={withSocialPreview(
+            "/dashboard/social?connections=open",
+            searchParams,
+          )}
           onClick={onNavigate}
           title={
             collapsed
@@ -1534,37 +1887,45 @@ function SocialSidebarContent({
       </div>
 
       <div className="shrink-0 border-t border-slate-200 px-3 py-3">
-        {!mobile &&
-        onToggleCollapsed ? (
-          <button
-            type="button"
-            onClick={
-              onToggleCollapsed
-            }
-            title={
-              collapsed
-                ? "Expand sidebar"
-                : "Collapse sidebar"
-            }
-            className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100"
-          >
-            {collapsed ? (
-              <ChevronRight className="h-5 w-5" />
-            ) : (
-              <ChevronLeft className="h-5 w-5" />
-            )}
-          </button>
+  {!mobile && onToggleCollapsed ? (
+    <div className="space-y-2">
+      <Link
+        href="/dashboard"
+        onClick={onNavigate}
+        title={collapsed ? "Back to TAKATAK" : undefined}
+        className={`flex items-center rounded-xl py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 ${
+          collapsed ? "justify-center px-0" : "gap-3 px-3"
+        }`}
+      >
+        <ArrowLeft className="h-5 w-5 shrink-0" />
+
+        {!collapsed ? <span>Back to TAKATAK</span> : null}
+      </Link>
+
+      <button
+        type="button"
+        onClick={onToggleCollapsed}
+        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100"
+      >
+        {collapsed ? (
+          <ChevronRight className="h-5 w-5" />
         ) : (
-          <Link
-            href="/dashboard"
-            onClick={onNavigate}
-            className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            Back to TAKATAK
-          </Link>
+          <ChevronLeft className="h-5 w-5" />
         )}
-      </div>
+      </button>
+    </div>
+  ) : (
+    <Link
+      href="/dashboard"
+      onClick={onNavigate}
+      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+    >
+      <ArrowLeft className="h-5 w-5" />
+      Back to TAKATAK
+    </Link>
+  )}
+</div>
     </div>
   );
 }
@@ -1573,10 +1934,15 @@ export function SocialWorkspaceShell({
   children,
   data,
 }: SocialWorkspaceShellProps) {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] =
     useState(false);
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [oauthNotice, setOauthNotice] = useState<{
+    tone: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const searchParams =
   useSearchParams();
@@ -1619,6 +1985,40 @@ const effectiveData: SocialShellData =
       );
     };
   }, []);
+
+  useEffect(() => {
+    const outcome = searchParams.get("social_oauth");
+    if (!outcome) {
+      return;
+    }
+
+    if (outcome === "accepted") {
+      setOauthNotice({
+        tone: "success",
+        message:
+          "Facebook authorization succeeded. Your connection was updated.",
+      });
+    } else if (outcome === "failed") {
+      setOauthNotice({
+        tone: "error",
+        message:
+          "Facebook authorization failed. You can try connecting again.",
+      });
+    } else if (outcome === "cancelled") {
+      setOauthNotice({
+        tone: "error",
+        message: "Facebook authorization was cancelled.",
+      });
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("social_oauth");
+    const query = params.toString();
+    const nextUrl = query ? `${pathname}?${query}` : pathname;
+    // Replace so refresh does not replay the OAuth outcome banner.
+    // Also drops Facebook's leftover #_=_ hash.
+    window.history.replaceState(window.history.state, "", nextUrl);
+  }, [pathname, searchParams]);
 
   function toggleCollapsed() {
     setCollapsed((current) => {
@@ -1711,6 +2111,26 @@ const effectiveData: SocialShellData =
         }`}
       >
         <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+          {oauthNotice ? (
+            <div
+              className={`mb-4 flex items-start justify-between gap-3 rounded-[12px] border px-4 py-3 text-sm ${
+                oauthNotice.tone === "success"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : "border-rose-200 bg-rose-50 text-rose-900"
+              }`}
+              role="status"
+            >
+              <p>{oauthNotice.message}</p>
+              <button
+                type="button"
+                aria-label="Dismiss"
+                onClick={() => setOauthNotice(null)}
+                className="rounded p-1 opacity-70 hover:opacity-100"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : null}
           {children}
         </div>
       </main>

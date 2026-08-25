@@ -1,64 +1,47 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { PublicServicePage } from "@/components/website/services/public-service-page";
+import { ServiceProductPage } from "@/components/website/services/ServiceProductPage";
 import {
-  getPublicService,
-  PUBLIC_SERVICES,
-} from "@/lib/website/public-services";
+  getServicePage,
+  servicePages,
+} from "@/lib/website/service-pages";
 
 export function generateStaticParams() {
-  return PUBLIC_SERVICES.map(
-    (service) => ({
-      slug: service.slug,
-    }),
-  );
+  return servicePages.map((service) => ({
+    slug: service.slug,
+  }));
 }
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-
-  const service =
-    getPublicService(slug);
+  const service = getServicePage(slug);
 
   if (!service) {
-    return {
-      title: "Service not found",
-    };
+    return { title: "Service not found" };
   }
 
   return {
-    title: `${service.title} — TAKATAK`,
-    description:
-      service.shortDescription,
+    title: `${service.title.en} — TAKATAK`,
+    description: service.tagline.en,
   };
 }
 
 export default async function ServicePage({
   params,
 }: {
-  params: Promise<{
-    slug: string;
-  }>;
+  params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-
-  const service =
-    getPublicService(slug);
+  const service = getServicePage(slug);
 
   if (!service) {
     notFound();
   }
 
-  return (
-    <PublicServicePage
-      service={service}
-    />
-  );
+  return <ServiceProductPage page={service} />;
 }

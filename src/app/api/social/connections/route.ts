@@ -9,6 +9,7 @@ import {
 } from "@/lib/security/api-response";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { getSocialConnectionsData } from "@/lib/social/connections/social-connection-data";
+import { toAccountPictureSrc, toClientSocialImageUrl } from "@/lib/social/media/remote-image";
 import { isUuid } from "@/lib/validation/common";
 
 export const runtime = "nodejs";
@@ -55,7 +56,16 @@ export async function GET(
     return jsonResponse(
       {
         ok: true,
-        connections,
+        connections: connections.map((connection) => ({
+          ...connection,
+          accounts: connection.accounts.map((account) => ({
+            ...account,
+            profileImageUrl:
+              account.platform === "facebook"
+                ? toAccountPictureSrc(account.id)
+                : toClientSocialImageUrl(account.profileImageUrl),
+          })),
+        })),
       },
       200,
     );

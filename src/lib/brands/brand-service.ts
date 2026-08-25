@@ -1,17 +1,12 @@
-import { Prisma } from "@prisma/client";
-
 import type { BrandInput } from "@/lib/brands/brand-validation";
+import { isPrismaKnownRequestError } from "@/lib/db/prisma-errors";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 
 function handleBrandWriteError(
   error: unknown,
 ): never {
-  if (
-    error instanceof
-      Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2002"
-  ) {
+  if (isPrismaKnownRequestError(error) && error.code === "P2002") {
     throw new ServiceError(
       "conflict",
       "A brand with this name already exists in the workspace.",

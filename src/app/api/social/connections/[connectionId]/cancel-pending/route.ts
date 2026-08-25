@@ -1,0 +1,113 @@
+import { revalidatePath } from "next/cache";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
+
+import {
+  handleApiError,
+  jsonResponse,
+} from "@/lib/security/api-response";
+import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
+import { cancelPendingSocialConnection } from "@/lib/social/connections/social-connection-lifecycle";
+import { isSocialConnectionProvider } from "@/lib/social/providers/registry";
+import { isUuid } from "@/lib/validation/common";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function POST(
+  request: NextRequest,
+  context: {
+    params: Promise<{
+      connectionId: string;
+    }>;
+  },
+): Promise<NextResponse> {
+  const gate =
+    await requireWorkspaceApiPermission(
+      "manage_social_accounts",
+    );
+
+  if (!gate.ok) {
+    return gate.response;
+  }
+
+  const { connectionId } =
+    await context.params;
+
+  if (!isUuid(connectionId)) {
+    return jsonResponse(
+      {
+        ok: false,
+        message:
+          "The selected social connection identifier is invalid.",
+      },
+      400,
+    );
+  }
+
+  const providerParam =
+    request.nextUrl.searchParams
+      .get("provider")
+      ?.trim() ?? "";
+
+  const provider =
+    providerParam &&
+    isSocialConnectionProvider(providerParam)
+      ? providerParam
+      : undefined;
+
+  if (providerParam && !provider) {
+    return jsonResponse(
+      {
+        ok: false,
+        message:
+          "The selected social provider is invalid.",
+      },
+      400,
+    );
+  }
+
+  try {
+    const connection =
+      await cancelPendingSocialConnection({
+        clientId:
+          gate.access.activeClientId,
+        profileId: gate.access.profileId,
+        connectionId,
+        provider,
+      });
+
+    revalidatePath("/dashboard/social");
+    revalidatePath(
+      "/dashboard/social/accounts",
+    );
+    revalidatePath("/dashboard/activity");
+
+    // Safe public payload only — never tokens, state, codes, or verifiers.
+    return jsonResponse(
+      {
+        ok: true,
+        message:
+          "Pending authorization cancelled. You can connect again.",
+        connection: {
+          id: connection.id,
+          provider: connection.provider,
+          status: connection.status,
+          businessBrandId:
+            connection.businessBrandId,
+          cancelledAt:
+            connection.cancelledAt,
+        },
+      },
+      200,
+    );
+  } catch (error) {
+    return handleApiError(
+      "social-connections-cancel-pending",
+      error,
+      "The pending authorization could not be cancelled.",
+    );
+  }
+}
