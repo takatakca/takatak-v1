@@ -1,11 +1,16 @@
 import type { SubscriptionStatus } from "@prisma/client";
 
+import { resolveSocialSubscriptionLifecycle } from "@/lib/billing/social/subscription-lifecycle";
+
 export type SocialConnectionAccessDecision =
   | { allowed: true; via: "subscription" | "trusted_dev_bypass" }
   | { allowed: false; via: "denied" };
 
 export type SocialConnectionAccessEvaluationInput = {
   status: SubscriptionStatus | null | undefined;
+  cancelAtPeriodEnd?: boolean;
+  currentPeriodEnd?: Date | string | null;
+  now?: Date;
   /** Server-persisted flag only — never from the browser. */
   developmentBypass: boolean;
   /**
@@ -132,7 +137,14 @@ export function evaluateClientSocialConnectionAccess(
     return { allowed: true, via: "trusted_dev_bypass" };
   }
 
-  if (input.status === "active" || input.status === "trial") {
+  const lifecycle = resolveSocialSubscriptionLifecycle({
+    status: input.status,
+    cancelAtPeriodEnd: input.cancelAtPeriodEnd,
+    currentPeriodEnd: input.currentPeriodEnd,
+    now: input.now,
+  });
+
+  if (lifecycle.access === "paid" || lifecycle.access === "free") {
     return { allowed: true, via: "subscription" };
   }
 

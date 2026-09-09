@@ -1028,13 +1028,13 @@ async function main() {
 
       await prisma.clientSubscription.update({
         where: { clientId },
-        data: { status: "expired", developmentBypass: false },
+        data: { status: "suspended", developmentBypass: false },
       });
       const subCheck = await prisma.clientSubscription.findUnique({
         where: { clientId },
         select: { status: true, developmentBypass: true },
       });
-      assert(subCheck?.status === "expired", "sub not expired");
+      assert(subCheck?.status === "suspended", "sub not suspended");
       assert(subCheck?.developmentBypass === false, "bypass on");
 
       const { assertClientCanConnectSocial } = await import(
@@ -1046,7 +1046,7 @@ async function main() {
       } catch {
         directDenied = true;
       }
-      assert(directDenied, "direct sub assert allowed expired");
+      assert(directDenied, "direct sub assert allowed suspended");
 
       const { state: s1 } = await createAttempt({
         profileId: managerId,
@@ -1058,18 +1058,18 @@ async function main() {
         rawQuery: { code: `code-${uuid()}`, state: s1 },
         profileId: managerId,
       });
-      assert(denied.outcome === "failed", "expired sub allowed");
+      assert(denied.outcome === "failed", "suspended sub allowed");
       assert(
         (await prisma.socialCredential.count({
           where: { connectionId },
         })) === 0,
-        "cred on expired sub",
+        "cred on suspended sub",
       );
 
       // Trusted DB bypass still works outside production even with require flag.
       await prisma.clientSubscription.update({
         where: { clientId },
-        data: { status: "expired", developmentBypass: true },
+        data: { status: "suspended", developmentBypass: true },
       });
       resetHappyMock();
       const { state: s2 } = await createAttempt({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
+import { assertClientCanInviteTeam } from "@/lib/billing/social/entitlement-gates";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
@@ -8,6 +9,7 @@ import {
   type Permission,
   type RoleKey,
 } from "@/lib/security/roles";
+import { isServiceError } from "@/lib/services/service-error";
 import { generateInvitationToken } from "@/lib/team/invitation-token";
 import { validateInvitationInput } from "@/lib/team/invitation-validation";
 
@@ -92,6 +94,18 @@ export async function POST(
       },
       403,
     );
+  }
+
+  try {
+    await assertClientCanInviteTeam(access.activeClientId);
+  } catch (error) {
+    if (isServiceError(error)) {
+      return jsonResponse(
+        { ok: false, message: error.message },
+        error.status,
+      );
+    }
+    throw error;
   }
 
   let requestBody: unknown;

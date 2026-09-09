@@ -1,3 +1,5 @@
+import { NetworkStatusBanner } from "@/components/network/network-status-banner";
+import { ClickPendingProvider } from "@/components/ui/click-pending-provider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Takatak ca",
-  description: "takatak.ca platform",
+  title: "Takatak Official website",
+  description: "takatak.ca official platform",
 };
 
 export default function RootLayout({
@@ -27,7 +29,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <NetworkStatusBanner />
+        <ClickPendingProvider>{children}</ClickPendingProvider>
+      </body>
     </html>
   );
 }

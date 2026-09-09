@@ -1,0 +1,88 @@
+.pagetop {
+  padding-top: 24px;
+}
+
+.host {
+  padding: 40px 35px 0 24px;
+  background: linear-gradient(
+    160deg,
+    #000b50 0%,
+    #000b50 25%,
+    #0d0957 45%,
+    #191073 65%,
+    #501eb1 82%,
+    #7122d4 100%
+  );
+}
+
+.hos {
+  padding-block: 25px;
+}
+
+.cbtn {
+  color: black;
+  background-color: white;
+  padding-block: 9px;
+  padding-inline: 19px;
+}
+
+.icon {
+  padding: 8px;
+}
+
+.sip {
+  padding: 20px;
+}
+
+.dex {
+  padding: 20px;
+}
+
+.secur {
+  padding-block: 60px;
+  padding-inline: 20px;
+}
+
+.tb {
+  padding: 20px;
+}
+
+.qs {
+  background: transparent;
+}
+
+.chat {
+  padding: 20px 24px 0;
+  background: linear-gradient(
+    160deg,
+    #001051 0%,
+    #001453 25%,
+    #244372 45%,
+    #0a9295 65%,
+    #0bbcac 82%,
+    #0ecdb4 100%
+  );
+}
+
+.assi {
+  padding-bottom: 20px;
+}
+
+@media screen and (max-width: 950px) {
+  .pagetop {
+    padding-top: 16px;
+  }
+
+  .host,
+  .chat {
+    padding: 20px 20px 0;
+  }
+
+  .dex {
+    padding: 15px;
+  }
+
+  .icon {
+    padding: 10px;
+  }
+}

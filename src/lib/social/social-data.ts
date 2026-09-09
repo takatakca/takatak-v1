@@ -1,6 +1,7 @@
 // Phase 5 — Social module data access. DB-first, honest mock fallback.
 // Never claims "database" unless real queries succeeded. Never crashes pages.
 
+import { analyticsHistoryCutoffForClient } from "@/lib/billing/social/entitlement-gates";
 import { getPrisma } from "@/lib/db/prisma";
 import { clientWhere, resolveDataScope } from "@/lib/security/data-scope";
 import type { TenantAccess } from "@/lib/security/tenant-access";
@@ -53,7 +54,7 @@ function logDbError(scope: string, error: unknown) {
 }
 
 function mockPipeline() {
-  return { draft: 2, pending_approval: 1, approved: 1, scheduled: 0, published: 0, failed: 0 };
+  return { draft: 2, pending_approval: 1, approved: 1, scheduled: 0, published: 0, failed: 0, blocked_by_plan: 0 };
 }
 
 // ── Overview ─────────────────────────────────────────────────
@@ -128,7 +129,7 @@ export async function getSocialOverviewData(access?: TenantAccess): Promise<Soci
 }
 
 function mockPipelineZero() {
-  return { draft: 0, pending_approval: 0, approved: 0, scheduled: 0, published: 0, failed: 0 };
+  return { draft: 0, pending_approval: 0, approved: 0, scheduled: 0, published: 0, failed: 0, blocked_by_plan: 0 };
 }
 
 // ── Accounts ─────────────────────────────────────────────────
@@ -295,13 +296,24 @@ export async function getSocialAnalyticsData(access?: TenantAccess): Promise<Sou
   const prisma = scope.kind === "db" ? getPrisma() : null;
   if (prisma && scope.kind === "db") {
     try {
+      const analyticsWhere = { ...clientWhere(scope) };
+      if (scope.clientIds?.length === 1) {
+        try {
+          const cutoff = await analyticsHistoryCutoffForClient(scope.clientIds[0]);
+          if (cutoff) {
+            Object.assign(analyticsWhere, { date: { gte: cutoff } });
+          }
+        } catch {
+          // Billing unavailable: keep the unclipped query rather than failing the page.
+        }
+      }
       const agg = await prisma.socialAnalyticsDaily.aggregate({
-        where: clientWhere(scope),
+        where: analyticsWhere,
         _sum: { reach: true, impressions: true, engagement: true, clicks: true, followers: true },
         _count: { _all: true },
       });
       const rowSource = agg._count._all > 0
-        ? (await prisma.socialAnalyticsDaily.findFirst({ where: clientWhere(scope), select: { source: true } }))?.source ?? null
+        ? (await prisma.socialAnalyticsDaily.findFirst({ where: analyticsWhere, select: { source: true } }))?.source ?? null
         : null;
       return {
         source: "database", sourceLabel: DB_LABEL,

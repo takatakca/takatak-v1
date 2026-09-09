@@ -311,6 +311,44 @@ async function main() {
     console.log("ok: durable lease + idempotent enqueue present");
   }
 
+  section("no duplicate const row in competitors POST route");
+  {
+    const src = await import("node:fs/promises").then((fs) =>
+      fs.readFile(
+        new URL(
+          "../src/app/api/social/facebook/competitors/route.ts",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    const declarations = src.match(/\bconst row\b/g) ?? [];
+    assert.equal(declarations.length, 1);
+    assert.ok(src.includes("Never include socialAccountId"));
+    console.log("ok: single const row in competitors collection route");
+  }
+
+  section("UI hides add form unless Meta capability is ready");
+  {
+    const src = await import("node:fs/promises").then((fs) =>
+      fs.readFile(
+        new URL(
+          "../src/components/social/platforms/facebook-competitors-panel.tsx",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    assert.ok(src.includes('capability?.status === "ready"'));
+    assert.ok(src.includes("{capabilityReady ? ("));
+    assert.ok(src.includes("Add competitor"));
+    assert.ok(src.includes("busyRef === row.publicRef || !capabilityReady"));
+    assert.ok(src.includes("{competitors.length > 0 ? ("));
+    assert.equal(src.includes("puppeteer"), false);
+    assert.equal(src.includes("competitor_reach"), false);
+    console.log("ok: add form gated; existing tracks remain visible");
+  }
+
   console.log("\nAll Step 9 Facebook competitor tests passed.");
 }
 

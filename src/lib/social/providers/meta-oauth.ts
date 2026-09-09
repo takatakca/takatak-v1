@@ -9,12 +9,27 @@ export const META_OAUTH_AUTHORIZE_HOST =
 export const META_OAUTH_CALLBACK_PATH =
   "/api/social/callback/facebook";
 
-/** Connect + Page list + engagement read + insights (no publish/moderate). */
-export const META_OAUTH_START_SCOPES = [
+/** Facebook Page identity + engagement + insights (no publish/moderate). */
+export const META_OAUTH_PAGE_SCOPES = [
   "public_profile",
   "pages_show_list",
   "pages_read_engagement",
   "read_insights",
+] as const;
+
+/**
+ * Instagram professional account identity + insights.
+ * Requested with Facebook Login; not required to finish Facebook Page setup.
+ */
+export const META_OAUTH_INSTAGRAM_SCOPES = [
+  "instagram_basic",
+  "instagram_manage_insights",
+] as const;
+
+/** Connect + Page list + Instagram professional account (no publish/moderate). */
+export const META_OAUTH_START_SCOPES = [
+  ...META_OAUTH_PAGE_SCOPES,
+  ...META_OAUTH_INSTAGRAM_SCOPES,
 ] as const;
 
 const DEFAULT_GRAPH_API_VERSION = "v21.0";

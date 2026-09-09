@@ -15,6 +15,7 @@ import {
   Loader2,
   Lock,
   Mail,
+  Phone,
   UserRound,
   X,
 } from "lucide-react";
@@ -40,6 +41,7 @@ const INITIAL_VALUES: RegistrationInput = {
   firstName: "",
   lastName: "",
   email: "",
+  phone: "",
   password: "",
   confirmPassword: "",
   acceptedTerms: false,
@@ -177,6 +179,7 @@ export function RegistrationForm() {
       "firstName",
       "lastName",
       "email",
+      "phone",
       "password",
       "confirmPassword",
       "acceptedTerms",
@@ -269,6 +272,10 @@ export function RegistrationForm() {
       setSuccessMessage(
         result.message ?? "Account created successfully.",
       );
+
+      sessionStorage.setItem("verifyEmail", validation.data.email);
+      sessionStorage.removeItem("verifyPhone");
+      sessionStorage.removeItem("otpAttempts");
 
       router.push(
         result.redirectTo ??
@@ -507,6 +514,48 @@ export function RegistrationForm() {
         <FieldError
           id="email-error"
           message={fieldErrors.email}
+        />
+      </div>
+
+      <div>
+        <label
+          htmlFor="phone"
+          className="mb-1.5 block text-xs font-semibold text-foreground"
+        >
+          Phone
+        </label>
+
+        <div className="relative">
+          <Phone
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+            aria-hidden="true"
+          />
+
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            required
+            autoComplete="tel"
+            inputMode="tel"
+            maxLength={REGISTRATION_LIMITS.phoneMaximum}
+            value={values.phone}
+            disabled={loading}
+            aria-invalid={Boolean(fieldErrors.phone)}
+            aria-describedby={
+              fieldErrors.phone ? "phone-error" : undefined
+            }
+            onChange={(event) =>
+              updateField("phone", event.target.value)
+            }
+            className={inputClassName}
+            placeholder="+1 416 555 0100"
+          />
+        </div>
+
+        <FieldError
+          id="phone-error"
+          message={fieldErrors.phone}
         />
       </div>
 
@@ -810,7 +859,7 @@ export function RegistrationForm() {
           />
         ) : null}
 
-        {loading ? "Creating account…" : "Create Account"}
+        {loading ? "Sending code…" : "Create Account"}
       </button>
 
       <p className="text-center text-xs text-muted-foreground">

@@ -485,13 +485,14 @@ export async function processFacebookOAuthCallback(options: {
     await assertClientCanConnectSocial(
       prisma,
       oauthState.clientId,
+      { provider: "meta", reconnect: true },
     );
 
     const brand = await prisma.businessBrand.findFirst({
       where: {
         id: oauthState.businessBrandId,
         clientId: oauthState.clientId,
-        status: { not: "archived" },
+        status: { notIn: ["archived", "frozen"] },
       },
       select: { id: true },
     });

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { loadClientSocialEntitlementContext } from "@/lib/billing/social/entitlement-gates";
+import { evaluateSocialNetworkConnect } from "@/lib/billing/social/entitlement-gates-policy";
+import { getPrisma } from "@/lib/db/prisma";
 import {
   handleApiError,
   jsonResponse,
@@ -25,6 +28,19 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
+    const prisma = getPrisma();
+    let entitlements = null as Awaited<
+      ReturnType<typeof loadClientSocialEntitlementContext>
+    >["entitlements"] | null;
+
+    if (prisma) {
+      const context = await loadClientSocialEntitlementContext(
+        prisma,
+        gate.access.activeClientId,
+      );
+      entitlements = context.entitlements;
+    }
+
     const providers =
       Object.values(
         SOCIAL_PROVIDER_REGISTRY,
@@ -33,6 +49,15 @@ export async function GET(): Promise<NextResponse> {
           getSocialProviderReadiness(
             definition.provider as SocialConnectionProviderValue,
           );
+
+        const planAllowsConnect = entitlements
+          ? evaluateSocialNetworkConnect({
+              provider: definition.provider,
+              entitlements,
+              connectedXCount: 0,
+              reconnect: true,
+            }).allowed
+          : true;
 
         return {
           provider:
@@ -54,7 +79,7 @@ export async function GET(): Promise<NextResponse> {
             readiness.implemented,
 
           connectable:
-            readiness.connectable,
+            readiness.connectable && planAllowsConnect,
 
           configured:
             readiness.configured,
@@ -72,7 +97,6 @@ export async function GET(): Promise<NextResponse> {
         ok: true,
         providers,
         metaPlatformRepresentation:
-          // Facebook / Instagram / Threads are not independent providers.
           {
             facebook: {
               independentlyImplemented: false,
@@ -80,14 +104,14 @@ export async function GET(): Promise<NextResponse> {
               role: "primary_oauth_card",
             },
             instagram: {
-              independentlyImplemented: false,
+              independentlyImplemented: true,
               representedThrough: "meta",
-              role: "represented_through_meta",
+              role: "meta_primary_or_independent_oauth",
             },
             threads: {
-              independentlyImplemented: false,
+              independentlyImplemented: true,
               representedThrough: "meta",
-              role: "represented_through_meta",
+              role: "meta_primary_or_independent_oauth",
             },
           },
       },

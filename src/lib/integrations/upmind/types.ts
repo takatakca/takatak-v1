@@ -46,11 +46,15 @@ export interface UpmindPlannedSyncJob {
   jobId?: string;
 }
 
-export type UpmindWebhookVerificationState = "not_configured" | "configured_untested" | "disabled";
+export type UpmindWebhookVerificationState =
+  | "not_configured"
+  | "disabled"
+  | "invalid_signature"
+  | "verified";
 
 export interface UpmindWebhookVerificationResult {
   state: UpmindWebhookVerificationState;
-  trusted: false; // Phase 8 NEVER trusts webhook events
+  trusted: boolean;
   message: string;
 }
 

@@ -10,13 +10,16 @@ import {
   MobileSidebar,
 } from "./dashboard-sidebar";
 import { DashboardTopbar } from "./dashboard-topbar";
+import { isWebDomainWorkspace, WebDomainShell } from "@/components/web-hosting/web-domain-shell";
 
 export function DashboardShell({
   children,
   session,
+  unreadNotificationCount = 0,
 }: {
   children: ReactNode;
   session: SessionSnapshot;
+  unreadNotificationCount?: number;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] =
@@ -37,8 +40,12 @@ export function DashboardShell({
     return <>{children}</>;
   }
 
+  if (isWebDomainWorkspace(pathname)) {
+    return <WebDomainShell>{children}</WebDomainShell>;
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#f4f5f7]">
       <DesktopSidebar session={session} />
 
       <MobileSidebar
@@ -49,12 +56,13 @@ export function DashboardShell({
         session={session}
       />
 
-      <div className="lg:pl-64">
+      <div className="lg:pl-[260px]">
         <DashboardTopbar
           onOpenSidebar={() =>
             setMobileOpen(true)
           }
           session={session}
+          unreadNotificationCount={unreadNotificationCount}
         />
 
         {!session.configured ? (
@@ -65,7 +73,7 @@ export function DashboardShell({
           </div>
         ) : null}
 
-        <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </main>
       </div>

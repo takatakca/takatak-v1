@@ -3,13 +3,13 @@
 // UPMIND_API_BASE_URL + UPMIND_TEST_ENDPOINT from confirmed official docs.
 // Secrets never appear in return values, logs, or errors.
 import "server-only";
-import { getUpmindEnvStatus } from "./env";
+import { getUpmindApiBaseUrl, getUpmindApiKey, getUpmindEnvStatus } from "./env";
 import type { UpmindTestConnectionResult } from "./types";
 
 const TIMEOUT_MS = 8000;
 
 function redact(text: string): string {
-  const key = process.env.UPMIND_API_KEY;
+  const key = getUpmindApiKey();
   const secret = process.env.UPMIND_WEBHOOK_SECRET;
   let out = text;
   if (key) out = out.split(key).join("[REDACTED_KEY]");
@@ -35,7 +35,7 @@ export async function attemptUpmindTestRequest(): Promise<UpmindTestConnectionRe
     };
   }
 
-  const base = process.env.UPMIND_API_BASE_URL!.replace(/\/+$/, "");
+  const base = getUpmindApiBaseUrl();
   const endpoint = process.env.UPMIND_TEST_ENDPOINT!.replace(/^\/+/, "");
   const url = `${base}/${endpoint}`;
   const controller = new AbortController();
@@ -44,7 +44,7 @@ export async function attemptUpmindTestRequest(): Promise<UpmindTestConnectionRe
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${process.env.UPMIND_API_KEY!}`,
+        Authorization: `Bearer ${getUpmindApiKey()}`,
         Accept: "application/json",
       },
       signal: controller.signal,

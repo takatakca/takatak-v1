@@ -86,7 +86,7 @@ export function DomainSearchOverlay({ onClose }: { onClose: () => void }) {
     trackEvent("domain_continue", { domain: selected, live: layerReady === true });
     if (layerReady) {
       onClose();
-      void navigate({ to: "/domain" });
+      void navigate({ to: "/checkout" });
       return;
     }
     setPhase("fallback");

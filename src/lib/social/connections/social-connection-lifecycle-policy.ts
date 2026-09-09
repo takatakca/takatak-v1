@@ -56,9 +56,10 @@ export type ContinueAttemptDecision =
   | { kind: "blocked"; reason: string };
 
 /**
- * Facebook / Instagram / Threads are not independent OAuth providers.
- * They are represented through the Meta connection (Facebook is the
- * primary start card; Instagram and Threads do not create auth records).
+ * Facebook remains the Meta Page OAuth card.
+ * Instagram and Threads use the Meta-linked account as the main path when a
+ * Facebook Page is connected. Independent login is a second choice when the
+ * account is not linked through Meta.
  */
 export const META_PLATFORM_REPRESENTATION = {
   facebook: {
@@ -71,19 +72,19 @@ export const META_PLATFORM_REPRESENTATION = {
   },
   instagram: {
     platform: "instagram",
-    independentlyImplemented: false,
+    independentlyImplemented: true,
     representedThrough: "meta",
-    role: "represented_through_meta",
+    role: "meta_primary_or_independent_oauth",
     note:
-      "Instagram is represented through the Meta connection. It does not start its own OAuth or create authorization records.",
+      "The Instagram professional account linked to the Facebook Page is the main path. Independent Instagram Login is available when that account is not linked through Meta.",
   },
   threads: {
     platform: "threads",
-    independentlyImplemented: false,
+    independentlyImplemented: true,
     representedThrough: "meta",
-    role: "represented_through_meta",
+    role: "meta_primary_or_independent_oauth",
     note:
-      "Threads is represented through the Meta connection. It does not start its own OAuth or create authorization records.",
+      "The Threads profile linked through the Facebook Page and Instagram professional account is the main path. Independent Threads Login is available when that profile is not linked through Meta.",
   },
 } as const;
 
@@ -501,6 +502,82 @@ export function resolveProviderCardLabel(options: {
   }
 
   return options.defaultActionLabel;
+}
+
+/**
+ * Main path: attach the Instagram professional account already linked to
+ * a selected Facebook Page. Independent Instagram Login is the second
+ * choice when that account is not linked through Meta.
+ */
+export function canAttachLinkedInstagram(options: {
+  facebookPageSelected: boolean;
+  instagramAlreadyConnected: boolean;
+  connectionStatus: SocialLifecycleConnectionStatus | null;
+}): LifecycleDecision {
+  if (options.instagramAlreadyConnected) {
+    return {
+      allowed: false,
+      reason: "already_connected",
+    };
+  }
+
+  if (options.connectionStatus !== "connected") {
+    return {
+      allowed: false,
+      reason: "facebook_not_connected",
+    };
+  }
+
+  if (!options.facebookPageSelected) {
+    return {
+      allowed: false,
+      reason: "facebook_page_required",
+    };
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Main path: attach the Threads profile that belongs to the Instagram
+ * professional account linked to the Facebook Page. Independent Threads
+ * Login is the second choice when that profile is not linked through Meta.
+ */
+export function canAttachLinkedThreads(options: {
+  facebookPageSelected: boolean;
+  metaInstagramConnected: boolean;
+  threadsAlreadyConnected: boolean;
+  connectionStatus: SocialLifecycleConnectionStatus | null;
+}): LifecycleDecision {
+  if (options.threadsAlreadyConnected) {
+    return {
+      allowed: false,
+      reason: "already_connected",
+    };
+  }
+
+  if (options.connectionStatus !== "connected") {
+    return {
+      allowed: false,
+      reason: "facebook_not_connected",
+    };
+  }
+
+  if (!options.facebookPageSelected) {
+    return {
+      allowed: false,
+      reason: "facebook_page_required",
+    };
+  }
+
+  if (!options.metaInstagramConnected) {
+    return {
+      allowed: false,
+      reason: "instagram_required",
+    };
+  }
+
+  return { allowed: true };
 }
 
 /**

@@ -26,9 +26,40 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
       "META_APP_ID",
       "META_APP_SECRET",
     ],
-    // Step 3 start-OAuth + Step 4 callback/token exchange.
-    // Facebook is the primary OAuth card; Instagram/Threads are
-    // represented through Meta and are not independent providers.
+    // Facebook Login remains the Meta Page OAuth card.
+    // Instagram and Threads authorize independently.
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
+  },
+
+  instagram: {
+    provider: "instagram",
+    label: "Instagram",
+    description:
+      "Instagram professional accounts through Instagram Login. Facebook is not required.",
+    platforms: ["instagram"],
+    authorizationType: "oauth2",
+    requiredEnvironment: [
+      "META_APP_ID",
+      "META_APP_SECRET",
+    ],
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
+  },
+
+  threads: {
+    provider: "threads",
+    label: "Threads",
+    description:
+      "Threads accounts through Threads Login. Facebook is not required.",
+    platforms: ["threads"],
+    authorizationType: "oauth2",
+    requiredEnvironment: [
+      "META_APP_ID",
+      "META_APP_SECRET",
+    ],
     implemented: true,
     connectable: true,
     supportsMultipleAccounts: false,
@@ -44,13 +75,13 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
       "youtube",
     ],
     authorizationType:
-      "oauth2",
+      "oauth2_pkce",
     requiredEnvironment: [
       "GOOGLE_SOCIAL_CLIENT_ID",
       "GOOGLE_SOCIAL_CLIENT_SECRET",
     ],
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
   },
 
@@ -75,7 +106,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     provider: "tiktok",
     label: "TikTok",
     description:
-      "TikTok account authorization, publishing, and analytics.",
+      "TikTok personal accounts through Login Kit. Facebook is not required.",
     platforms: ["tiktok"],
     authorizationType:
       "oauth2_pkce",
@@ -83,8 +114,8 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
       "TIKTOK_CLIENT_KEY",
       "TIKTOK_CLIENT_SECRET",
     ],
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
   },
 
@@ -109,7 +140,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     provider: "x",
     label: "X",
     description:
-      "X account publishing and analytics.",
+      "X accounts through OAuth 2.0. Facebook is not required.",
     platforms: ["x"],
     authorizationType:
       "oauth2_pkce",
@@ -117,8 +148,8 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
       "X_CLIENT_ID",
       "X_CLIENT_SECRET",
     ],
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
   },
 

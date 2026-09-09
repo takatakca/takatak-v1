@@ -10,10 +10,39 @@ export interface UpmindEnvStatus {
   canAttemptLiveTest: boolean; // configured + test endpoint
 }
 
-const REQUIRED = ["UPMIND_API_KEY", "UPMIND_API_BASE_URL"] as const;
+/**
+ * Accepts the current name UPMIND_API_KEY and the former-project name UPMIND_KEY.
+ * Never log or return this value.
+ */
+export function getUpmindApiKey(): string {
+  return (
+    process.env.UPMIND_API_KEY?.trim() ||
+    process.env.UPMIND_KEY?.trim() ||
+    ""
+  );
+}
+
+export function getUpmindApiBaseUrl(): string {
+  return process.env.UPMIND_API_BASE_URL?.trim().replace(/\/+$/, "") ?? "";
+}
+
+export function getUpmindBrandId(): string {
+  return (
+    process.env.UPMIND_BRAND_ID?.trim() ||
+    process.env.NEXT_PUBLIC_UPMIND_BRAND_ID?.trim() ||
+    ""
+  );
+}
+
+/** Webhook HMAC secret. Never log or return this from status APIs. */
+export function getUpmindWebhookSecret(): string {
+  return process.env.UPMIND_WEBHOOK_SECRET?.trim() ?? "";
+}
 
 export function getUpmindEnvStatus(): UpmindEnvStatus {
-  const missing = REQUIRED.filter((name) => !process.env[name]);
+  const missing: string[] = [];
+  if (!getUpmindApiKey()) missing.push("UPMIND_API_KEY");
+  if (!getUpmindApiBaseUrl()) missing.push("UPMIND_API_BASE_URL");
   const configured = missing.length === 0;
   const hasTestEndpoint = Boolean(process.env.UPMIND_TEST_ENDPOINT);
   return {

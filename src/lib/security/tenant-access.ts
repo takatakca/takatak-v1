@@ -219,6 +219,24 @@ export function computeTenantAccess(
     };
   }
 
+  // Missing or invalid workspace cookie: use the first workspace this
+  // person can actually access. Owners/admins used to skip this and become
+  // platform_admin, so Social/Team/Brands redirected back to /dashboard
+  // after login cleared the workspace cookie.
+  if (activeMemberships.length > 0) {
+    const membership = activeMemberships[0];
+
+    return {
+      mode: "client_scoped",
+      profileId: input.profile.id,
+      role: membership.role,
+      allowedClientIds,
+      activeClientId: membership.clientId,
+      customPermissions: membership.customPermissions,
+      deniedPermissions: membership.deniedPermissions,
+    };
+  }
+
   if (
     input.profile.role === "owner" ||
     input.profile.role === "admin"
@@ -233,97 +251,111 @@ export function computeTenantAccess(
     };
   }
 
-  if (activeMemberships.length === 0) {
-    const hasInactiveWorkspace =
-      input.memberships.some(
-        (membership) =>
-          membership.status === "active" &&
-          (membership.clientStatus ===
-            "paused" ||
-            membership.clientStatus ===
-              "archived"),
-      );
+  const hasInactiveWorkspace =
+    input.memberships.some(
+      (membership) =>
+        membership.status === "active" &&
+        (membership.clientStatus ===
+          "paused" ||
+          membership.clientStatus ===
+            "archived"),
+    );
 
-    const hasSuspendedMembership =
-      input.memberships.some(
-        (membership) =>
-          membership.status === "suspended",
-      );
-
-    return {
-      mode: "denied",
-      reason: hasInactiveWorkspace
-        ? "client_inactive"
-        : hasSuspendedMembership
-          ? "membership_suspended"
-          : "membership_missing",
-    };
-  }
-
-  if (input.requestedClientId) {
-    return {
-      mode: "denied",
-      reason: "client_not_allowed",
-    };
-  }
-
-  if (activeMemberships.length === 1) {
-    const membership =
-      activeMemberships[0];
-
-    return {
-      mode: "client_scoped",
-      profileId: input.profile.id,
-      role: membership.role,
-      allowedClientIds,
-      activeClientId:
-        membership.clientId,
-      customPermissions:
-        membership.customPermissions,
-      deniedPermissions:
-        membership.deniedPermissions,
-    };
-  }
+  const hasSuspendedMembership =
+    input.memberships.some(
+      (membership) =>
+        membership.status === "suspended",
+    );
 
   return {
-    mode: "selection_required",
-    profileId: input.profile.id,
-    platformRole: input.profile.role,
-    allowedClientIds,
+    mode: "denied",
+    reason: hasInactiveWorkspace
+      ? "client_inactive"
+      : hasSuspendedMembership
+        ? "membership_suspended"
+        : "membership_missing",
   };
 }
 
-export async function resolveTenantAccess(
+function summarizeAccessError(error: unknown): string {
+  if (!(error instanceof Error) || !error.message) {
+    return "Unknown error";
+  }
+
+  const tls = error.message.match(
+    /Error opening a TLS connection:[^\n]+/i,
+  );
+  if (tls) return tls[0].trim();
+
+  const firstLine =
+    error.message
+      .split("\n")
+      .find((line) => line.trim().length > 0)
+      ?.trim() ?? error.message;
+
+  return firstLine.length > 280
+    ? `${firstLine.slice(0, 277)}...`
+    : firstLine;
+}
+
+export type ShellProfileDetails = {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  email: string;
+  role: PlatformRoleKey;
+};
+
+export type TenantAccessBundle = {
+  access: TenantAccess;
+  profileDetails: ShellProfileDetails | null;
+  clientNames: Record<string, string>;
+};
+
+function accessBundle(
+  access: TenantAccess,
+  profileDetails: ShellProfileDetails | null = null,
+  clientNames: Record<string, string> = {},
+): TenantAccessBundle {
+  return { access, profileDetails, clientNames };
+}
+
+export async function resolveTenantAccessBundle(
   requestedClientId?: string | null,
-): Promise<TenantAccess> {
+): Promise<TenantAccessBundle> {
   const runtime = getRuntimeInfo();
 
   if (
     runtime.mode === "production_blocked" ||
     runtime.foundationAllowed
   ) {
-    return computeTenantAccess({
-      runtime,
-      authenticated: false,
-      databaseAvailable: false,
-      profile: null,
-      memberships: [],
-      requestedClientId: null,
-    });
+    return accessBundle(
+      computeTenantAccess({
+        runtime,
+        authenticated: false,
+        databaseAvailable: false,
+        profile: null,
+        memberships: [],
+        requestedClientId: null,
+      }),
+    );
   }
 
   const user = await getSessionUser();
   const prisma = getPrisma();
 
   if (!user || !prisma) {
-    return computeTenantAccess({
-      runtime,
-      authenticated: Boolean(user),
-      databaseAvailable: Boolean(prisma),
-      profile: null,
-      memberships: [],
-      requestedClientId: null,
-    });
+    return accessBundle(
+      computeTenantAccess({
+        runtime,
+        authenticated: Boolean(user),
+        databaseAvailable: Boolean(prisma),
+        profile: null,
+        memberships: [],
+        requestedClientId: null,
+      }),
+    );
   }
 
   try {
@@ -336,12 +368,17 @@ export async function resolveTenantAccess(
           id: true,
           role: true,
           status: true,
+          firstName: true,
+          lastName: true,
+          displayName: true,
+          email: true,
           memberships: {
             select: {
               clientId: true,
               client: {
                 select: {
                   status: true,
+                  name: true,
                 },
               },
               role: true,
@@ -353,7 +390,12 @@ export async function resolveTenantAccess(
         },
       });
 
-    return computeTenantAccess({
+    const clientNames: Record<string, string> = {};
+    for (const membership of profile?.memberships ?? []) {
+      clientNames[membership.clientId] = membership.client.name;
+    }
+
+    const access = computeTenantAccess({
       runtime,
       authenticated: true,
       databaseAvailable: true,
@@ -381,19 +423,38 @@ export async function resolveTenantAccess(
       requestedClientId:
         requestedClientId ?? null,
     });
+
+    return accessBundle(
+      access,
+      profile
+        ? {
+            id: profile.id,
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            displayName: profile.displayName,
+            email: profile.email,
+            role: profile.role,
+          }
+        : null,
+      clientNames,
+    );
   } catch (error) {
     console.error(
       "[tenant-access] Access resolution failed:",
-      error instanceof Error
-        ? error.message
-        : "Unknown error",
+      summarizeAccessError(error),
     );
 
-    return {
+    return accessBundle({
       mode: "denied",
       reason: "database_unavailable",
-    };
+    });
   }
+}
+
+export async function resolveTenantAccess(
+  requestedClientId?: string | null,
+): Promise<TenantAccess> {
+  return (await resolveTenantAccessBundle(requestedClientId)).access;
 }
 
 

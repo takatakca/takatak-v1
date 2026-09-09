@@ -101,13 +101,23 @@ export function UserProfileMenu({
     };
   }, [open]);
 
+  const composedName = [session.firstName, session.lastName]
+    .filter(Boolean)
+    .join(" ");
   const displayName =
-    session.displayName ??
-    [session.firstName, session.lastName]
-      .filter(Boolean)
-      .join(" ") ??
-    session.email ??
+    session.displayName ||
+    composedName ||
+    session.activeClientName ||
+    session.email ||
     "User";
+
+  const roleLabel = session.role
+    ? ROLE_LABELS[session.role]
+    : session.platformRole === "owner"
+      ? "Owner"
+      : session.platformRole === "admin"
+        ? "Admin"
+        : null;
 
   const initials = getInitials(session);
 
@@ -121,10 +131,19 @@ export function UserProfileMenu({
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="flex items-center gap-2 rounded-lg p-1 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        className="flex items-center gap-2 rounded-lg p-1 pr-2 transition hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
       >
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-600 text-xs font-semibold text-white">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold text-white">
           {initials}
+        </span>
+
+        <span className="hidden min-w-0 text-left leading-tight sm:block">
+          <span className="block max-w-[160px] truncate text-sm font-semibold text-slate-900">
+            {displayName}
+          </span>
+          {roleLabel ? (
+            <span className="block text-[11px] text-slate-500">{roleLabel}</span>
+          ) : null}
         </span>
 
         <ChevronDown
@@ -180,7 +199,7 @@ export function UserProfileMenu({
             </Link>
 
             <Link
-              href="/dashboard/settings"
+              href="/dashboard/profile"
               role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-100"
@@ -195,6 +214,7 @@ export function UserProfileMenu({
 
             <Link
               href="/dashboard/select-client"
+              prefetch={false}
               role="menuitem"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-100"

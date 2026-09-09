@@ -20,7 +20,10 @@
     "bootstrap:owner": "tsx scripts/bootstrap-owner.ts",
     "qa:access": "tsx scripts/check-access-control.ts",
     "qa:tenant-isolation": "tsx scripts/check-tenant-isolation.ts",
-    "qa:social-lifecycle": "tsx scripts/check-social-lifecycle.ts",
+    "qa:social-instagram": "tsx scripts/instagram-connection-tests.ts",
+    "qa:social-tiktok": "tsx scripts/tiktok-connection-tests.ts",
+    "qa:social-youtube": "tsx scripts/youtube-connection-tests.ts",
+    "qa:social-x": "tsx scripts/x-connection-tests.ts",
     "qa:social-step4-correction": "tsx scripts/step-4-correction-verification.ts",
     "qa:oauth-access-logs": "tsx scripts/verify-oauth-access-log-protection.ts",
     "qa:social-step5-pages": "tsx scripts/step-5-facebook-page-tests.ts",
@@ -37,7 +40,16 @@
     "qa:brand-selector": "tsx scripts/brand-selector-tests.ts",
     "dev:reset-meta-facebook": "tsx scripts/dev-reset-meta-facebook-connection.ts",
     "worker:social-sync": "tsx scripts/run-social-sync-worker.ts",
-    "worker:social-sync:backfill": "tsx scripts/run-facebook-historical-backfill.ts"
+    "worker:social-sync:backfill": "tsx scripts/run-facebook-historical-backfill.ts",
+    "qa:upmind-webhook": "tsx scripts/upmind-webhook-tests.ts",
+    "qa:social-entitlements": "tsx scripts/verify-social-entitlements.ts",
+    "qa:social-access-policy": "tsx scripts/verify-social-connection-access-policy.ts",
+    "qa:social-lifecycle": "tsx scripts/verify-social-subscription-lifecycle.ts",
+    "qa:social-brand-allowance": "tsx scripts/verify-social-brand-allowance.ts",
+    "qa:social-entitlement-gates": "tsx scripts/verify-social-entitlement-gates.ts",
+    "qa:social-billing-banner": "tsx scripts/verify-social-billing-banner.ts",
+    "qa:social-stripe-webhook": "tsx scripts/verify-social-stripe-webhook.ts",
+    "qa:social-stripe-addons": "tsx scripts/verify-social-stripe-addons.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "6.19.3",
@@ -49,7 +61,8 @@
     "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "react-icons": "^5.7.0"
+    "react-icons": "^5.7.0",
+    "stripe": "^22.6.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

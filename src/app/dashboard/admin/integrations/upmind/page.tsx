@@ -11,7 +11,9 @@ export const dynamic = "force-dynamic";
 
 const CREDENTIALS: { name: string; required: boolean }[] = [
   { name: "UPMIND_API_KEY", required: true },
+  { name: "UPMIND_KEY", required: false },
   { name: "UPMIND_API_BASE_URL", required: true },
+  { name: "NEXT_PUBLIC_UPMIND_BRAND_ID", required: false },
   { name: "UPMIND_TEST_ENDPOINT", required: false },
   { name: "UPMIND_WEBHOOK_SECRET", required: false },
   { name: "UPMIND_WEBHOOK_ENABLED", required: false },
@@ -30,8 +32,13 @@ export default async function AdminUpmindPage() {
   const present = (name: string) => {
     switch (name) {
       case "UPMIND_API_KEY":
+        return Boolean(process.env.UPMIND_API_KEY || process.env.UPMIND_KEY);
+      case "UPMIND_KEY":
+        return Boolean(process.env.UPMIND_KEY);
       case "UPMIND_API_BASE_URL":
         return !env.missing.includes(name);
+      case "NEXT_PUBLIC_UPMIND_BRAND_ID":
+        return Boolean(process.env.NEXT_PUBLIC_UPMIND_BRAND_ID);
       case "UPMIND_TEST_ENDPOINT": return env.hasTestEndpoint;
       case "UPMIND_WEBHOOK_SECRET": return env.hasWebhookSecret;
       case "UPMIND_WEBHOOK_ENABLED": return env.webhookEnabled;
@@ -50,9 +57,8 @@ export default async function AdminUpmindPage() {
       <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
         <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
         <p className="text-xs leading-relaxed text-amber-800">
-          No domain registration, DNS editing, SSL installation, invoice sync, or hosting provisioning
-          is active in Phase 8. Endpoints are never guessed — base URL and test endpoint stay empty until
-          confirmed from official Upmind documentation.
+          Domain checkout uses the Upmind widget. Webhooks can record paid domains on the matching
+          TAKATAK workspace. DNS editing, SSL installation, and hosting provisioning are not active yet.
         </p>
       </div>
 
@@ -75,15 +81,16 @@ export default async function AdminUpmindPage() {
           <CardBody><UpmindTestPanel /></CardBody>
         </Card>
         <Card>
-          <CardHeader title="Webhook readiness" subtitle="Events are never trusted in Phase 8." />
+          <CardHeader title="Webhook readiness" subtitle="Verified events can create or update DomainAsset rows." />
           <CardBody className="space-y-2">
             <div className="flex items-center gap-2 text-xs text-slate-600">
               Webhooks: <Badge tone={env.webhookEnabled ? "accent" : "muted"}>{env.webhookEnabled ? "Enabled" : "Disabled"}</Badge>
               Secret: <Badge tone={env.hasWebhookSecret ? "success" : "warning"}>{env.hasWebhookSecret ? "Present" : "Missing"}</Badge>
             </div>
             <p className="text-[11px] leading-relaxed text-slate-400">
-              Signature verification rules must be confirmed from official Upmind docs before events are trusted.
-              Until then, received events are recorded as ignored and never processed.
+              Incoming POSTs must include X-Webhook-Signature (HMAC-SHA256 of the raw body).
+              Paid and provisioned domain events upsert a domain on the matching TAKATAK workspace.
+              The raw body is never logged.
             </p>
           </CardBody>
         </Card>

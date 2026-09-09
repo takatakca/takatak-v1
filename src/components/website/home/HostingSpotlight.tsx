@@ -36,10 +36,10 @@ export function HostingSpotlight() {
               <div
                 key={plan.key}
                 className={
-                  "relative flex flex-col rounded-2xl border p-5 transition-colors " +
+                  "tk-frost-card relative flex flex-col rounded-2xl border p-5 transition-colors " +
                   (featured
-                    ? "border-primary/50 bg-white/[0.06] shadow-[0_30px_60px_-30px_color-mix(in_oklab,var(--brand-accent-cyan)_60%,transparent)]"
-                    : "border-white/10 bg-white/[0.03] hover:border-white/25")
+                    ? "border-primary/50 bg-white/10 shadow-[0_30px_60px_-30px_color-mix(in_oklab,var(--brand-accent-cyan)_60%,transparent)]"
+                    : "border-white/10 bg-white/10 hover:border-white/25")
                 }
               >
                 {featured && (

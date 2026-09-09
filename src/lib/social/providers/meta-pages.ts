@@ -58,9 +58,11 @@ export const META_OAUTH_PERMISSION_MODERATE =
  * - Page settings (future): MANAGE task (not claimed as publish/moderate)
  *
  * Step 5 start scopes today: public_profile, pages_show_list,
- * pages_read_engagement, read_insights.
+ * pages_read_engagement, read_insights, instagram_basic,
+ * instagram_manage_insights.
  * Connection eligibility still gates on Page token + pages_read_engagement.
- * Analytics additionally needs read_insights on the issued token.
+ * Instagram attach additionally needs instagram_basic and a Page-linked
+ * Instagram professional account. Analytics additionally needs read_insights.
  */
 export const META_PAGE_FEATURE_PERMISSION_MAP = {
   connection: {

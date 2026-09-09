@@ -19,13 +19,65 @@ const DB_LABEL = "Database — live foundation records (Upmind not connected).";
 
 // ── Mock foundation data (mirrors the seed, clearly internal demo) ──
 const MOCK_DOMAINS: DomainSummary[] = [
-  { id: "m_d1", domainName: "montrealrestauranthub.demo", brandName: "Montreal Restaurant Hub Demo", registrar: "internal_demo", status: "pending_connection", dnsStatus: "pending", sslStatus: "pending", autoRenew: false, expiresAt: null },
-  { id: "m_d2", domainName: "takatak.demo", brandName: "TAKATAK Demo Brand", registrar: "internal_demo", status: "planned", dnsStatus: "not_configured", sslStatus: "not_configured", autoRenew: false, expiresAt: null },
+  {
+    id: "m_d1",
+    domainName: "montrealrestauranthub.demo",
+    brandName: "Montreal Restaurant Hub Demo",
+    brandWebsite: null,
+    brandCategory: "Restaurant",
+    brandTimezone: "America/Toronto",
+    brandImageUrl: null,
+    registrar: "internal_demo",
+    status: "pending_connection",
+    dnsStatus: "pending",
+    sslStatus: "pending",
+    autoRenew: false,
+    expiresAt: null,
+    createdAt: null,
+  },
+  {
+    id: "m_d2",
+    domainName: "takatak.demo",
+    brandName: "TAKATAK Demo Brand",
+    brandWebsite: null,
+    brandCategory: "Marketing",
+    brandTimezone: "America/Toronto",
+    brandImageUrl: null,
+    registrar: "internal_demo",
+    status: "planned",
+    dnsStatus: "not_configured",
+    sslStatus: "not_configured",
+    autoRenew: false,
+    expiresAt: null,
+    createdAt: null,
+  },
 ];
 
 const MOCK_HOSTING: HostingServiceSummary[] = [
-  { id: "m_h1", planName: "Bronze Hosting Foundation", brandName: "Montreal Restaurant Hub Demo", primaryDomain: "montrealrestauranthub.demo", status: "pending_setup", serverStatus: "pending", renewalDate: null, usageSummary: null },
-  { id: "m_h2", planName: "SaaS Hosting Foundation", brandName: "TAKATAK Demo Brand", primaryDomain: "takatak.demo", status: "planned", serverStatus: "unknown", renewalDate: null, usageSummary: null },
+  {
+    id: "m_h1",
+    planName: "Bronze Hosting Foundation",
+    brandName: "Montreal Restaurant Hub Demo",
+    primaryDomain: "montrealrestauranthub.demo",
+    status: "pending_setup",
+    serverStatus: "pending",
+    renewalDate: null,
+    createdAt: null,
+    usageSummary: null,
+    fromUpmind: false,
+  },
+  {
+    id: "m_h2",
+    planName: "SaaS Hosting Foundation",
+    brandName: "TAKATAK Demo Brand",
+    primaryDomain: "takatak.demo",
+    status: "planned",
+    serverStatus: "unknown",
+    renewalDate: null,
+    createdAt: null,
+    usageSummary: null,
+    fromUpmind: false,
+  },
 ];
 
 const MOCK_DNS: DnsRecordSummary[] = [
@@ -79,15 +131,30 @@ export async function getDomainAssetsData(access?: TenantAccess): Promise<Source
     try {
       const rows = await prisma.domainAsset.findMany({
         where: clientWhere(scope),
-        include: { businessBrand: { select: { name: true } } },
+        include: {
+          businessBrand: {
+            select: { name: true, website: true, category: true, timezone: true, imageUrl: true },
+          },
+        },
         orderBy: { createdAt: "asc" },
       });
       return {
         source: "database", sourceLabel: DB_LABEL,
         domains: rows.map((d) => ({
-          id: d.id, domainName: d.domainName, brandName: d.businessBrand?.name ?? null,
-          registrar: d.registrar, status: d.status, dnsStatus: d.dnsStatus, sslStatus: d.sslStatus,
-          autoRenew: d.autoRenew, expiresAt: d.expiresAt?.toISOString().slice(0, 10) ?? null,
+          id: d.id,
+          domainName: d.domainName,
+          brandName: d.businessBrand?.name ?? null,
+          brandWebsite: d.businessBrand?.website ?? null,
+          brandCategory: d.businessBrand?.category ?? null,
+          brandTimezone: d.businessBrand?.timezone ?? null,
+          brandImageUrl: d.businessBrand?.imageUrl ?? null,
+          registrar: d.registrar,
+          status: d.status,
+          dnsStatus: d.dnsStatus,
+          sslStatus: d.sslStatus,
+          autoRenew: d.autoRenew,
+          expiresAt: d.expiresAt?.toISOString().slice(0, 10) ?? null,
+          createdAt: d.createdAt.toISOString().slice(0, 10),
         })),
       };
     } catch (error) {
@@ -116,12 +183,26 @@ export async function getHostingServicesData(access?: TenantAccess): Promise<Sou
       });
       return {
         source: "database", sourceLabel: DB_LABEL,
-        hostingServices: rows.map((h) => ({
-          id: h.id, planName: h.planName, brandName: h.businessBrand?.name ?? null,
-          primaryDomain: h.primaryDomain?.domainName ?? null, status: h.status, serverStatus: h.serverStatus,
-          renewalDate: h.renewalDate?.toISOString().slice(0, 10) ?? null,
-          usageSummary: (h.usageSummary as Record<string, unknown> | null) ?? null,
-        })),
+        hostingServices: rows.map((h) => {
+          const metadata =
+            h.metadata && typeof h.metadata === "object" && !Array.isArray(h.metadata)
+              ? (h.metadata as Record<string, unknown>)
+              : {};
+          const source =
+            typeof metadata.source === "string" ? metadata.source : "";
+          return {
+            id: h.id,
+            planName: h.planName,
+            brandName: h.businessBrand?.name ?? null,
+            primaryDomain: h.primaryDomain?.domainName ?? null,
+            status: h.status,
+            serverStatus: h.serverStatus,
+            renewalDate: h.renewalDate?.toISOString().slice(0, 10) ?? null,
+            createdAt: h.createdAt.toISOString().slice(0, 10),
+            usageSummary: (h.usageSummary as Record<string, unknown> | null) ?? null,
+            fromUpmind: source.startsWith("upmind"),
+          };
+        }),
       };
     } catch (error) {
       logDbError("hosting", error);

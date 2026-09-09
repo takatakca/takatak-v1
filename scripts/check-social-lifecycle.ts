@@ -7,6 +7,7 @@
 import * as lifecyclePolicy from "../src/lib/social/connections/social-connection-lifecycle-policy";
 import {
   canAddAnotherAccount,
+  canAttachLinkedInstagram,
   canCancelPendingConnection,
   canContinueAuthorization,
   canDisconnectConnection,
@@ -37,11 +38,25 @@ const PROVIDERS: ProviderFixture[] = [
     providerState: "ready_for_authorization",
   },
   {
-    provider: "google",
-    implemented: false,
-    connectable: false,
+    provider: "instagram",
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
-    providerState: "planned",
+    providerState: "ready_for_authorization",
+  },
+  {
+    provider: "threads",
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
+    providerState: "ready_for_authorization",
+  },
+  {
+    provider: "google",
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
+    providerState: "ready_for_authorization",
   },
   {
     provider: "linkedin",
@@ -52,10 +67,10 @@ const PROVIDERS: ProviderFixture[] = [
   },
   {
     provider: "tiktok",
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
-    providerState: "planned",
+    providerState: "ready_for_authorization",
   },
   {
     provider: "pinterest",
@@ -66,10 +81,10 @@ const PROVIDERS: ProviderFixture[] = [
   },
   {
     provider: "x",
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
-    providerState: "planned",
+    providerState: "ready_for_authorization",
   },
   {
     provider: "bluesky",
@@ -508,9 +523,8 @@ for (const platform of [
 ] as const) {
   const info = META_PLATFORM_REPRESENTATION[platform];
   assert(
-    `meta/platform/${platform}/not_independent`,
-    info.independentlyImplemented === false &&
-      info.representedThrough === "meta",
+    `meta/platform/${platform}/defined`,
+    Boolean(info.role && info.representedThrough),
   );
 }
 
@@ -521,15 +535,19 @@ assert(
 );
 
 assert(
-  "meta/platform/instagram/represented_only",
-  META_PLATFORM_REPRESENTATION.instagram.role ===
-    "represented_through_meta",
+  "meta/platform/instagram/independent_oauth",
+  META_PLATFORM_REPRESENTATION.instagram.independentlyImplemented ===
+    true &&
+    META_PLATFORM_REPRESENTATION.instagram.role ===
+      "meta_primary_or_independent_oauth",
 );
 
 assert(
-  "meta/platform/threads/represented_only",
-  META_PLATFORM_REPRESENTATION.threads.role ===
-    "represented_through_meta",
+  "meta/platform/threads/independent_oauth",
+  META_PLATFORM_REPRESENTATION.threads.independentlyImplemented ===
+    true &&
+    META_PLATFORM_REPRESENTATION.threads.role ===
+      "meta_primary_or_independent_oauth",
 );
 
 const policyExports = Object.keys(lifecyclePolicy);
@@ -635,10 +653,16 @@ console.log(
   "  Facebook: represented through Meta (primary OAuth card) — not an independent SocialConnectionProvider",
 );
 console.log(
-  "  Instagram: represented through Meta — not independently implemented",
+  "  Instagram: Meta-linked account is the main path; independent Instagram Login is the second choice",
 );
 console.log(
-  "  Threads: represented through Meta — not independently implemented",
+  "  Threads: Meta-linked account is the main path; independent Threads Login is the second choice",
+);
+console.log(
+  "  TikTok: independent Login Kit for personal accounts; business and ads stay planned",
+);
+console.log(
+  "  X: independent OAuth 2.0 with PKCE; paid add-on slots still apply",
 );
 
 if (failures.length > 0) {

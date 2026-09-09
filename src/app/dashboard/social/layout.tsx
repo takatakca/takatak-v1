@@ -1,9 +1,11 @@
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
 
 import {
   SocialWorkspaceShell,
   type SocialShellAccount,
 } from "@/components/social/navigation/social-workspace-shell";
+import { PATHNAME_HEADER } from "@/lib/auth/session-user";
 import type {
   ManageConnectionsConnection,
   ManageConnectionsProvider,
@@ -17,63 +19,61 @@ import {
   getSocialProviderDefinition,
   listSocialProviderReadiness,
 } from "@/lib/social/providers/registry";
-import { getPrisma } from "@/lib/db/prisma";
+import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
+import { evaluateSocialNetworkConnect } from "@/lib/billing/social/entitlement-gates-policy";
 import { toAccountPictureSrc, toClientSocialImageUrl } from "@/lib/social/media/remote-image";
 
 export const dynamic = "force-dynamic";
+
+function isSocialChromeOnlyPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/dashboard/social/reports") ||
+    pathname.startsWith("/dashboard/social/inbox") ||
+    pathname.startsWith("/dashboard/social/brands") ||
+    pathname.startsWith("/dashboard/social/settings") ||
+    pathname.startsWith("/dashboard/social/approvals")
+  );
+}
 
 export default async function SocialLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const pathname = (await headers()).get(PATHNAME_HEADER) ?? "";
+  const skipConnectionLoad = isSocialChromeOnlyPath(pathname);
+
   const access =
     await requireWorkspacePermission(
       "view_social",
       "/dashboard/social",
     );
 
-  const brandContext =
-    await resolveBrandSessionContext(
-      access,
-    );
+  const billingPromise = getSocialShellBilling(access.activeClientId);
+  const brandContext = await resolveBrandSessionContext(access);
 
-  const prisma = getPrisma();
+  const connectionsPromise =
+    brandContext.activeBrandId && !skipConnectionLoad
+      ? getSocialConnectionsData(
+          access.activeClientId,
+          brandContext.activeBrandId,
+        ).catch((error: unknown) => {
+          console.error(
+            "[social-layout] Social connection data could not be loaded:",
+            error instanceof Error
+              ? error.message
+              : "Unknown error",
+          );
+          return "unavailable" as const;
+        })
+      : Promise.resolve(null);
 
-  let planName: string | null = null;
-  let hasPaidPlan = false;
-  
-  if (prisma) {
-    try {
-      const client =
-        await prisma.client.findUnique({
-          where: {
-            id: access.activeClientId,
-          },
-          select: {
-            planName: true,
-          },
-        });
-  
-      planName =
-        client?.planName?.trim() || null;
-  
-      const normalizedPlan =
-        planName?.toLowerCase() ?? null;
-  
-      hasPaidPlan =
-        normalizedPlan !== null &&
-        normalizedPlan !== "free" &&
-        normalizedPlan !== "trial";
-    } catch (error) {
-      console.error(
-        "[social-layout] Plan status could not be loaded:",
-        error instanceof Error
-          ? error.message
-          : "Unknown error",
-      );
-    }
-  }  
+  const [billing, connectionRecords] = await Promise.all([
+    billingPromise,
+    connectionsPromise,
+  ]);
+  const planName = billing?.planName ?? null;
+  const hasPaidPlan = billing?.hasPaidPlan ?? false; 
 
   const providers: ManageConnectionsProvider[] =
     listSocialProviderReadiness().map(
@@ -82,6 +82,14 @@ export default async function SocialLayout({
           getSocialProviderDefinition(
             readiness.provider,
           );
+        const planAllowsConnect = billing?.entitlements
+          ? evaluateSocialNetworkConnect({
+              provider: readiness.provider,
+              entitlements: billing.entitlements,
+              connectedXCount: 0,
+              reconnect: true,
+            }).allowed
+          : true;
 
         return {
           provider:
@@ -94,7 +102,7 @@ export default async function SocialLayout({
           implemented:
             readiness.implemented,
           connectable:
-            readiness.connectable,
+            readiness.connectable && planAllowsConnect,
           configured:
             readiness.configured,
           supportsMultipleAccounts:
@@ -110,15 +118,10 @@ export default async function SocialLayout({
   let accounts: SocialShellAccount[] =
     [];
 
-  let dataUnavailable = false;
+  const dataUnavailable = connectionRecords === "unavailable";
 
-  if (brandContext.activeBrandId) {
-    try {
-      const records =
-        await getSocialConnectionsData(
-          access.activeClientId,
-          brandContext.activeBrandId,
-        );
+  if (connectionRecords && connectionRecords !== "unavailable") {
+    const records = connectionRecords;
 
       connections = records.map(
         (connection) => ({
@@ -234,16 +237,6 @@ export default async function SocialLayout({
               ? toAccountPictureSrc(account.id)
               : toClientSocialImageUrl(account.profileImageUrl),
         }));
-    } catch (error) {
-      dataUnavailable = true;
-
-      console.error(
-        "[social-layout] Social connection data could not be loaded:",
-        error instanceof Error
-          ? error.message
-          : "Unknown error",
-      );
-    }
   }
 
   return (
@@ -280,8 +273,11 @@ export default async function SocialLayout({
             "manage_brands",
           ),
 
+        brandAllowance: billing?.entitlements.brandAllowance ?? 1,
+
         planName,
-        hasPaidPlan,  
+        hasPaidPlan,
+        billingBanner: billing?.banner ?? null, 
 
         dataUnavailable,
       }}

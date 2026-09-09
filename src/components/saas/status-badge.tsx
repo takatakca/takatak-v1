@@ -22,7 +22,7 @@ const LABELS: Record<string, string> = {
   workflow: "Workflow",
   active: "Active",
   paused: "Paused",
-  archived: "Archived",
+  frozen: "Frozen by plan",
   draft: "Draft",
   prospect: "Prospect",
   suspended: "Suspended",

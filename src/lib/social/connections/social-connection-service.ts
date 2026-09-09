@@ -28,6 +28,11 @@ import {
   getSocialProviderReadiness,
 } from "@/lib/social/providers/registry";
 import { buildMetaAuthorizationUrl } from "@/lib/social/providers/meta-oauth";
+import { buildInstagramAuthorizationUrl } from "@/lib/social/providers/instagram-oauth";
+import { buildThreadsAuthorizationUrl } from "@/lib/social/providers/threads-oauth";
+import { buildTikTokAuthorizationUrl } from "@/lib/social/providers/tiktok-oauth";
+import { buildGoogleAuthorizationUrl } from "@/lib/social/providers/google-oauth";
+import { buildXAuthorizationUrl } from "@/lib/social/providers/x-oauth";
 import type { SocialConnectionProviderValue } from "@/lib/social/providers/types";
 import { assertProfileCanManageSocialAccounts } from "@/lib/social/connections/social-connection-auth";
 import {
@@ -87,6 +92,38 @@ function buildAuthorizationUrl(options: {
 }): string {
   if (options.provider === "meta") {
     return buildMetaAuthorizationUrl({
+      state: options.state,
+      codeChallenge: options.codeChallenge,
+    });
+  }
+
+  if (options.provider === "instagram") {
+    return buildInstagramAuthorizationUrl({
+      state: options.state,
+    });
+  }
+
+  if (options.provider === "threads") {
+    return buildThreadsAuthorizationUrl({
+      state: options.state,
+    });
+  }
+
+  if (options.provider === "tiktok") {
+    return buildTikTokAuthorizationUrl({
+      state: options.state,
+    });
+  }
+
+  if (options.provider === "google") {
+    return buildGoogleAuthorizationUrl({
+      state: options.state,
+      codeChallenge: options.codeChallenge,
+    });
+  }
+
+  if (options.provider === "x") {
+    return buildXAuthorizationUrl({
       state: options.state,
       codeChallenge: options.codeChallenge,
     });
@@ -290,9 +327,33 @@ export async function createSocialOAuthState(options: {
     },
   );
 
+  const existingXAccount =
+    options.provider === "x"
+      ? await prisma.socialAccount.findFirst({
+          where: {
+            clientId: options.clientId,
+            businessBrandId: options.businessBrandId,
+            platform: "x",
+            status: {
+              in: [
+                "connected",
+                "expired",
+                "error",
+                "pending_connection",
+              ],
+            },
+          },
+          select: { id: true },
+        })
+      : null;
+
   await assertClientCanConnectSocial(
     prisma,
     options.clientId,
+    {
+      provider: options.provider,
+      reconnect: Boolean(existingXAccount),
+    },
   );
 
   const definition =
@@ -341,7 +402,7 @@ export async function createSocialOAuthState(options: {
         id: options.businessBrandId,
         clientId: options.clientId,
         status: {
-          not: "archived",
+          notIn: ["archived", "frozen"],
         },
       },
       select: {
@@ -572,7 +633,10 @@ export async function startMetaFacebookReauthorization(options: {
     profileId: options.profileId,
   });
 
-  await assertClientCanConnectSocial(prisma, options.clientId);
+  await assertClientCanConnectSocial(prisma, options.clientId, {
+    provider: "meta",
+    reconnect: true,
+  });
 
   const readiness = getSocialProviderReadiness("meta");
   const definition = getSocialProviderDefinition("meta");
@@ -805,11 +869,6 @@ export async function continueSocialAuthorization(options: {
     profileId: options.profileId,
   });
 
-  await assertClientCanConnectSocial(
-    prisma,
-    options.clientId,
-  );
-
   const connection =
     await prisma.socialProviderConnection.findFirst({
       where: {
@@ -830,6 +889,11 @@ export async function continueSocialAuthorization(options: {
       "The selected social connection could not be found in this workspace.",
     );
   }
+
+  await assertClientCanConnectSocial(prisma, options.clientId, {
+    provider: connection.provider,
+    reconnect: true,
+  });
 
   if (options.provider) {
     const scope = connectionMatchesProviderScope({
@@ -1210,11 +1274,6 @@ export async function addAnotherSocialAccount(options: {
     profileId: options.profileId,
   });
 
-  await assertClientCanConnectSocial(
-    prisma,
-    options.clientId,
-  );
-
   const source =
     await prisma.socialProviderConnection.findFirst({
       where: {
@@ -1235,6 +1294,10 @@ export async function addAnotherSocialAccount(options: {
       "The selected social connection could not be found in this workspace.",
     );
   }
+
+  await assertClientCanConnectSocial(prisma, options.clientId, {
+    provider: source.provider,
+  });
 
   if (options.provider) {
     const scope = connectionMatchesProviderScope({

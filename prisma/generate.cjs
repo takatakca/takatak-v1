@@ -62,4 +62,21 @@ if (result.error) {
   process.exit(1);
 }
 
+if (result.status === 0) {
+  // Prisma emits `//# sourceMappingURL=client.js.map` without the file.
+  // Next.js then logs "Invalid source map ... payload ... null" on errors.
+  const runtimeDir = path.join(root, "prisma", "generated", "runtime");
+  if (fs.existsSync(runtimeDir)) {
+    for (const name of fs.readdirSync(runtimeDir)) {
+      if (!name.endsWith(".js")) continue;
+      const file = path.join(runtimeDir, name);
+      const source = fs.readFileSync(file, "utf8");
+      const next = source.replace(/\/\/[#@]\s*sourceMappingURL=.*$/gm, "");
+      if (next !== source) {
+        fs.writeFileSync(file, next);
+      }
+    }
+  }
+}
+
 process.exit(result.status === null ? 1 : result.status);

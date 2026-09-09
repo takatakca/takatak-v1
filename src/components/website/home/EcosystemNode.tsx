@@ -39,8 +39,8 @@ export function EcosystemNode({ node, reached, current, selected, onEnter, onLea
         positioned ? "absolute w-[208px] -translate-x-1/2 -translate-y-1/2" : "w-full"
       } ${
         reached || selected
-          ? "border-primary/45 bg-white/[0.09] shadow-[0_24px_60px_-30px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-          : "border-white/12 bg-white/[0.045]"
+          ? "border-primary/45 bg-white/[0.14] shadow-[0_24px_60px_-30px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+          : "border-white/12 bg-white/10"
       } ${selected && positioned ? "-translate-y-[calc(50%+6px)]" : ""}`}
     >
       <span className="flex items-center gap-2">

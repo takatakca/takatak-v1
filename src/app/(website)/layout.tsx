@@ -16,6 +16,7 @@ import { LiveChatLauncher } from "@/components/website/support/LiveChatLauncher"
 import { getWebsiteSession } from "@/lib/website/website-session";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { WebsiteProviders } from "@/lib/website/website-providers";
+import { UpmindHeadScripts } from "@/components/website/domain/upmind-head-scripts";
 
 import "./website.css";
 
@@ -76,6 +77,7 @@ export default async function WebsiteLayout({
     <div
       className={`website-surface ${inter.variable} ${spaceGrotesk.variable}`}
     >
+      <UpmindHeadScripts />
       <WebsiteProviders
         isAuthenticated={session.isAuthenticated}
         email={session.email}

@@ -1,5 +1,7 @@
 export const SOCIAL_CONNECTION_PROVIDERS = [
   "meta",
+  "instagram",
+  "threads",
   "google",
   "linkedin",
   "tiktok",

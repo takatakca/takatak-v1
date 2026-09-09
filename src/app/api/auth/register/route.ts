@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
+import { issueRegistrationEmailOtp } from "@/lib/auth/otp/service";
 import {
   hasRegistrationErrors,
   isRegistrationInput,
   type RegistrationFieldErrors,
   validateRegistrationInput,
 } from "@/lib/auth/registration-validation";
-import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
-import {
-  getApplicationOrigin,
-  originFromRequest,
-} from "@/lib/config/app-origin";
+import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
 import { getPrisma } from "@/lib/db/prisma";
+import {
+  isTrustedRequestOrigin,
+  jsonAuthHeaders,
+  readJsonBody,
+} from "@/lib/auth/trusted-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,13 +25,6 @@ type SupabaseRegistrationError = {
   status?: number;
   code?: string;
 };
-
-function createResponseHeaders(): Headers {
-  const headers = new Headers();
-  headers.set("Cache-Control", "no-store");
-  headers.set("Content-Type", "application/json");
-  return headers;
-}
 
 function errorResponse(
   message: string,
@@ -44,40 +39,9 @@ function errorResponse(
     },
     {
       status,
-      headers: createResponseHeaders(),
+      headers: jsonAuthHeaders(),
     },
   );
-}
-
-function normalizeOrigin(value: string | null): string | null {
-  if (!value) {
-    return null;
-  }
-
-  try {
-    return new URL(value).origin;
-  } catch {
-    return null;
-  }
-}
-
-function isTrustedRequestOrigin(request: NextRequest): boolean {
-  const requestOrigin = normalizeOrigin(request.headers.get("origin"));
-
-  if (!requestOrigin) {
-    return false;
-  }
-
-  const allowedOrigins = new Set<string>();
-
-  allowedOrigins.add(originFromRequest(request));
-  allowedOrigins.add(getApplicationOrigin(new URL(request.url).origin));
-
-  return allowedOrigins.has(requestOrigin);
-}
-
-function getApplicationOriginFromRequest(request: NextRequest): string {
-  return originFromRequest(request);
 }
 
 function getFriendlySupabaseError(
@@ -181,19 +145,6 @@ function getFriendlySupabaseError(
   };
 }
 
-async function readRequestBody(
-  request: NextRequest,
-): Promise<unknown> {
-  const bodyText = await request.text();
-  const bodyBytes = new TextEncoder().encode(bodyText).byteLength;
-
-  if (bodyBytes > MAXIMUM_REQUEST_BYTES) {
-    throw new Error("REQUEST_TOO_LARGE");
-  }
-
-  return JSON.parse(bodyText) as unknown;
-}
-
 export async function POST(request: NextRequest) {
   if (!isTrustedRequestOrigin(request)) {
     return errorResponse(
@@ -223,7 +174,7 @@ export async function POST(request: NextRequest) {
   let requestBody: unknown;
 
   try {
-    requestBody = await readRequestBody(request);
+    requestBody = await readJsonBody(request, MAXIMUM_REQUEST_BYTES);
   } catch (error) {
     if (
       error instanceof Error &&
@@ -261,9 +212,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createSupabaseServerClient();
+  const admin = getSupabaseAdminClient();
 
-  if (!supabase) {
+  if (!admin) {
     return errorResponse(
       "The authentication service is not configured.",
       503,
@@ -271,22 +222,33 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const existingProfile = await prisma.profile.findUnique({
-      where: {
-        email: validation.data.email,
-      },
-      select: {
-        id: true,
-      },
-    });
+    const [existingEmail, existingPhone] = await Promise.all([
+      prisma.profile.findUnique({
+        where: { email: validation.data.email },
+        select: { id: true },
+      }),
+      prisma.profile.findUnique({
+        where: { phone: validation.data.phone },
+        select: { id: true },
+      }),
+    ]);
 
-    if (existingProfile) {
+    if (existingEmail) {
       return errorResponse(
-        "An account already exists for this email address.",
+        "User already exists. Please log in.",
         409,
         {
-          email:
-            "An account already exists for this email address.",
+          email: "An account already exists for this email address.",
+        },
+      );
+    }
+
+    if (existingPhone) {
+      return errorResponse(
+        "User already exists. Please log in.",
+        409,
+        {
+          phone: "An account already exists for this phone number.",
         },
       );
     }
@@ -304,20 +266,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const applicationOrigin = getApplicationOriginFromRequest(request);
-  const emailRedirectTo = `${applicationOrigin}/auth/callback`;
-
   try {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await admin.auth.admin.createUser({
       email: validation.data.email,
       password: validation.data.password,
-      options: {
-        emailRedirectTo,
-        data: {
-          first_name: validation.data.firstName,
-          last_name: validation.data.lastName,
-          full_name: `${validation.data.firstName} ${validation.data.lastName}`,
-        },
+      email_confirm: false,
+      user_metadata: {
+        first_name: validation.data.firstName,
+        last_name: validation.data.lastName,
+        phone: validation.data.phone,
+        full_name: `${validation.data.firstName} ${validation.data.lastName}`,
       },
     });
 
@@ -336,23 +294,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (
-      !data.user ||
-      (Array.isArray(data.user.identities) &&
-        data.user.identities.length === 0)
-    ) {
+    if (!data.user) {
       return errorResponse(
-        "An account already exists for this email address.",
-        409,
-        {
-          email:
-            "An account already exists for this email address.",
-        },
+        "Unable to create your account. Please try again.",
+        400,
       );
     }
 
-    const profileResult =
-      await ensureProfileForSupabaseUser(data.user);
+    const profileResult = await ensureProfileForSupabaseUser(data.user);
 
     if (
       profileResult.outcome === "error" ||
@@ -363,26 +312,36 @@ export async function POST(request: NextRequest) {
         "[registration] Profile synchronization pending:",
         profileResult.outcome,
       );
+      return errorResponse(
+        "Account created, but the profile could not be saved. Please try signing in.",
+        503,
+      );
     }
 
-    const requiresEmailVerification = data.session === null;
+    await prisma.profile.update({
+      where: { id: profileResult.profileId },
+      data: { phone: validation.data.phone },
+    });
+
+    const otpResult = await issueRegistrationEmailOtp(
+      profileResult.profileId,
+      validation.data.email,
+    );
+
+    if (!otpResult.ok) {
+      return errorResponse(otpResult.message, otpResult.status);
+    }
 
     return NextResponse.json(
       {
         ok: true,
-        message: requiresEmailVerification
-          ? "Account created. Check your email to verify your account."
-          : "Account created successfully.",
-        requiresEmailVerification,
-        redirectTo: requiresEmailVerification
-          ? `/register/verify?email=${encodeURIComponent(
-              validation.data.email,
-            )}`
-          : "/dashboard",
+        message: otpResult.message,
+        requiresEmailVerification: true,
+        redirectTo: `/otp?email=${encodeURIComponent(validation.data.email)}`,
       },
       {
         status: 201,
-        headers: createResponseHeaders(),
+        headers: jsonAuthHeaders(),
       },
     );
   } catch (error) {

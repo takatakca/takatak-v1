@@ -60,7 +60,7 @@ export async function setActiveBrand(
         id: brandId,
         clientId: access.activeClientId,
         status: {
-          not: "archived",
+          notIn: ["archived", "frozen"],
         },
       },
       select: {

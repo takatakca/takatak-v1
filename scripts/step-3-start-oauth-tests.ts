@@ -992,7 +992,20 @@ async function main() {
         "past_due",
         "canceled",
         "expired",
+        "free",
+        "incomplete",
+        "paused",
+        "suspended",
       ] as const;
+
+      const allowedStatuses = new Set([
+        "active",
+        "trial",
+        "past_due",
+        "canceled",
+        "expired",
+        "free",
+      ]);
 
       for (const status of statuses) {
         await prisma.clientSubscription.update({
@@ -1021,7 +1034,7 @@ async function main() {
         const after = await prisma.socialOAuthState.count({
           where: { clientId },
         });
-        if (status === "active" || status === "trial") {
+        if (allowedStatuses.has(status)) {
           assert(ok, `${status} should allow`);
           assert(after === before + 1, `${status} no attempt`);
         } else {
@@ -1072,7 +1085,7 @@ async function main() {
         10,
         "Subscription enforcement",
         "PASS",
-        "active/trial allowed; past_due/canceled/expired/missing denied with no OAuth attempt.",
+        "active/trial/past_due/canceled/expired/free allowed; incomplete/paused/suspended/missing denied with no OAuth attempt.",
       );
     } catch (error) {
       record(
@@ -1096,7 +1109,7 @@ async function main() {
       await prisma.clientSubscription.update({
         where: { clientId },
         data: {
-          status: "expired",
+          status: "suspended",
           developmentBypass: true,
         },
       });
@@ -1116,7 +1129,7 @@ async function main() {
 
       // Production Node ignores DB bypass (no fake paid status required).
       const prodNode = evaluateClientSocialConnectionAccess({
-        status: "expired",
+        status: "suspended",
         developmentBypass: true,
         nodeEnv: "production",
         vercelEnv: "preview",
@@ -1126,7 +1139,7 @@ async function main() {
 
       // Production Vercel ignores DB + env bypass even if NODE_ENV is development.
       const prodVercel = evaluateClientSocialConnectionAccess({
-        status: "expired",
+        status: "suspended",
         developmentBypass: true,
         nodeEnv: "development",
         vercelEnv: "production",
@@ -1223,10 +1236,10 @@ async function main() {
       if (runtimeNodeEnv === "production") {
         assert(
           startBlockedWithoutTrustedBypass,
-          "production runtime must block expired+bypass start",
+          "production runtime must block suspended+bypass start",
         );
         bypassStartEvidence =
-          "production runtime blocked expired subscription even with DB bypass flag.";
+          "production runtime blocked suspended subscription even with DB bypass flag.";
       } else {
         // Non-production: DB bypass should allow start (manual OAuth test path).
         assert(

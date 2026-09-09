@@ -191,6 +191,22 @@ export async function GET(): Promise<NextResponse> {
       200,
     );
   } catch (error) {
+    const code =
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      typeof (error as { code?: unknown }).code === "string"
+        ? (error as { code: string }).code
+        : "";
+    if (code === "P2021" || code === "P2022") {
+      return jsonResponse(
+        {
+          ok: true,
+          onboarding: serializeOnboarding(null),
+        },
+        200,
+      );
+    }
     return handleApiError(
       "social-onboarding-read",
       error,

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { assertClientCanAddCompetitor } from "@/lib/billing/social/entitlement-gates";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
@@ -14,7 +15,6 @@ import {
 } from "@/lib/social/providers/meta-competitors";
 import { hashExternalCompetitorPageId } from "@/lib/social/providers/meta-competitors";
 
-const MAX_COMPETITORS_PER_BRAND = 10;
 const REFRESH_INTERVAL_MS = 12 * 60 * 60 * 1000;
 
 export type CompetitorClientRow = {
@@ -182,13 +182,7 @@ export async function addFacebookCompetitor(options: {
       status: "active",
     },
   });
-  if (activeCount >= MAX_COMPETITORS_PER_BRAND) {
-    throw new ServiceError(
-      "invalid_input",
-      `You can track up to ${MAX_COMPETITORS_PER_BRAND} competitors per brand.`,
-      { status: 400 },
-    );
-  }
+  await assertClientCanAddCompetitor(options.clientId, activeCount);
 
   const resolved = await resolveFacebookCompetitorPage({
     input: options.input,

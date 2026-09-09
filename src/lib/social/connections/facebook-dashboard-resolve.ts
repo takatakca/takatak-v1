@@ -46,7 +46,7 @@ export async function resolveCanonicalFacebookDashboard(options: {
     where: {
       id: options.businessBrandId,
       clientId: options.clientId,
-      status: { not: "archived" },
+      status: { notIn: ["archived", "frozen"] },
     },
     select: { id: true },
   });
@@ -176,7 +176,7 @@ export async function resolveCanonicalMetaConnectionForReauth(options: {
     where: {
       id: options.businessBrandId,
       clientId: options.clientId,
-      status: { not: "archived" },
+      status: { notIn: ["archived", "frozen"] },
     },
     select: { id: true },
   });

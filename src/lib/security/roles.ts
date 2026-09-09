@@ -185,6 +185,9 @@ export const MODULE_ACCESS: Record<
   "/dashboard/jobs": "manage_jobs",
   "/dashboard/activity": "view_activity_log",
   "/dashboard/team": "view_team",
+  "/dashboard/social/users": "view_team",
+  "/dashboard/social/settings": "view_social",
+  "/dashboard/billing": "view_social",
   "/dashboard/admin": "view_admin",
   "/dashboard/settings": "manage_settings",
 };

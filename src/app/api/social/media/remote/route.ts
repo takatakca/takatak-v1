@@ -11,7 +11,7 @@ const MAX_BYTES = 1_500_000;
 
 /**
  * Same-origin avatar proxy. Browser <img> requests include the session cookie.
- * Only Facebook/Instagram image hosts are fetched.
+ * Only Facebook, Instagram, and TikTok image hosts are fetched.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const gate = await requireWorkspaceApiPermission("view_social");

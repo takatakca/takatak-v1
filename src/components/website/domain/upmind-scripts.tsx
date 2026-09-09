@@ -56,6 +56,9 @@ function injectScript(
       const existing =
         document.querySelector<HTMLScriptElement>(
           `script[data-upmind-src="${src}"]`,
+        ) ??
+        document.querySelector<HTMLScriptElement>(
+          `script[src="${src}"]`,
         );
 
       if (existing) {
@@ -63,6 +66,16 @@ function injectScript(
           existing.dataset
             .upmindLoaded === "1"
         ) {
+          resolve();
+          return;
+        }
+
+        const tag = src.includes("upm-dac")
+          ? "upm-dac"
+          : "upm-widget";
+
+        if (isElementDefined(tag)) {
+          existing.dataset.upmindLoaded = "1";
           resolve();
           return;
         }

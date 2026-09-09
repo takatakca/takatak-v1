@@ -15,14 +15,7 @@ export async function getWebsiteSession(): Promise<WebsiteSession> {
       isAuthenticated: Boolean(user),
       email: user?.email ?? null,
     };
-  } catch (error) {
-    console.error(
-      "[website-session] Session lookup failed:",
-      error instanceof Error
-        ? error.message
-        : "Unknown error",
-    );
-
+  } catch {
     return {
       isAuthenticated: false,
       email: null,

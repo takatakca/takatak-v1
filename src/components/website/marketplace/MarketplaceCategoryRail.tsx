@@ -75,9 +75,13 @@ export function MarketplaceCategoryRail({ compact = false }: { compact?: boolean
   return (
     <nav
       aria-label="Marketplace categories"
-      className="relative border-b border-border bg-background/95 backdrop-blur"
+      className="relative overflow-visible"
       onKeyDown={(e) => { if (e.key === "Escape") setPreview(null); }}
     >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 border-b border-border bg-background/95 backdrop-blur"
+      />
       <div className="relative mx-auto max-w-7xl px-4">
         {!atStart && (
           <button

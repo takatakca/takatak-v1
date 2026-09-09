@@ -94,17 +94,30 @@ enum ClientStatus {
 }
 
 enum SubscriptionStatus {
+  /// Checkout started; payment not confirmed.
+  incomplete
   trial
   active
+  /// Renewal charge failed; retries underway. Paid access stays.
   past_due
+  /// Extra retry window. Paid access stays.
+  grace_period
   canceled
   expired
+  /// Permanent Free Social plan. Not a trial. Fallback after expire / failed retries.
+  free
+  /// Billing intentionally paused.
+  paused
+  /// Admin / fraud lock. No Social access.
+  suspended
 }
 
 enum BrandStatus {
   draft
   active
   paused
+  /// Hidden by Social plan allowance. Not deleted. Restore on upgrade or owner pick.
+  frozen
   archived
 }
 
@@ -270,6 +283,20 @@ model Profile {
   displayName String?
   role        PlatformRole  @default(user)
   status      ProfileStatus @default(invited)
+  /// Upmind billing customer id. TAKATAK remains the login; this only links checkout.
+  upmindClientId String?    @unique
+  phone              String?   @unique
+  otpHash            String?
+  otpExpiresAt       DateTime?
+  lastOtpRequestedAt DateTime?
+  otpAttemptCount    Int       @default(0)
+  /// UI language for Account settings. English is the only shipped locale.
+  language               String   @default("en")
+  timezone               String   @default("America/Toronto")
+  /// sunday | monday
+  weekStartsOn           String   @default("sunday")
+  monthlySummaryEnabled  Boolean  @default(true)
+  monthlySummaryEmail    String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -319,6 +346,10 @@ model Client {
   status            ClientStatus @default(prospect)
   planName          String?
   timezone          String       @default("America/Toronto")
+  vatTaxId          String?
+  billingAddress    String?
+  billingCountry    String       @default("Canada")
+  invoiceEmails     String[]     @default([])
   assignedProfileId String?      @db.Uuid
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
@@ -372,8 +403,10 @@ model Client {
   @@map("clients")
 }
 
-/// Billing/subscription state for a TAKATAK client workspace.
+/// Billing/subscription state for a TAKATAK client workspace (Social).
 /// Premium access must be derived from this record — never from frontend helpers.
+/// planCode uses Social catalog codes (social_free, social_starter_5, …).
+/// Domains/hosting billing stays on Upmind, not this row.
 model ClientSubscription {
   id                     String             @id @default(uuid()) @db.Uuid
   clientId               String             @unique @db.Uuid
@@ -386,6 +419,10 @@ model ClientSubscription {
   currentPeriodStart     DateTime?
   currentPeriodEnd       DateTime?
   cancelAtPeriodEnd      Boolean            @default(false)
+  /// Paid X/Twitter connection slots. 0 until Stripe add-on checkout exists.
+  xAccountAllowance      Int                @default(0)
+  /// Studio/campaign analytics add-on. False until purchased.
+  advancedAnalytics      Boolean            @default(false)
   /// Dev-only bypass. Must remain false in production.
   developmentBypass      Boolean            @default(false)
   createdAt              DateTime           @default(now())
@@ -394,7 +431,21 @@ model ClientSubscription {
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@index([status])
+  @@index([externalCustomerId])
+  @@index([externalSubscriptionId])
   @@map("client_subscriptions")
+}
+
+/// Idempotency for Social Stripe webhooks. Payload is not stored.
+model StripeWebhookEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  stripeEventId String   @unique
+  type          String
+  clientId      String?  @db.Uuid
+  createdAt     DateTime @default(now())
+
+  @@index([clientId])
+  @@map("stripe_webhook_events")
 }
 
 /// Connects profiles/users to clients (future multi-client permissions).
@@ -462,6 +513,10 @@ model BusinessBrand {
   timezone     String      @default("America/Toronto")
   /// Explicitly uploaded brand/workspace image. Never overwritten by social connect.
   imageUrl     String?
+  /// Connected social account chosen as this brand's avatar in Brand settings.
+  imageSocialAccountId String? @db.Uuid
+  /// Engagement rate display multiplier: 100 (per 100 reached) or 1000 (per 1000 reached).
+  engagementRatio Int @default(100)
   /// Set by migration/runtime when Meta connection/Page identity was ambiguous.
   /// UI must force reconnect + Page reselection; never guess a canonical Page.
   requiresMetaPageReselection Boolean @default(false)
@@ -470,6 +525,7 @@ model BusinessBrand {
   updatedAt    DateTime    @updatedAt
 
   client                    Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  imageSocialAccount        SocialAccount?             @relation("BrandSelectedDisplayImage", fields: [imageSocialAccountId], references: [id], onDelete: SetNull)
   serviceInstances          ServiceInstance[]
   integrationAccounts       IntegrationAccount[]
   jobs                      Job[]
@@ -510,6 +566,7 @@ model BusinessBrand {
   @@unique([id, clientId])
   @@index([clientId])
   @@index([status])
+  @@index([imageSocialAccountId])
   @@map("business_brands")
 }
 
@@ -802,6 +859,8 @@ enum SocialAccountAccessStatus {
 
 enum SocialConnectionProvider {
   meta
+  instagram
+  threads
   google
   linkedin
   tiktok
@@ -888,6 +947,8 @@ enum PostStatus {
   scheduled
   published
   failed
+  /// Scheduled (or queued) but the current plan cannot publish it yet.
+  blocked_by_plan
 }
 
 enum ApprovalStatus {
@@ -936,6 +997,7 @@ model SocialAccount {
 
   client             Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
   businessBrand      BusinessBrand?            @relation(fields: [businessBrandId], references: [id])
+  brandDisplaySelections BusinessBrand[]       @relation("BrandSelectedDisplayImage")
   integrationAccount IntegrationAccount?       @relation(fields: [integrationAccountId], references: [id])
   providerConnection SocialProviderConnection? @relation(fields: [providerConnectionId], references: [id], onDelete: SetNull)
   businessLocation   BusinessLocation?         @relation(fields: [businessLocationId], references: [id], onDelete: SetNull)
@@ -951,6 +1013,22 @@ model SocialAccount {
   /// (see migration sa_one_connected_facebook_page_per_client_key).
   /// Partial unique: one connected Facebook Page per provider connection
   /// (see migration sa_one_connected_facebook_per_connection_key).
+  /// Partial unique: one connected Instagram professional account per Client
+  /// (see migration sa_one_connected_instagram_account_per_client_key).
+  /// Partial unique: one connected Instagram professional account per connection
+  /// (see migration sa_one_connected_instagram_per_connection_key).
+  /// Partial unique: one connected YouTube channel per Client
+  /// (see migration sa_one_connected_youtube_channel_per_client_key).
+  /// Partial unique: one connected YouTube channel per Google connection
+  /// (see migration sa_one_connected_youtube_per_connection_key).
+  /// Partial unique: one connected TikTok account per Client
+  /// (see migration sa_one_connected_tiktok_account_per_client_key).
+  /// Partial unique: one connected TikTok account per connection
+  /// (see migration sa_one_connected_tiktok_per_connection_key).
+  /// Partial unique: one connected X account per Client
+  /// (see migration sa_one_connected_x_account_per_client_key).
+  /// Partial unique: one connected X account per connection
+  /// (see migration sa_one_connected_x_per_connection_key).
   @@index([clientId])
   @@index([businessBrandId])
   @@index([integrationAccountId])
@@ -1858,6 +1936,8 @@ model BrandVoice {
   bannedPhrases   Json?
   sampleCaption   String?
   notes           String?
+  /// Global + per-platform writing instructions for Brand settings AI configuration.
+  instructions    Json?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

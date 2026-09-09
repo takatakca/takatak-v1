@@ -1,11 +1,24 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { FacebookConnectPage } from "@/components/social/platforms/facebook-connect-page";
+import {
+  InstagramConnectPage,
+  ThreadsConnectPage,
+} from "@/components/social/platforms/instagram-connect-page";
+import { TikTokConnectPage } from "@/components/social/platforms/tiktok-connect-page";
+import { YoutubeConnectPage } from "@/components/social/platforms/youtube-connect-page";
+import { XConnectPage } from "@/components/social/platforms/x-connect-page";
 import { resolveBrandSessionContext } from "@/lib/security/brand-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { resolveCanonicalFacebookDashboard } from "@/lib/social/connections/facebook-dashboard-resolve";
+import { resolveCanonicalInstagramDashboard } from "@/lib/social/connections/instagram-dashboard-resolve";
+import { resolveCanonicalThreadsDashboard } from "@/lib/social/connections/threads-dashboard-resolve";
+import { resolveCanonicalTikTokDashboard } from "@/lib/social/connections/tiktok-dashboard-resolve";
+import { resolveCanonicalYoutubeDashboard } from "@/lib/social/connections/youtube-dashboard-resolve";
+import { resolveCanonicalXDashboard } from "@/lib/social/connections/x-dashboard-resolve";
+import { toAccountPictureSrc } from "@/lib/social/media/remote-image";
 import { getSelectedFacebookPageSyncSnapshot } from "@/lib/social/sync/facebook-page-initial-sync";
 
 const SOCIAL_PLATFORMS = {
@@ -70,18 +83,209 @@ type PlatformKey = keyof typeof SOCIAL_PLATFORMS;
 
 export default async function SocialPlatformPage({
   params,
+  searchParams,
 }: {
   params: Promise<{
     platform: string;
   }>;
+  searchParams: Promise<{ tab?: string | string[] }>;
 }) {
   const { platform } = await params;
+
+  if (platform === "users") {
+    redirect("/dashboard/social/users");
+  }
+
+  if (platform === "settings") {
+    const query = await searchParams;
+    const tab = Array.isArray(query.tab) ? query.tab[0] : query.tab;
+    redirect(
+      tab
+        ? `/dashboard/profile?tab=${encodeURIComponent(tab)}`
+        : "/dashboard/profile",
+    );
+  }
+
+  if (platform === "brands") {
+    redirect("/dashboard/social/brands/settings");
+  }
 
   const configuration =
     SOCIAL_PLATFORMS[platform as PlatformKey];
 
   if (!configuration) {
     notFound();
+  }
+
+  if (platform === "instagram") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/instagram",
+    );
+    const brand = await resolveBrandSessionContext(access);
+
+    let isConnected = false;
+    let connectedLabel: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+    let connectedVia: "instagram_login" | "facebook_page" | null = null;
+    let facebookConnectionId: string | null = null;
+    let facebookPageSelected = false;
+    let facebookNeedsPage = false;
+
+    try {
+      const facebook = await resolveCanonicalFacebookDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (facebook.kind === "ready") {
+        facebookPageSelected = true;
+        facebookConnectionId = facebook.connectionId;
+      } else if (facebook.kind === "missing" && brand.activeBrandId) {
+        const { getPrisma } = await import("@/lib/db/prisma");
+        const prisma = getPrisma();
+        const authorized = prisma
+          ? await prisma.socialProviderConnection.findFirst({
+              where: {
+                clientId: access.activeClientId,
+                businessBrandId: brand.activeBrandId,
+                provider: "meta",
+                status: "authorized",
+              },
+              select: { id: true },
+            })
+          : null;
+        facebookNeedsPage = Boolean(authorized);
+      }
+
+      const instagram = await resolveCanonicalInstagramDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (instagram.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (instagram.kind === "ready") {
+        isConnected = true;
+        connectedLabel = instagram.accountName;
+        profileImageUrl = toAccountPictureSrc(instagram.socialAccountId);
+        connectedVia = instagram.source;
+      }
+    } catch (error) {
+      console.error(
+        "[social-instagram] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <InstagramConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        connectedLabel={connectedLabel}
+        profileImageUrl={profileImageUrl}
+        resolutionIssue={resolutionIssue}
+        connectedVia={connectedVia}
+        facebookConnectionId={facebookConnectionId}
+        facebookPageSelected={facebookPageSelected}
+        facebookNeedsPage={facebookNeedsPage}
+      />
+    );
+  }
+
+  if (platform === "threads") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/threads",
+    );
+    const brand = await resolveBrandSessionContext(access);
+
+    let isConnected = false;
+    let connectedLabel: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+    let connectedVia: "threads_login" | "facebook_page" | null = null;
+    let facebookConnectionId: string | null = null;
+    let facebookPageSelected = false;
+    let facebookNeedsPage = false;
+    let instagramLinkedViaFacebook = false;
+
+    try {
+      const facebook = await resolveCanonicalFacebookDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (facebook.kind === "ready") {
+        facebookPageSelected = true;
+        facebookConnectionId = facebook.connectionId;
+      } else if (facebook.kind === "missing" && brand.activeBrandId) {
+        const { getPrisma } = await import("@/lib/db/prisma");
+        const prisma = getPrisma();
+        const authorized = prisma
+          ? await prisma.socialProviderConnection.findFirst({
+              where: {
+                clientId: access.activeClientId,
+                businessBrandId: brand.activeBrandId,
+                provider: "meta",
+                status: "authorized",
+              },
+              select: { id: true },
+            })
+          : null;
+        facebookNeedsPage = Boolean(authorized);
+      }
+
+      const instagram = await resolveCanonicalInstagramDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+      instagramLinkedViaFacebook =
+        instagram.kind === "ready" && instagram.source === "facebook_page";
+
+      const threads = await resolveCanonicalThreadsDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (threads.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (threads.kind === "ready") {
+        isConnected = true;
+        connectedLabel = threads.accountName;
+        profileImageUrl = toAccountPictureSrc(threads.socialAccountId);
+        connectedVia = threads.source;
+      }
+    } catch (error) {
+      console.error(
+        "[social-threads] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <ThreadsConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        connectedLabel={connectedLabel}
+        profileImageUrl={profileImageUrl}
+        resolutionIssue={resolutionIssue}
+        connectedVia={connectedVia}
+        facebookConnectionId={facebookConnectionId}
+        facebookPageSelected={facebookPageSelected}
+        facebookNeedsPage={facebookNeedsPage}
+        instagramLinkedViaFacebook={instagramLinkedViaFacebook}
+      />
+    );
   }
 
   if (platform === "facebook") {
@@ -145,6 +349,151 @@ export default async function SocialPlatformPage({
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
         initialSyncStatus={syncStatus}
+        resolutionIssue={resolutionIssue}
+      />
+    );
+  }
+
+  if (platform === "youtube") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/youtube",
+    );
+    const brand = await resolveBrandSessionContext(access);
+
+    let isConnected = false;
+    let connectedLabel: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+    let needsSelectionConnectionId: string | null = null;
+
+    try {
+      const youtube = await resolveCanonicalYoutubeDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (youtube.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (youtube.kind === "ready") {
+        isConnected = true;
+        connectedLabel = youtube.accountName;
+        profileImageUrl = youtube.profileImageUrl;
+      } else if (youtube.kind === "needs_selection") {
+        needsSelectionConnectionId = youtube.connectionId;
+      }
+    } catch (error) {
+      console.error(
+        "[social-youtube] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <YoutubeConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        connectedLabel={connectedLabel}
+        profileImageUrl={profileImageUrl}
+        resolutionIssue={resolutionIssue}
+        needsSelectionConnectionId={needsSelectionConnectionId}
+      />
+    );
+  }
+
+  if (platform === "tiktok") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/tiktok",
+    );
+    const brand = await resolveBrandSessionContext(access);
+
+    let isConnected = false;
+    let connectedLabel: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+
+    try {
+      const tiktok = await resolveCanonicalTikTokDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (tiktok.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (tiktok.kind === "ready") {
+        isConnected = true;
+        connectedLabel = tiktok.accountName;
+        profileImageUrl = toAccountPictureSrc(tiktok.socialAccountId);
+      }
+    } catch (error) {
+      console.error(
+        "[social-tiktok] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <TikTokConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        connectedLabel={connectedLabel}
+        profileImageUrl={profileImageUrl}
+        resolutionIssue={resolutionIssue}
+      />
+    );
+  }
+
+  if (platform === "x") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/x",
+    );
+    const brand = await resolveBrandSessionContext(access);
+
+    let isConnected = false;
+    let connectedLabel: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+
+    try {
+      const xAccount = await resolveCanonicalXDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (xAccount.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (xAccount.kind === "ready") {
+        isConnected = true;
+        connectedLabel = xAccount.accountName;
+        profileImageUrl = toAccountPictureSrc(xAccount.socialAccountId);
+      }
+    } catch (error) {
+      console.error(
+        "[social-x] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <XConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        connectedLabel={connectedLabel}
+        profileImageUrl={profileImageUrl}
         resolutionIssue={resolutionIssue}
       />
     );

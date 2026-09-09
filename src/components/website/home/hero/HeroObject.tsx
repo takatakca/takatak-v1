@@ -62,8 +62,8 @@ export function HeroObject({
       }}
       className={`tk-hero-object group block rounded-2xl border backdrop-blur-md transition-[border-color,background-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
         reached || selected
-          ? "border-primary/40 bg-white/[0.07]"
-          : "border-white/10 bg-white/[0.035]"
+          ? "border-primary/40 bg-white/[0.14]"
+          : "border-white/10 bg-white/10"
       } ${DEPTH_CLASS[depth]} ${className}`}
     >
       <span className="pointer-events-none absolute inset-x-0 top-0 h-px rounded-t-2xl bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--primary)_55%,transparent),transparent)] opacity-70" />

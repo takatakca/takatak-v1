@@ -69,7 +69,7 @@ export function TakatakEcosystemHero() {
               })}
             </p>
 
-            <div className="tk-hero-console mt-7 rounded-2xl border border-white/12 bg-white/[0.045] p-3 backdrop-blur-md sm:p-4">
+            <div className="tk-hero-console mt-7 rounded-2xl border border-white/12 bg-white/10 p-3 backdrop-blur-md sm:p-4">
               <p className="mb-2 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                 <span>{tx({ en: "Describe what your business needs", fr: "Décrivez ce dont votre entreprise a besoin" })}</span>
                 <kbd className="hidden rounded border border-white/15 bg-white/5 px-1.5 py-0.5 font-sans text-[10px] tracking-normal text-foreground/70 sm:inline">
@@ -133,7 +133,7 @@ export function TakatakEcosystemHero() {
 
           {/* Signature visual zone */}
           <div className="relative">
-            <div className="mb-3 flex items-center justify-end gap-1 rounded-full border border-white/12 bg-white/[0.04] p-1 text-[11px] font-semibold md:ml-auto md:w-fit">
+            <div className="mb-3 flex items-center justify-end gap-1 rounded-full border border-white/12 bg-white/10 p-1 text-[11px] font-semibold md:ml-auto md:w-fit">
               <button
                 type="button"
                 onClick={() => setExplore(false)}

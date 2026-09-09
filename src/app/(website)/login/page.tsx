@@ -17,7 +17,7 @@ export default function LoginPage() {
       <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
         <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sign in to your TAKATAK account.
+          We will send a one-time password to your email.
         </p>
         <div className="mt-6">
           {configured ? (

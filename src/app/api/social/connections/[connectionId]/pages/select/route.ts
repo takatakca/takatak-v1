@@ -90,6 +90,7 @@ export async function POST(
     revalidatePath("/dashboard/social");
     revalidatePath("/dashboard/social/accounts");
     revalidatePath("/dashboard/social/facebook");
+    revalidatePath("/dashboard/social/instagram");
 
     return jsonResponse(
       {
@@ -200,6 +201,7 @@ export async function DELETE(
     revalidatePath("/dashboard/social");
     revalidatePath("/dashboard/social/accounts");
     revalidatePath("/dashboard/social/facebook");
+    revalidatePath("/dashboard/social/instagram");
 
     return jsonResponse(
       {

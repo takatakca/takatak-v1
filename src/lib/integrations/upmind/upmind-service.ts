@@ -70,8 +70,11 @@ export async function recordUpmindTestResult(result: UpmindTestConnectionResult)
   }
 }
 
-/** Records an UNTRUSTED webhook receipt for observability (never processed). */
-export async function recordUpmindWebhookReceipt(state: string): Promise<{ recorded: boolean }> {
+/** Records a webhook receipt summary. Never stores the raw body. */
+export async function recordUpmindWebhookReceipt(
+  state: string,
+  status: "ignored" | "failed" | "processed" = "ignored",
+): Promise<{ recorded: boolean }> {
   const prisma = getPrisma();
   if (!prisma) return { recorded: false };
   try {
@@ -79,8 +82,8 @@ export async function recordUpmindWebhookReceipt(state: string): Promise<{ recor
       data: {
         provider: "upmind",
         eventType: "webhook_received",
-        status: "ignored", // Phase 8: never trusted, never processed
-        payload: { verificationState: state, note: "Phase 8 skeleton — event NOT trusted, no business processing." },
+        status,
+        payload: { verificationState: state },
       },
     });
     return { recorded: true };

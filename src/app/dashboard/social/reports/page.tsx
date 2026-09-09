@@ -1,26 +1,32 @@
-import Link from "next/link";
-import { FileBarChart2 } from "lucide-react";
-import { SocialEmptyState } from "@/components/social/social-empty-state";
-import { SocialHeader } from "@/components/social/social-header";
+import { SocialReportingView } from "@/components/social/reports/social-reporting-view";
+import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
+import { SOCIAL_BILLING_HREF } from "@/lib/billing/social/billing-banner-policy";
+import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = {
+  title: "Reporting",
+  robots: { index: false, follow: false },
+};
+
 export default async function SocialReportsPage() {
+  const access = await requireWorkspacePermission(
+    "view_social",
+    "/dashboard/social/reports",
+  );
+  const billing = await getSocialShellBilling(access.activeClientId);
+  const reportsUnlocked = billing?.reports ?? false;
+  const advancedUnlocked = Boolean(
+    billing?.entitlements.apiAccess ||
+      billing?.entitlements.advancedAnalytics,
+  );
+
   return (
-    <div className="space-y-5">
-      <SocialHeader
-        title="Social Reports"
-        subtitle="Weekly, monthly, and campaign reports for clients. The report engine expands in Phase 12; white-label Metricool reports arrive after Phase 6."
-        badges={[{ label: "Planned", status: "planned" }]}
-      />
-      <SocialEmptyState
-        icon={FileBarChart2}
-        title="No social reports yet"
-        description="Draft social reports will appear here once the report engine and Metricool data exist."
-      />
-      <p className="text-xs text-slate-400">
-        Looking for the main report center? <Link href="/dashboard/reports" className="font-medium text-indigo-600 hover:text-indigo-500">Open Reports module →</Link>
-      </p>
-    </div>
+    <SocialReportingView
+      reportsUnlocked={reportsUnlocked}
+      advancedUnlocked={advancedUnlocked}
+      billingHref={SOCIAL_BILLING_HREF}
+    />
   );
 }

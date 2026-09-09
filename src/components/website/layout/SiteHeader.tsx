@@ -40,11 +40,15 @@ export function SiteHeader() {
   };
 
   return (
-    <header
-      className={`sticky top-0 z-50 border-b bg-background/80 backdrop-blur-xl transition-all duration-300 supports-[backdrop-filter]:bg-background/70 ${
-        scrolled ? "border-border shadow-[0_10px_30px_-24px_rgb(0_0_0/0.6)]" : "border-border/60"
-      }`}
-    >
+    <header className="relative sticky top-0 z-50 overflow-visible">
+      {/* Blur on a sibling layer so dropdowns are not clipped by backdrop-filter. */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute inset-0 border-b bg-background/80 backdrop-blur-xl transition-all duration-300 supports-[backdrop-filter]:bg-background/70 ${
+          scrolled ? "border-border shadow-[0_10px_30px_-24px_rgb(0_0_0/0.6)]" : "border-border/60"
+        }`}
+      />
+      <div className="relative">
       <nav
         className={`mx-auto flex max-w-7xl items-center gap-3 px-4 transition-all duration-300 ${
           scrolled ? "h-14" : "h-16"
@@ -131,6 +135,7 @@ export function SiteHeader() {
 
       <div id="tk-site-menu">
         <SiteMenuDrawer open={menuOpen} onClose={closeMenu} />
+      </div>
       </div>
     </header>
   );

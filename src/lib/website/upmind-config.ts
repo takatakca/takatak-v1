@@ -26,6 +26,25 @@ export const UPMIND_CURRENCY =
     .NEXT_PUBLIC_UPMIND_CURRENCY ??
   "CAD";
 
+export const UPMIND_HOSTING_PLANS = [
+  {
+    id: "61e50989-73d2-4752-053c-e45e610832d7",
+    name: "Portfolio Hosting",
+  },
+  {
+    id: "1e96d298-537d-4e75-383b-14e120637085",
+    name: "Bronze Hosting",
+  },
+  {
+    id: "80d1639e-237d-4395-3e2a-54610589e572",
+    name: "Silver Hosting",
+  },
+  {
+    id: "0381d780-e72d-4dd6-701c-8413569926e5",
+    name: "Gold Hosting",
+  },
+] as const;
+
 export const UPMIND_DOMAIN_SEARCH_MODE =
   process.env
     .NEXT_PUBLIC_UPMIND_DOMAIN_SEARCH_MODE ??

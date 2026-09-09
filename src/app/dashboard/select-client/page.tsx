@@ -4,6 +4,7 @@ import {
   Check,
   ShieldCheck,
 } from "lucide-react";
+import { getSessionUser } from "@/lib/auth/supabase-server";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
@@ -37,18 +38,36 @@ export default async function SelectClientPage({
   }
 
   if (access.mode === "denied") {
-    redirect(
-      access.reason ===
-        "not_authenticated"
-        ? `/login?next=${encodeURIComponent(
-            "/dashboard/select-client",
-          )}`
-        : "/dashboard",
-    );
+    if (access.reason === "not_authenticated") {
+      redirect(
+        `/login?next=${encodeURIComponent(
+          "/dashboard/select-client",
+        )}`,
+      );
+    }
+
+    // A stale/tampered workspace cookie must stay on this page so the
+    // user can pick a valid workspace. Sending them to /dashboard makes
+    // the dashboard layout bounce back here forever.
+    if (access.reason !== "client_not_allowed") {
+      redirect("/dashboard");
+    }
   }
 
-  const profileId = access.profileId;
   const prisma = getPrisma();
+  let profileId =
+    access.mode === "denied" ? null : access.profileId;
+
+  if (!profileId) {
+    const user = await getSessionUser();
+    if (user && prisma) {
+      const sessionProfile = await prisma.profile.findUnique({
+        where: { authUserId: user.id },
+        select: { id: true },
+      });
+      profileId = sessionProfile?.id ?? null;
+    }
+  }
 
   if (!prisma) {
     return (
@@ -64,6 +83,10 @@ export default async function SelectClientPage({
         </section>
       </main>
     );
+  }
+
+  if (!profileId) {
+    redirect("/dashboard");
   }
 
   const [profile, memberships] =

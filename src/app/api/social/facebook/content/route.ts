@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 
+import { clipAnalyticsDateRangeForClient } from "@/lib/billing/social/entitlement-gates";
 import {
   handleApiError,
   jsonResponse,
@@ -120,13 +121,16 @@ export async function GET(request: NextRequest) {
           ? "custom"
           : "last_30";
 
-    const range = resolveFacebookAnalyticsRange({
-      preset,
-      timezone: "UTC",
-      customStart,
-      customEnd,
-      compare,
-    });
+    const range = await clipAnalyticsDateRangeForClient(
+      gate.access.activeClientId,
+      resolveFacebookAnalyticsRange({
+        preset,
+        timezone: "UTC",
+        customStart,
+        customEnd,
+        compare,
+      }),
+    );
 
     const sortParam = request.nextUrl.searchParams.get("sort");
     const sort =

@@ -67,7 +67,7 @@ export const DNS_RECORD_STATUS_LABELS: Record<string, string> = {
 
 export const WEB_SOURCE_LABELS: Record<string, string> = {
   internal_demo: "Internal demo",
-  upmind: "Upmind",
+  upmind: "TAKATAK",
   manual: "Manual",
   provider_api: "Provider API",
 };

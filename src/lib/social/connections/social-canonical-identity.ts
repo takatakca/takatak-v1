@@ -225,10 +225,375 @@ export function pickConnectedPlatformAccount<
     return pickSelectedFacebookAccount(matches);
   }
 
+  if (platform === "instagram") {
+    return pickSelectedInstagramAccount(matches);
+  }
+
+  if (platform === "threads") {
+    return pickSelectedThreadsAccount(matches);
+  }
+
+  if (platform === "tiktok") {
+    return pickSelectedTikTokAccount(matches);
+  }
+
+  if (platform === "x") {
+    return pickSelectedXAccount(matches);
+  }
+
   return (
     matches.find((account) => account.status === "connected") ??
     null
   );
+}
+
+export type StrictSelectedInstagramResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+/**
+ * Strict selected Instagram professional account:
+ * exactly one connected + accessStatus=selected.
+ */
+export function pickSelectedInstagramAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedInstagramResult<T> {
+  const instagram = accounts.filter((account) => {
+    if (account.platform !== "instagram") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = instagram.filter(
+    (account) =>
+      account.status === "connected" &&
+      account.accessStatus === "selected",
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedInstagramAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedInstagramAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const instagram = accounts.filter((account) => {
+    if (account.platform !== "instagram") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = instagram.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
+}
+
+export type StrictSelectedThreadsResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedThreadsAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedThreadsResult<T> {
+  const threads = accounts.filter((account) => {
+    if (account.platform !== "threads") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = threads.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedThreadsAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedThreadsAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const threads = accounts.filter((account) => {
+    if (account.platform !== "threads") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = threads.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
+}
+
+export type StrictSelectedYoutubeResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedYoutubeAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedYoutubeResult<T> {
+  const youtube = accounts.filter((account) => {
+    if (account.platform !== "youtube") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = youtube.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedYoutubeAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedYoutubeAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+  return null;
+}
+
+export type StrictSelectedTikTokResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedTikTokAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedTikTokResult<T> {
+  const tiktok = accounts.filter((account) => {
+    if (account.platform !== "tiktok") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = tiktok.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedTikTokAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedTikTokAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const tiktok = accounts.filter((account) => {
+    if (account.platform !== "tiktok") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = tiktok.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
+}
+
+export type StrictSelectedXResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedXAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedXResult<T> {
+  const xAccounts = accounts.filter((account) => {
+    if (account.platform !== "x") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = xAccounts.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedXAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedXAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const xAccounts = accounts.filter((account) => {
+    if (account.platform !== "x") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = xAccounts.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
 }
 
 /**

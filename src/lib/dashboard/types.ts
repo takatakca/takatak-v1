@@ -23,6 +23,9 @@ export interface NavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  /** Visual chevron — nested destinations arrive in a later pass. */
+  hasDropdown?: boolean;
+  children?: NavItem[];
 }
 
 export interface KpiCard {

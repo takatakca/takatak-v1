@@ -9,26 +9,41 @@ import {
   Briefcase,
   Building2,
   CalendarClock,
+  CircleCheck,
+  Database,
   FileBarChart2,
   FileStack,
+  FileText,
+  Filter,
   FolderOpen,
   Globe,
+  Hash,
   History,
+  HardDrive,
   LayoutDashboard,
   LifeBuoy,
+  Link2,
   ListChecks,
+  Lock,
+  Mail,
   MapPin,
   MapPinned,
   Megaphone,
   PlugZap,
   Plus,
   Receipt,
+  Search,
+  Server,
   Settings,
   Share2,
+  Shield,
   ShieldCheck,
   Sparkles,
+  Star,
   UserPlus,
+  UserRound,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import type {
@@ -42,8 +57,9 @@ import type {
   ServiceModule,
 } from "./types";
 
-export const APP_NAME = "TAKATAK";
-export const APP_FULL_NAME = "TAKATAK User Official Dashboard V1";
+export const APP_NAME = "TakaTak";
+export const APP_NAME_BADGE = "Official";
+export const APP_FULL_NAME = "TakaTak Official Dashboard";
 
 export interface NavSection {
   title?: string;
@@ -64,40 +80,111 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
-    title: "Modules",
+    title: "Integrations",
     items: [
-      { label: "Social Media", href: "/dashboard/social", icon: Share2 },
-      { label: "Web & Hosting", href: "/dashboard/web-hosting", icon: Globe },
+      { label: "Web Integration", href: "/dashboard/web-hosting", icon: Globe, hasDropdown: true, children: [
+        { label: "Overview", href: "/dashboard/web-hosting", icon: LayoutDashboard },
+        { label: "Websites", href: "/dashboard/web-hosting/websites", icon: Globe },
+        { label: "Domains", href: "/dashboard/web-hosting/domains", icon: Link2 },
+        { label: "SSL Certificates", href: "/dashboard/web-hosting/ssl", icon: Lock },
+        { label: "Hosting", href: "/dashboard/web-hosting/hosting", icon: Server },
+      ] },
+      { label: "Social Media", href: "/dashboard/social", icon: Share2, hasDropdown: true },
+      { label: "Advertising", href: "/dashboard/advertising", icon: Megaphone, hasDropdown: true },
+      { label: "Reviews", href: "/dashboard/local-listings/reviews", icon: Star, hasDropdown: true },
       { label: "Local Listings", href: "/dashboard/local-listings", icon: MapPin },
-      { label: "Leads", href: "/dashboard/leads", icon: Megaphone },
+      { label: "Leads", href: "/dashboard/leads", icon: Filter },
       { label: "AI Studio", href: "/dashboard/ai-studio", icon: Sparkles },
     ],
   },
   {
-    title: "Operations",
+    title: "Services",
     items: [
-      { label: "Reports", href: "/dashboard/reports", icon: FileBarChart2 },
+      {
+        label: "Hosting",
+        href: "/dashboard/hosting",
+        icon: Server,
+        hasDropdown: true,
+        children: [
+          { label: "Overview", href: "/dashboard/hosting", icon: LayoutDashboard },
+          { label: "My Hosting", href: "/dashboard/hosting/accounts", icon: HardDrive },
+          { label: "Servers", href: "/dashboard/hosting/servers", icon: Server },
+          { label: "SSL Certificates", href: "/dashboard/web-hosting/ssl", icon: Lock },
+          { label: "Backups", href: "/dashboard/web-hosting/backups", icon: Database },
+          { label: "Email Accounts", href: "/dashboard/hosting/email", icon: Mail },
+          { label: "Security", href: "/dashboard/web-hosting/security", icon: Shield },
+        ],
+      },
+    ],
+  },
+  {
+    title: "SEO & Citations",
+    items: [
+      { label: "SEO Overview", href: "/dashboard/seo", icon: Search },
+      { label: "Citations", href: "/dashboard/local-listings/citations", icon: CircleCheck },
+      { label: "Backlinks", href: "/dashboard/seo/backlinks", icon: Link2 },
+      { label: "Keywords", href: "/dashboard/seo/keywords", icon: Hash },
+    ],
+  },
+  {
+    title: "Reports",
+    items: [
+      { label: "Analytics Reports", href: "/dashboard/reports", icon: FileBarChart2 },
+      { label: "Custom Reports", href: "/dashboard/reports/builder", icon: FileText },
       { label: "Invoices", href: "/dashboard/invoices", icon: Receipt },
       { label: "Files", href: "/dashboard/files", icon: FolderOpen },
-      { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
       { label: "Support", href: "/dashboard/support", icon: LifeBuoy },
     ],
   },
   {
-    title: "Platform",
+    title: "Settings",
     items: [
+      { label: "Account settings", href: "/dashboard/profile", icon: UserRound },
+      { label: "User management", href: "/dashboard/team", icon: ShieldCheck },
+      { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
+      { label: "Billing & Plans", href: "/dashboard/billing", icon: Wallet },
       { label: "Integrations", href: "/dashboard/integrations", icon: PlugZap },
       { label: "Jobs", href: "/dashboard/jobs", icon: CalendarClock },
       { label: "Activity", href: "/dashboard/activity", icon: History },
-      { label: "Team & Permissions", href: "/dashboard/team", icon: ShieldCheck },
       { label: "Admin", href: "/dashboard/admin", icon: Briefcase },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },
     ],
   },
 ];
 
+function flattenNavItems(items: NavItem[]): NavItem[] {
+  return items.flatMap((item) => [item, ...(item.children ? flattenNavItems(item.children) : [])]);
+}
+
 /** Flat list kept for compatibility with existing consumers. */
-export const NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap((s) => s.items);
+export const NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap((s) => flattenNavItems(s.items));
+
+export function pageTitleForPath(pathname: string): string {
+  if (pathname === "/dashboard") return "Dashboard";
+  const matches = NAV_ITEMS.filter(
+    (item) =>
+      item.href !== "/dashboard" &&
+      (pathname === item.href || pathname.startsWith(`${item.href}/`)),
+  );
+  matches.sort((a, b) => b.href.length - a.href.length);
+  return matches[0]?.label ?? "Dashboard";
+}
+
+export function pageSubtitleForPath(pathname: string): string | null {
+  if (pathname === "/dashboard/web-hosting/domains" || pathname.startsWith("/dashboard/web-hosting/domains/")) {
+    return "Manage your domains, DNS settings, renewals, redirects, and connection status.";
+  }
+  if (pathname === "/dashboard/web-hosting/websites" || pathname.startsWith("/dashboard/web-hosting/websites/")) {
+    return "Manage and monitor all your websites in one place.";
+  }
+  if (pathname === "/dashboard/web-hosting/hosting" || pathname.startsWith("/dashboard/web-hosting/hosting/")) {
+    return "Manage hosting packages, server resources, website performance, renewals, and subscription settings.";
+  }
+  if (pathname === "/dashboard/hosting" || pathname.startsWith("/dashboard/hosting/")) {
+    return "Manage your hosting accounts, servers, and performance.";
+  }
+  return null;
+}
 
 // KPI cards — static placeholders. Real values arrive with the database (Phase 4).
 export const KPI_CARDS: KpiCard[] = [
@@ -303,6 +390,107 @@ export const MODULE_PLACEHOLDERS: Record<string, ModulePlaceholderDef> = {
     purpose: "Account, branding, notifications, billing, security, and integration settings.",
     status: "foundation",
     functions: ["Account and business profile", "White-label branding (logo, colors, portal name)", "Client-level integration settings", "Security: sessions, 2FA (later), audit log"],
+  },
+  advertising: {
+    title: "Advertising",
+    purpose: "Paid media across Meta Ads and Google Ads. Campaigns, spend, and conversions appear after an ad account is connected.",
+    engine: "Meta Ads / Google Ads",
+    status: "not_connected",
+    functions: ["Ad accounts", "Campaign performance", "Spend and conversions", "Creative reporting"],
+    note: "Nested advertising screens will be added as that module is built. No ad account is connected until a real provider authorization succeeds.",
+  },
+  seo: {
+    title: "SEO Overview",
+    purpose: "Search visibility across rankings, technical health, and on-page opportunities.",
+    status: "planned",
+    functions: ["Visibility score", "Ranking movements", "Technical issues", "On-page recommendations"],
+    note: "SEO data is not connected yet. This overview activates with the SEO module.",
+  },
+  backlinks: {
+    title: "Backlinks",
+    purpose: "Referring domains and acquired links that support citation and search authority.",
+    status: "planned",
+    functions: ["Referring domains", "New and lost links", "Anchor text", "Link quality"],
+    note: "Backlink tracking is not connected yet.",
+  },
+  keywords: {
+    title: "Keywords",
+    purpose: "Tracked search terms, ranking positions, and opportunity gaps.",
+    status: "planned",
+    functions: ["Tracked keywords", "Position history", "Search volume", "Opportunity list"],
+    note: "Keyword tracking is not connected yet.",
+  },
+  billing: {
+    title: "Billing & Plans",
+    purpose: "Workspace plan, subscription status, and invoices for this TAKATAK account.",
+    engine: "Stripe",
+    status: "planned",
+    functions: ["Current plan", "Subscription status", "Payment method", "Invoice history"],
+    note: "Billing is not live yet. Plan and invoice records appear when Stripe is connected.",
+  },
+  "web-pages": {
+    title: "Pages",
+    purpose: "Website pages and templates for each hosted site.",
+    status: "planned",
+    functions: ["Page list", "Templates", "Publish state", "SEO fields"],
+    note: "Page management activates with the website builder.",
+  },
+  "web-blog": {
+    title: "Blog & Content",
+    purpose: "Articles, drafts, and content calendars for the website.",
+    status: "planned",
+    functions: ["Posts", "Categories", "Authors", "Publish schedule"],
+  },
+  "web-analytics": {
+    title: "Website Analytics",
+    purpose: "Traffic, page views, and audience for connected websites.",
+    status: "not_connected",
+    functions: ["Sessions", "Page views", "Top pages", "Referrers"],
+    note: "Website analytics is not connected yet.",
+  },
+  "web-redirects": {
+    title: "Redirects",
+    purpose: "URL redirects and canonical rules.",
+    status: "planned",
+    functions: ["301 / 302 rules", "Bulk import", "Broken-link checks"],
+  },
+  "web-backups": {
+    title: "Backups & Restore",
+    purpose: "Backup schedule, restore points, and recovery tests.",
+    status: "planned",
+    functions: ["Latest backup", "Retention", "Restore test", "Download"],
+  },
+  "web-staging": {
+    title: "Staging",
+    purpose: "Staging environments for safe deploys.",
+    status: "planned",
+    functions: ["Create staging", "Sync from production", "Promote"],
+  },
+  "web-performance": {
+    title: "Performance",
+    purpose: "Runtime performance, cache, and Core Web Vitals.",
+    status: "not_connected",
+    functions: ["CPU / memory", "Cache hit ratio", "Response time"],
+  },
+  "web-security": {
+    title: "Security",
+    purpose: "WAF, SSL, and environment secrets.",
+    status: "planned",
+    functions: ["SSL status", "Firewall", "Env vars", "Incidents"],
+  },
+  "hosting-servers": {
+    title: "Servers",
+    purpose: "Server inventory, location, and health for hosted environments.",
+    status: "not_connected",
+    functions: ["Server list", "Location", "Health", "Specifications"],
+    note: "Server telemetry appears after the hosting provider is connected.",
+  },
+  "hosting-email": {
+    title: "Email Accounts",
+    purpose: "Mailbox management for hosted domains.",
+    status: "not_connected",
+    functions: ["Mailboxes", "Forwarders", "Catch-all", "Webmail"],
+    note: "Email accounts appear after hosting mail is connected.",
   },
 };
 

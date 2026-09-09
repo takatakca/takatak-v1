@@ -140,7 +140,7 @@ export async function POST(
             clientId:
               gate.access.activeClientId,
             status: {
-              not: "archived",
+              notIn: ["archived", "frozen"],
             },
           },
 

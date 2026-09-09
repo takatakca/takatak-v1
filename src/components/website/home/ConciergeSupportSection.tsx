@@ -68,7 +68,7 @@ export function ConciergeSupportSection() {
         </Reveal>
 
         <Reveal delay={120}>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur">
+          <div className="tk-frost-card rounded-2xl border border-white/10 bg-white/10 p-5 backdrop-blur">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <span className="tk-blink inline-block h-2 w-2 rounded-full bg-primary" />
               TAKATAK

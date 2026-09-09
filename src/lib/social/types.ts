@@ -80,6 +80,7 @@ export interface PostPipeline {
   scheduled: number;
   published: number;
   failed: number;
+  blocked_by_plan: number;
 }
 
 export interface SocialOverviewData extends SourceMeta {

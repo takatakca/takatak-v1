@@ -4,10 +4,6 @@
 // cPanel runs `node <startup file>` — it does not run `pnpm start`.
 const path = require("path");
 const fs = require("fs");
-const venvModules = "/home/takatakc/nodevenv/app/takatak/22/lib/node_modules";
-if (!module.paths.includes(venvModules)) {
-  module.paths.unshift(venvModules);
-}
 
 function loadDotEnv(filePath) {
   if (!fs.existsSync(filePath)) return;

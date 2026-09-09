@@ -82,12 +82,14 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
   const [busyRef, setBusyRef] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [serverNotice, setServerNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!liveMode) {
       setCapability(null);
       setCompetitors([]);
       setBenchmark(null);
+      setServerNotice(null);
       return;
     }
     setLoading(true);
@@ -100,6 +102,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
       const body = (await response.json()) as {
         ok?: boolean;
         message?: string;
+        notice?: string;
         capability?: Capability;
         competitors?: CompetitorRow[];
         benchmark?: Benchmark;
@@ -111,6 +114,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
       setCapability(body.capability ?? null);
       setCompetitors(body.competitors ?? []);
       setBenchmark(body.benchmark ?? null);
+      setServerNotice(body.notice ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Competitors could not be loaded.");
     } finally {
@@ -122,10 +126,8 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
     void load();
   }, [load]);
 
-  const unavailable =
-    capability &&
-    capability.status !== "ready" &&
-    capability.status !== "unknown";
+  const capabilityReady = capability?.status === "ready";
+  const unavailable = Boolean(capability && capability.status !== "ready");
 
   async function onAdd(event: React.FormEvent) {
     event.preventDefault();
@@ -256,6 +258,12 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
         </div>
       ) : null}
 
+      {serverNotice ? (
+        <div className="rounded-[10px] border border-[#e8eaed] bg-white px-4 py-3 text-sm text-[#6b7280]">
+          {serverNotice}
+        </div>
+      ) : null}
+
       {unavailable ? (
         <section className="rounded-[14px] border border-[#f0d48a] bg-[#fff8e6] px-5 py-6">
           <h3 className="text-[18px] font-semibold text-[#20242A]">
@@ -279,64 +287,66 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
         </section>
       ) : null}
 
-      {!unavailable ? (
-        <>
-          <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
-            <h3 className="text-[18px] font-semibold text-[#20242A]">
-              How competitor tracking works
-            </h3>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-[#6b7280]">
-              Add a public Facebook Page URL or username. Takatak resolves it
-              through Meta Graph API endpoints only, stores dated public
-              snapshots, and compares equivalent confirmed metrics. Private Page
-              insights are never claimed for competitors.
-            </p>
+      {capabilityReady ? (
+        <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
+          <h3 className="text-[18px] font-semibold text-[#20242A]">
+            How competitor tracking works
+          </h3>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#6b7280]">
+            Add a public Facebook Page URL or username. Takatak resolves it
+            through Meta Graph API endpoints only, stores dated public
+            snapshots, and compares equivalent confirmed metrics. Private Page
+            insights are never claimed for competitors.
+          </p>
 
-            <form onSubmit={onAdd} className="mt-5 grid gap-3 lg:grid-cols-[1fr_220px_auto]">
-              <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-                <span>Facebook Page URL or username</span>
-                <input
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  placeholder="https://www.facebook.com/example or example"
-                  className="h-11 rounded-[10px] border border-[#d7dbe0] px-3 text-sm text-[#30343a]"
-                  required
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-                <span>Local display label (optional)</span>
-                <input
-                  value={displayLabel}
-                  onChange={(event) => setDisplayLabel(event.target.value)}
-                  placeholder="Nickname"
-                  className="h-11 rounded-[10px] border border-[#d7dbe0] px-3 text-sm text-[#30343a]"
-                />
-              </label>
-              <div className="flex items-end">
-                <button
-                  type="submit"
-                  disabled={busyRef === "add"}
-                  className="inline-flex h-11 items-center rounded-[10px] bg-[#20242A] px-4 text-sm font-semibold text-white disabled:opacity-60"
-                >
-                  {busyRef === "add" ? "Adding…" : "Add competitor"}
-                </button>
-              </div>
-            </form>
-          </section>
+          <form onSubmit={onAdd} className="mt-5 grid gap-3 lg:grid-cols-[1fr_220px_auto]">
+            <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
+              <span>Facebook Page URL or username</span>
+              <input
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder="https://www.facebook.com/example or example"
+                className="h-11 rounded-[10px] border border-[#d7dbe0] px-3 text-sm text-[#30343a]"
+                required
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
+              <span>Local display label (optional)</span>
+              <input
+                value={displayLabel}
+                onChange={(event) => setDisplayLabel(event.target.value)}
+                placeholder="Nickname"
+                className="h-11 rounded-[10px] border border-[#d7dbe0] px-3 text-sm text-[#30343a]"
+              />
+            </label>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={busyRef === "add" || !capabilityReady}
+                className="inline-flex h-11 items-center rounded-[10px] bg-[#20242A] px-4 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {busyRef === "add" ? "Adding…" : "Add competitor"}
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
 
-          {competitors.length === 0 ? (
-            <section className="rounded-[14px] border border-dashed border-[#e1e4e7] bg-[#fafbfc] px-5 py-10 text-center">
-              <p className="text-[16px] font-semibold text-[#30343a]">
-                No competitors tracked yet
-              </p>
-              <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#6b7280]">
-                Add a public Facebook Page to start dated public snapshots. If
-                Meta later revokes access, prior confirmed snapshots stay visible
-                as stale.
-              </p>
-            </section>
-          ) : (
-            <section className="overflow-hidden rounded-[14px] border border-[#e8eaed] bg-white">
+      {!loading && capabilityReady && competitors.length === 0 ? (
+        <section className="rounded-[14px] border border-dashed border-[#e1e4e7] bg-[#fafbfc] px-5 py-10 text-center">
+          <p className="text-[16px] font-semibold text-[#30343a]">
+            No competitors tracked yet
+          </p>
+          <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#6b7280]">
+            Add a public Facebook Page to start dated public snapshots. If
+            Meta later revokes access, prior confirmed snapshots stay visible
+            as stale.
+          </p>
+        </section>
+      ) : null}
+
+      {competitors.length > 0 ? (
+            <section className="overflow-x-auto rounded-[14px] border border-[#e8eaed] bg-white">
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-[#fafbfc] text-xs uppercase tracking-wide text-[#6b7280]">
                   <tr>
@@ -397,16 +407,25 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                         </td>
                         <td className="px-4 py-3">
                           <span className="rounded-full bg-[#f3f4f6] px-2 py-0.5 text-[11px] font-medium text-[#505761]">
-                            {row.availability}
+                            {row.latestSnapshot?.availability === "partial"
+                              ? "partial"
+                              : row.availability}
                           </span>
+                          {row.lastErrorMessage ? (
+                            <p className="mt-1 max-w-[220px] text-xs leading-5 text-[#6b7280]">
+                              {row.lastErrorMessage}
+                            </p>
+                          ) : null}
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
-                              disabled={busyRef === row.publicRef}
+                              disabled={
+                                busyRef === row.publicRef || !capabilityReady
+                              }
                               onClick={() => void onRefresh(row.publicRef)}
-                              className="text-xs font-semibold text-[#566DF1]"
+                              className="text-xs font-semibold text-[#566DF1] disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               Refresh
                             </button>
@@ -462,9 +481,9 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                 </tbody>
               </table>
             </section>
-          )}
+          ) : null}
 
-          {benchmark ? (
+          {benchmark && competitors.length > 0 ? (
             <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
               <h3 className="text-[18px] font-semibold text-[#20242A]">
                 Equivalent public follower comparison
@@ -547,8 +566,6 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
               </div>
             </section>
           ) : null}
-        </>
-      ) : null}
     </div>
   );
 }

@@ -165,8 +165,7 @@ export function SocialPlatformIcon({
       return (
         <span
           aria-hidden="true"
-          // className={`inline-flex ${className} items-center justify-center   ${color}`}
-          className={iconClassName}
+          className={`inline-flex items-center justify-center leading-none ${iconClassName}`}
         >
           <FaFacebook size={25}/>
         </span>

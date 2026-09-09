@@ -9,6 +9,7 @@ export const POST_STATUS_LABELS: Record<string, string> = {
   scheduled: "Scheduled",
   published: "Published",
   failed: "Failed",
+  blocked_by_plan: "Blocked by plan",
 };
 
 export const APPROVAL_STATUS_LABELS: Record<string, string> = {
@@ -43,7 +44,8 @@ export const POST_STATUS_TRANSITIONS: Record<string, string[]> = {
   draft: ["pending_approval"],
   pending_approval: ["approved", "draft"],
   approved: ["scheduled"],
-  scheduled: ["published", "failed"],
+  scheduled: ["published", "failed", "blocked_by_plan"],
+  blocked_by_plan: ["scheduled"],
   published: [],
   failed: ["draft"],
 };
@@ -74,6 +76,7 @@ export function socialToneForStatus(status: string): "neutral" | "accent" | "war
       return "warning";
     case "planned":
     case "scheduled":
+    case "blocked_by_plan":
       return "accent";
     case "disabled":
     case "cancelled":

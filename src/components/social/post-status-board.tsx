@@ -3,7 +3,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { POST_STATUS_LABELS, POST_STATUS_TRANSITIONS, socialToneForStatus } from "@/lib/social/status";
 import type { PostPipeline } from "@/lib/social/types";
 
-const ORDER: (keyof PostPipeline)[] = ["draft", "pending_approval", "approved", "scheduled", "published", "failed"];
+const ORDER: (keyof PostPipeline)[] = ["draft", "pending_approval", "approved", "scheduled", "blocked_by_plan", "published", "failed"];
 
 export function PostStatusBoard({ pipeline }: { pipeline: PostPipeline }) {
   return (

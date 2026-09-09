@@ -1,4 +1,6 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { AUTH_STATUS_HEADER } from "@/lib/auth/session-user";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import type { Permission } from "@/lib/security/roles";
@@ -35,6 +37,11 @@ export async function requireWorkspacePermission(
     access.mode === "denied" &&
     access.reason === "not_authenticated"
   ) {
+    const authStatus = (await headers()).get(AUTH_STATUS_HEADER);
+    if (authStatus === "network") {
+      redirect("/dashboard");
+    }
+
     const safeReturnPath =
       getSafeReturnPath(returnPath);
 
@@ -45,18 +52,10 @@ export async function requireWorkspacePermission(
     );
   }
 
-  if (access.mode === "selection_required") {
-    redirect("/dashboard");
-  }
-
-  if (access.mode === "platform_admin") {
-    const safeReturnPath =
-      getSafeReturnPath(returnPath);
-  
+  if (access.mode === "selection_required" || access.mode === "platform_admin") {
+    const safeReturnPath = getSafeReturnPath(returnPath);
     redirect(
-      `/dashboard/select-client?next=${encodeURIComponent(
-        safeReturnPath,
-      )}`,
+      `/dashboard/select-client?next=${encodeURIComponent(safeReturnPath)}`,
     );
   }
 

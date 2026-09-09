@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { assertClientCanInviteTeam } from "@/lib/billing/social/entitlement-gates";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
@@ -6,6 +7,7 @@ import {
   isRoleKey,
   type RoleKey,
 } from "@/lib/security/roles";
+import { isServiceError } from "@/lib/services/service-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,6 +77,18 @@ export async function PATCH(
       },
       403,
     );
+  }
+
+  try {
+    await assertClientCanInviteTeam(access.activeClientId);
+  } catch (error) {
+    if (isServiceError(error)) {
+      return jsonResponse(
+        { ok: false, message: error.message },
+        error.status,
+      );
+    }
+    throw error;
   }
 
   let body: unknown;

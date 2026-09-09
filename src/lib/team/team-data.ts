@@ -1,3 +1,5 @@
+import { resolveEffectiveSocialEntitlements } from "@/lib/billing/social";
+import { listConnectedPlatformIcons } from "@/lib/brands/brand-display-image";
 import { getPrisma } from "@/lib/db/prisma";
 import type { Permission, RoleKey } from "@/lib/security/roles";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
@@ -27,6 +29,26 @@ export type WorkspaceInvitationSummary = {
   createdAt: string;
 };
 
+export type WorkspaceBrandSummary = {
+  id: string;
+  name: string;
+  status: string;
+  connectedPlatforms: string[];
+};
+
+export type UserManagementTab = "users" | "roles";
+
+export type UserManagementCapabilities = {
+  currentProfileId: string;
+  allowedRoles: RoleKey[];
+  assignablePermissions: Permission[];
+  canInvite: boolean;
+  canManageRoles: boolean;
+  canManagePermissions: boolean;
+  canSuspendUsers: boolean;
+  canDeleteUsers: boolean;
+};
+
 export type WorkspaceTeamData =
   | {
       source: "database";
@@ -34,6 +56,10 @@ export type WorkspaceTeamData =
       clientName: string;
       members: WorkspaceMemberSummary[];
       invitations: WorkspaceInvitationSummary[];
+      brands: WorkspaceBrandSummary[];
+      planName: string;
+      teamManagement: boolean;
+      customRoles: boolean;
     }
   | {
       source: "unavailable";
@@ -42,6 +68,10 @@ export type WorkspaceTeamData =
       clientName: null;
       members: [];
       invitations: [];
+      brands: [];
+      planName: null;
+      teamManagement: false;
+      customRoles: false;
     };
 
 export async function getWorkspaceTeamData(
@@ -57,6 +87,10 @@ export async function getWorkspaceTeamData(
       clientName: null,
       members: [],
       invitations: [],
+      brands: [],
+      planName: null,
+      teamManagement: false,
+      customRoles: false,
     };
   }
 
@@ -110,6 +144,39 @@ export async function getWorkspaceTeamData(
             },
           },
         },
+        businessBrands: {
+          where: {
+            status: { notIn: ["archived", "frozen"] },
+          },
+          select: {
+            id: true,
+            name: true,
+            status: true,
+          },
+          orderBy: {
+            name: "asc",
+          },
+        },
+        socialAccounts: {
+          where: {
+            status: "connected",
+            businessBrandId: { not: null },
+          },
+          select: {
+            businessBrandId: true,
+            platform: true,
+            accessStatus: true,
+          },
+        },
+        subscription: {
+          select: {
+            status: true,
+            planCode: true,
+            planName: true,
+            cancelAtPeriodEnd: true,
+            currentPeriodEnd: true,
+          },
+        },
       },
     });
 
@@ -121,8 +188,19 @@ export async function getWorkspaceTeamData(
         clientName: null,
         members: [],
         invitations: [],
+        brands: [],
+        planName: null,
+        teamManagement: false,
+        customRoles: false,
       };
     }
+
+    const { entitlements } = resolveEffectiveSocialEntitlements({
+      status: client.subscription?.status,
+      planCode: client.subscription?.planCode,
+      cancelAtPeriodEnd: client.subscription?.cancelAtPeriodEnd,
+      currentPeriodEnd: client.subscription?.currentPeriodEnd,
+    });
 
     return {
       source: "database",
@@ -158,6 +236,29 @@ export async function getWorkspaceTeamData(
         expiresAt: invitation.expiresAt.toISOString(),
         createdAt: invitation.createdAt.toISOString(),
       })),
+      brands: client.businessBrands.map((brand) => {
+        const platforms = client.socialAccounts
+          .filter((account) => {
+            if (account.businessBrandId !== brand.id) {
+              return false;
+            }
+            if (account.platform === "facebook") {
+              return account.accessStatus === "selected";
+            }
+            return true;
+          })
+          .map((account) => account.platform);
+
+        return {
+          id: brand.id,
+          name: brand.name,
+          status: brand.status,
+          connectedPlatforms: listConnectedPlatformIcons(platforms),
+        };
+      }),
+      planName: entitlements.planName,
+      teamManagement: entitlements.teamManagement,
+      customRoles: entitlements.customRoles,
     };
   } catch (error) {
     console.error(
@@ -172,6 +273,10 @@ export async function getWorkspaceTeamData(
       clientName: null,
       members: [],
       invitations: [],
+      brands: [],
+      planName: null,
+      teamManagement: false,
+      customRoles: false,
     };
   }
 }

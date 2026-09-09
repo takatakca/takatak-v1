@@ -15,6 +15,7 @@ import {
   revalidateManagedFacebookPage,
   type MetaPageDiscoveryErrorCategory,
 } from "@/lib/social/providers/meta-pages";
+import { disconnectInstagramAccountsForConnection } from "@/lib/social/connections/social-instagram-account-service";
 import {
   buildSocialCredentialAad,
   clearMetaFacebookPageCredential,
@@ -1514,7 +1515,7 @@ export async function selectFacebookPage(options: {
         where: {
           id: fresh.businessBrandId,
           clientId: options.clientId,
-          status: { not: "archived" },
+          status: { notIn: ["archived", "frozen"] },
         },
         select: { id: true },
       });
@@ -1795,6 +1796,12 @@ export async function clearSelectedFacebookPage(options: {
           },
         });
       }
+
+      await disconnectInstagramAccountsForConnection({
+        clientId: options.clientId,
+        connectionId: connection.id,
+        transaction,
+      });
 
       // Defensive: no active Page assignment should remain on this brand
       // for accounts that still belong to this Meta connection.
@@ -2173,6 +2180,10 @@ async function demoteSelectedFacebookPagesForConnection(options: {
         businessBrandId: null,
       },
     });
+    await disconnectInstagramAccountsForConnection({
+      clientId: options.clientId,
+      connectionId: options.connectionId,
+    });
     return;
   }
 
@@ -2217,6 +2228,11 @@ async function demoteSelectedFacebookPagesForConnection(options: {
       accessStatus: "available",
       businessBrandId: null,
     },
+  });
+
+  await disconnectInstagramAccountsForConnection({
+    clientId: options.clientId,
+    connectionId: options.connectionId,
   });
 
   await prisma.socialBrandAccountAssignment.updateMany({

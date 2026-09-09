@@ -12,8 +12,10 @@ import { originFromRequest } from "@/lib/config/app-origin";
 import {
   ACTIVE_CLIENT_COOKIE,
 } from "@/lib/security/access-context";
+import { clearWorkspaceCookiesOnResponse } from "@/lib/auth/workspace-session-cookies";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { acceptWorkspaceInvitation } from "@/lib/team/accept-invitation";
+import { linkUpmindCustomerForProfile } from "@/lib/web-hosting/upmind-session-customer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -75,6 +77,8 @@ function redirectWithoutCache(
         maxAge: 60 * 60 * 24 * 30,
       },
     );
+  } else {
+    clearWorkspaceCookiesOnResponse(response);
   }
 
   return response;
@@ -170,6 +174,10 @@ export async function GET(request: NextRequest) {
       return redirectWithoutCache(
         `${applicationOrigin}/login?error=profile_sync_failed`,
       );
+    }
+
+    if (!isInvitationFlow) {
+      await linkUpmindCustomerForProfile(profileResult.profileId);
     }
 
     if (isInvitationFlow && invitationToken) {

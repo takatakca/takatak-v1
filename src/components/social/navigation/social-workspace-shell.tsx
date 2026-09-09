@@ -24,6 +24,7 @@ import {
   Settings2,
   Share2,
   ShieldCheck,
+  Sparkles,
   Check,
   Tag,
   X,
@@ -43,6 +44,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 
+import { AddBrandsModal } from "@/components/social/brands/add-brands-modal";
 import {
   ManageConnectionsModal,
   type ManageConnectionsConnection,
@@ -56,9 +58,10 @@ import { SOCIAL_BRAND_SELECTOR_REFRESH_EVENT } from "@/components/social/navigat
 import { FaLinkedin } from "react-icons/fa";
 import { brandInitials as resolveBrandInitials } from "@/lib/brands/brand-display-image";
 import { pickConnectedPlatformAccount } from "@/lib/social/connections/social-selected-page-identity";
+import { SocialBillingBanner } from "@/components/social/billing/social-billing-banner";
+import type { SocialBillingBannerModel } from "@/lib/billing/social/billing-banner-policy";
 import { SocialOnboardingModal } from "@/components/social/onboarding/social-onboarding-modal";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
-import { SocialPreviewSwitcher } from "@/components/social/preview/social-preview-switcher";
 
 export interface SocialShellBrand {
   id: string;
@@ -95,6 +98,7 @@ export interface SocialShellData {
   connections: ManageConnectionsConnection[];
   canManageSocialAccounts: boolean;
   canManageBrands: boolean;
+  brandAllowance?: number;
 
   /*
    * Optional for now so the shell continues to work
@@ -102,6 +106,7 @@ export interface SocialShellData {
    */
   planName?: string | null;
   hasPaidPlan?: boolean;
+  billingBanner?: SocialBillingBannerModel | null;
 
   dataUnavailable: boolean;
 }
@@ -119,6 +124,29 @@ interface StarterPlatform {
   premium: boolean;
 }
 
+function isSocialSettingsPage(pathname: string): boolean {
+  return (
+    pathname.startsWith("/dashboard/social/settings") ||
+    pathname.startsWith("/dashboard/social/brands") ||
+    pathname.startsWith("/dashboard/social/users") ||
+    pathname.startsWith("/dashboard/social/approvals") ||
+    pathname.startsWith("/dashboard/social/reports") ||
+    pathname.startsWith("/dashboard/social/inbox") ||
+    pathname.startsWith("/dashboard/social/calendar")
+  );
+}
+
+function isAnalyticsPath(pathname: string): boolean {
+  if (isSocialSettingsPage(pathname)) {
+    return false;
+  }
+
+  return (
+    pathname === "/dashboard/social" ||
+    pathname.startsWith("/dashboard/social/")
+  );
+}
+
 const TOP_NAVIGATION = [
   {
     label: "Analytics",
@@ -130,19 +158,19 @@ const TOP_NAVIGATION = [
     label: "Reporting",
     href: "/dashboard/social/reports",
     icon: FileBarChart2,
-    enabled: false,
+    enabled: true,
   },
   {
     label: "Inbox",
     href: "/dashboard/social/inbox",
     icon: Inbox,
-    enabled: false,
+    enabled: true,
   },
   {
     label: "Planning",
     href: "/dashboard/social/calendar",
     icon: CalendarDays,
-    enabled: false,
+    enabled: true,
   },
   {
     label: "SmartLinks",
@@ -369,6 +397,7 @@ function BrandSelector({
   data: SocialShellData;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
@@ -665,7 +694,10 @@ function BrandSelector({
         >
           {data.canManageBrands ? (
             <Link
-              href="/dashboard/brands"
+              href={withSocialPreview(
+                "/dashboard/social?addBrand=1",
+                searchParams,
+              )}
               onClick={() => {
                 setOpen(false);
               }}
@@ -777,6 +809,7 @@ function DrawerRow({
   languageCode,
   showChevron = false,
   disabled = false,
+  active = false,
   onClose,
 }: {
   label: string;
@@ -786,12 +819,15 @@ function DrawerRow({
   languageCode?: string;
   showChevron?: boolean;
   disabled?: boolean;
+  active?: boolean;
   onClose: () => void;
 }) {
   const rowClassName = `flex min-h-[46px] w-full items-center gap-2.5 px-4 text-left text-[14px] font-normal transition-colors ${
-    premiumLocked
-      ? "bg-[#f7fadf] text-[#2a2a2a]"
-      : "bg-white text-[#2a2a2a] hover:bg-slate-50"
+    active
+      ? "bg-[#e8ecee] text-slate-950"
+      : premiumLocked
+        ? "bg-[#f7fadf] text-[#2a2a2a]"
+        : "bg-white text-[#2a2a2a] hover:bg-slate-50"
   } ${
     disabled
       ? "cursor-default"
@@ -1174,6 +1210,19 @@ function ModuleDrawer({
   const premiumLocked =
     data.hasPaidPlan !== true;
 
+  const settingsTab = searchParams.get("tab");
+  const onBrandSettingsPage =
+    pathname === "/dashboard/social/brands" ||
+    pathname.startsWith("/dashboard/social/brands/");
+  const connectionsActive =
+    onBrandSettingsPage && settingsTab === "connections";
+  const aiConfigurationActive =
+    onBrandSettingsPage && settingsTab === "ai";
+  const brandSettingsActive =
+    onBrandSettingsPage &&
+    settingsTab !== "connections" &&
+    settingsTab !== "ai";
+
   return (
     <div className="fixed inset-0 z-[90]">
       <button
@@ -1206,16 +1255,9 @@ function ModuleDrawer({
                 const Icon = item.icon;
 
                 const active =
-                  item.label ===
-                  "Analytics"
-                    ? pathname ===
-                        "/dashboard/social" ||
-                      pathname.startsWith(
-                        "/dashboard/social/",
-                      )
-                    : pathname.startsWith(
-                        item.href,
-                      );
+                  item.label === "Analytics"
+                    ? isAnalyticsPath(pathname)
+                    : pathname.startsWith(item.href);
 
                 const navigationContent = (
                   <>
@@ -1253,16 +1295,31 @@ function ModuleDrawer({
                   );
                 }
 
+                const itemClassName = `flex min-h-[46px] w-full items-center gap-2.5 px-4 text-left text-[14px] font-medium transition ${
+                  active
+                    ? "bg-slate-200 text-slate-950"
+                    : "text-[#2a2a2a] hover:bg-slate-50"
+                }`;
+
+                if (active) {
+                  return (
+                    <span
+                      key={item.label}
+                      aria-current="page"
+                      className={itemClassName}
+                    >
+                      {navigationContent}
+                    </span>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.label}
                     href={item.href}
+                    prefetch={false}
                     onClick={onClose}
-                    className={`flex min-h-[46px] w-full items-center gap-2.5 px-4 text-left text-[14px] font-medium transition ${
-                      active
-                        ? "bg-slate-200 text-slate-950"
-                        : "text-[#2a2a2a] hover:bg-slate-50"
-                    }`}
+                    className={itemClassName}
                   >
                     {navigationContent}
                   </Link>
@@ -1274,28 +1331,46 @@ function ModuleDrawer({
           <section className="border-b border-[#e5edef] py-1">
             <DrawerRow
               label="Add brand"
-              href="/dashboard/brands"
+              href={withSocialPreview(
+                "/dashboard/social?addBrand=1",
+                searchParams,
+              )}
               icon={Plus}
-              premiumLocked={
-                premiumLocked
-              }
+              premiumLocked={premiumLocked}
+              active={searchParams.get("addBrand") === "1"}
               onClose={onClose}
             />
 
             <DrawerRow
               label="Connections"
               href={withSocialPreview(
-                "/dashboard/social?connections=open",
+                "/dashboard/social/brands/settings?tab=connections",
                 searchParams,
               )}
               icon={Share2}
+              active={connectionsActive}
+              onClose={onClose}
+            />
+
+            <DrawerRow
+              label="AI Configuration"
+              href={withSocialPreview(
+                "/dashboard/social/brands/settings?tab=ai",
+                searchParams,
+              )}
+              icon={Sparkles}
+              active={aiConfigurationActive}
               onClose={onClose}
             />
 
             <DrawerRow
               label="Brand settings"
-              href="/dashboard/brands"
+              href={withSocialPreview(
+                "/dashboard/social/brands/settings",
+                searchParams,
+              )}
               icon={Settings2}
+              active={brandSettingsActive}
               onClose={onClose}
             />
           </section>
@@ -1303,44 +1378,58 @@ function ModuleDrawer({
           <section className="border-b border-[#e5edef] py-1">
             <DrawerRow
               label="User management"
-              href="/dashboard/team"
+              href={withSocialPreview(
+                "/dashboard/team",
+                searchParams,
+              )}
               icon={ShieldCheck}
-              premiumLocked={
-                premiumLocked
-              }
+              premiumLocked={premiumLocked}
+              active={pathname.startsWith("/dashboard/team")}
               onClose={onClose}
             />
 
             <DrawerRow
               label="Plans and billing"
-              href="/dashboard/settings"
+              href={withSocialPreview(
+                "/dashboard/social/settings?tab=billing",
+                searchParams,
+              )}
               icon={CreditCard}
+              active={
+                (pathname.startsWith("/dashboard/social/settings") ||
+                  pathname.startsWith("/dashboard/profile")) &&
+                settingsTab === "billing"
+              }
               onClose={onClose}
             />
 
             <DrawerRow
               label="My tasks"
-              href="/dashboard/social/approvals"
+              href={withSocialPreview(
+                "/dashboard/social/approvals",
+                searchParams,
+              )}
               icon={ClipboardList}
-              premiumLocked={
-                premiumLocked
-              }
+              premiumLocked={premiumLocked}
+              active={pathname.startsWith("/dashboard/social/approvals")}
               onClose={onClose}
             />
 
-            {/* <DrawerRow
-              label="Language"
-              icon={Globe2}
-              languageCode="EN"
-              showChevron
-              onClose={onClose}
-            /> */}
             <LanguageFlyout />
 
             <DrawerRow
               label="Account settings"
-              href="/dashboard/settings"
+              href={withSocialPreview(
+                "/dashboard/social/settings",
+                searchParams,
+              )}
               icon={Settings2}
+              active={
+                (pathname.startsWith("/dashboard/social/settings") ||
+                  pathname.startsWith("/dashboard/profile") ||
+                  pathname === "/dashboard/settings") &&
+                settingsTab !== "billing"
+              }
               onClose={onClose}
             />
           </section>
@@ -1348,22 +1437,25 @@ function ModuleDrawer({
           <section className="py-1">
             <DrawerRow
               label="Help center"
+              href="/dashboard/support"
               icon={CircleHelp}
-              disabled
+              active={pathname.startsWith("/dashboard/support")}
               onClose={onClose}
             />
 
             <DrawerRow
               label="What's new"
+              href="/dashboard/notifications"
               icon={Megaphone}
-              disabled
+              active={pathname.startsWith("/dashboard/notifications")}
               onClose={onClose}
             />
 
             <DrawerRow
               label="Affiliation program"
+              href="/marketplace"
               icon={Handshake}
-              disabled
+              active={pathname.startsWith("/marketplace")}
               onClose={onClose}
             />
           </section>
@@ -1388,7 +1480,9 @@ function ModuleDrawer({
           </form>
 
           <p className="mt-5 text-[14px] font-medium text-[#7c8e98]">
-            Legal terms
+            <Link href="/terms" className="hover:text-slate-700">
+              Legal terms
+            </Link>
           </p>
         </footer>
       </aside>
@@ -1399,9 +1493,11 @@ function ModuleDrawer({
 function SocialTopbar({
   data,
   onOpenMobile,
+  hideSidebar,
 }: {
   data: SocialShellData;
   onOpenMobile: () => void;
+  hideSidebar: boolean;
 }) {
   const pathname = usePathname();
 
@@ -1411,14 +1507,16 @@ function SocialTopbar({
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-40 flex h-[66px] items-center border-b-4 border-[#dfff32] bg-[#2a1728] px-3 shadow-sm sm:px-5">
-        <button
-          type="button"
-          onClick={onOpenMobile}
-          aria-label="Open Social Media menu"
-          className="mr-1 rounded-lg p-2 text-white hover:bg-white/10 lg:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        {hideSidebar ? null : (
+          <button
+            type="button"
+            onClick={onOpenMobile}
+            aria-label="Open Social Media menu"
+            className="mr-1 rounded-lg p-2 text-white hover:bg-white/10 lg:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        )}
 
         <Link
           href="/dashboard"
@@ -1434,16 +1532,9 @@ function SocialTopbar({
               const Icon = item.icon;
 
               const active =
-                item.label ===
-                "Analytics"
-                  ? pathname ===
-                      "/dashboard/social" ||
-                    pathname.startsWith(
-                      "/dashboard/social/",
-                    )
-                  : pathname.startsWith(
-                      item.href,
-                    );
+                item.label === "Analytics"
+                  ? isAnalyticsPath(pathname)
+                  : pathname.startsWith(item.href);
 
               if (!item.enabled) {
                 return (
@@ -1460,15 +1551,31 @@ function SocialTopbar({
                 );
               }
 
+              const itemClassName = `flex h-11 items-center gap-2 rounded-lg px-4 text-sm font-medium transition ${
+                active
+                  ? "bg-[#746f73] text-white"
+                  : "text-white/85 hover:bg-white/10 hover:text-white"
+              }`;
+
+              if (active) {
+                return (
+                  <span
+                    key={item.label}
+                    aria-current="page"
+                    className={itemClassName}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.label}
+                  </span>
+                );
+              }
+
               return (
                 <Link
                   key={item.label}
                   href={item.href}
-                  className={`flex h-11 items-center gap-2 rounded-lg px-4 text-sm font-medium transition ${
-                    active
-                      ? "bg-[#746f73] text-white"
-                      : "text-white/85 hover:bg-white/10 hover:text-white"
-                  }`}
+                  prefetch={false}
+                  className={itemClassName}
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}
@@ -1482,7 +1589,7 @@ function SocialTopbar({
           {data.hasPaidPlan !==
           true ? (
             <Link
-              href="/dashboard/settings"
+              href="/dashboard/social/settings?tab=billing"
               className="hidden h-10 items-center gap-2 rounded-lg bg-[#dfff32] px-4 text-sm font-semibold text-[#2a1728] transition hover:bg-[#d5f526] xl:flex"
             >
               <Gem className="h-4 w-4" />
@@ -1602,6 +1709,10 @@ function SocialSidebarContent({
 
   const summaryActive =
     pathname === "/dashboard/social";
+
+  const brandSettingsActive =
+    pathname === "/dashboard/social/brands" ||
+    pathname.startsWith("/dashboard/social/brands/");
 
   const starterPlatformSet =
     new Set(
@@ -1867,14 +1978,21 @@ function SocialSidebarContent({
         </button>
 
         <Link
-          href="/dashboard/brands"
+          href={withSocialPreview(
+            "/dashboard/social/brands/settings",
+            searchParams,
+          )}
           onClick={onNavigate}
           title={
             collapsed
               ? "Brand settings"
               : undefined
           }
-          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+          className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+            brandSettingsActive
+              ? "bg-[#2a1728] text-white"
+              : "text-slate-700 hover:bg-slate-100"
+          }`}
         >
           <Settings2 className="h-5 w-5 shrink-0" />
 
@@ -1939,6 +2057,7 @@ export function SocialWorkspaceShell({
     useState(false);
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [addBrandOpen, setAddBrandOpen] = useState(false);
   const [oauthNotice, setOauthNotice] = useState<{
     tone: "success" | "error";
     message: string;
@@ -1987,7 +2106,18 @@ const effectiveData: SocialShellData =
   }, []);
 
   useEffect(() => {
-    const outcome = searchParams.get("social_oauth");
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("addBrand") !== "1") {
+      return;
+    }
+    setAddBrandOpen(true);
+    // Do not history.replaceState — Next.js patches it and re-fetches the
+    // dynamic RSC payload in a loop (ACTION_RESTORE / spawnDynamicRequests).
+  }, [pathname]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const outcome = params.get("social_oauth");
     if (!outcome) {
       return;
     }
@@ -2011,14 +2141,19 @@ const effectiveData: SocialShellData =
       });
     }
 
-    const params = new URLSearchParams(searchParams.toString());
+    // Strip the param only when Next's history flag is present so the
+    // patched replaceState does not dispatch ACTION_RESTORE.
+    const state = window.history.state as { __NA?: boolean; _N?: boolean } | null;
+    if (!state?.__NA && !state?._N) {
+      return;
+    }
     params.delete("social_oauth");
     const query = params.toString();
-    const nextUrl = query ? `${pathname}?${query}` : pathname;
-    // Replace so refresh does not replay the OAuth outcome banner.
-    // Also drops Facebook's leftover #_=_ hash.
-    window.history.replaceState(window.history.state, "", nextUrl);
-  }, [pathname, searchParams]);
+    window.history.replaceState(state, "", query ? `${pathname}?${query}` : pathname);
+  }, [pathname]);
+
+  const hideSidebar = isSocialSettingsPage(pathname);
+  const isPlanningPage = pathname.startsWith("/dashboard/social/calendar");
 
   function toggleCollapsed() {
     setCollapsed((current) => {
@@ -2034,31 +2169,32 @@ const effectiveData: SocialShellData =
   }
 
   return (
-    <div className="min-h-screen bg-[#eef1f3]">
+    <div
+      className={`min-h-screen ${hideSidebar ? "bg-white" : "bg-[#eef1f3]"}`}
+    >
       <SocialTopbar
         data={effectiveData}
+        hideSidebar={hideSidebar}
         onOpenMobile={() => {
           setMobileOpen(true);
         }}
       />
 
-      <aside
-        className={`fixed bottom-0 left-0 top-[66px] z-30 hidden border-r border-slate-200 bg-white transition-[width] duration-200 lg:block ${
-          collapsed
-            ? "w-[74px]"
-            : "w-[238px]"
-        }`}
-      >
-        <SocialSidebarContent
-          data={effectiveData}
-          collapsed={collapsed}
-          onToggleCollapsed={
-            toggleCollapsed
-          }
-        />
-      </aside>
+      {hideSidebar ? null : (
+        <aside
+          className={`fixed bottom-0 left-0 top-[66px] z-30 hidden border-r border-slate-200 bg-white transition-[width] duration-200 lg:block ${
+            collapsed ? "w-[74px]" : "w-[238px]"
+          }`}
+        >
+          <SocialSidebarContent
+            data={effectiveData}
+            collapsed={collapsed}
+            onToggleCollapsed={toggleCollapsed}
+          />
+        </aside>
+      )}
 
-      {mobileOpen ? (
+      {!hideSidebar && mobileOpen ? (
         <div
           className="fixed inset-0 z-50 lg:hidden"
           role="dialog"
@@ -2104,39 +2240,122 @@ const effectiveData: SocialShellData =
       ) : null}
 
       <main
-        className={`min-h-screen pt-[66px] transition-[padding] duration-200 ${
-          collapsed
-            ? "lg:pl-[74px]"
-            : "lg:pl-[238px]"
+        className={`pt-[66px] transition-[padding] duration-200 ${
+          hideSidebar
+            ? isPlanningPage
+              ? "h-screen overflow-hidden bg-[#eaeeef]"
+              : "min-h-screen bg-white"
+            : `min-h-screen ${collapsed ? "lg:pl-[74px]" : "lg:pl-[238px]"}`
         }`}
       >
-        <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
-          {oauthNotice ? (
-            <div
-              className={`mb-4 flex items-start justify-between gap-3 rounded-[12px] border px-4 py-3 text-sm ${
-                oauthNotice.tone === "success"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                  : "border-rose-200 bg-rose-50 text-rose-900"
-              }`}
-              role="status"
-            >
-              <p>{oauthNotice.message}</p>
-              <button
-                type="button"
-                aria-label="Dismiss"
-                onClick={() => setOauthNotice(null)}
-                className="rounded p-1 opacity-70 hover:opacity-100"
+        {hideSidebar ? (
+          <div
+            className={
+              isPlanningPage
+                ? "flex h-full min-h-0 flex-col overflow-hidden"
+                : "w-full"
+            }
+          >
+            {oauthNotice ? (
+              <div className="px-5 pt-4 sm:px-6">
+                <div
+                  className={`flex items-start justify-between gap-3 rounded-[12px] border px-4 py-3 text-sm ${
+                    oauthNotice.tone === "success"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                      : "border-rose-200 bg-rose-50 text-rose-900"
+                  }`}
+                  role="status"
+                >
+                  <p>{oauthNotice.message}</p>
+                  <button
+                    type="button"
+                    aria-label="Dismiss"
+                    onClick={() => setOauthNotice(null)}
+                    className="rounded p-1 opacity-70 hover:opacity-100"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ) : null}
+            {isPlanningPage ? null : (
+              <SocialBillingBanner
+                banner={effectiveData.billingBanner ?? null}
+                className="mx-6 mt-4"
+              />
+            )}
+            {children}
+          </div>
+        ) : (
+          <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+            {oauthNotice ? (
+              <div
+                className={`mb-4 flex items-start justify-between gap-3 rounded-[12px] border px-4 py-3 text-sm ${
+                  oauthNotice.tone === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                    : "border-rose-200 bg-rose-50 text-rose-900"
+                }`}
+                role="status"
               >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ) : null}
-          {children}
-        </div>
+                <p>{oauthNotice.message}</p>
+                <button
+                  type="button"
+                  aria-label="Dismiss"
+                  onClick={() => setOauthNotice(null)}
+                  className="rounded p-1 opacity-70 hover:opacity-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : null}
+            <SocialBillingBanner banner={effectiveData.billingBanner ?? null} />
+            {children}
+          </div>
+        )}
       </main>
 
       <SocialOnboardingModal />
-      <SocialPreviewSwitcher />
+      <AddBrandsModal
+        open={addBrandOpen}
+        brands={effectiveData.brands.map((brand) => ({
+          id: brand.id,
+          name: brand.name,
+          status: brand.status,
+          displayLabel: brand.displayLabel,
+          displayImageUrl: brand.displayImageUrl,
+          connectedPlatforms: brand.connectedPlatforms,
+        }))}
+        activeBrandId={effectiveData.activeBrandId}
+        canAddBrand={
+          Boolean(effectiveData.canManageBrands) &&
+          effectiveData.brands.length <
+            (effectiveData.brandAllowance ?? 1)
+        }
+        brandAllowance={effectiveData.brandAllowance ?? 1}
+        hasPaidPlan={Boolean(effectiveData.hasPaidPlan)}
+        billingHref={withSocialPreview(
+          "/dashboard/billing",
+          searchParams,
+        )}
+        usersHref={withSocialPreview("/dashboard/team", searchParams)}
+        onClose={() => setAddBrandOpen(false)}
+        onSelectBrand={(brandId) => {
+          void fetch("/api/social/brand-context", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ brandId }),
+          }).then((response) => {
+            if (response.ok) {
+              window.location.reload();
+            }
+          });
+        }}
+        onCreated={() => {
+          setAddBrandOpen(false);
+          window.location.reload();
+        }}
+      />
 
       <ManageConnectionsModal
         key={

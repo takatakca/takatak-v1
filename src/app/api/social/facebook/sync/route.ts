@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { clipAnalyticsDateRangeForClient } from "@/lib/billing/social/entitlement-gates";
 import {
   handleApiError,
   jsonResponse,
@@ -180,21 +181,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         "previous_month",
         "custom",
       ]);
-      const range = resolveFacebookAnalyticsRange({
-        preset: allowedPresets.has(preset)
-          ? (preset as
-              | "last_7"
-              | "last_30"
-              | "last_90"
-              | "current_month"
-              | "previous_month"
-              | "custom")
-          : "last_30",
-        timezone: sync.timezone || "UTC",
-        customStart,
-        customEnd,
-        compare,
-      });
+      const range = await clipAnalyticsDateRangeForClient(
+        gate.access.activeClientId,
+        resolveFacebookAnalyticsRange({
+          preset: allowedPresets.has(preset)
+            ? (preset as
+                | "last_7"
+                | "last_30"
+                | "last_90"
+                | "current_month"
+                | "previous_month"
+                | "custom")
+            : "last_30",
+          timezone: sync.timezone || "UTC",
+          customStart,
+          customEnd,
+          compare,
+        }),
+      );
 
       const metrics =
         sync.status === "ready" ||

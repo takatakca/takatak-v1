@@ -69,6 +69,7 @@ type CanonicalRow = {
   brandName: string;
   brandStatus: string;
   brandImageUrl: string | null;
+  imageSocialAccountId: string | null;
   accountPlatform: string | null;
   accountId: string | null;
   accountDisplayName: string | null;
@@ -119,6 +120,7 @@ async function loadBrandSelectorSnapshotsUncached(
       b.name AS "brandName",
       b.status::text AS "brandStatus",
       b."imageUrl" AS "brandImageUrl",
+      b."imageSocialAccountId" AS "imageSocialAccountId",
       s.platform::text AS "accountPlatform",
       s.id AS "accountId",
       s."displayName" AS "accountDisplayName",
@@ -141,7 +143,7 @@ async function loadBrandSelectorSnapshotsUncached(
       AND s."businessBrandId" = b.id
       AND s.status = 'connected'
       AND (
-        s."accessStatus" = 'selected'
+      s."accessStatus" = 'selected'
         OR s.platform <> 'facebook'
       )
     LEFT JOIN social_provider_connections c
@@ -152,6 +154,7 @@ async function loadBrandSelectorSnapshotsUncached(
       ON sync."socialAccountId" = s.id
     WHERE b."clientId" = ${clientId}::uuid
       AND b.status <> 'archived'
+      AND b.status <> 'frozen'
     ORDER BY b.status ASC, b.name ASC
   `;
 
@@ -164,6 +167,7 @@ async function loadBrandSelectorSnapshotsUncached(
       name: string;
       status: string;
       imageUrl: string | null;
+      imageSocialAccountId: string | null;
       accounts: Array<{
         accountId: string | null;
         platform: string;
@@ -184,6 +188,7 @@ async function loadBrandSelectorSnapshotsUncached(
         name: row.brandName,
         status: row.brandStatus,
         imageUrl: row.brandImageUrl,
+        imageSocialAccountId: row.imageSocialAccountId,
         accounts: [],
         platforms: [],
         facebookSurface: null,
@@ -191,10 +196,7 @@ async function loadBrandSelectorSnapshotsUncached(
       byBrand.set(row.brandId, brand);
     }
 
-    if (
-      row.accountPlatform === "facebook" ||
-      row.shellProvider === "meta"
-    ) {
+    if (row.accountPlatform === "facebook") {
       const projection = projectMetaBrandSurface({
         connection: row.shellStatus
           ? {
@@ -203,22 +205,19 @@ async function loadBrandSelectorSnapshotsUncached(
               lastErrorCode: row.shellLastErrorCode,
             }
           : null,
-        selectedPage:
-          row.accountPlatform === "facebook"
-            ? {
-                id: "page",
-                status: "connected",
-                accessStatus: row.accountAccessStatus,
-                displayName: row.accountDisplayName,
-                profileImageUrl: row.accountProfileImageUrl,
-              }
-            : null,
+        selectedPage: {
+          id: "page",
+          status: "connected",
+          accessStatus: row.accountAccessStatus,
+          displayName: row.accountDisplayName,
+          profileImageUrl: row.accountProfileImageUrl,
+        },
         syncStatus: row.syncStatus,
         hasPendingOAuthAttempt: row.pendingOAuth === true,
       });
       brand.facebookSurface = projection;
 
-      if (projection.showFacebookIcon && row.accountPlatform === "facebook") {
+      if (projection.showFacebookIcon) {
         brand.platforms.push("facebook");
         brand.accounts.push({
           accountId: row.accountId,
@@ -229,6 +228,21 @@ async function loadBrandSelectorSnapshotsUncached(
         });
       }
       continue;
+    }
+
+    if (row.shellProvider === "meta" && !brand.facebookSurface) {
+      brand.facebookSurface = projectMetaBrandSurface({
+        connection: row.shellStatus
+          ? {
+              id: "shell",
+              status: row.shellStatus,
+              lastErrorCode: row.shellLastErrorCode,
+            }
+          : null,
+        selectedPage: null,
+        syncStatus: row.syncStatus,
+        hasPendingOAuthAttempt: row.pendingOAuth === true,
+      });
     }
 
     if (row.accountPlatform) {
@@ -252,9 +266,17 @@ async function loadBrandSelectorSnapshotsUncached(
 
   const result = orderedIds.map((id) => {
     const brand = byBrand.get(id)!;
+    const selectedAccount = brand.imageSocialAccountId
+      ? brand.accounts.find(
+          (account) => account.accountId === brand.imageSocialAccountId,
+        ) ?? null
+      : null;
+
     const resolved = resolveBrandDisplayImage({
-      uploadedImageUrl: brand.imageUrl,
-      connectedAccounts: brand.accounts,
+      uploadedImageUrl: selectedAccount ? null : brand.imageUrl,
+      connectedAccounts: selectedAccount
+        ? [{ ...selectedAccount, preferAsPrimary: true }]
+        : brand.accounts,
     });
     const displayLabel = resolveBrandDisplayLabel({
       brandName: brand.name,

@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { ensureDefaultSocialSubscription } from "@/lib/billing/social/ensure-free-subscription";
 import { getPrisma } from "@/lib/db/prisma";
 import {
   normalizeEmail,
@@ -76,7 +77,7 @@ function getProfileIdentity(user: User): {
   };
 }
 
-async function ensurePersonalClientWorkspace(
+export async function ensurePersonalClientWorkspace(
   profileId: string,
   email: string,
   displayName: string,
@@ -94,10 +95,15 @@ async function ensurePersonalClientWorkspace(
       },
       select: {
         id: true,
+        clientId: true,
       },
     });
 
   if (existingMembership) {
+    await ensureDefaultSocialSubscription(
+      prisma,
+      existingMembership.clientId,
+    );
     return;
   }
 
@@ -127,6 +133,8 @@ async function ensurePersonalClientWorkspace(
         ],
         skipDuplicates: true,
       });
+
+    await ensureDefaultSocialSubscription(transaction, profileId);
 
     if (membershipResult.count === 1) {
       await transaction.auditLog.create({
@@ -168,6 +176,19 @@ export async function ensureProfileForSupabaseUser(
       where: {
         authUserId: user.id,
       },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        displayName: true,
+        status: true,
+        _count: {
+          select: {
+            memberships: true,
+          },
+        },
+      },
     });
 
     if (existingProfile) {
@@ -196,11 +217,14 @@ export async function ensureProfileForSupabaseUser(
         existingProfile.displayName !== displayName ||
         existingProfile.status !== status;
 
+      const hasWorkspace = existingProfile._count.memberships > 0;
+
       if (!requiresUpdate) {
         if (
           shouldCreatePersonalWorkspace &&
           identity.emailVerified &&
-          existingProfile.status !== "disabled"
+          existingProfile.status !== "disabled" &&
+          !hasWorkspace
         ) {
           await ensurePersonalClientWorkspace(
             existingProfile.id,
@@ -231,7 +255,8 @@ export async function ensureProfileForSupabaseUser(
       if (
         shouldCreatePersonalWorkspace &&
         identity.emailVerified &&
-        updatedProfile.status !== "disabled"
+        updatedProfile.status !== "disabled" &&
+        !hasWorkspace
       ) {
         await ensurePersonalClientWorkspace(
           updatedProfile.id,

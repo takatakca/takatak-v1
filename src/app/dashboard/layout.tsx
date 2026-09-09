@@ -2,19 +2,21 @@
 // Phase 15A: access resolution is Profile + ClientMembership based via
 // getServerAccessContext. Denied states render safe screens — never demo
 // data, never another client's data, never owner defaults.
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AccessDenied } from "@/components/security/access-denied";
 import { MembershipRequired } from "@/components/security/membership-required";
+import { CheckNetworkScreen } from "@/components/network/check-network-screen";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
+import { AUTH_STATUS_HEADER } from "@/lib/auth/session-user";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { ensureProfileForAuthenticatedUser } from "@/lib/auth/profile-sync";
 import { Building2 } from "lucide-react";
 import { getPrisma } from "@/lib/db/prisma";
 import { setActiveClient } from "@/app/dashboard/select-client/actions";
 import { getEffectivePermissions } from "@/lib/security/effective-permissions";
-import type { PlatformRoleKey } from "@/lib/security/roles";
 
 export const metadata = { robots: { index: false, follow: false } };
 
@@ -23,9 +25,18 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode;
 }) {
-  await ensureProfileForAuthenticatedUser();
+  const authStatus = (await headers()).get(AUTH_STATUS_HEADER);
+  if (authStatus === "network") {
+    return <CheckNetworkScreen />;
+  }
 
-  const { runtime, access, displayEmail } =
+  // Profile create/update already runs on login, register, and callback.
+  // Doing it on every dashboard render adds a remote Postgres round-trip.
+  if (authStatus !== "authenticated") {
+    await ensureProfileForAuthenticatedUser();
+  }
+
+  const { runtime, access, displayEmail, profileDetails, activeClientName } =
     await getServerAccessContext();
 
   // Production runtime without auth env: safe setup-required state (Phase 14).
@@ -65,15 +76,13 @@ export default async function DashboardLayout({
           />
         );
       
+      case "client_not_allowed":
       case "membership_missing":
         return <MembershipRequired email={displayEmail} />;
       case "profile_disabled":
         return <AccessDenied title="Account disabled" message="This account is disabled. Contact your TAKATAK administrator." />;
       case "profile_missing":
         return <AccessDenied title="Profile not found" message="Your account profile could not be resolved. Contact your TAKATAK administrator." />;
-      case "client_not_allowed":
-        redirect("/dashboard/select-client");
-        break;
       default:
         return <AccessDenied title="Temporarily unavailable" message="Data access could not be resolved safely. Try again shortly." />;
     }
@@ -81,7 +90,7 @@ export default async function DashboardLayout({
 
   if (access.mode === "selection_required") {
     const prisma = getPrisma();
-  
+
     const clients = prisma
       ? await prisma.client.findMany({
           where: {
@@ -99,18 +108,18 @@ export default async function DashboardLayout({
           },
         })
       : [];
-  
+
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <h1 className="text-xl font-semibold text-slate-900">
             Select a workspace
           </h1>
-  
+
           <p className="mt-1 text-sm text-slate-500">
             Choose the workspace you want to access.
           </p>
-  
+
           <div className="mt-5 space-y-2">
             {clients.map((client) => (
               <form key={client.id} action={setActiveClient}>
@@ -119,7 +128,7 @@ export default async function DashboardLayout({
                   name="clientId"
                   value={client.id}
                 />
-  
+
                 <button
                   type="submit"
                   className="flex w-full items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-left text-sm font-medium text-slate-800 transition hover:border-indigo-300 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -128,12 +137,12 @@ export default async function DashboardLayout({
                     className="h-4 w-4 text-slate-400"
                     aria-hidden="true"
                   />
-  
+
                   <span>{client.name}</span>
                 </button>
               </form>
             ))}
-  
+
             {clients.length === 0 ? (
               <p className="text-sm text-slate-500">
                 No accessible workspace could be loaded.
@@ -145,16 +154,7 @@ export default async function DashboardLayout({
     );
   }
 
-  let profileDetails: {
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-    displayName: string | null;
-    email: string;
-    role: PlatformRoleKey;
-  } | null = null;
-  
-  let activeClientName: string | null = null;
+  let unreadNotificationCount = 0;
   
   if (
     access.mode === "platform_admin" ||
@@ -163,34 +163,16 @@ export default async function DashboardLayout({
     const prisma = getPrisma();
   
     if (prisma) {
-      const [profile, activeClient] = await Promise.all([
-        prisma.profile.findUnique({
+      unreadNotificationCount = await prisma.notification
+        .count({
           where: {
-            id: access.profileId,
+            status: "unread",
+            ...(access.mode === "client_scoped"
+              ? { clientId: access.activeClientId }
+              : {}),
           },
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            displayName: true,
-            email: true,
-            role: true,
-          },
-        }),
-        access.mode === "client_scoped"
-          ? prisma.client.findUnique({
-              where: {
-                id: access.activeClientId,
-              },
-              select: {
-                name: true,
-              },
-            })
-          : Promise.resolve(null),
-      ]);
-  
-      profileDetails = profile;
-      activeClientName = activeClient?.name ?? null;
+        })
+        .catch(() => 0);
     }
   }
 
@@ -244,5 +226,12 @@ export default async function DashboardLayout({
   // Foundation mode keeps configured=false so the existing warning renders.
   if (access.mode === "foundation_demo") session.configured = false;
 
-  return <DashboardShell session={session}>{children}</DashboardShell>;
+  return (
+    <DashboardShell
+      session={session}
+      unreadNotificationCount={unreadNotificationCount}
+    >
+      {children}
+    </DashboardShell>
+  );
 }

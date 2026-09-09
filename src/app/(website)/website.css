@@ -1,69 +1,76 @@
 @theme inline {
     --color-background:
-      var(--background);
+      var(--background, oklch(1 0 0));
   
     --color-foreground:
-      var(--foreground);
+      var(--foreground, oklch(0.18 0.01 260));
   
     --color-card:
-      var(--card);
+      var(--card, oklch(1 0 0));
   
     --color-card-foreground:
-      var(--card-foreground);
+      var(--card-foreground, oklch(0.18 0.01 260));
   
     --color-popover:
-      var(--popover);
+      var(--popover, oklch(1 0 0));
   
     --color-popover-foreground:
-      var(--popover-foreground);
+      var(--popover-foreground, oklch(0.18 0.01 260));
   
     --color-primary:
-      var(--primary);
+      var(--primary, oklch(0.52 0.16 152));
   
     --color-primary-foreground:
-      var(--primary-foreground);
+      var(--primary-foreground, oklch(1 0 0));
   
     --color-secondary:
-      var(--secondary);
+      var(--secondary, oklch(0.97 0.003 250));
   
     --color-secondary-foreground:
-      var(--secondary-foreground);
+      var(--secondary-foreground, oklch(0.22 0.01 260));
   
     --color-muted:
-      var(--muted);
+      var(--muted, oklch(0.965 0.003 250));
   
     --color-muted-foreground:
-      var(--muted-foreground);
+      var(--muted-foreground, oklch(0.48 0.01 260));
   
     --color-accent:
-      var(--accent);
+      var(--accent, oklch(0.55 0.17 152));
   
     --color-accent-foreground:
-      var(--accent-foreground);
+      var(--accent-foreground, oklch(1 0 0));
   
     --color-destructive:
-      var(--destructive);
+      var(--destructive, oklch(0.6 0.22 25));
   
     --color-destructive-foreground:
-      var(--destructive-foreground);
+      var(--destructive-foreground, oklch(1 0 0));
   
     --color-border:
-      var(--border);
+      var(--border, oklch(0.91 0.004 250));
   
     --color-input:
-      var(--input);
+      var(--input, oklch(0.94 0.004 250));
   
     --color-ring:
-      var(--ring);
+      var(--ring, oklch(0.52 0.16 152));
   
     --color-success:
-      var(--success);
+      var(--success, oklch(0.55 0.16 152));
   
     --color-warning:
-      var(--warning);
+      var(--warning, oklch(0.75 0.15 75));
   }
-  
+
+  /*
+    Keep tokens on html while the public site is mounted so portaled overlays
+    (menu drawer) still resolve --card / --popover. Scoping only to
+    .website-surface left those utilities with an empty fill and a visible border.
+  */
+  html:has(.website-surface),
   .website-surface {
+    color-scheme: light;
     --radius: 0.625rem;
   
     --background:
@@ -178,23 +185,35 @@
   
     --brand-accent-violet:
       oklch(0.72 0.15 290);
-  
-    min-height: 100vh;
-    background-color:
-      var(--background);
-  
-    color:
-      var(--foreground);
-  
-    font-family:
-      var(--font-body);
   }
-  
+
+  html:has(.website-surface) body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+
+  .website-surface {
+    min-height: 100vh;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-body);
+  }
+
+  html:has(.website-surface) *,
+  html:has(.website-surface) *::before,
+  html:has(.website-surface) *::after,
   .website-surface *,
   .website-surface *::before,
   .website-surface *::after {
-    border-color:
-      var(--border);
+    border-color: var(--border);
+  }
+
+  /* Solid overlay fills even if a utility resolved against an empty token. */
+  html:has(.website-surface) .bg-card {
+    background-color: var(--card);
+  }
+  html:has(.website-surface) .bg-popover {
+    background-color: var(--popover);
   }
   
   .website-surface h1,
@@ -464,6 +483,12 @@
 
 /* Pass 2 — flagship hero scene */
 .tk-hero-scene { --tk-px: 0; --tk-py: 0; }
+.tk-hero-object,
+.tk-eco-node,
+.tk-hero-console,
+.tk-frost-card {
+  background-color: rgb(255 255 255 / 0.1);
+}
 .tk-hero-object {
   position: relative;
   transition:
@@ -474,7 +499,14 @@
 }
 .tk-hero-object:hover,
 .tk-hero-object:focus-visible,
-.tk-hero-object[data-state="selected"] {
+.tk-hero-object[data-state="selected"],
+.tk-hero-object[data-state="reached"],
+.tk-eco-node:hover,
+.tk-eco-node:focus-visible,
+.tk-eco-node[data-state="selected"],
+.tk-eco-node[data-state="reached"],
+.tk-frost-card[data-active="true"] {
+  background-color: rgb(255 255 255 / 0.16);
   border-color: color-mix(in oklab, var(--primary) 55%, transparent);
 }
 .tk-hero-object[data-state="selected"] { z-index: 40; }

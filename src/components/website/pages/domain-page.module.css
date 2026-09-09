@@ -1,0 +1,59 @@
+.pagetop {
+  padding-top: 24px;
+  background: #090a1a;
+}
+
+.cont {
+  padding-block: 70px;
+}
+
+.sip {
+  padding: 20px;
+}
+
+.dex {
+  padding: 20px;
+}
+
+.secur {
+  padding-block: 60px;
+  padding-inline: 20px;
+}
+
+.chat {
+  padding: 20px;
+  padding-bottom: 0;
+}
+
+.cbtn {
+  color: black;
+  background-color: white;
+  padding-block: 9px;
+  padding-inline: 19px;
+}
+
+.icon {
+  padding: 8px;
+}
+
+.prc {
+  padding-left: 10px;
+}
+
+.tb {
+  padding: 20px;
+}
+
+.qs {
+  background: transparent;
+}
+
+@media screen and (max-width: 950px) {
+  .pagetop {
+    padding-top: 16px;
+  }
+
+  .dex {
+    padding: 15px;
+  }
+}

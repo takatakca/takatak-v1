@@ -149,7 +149,7 @@ import type {
         clientId,
   
         status: {
-          not: "archived",
+          notIn: ["archived", "frozen"],
         },
       },
   

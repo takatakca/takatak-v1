@@ -59,7 +59,7 @@ export async function assignSocialAccountToBrand(options: {
       where: {
         id: options.businessBrandId,
         clientId: options.clientId,
-        status: { not: "archived" },
+        status: { notIn: ["archived", "frozen"] },
       },
       select: { id: true },
     });

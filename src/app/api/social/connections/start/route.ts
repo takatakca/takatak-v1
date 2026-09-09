@@ -98,7 +98,17 @@ export async function POST(
         ok: true,
 
         message:
-          "Continue to Facebook to authorize this brand.",
+          authorization.provider === "instagram"
+            ? "Continue to Instagram to authorize this brand."
+            : authorization.provider === "threads"
+              ? "Continue to Threads to authorize this brand."
+              : authorization.provider === "tiktok"
+                ? "Continue to TikTok to authorize this brand."
+                : authorization.provider === "google"
+                  ? "Continue to Google to authorize YouTube for this brand."
+                  : authorization.provider === "x"
+                    ? "Continue to X to authorize this brand."
+                    : "Continue to Facebook to authorize this brand.",
 
         authorization: {
           authorizationUrl:

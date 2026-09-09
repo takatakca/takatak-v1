@@ -1,4 +1,5 @@
 import type { BrandInput } from "@/lib/brands/brand-validation";
+import { assertClientCanAddBrand } from "@/lib/billing/social/brand-allowance";
 import { isPrismaKnownRequestError } from "@/lib/db/prisma-errors";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
@@ -91,6 +92,8 @@ export async function createBrand(
       },
     );
   }
+
+  await assertClientCanAddBrand(clientId);
 
   try {
     return await prisma.$transaction(
@@ -221,6 +224,13 @@ export async function updateBrand(
     throw new ServiceError(
       "not_found",
       "The selected brand could not be found.",
+    );
+  }
+
+  if (current.status === "frozen") {
+    throw new ServiceError(
+      "forbidden",
+      "This brand is frozen by the Social plan. Restore it from Plans and billing.",
     );
   }
 

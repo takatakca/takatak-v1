@@ -47,7 +47,43 @@ function main() {
     "trial must use subscription path",
   );
 
-  for (const status of ["past_due", "canceled", "expired"] as const) {
+  check(
+    "free subscription allowed in production",
+    evaluateClientSocialConnectionAccess({
+      status: "free",
+      developmentBypass: false,
+      nodeEnv: "production",
+      vercelEnv: "production",
+      serverDevBypassFlag: null,
+    }).via === "subscription",
+    "Free must be allowed to connect (one-brand plan, Brand cap is Step 3)",
+  );
+
+  check(
+    "expired falls back to Free in production",
+    evaluateClientSocialConnectionAccess({
+      status: "expired",
+      developmentBypass: false,
+      nodeEnv: "production",
+      vercelEnv: "production",
+      serverDevBypassFlag: null,
+    }).via === "subscription",
+    "expired must not stay locked; it becomes Free",
+  );
+
+  check(
+    "past_due keeps access in production",
+    evaluateClientSocialConnectionAccess({
+      status: "past_due",
+      developmentBypass: false,
+      nodeEnv: "production",
+      vercelEnv: "production",
+      serverDevBypassFlag: null,
+    }).allowed === true,
+    "payment retry window must keep access",
+  );
+
+  for (const status of ["incomplete", "paused", "suspended"] as const) {
     check(
       `${status} denied in production even with DB+env bypass`,
       evaluateClientSocialConnectionAccess({
@@ -57,32 +93,32 @@ function main() {
         vercelEnv: "production",
         serverDevBypassFlag: "true",
       }).allowed === false,
-      "production must ignore trusted bypass flags",
+      "production must ignore trusted bypass flags on blocked statuses",
     );
   }
 
   check(
     "NODE_ENV=production blocks bypass",
     evaluateClientSocialConnectionAccess({
-      status: "expired",
+      status: "suspended",
       developmentBypass: true,
       nodeEnv: "production",
       vercelEnv: "preview",
       serverDevBypassFlag: "true",
     }).allowed === false,
-    "NODE_ENV production alone must deny",
+    "NODE_ENV production alone must deny blocked statuses",
   );
 
   check(
     "VERCEL_ENV=production blocks bypass",
     evaluateClientSocialConnectionAccess({
-      status: "expired",
+      status: "suspended",
       developmentBypass: true,
       nodeEnv: "development",
       vercelEnv: "production",
       serverDevBypassFlag: "true",
     }).allowed === false,
-    "VERCEL_ENV production alone must deny",
+    "VERCEL_ENV production alone must deny blocked statuses",
   );
 
   check(
@@ -119,14 +155,14 @@ function main() {
   check(
     "SOCIAL_CONNECTION_REQUIRE_SUBSCRIPTION forces checks in non-prod",
     evaluateClientSocialConnectionAccess({
-      status: "expired",
+      status: "suspended",
       developmentBypass: false,
       nodeEnv: "development",
       vercelEnv: null,
       serverDevBypassFlag: null,
       requireSubscriptionFlag: "true",
     }).allowed === false,
-    "require flag must deny expired without explicit bypass",
+    "require flag must deny suspended without explicit bypass",
   );
 
   // Direct require-flag check on trusted helper

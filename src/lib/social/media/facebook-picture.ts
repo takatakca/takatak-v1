@@ -164,8 +164,12 @@ export async function fetchFacebookAccountPicture(options: {
     if (fromStored) return fromStored;
   }
 
-  if (account.platform === "facebook" && pageId) {
+  if (pageId && account.platform === "facebook") {
     return { redirectTo: publicGraphPictureUrl(pageId) };
+  }
+
+  if (isAllowedSocialImageUrl(account.profileImageUrl)) {
+    return { redirectTo: account.profileImageUrl! };
   }
 
   return null;

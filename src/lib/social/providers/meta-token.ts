@@ -5,7 +5,8 @@ import {
   getMetaAppId,
   getMetaGraphApiVersion,
   getMetaOAuthRedirectUri,
-  META_OAUTH_START_SCOPES,
+  META_OAUTH_INSTAGRAM_SCOPES,
+  META_OAUTH_PAGE_SCOPES,
 } from "@/lib/social/providers/meta-oauth";
 
 const META_GRAPH_HOST = "https://graph.facebook.com";
@@ -502,7 +503,7 @@ export function assertRequiredMetaPageScopes(
   granted: string[],
 ): void {
   const grantedSet = new Set(granted);
-  const missing = META_OAUTH_START_SCOPES.filter(
+  const missing = META_OAUTH_PAGE_SCOPES.filter(
     (scope) => !grantedSet.has(scope),
   );
 
@@ -517,6 +518,12 @@ export function assertRequiredMetaPageScopes(
       "Facebook authorization is missing required Page permissions. Please reconnect and grant Page access.",
     );
   }
+}
+
+export function hasRequiredMetaInstagramScopes(
+  granted: readonly string[],
+): boolean {
+  return granted.includes(META_OAUTH_INSTAGRAM_SCOPES[0]);
 }
 
 export async function exchangeMetaCodeForStoredCredential(options: {

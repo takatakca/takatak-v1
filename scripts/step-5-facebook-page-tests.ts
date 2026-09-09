@@ -2863,28 +2863,24 @@ async function main() {
 
     await check(
       59,
-      "Instagram and Threads remain Meta-represented only",
+      "Instagram and Threads authorize independently of Facebook",
       async () => {
         assert(
-          META_PLATFORM_REPRESENTATION.instagram.platform === "instagram",
-          "ig",
+          META_PLATFORM_REPRESENTATION.instagram.independentlyImplemented ===
+            true,
+          "ig independent",
         );
         assert(
-          META_PLATFORM_REPRESENTATION.threads.platform === "threads",
-          "threads",
+          META_PLATFORM_REPRESENTATION.threads.independentlyImplemented ===
+            true,
+          "threads independent",
         );
         const modal = readSource(
           "src/components/social/connections/manage-connections-modal.tsx",
         );
-        assert(
-          modal.includes("Instagram connects through Facebook Meta"),
-          "ig note",
-        );
-        assert(
-          !modal.includes('provider: "instagram"'),
-          "no independent ig provider card oauth",
-        );
-        return "Meta-represented only";
+        assert(modal.includes('provider: "instagram"'), "ig provider card");
+        assert(modal.includes('provider: "threads"'), "threads provider card");
+        return "independent Instagram and Threads OAuth";
       },
     );
 

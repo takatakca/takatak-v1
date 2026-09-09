@@ -1,9 +1,12 @@
+import { normalizePhone, validatePhone } from "@/lib/auth/otp/phone";
+
 export const REGISTRATION_LIMITS = {
     firstNameMinimum: 1,
     firstNameMaximum: 50,
     lastNameMinimum: 1,
     lastNameMaximum: 50,
     emailMaximum: 254,
+    phoneMaximum: 20,
     passwordMinimum: 12,
     passwordMaximum: 72,
   } as const;
@@ -12,6 +15,7 @@ export const REGISTRATION_LIMITS = {
     | "firstName"
     | "lastName"
     | "email"
+    | "phone"
     | "password"
     | "confirmPassword"
     | "acceptedTerms";
@@ -24,6 +28,7 @@ export const REGISTRATION_LIMITS = {
     firstName: string;
     lastName: string;
     email: string;
+    phone: string;
     password: string;
     confirmPassword: string;
     acceptedTerms: boolean;
@@ -203,6 +208,7 @@ export const REGISTRATION_LIMITS = {
       firstName: normalizePersonName(input.firstName),
       lastName: normalizePersonName(input.lastName),
       email: normalizeEmail(input.email),
+      phone: normalizePhone(input.phone) ?? input.phone.trim(),
       password: input.password,
       confirmPassword: input.confirmPassword,
       acceptedTerms: input.acceptedTerms === true,
@@ -213,6 +219,7 @@ export const REGISTRATION_LIMITS = {
     const firstNameError = validateFirstName(data.firstName);
     const lastNameError = validateLastName(data.lastName);
     const emailError = validateEmail(data.email);
+    const phoneError = validatePhone(input.phone);
     const passwordError = validatePassword(data.password);
   
     if (firstNameError) {
@@ -225,6 +232,10 @@ export const REGISTRATION_LIMITS = {
   
     if (emailError) {
       errors.email = emailError;
+    }
+
+    if (phoneError) {
+      errors.phone = phoneError;
     }
   
     if (passwordError) {
@@ -261,6 +272,7 @@ export const REGISTRATION_LIMITS = {
       typeof input.firstName === "string" &&
       typeof input.lastName === "string" &&
       typeof input.email === "string" &&
+      typeof input.phone === "string" &&
       typeof input.password === "string" &&
       typeof input.confirmPassword === "string" &&
       typeof input.acceptedTerms === "boolean"

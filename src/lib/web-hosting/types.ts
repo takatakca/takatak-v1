@@ -10,12 +10,17 @@ export interface DomainSummary {
   id: string;
   domainName: string;
   brandName: string | null;
+  brandWebsite: string | null;
+  brandCategory: string | null;
+  brandTimezone: string | null;
+  brandImageUrl: string | null;
   registrar: string | null;
   status: string;
   dnsStatus: string;
   sslStatus: string;
   autoRenew: boolean;
   expiresAt: string | null;
+  createdAt: string | null;
 }
 
 export interface HostingServiceSummary {
@@ -26,7 +31,9 @@ export interface HostingServiceSummary {
   status: string;
   serverStatus: string;
   renewalDate: string | null;
+  createdAt: string | null;
   usageSummary: Record<string, unknown> | null;
+  fromUpmind: boolean;
 }
 
 export interface DnsRecordSummary {

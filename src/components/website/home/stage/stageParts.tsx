@@ -40,8 +40,9 @@ export function Panel({
 }) {
   return (
     <div
-      className={`rounded-2xl border backdrop-blur-md transition-colors duration-500 ${
-        active ? "border-primary/45 bg-primary/[0.07]" : "border-white/12 bg-white/[0.035]"
+      data-active={active ? "true" : "false"}
+      className={`tk-frost-card rounded-2xl border backdrop-blur-md transition-colors duration-500 ${
+        active ? "border-primary/45 bg-primary/[0.07]" : "border-white/12 bg-white/[0.1]"
       } ${className}`}
     >
       {(title || meta) && (

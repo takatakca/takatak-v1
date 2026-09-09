@@ -7,7 +7,11 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { getSessionUser } from "@/lib/auth/supabase-server";
 import { getRuntimeInfo, type RuntimeInfo } from "@/lib/security/runtime-mode";
-import { resolveTenantAccess, type TenantAccess } from "@/lib/security/tenant-access";
+import {
+  resolveTenantAccessBundle,
+  type ShellProfileDetails,
+  type TenantAccess,
+} from "@/lib/security/tenant-access";
 
 export const ACTIVE_CLIENT_COOKIE = "takatak_active_client";
 
@@ -15,6 +19,8 @@ export interface ServerAccessContext {
   runtime: RuntimeInfo;
   access: TenantAccess;
   displayEmail: string | null; // safe identity only — never tokens
+  profileDetails: ShellProfileDetails | null;
+  activeClientName: string | null;
 }
 
 export const getServerAccessContext = cache(async (): Promise<ServerAccessContext> => {
@@ -29,11 +35,21 @@ export const getServerAccessContext = cache(async (): Promise<ServerAccessContex
   } catch {
     requestedClientId = null;
   }
-  const access = await resolveTenantAccess(requestedClientId);
-  let displayEmail: string | null = null;
-  if (access.mode !== "foundation_demo" && access.mode !== "denied") {
+  const { access, profileDetails, clientNames } =
+    await resolveTenantAccessBundle(requestedClientId);
+  let displayEmail: string | null = profileDetails?.email ?? null;
+  if (!displayEmail && access.mode !== "foundation_demo" && access.mode !== "denied") {
     const user = await getSessionUser();
     displayEmail = user?.email ?? null;
   }
-  return { runtime, access, displayEmail };
+  return {
+    runtime,
+    access,
+    displayEmail,
+    profileDetails,
+    activeClientName:
+      access.mode === "client_scoped"
+        ? clientNames[access.activeClientId] ?? null
+        : null,
+  };
 });

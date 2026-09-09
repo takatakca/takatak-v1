@@ -319,7 +319,7 @@ export async function getBrandOptions(
       where: {
         clientId: access.activeClientId,
         status: {
-          not: "archived",
+          notIn: ["archived", "frozen"],
         },
       },
       orderBy: {
