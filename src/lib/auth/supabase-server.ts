@@ -6,6 +6,7 @@ import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv } from "./env";
 import {
   AUTH_STATUS_HEADER,
+  AUTH_USER_ID_HEADER,
   PATHNAME_HEADER,
   hasSupabaseAuthCookie,
   readLocalSessionUser,
@@ -63,6 +64,14 @@ async function readPathnameHeader(): Promise<string | null> {
  * skip is only for low-risk document/API traffic and is never treated as
  * cryptographic authentication for billing, admin, team, or account changes.
  */
+async function readAuthUserIdHeader(): Promise<string | null> {
+  try {
+    return (await headers()).get(AUTH_USER_ID_HEADER);
+  } catch {
+    return null;
+  }
+}
+
 export const getSessionUser = cache(async () => {
   const pathname = await readPathnameHeader();
   const highRisk = isHighRiskPath(pathname);
@@ -77,7 +86,22 @@ export const getSessionUser = cache(async () => {
   if (!supabase) return null;
 
   const cookieStore = await cookies();
-  const hasAuthCookie = hasSupabaseAuthCookie(cookieStore.getAll());
+  const cookieList = cookieStore.getAll();
+  const hasAuthCookie = hasSupabaseAuthCookie(cookieList);
+  const localUser = hasAuthCookie ? readLocalSessionUser(cookieList) : null;
+  const claimedUserId = (await readAuthUserIdHeader())?.trim() || null;
+
+  // The internal identity header is set only by the proxy after stripping any
+  // client-supplied value. A spoofed header without a matching local JWT
+  // cannot authenticate.
+
+  if (claimedUserId && localUser && localUser.id !== claimedUserId) {
+    const resolution = await resolveAuthUser(supabase, { hasAuthCookie });
+    return resolution.status === "authenticated" &&
+      resolution.user.id === claimedUserId
+      ? resolution.user
+      : null;
+  }
 
   if (highRisk) {
     const resolution = await resolveAuthUser(supabase, { hasAuthCookie });
@@ -85,15 +109,24 @@ export const getSessionUser = cache(async () => {
   }
 
   if (status === "authenticated" || status === "network") {
-    return hasAuthCookie ? readLocalSessionUser(cookieStore.getAll()) : null;
+    if (claimedUserId && localUser && localUser.id === claimedUserId) {
+      return localUser;
+    }
+    if (claimedUserId && !localUser) {
+      return null;
+    }
+    return localUser;
   }
 
   const resolution = await resolveAuthUser(supabase, { hasAuthCookie });
   if (resolution.status === "authenticated") {
     return resolution.user;
   }
-  if (resolution.status === "network" && hasAuthCookie) {
-    return readLocalSessionUser(cookieStore.getAll());
+  if (resolution.status === "network" && localUser) {
+    if (claimedUserId && localUser.id !== claimedUserId) {
+      return null;
+    }
+    return localUser;
   }
   return null;
 });

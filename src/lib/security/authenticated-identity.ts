@@ -100,6 +100,43 @@ export function shouldSkipAuthLookup(input: {
   );
 }
 
+export function bindActiveClientCookie(
+  authUserId: string,
+  clientId: string,
+): string {
+  return `${authUserId.trim()}:${clientId.trim()}`;
+}
+
+export function parseBoundClientCookie(
+  raw: string | null | undefined,
+  authUserId: string | null | undefined,
+  identityCookie?: string | null,
+): string | null {
+  const userId = authUserId?.trim() ?? "";
+  const value = raw?.trim() ?? "";
+  if (!userId || !value) {
+    return null;
+  }
+
+  const identity = identityCookie?.trim() ?? "";
+  if (identity && identity !== userId) {
+    return null;
+  }
+
+  const separator = value.indexOf(":");
+  if (separator <= 0) {
+    return value;
+  }
+
+  const cookieUserId = value.slice(0, separator);
+  const clientId = value.slice(separator + 1).trim();
+  if (cookieUserId !== userId || !clientId) {
+    return null;
+  }
+
+  return clientId;
+}
+
 export function staleActiveClientCookie(input: {
   requestedClientId: string | null | undefined;
   access: {

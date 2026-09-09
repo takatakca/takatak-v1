@@ -2,7 +2,43 @@ import type { User } from "@supabase/supabase-js";
 import { cookieUserMatchesAccessToken } from "@/lib/security/authenticated-identity";
 
 export const AUTH_STATUS_HEADER = "x-takatak-auth-status";
+export const AUTH_USER_ID_HEADER = "x-takatak-auth-user-id";
 export const PATHNAME_HEADER = "x-takatak-pathname";
+
+export const INTERNAL_AUTH_HEADER_NAMES = [
+  AUTH_STATUS_HEADER,
+  AUTH_USER_ID_HEADER,
+  PATHNAME_HEADER,
+] as const;
+
+type HeaderMutator = {
+  delete: (name: string) => void;
+  set: (name: string, value: string) => void;
+  get?: (name: string) => string | null;
+};
+
+export function stripInternalAuthHeaders(headers: HeaderMutator): void {
+  for (const name of INTERNAL_AUTH_HEADER_NAMES) {
+    headers.delete(name);
+  }
+}
+
+export function applyTrustedAuthRequestHeaders(
+  headers: HeaderMutator,
+  input: {
+    status: AuthStatus;
+    pathname: string;
+    userId?: string | null;
+  },
+): void {
+  stripInternalAuthHeaders(headers);
+  headers.set(AUTH_STATUS_HEADER, input.status);
+  headers.set(PATHNAME_HEADER, input.pathname);
+  const userId = input.userId?.trim() ?? "";
+  if (userId) {
+    headers.set(AUTH_USER_ID_HEADER, userId);
+  }
+}
 
 export type AuthStatus =
   | "authenticated"
@@ -152,31 +188,107 @@ function authStorageKey(name: string): string | null {
   return name.replace(/\.\d+$/, "");
 }
 
+export function supabaseAuthStorageKeyFromUrl(
+  url: string | null | undefined,
+): string | null {
+  const raw = url?.trim() ?? "";
+  if (!raw) return null;
+  try {
+    const host = new URL(raw).hostname;
+    const ref = host.split(".")[0]?.trim();
+    if (!ref) return null;
+    return `sb-${ref}-auth-token`;
+  } catch {
+    return null;
+  }
+}
+
+function preferredAuthStorageKey(): string | null {
+  return supabaseAuthStorageKeyFromUrl(process.env.NEXT_PUBLIC_SUPABASE_URL);
+}
+
+function jwtIssuedAt(accessToken: string): number {
+  const parts = accessToken.split(".");
+  if (parts.length < 2) return 0;
+  try {
+    const payload = JSON.parse(decodeBase64Url(parts[1])) as {
+      iat?: unknown;
+    };
+    return typeof payload.iat === "number" ? payload.iat : 0;
+  } catch {
+    return 0;
+  }
+}
+
 function sessionIssuedAt(value: unknown): number {
   if (!value || typeof value !== "object") return 0;
   const record = value as {
-    expires_at?: unknown;
     access_token?: unknown;
   };
-  if (typeof record.expires_at === "number") {
-    return record.expires_at;
-  }
   if (typeof record.access_token === "string") {
-    const parts = record.access_token.split(".");
-    if (parts.length >= 2) {
-      try {
-        const payload = JSON.parse(decodeBase64Url(parts[1])) as {
-          iat?: unknown;
-          exp?: unknown;
-        };
-        if (typeof payload.iat === "number") return payload.iat;
-        if (typeof payload.exp === "number") return payload.exp;
-      } catch {
-        return 0;
-      }
-    }
+    return jwtIssuedAt(record.access_token);
   }
   return 0;
+}
+
+function cookiePresent(byName: Map<string, string>, name: string): boolean {
+  return (byName.get(name) ?? "").length > 0;
+}
+
+function existingStorageKeyCookieNames(
+  byName: Map<string, string>,
+  key: string,
+): string[] {
+  const names: string[] = [];
+  if (cookiePresent(byName, key)) names.push(key);
+  for (let index = 0; index < 10; index += 1) {
+    const name = `${key}.${index}`;
+    if (cookiePresent(byName, name)) names.push(name);
+  }
+  return names;
+}
+
+function rawSessionForStorageKey(
+  byName: Map<string, string>,
+  key: string,
+): { raw: string; issuedAt: number } | null {
+  const candidates: string[] = [];
+  const whole = byName.get(key);
+  if (whole) candidates.push(whole);
+
+  const parts: string[] = [];
+  for (let index = 0; ; index += 1) {
+    const part = byName.get(`${key}.${index}`);
+    if (!part) break;
+    parts.push(part);
+    const joined = parts.join("");
+    const parsed = parseJsonText(joined);
+    if (parsed) candidates.push(joined);
+  }
+
+  let bestRaw: string | null = null;
+  let bestIssuedAt = -1;
+  for (const raw of candidates) {
+    const parsed = parseJsonText(raw);
+    const issuedAt = sessionIssuedAt(parsed);
+    if (issuedAt >= bestIssuedAt) {
+      bestIssuedAt = issuedAt;
+      bestRaw = raw;
+    }
+  }
+
+  return bestRaw ? { raw: bestRaw, issuedAt: bestIssuedAt } : null;
+}
+
+function authStorageKeys(
+  cookies: Array<{ name: string; value?: string }>,
+): string[] {
+  const keys = new Set<string>();
+  for (const cookie of cookies) {
+    const key = authStorageKey(cookie.name);
+    if (key && cookie.value) keys.add(key);
+  }
+  return [...keys];
 }
 
 function combineAuthCookieValue(
@@ -185,41 +297,79 @@ function combineAuthCookieValue(
   const byName = new Map(
     cookies.map((cookie) => [cookie.name, cookie.value ?? ""]),
   );
-  const keys = new Set<string>();
-  for (const cookie of cookies) {
-    const key = authStorageKey(cookie.name);
-    if (key && cookie.value) keys.add(key);
-  }
+  const keys = authStorageKeys(cookies);
+  const preferred = preferredAuthStorageKey();
+  const eligible =
+    preferred && keys.includes(preferred)
+      ? [preferred]
+      : preferred
+        ? []
+        : keys;
 
   let bestRaw: string | null = null;
   let bestIssuedAt = -1;
 
-  for (const key of keys) {
-    const candidates: string[] = [];
-    const whole = byName.get(key);
-    if (whole) candidates.push(whole);
-
-    const parts: string[] = [];
-    for (let index = 0; ; index += 1) {
-      const part = byName.get(`${key}.${index}`);
-      if (!part) break;
-      parts.push(part);
-      const joined = parts.join("");
-      const parsed = parseJsonText(joined);
-      if (parsed) candidates.push(joined);
-    }
-
-    for (const raw of candidates) {
-      const parsed = parseJsonText(raw);
-      const issuedAt = sessionIssuedAt(parsed);
-      if (issuedAt >= bestIssuedAt) {
-        bestIssuedAt = issuedAt;
-        bestRaw = raw;
-      }
+  for (const key of eligible) {
+    const selected = rawSessionForStorageKey(byName, key);
+    if (!selected) continue;
+    if (selected.issuedAt >= bestIssuedAt) {
+      bestIssuedAt = selected.issuedAt;
+      bestRaw = selected.raw;
     }
   }
 
   return bestRaw;
+}
+
+export function authCookieNamesToDiscard(
+  cookies: Array<{ name: string; value?: string }>,
+  keepUserId: string,
+): string[] {
+  const keep = keepUserId.trim();
+  if (!keep) return [];
+
+  const byName = new Map(
+    cookies.map((cookie) => [cookie.name, cookie.value ?? ""]),
+  );
+  const preferred = preferredAuthStorageKey();
+  const names = new Set<string>();
+
+  for (const key of authStorageKeys(cookies)) {
+    if (preferred && key !== preferred) {
+      for (const name of existingStorageKeyCookieNames(byName, key)) {
+        names.add(name);
+      }
+      continue;
+    }
+
+    const whole = byName.get(key) ?? "";
+    const wholeUser = whole
+      ? userFromSessionPayload(parseJsonText(whole))
+      : null;
+    const selected = rawSessionForStorageKey(byName, key);
+    const selectedUser = selected
+      ? userFromSessionPayload(parseJsonText(selected.raw))
+      : null;
+
+    if (wholeUser?.id === keep) {
+      for (const name of existingStorageKeyCookieNames(byName, key)) {
+        if (name !== key) names.add(name);
+      }
+      continue;
+    }
+
+    if (wholeUser && wholeUser.id !== keep) {
+      names.add(key);
+    }
+
+    if (selectedUser && selectedUser.id !== keep && wholeUser?.id !== keep) {
+      for (const name of existingStorageKeyCookieNames(byName, key)) {
+        names.add(name);
+      }
+    }
+  }
+
+  return [...names];
 }
 
 function userFromJwtPayload(payload: Record<string, unknown>): User | null {

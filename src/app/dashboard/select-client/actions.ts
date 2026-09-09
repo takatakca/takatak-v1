@@ -1,9 +1,11 @@
 "use server";
 
+import { getSessionUser } from "@/lib/auth/supabase-server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { ACTIVE_CLIENT_COOKIE } from "@/lib/security/access-context";
+import { bindActiveClientCookie } from "@/lib/security/authenticated-identity";
 import { ACTIVE_BRAND_COOKIE } from "@/lib/security/brand-context";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { resolveTenantAccess } from "@/lib/security/tenant-access";
@@ -33,12 +35,18 @@ export async function setActiveClient(
   const access =
     await resolveTenantAccess(clientId);
 
-  if (access.mode !== "client_scoped") {
+  if (access.mode !== "client_scoped" || access.activeClientId !== clientId) {
     redirect(
       `/dashboard/select-client?next=${encodeURIComponent(
         nextPath,
       )}`,
     );
+  }
+
+  const user = await getSessionUser();
+  if (!user) {
+    redirect("/login");
+    return;
   }
 
   const cookieStore = await cookies();
@@ -49,7 +57,7 @@ export async function setActiveClient(
 
   cookieStore.set(
     ACTIVE_CLIENT_COOKIE,
-    clientId,
+    bindActiveClientCookie(user.id, clientId),
     {
       httpOnly: true,
       sameSite: "lax",

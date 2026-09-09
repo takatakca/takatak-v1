@@ -12,6 +12,7 @@ import { originFromRequest } from "@/lib/config/app-origin";
 import {
   ACTIVE_CLIENT_COOKIE,
 } from "@/lib/security/access-context";
+import { bindActiveClientCookie } from "@/lib/security/authenticated-identity";
 import { clearWorkspaceCookiesOnResponse } from "@/lib/auth/workspace-session-cookies";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { acceptWorkspaceInvitation } from "@/lib/team/accept-invitation";
@@ -59,16 +60,16 @@ function isSuccessfulProfileSync(
 
 function redirectWithoutCache(
   url: string,
-  activeClientId?: string,
+  options?: { activeClientId?: string; authUserId?: string },
 ): NextResponse {
   const response = NextResponse.redirect(url);
 
-  response.headers.set("Cache-Control", "no-store");
+  response.headers.set("Cache-Control", "private, no-store, no-cache, must-revalidate");
 
-  if (activeClientId) {
+  if (options?.activeClientId && options.authUserId) {
     response.cookies.set(
       ACTIVE_CLIENT_COOKIE,
-      activeClientId,
+      bindActiveClientCookie(options.authUserId, options.activeClientId),
       {
         httpOnly: true,
         sameSite: "lax",
@@ -213,7 +214,10 @@ export async function GET(request: NextRequest) {
 
       return redirectWithoutCache(
         `${applicationOrigin}${invitationDestination}`,
-        invitationResult.clientId,
+        {
+          activeClientId: invitationResult.clientId,
+          authUserId: verifiedUser.id,
+        },
       );
     }
 

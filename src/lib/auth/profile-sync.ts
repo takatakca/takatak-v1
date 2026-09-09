@@ -309,6 +309,7 @@ export async function ensureProfileForSupabaseUser(
           },
           select: {
             id: true,
+            authUserId: true,
           },
         });
 
@@ -317,6 +318,26 @@ export async function ensureProfileForSupabaseUser(
             outcome: "existing",
             profileId: concurrentProfile.id,
           };
+        }
+
+        const emailCollision = await prisma.profile.findUnique({
+          where: {
+            email: identity.email,
+          },
+          select: {
+            id: true,
+            authUserId: true,
+          },
+        });
+
+        if (
+          emailCollision &&
+          emailCollision.authUserId !== user.id
+        ) {
+          console.error(
+            "[profile-sync] Email is already bound to a different auth user",
+          );
+          return { outcome: "denied" };
         }
       } catch {
         return { outcome: "error" };

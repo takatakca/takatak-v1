@@ -6,7 +6,12 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { getRuntimeInfo, type RuntimeInfo } from "@/lib/security/runtime-mode";
-import { staleActiveClientCookie } from "@/lib/security/authenticated-identity";
+import {
+  parseBoundClientCookie,
+  staleActiveClientCookie,
+  AUTH_IDENTITY_COOKIE,
+} from "@/lib/security/authenticated-identity";
+import { getSessionUser } from "@/lib/auth/supabase-server";
 import {
   resolveTenantAccessBundle,
   type ShellProfileDetails,
@@ -25,13 +30,19 @@ export interface ServerAccessContext {
 
 export const getServerAccessContext = cache(async (): Promise<ServerAccessContext> => {
   const runtime = getRuntimeInfo();
-  // Requested client comes from a same-site cookie set server-side by the
-  // select-client action — and is RE-VALIDATED against memberships on every
-  // request inside resolveTenantAccess. It carries no role or access list.
+  const user = await getSessionUser();
   let requestedClientId: string | null = null;
   try {
     const jar = await cookies();
-    requestedClientId = jar.get(ACTIVE_CLIENT_COOKIE)?.value ?? null;
+    const rawClient = jar.get(ACTIVE_CLIENT_COOKIE)?.value ?? null;
+    requestedClientId = parseBoundClientCookie(
+      rawClient,
+      user?.id ?? null,
+      jar.get(AUTH_IDENTITY_COOKIE)?.value ?? null,
+    );
+    if (rawClient && !requestedClientId) {
+      jar.delete(ACTIVE_CLIENT_COOKIE);
+    }
   } catch {
     requestedClientId = null;
   }

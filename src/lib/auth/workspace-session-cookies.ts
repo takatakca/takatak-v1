@@ -63,10 +63,12 @@ export function productionCookieDefaults(
   };
 }
 
-const CLEARED_COOKIE = productionCookieDefaults({
-  maxAge: 0,
-  expires: new Date(0),
-});
+function clearedCookie(): SessionCookieOptions {
+  return productionCookieDefaults({
+    maxAge: 0,
+    expires: new Date(0),
+  });
+}
 
 function isAuthTokenCookie(name: string): boolean {
   return name.includes("-auth-token");
@@ -87,21 +89,25 @@ function authCookieNamesToExpire(existingNames: string[]): string[] {
   return [...names];
 }
 
+export function expireNamedCookies(names: string[]): SessionCookieWrite[] {
+  return [...new Set(names)].map((name) => ({
+    name,
+    value: "",
+    options: clearedCookie(),
+  }));
+}
+
 export function expireAuthCookies(
   existingNames: string[],
 ): SessionCookieWrite[] {
-  return authCookieNamesToExpire(existingNames).map((name) => ({
-    name,
-    value: "",
-    options: CLEARED_COOKIE,
-  }));
+  return expireNamedCookies(authCookieNamesToExpire(existingNames));
 }
 
 export function workspaceCookieClears(): SessionCookieWrite[] {
   return WORKSPACE_COOKIE_NAMES.map((name) => ({
     name,
     value: "",
-    options: CLEARED_COOKIE,
+    options: clearedCookie(),
   }));
 }
 
@@ -109,7 +115,7 @@ export function staleTenantCookieClears(): SessionCookieWrite[] {
   return TENANT_COOKIE_NAMES.map((name) => ({
     name,
     value: "",
-    options: CLEARED_COOKIE,
+    options: clearedCookie(),
   }));
 }
 

@@ -13,7 +13,7 @@ import { originFromRequest } from "@/lib/config/app-origin";
 
 export async function POST(request: Request) {
   const response = NextResponse.redirect(
-    new URL("/login", originFromRequest(request)),
+    new URL("/login?signed_out=1", originFromRequest(request)),
     { status: 303 },
   );
   response.headers.set("Cache-Control", "no-store");

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Mail } from "lucide-react";
-import { type FormEvent, useRef, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import {
   formatAuthErrorMessage,
@@ -35,6 +35,17 @@ export function LoginForm() {
     getCallbackError(searchParams.get("error")),
   );
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (
+      searchParams.get("signed_out") === "1" ||
+      searchParams.get("error") === "session_expired"
+    ) {
+      sessionStorage.removeItem("verifyEmail");
+      sessionStorage.removeItem("verifyPhone");
+      sessionStorage.removeItem("otpAttempts");
+    }
+  }, [searchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

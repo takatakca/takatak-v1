@@ -18,6 +18,9 @@ import { getPrisma } from "@/lib/db/prisma";
 import { setActiveClient } from "@/app/dashboard/select-client/actions";
 import { getEffectivePermissions } from "@/lib/security/effective-permissions";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export const metadata = { robots: { index: false, follow: false } };
 
 export default async function DashboardLayout({
@@ -83,6 +86,9 @@ export default async function DashboardLayout({
         return <AccessDenied title="Account disabled" message="This account is disabled. Contact your TAKATAK administrator." />;
       case "profile_missing":
         return <AccessDenied title="Profile not found" message="Your account profile could not be resolved. Contact your TAKATAK administrator." />;
+      case "identity_mismatch":
+        redirect("/login?error=session_expired");
+        break;
       default:
         return <AccessDenied title="Temporarily unavailable" message="Data access could not be resolved safely. Try again shortly." />;
     }

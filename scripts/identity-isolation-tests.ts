@@ -1,12 +1,23 @@
-import { readLocalSessionUser, resolveAuthUser } from "../src/lib/auth/session-user";
+import {
+  AUTH_STATUS_HEADER,
+  AUTH_USER_ID_HEADER,
+  PATHNAME_HEADER,
+  applyTrustedAuthRequestHeaders,
+  authCookieNamesToDiscard,
+  readLocalSessionUser,
+  resolveAuthUser,
+  stripInternalAuthHeaders,
+} from "../src/lib/auth/session-user";
 import {
   expireAuthCookies,
+  expireNamedCookies,
   identitySessionCookies,
   staleTenantCookieClears,
   workspaceCookieClears,
 } from "../src/lib/auth/workspace-session-cookies";
 import {
   AUTH_IDENTITY_COOKIE,
+  bindActiveClientCookie,
   brandSelectorCacheKey,
   cookieUserMatchesAccessToken,
   dashboardLoaderScopeKey,
@@ -14,6 +25,7 @@ import {
   localIdentityAgrees,
   mayUseCachedLocalSession,
   ordinaryUserCannotUsePlatformScope,
+  parseBoundClientCookie,
   sessionMatchesProfile,
   shouldSkipAuthLookup,
   staleActiveBrandCookie,
@@ -90,15 +102,23 @@ function authCookie(input: {
   cookieUserId?: string;
   cookieEmail?: string;
   omitUser?: boolean;
+  iat?: number;
+  exp?: number;
+  expiresAt?: number;
 }): { name: string; value: string } {
+  const now = Math.floor(Date.now() / 1000);
   const accessToken = encodeJwt({
     sub: input.authUserId,
     email: input.email,
     aud: "authenticated",
     role: "authenticated",
-    exp: Math.floor(Date.now() / 1000) + 3600,
+    iat: input.iat ?? now,
+    exp: input.exp ?? now + 3600,
   });
   const payload: Record<string, unknown> = { access_token: accessToken };
+  if (typeof input.expiresAt === "number") {
+    payload.expires_at = input.expiresAt;
+  }
   if (!input.omitUser) {
     payload.user = {
       id: input.cookieUserId ?? input.authUserId,
@@ -111,7 +131,20 @@ function authCookie(input: {
   };
 }
 
+function splitAuthCookieChunks(
+  cookie: { name: string; value: string },
+  reverseOrder = false,
+): Array<{ name: string; value: string }> {
+  const mid = Math.max(1, Math.floor(cookie.value.length / 2));
+  const chunks = [
+    { name: `${cookie.name}.0`, value: cookie.value.slice(0, mid) },
+    { name: `${cookie.name}.1`, value: cookie.value.slice(mid) },
+  ];
+  return reverseOrder ? [...chunks].reverse() : chunks;
+}
+
 async function main() {
+  process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
   console.log("[identity-isolation] synthetic account A/B isolation");
 
   const accessA = computeTenantAccess(
@@ -421,10 +454,240 @@ async function main() {
       }) === false,
   );
 
+  const userC = computeTenantAccess(
+    accessInput({
+      profile: { id: "profile-c", role: "user", status: "active" },
+      memberships: [],
+    }),
+  );
+  assert(
+    "Account C with no workspace receives an honest empty/onboarding state",
+    userC.mode === "denied" && userC.reason === "membership_missing",
+  );
+
+  const unauthenticatedDashboard = computeTenantAccess(
+    accessInput({ authenticated: false, profile: null, memberships: [] }),
+  );
+  assert(
+    "unauthenticated dashboard requests are rejected",
+    unauthenticatedDashboard.mode === "denied" &&
+      unauthenticatedDashboard.reason === "not_authenticated",
+  );
+
+  const now = Math.floor(Date.now() / 1000);
+  const leftoverA = authCookie({
+    authUserId: ACCOUNT_A.authUserId,
+    email: ACCOUNT_A.email,
+    iat: now - 3_600,
+    exp: now + 86_400,
+    expiresAt: now + 86_400,
+  });
+  leftoverA.name = "sb-example-auth-token.0";
+  const currentB = authCookie({
+    authUserId: ACCOUNT_B.authUserId,
+    email: ACCOUNT_B.email,
+    iat: now,
+    exp: now + 600,
+    expiresAt: now + 600,
+  });
+  const mixedSession = readLocalSessionUser([leftoverA, currentB]);
+  assert(
+    "leftover JWT with later expiry cannot override the current login",
+    mixedSession?.id === ACCOUNT_B.authUserId &&
+      mixedSession?.email === ACCOUNT_B.email,
+  );
+
+  const foreignProject = authCookie({
+    authUserId: ACCOUNT_A.authUserId,
+    email: ACCOUNT_A.email,
+    iat: now + 10,
+  });
+  foreignProject.name = "sb-otherproject-auth-token";
+  const currentProject = readLocalSessionUser([foreignProject, currentB]);
+  assert(
+    "another Supabase project's leftover cookie cannot become the session",
+    currentProject?.id === ACCOUNT_B.authUserId,
+  );
+  const discarded = authCookieNamesToDiscard(
+    [foreignProject, leftoverA, currentB],
+    ACCOUNT_B.authUserId,
+  );
+  assert(
+    "foreign and leftover auth cookies are expired for the current user",
+    discarded.includes("sb-otherproject-auth-token") &&
+      discarded.includes("sb-example-auth-token.0") &&
+      !discarded.includes("sb-example-auth-token"),
+  );
+  assert(
+    "a clean current session does not expire placeholder auth cookie chunks",
+    authCookieNamesToDiscard([currentB], ACCOUNT_B.authUserId).length === 0,
+  );
+
+  const chunkedB = splitAuthCookieChunks(currentB, true);
+  const chunk0 = chunkedB.find((cookie) => cookie.name.endsWith(".0"));
+  const chunk1 = chunkedB.find((cookie) => cookie.name.endsWith(".1"));
+  assert(
+    "chunked Supabase cookies are reconstituted in index order, not cookie-header order",
+    chunkedB[0]?.name.endsWith(".1") === true &&
+      readLocalSessionUser(chunkedB)?.id === ACCOUNT_B.authUserId,
+  );
+  let partialChunkParses = false;
+  try {
+    JSON.parse(chunk0?.value ?? "");
+    partialChunkParses = true;
+  } catch {
+    partialChunkParses = false;
+  }
+  assert("partial auth cookie chunk is not valid JSON on its own", !partialChunkParses);
+  assert(
+    "a partial leftover chunk cannot become the session",
+    readLocalSessionUser(chunk0 ? [chunk0] : []) === null &&
+      readLocalSessionUser(chunk1 ? [chunk1] : []) === null,
+  );
+  const chunkedDiscard = authCookieNamesToDiscard(
+    [...chunkedB, foreignProject],
+    ACCOUNT_B.authUserId,
+  );
+  assert(
+    "chunked current-session cookies are preserved during leftover cleanup",
+    !chunkedDiscard.includes("sb-example-auth-token.0") &&
+      !chunkedDiscard.includes("sb-example-auth-token.1") &&
+      chunkedDiscard.includes("sb-otherproject-auth-token"),
+  );
+
+  const staleWholeA = authCookie({
+    authUserId: ACCOUNT_A.authUserId,
+    email: ACCOUNT_A.email,
+    iat: now - 3_600,
+    expiresAt: now + 86_400,
+  });
+  const mixedWholeAndChunks = readLocalSessionUser([
+    staleWholeA,
+    ...splitAuthCookieChunks(currentB),
+  ]);
+  const mixedDiscard = authCookieNamesToDiscard(
+    [staleWholeA, ...splitAuthCookieChunks(currentB)],
+    ACCOUNT_B.authUserId,
+  );
+  assert(
+    "newer chunked JWT wins over a stale unchunked leftover on the same project",
+    mixedWholeAndChunks?.id === ACCOUNT_B.authUserId,
+  );
+  assert(
+    "cleanup expires the stale whole cookie and keeps the current chunks",
+    mixedDiscard.includes("sb-example-auth-token") &&
+      !mixedDiscard.includes("sb-example-auth-token.0") &&
+      !mixedDiscard.includes("sb-example-auth-token.1"),
+  );
+
+  const expiredWrites = expireNamedCookies(["sb-otherproject-auth-token"]);
+  const previousCookieEnv = process.env.NODE_ENV;
+  Reflect.set(process.env, "NODE_ENV", "production");
+  const productionClears = expireNamedCookies(["sb-otherproject-auth-token"]);
+  Reflect.set(process.env, "NODE_ENV", previousCookieEnv);
+  assert(
+    "stale auth cookie cleanup uses path=/, HttpOnly, and SameSite=Lax",
+    expiredWrites[0]?.value === "" &&
+      expiredWrites[0]?.options?.path === "/" &&
+      expiredWrites[0]?.options?.httpOnly === true &&
+      expiredWrites[0]?.options?.sameSite === "lax" &&
+      expiredWrites[0]?.options?.maxAge === 0,
+  );
+  assert(
+    "stale auth cookie cleanup is Secure in production",
+    productionClears[0]?.options?.secure === true,
+  );
+
+  const spoofed = new Headers({
+    [AUTH_USER_ID_HEADER]: ACCOUNT_A.authUserId,
+    [AUTH_STATUS_HEADER]: "authenticated",
+    [PATHNAME_HEADER]: "/dashboard",
+    cookie: "unrelated=1",
+  });
+  applyTrustedAuthRequestHeaders(spoofed, {
+    status: "anonymous",
+    pathname: "/login",
+  });
+  assert(
+    "a public request cannot keep a client-supplied x-takatak-auth-user-id",
+    spoofed.get(AUTH_USER_ID_HEADER) === null &&
+      spoofed.get(AUTH_STATUS_HEADER) === "anonymous" &&
+      spoofed.get(PATHNAME_HEADER) === "/login" &&
+      spoofed.get("cookie") === "unrelated=1",
+  );
+  applyTrustedAuthRequestHeaders(spoofed, {
+    status: "authenticated",
+    pathname: "/dashboard",
+    userId: ACCOUNT_B.authUserId,
+  });
+  assert(
+    "proxy overwrites the internal identity header with the trusted user id",
+    spoofed.get(AUTH_USER_ID_HEADER) === ACCOUNT_B.authUserId,
+  );
+  const responseHeaders = new Headers({
+    [AUTH_USER_ID_HEADER]: ACCOUNT_A.authUserId,
+    [AUTH_STATUS_HEADER]: "authenticated",
+    "cache-control": "private, no-store",
+  });
+  stripInternalAuthHeaders(responseHeaders);
+  assert(
+    "internal identity headers are never exposed as response headers",
+    responseHeaders.get(AUTH_USER_ID_HEADER) === null &&
+      responseHeaders.get(AUTH_STATUS_HEADER) === null &&
+      responseHeaders.get("cache-control") === "private, no-store",
+  );
+
+  assert(
+    "workspace cookie bound to Account A cannot be used as Account B",
+    parseBoundClientCookie(
+      bindActiveClientCookie(ACCOUNT_A.authUserId, ACCOUNT_A.clientId),
+      ACCOUNT_B.authUserId,
+    ) === null,
+  );
+  assert(
+    "workspace cookie bound to Account B is usable only by Account B",
+    parseBoundClientCookie(
+      bindActiveClientCookie(ACCOUNT_B.authUserId, ACCOUNT_B.clientId),
+      ACCOUNT_B.authUserId,
+    ) === ACCOUNT_B.clientId,
+  );
+  assert(
+    "identity cookie from Account A blocks Account B from a legacy workspace cookie",
+    parseBoundClientCookie(
+      ACCOUNT_A.clientId,
+      ACCOUNT_B.authUserId,
+      ACCOUNT_A.authUserId,
+    ) === null,
+  );
+
+  const noFallback = computeTenantAccess(
+    accessInput({
+      profile: null,
+      memberships: [membership(ACCOUNT_A.clientId)],
+      requestedClientId: ACCOUNT_A.clientId,
+    }),
+  );
+  assert(
+    "no fallback query returns another user when the profile is missing",
+    noFallback.mode === "denied" && noFallback.reason === "profile_missing",
+  );
+
   {
     const { readFileSync } = await import("node:fs");
     const tenantSource = readFileSync(
       new URL("../src/lib/security/tenant-access.ts", import.meta.url),
+      "utf8",
+    );
+    const proxySource = readFileSync(
+      new URL("../src/proxy.ts", import.meta.url),
+      "utf8",
+    );
+    const layoutSource = readFileSync(
+      new URL("../src/app/dashboard/layout.tsx", import.meta.url),
+      "utf8",
+    );
+    const nextConfigSource = readFileSync(
+      new URL("../next.config.ts", import.meta.url),
       "utf8",
     );
     assert(
@@ -437,8 +700,61 @@ async function main() {
       !tenantSource.includes("profile.findFirst("),
     );
     assert(
-      "identity repair does not import untracked role-permissions",
-      !tenantSource.includes("role-permissions"),
+      "proxy never rewrites identity cookies back to a leftover local JWT",
+      !proxySource.includes("identitySessionCookies(localUser") &&
+        proxySource.includes("applyTrustedAuthRequestHeaders") &&
+        proxySource.includes("stripInternalAuthHeaders") &&
+        proxySource.includes("writes.length === 0"),
+    );
+    const sessionServerSource = readFileSync(
+      new URL("../src/lib/auth/supabase-server.ts", import.meta.url),
+      "utf8",
+    );
+    assert(
+      "a spoofed x-takatak-auth-user-id without a matching local JWT cannot authenticate",
+      sessionServerSource.includes("claimedUserId && !localUser") &&
+        sessionServerSource.includes("return null"),
+    );
+    const loginSource = readFileSync(
+      new URL("../src/components/auth/login-form.tsx", import.meta.url),
+      "utf8",
+    );
+    const otpSource = readFileSync(
+      new URL("../src/components/auth/otp-form.tsx", import.meta.url),
+      "utf8",
+    );
+    const signoutSource = readFileSync(
+      new URL("../src/app/auth/signout/route.ts", import.meta.url),
+      "utf8",
+    );
+    assert(
+      "logout clears OTP sessionStorage and redirects with signed_out",
+      loginSource.includes('searchParams.get("signed_out")') &&
+        loginSource.includes('sessionStorage.removeItem("verifyEmail")') &&
+        signoutSource.includes("signed_out=1"),
+    );
+    assert(
+      "OTP form does not reuse leftover sessionStorage.verifyEmail after logout",
+      !otpSource.includes('sessionStorage.getItem("verifyEmail")'),
+    );
+    assert(
+      "authenticated dashboard layout is dynamic and not statically cached",
+      layoutSource.includes('dynamic = "force-dynamic"') &&
+        layoutSource.includes("revalidate = 0"),
+    );
+    assert(
+      "authenticated routes send private no-store cache headers",
+      nextConfigSource.includes("private, no-store") &&
+        nextConfigSource.includes("/dashboard/:path*"),
+    );
+    const actionsSource = readFileSync(
+      new URL("../src/app/dashboard/select-client/actions.ts", import.meta.url),
+      "utf8",
+    );
+    assert(
+      "switching workspace requires a membership-validated client ID",
+      actionsSource.includes("access.activeClientId !== clientId") &&
+        actionsSource.includes("bindActiveClientCookie"),
     );
   }
 

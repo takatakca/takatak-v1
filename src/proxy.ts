@@ -5,16 +5,18 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseEnv } from "@/lib/auth/env";
 import {
-  AUTH_STATUS_HEADER,
-  PATHNAME_HEADER,
+  applyTrustedAuthRequestHeaders,
+  authCookieNamesToDiscard,
   hasSupabaseAuthCookie,
   isLocalAccessTokenFresh,
   readLocalSessionUser,
   resolveAuthUser,
+  stripInternalAuthHeaders,
   type AuthStatus,
 } from "@/lib/auth/session-user";
 import {
   applySessionCookies,
+  expireNamedCookies,
   identitySessionCookies,
   staleTenantCookieClears,
 } from "@/lib/auth/workspace-session-cookies";
@@ -27,6 +29,8 @@ import {
   mayUseCachedLocalSession,
 } from "@/lib/security/authenticated-identity";
 
+const PRIVATE_NO_STORE = "private, no-store, no-cache, must-revalidate";
+
 function copyCookies(
   from: NextResponse,
   to: NextResponse,
@@ -37,23 +41,70 @@ function copyCookies(
   return to;
 }
 
-function applyStaleTenantPolicy(
+function applyPrivateCache(response: NextResponse, path: string): NextResponse {
+  stripInternalAuthHeaders(response.headers);
+  if (
+    path.startsWith("/dashboard") ||
+    path.startsWith("/api/") ||
+    path.startsWith("/auth/")
+  ) {
+    response.headers.set("Cache-Control", PRIVATE_NO_STORE);
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Vary", "Cookie");
+  }
+  return response;
+}
+
+function trustedRequestHeaders(
+  request: NextRequest,
+  input: { status: AuthStatus; userId?: string | null },
+): Headers {
+  const headers = new Headers(request.headers);
+  applyTrustedAuthRequestHeaders(headers, {
+    status: input.status,
+    pathname: request.nextUrl.pathname,
+    userId: input.userId,
+  });
+  return headers;
+}
+
+function passthroughWithoutClientIdentity(request: NextRequest): NextResponse {
+  const headers = trustedRequestHeaders(request, { status: "anonymous" });
+  const response = NextResponse.next({ request: { headers } });
+  stripInternalAuthHeaders(response.headers);
+  return response;
+}
+
+function applyVerifiedIdentity(
   response: NextResponse,
-  localUserId: string | null,
+  requestCookies: Array<{ name: string; value?: string }>,
+  verifiedUserId: string,
   identityCookie: string | null,
 ): void {
-  if (!localUserId || !identityCookie || identityCookie === localUserId) {
+  const leftoverAuthCookies = authCookieNamesToDiscard(
+    requestCookies,
+    verifiedUserId,
+  );
+  const writes = [
+    ...(leftoverAuthCookies.length > 0
+      ? expireNamedCookies(leftoverAuthCookies)
+      : []),
+    ...(identityCookie && identityCookie !== verifiedUserId
+      ? staleTenantCookieClears()
+      : []),
+    ...(identityCookie === verifiedUserId
+      ? []
+      : identitySessionCookies(verifiedUserId)),
+  ];
+  if (writes.length === 0) {
     return;
   }
-  applySessionCookies(response, [
-    ...staleTenantCookieClears(),
-    ...identitySessionCookies(localUserId),
-  ]);
+  applySessionCookies(response, writes);
 }
 
 export default async function proxy(request: NextRequest) {
   const env = getSupabaseEnv();
-  if (!env) return NextResponse.next(); // not configured — no crash, no redirect loop
+  if (!env) return passthroughWithoutClientIdentity(request);
 
   const path = request.nextUrl.pathname;
 
@@ -64,13 +115,12 @@ export default async function proxy(request: NextRequest) {
     path.startsWith("/api/health/") ||
     path.startsWith("/auth/callback")
   ) {
-    return NextResponse.next();
+    return passthroughWithoutClientIdentity(request);
   }
 
-  const hasAuthCookie = hasSupabaseAuthCookie(request.cookies.getAll());
-  const localUser = hasAuthCookie
-    ? readLocalSessionUser(request.cookies.getAll())
-    : null;
+  const requestCookies = request.cookies.getAll();
+  const hasAuthCookie = hasSupabaseAuthCookie(requestCookies);
+  const localUser = hasAuthCookie ? readLocalSessionUser(requestCookies) : null;
   const identityCookie =
     request.cookies.get(AUTH_IDENTITY_COOKIE)?.value ?? null;
   const verifiedAtMs = Number(
@@ -86,25 +136,36 @@ export default async function proxy(request: NextRequest) {
     sessionUserId: localUser?.id,
     identityCookie,
     verifiedAtMs: Number.isFinite(verifiedAtMs) ? verifiedAtMs : null,
-    tokenIsFresh: isLocalAccessTokenFresh(request.cookies.getAll()),
+    tokenIsFresh: isLocalAccessTokenFresh(requestCookies),
   });
   const highRisk = isHighRiskPath(path);
 
-  // Low-risk APIs re-read the local JWT. High-risk APIs always go through
-  // Auth getUser() — decoded JWT `sub` is not enough for billing/admin/team.
-  if (path.startsWith("/api/") && !highRisk) {
+  // Low-risk APIs re-read the local JWT only when it matches the identity
+  // cookie. A leftover JWT must not rewrite identity or label the request.
+  if (path.startsWith("/api/") && !highRisk && !(localUser && !identityAgrees)) {
     const authStatus: AuthStatus = localUser
       ? "authenticated"
       : hasAuthCookie
         ? "network"
         : "anonymous";
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set(AUTH_STATUS_HEADER, authStatus);
-    requestHeaders.set(PATHNAME_HEADER, path);
-    const response = NextResponse.next({
-      request: { headers: requestHeaders },
+    const requestHeaders = trustedRequestHeaders(request, {
+      status: authStatus,
+      userId: localUser?.id ?? null,
     });
-    applyStaleTenantPolicy(response, localUser?.id ?? null, identityCookie);
+    const response = applyPrivateCache(
+      NextResponse.next({
+        request: { headers: requestHeaders },
+      }),
+      path,
+    );
+    if (localUser) {
+      applyVerifiedIdentity(
+        response,
+        requestCookies,
+        localUser.id,
+        identityCookie,
+      );
+    }
     return response;
   }
 
@@ -112,13 +173,22 @@ export default async function proxy(request: NextRequest) {
   // skip getUser(). Auth cookie writes on every document request make the
   // App Router restart the RSC fetch in a loop.
   if (localUser && skipAuthLookup) {
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set(AUTH_STATUS_HEADER, "authenticated");
-    requestHeaders.set(PATHNAME_HEADER, path);
-    const response = NextResponse.next({
-      request: { headers: requestHeaders },
+    const requestHeaders = trustedRequestHeaders(request, {
+      status: "authenticated",
+      userId: localUser.id,
     });
-    applyStaleTenantPolicy(response, localUser.id, identityCookie);
+    const response = applyPrivateCache(
+      NextResponse.next({
+        request: { headers: requestHeaders },
+      }),
+      path,
+    );
+    applyVerifiedIdentity(
+      response,
+      requestCookies,
+      localUser.id,
+      identityCookie,
+    );
     return response;
   }
 
@@ -157,24 +227,18 @@ export default async function proxy(request: NextRequest) {
   if (resolution.status === "network") {
     // Timed-out getUser() must not later clear cookies (refresh-token races).
     persistAuthCookies = false;
-    if (localUser && !highRisk) {
+    if (localUser && identityAgrees && !highRisk) {
       authStatus = "authenticated";
     }
   }
 
   if (resolution.status === "authenticated") {
-    applySessionCookies(
+    applyVerifiedIdentity(
       response,
-      identitySessionCookies(resolution.user.id),
+      requestCookies,
+      resolution.user.id,
+      identityCookie,
     );
-  }
-
-  if (
-    localUser &&
-    identityCookie &&
-    !identityAgrees
-  ) {
-    applyStaleTenantPolicy(response, localUser.id, identityCookie);
   }
 
   const isDashboard = path.startsWith("/dashboard");
@@ -189,16 +253,26 @@ export default async function proxy(request: NextRequest) {
     if (authStatus === "expired") {
       url.searchParams.set("error", "session_expired");
     }
-    const redirect = NextResponse.redirect(url);
+    const redirect = applyPrivateCache(NextResponse.redirect(url), path);
     return copyCookies(response, redirect);
   }
 
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set(AUTH_STATUS_HEADER, authStatus);
-  requestHeaders.set(PATHNAME_HEADER, path);
-  const next = NextResponse.next({
-    request: { headers: requestHeaders },
+  const verifiedUserId =
+    resolution.status === "authenticated"
+      ? resolution.user.id
+      : authStatus === "authenticated" && localUser && identityAgrees
+        ? localUser.id
+        : null;
+  const requestHeaders = trustedRequestHeaders(request, {
+    status: authStatus,
+    userId: verifiedUserId,
   });
+  const next = applyPrivateCache(
+    NextResponse.next({
+      request: { headers: requestHeaders },
+    }),
+    path,
+  );
   return copyCookies(response, next);
 }
 

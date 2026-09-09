@@ -39,12 +39,14 @@ export function OtpForm() {
   useEffect(() => {
     const queryEmail = searchParams.get("email")?.trim() ?? "";
     const queryPhone = searchParams.get("phone")?.trim() ?? "";
-    const storedEmail = sessionStorage.getItem("verifyEmail") ?? "";
-    const storedPhone = sessionStorage.getItem("verifyPhone") ?? "";
 
-    setEmail(queryEmail || storedEmail);
-    setPhone(queryPhone || storedPhone);
-    setEmailDraft(queryEmail || storedEmail);
+    setEmail(queryEmail);
+    setPhone(queryPhone);
+    setEmailDraft(queryEmail);
+
+    if (!queryEmail && !queryPhone) {
+      setStep("enter-email");
+    }
 
     const storedAttempts = sessionStorage.getItem("otpAttempts");
     if (storedAttempts) {
