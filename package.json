@@ -16,8 +16,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "test:auth": "tsx scripts/auth-otp-tests.ts && tsx scripts/auth-session-tests.ts && tsx scripts/auth-frontend-tests.ts && tsx scripts/auth-cookie-tests.ts && tsx scripts/deployment-guard-tests.ts",
-    "test:identity": "tsx scripts/identity-isolation-tests.ts",
+    "test:auth": "tsx --require ./scripts/register-server-only.cjs scripts/auth-otp-tests.ts && tsx --require ./scripts/register-server-only.cjs scripts/auth-session-tests.ts && tsx scripts/auth-frontend-tests.ts && tsx scripts/auth-cookie-tests.ts && tsx scripts/deployment-guard-tests.ts",
+    "test:identity": "tsx --require ./scripts/register-server-only.cjs scripts/identity-isolation-tests.ts",
     "check:modules": "tsx scripts/check-compiled-modules.ts && tsx scripts/check-module-load.ts",
     "check:sources": "node scripts/check-required-sources.cjs",
     "preflight": "tsx scripts/production-preflight.ts",
@@ -31,7 +31,7 @@
     "qa:readiness": "tsx scripts/check-readiness.ts",
     "qa:routes": "tsx scripts/list-routes.ts",
     "bootstrap:owner": "tsx scripts/bootstrap-owner.ts",
-    "qa:access": "tsx scripts/check-access-control.ts",
+    "qa:access": "tsx --require ./scripts/register-server-only.cjs scripts/check-access-control.ts",
     "qa:tenant-isolation": "tsx scripts/check-tenant-isolation.ts",
     "qa:social-instagram": "tsx scripts/instagram-connection-tests.ts",
     "qa:social-tiktok": "tsx scripts/tiktok-connection-tests.ts",
@@ -75,6 +75,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-icons": "^5.7.0",
+    "server-only": "0.0.1",
     "stripe": "^22.6.0"
   },
   "devDependencies": {
