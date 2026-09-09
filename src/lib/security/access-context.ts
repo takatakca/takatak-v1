@@ -5,8 +5,8 @@
 // next/headers + Prisma — and must stay importable by tsx QA scripts.)
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { getSessionUser } from "@/lib/auth/supabase-server";
 import { getRuntimeInfo, type RuntimeInfo } from "@/lib/security/runtime-mode";
+import { staleActiveClientCookie } from "@/lib/security/authenticated-identity";
 import {
   resolveTenantAccessBundle,
   type ShellProfileDetails,
@@ -37,11 +37,15 @@ export const getServerAccessContext = cache(async (): Promise<ServerAccessContex
   }
   const { access, profileDetails, clientNames } =
     await resolveTenantAccessBundle(requestedClientId);
-  let displayEmail: string | null = profileDetails?.email ?? null;
-  if (!displayEmail && access.mode !== "foundation_demo" && access.mode !== "denied") {
-    const user = await getSessionUser();
-    displayEmail = user?.email ?? null;
+  if (staleActiveClientCookie({ requestedClientId, access })) {
+    try {
+      const jar = await cookies();
+      jar.delete(ACTIVE_CLIENT_COOKIE);
+    } catch {
+      // Cookie mutation is not always available in Server Components.
+    }
   }
+  const displayEmail: string | null = profileDetails?.email ?? null;
   return {
     runtime,
     access,

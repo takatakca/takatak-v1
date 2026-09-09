@@ -6,6 +6,7 @@ import {
   resolveBrandDisplayLabel,
 } from "@/lib/brands/brand-display-image";
 import { getPrisma } from "@/lib/db/prisma";
+import { brandSelectorCacheKey, staleActiveBrandCookie } from "@/lib/security/authenticated-identity";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
 import { projectMetaBrandSurface } from "@/lib/social/connections/meta-brand-projection";
@@ -92,9 +93,20 @@ export function invalidateBrandSelectorCache(
 ): void {
   if (!clientId) {
     snapshotCache.clear();
+    snapshotInFlight.clear();
     return;
   }
-  snapshotCache.delete(clientId);
+  const suffix = `::${clientId}`;
+  for (const key of snapshotCache.keys()) {
+    if (key === clientId || key.endsWith(suffix)) {
+      snapshotCache.delete(key);
+    }
+  }
+  for (const key of snapshotInFlight.keys()) {
+    if (key === clientId || key.endsWith(suffix)) {
+      snapshotInFlight.delete(key);
+    }
+  }
 }
 
 /**
@@ -317,46 +329,43 @@ async function loadBrandSelectorSnapshotsUncached(
 
 export async function loadBrandSelectorSnapshots(
   clientId: string,
-  options?: { bypassCache?: boolean },
+  options?: { bypassCache?: boolean; profileId?: string | null },
 ): Promise<BrandSessionOption[]> {
-  if (!options?.bypassCache) {
-    const cached = snapshotCache.get(clientId);
+  const cacheKey = options?.profileId
+    ? brandSelectorCacheKey(options.profileId, clientId)
+    : null;
+
+  if (cacheKey && !options?.bypassCache) {
+    const cached = snapshotCache.get(cacheKey);
     if (cached && cached.expiresAt > Date.now()) {
-      logSocialOAuthEvent("social-brand-selector", {
-        stage: "snapshots",
-        outcome: "cache_hit",
-        msTotal: 0,
-        rawCount: cached.value.length,
-      });
       return cached.value;
     }
 
-    const inflight = snapshotInFlight.get(clientId);
+    const inflight = snapshotInFlight.get(cacheKey);
     if (inflight) {
-      logSocialOAuthEvent("social-brand-selector", {
-        stage: "snapshots",
-        outcome: "coalesced",
-        msTotal: 0,
-      });
       return inflight;
     }
   }
 
   const promise = loadBrandSelectorSnapshotsUncached(clientId)
     .then((value) => {
-      snapshotCache.set(clientId, {
-        value,
-        expiresAt: Date.now() + BRAND_SELECTOR_CACHE_TTL_MS,
-      });
+      if (cacheKey) {
+        snapshotCache.set(cacheKey, {
+          value,
+          expiresAt: Date.now() + BRAND_SELECTOR_CACHE_TTL_MS,
+        });
+      }
       return value;
     })
     .finally(() => {
-      if (snapshotInFlight.get(clientId) === promise) {
-        snapshotInFlight.delete(clientId);
+      if (cacheKey && snapshotInFlight.get(cacheKey) === promise) {
+        snapshotInFlight.delete(cacheKey);
       }
     });
 
-  snapshotInFlight.set(clientId, promise);
+  if (cacheKey) {
+    snapshotInFlight.set(cacheKey, promise);
+  }
   return promise;
 }
 
@@ -383,6 +392,7 @@ export async function resolveBrandSessionContext(
   try {
     const brands = await loadBrandSelectorSnapshots(
       access.activeClientId,
+      { profileId: access.profileId },
     );
 
     const selected = requestedBrandId
@@ -391,6 +401,22 @@ export async function resolveBrandSessionContext(
       : brands.length === 1
         ? brands[0]
         : null;
+
+    if (
+      staleActiveBrandCookie({
+        requestedBrandId,
+        availableBrandIds: brands.map((brand) => brand.id),
+        activeClientId: access.activeClientId,
+      })
+    ) {
+      try {
+        const { cookies } = await import("next/headers");
+        const cookieStore = await cookies();
+        cookieStore.delete(ACTIVE_BRAND_COOKIE);
+      } catch {
+        // Cookie mutation is not always available in Server Components.
+      }
+    }
 
     return {
       activeBrandId: selected?.id ?? null,

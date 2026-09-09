@@ -7,16 +7,12 @@
 // - ServiceInstance.provider never implies a connected integration.
 // - No credentials, tokens, or realistic external IDs in seed data.
 
+// Single production client strategy for MochaHost / Passenger / Node 22:
+// the JavaScript client engine plus @prisma/adapter-pg. Do not add a second
+// generator. prisma/generated is not the editable schema and is not used
+// as an import path. Generate during the Linux build; never on live Passenger.
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native"]
-}
-
-// MochaHost runtime client: no Rust query engine (CloudLinux panics with
-// "timer has gone away" and cannot fork prisma generate).
-generator mochaClient {
   provider   = "prisma-client-js"
-  output     = "./generated"
   engineType = "client"
 }
 
@@ -286,7 +282,7 @@ model Profile {
   /// Upmind billing customer id. TAKATAK remains the login; this only links checkout.
   upmindClientId String?    @unique
   phone              String?   @unique
-  otpHash            String?
+  otpHash            String?   // PostgreSQL TEXT; pending.v1 reservation fits with headroom
   otpExpiresAt       DateTime?
   lastOtpRequestedAt DateTime?
   otpAttemptCount    Int       @default(0)

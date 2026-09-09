@@ -5,6 +5,7 @@ import {
   import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
   import { validateInvitationCompletion } from "@/lib/auth/invitation-completion-validation";
   import { getPrisma } from "@/lib/db/prisma";
+  import { wrapAuthRoute } from "@/lib/auth/auth-json";
   
   export const runtime = "nodejs";
   export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ import {
     return response;
   }
   
-  export async function PATCH(
+  async function handleCompleteInvitation(
     request: NextRequest,
   ): Promise<NextResponse> {
     const supabase =
@@ -296,3 +297,9 @@ import {
       );
     }
   }
+
+export const PATCH = wrapAuthRoute(
+  "complete-invitation",
+  "The account service is temporarily unavailable.",
+  handleCompleteInvitation,
+);

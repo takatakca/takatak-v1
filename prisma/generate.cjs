@@ -2,8 +2,10 @@
 
 // Do not run this on MochaHost. CloudLinux nproc is already used by lsnode,
 // so `prisma generate` dies with: fork: Resource temporarily unavailable.
-// Generate on your Mac (`pnpm db:generate`) and upload prisma/generated.
+// Generate during the Linux production build (or locally) and include the
+// generated client in the versioned artifact.
 const { spawnSync } = require("child_process");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 
@@ -16,12 +18,15 @@ const onMochaHost =
   initCwd.includes("/nodevenv/") ||
   cwd.includes("/home/takatakc/") ||
   initCwd.includes("/home/takatakc/") ||
+  cwd.includes("/home/bolonca/") ||
+  initCwd.includes("/home/bolonca/") ||
   home.includes("/home/takatakc") ||
+  home.includes("/home/bolonca") ||
   fs.existsSync("/usr/local/lsws/fcgi-bin/lsnode.js");
 
 if (onMochaHost) {
   console.log(
-    "[prisma-generate] skipped on MochaHost. Upload prisma/generated from your Mac instead.",
+    "[prisma-generate] skipped on MochaHost. Use the Linux-built artifact instead.",
   );
   process.exit(0);
 }
@@ -35,6 +40,7 @@ const schemaFromInitCwd = process.env.INIT_CWD
   ? path.join(process.env.INIT_CWD, "prisma", "schema.prisma")
   : null;
 const schemaFromCwd = path.join(process.cwd(), "prisma", "schema.prisma");
+const generatedSchema = path.join(__dirname, "generated", "schema.prisma");
 
 const schema = firstExisting(
   [schemaFromHere, schemaFromInitCwd, schemaFromCwd].filter(Boolean),
@@ -42,6 +48,13 @@ const schema = firstExisting(
 
 if (!schema) {
   console.error("[prisma-generate] prisma/schema.prisma was not found.");
+  process.exit(1);
+}
+
+if (path.resolve(schema) === path.resolve(generatedSchema)) {
+  console.error(
+    "[prisma-generate] Refusing to generate from prisma/generated/schema.prisma.",
+  );
   process.exit(1);
 }
 
@@ -63,20 +76,14 @@ if (result.error) {
 }
 
 if (result.status === 0) {
-  // Prisma emits `//# sourceMappingURL=client.js.map` without the file.
-  // Next.js then logs "Invalid source map ... payload ... null" on errors.
-  const runtimeDir = path.join(root, "prisma", "generated", "runtime");
-  if (fs.existsSync(runtimeDir)) {
-    for (const name of fs.readdirSync(runtimeDir)) {
-      if (!name.endsWith(".js")) continue;
-      const file = path.join(runtimeDir, name);
-      const source = fs.readFileSync(file, "utf8");
-      const next = source.replace(/\/\/[#@]\s*sourceMappingURL=.*$/gm, "");
-      if (next !== source) {
-        fs.writeFileSync(file, next);
-      }
-    }
+  const schemaSource = fs.readFileSync(schema, "utf8");
+  const checksum = crypto.createHash("sha256").update(schemaSource).digest("hex");
+  const stampPath = path.join(root, "node_modules", ".prisma", "client", "takatak-schema.sha256");
+  const stampDir = path.dirname(stampPath);
+  if (fs.existsSync(stampDir)) {
+    fs.writeFileSync(stampPath, `${checksum}\n`);
   }
+  fs.writeFileSync(path.join(__dirname, ".generated-schema.sha256"), `${checksum}\n`);
 }
 
 process.exit(result.status === null ? 1 : result.status);

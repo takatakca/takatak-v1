@@ -13,7 +13,43 @@ import {
   resolveAuthUser,
   type AuthStatus,
 } from "@/lib/auth/session-user";
+import {
+  applySessionCookies,
+  identitySessionCookies,
+  staleTenantCookieClears,
+} from "@/lib/auth/workspace-session-cookies";
 import { originFromRequest } from "@/lib/config/app-origin";
+import {
+  AUTH_IDENTITY_COOKIE,
+  AUTH_VERIFIED_AT_COOKIE,
+  isHighRiskPath,
+  localIdentityAgrees,
+  mayUseCachedLocalSession,
+} from "@/lib/security/authenticated-identity";
+
+function copyCookies(
+  from: NextResponse,
+  to: NextResponse,
+): NextResponse {
+  for (const cookie of from.cookies.getAll()) {
+    to.cookies.set(cookie);
+  }
+  return to;
+}
+
+function applyStaleTenantPolicy(
+  response: NextResponse,
+  localUserId: string | null,
+  identityCookie: string | null,
+): void {
+  if (!localUserId || !identityCookie || identityCookie === localUserId) {
+    return;
+  }
+  applySessionCookies(response, [
+    ...staleTenantCookieClears(),
+    ...identitySessionCookies(localUserId),
+  ]);
+}
 
 export default async function proxy(request: NextRequest) {
   const env = getSupabaseEnv();
@@ -23,7 +59,11 @@ export default async function proxy(request: NextRequest) {
 
   // Health stays a cheap liveness probe. Auth callbacks replace cookies
   // themselves — do not sign-out stale tokens on that response.
-  if (path === "/api/health" || path.startsWith("/auth/callback")) {
+  if (
+    path === "/api/health" ||
+    path.startsWith("/api/health/") ||
+    path.startsWith("/auth/callback")
+  ) {
     return NextResponse.next();
   }
 
@@ -31,11 +71,28 @@ export default async function proxy(request: NextRequest) {
   const localUser = hasAuthCookie
     ? readLocalSessionUser(request.cookies.getAll())
     : null;
+  const identityCookie =
+    request.cookies.get(AUTH_IDENTITY_COOKIE)?.value ?? null;
+  const verifiedAtMs = Number(
+    request.cookies.get(AUTH_VERIFIED_AT_COOKIE)?.value ?? "",
+  );
+  const identityAgrees = localIdentityAgrees({
+    sessionUserId: localUser?.id,
+    identityCookie,
+  });
+  const skipAuthLookup = mayUseCachedLocalSession({
+    pathname: path,
+    hasLocalUser: Boolean(localUser),
+    sessionUserId: localUser?.id,
+    identityCookie,
+    verifiedAtMs: Number.isFinite(verifiedAtMs) ? verifiedAtMs : null,
+    tokenIsFresh: isLocalAccessTokenFresh(request.cookies.getAll()),
+  });
+  const highRisk = isHighRiskPath(path);
 
-  // API handlers re-read the local JWT. Don't spend 1s on getUser() for
-  // every image/onboarding poll — that was making picture/onboarding look
-  // like 404s while Auth was still in flight.
-  if (path.startsWith("/api/")) {
+  // Low-risk APIs re-read the local JWT. High-risk APIs always go through
+  // Auth getUser() — decoded JWT `sub` is not enough for billing/admin/team.
+  if (path.startsWith("/api/") && !highRisk) {
     const authStatus: AuthStatus = localUser
       ? "authenticated"
       : hasAuthCookie
@@ -44,20 +101,25 @@ export default async function proxy(request: NextRequest) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set(AUTH_STATUS_HEADER, authStatus);
     requestHeaders.set(PATHNAME_HEADER, path);
-    return NextResponse.next({
+    const response = NextResponse.next({
       request: { headers: requestHeaders },
     });
+    applyStaleTenantPolicy(response, localUser?.id ?? null, identityCookie);
+    return response;
   }
 
-  // Fresh JWT: skip getUser(). Auth cookie writes on every document request
-  // make the App Router restart the RSC fetch in a loop.
-  if (localUser && isLocalAccessTokenFresh(request.cookies.getAll())) {
+  // Fresh JWT + matching identity cookie + recent Auth verification:
+  // skip getUser(). Auth cookie writes on every document request make the
+  // App Router restart the RSC fetch in a loop.
+  if (localUser && skipAuthLookup) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set(AUTH_STATUS_HEADER, "authenticated");
     requestHeaders.set(PATHNAME_HEADER, path);
-    return NextResponse.next({
+    const response = NextResponse.next({
       request: { headers: requestHeaders },
     });
+    applyStaleTenantPolicy(response, localUser.id, identityCookie);
+    return response;
   }
 
   let response = NextResponse.next({ request });
@@ -95,9 +157,24 @@ export default async function proxy(request: NextRequest) {
   if (resolution.status === "network") {
     // Timed-out getUser() must not later clear cookies (refresh-token races).
     persistAuthCookies = false;
-    if (localUser) {
+    if (localUser && !highRisk) {
       authStatus = "authenticated";
     }
+  }
+
+  if (resolution.status === "authenticated") {
+    applySessionCookies(
+      response,
+      identitySessionCookies(resolution.user.id),
+    );
+  }
+
+  if (
+    localUser &&
+    identityCookie &&
+    !identityAgrees
+  ) {
+    applyStaleTenantPolicy(response, localUser.id, identityCookie);
   }
 
   const isDashboard = path.startsWith("/dashboard");
@@ -112,7 +189,8 @@ export default async function proxy(request: NextRequest) {
     if (authStatus === "expired") {
       url.searchParams.set("error", "session_expired");
     }
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    return copyCookies(response, redirect);
   }
 
   const requestHeaders = new Headers(request.headers);
@@ -121,10 +199,7 @@ export default async function proxy(request: NextRequest) {
   const next = NextResponse.next({
     request: { headers: requestHeaders },
   });
-  for (const cookie of response.cookies.getAll()) {
-    next.cookies.set(cookie);
-  }
-  return next;
+  return copyCookies(response, next);
 }
 
 export const config = {

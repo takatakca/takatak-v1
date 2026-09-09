@@ -1,49 +1,31 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
+import {
+  authErrorResponse,
+  authJson,
+  readTrustedJsonBody,
+  wrapAuthRoute,
+} from "@/lib/auth/auth-json";
 import { verifyEmailOtp, verifyPhoneOtp } from "@/lib/auth/otp/service";
 import { applySessionCookies } from "@/lib/auth/workspace-session-cookies";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
-import {
-  isTrustedRequestOrigin,
-  jsonAuthHeaders,
-  readJsonBody,
-} from "@/lib/auth/trusted-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAXIMUM_REQUEST_BYTES = 4_000;
 
-function errorResponse(message: string, status: number) {
-  return NextResponse.json(
-    { ok: false, message },
-    { status, headers: jsonAuthHeaders() },
-  );
-}
-
-export async function POST(request: NextRequest) {
-  if (!isTrustedRequestOrigin(request)) {
-    return errorResponse("The request origin could not be verified.", 403);
+async function handleVerifyOtp(request: NextRequest) {
+  const parsed = await readTrustedJsonBody(request, MAXIMUM_REQUEST_BYTES);
+  if (!parsed.ok) {
+    return parsed.response;
   }
 
-  const contentType =
-    request.headers.get("content-type")?.toLowerCase() ?? "";
-  if (!contentType.startsWith("application/json")) {
-    return errorResponse("Invalid request format.", 415);
-  }
-
-  let body: unknown;
-  try {
-    body = await readJsonBody(request, MAXIMUM_REQUEST_BYTES);
-  } catch (error) {
-    if (error instanceof Error && error.message === "REQUEST_TOO_LARGE") {
-      return errorResponse("The request is too large.", 413);
-    }
-    return errorResponse("Invalid request body.", 400);
-  }
-
+  const body = parsed.body;
   if (!body || typeof body !== "object") {
-    return errorResponse("Phone or email is required", 400);
+    return authErrorResponse("Phone or email is required", 400, {
+      code: "invalid_request",
+    });
   }
 
   const input = body as {
@@ -59,38 +41,59 @@ export async function POST(request: NextRequest) {
     typeof input.next === "string"
       ? sanitizeNextPath(input.next)
       : "/dashboard";
+  const existingCookies = request.cookies.getAll();
 
   if (phone) {
-    const result = await verifyPhoneOtp(phone, otp);
-    const response = NextResponse.json(
+    const result = await verifyPhoneOtp(phone, otp, { existingCookies });
+    const response = authJson(
       {
         ok: result.ok,
         message: result.message,
+        ...(result.code ? { code: result.code } : {}),
         redirectTo: result.ok ? next : undefined,
       },
-      { status: result.status, headers: jsonAuthHeaders() },
+      result.status,
     );
     if (result.ok && result.cookies) {
-      applySessionCookies(response, result.cookies);
+      const cookies = applySessionCookies(response, result.cookies);
+      if (!cookies.ok) {
+        return authErrorResponse(cookies.message, 500, {
+          code: "session_unavailable",
+        });
+      }
     }
     return response;
   }
 
   if (email) {
-    const result = await verifyEmailOtp(email, otp);
-    const response = NextResponse.json(
+    const result = await verifyEmailOtp(email, otp, { existingCookies });
+    const response = authJson(
       {
         ok: result.ok,
         message: result.message,
+        ...(result.code ? { code: result.code } : {}),
         redirectTo: result.ok ? next : undefined,
       },
-      { status: result.status, headers: jsonAuthHeaders() },
+      result.status,
     );
     if (result.ok && result.cookies) {
-      applySessionCookies(response, result.cookies);
+      const cookies = applySessionCookies(response, result.cookies);
+      if (!cookies.ok) {
+        return authErrorResponse(cookies.message, 500, {
+          code: "session_unavailable",
+        });
+      }
     }
     return response;
   }
 
-  return errorResponse("Phone or email is required", 400);
+  return authErrorResponse("Phone or email is required", 400, {
+    code: "invalid_request",
+  });
 }
+
+export const POST = wrapAuthRoute(
+  "verify-otp",
+  "The verification service is temporarily unavailable.",
+  handleVerifyOtp,
+);

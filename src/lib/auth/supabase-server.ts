@@ -6,10 +6,12 @@ import { createServerClient } from "@supabase/ssr";
 import { getSupabaseEnv } from "./env";
 import {
   AUTH_STATUS_HEADER,
+  PATHNAME_HEADER,
   hasSupabaseAuthCookie,
   readLocalSessionUser,
   resolveAuthUser,
 } from "./session-user";
+import { isHighRiskPath } from "@/lib/security/authenticated-identity";
 
 export async function createSupabaseServerClient(options?: {
   persistSessionCookies?: boolean;
@@ -46,14 +48,24 @@ async function readAuthStatusHeader(): Promise<string | null> {
   }
 }
 
+async function readPathnameHeader(): Promise<string | null> {
+  try {
+    return (await headers()).get(PATHNAME_HEADER);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Returns the authenticated user or null. Never throws on missing config.
  *
- * The proxy already called Auth (`getUser`). Nested layouts must not do that
- * again — a second lookup can time out and look like a sign-out, or race the
- * refresh token and actually clear the session.
+ * High-risk routes always call Auth `getUser()`. The five-minute local JWT
+ * skip is only for low-risk document/API traffic and is never treated as
+ * cryptographic authentication for billing, admin, team, or account changes.
  */
 export const getSessionUser = cache(async () => {
+  const pathname = await readPathnameHeader();
+  const highRisk = isHighRiskPath(pathname);
   const status = await readAuthStatusHeader();
   if (status === "anonymous" || status === "expired") {
     return null;
@@ -66,6 +78,11 @@ export const getSessionUser = cache(async () => {
 
   const cookieStore = await cookies();
   const hasAuthCookie = hasSupabaseAuthCookie(cookieStore.getAll());
+
+  if (highRisk) {
+    const resolution = await resolveAuthUser(supabase, { hasAuthCookie });
+    return resolution.status === "authenticated" ? resolution.user : null;
+  }
 
   if (status === "authenticated" || status === "network") {
     return hasAuthCookie ? readLocalSessionUser(cookieStore.getAll()) : null;

@@ -16,32 +16,41 @@ export async function POST(request: Request) {
     new URL("/login", originFromRequest(request)),
     { status: 303 },
   );
+  response.headers.set("Cache-Control", "no-store");
 
-  const env = getSupabaseEnv();
-  if (env) {
+  try {
     const cookieStore = await cookies();
-    const supabase = createServerClient(env.url, env.anonKey, {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    });
+    const existingNames = cookieStore.getAll().map((cookie) => cookie.name);
+    const env = getSupabaseEnv();
 
-    await supabase.auth.signOut();
+    if (env) {
+      const supabase = createServerClient(env.url, env.anonKey, {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      });
+
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        console.error("[signout] Local sign-out failed");
+      }
+    }
+
+    applySessionCookies(response, [
+      ...expireAuthCookies(existingNames),
+      ...workspaceCookieClears(),
+    ]);
+  } catch {
+    applySessionCookies(response, workspaceCookieClears());
   }
 
-  applySessionCookies(response, [
-    ...expireAuthCookies(
-      (await cookies()).getAll().map((cookie) => cookie.name),
-    ),
-    ...workspaceCookieClears(),
-  ]);
-  response.headers.set("Cache-Control", "no-store");
   return response;
 }

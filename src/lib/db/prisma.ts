@@ -1,9 +1,8 @@
 // Phase 4 — safe Prisma client access.
-// MochaHost cannot run Prisma's Rust query engine (nproc + "timer has gone away").
-// This client uses node-postgres via @prisma/adapter-pg instead.
-import { createRequire } from "node:module";
+// MochaHost / CloudLinux cannot run Prisma's Rust query engine
+// ("timer has gone away" / nproc). Production uses the JavaScript
+// client engine (`engineType = "client"`) with the node-postgres adapter.
 import fs from "fs";
-import path from "path";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { isDatabaseConfigured } from "./env";
@@ -12,37 +11,6 @@ const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
   prismaTlsMode?: "relaxed" | "strict";
 };
-
-type PrismaClientCtor = new (options: { adapter: unknown }) => PrismaClient;
-
-function loadPrismaClientCtor(): PrismaClientCtor {
-  try {
-    const nodeRequire = createRequire(
-      path.join(process.cwd(), "package.json"),
-    );
-    const candidates = [
-      path.join("/home/takatakc/app/takatak", "prisma", "generated"),
-      path.join(process.cwd(), "prisma", "generated"),
-    ];
-
-    for (const moduleId of candidates) {
-      try {
-        const loaded = nodeRequire(moduleId) as {
-          PrismaClient?: PrismaClientCtor;
-        };
-        if (typeof loaded.PrismaClient === "function") {
-          return loaded.PrismaClient;
-        }
-      } catch {
-        // Generated client is optional on Mac; required on MochaHost.
-      }
-    }
-  } catch {
-    // ESM bundlers can still provide @prisma/client below.
-  }
-
-  return PrismaClient as unknown as PrismaClientCtor;
-}
 
 function isLoopbackDatabaseHost(connectionString: string): boolean {
   try {
@@ -53,6 +21,18 @@ function isLoopbackDatabaseHost(connectionString: string): boolean {
   }
 }
 
+export function isPassengerOrSharedHost(): boolean {
+  return (
+    typeof (globalThis as { PhusionPassenger?: unknown }).PhusionPassenger !==
+      "undefined" ||
+    Boolean(process.env.PASSENGER_APP_ENV) ||
+    Boolean(process.env.PASSENGER_BASE_URI) ||
+    (process.env.HOME ?? "").includes("/home/takatakc") ||
+    (process.env.HOME ?? "").includes("/home/bolonca") ||
+    fs.existsSync("/usr/local/lsws/fcgi-bin/lsnode.js")
+  );
+}
+
 function shouldRelaxPostgresTls(connectionString: string): boolean {
   if (process.env.PGSSL_REJECT_UNAUTHORIZED === "true") {
     return false;
@@ -61,10 +41,7 @@ function shouldRelaxPostgresTls(connectionString: string): boolean {
   return (
     process.env.PGSSL_REJECT_UNAUTHORIZED === "false" ||
     /sslmode=no-verify/i.test(connectionString) ||
-    (process.env.HOME ?? "").includes("/home/takatakc") ||
-    fs.existsSync("/usr/local/lsws/fcgi-bin/lsnode.js") ||
-    // next dev on a Mac against MochaHost (or similar) Postgres, whose
-    // certificate chain is not in the local trust store.
+    isPassengerOrSharedHost() ||
     (process.env.NODE_ENV !== "production" &&
       !isLoopbackDatabaseHost(connectionString))
   );
@@ -75,9 +52,20 @@ function mochaSafeConnectionString(connectionString: string): string {
     return connectionString;
   }
 
-  const withoutSslMode = connectionString.replace(/([?&])sslmode=[^&]*/g, "$1").replace(/\?&/, "?").replace(/[?&]$/, "");
+  const withoutSslMode = connectionString
+    .replace(/([?&])sslmode=[^&]*/g, "$1")
+    .replace(/\?&/, "?")
+    .replace(/[?&]$/, "");
   const separator = withoutSslMode.includes("?") ? "&" : "?";
   return `${withoutSslMode}${separator}sslmode=no-verify`;
+}
+
+function prismaPoolMax(): number {
+  const configured = Number(process.env.PRISMA_POOL_MAX ?? "");
+  if (Number.isFinite(configured) && configured > 0 && configured <= 10) {
+    return Math.floor(configured);
+  }
+  return isPassengerOrSharedHost() ? 3 : 8;
 }
 
 function createPrismaClient(): PrismaClient {
@@ -88,17 +76,12 @@ function createPrismaClient(): PrismaClient {
 
   const adapter = new PrismaPg({
     connectionString: mochaSafeConnectionString(connectionString),
-    max:
-      (process.env.HOME ?? "").includes("/home/takatakc") ||
-      fs.existsSync("/usr/local/lsws/fcgi-bin/lsnode.js")
-        ? 3
-        : 8,
+    max: prismaPoolMax(),
     ...(shouldRelaxPostgresTls(connectionString)
       ? { ssl: { rejectUnauthorized: false } }
       : {}),
   });
-  const PrismaClientCtor = loadPrismaClientCtor();
-  return new PrismaClientCtor({ adapter });
+  return new PrismaClient({ adapter });
 }
 
 export function getPrisma(): PrismaClient | null {
@@ -117,11 +100,23 @@ export function getPrisma(): PrismaClient | null {
       globalForPrisma.prismaTlsMode = tlsMode;
     } catch (error) {
       console.error(
-        "[prisma] Client could not start. Install pg and @prisma/adapter-pg, then upload prisma/generated.",
-        error instanceof Error ? error.message : error,
+        "[prisma] Client could not start.",
+        error instanceof Error ? error.message : "unknown_error",
       );
       return null;
     }
   }
   return globalForPrisma.prisma;
+}
+
+export async function disconnectPrisma(): Promise<void> {
+  if (!globalForPrisma.prisma) {
+    return;
+  }
+  try {
+    await globalForPrisma.prisma.$disconnect();
+  } catch {
+    // Process is exiting; ignore disconnect failures.
+  }
+  globalForPrisma.prisma = undefined;
 }

@@ -14,6 +14,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Keep Prisma out of the bundle so Node resolves the real package names.
+  // Production builds MUST use webpack (`next build --webpack`). Next.js 16
+  // Turbopack rewrites these to hashed aliases such as
+  // `@prisma/client-<hash>` which do not exist in node_modules.
   serverExternalPackages: ["@prisma/client", "prisma", "@prisma/adapter-pg", "pg"],
   // Dev-only access logger. Production Next builds do not emit this logger;
   // production first-hop protection requires META_OAUTH_REDIRECT_URI → relay.

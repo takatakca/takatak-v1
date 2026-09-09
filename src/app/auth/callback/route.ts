@@ -15,7 +15,7 @@ import {
 import { clearWorkspaceCookiesOnResponse } from "@/lib/auth/workspace-session-cookies";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { acceptWorkspaceInvitation } from "@/lib/team/accept-invitation";
-import { linkUpmindCustomerForProfile } from "@/lib/web-hosting/upmind-session-customer";
+import { scheduleUpmindCustomerLink } from "@/lib/web-hosting/upmind-session-customer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!isInvitationFlow) {
-      await linkUpmindCustomerForProfile(profileResult.profileId);
+      scheduleUpmindCustomerLink(profileResult.profileId);
     }
 
     if (isInvitationFlow && invitationToken) {

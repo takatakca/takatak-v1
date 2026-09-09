@@ -1,47 +1,29 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-import { sendEmailOtp, sendPhoneOtp } from "@/lib/auth/otp/service";
 import {
-  isTrustedRequestOrigin,
-  jsonAuthHeaders,
-  readJsonBody,
-} from "@/lib/auth/trusted-origin";
+  authErrorResponse,
+  authJson,
+  readTrustedJsonBody,
+  wrapAuthRoute,
+} from "@/lib/auth/auth-json";
+import { sendEmailOtp, sendPhoneOtp } from "@/lib/auth/otp/service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAXIMUM_REQUEST_BYTES = 4_000;
 
-function errorResponse(message: string, status: number) {
-  return NextResponse.json(
-    { ok: false, message },
-    { status, headers: jsonAuthHeaders() },
-  );
-}
-
-export async function POST(request: NextRequest) {
-  if (!isTrustedRequestOrigin(request)) {
-    return errorResponse("The request origin could not be verified.", 403);
+async function handleResendCode(request: NextRequest) {
+  const parsed = await readTrustedJsonBody(request, MAXIMUM_REQUEST_BYTES);
+  if (!parsed.ok) {
+    return parsed.response;
   }
 
-  const contentType =
-    request.headers.get("content-type")?.toLowerCase() ?? "";
-  if (!contentType.startsWith("application/json")) {
-    return errorResponse("Invalid request format.", 415);
-  }
-
-  let body: unknown;
-  try {
-    body = await readJsonBody(request, MAXIMUM_REQUEST_BYTES);
-  } catch (error) {
-    if (error instanceof Error && error.message === "REQUEST_TOO_LARGE") {
-      return errorResponse("The request is too large.", 413);
-    }
-    return errorResponse("Invalid request body.", 400);
-  }
-
+  const body = parsed.body;
   if (!body || typeof body !== "object") {
-    return errorResponse("Email or phone number is required", 400);
+    return authErrorResponse("Email or phone number is required", 400, {
+      code: "invalid_request",
+    });
   }
 
   const input = body as { email?: unknown; phone?: unknown };
@@ -50,19 +32,35 @@ export async function POST(request: NextRequest) {
 
   if (phone) {
     const result = await sendPhoneOtp(phone);
-    return NextResponse.json(
-      { ok: result.ok, message: result.message },
-      { status: result.status, headers: jsonAuthHeaders() },
+    return authJson(
+      {
+        ok: result.ok,
+        message: result.message,
+        ...(result.code ? { code: result.code } : {}),
+      },
+      result.status,
     );
   }
 
   if (email) {
     const result = await sendEmailOtp(email);
-    return NextResponse.json(
-      { ok: result.ok, message: result.message },
-      { status: result.status, headers: jsonAuthHeaders() },
+    return authJson(
+      {
+        ok: result.ok,
+        message: result.message,
+        ...(result.code ? { code: result.code } : {}),
+      },
+      result.status,
     );
   }
 
-  return errorResponse("Email or phone number is required", 400);
+  return authErrorResponse("Email or phone number is required", 400, {
+    code: "invalid_request",
+  });
 }
+
+export const POST = wrapAuthRoute(
+  "resend-code",
+  "The verification service is temporarily unavailable.",
+  handleResendCode,
+);

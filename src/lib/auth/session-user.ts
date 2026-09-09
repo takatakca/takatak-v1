@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { cookieUserMatchesAccessToken } from "@/lib/security/authenticated-identity";
 
 export const AUTH_STATUS_HEADER = "x-takatak-auth-status";
 export const PATHNAME_HEADER = "x-takatak-pathname";
@@ -267,30 +268,47 @@ function userFromSessionPayload(value: unknown): User | null {
     access_token?: unknown;
   };
 
+  if (typeof record.access_token !== "string") {
+    return null;
+  }
+
+  const parts = record.access_token.split(".");
+  if (parts.length < 2) {
+    return null;
+  }
+
+  let jwtUser: User | null = null;
+  try {
+    const payload = JSON.parse(decodeBase64Url(parts[1])) as Record<
+      string,
+      unknown
+    >;
+    jwtUser = userFromJwtPayload(payload);
+  } catch {
+    return null;
+  }
+
+  if (!jwtUser) {
+    return null;
+  }
+
   const stored = record.user;
   if (stored && typeof stored === "object") {
-    const id = (stored as { id?: unknown }).id;
-    if (typeof id === "string" && id) {
-      return stored as User;
+    const cookieUser = stored as { id?: unknown; email?: unknown };
+    if (
+      !cookieUserMatchesAccessToken({
+        accessTokenUserId: jwtUser.id,
+        accessTokenEmail: jwtUser.email,
+        cookieUserId: typeof cookieUser.id === "string" ? cookieUser.id : null,
+        cookieUserEmail:
+          typeof cookieUser.email === "string" ? cookieUser.email : null,
+      })
+    ) {
+      return null;
     }
   }
 
-  if (typeof record.access_token === "string") {
-    const parts = record.access_token.split(".");
-    if (parts.length >= 2) {
-      try {
-        const payload = JSON.parse(decodeBase64Url(parts[1])) as Record<
-          string,
-          unknown
-        >;
-        return userFromJwtPayload(payload);
-      } catch {
-        return null;
-      }
-    }
-  }
-
-  return null;
+  return jwtUser;
 }
 
 /**

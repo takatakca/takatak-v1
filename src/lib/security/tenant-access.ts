@@ -10,6 +10,7 @@
 
 import { getSessionUser } from "@/lib/auth/supabase-server";
 import { getPrisma } from "@/lib/db/prisma";
+import { sessionMatchesProfile } from "@/lib/security/authenticated-identity";
 import { getRuntimeInfo } from "@/lib/security/runtime-mode";
 import type {
   Permission,
@@ -20,6 +21,7 @@ import type {
 export type DeniedReason =
   | "not_authenticated"
   | "profile_missing"
+  | "identity_mismatch"
   | "profile_disabled"
   | "membership_missing"
   | "membership_suspended"
@@ -39,6 +41,8 @@ type MembershipAccess = {
   status: "active" | "suspended";
   customPermissions: Permission[];
   deniedPermissions: Permission[];
+  roleBasePermissions?: Permission[];
+  customRoleId?: string | null;
 };
 
 export type TenantAccess =
@@ -63,6 +67,8 @@ export type TenantAccess =
       activeClientId: string;
       customPermissions: Permission[];
       deniedPermissions: Permission[];
+      roleBasePermissions?: Permission[];
+      customRoleId?: string | null;
     }
   | {
       mode: "selection_required";
@@ -93,6 +99,24 @@ export interface TenantAccessInput {
 
 const FOUNDATION_WARNING =
   "Foundation demo mode — no real authentication or tenant isolation is active. Local development only.";
+
+function clientScopedAccess(
+  profileId: string,
+  membership: MembershipAccess,
+  allowedClientIds: string[],
+): Extract<TenantAccess, { mode: "client_scoped" }> {
+  return {
+    mode: "client_scoped",
+    profileId,
+    role: membership.role,
+    allowedClientIds,
+    activeClientId: membership.clientId,
+    customPermissions: membership.customPermissions,
+    deniedPermissions: membership.deniedPermissions,
+    roleBasePermissions: membership.roleBasePermissions,
+    customRoleId: membership.customRoleId ?? null,
+  };
+}
 
 export function computeTenantAccess(
   input: TenantAccessInput,
@@ -205,18 +229,11 @@ export function computeTenantAccess(
       : null;
 
   if (requestedMembership) {
-    return {
-      mode: "client_scoped",
-      profileId: input.profile.id,
-      role: requestedMembership.role,
+    return clientScopedAccess(
+      input.profile.id,
+      requestedMembership,
       allowedClientIds,
-      activeClientId:
-        requestedMembership.clientId,
-      customPermissions:
-        requestedMembership.customPermissions,
-      deniedPermissions:
-        requestedMembership.deniedPermissions,
-    };
+    );
   }
 
   // Missing or invalid workspace cookie: use the first workspace this
@@ -224,17 +241,11 @@ export function computeTenantAccess(
   // platform_admin, so Social/Team/Brands redirected back to /dashboard
   // after login cleared the workspace cookie.
   if (activeMemberships.length > 0) {
-    const membership = activeMemberships[0];
-
-    return {
-      mode: "client_scoped",
-      profileId: input.profile.id,
-      role: membership.role,
+    return clientScopedAccess(
+      input.profile.id,
+      activeMemberships[0],
       allowedClientIds,
-      activeClientId: membership.clientId,
-      customPermissions: membership.customPermissions,
-      deniedPermissions: membership.deniedPermissions,
-    };
+    );
   }
 
   if (
@@ -366,6 +377,7 @@ export async function resolveTenantAccessBundle(
         },
         select: {
           id: true,
+          authUserId: true,
           role: true,
           status: true,
           firstName: true,
@@ -393,6 +405,21 @@ export async function resolveTenantAccessBundle(
     const clientNames: Record<string, string> = {};
     for (const membership of profile?.memberships ?? []) {
       clientNames[membership.clientId] = membership.client.name;
+    }
+
+    if (
+      profile &&
+      !sessionMatchesProfile({
+        sessionUserId: user.id,
+        sessionEmail: user.email,
+        profileAuthUserId: profile.authUserId,
+        profileEmail: profile.email,
+      })
+    ) {
+      return accessBundle({
+        mode: "denied",
+        reason: "identity_mismatch",
+      });
     }
 
     const access = computeTenantAccess({

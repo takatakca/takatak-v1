@@ -28,14 +28,10 @@ import {
   type RegistrationInput,
   validateRegistrationInput,
 } from "@/lib/auth/registration-validation";
-
-type RegistrationResponse = {
-  ok: boolean;
-  message?: string;
-  fieldErrors?: RegistrationFieldErrors;
-  requiresEmailVerification?: boolean;
-  redirectTo?: string;
-};
+import {
+  formatAuthErrorMessage,
+  parseAuthResponse,
+} from "@/lib/auth/parse-auth-response";
 
 const INITIAL_VALUES: RegistrationInput = {
   firstName: "",
@@ -242,27 +238,15 @@ export function RegistrationForm() {
         body: JSON.stringify(validation.data),
       });
 
-      let result: RegistrationResponse;
+      const result = await parseAuthResponse(response);
 
-      try {
-        result =
-          (await response.json()) as RegistrationResponse;
-      } catch {
-        setGlobalError(
-          "The registration service returned an invalid response. Please try again.",
-        );
-        return;
-      }
-
-      if (!response.ok || !result.ok) {
-        const responseFieldErrors =
-          result.fieldErrors ?? {};
+      if (!result.ok) {
+        const responseFieldErrors = result.fieldErrors ?? {};
 
         setFieldErrors(responseFieldErrors);
 
         setGlobalError(
-          result.message ??
-            "Unable to create your account.",
+          formatAuthErrorMessage(result) || "Unable to create your account.",
         );
 
         focusFirstInvalidField(responseFieldErrors);

@@ -14,6 +14,7 @@ import {
   jsonAuthHeaders,
   readJsonBody,
 } from "@/lib/auth/trusted-origin";
+import { wrapAuthRoute } from "@/lib/auth/auth-json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -145,7 +146,7 @@ function getFriendlySupabaseError(
   };
 }
 
-export async function POST(request: NextRequest) {
+async function handleRegister(request: NextRequest) {
   if (!isTrustedRequestOrigin(request)) {
     return errorResponse(
       "The request origin could not be verified.",
@@ -358,3 +359,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = wrapAuthRoute(
+  "register",
+  "The registration service is temporarily unavailable.",
+  handleRegister,
+);

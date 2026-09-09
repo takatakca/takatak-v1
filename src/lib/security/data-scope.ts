@@ -17,6 +17,7 @@ export type DataScope =
 const DENIED_LABELS: Record<string, string> = {
   not_authenticated: "Sign in to view this data.",
   profile_missing: "Your account profile could not be resolved. Contact your TAKATAK administrator.",
+  identity_mismatch: "Your account identity could not be verified. Sign in again.",
   profile_disabled: "This account is disabled. Contact your TAKATAK administrator.",
   membership_missing: "Your account is authenticated, but no TAKATAK client access has been assigned. Contact your TAKATAK administrator.",
   client_inactive: "The selected workspace is paused or archived.",

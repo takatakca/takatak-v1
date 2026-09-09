@@ -12,12 +12,10 @@ import {
   useState,
 } from "react";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
-
-type OtpResponse = {
-  ok: boolean;
-  message?: string;
-  redirectTo?: string;
-};
+import {
+  formatAuthErrorMessage,
+  parseAuthResponse,
+} from "@/lib/auth/parse-auth-response";
 
 export function OtpForm() {
   const searchParams = useSearchParams();
@@ -30,6 +28,7 @@ export function OtpForm() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [attempts, setAttempts] = useState(0);
+  const [locked, setLocked] = useState(false);
   const [canResend, setCanResend] = useState(true);
   const [countdown, setCountdown] = useState(60);
   const [step, setStep] = useState<"code" | "enter-email">("code");
@@ -81,7 +80,7 @@ export function OtpForm() {
   }, [canResend]);
 
   async function verifyCode(digits: string[]) {
-    if (submissionInProgressReference.current || loading || attempts >= 3) {
+    if (submissionInProgressReference.current || loading) {
       return;
     }
 
@@ -98,7 +97,6 @@ export function OtpForm() {
     submissionInProgressReference.current = true;
     setLoading(true);
     setError(null);
-    setAttempts((current) => current + 1);
 
     try {
       const response = await fetch("/api/auth/verify-otp", {
@@ -116,16 +114,19 @@ export function OtpForm() {
         }),
       });
 
-      let result: OtpResponse;
-      try {
-        result = (await response.json()) as OtpResponse;
-      } catch {
-        setError("The verification service returned an invalid response.");
-        return;
-      }
+      const result = await parseAuthResponse(response);
 
-      if (!response.ok || !result.ok) {
-        setError(result.message ?? "Invalid OTP recheck!");
+      if (!result.ok) {
+        setError(formatAuthErrorMessage(result));
+        if (result.code === "invalid_otp") {
+          setAttempts((current) => current + 1);
+        }
+        if (
+          result.code === "too_many_attempts" ||
+          result.code === "disabled_account"
+        ) {
+          setLocked(true);
+        }
         return;
       }
 
@@ -241,14 +242,15 @@ export function OtpForm() {
         }),
       });
 
-      const result = (await response.json()) as OtpResponse;
-      if (!response.ok || !result.ok) {
-        setError(result.message ?? "Unable to resend the code.");
+      const result = await parseAuthResponse(response);
+      if (!result.ok) {
+        setError(formatAuthErrorMessage(result));
         setCanResend(true);
         return;
       }
 
       setAttempts(0);
+      setLocked(false);
     } catch {
       setError("A network error occurred. Check your connection and try again.");
       setCanResend(true);
@@ -280,9 +282,9 @@ export function OtpForm() {
         body: JSON.stringify({ email: nextEmail }),
       });
 
-      const result = (await response.json()) as OtpResponse;
-      if (!response.ok || !result.ok) {
-        setError(result.message ?? "Unable to send a code.");
+      const result = await parseAuthResponse(response);
+      if (!result.ok) {
+        setError(formatAuthErrorMessage(result));
         return;
       }
 
@@ -292,6 +294,7 @@ export function OtpForm() {
       sessionStorage.removeItem("verifyPhone");
       setOtp(new Array(6).fill(""));
       setAttempts(0);
+      setLocked(false);
       setStep("code");
     } catch {
       setError("A network error occurred. Check your connection and try again.");
@@ -394,7 +397,7 @@ export function OtpForm() {
             autoComplete={index === 0 ? "one-time-code" : "off"}
             maxLength={6}
             value={digit}
-            disabled={attempts >= 3 || loading}
+            disabled={locked || loading}
             onChange={(event) => handleChange(event.target.value, index)}
             onPaste={(event) => handlePaste(event, index)}
             onKeyDown={(event) => handleKeyDown(event, index)}
@@ -406,7 +409,7 @@ export function OtpForm() {
         ))}
       </div>
 
-      {attempts >= 3 ? (
+      {locked ? (
         <p className="text-center text-xs font-medium text-rose-700">
           You have reached the maximum number of attempts. Please try again
           later.
@@ -424,7 +427,7 @@ export function OtpForm() {
 
       <button
         type="submit"
-        disabled={loading || attempts >= 3}
+        disabled={loading || locked}
         className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         style={{ backgroundImage: "var(--gradient-hero)" }}
       >

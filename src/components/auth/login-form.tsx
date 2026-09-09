@@ -5,6 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Mail } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
+import {
+  formatAuthErrorMessage,
+  parseAuthResponse,
+} from "@/lib/auth/parse-auth-response";
 
 function getCallbackError(errorCode: string | null): string | null {
   switch (errorCode) {
@@ -20,11 +24,6 @@ function getCallbackError(errorCode: string | null): string | null {
       return null;
   }
 }
-
-type LoginResponse = {
-  ok: boolean;
-  message?: string;
-};
 
 export function LoginForm() {
   const router = useRouter();
@@ -67,16 +66,10 @@ export function LoginForm() {
         body: JSON.stringify({ email: normalizedEmail }),
       });
 
-      let result: LoginResponse;
-      try {
-        result = (await response.json()) as LoginResponse;
-      } catch {
-        setError("The sign-in service returned an invalid response.");
-        return;
-      }
+      const result = await parseAuthResponse(response);
 
-      if (!response.ok || !result.ok) {
-        setError(result.message ?? "Unable to send a sign-in code.");
+      if (!result.ok) {
+        setError(formatAuthErrorMessage(result));
         return;
       }
 

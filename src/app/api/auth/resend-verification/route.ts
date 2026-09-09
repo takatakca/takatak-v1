@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { wrapAuthRoute } from "@/lib/auth/auth-json";
 import {
   normalizeEmail,
   validateEmail,
@@ -112,7 +113,7 @@ async function readRequestBody(
   return JSON.parse(bodyText) as unknown;
 }
 
-export async function POST(request: NextRequest) {
+async function handleResendVerification(request: NextRequest) {
   if (!isTrustedRequestOrigin(request)) {
     return errorResponse(
       "The request origin could not be verified.",
@@ -241,3 +242,9 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = wrapAuthRoute(
+  "resend-verification",
+  "The verification service is temporarily unavailable.",
+  handleResendVerification,
+);

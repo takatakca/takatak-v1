@@ -48,3 +48,8 @@ next-env.d.ts
 
 # Prisma client generated for MochaHost upload (includes Linux engines)
 /prisma/generated
+/prisma/.generated-schema.sha256
+
+# Production artifacts (never commit secrets or full node_modules tarballs)
+/var/artifacts
+

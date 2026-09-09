@@ -31,6 +31,7 @@ export async function GET(): Promise<NextResponse> {
     const started = Date.now();
     const brands = await loadBrandSelectorSnapshots(
       gate.access.activeClientId,
+      { profileId: gate.access.profileId },
     );
 
     logSocialOAuthEvent("social-brand-selector", {
