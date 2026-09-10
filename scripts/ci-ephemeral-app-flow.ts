@@ -243,9 +243,17 @@ async function main() {
       "activeClientId" in accessB &&
       accessB.activeClientId === seed.b.clientId,
   );
+  const aasBStayedOnA =
+    accessAasB.mode === "client_scoped" &&
+    "activeClientId" in accessAasB &&
+    accessAasB.activeClientId === seed.a.clientId &&
+    accessAasB.activeClientId !== seed.b.clientId &&
+    Array.isArray(accessAasB.allowedClientIds) &&
+    accessAasB.allowedClientIds.includes(seed.a.clientId) &&
+    !accessAasB.allowedClientIds.includes(seed.b.clientId);
   assert(
     "workspace selection cannot switch A onto Workspace B",
-    accessAasB.mode === "denied",
+    accessAasB.mode === "denied" || aasBStayedOnA,
     JSON.stringify(accessAasB),
   );
   assert("C has no workspace data", accessC.mode === "denied", JSON.stringify(accessC));
