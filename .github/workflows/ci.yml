@@ -85,6 +85,9 @@ jobs:
           eval "$(supabase status -o env)"
           ANON="${ANON_KEY:-${PUBLISHABLE_KEY:-}}"
           SERVICE="${SERVICE_ROLE_KEY:-${SECRET_KEY:-}}"
+          DB="${DB_URL:-${POSTGRES_URL:-}}"
+          echo "ephemeral_api_url=${API_URL:-unset}"
+          echo "ephemeral_db_identity=${DB##*@}"
           {
             echo "EPHEMERAL_SUPABASE=1"
             echo "OTP_MEMORY_PATH=/tmp/takatak-otp-memory.json"
@@ -94,16 +97,19 @@ jobs:
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON"
             echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE"
             echo "SUPABASE_SECRET_KEY=$SERVICE"
-            echo "DATABASE_URL=$DB_URL"
-            echo "DIRECT_URL=$DB_URL"
+            echo "DATABASE_URL=$DB"
+            echo "DIRECT_URL=$DB"
           } >> "$GITHUB_ENV"
+          test -n "$ANON"
+          test -n "$SERVICE"
+          test -n "$DB"
 
       - name: Fail if hosted Supabase leaked into ephemeral env
         run: node scripts/ci-fail-if-hosted-supabase.cjs
 
       - name: Apply Prisma migrations (never db push)
         run: |
-          npx prisma migrate status
+          echo "Applying pending Prisma migrations to ephemeral local Postgres"
           npx prisma migrate deploy
           npx prisma migrate status
           if grep -R "pcjfahhlozsseqqevimi" supabase prisma/migrations >/dev/null 2>&1; then
