@@ -109,9 +109,27 @@ jobs:
 
       - name: Apply Prisma migrations (never db push)
         run: |
-          echo "Applying pending Prisma migrations to ephemeral local Postgres"
-          npx prisma migrate deploy
-          npx prisma migrate status
+          set -euo pipefail
+          append_ssl() {
+            case "$1" in
+              *sslmode=*) printf '%s\n' "$1" ;;
+              *\?*) printf '%s&sslmode=disable\n' "$1" ;;
+              *) printf '%s?sslmode=disable\n' "$1" ;;
+            esac
+          }
+          export DATABASE_URL="$(append_ssl "${DATABASE_URL/localhost/127.0.0.1}")"
+          export DIRECT_URL="$(append_ssl "${DIRECT_URL/localhost/127.0.0.1}")"
+          echo "ephemeral_db_identity=${DATABASE_URL#*@}"
+          node -e "const {Client}=require('pg'); const c=new Client({connectionString:process.env.DATABASE_URL,ssl:false}); c.connect().then(()=>c.query('select current_user, current_database()')).then((r)=>{console.log('pg_ok', r.rows[0]); return c.end();}).catch((e)=>{console.error('pg_fail', e.message); process.exit(1);})"
+          set +e +o pipefail
+          npx prisma migrate deploy 2>&1 | tee /tmp/prisma-migrate.log
+          status=${PIPESTATUS[0]}
+          set -euo pipefail
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=prisma migrate deploy::$(tail -n 30 /tmp/prisma-migrate.log | tr '\n' ' | ')"
+            exit "$status"
+          fi
+          npx prisma migrate status || true
           if grep -R "pcjfahhlozsseqqevimi" supabase prisma/migrations >/dev/null 2>&1; then
             echo "hosted project ref must not appear in ephemeral SQL"
             exit 1
