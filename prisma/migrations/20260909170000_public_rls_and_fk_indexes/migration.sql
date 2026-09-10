@@ -92,8 +92,8 @@ BEGIN
   END IF;
 END $$;
 
-CREATE OR REPLACE FUNCTION private.is_current_profile(target_profile pg_catalog.uuid)
-RETURNS pg_catalog.boolean
+CREATE OR REPLACE FUNCTION private.is_current_profile(target_profile uuid)
+RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
@@ -110,8 +110,8 @@ AS $$
     );
 $$;
 
-CREATE OR REPLACE FUNCTION private.has_client_access(target_client pg_catalog.uuid)
-RETURNS pg_catalog.boolean
+CREATE OR REPLACE FUNCTION private.has_client_access(target_client uuid)
+RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
@@ -132,7 +132,7 @@ AS $$
 $$;
 
 CREATE OR REPLACE FUNCTION private.has_any_workspace_membership()
-RETURNS pg_catalog.boolean
+RETURNS boolean
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
