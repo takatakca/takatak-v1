@@ -14,7 +14,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { getBrandDirectoryData } from "@/lib/brands/brand-data";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 
 export const dynamic =
@@ -31,7 +31,7 @@ export default async function BrandsPage() {
     await Promise.all([
       getBrandDirectoryData(access),
 
-      resolveBrandSessionContext(
+      resolveBrandSessionContextFromRequest(
         access,
       ),
     ]);

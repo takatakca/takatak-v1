@@ -333,8 +333,14 @@ function accessBundle(
   return { access, profileDetails, clientNames };
 }
 
+export type SessionIdentity = {
+  id: string;
+  email?: string | null;
+};
+
 export async function resolveTenantAccessBundle(
   requestedClientId?: string | null,
+  sessionIdentity?: SessionIdentity | null,
 ): Promise<TenantAccessBundle> {
   const runtime = getRuntimeInfo();
 
@@ -354,7 +360,10 @@ export async function resolveTenantAccessBundle(
     );
   }
 
-  const user = await getSessionUser();
+  const user =
+    sessionIdentity !== undefined
+      ? sessionIdentity
+      : await getSessionUser();
   const prisma = getPrisma();
 
   if (!user || !prisma) {
@@ -511,8 +520,10 @@ export async function resolveTenantAccessBundle(
 
 export async function resolveTenantAccess(
   requestedClientId?: string | null,
+  sessionIdentity?: SessionIdentity | null,
 ): Promise<TenantAccess> {
-  return (await resolveTenantAccessBundle(requestedClientId)).access;
+  return (await resolveTenantAccessBundle(requestedClientId, sessionIdentity))
+    .access;
 }
 
 

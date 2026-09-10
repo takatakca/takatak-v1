@@ -52,6 +52,7 @@ export interface BrandSessionContext {
   activeBrandDisplayLabel: string | null;
   activeBrandDisplayImageUrl: string | null;
   availableBrands: BrandSessionOption[];
+  staleBrandCookie: boolean;
 }
 
 type CacheEntry = {
@@ -377,18 +378,8 @@ export function resetBrandSelectorCacheForTests(): void {
 
 export async function resolveBrandSessionContext(
   access: ClientScopedAccess,
+  requestedBrandId: string | null = null,
 ): Promise<BrandSessionContext> {
-  let requestedBrandId: string | null = null;
-
-  try {
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    requestedBrandId =
-      cookieStore.get(ACTIVE_BRAND_COOKIE)?.value ?? null;
-  } catch {
-    requestedBrandId = null;
-  }
-
   try {
     const brands = await loadBrandSelectorSnapshots(
       access.activeClientId,
@@ -402,21 +393,11 @@ export async function resolveBrandSessionContext(
         ? brands[0]
         : null;
 
-    if (
-      staleActiveBrandCookie({
-        requestedBrandId,
-        availableBrandIds: brands.map((brand) => brand.id),
-        activeClientId: access.activeClientId,
-      })
-    ) {
-      try {
-        const { cookies } = await import("next/headers");
-        const cookieStore = await cookies();
-        cookieStore.delete(ACTIVE_BRAND_COOKIE);
-      } catch {
-        // Cookie mutation is not always available in Server Components.
-      }
-    }
+    const staleBrandCookie = staleActiveBrandCookie({
+      requestedBrandId,
+      availableBrandIds: brands.map((brand) => brand.id),
+      activeClientId: access.activeClientId,
+    });
 
     return {
       activeBrandId: selected?.id ?? null,
@@ -425,6 +406,7 @@ export async function resolveBrandSessionContext(
       activeBrandDisplayImageUrl:
         selected?.displayImageUrl ?? null,
       availableBrands: brands,
+      staleBrandCookie,
     };
   } catch (error) {
     console.error(
@@ -440,6 +422,7 @@ export async function resolveBrandSessionContext(
       activeBrandDisplayLabel: null,
       activeBrandDisplayImageUrl: null,
       availableBrands: [],
+      staleBrandCookie: Boolean(requestedBrandId),
     };
   }
 }

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { getBrandDetailData } from "@/lib/brands/brand-data";
 import type { BrandStatusValue } from "@/lib/brands/brand-validation";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { isUuid } from "@/lib/validation/common";
 
@@ -79,7 +79,7 @@ export default async function BrandDetailPage({
         brandId,
       ),
 
-      resolveBrandSessionContext(
+      resolveBrandSessionContextFromRequest(
         access,
       ),
     ]);

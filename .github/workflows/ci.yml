@@ -191,7 +191,15 @@ jobs:
       - name: Prisma tenant-isolation tests
         env:
           NODE_ENV: development
-        run: npm run qa:tenant-isolation
+        run: |
+          set +e +o pipefail
+          npm run qa:tenant-isolation 2>&1 | tee /tmp/qa-tenant.log
+          status=${PIPESTATUS[0]}
+          set -euo pipefail
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=qa:tenant-isolation::$(grep -E 'FAIL |crashed|Error' /tmp/qa-tenant.log | tail -n 40 | tr '\n' ' | ')"
+            exit "$status"
+          fi
 
       - name: Build (webpack)
         run: npm run build

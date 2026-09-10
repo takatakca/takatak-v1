@@ -5,7 +5,7 @@ import {
   type SocialSummaryData,
 } from "@/components/social/analytics/social-summary-dashboard";
 import { getPrisma } from "@/lib/db/prisma";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 
 export const dynamic =
@@ -19,7 +19,7 @@ export default async function SocialSummaryPage() {
     );
 
   const brand =
-    await resolveBrandSessionContext(
+    await resolveBrandSessionContextFromRequest(
       access,
     );
 

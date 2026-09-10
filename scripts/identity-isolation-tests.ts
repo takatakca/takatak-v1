@@ -33,6 +33,8 @@ import {
 } from "../src/lib/security/authenticated-identity";
 import { clientWhere, resolveDataScope } from "../src/lib/security/data-scope";
 import { computeTenantAccess, type TenantAccessInput } from "../src/lib/security/tenant-access";
+import { reportWorkspaceSelection } from "../src/lib/security/workspace-selection";
+import { applyWorkspaceCookieClear } from "../src/lib/security/workspace-cookie-mutation";
 
 let failed = 0;
 
@@ -207,6 +209,34 @@ async function main() {
     "stale tenant cookies are cleared by name",
     tenantClears.some((cookie) => cookie.name === "takatak_active_client" && cookie.value === "") &&
       tenantClears.some((cookie) => cookie.name === "takatak_active_brand" && cookie.value === ""),
+  );
+
+  const reported = reportWorkspaceSelection({
+    access: afterBLogin,
+    requestedClientId: ACCOUNT_A.clientId,
+    rawClientCookie: bindActiveClientCookie(ACCOUNT_B.authUserId, ACCOUNT_A.clientId),
+    authUserId: ACCOUNT_B.authUserId,
+  });
+  assert(
+    "invalid workspace selection is reported without granting B access to A",
+    reported.shouldClearWorkspaceCookie &&
+      reported.activeClientId === ACCOUNT_B.clientId &&
+      (Array.isArray(reported.allowedClientIds)
+        ? !reported.allowedClientIds.includes(ACCOUNT_A.clientId)
+        : reported.allowedClientIds !== "all"),
+  );
+  assert(
+    "standalone execution does not mutate cookies",
+    applyWorkspaceCookieClear(reported.shouldClearWorkspaceCookie, "takatak_active_client", undefined) === false,
+  );
+  const cleared: string[] = [];
+  assert(
+    "request-boundary adapter clears the stale cookie",
+    applyWorkspaceCookieClear(
+      reported.shouldClearWorkspaceCookie,
+      "takatak_active_client",
+      { delete: (name) => cleared.push(name) },
+    ) === true && cleared[0] === "takatak_active_client",
   );
 
   const manipulatedClient = computeTenantAccess(

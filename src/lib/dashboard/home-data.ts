@@ -211,7 +211,13 @@ export async function getDashboardHomeData(options: {
   const prev = previousRange(range);
   const [{ displayEmail, profileDetails, activeClientName }, scope] =
     await Promise.all([
-      getServerAccessContext(),
+      options.access
+        ? Promise.resolve({
+            displayEmail: null as string | null,
+            profileDetails: null,
+            activeClientName: null as string | null,
+          })
+        : getServerAccessContext(),
       resolveDataScope(options.access),
     ]);
 

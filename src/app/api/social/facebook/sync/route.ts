@@ -5,7 +5,7 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { resolveCanonicalFacebookDashboard } from "@/lib/social/connections/facebook-dashboard-resolve";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return gate.response;
   }
 
-  const brand = await resolveBrandSessionContext(gate.access);
+  const brand = await resolveBrandSessionContextFromRequest(gate.access);
   const started = Date.now();
   const url = new URL(request.url);
   const preset = url.searchParams.get("range") ?? "last_30";
@@ -539,7 +539,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return gate.response;
   }
 
-  const brand = await resolveBrandSessionContext(gate.access);
+  const brand = await resolveBrandSessionContextFromRequest(gate.access);
   const started = Date.now();
 
   if (!brand.activeBrandId) {

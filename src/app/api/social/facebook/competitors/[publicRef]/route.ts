@@ -4,7 +4,7 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { isServiceError } from "@/lib/services/service-error";
 import { assertCompetitorRateLimit } from "@/lib/social/sync/facebook-competitor-rate-limit";
@@ -32,7 +32,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     );
     if (!gate.ok) return gate.response;
 
-    const brand = await resolveBrandSessionContext(gate.access);
+    const brand = await resolveBrandSessionContextFromRequest(gate.access);
     if (!brand.activeBrandId) {
       return jsonResponse(
         { ok: false, message: "Select a brand first." },
@@ -80,7 +80,7 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     );
     if (!gate.ok) return gate.response;
 
-    const brand = await resolveBrandSessionContext(gate.access);
+    const brand = await resolveBrandSessionContextFromRequest(gate.access);
     if (!brand.activeBrandId) {
       return jsonResponse(
         { ok: false, message: "Select a brand first." },
@@ -122,7 +122,7 @@ export async function POST(_request: NextRequest, context: RouteContext) {
     );
     if (!gate.ok) return gate.response;
 
-    const brand = await resolveBrandSessionContext(gate.access);
+    const brand = await resolveBrandSessionContextFromRequest(gate.access);
     if (!brand.activeBrandId) {
       return jsonResponse(
         { ok: false, message: "Select a brand first." },

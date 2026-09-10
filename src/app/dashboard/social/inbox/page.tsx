@@ -1,4 +1,5 @@
 import { SocialInboxView } from "@/components/social/inbox/social-inbox-view";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { getSocialInboxData } from "@/lib/social/inbox/inbox-data";
 
@@ -14,7 +15,8 @@ export default async function SocialInboxPage() {
     "view_social",
     "/dashboard/social/inbox",
   );
-  const data = await getSocialInboxData(access);
+  const brand = await resolveBrandSessionContextFromRequest(access);
+  const data = await getSocialInboxData(access, brand.activeBrandId);
 
   return <SocialInboxView data={data} />;
 }

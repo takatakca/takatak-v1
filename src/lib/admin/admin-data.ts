@@ -70,22 +70,32 @@ type AdminGate =
  *  (owner/admin Profile). Client-scoped members NEVER receive global admin
  *  data, even if a request reaches these functions. */
 async function resolveAdminDataGate(
-  _access?: TenantAccess,
+  access?: TenantAccess,
 ): Promise<AdminGate> {
-  void _access;
+  if (access) {
+    if (access.mode === "foundation_demo") {
+      return { kind: "mock" };
+    }
+    if (access.mode === "platform_admin") {
+      return { kind: "db", allowMockFallback: false };
+    }
+    return {
+      kind: "unavailable",
+      label: "Platform administration access is required.",
+    };
+  }
 
-  const access =
-    await getPlatformAdminAccess();
+  const platformAccess = await getPlatformAdminAccess();
 
   if (
-    access.mode === "foundation_demo"
+    platformAccess.mode === "foundation_demo"
   ) {
     return {
       kind: "mock",
     };
   }
 
-  if (access.mode !== "authorized") {
+  if (platformAccess.mode !== "authorized") {
     return {
       kind: "unavailable",
       label:

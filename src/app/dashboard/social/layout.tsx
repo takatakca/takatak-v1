@@ -10,7 +10,7 @@ import type {
   ManageConnectionsConnection,
   ManageConnectionsProvider,
 } from "@/components/social/connections/manage-connections-modal";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { getSocialConnectionsData } from "@/lib/social/connections/social-connection-data";
@@ -50,7 +50,7 @@ export default async function SocialLayout({
     );
 
   const billingPromise = getSocialShellBilling(access.activeClientId);
-  const brandContext = await resolveBrandSessionContext(access);
+  const brandContext = await resolveBrandSessionContextFromRequest(access);
 
   const connectionsPromise =
     brandContext.activeBrandId && !skipConnectionLoad

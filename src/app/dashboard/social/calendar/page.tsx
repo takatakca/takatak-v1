@@ -1,4 +1,5 @@
 import { SocialPlanningView } from "@/components/social/planning/social-planning-view";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { getSocialPlanningData } from "@/lib/social/planning/planning-data";
@@ -15,7 +16,8 @@ export default async function SocialCalendarPage() {
     "view_social",
     "/dashboard/social/calendar",
   );
-  const data = await getSocialPlanningData(access);
+  const brand = await resolveBrandSessionContextFromRequest(access);
+  const data = await getSocialPlanningData(access, brand.activeBrandId);
 
   return (
     <SocialPlanningView

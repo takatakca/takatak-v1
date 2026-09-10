@@ -12,8 +12,9 @@ export type {
 
 export async function getSocialInboxData(
   access: ClientScopedAccess,
+  requestedBrandId: string | null = null,
 ): Promise<InboxPageData> {
-  const brand = await resolveBrandSessionContext(access);
+  const brand = await resolveBrandSessionContext(access, requestedBrandId);
   const active =
     brand.availableBrands.find(
       (item) => item.id === brand.activeBrandId,

@@ -9,7 +9,7 @@ import {
 import { TikTokConnectPage } from "@/components/social/platforms/tiktok-connect-page";
 import { YoutubeConnectPage } from "@/components/social/platforms/youtube-connect-page";
 import { XConnectPage } from "@/components/social/platforms/x-connect-page";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { resolveCanonicalFacebookDashboard } from "@/lib/social/connections/facebook-dashboard-resolve";
@@ -122,7 +122,7 @@ export default async function SocialPlatformPage({
       "view_social",
       "/dashboard/social/instagram",
     );
-    const brand = await resolveBrandSessionContext(access);
+    const brand = await resolveBrandSessionContextFromRequest(access);
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -203,7 +203,7 @@ export default async function SocialPlatformPage({
       "view_social",
       "/dashboard/social/threads",
     );
-    const brand = await resolveBrandSessionContext(access);
+    const brand = await resolveBrandSessionContextFromRequest(access);
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -293,7 +293,7 @@ export default async function SocialPlatformPage({
       "view_social",
       "/dashboard/social/facebook",
     );
-    const brand = await resolveBrandSessionContext(access);
+    const brand = await resolveBrandSessionContextFromRequest(access);
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -359,7 +359,7 @@ export default async function SocialPlatformPage({
       "view_social",
       "/dashboard/social/youtube",
     );
-    const brand = await resolveBrandSessionContext(access);
+    const brand = await resolveBrandSessionContextFromRequest(access);
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -410,7 +410,7 @@ export default async function SocialPlatformPage({
       "view_social",
       "/dashboard/social/tiktok",
     );
-    const brand = await resolveBrandSessionContext(access);
+    const brand = await resolveBrandSessionContextFromRequest(access);
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -457,7 +457,7 @@ export default async function SocialPlatformPage({
       "view_social",
       "/dashboard/social/x",
     );
-    const brand = await resolveBrandSessionContext(access);
+    const brand = await resolveBrandSessionContextFromRequest(access);
 
     let isConnected = false;
     let connectedLabel: string | null = null;

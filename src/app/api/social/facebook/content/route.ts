@@ -5,7 +5,7 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { resolveCanonicalFacebookDashboard } from "@/lib/social/connections/facebook-dashboard-resolve";
 import {
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     const gate = await requireWorkspaceApiPermission("view_social");
     if (!gate.ok) return gate.response;
 
-    const brand = await resolveBrandSessionContext(gate.access);
+    const brand = await resolveBrandSessionContextFromRequest(gate.access);
     if (!brand.activeBrandId) {
       return jsonResponse(
         {

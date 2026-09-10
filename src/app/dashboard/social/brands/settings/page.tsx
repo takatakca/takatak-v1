@@ -1,7 +1,7 @@
 import { BrandSettingsView } from "@/components/social/brands/brand-settings-view";
 import { getBrandSettingsPageData } from "@/lib/brands/brand-settings-data";
 import type { BrandSettingsTab } from "@/lib/brands/brand-settings-data";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 
@@ -31,7 +31,7 @@ export default async function BrandSettingsPage({
   );
 
   const params = await searchParams;
-  const brandContext = await resolveBrandSessionContext(access);
+  const brandContext = await resolveBrandSessionContextFromRequest(access);
   const data = await getBrandSettingsPageData(
     access,
     brandContext.activeBrandId,

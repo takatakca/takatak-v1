@@ -27,8 +27,9 @@ function emptyPlanning(
 
 export async function getSocialPlanningData(
   access: ClientScopedAccess,
+  requestedBrandId: string | null = null,
 ): Promise<PlanningPageData> {
-  const brand = await resolveBrandSessionContext(access);
+  const brand = await resolveBrandSessionContext(access, requestedBrandId);
   const active =
     brand.availableBrands.find(
       (item) => item.id === brand.activeBrandId,

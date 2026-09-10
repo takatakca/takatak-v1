@@ -5,7 +5,7 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
-import { resolveBrandSessionContext } from "@/lib/security/brand-context";
+import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { startMetaFacebookReauthorization } from "@/lib/social/connections/social-connection-service";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
@@ -28,7 +28,7 @@ export async function POST(
     return gate.response;
   }
 
-  const brand = await resolveBrandSessionContext(gate.access);
+  const brand = await resolveBrandSessionContextFromRequest(gate.access);
   if (!brand.activeBrandId) {
     return jsonResponse(
       {

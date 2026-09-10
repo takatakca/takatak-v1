@@ -7,7 +7,6 @@
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "./access-context";
 import type { TenantAccess } from "./tenant-access";
-import { resolveTenantAccess } from "./tenant-access";
 
 export type DataScope =
   | { kind: "mock"; label: string }
@@ -28,18 +27,9 @@ const DENIED_LABELS: Record<string, string> = {
 };
 
 export async function resolveDataScope(access?: TenantAccess): Promise<DataScope> {
-  let resolved: TenantAccess;
-  if (access) {
-    resolved = access;
-  } else {
-    try {
-      // Request context: cached once per request.
-      resolved = (await getServerAccessContext()).access;
-    } catch {
-      // Non-request context (scripts/tools): resolve directly.
-      resolved = await resolveTenantAccess(null);
-    }
-  }
+  const resolved = access
+    ? access
+    : (await getServerAccessContext()).access;
   switch (resolved.mode) {
     case "foundation_demo":
       return getPrisma()
