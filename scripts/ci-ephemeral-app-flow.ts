@@ -137,7 +137,7 @@ async function main() {
       acceptedTerms: true,
     }),
     duplex: "half",
-  } as RequestInit);
+  });
   let registerResponse: Response;
   try {
     registerResponse = await registerPost(registerRequest);
