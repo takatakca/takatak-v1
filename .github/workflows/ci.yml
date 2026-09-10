@@ -1,4 +1,4 @@
-# Phase 14 — TAKATAK V1 CI. No secrets, no live DB, no seed, no deploy.
+# TAKATAK V1 CI. Ephemeral local Supabase only. No hosted project, no deploy.
 name: CI
 
 on:
@@ -13,14 +13,14 @@ on:
 jobs:
   linux-quality-and-artifact:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       CI: "true"
       CHECK_GIT_TRACKED: "1"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key-not-a-secret
-      NEXT_PUBLIC_APP_URL: http://127.0.0.1:3000
       DATABASE_URL: postgresql://127.0.0.1:1/ci
       DIRECT_URL: postgresql://127.0.0.1:1/ci
       SUPABASE_SECRET_KEY: ci-secret-key-not-a-secret
@@ -45,6 +45,9 @@ jobs:
       - name: Required source files are tracked
         run: npm run check:sources
 
+      - name: Static RLS checks
+        run: npm run qa:rls:static
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -66,6 +69,65 @@ jobs:
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
 
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 2.117.0
+
+      - name: Show pinned Supabase CLI version
+        run: supabase --version
+
+      - name: Start ephemeral local Supabase
+        run: supabase start
+
+      - name: Export ephemeral Supabase env
+        run: |
+          eval "$(supabase status -o env)"
+          ANON="${ANON_KEY:-${PUBLISHABLE_KEY:-}}"
+          SERVICE="${SERVICE_ROLE_KEY:-${SECRET_KEY:-}}"
+          {
+            echo "EPHEMERAL_SUPABASE=1"
+            echo "OTP_MEMORY_PATH=/tmp/takatak-otp-memory.json"
+            echo "EPHEMERAL_SEED_PATH=/tmp/takatak-ephemeral-seed.json"
+            echo "NEXT_PUBLIC_APP_URL=http://localhost:3000"
+            echo "NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321"
+            echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE"
+            echo "SUPABASE_SECRET_KEY=$SERVICE"
+            echo "DATABASE_URL=$DB_URL"
+            echo "DIRECT_URL=$DB_URL"
+          } >> "$GITHUB_ENV"
+
+      - name: Fail if hosted Supabase leaked into ephemeral env
+        run: node scripts/ci-fail-if-hosted-supabase.cjs
+
+      - name: Apply Prisma migrations (never db push)
+        run: |
+          npx prisma migrate status
+          npx prisma migrate deploy
+          npx prisma migrate status
+          if grep -R "pcjfahhlozsseqqevimi" supabase prisma/migrations >/dev/null 2>&1; then
+            echo "hosted project ref must not appear in ephemeral SQL"
+            exit 1
+          fi
+
+      - name: Seed synthetic Auth identities
+        run: npm run qa:ephemeral-seed
+
+      - name: Live RLS + PostgREST checks
+        run: npm run qa:rls
+
+      - name: Security Advisor catalog equivalent
+        run: npm run qa:rls:advisor
+
+      - name: Application-flow tests (memory OTP adapter)
+        env:
+          OTP_EMAIL_ADAPTER: memory
+        run: npm run qa:ephemeral-app-flow
+
+      - name: Prisma tenant-isolation tests
+        run: npm run qa:tenant-isolation
+
       - name: Build (webpack)
         run: npm run build
 
@@ -83,7 +145,7 @@ jobs:
       - name: Clean artifact startup
         run: node scripts/artifact-startup-smoke.cjs var/artifacts/ci-${{ github.sha }}/takatak-ci-${{ github.sha }}.tar.gz
 
-      - name: Upload staging tarball
+      - name: Upload CI tarball
         uses: actions/upload-artifact@v4
         with:
           name: takatak-ci-${{ github.sha }}

@@ -108,8 +108,9 @@ function statusLabel(
   }
   switch (status) {
     case "syncing":
-    case "idle":
       return "Syncing";
+    case "idle":
+      return "Not synced";
     case "ready":
       return "Ready";
     case "empty":
@@ -125,6 +126,10 @@ function statusLabel(
   }
 }
 
+const SYNC_POLL_MS = 2500;
+const SYNC_POLL_TIMEOUT_MS = 120_000;
+const IDLE_START_GRACE_MS = 20_000;
+
 function isActiveSyncJob(
   operation: SyncPayload["operation"] | undefined,
 ): boolean {
@@ -135,6 +140,34 @@ function isActiveSyncJob(
     operation.jobStatus === "retrying" ||
     operation.leaseActive === true
   );
+}
+
+function stillInFlight(payload: SyncPayload | null): boolean {
+  if (!payload) return false;
+  // Idle is "not started" — never treat it as an in-flight snapshot.
+  if (payload.status === "syncing") return true;
+  return isActiveSyncJob(payload.operation);
+}
+
+function shouldContinueSyncPoll(
+  payload: SyncPayload | null,
+  options: { startedAt: number; waitingForStart: boolean },
+): { continue: boolean; waitingForStart: boolean } {
+  const elapsed = Date.now() - options.startedAt;
+  if (elapsed >= SYNC_POLL_TIMEOUT_MS) {
+    return { continue: false, waitingForStart: false };
+  }
+  if (stillInFlight(payload)) {
+    return { continue: true, waitingForStart: false };
+  }
+  if (
+    options.waitingForStart &&
+    payload?.status === "idle" &&
+    elapsed < IDLE_START_GRACE_MS
+  ) {
+    return { continue: true, waitingForStart: true };
+  }
+  return { continue: false, waitingForStart: false };
 }
 
 function needsReconnect(sync: SyncPayload | null): boolean {
@@ -238,6 +271,9 @@ export function FacebookPageSyncDashboard({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [awaitingStart, setAwaitingStart] = useState(
+    initialSyncStatus === "idle" || initialSyncStatus === "syncing",
+  );
   const startedIdleRef = useRef(false);
   const refreshedSelectorRef = useRef(false);
 
@@ -391,6 +427,41 @@ export function FacebookPageSyncDashboard({
     }
   }
 
+  function pollUntilSettled() {
+    const startedAt = Date.now();
+    let waitingForStart = true;
+    setAwaitingStart(true);
+    const poll = setInterval(() => {
+      void (async () => {
+        const next = await loadStatus();
+        const decision = shouldContinueSyncPoll(next, {
+          startedAt,
+          waitingForStart,
+        });
+        waitingForStart = decision.waitingForStart;
+        if (decision.continue) return;
+
+        setAwaitingStart(false);
+        if (
+          next &&
+          !refreshedSelectorRef.current &&
+          (next.status === "ready" ||
+            next.status === "degraded" ||
+            next.status === "empty")
+        ) {
+          refreshedSelectorRef.current = true;
+          requestSocialBrandSelectorRefresh();
+        }
+        clearInterval(poll);
+        window.clearTimeout(limit);
+      })();
+    }, SYNC_POLL_MS);
+    const limit = window.setTimeout(() => {
+      setAwaitingStart(false);
+      clearInterval(poll);
+    }, SYNC_POLL_TIMEOUT_MS);
+  }
+
   async function reconnectFacebook() {
     if (busyAction !== null) return;
     setBusyAction("reconnect");
@@ -435,20 +506,59 @@ export function FacebookPageSyncDashboard({
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | null = null;
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    let waitingForStart = false;
+    let startedAt = Date.now();
 
     const stopTimer = () => {
       if (timer) {
         clearInterval(timer);
         timer = null;
       }
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
     };
 
-    const stillInFlight = (payload: SyncPayload | null) => {
-      if (!payload) return false;
-      if (payload.status === "idle" || payload.status === "syncing") {
-        return true;
+    const maybeRefreshSelector = (payload: SyncPayload | null) => {
+      if (
+        payload &&
+        !refreshedSelectorRef.current &&
+        (payload.status === "ready" ||
+          payload.status === "degraded" ||
+          payload.status === "empty")
+      ) {
+        refreshedSelectorRef.current = true;
+        requestSocialBrandSelectorRefresh();
       }
-      return isActiveSyncJob(payload.operation);
+    };
+
+    const beginPoll = (initialWaitingForStart: boolean) => {
+      waitingForStart = initialWaitingForStart;
+      startedAt = Date.now();
+      timer = setInterval(() => {
+        void (async () => {
+          const next = await loadStatus();
+          if (cancelled) return;
+
+          const decision = shouldContinueSyncPoll(next, {
+            startedAt,
+            waitingForStart,
+          });
+          waitingForStart = decision.waitingForStart;
+          if (decision.continue) return;
+
+          setAwaitingStart(false);
+          maybeRefreshSelector(next);
+          stopTimer();
+        })();
+      }, SYNC_POLL_MS);
+      timeout = setTimeout(() => {
+        if (cancelled) return;
+        setAwaitingStart(false);
+        stopTimer();
+      }, SYNC_POLL_TIMEOUT_MS);
     };
 
     void (async () => {
@@ -462,43 +572,28 @@ export function FacebookPageSyncDashboard({
         status === "action_required" ||
         initialSyncStatus === "action_required"
       ) {
+        setAwaitingStart(false);
         return;
       }
 
+      let kickedIdle = false;
       if (
         (status === "idle" || initialSyncStatus === "idle") &&
         !startedIdleRef.current
       ) {
         startedIdleRef.current = true;
+        kickedIdle = true;
+        setAwaitingStart(true);
         void runSync(false);
       }
 
-      if (
-        stillInFlight(first) ||
-        initialSyncStatus === "idle" ||
-        initialSyncStatus === "syncing"
-      ) {
-        timer = setInterval(() => {
-          void (async () => {
-            const next = await loadStatus();
-            if (cancelled) return;
-
-            if (!stillInFlight(next)) {
-              if (
-                next &&
-                !refreshedSelectorRef.current &&
-                (next.status === "ready" ||
-                  next.status === "degraded" ||
-                  next.status === "empty")
-              ) {
-                refreshedSelectorRef.current = true;
-                requestSocialBrandSelectorRefresh();
-              }
-              stopTimer();
-            }
-          })();
-        }, 2500);
+      if (stillInFlight(first) || kickedIdle || first?.status === "syncing") {
+        beginPoll(kickedIdle);
+        return;
       }
+
+      setAwaitingStart(false);
+      maybeRefreshSelector(first);
     })();
 
     return () => {
@@ -520,6 +615,8 @@ export function FacebookPageSyncDashboard({
     sync?.metricsAvailable === true;
 
   const jobActive = isActiveSyncJob(sync?.operation);
+  const syncInProgress =
+    awaitingStart || status === "syncing" || jobActive;
   const refreshingWithData = metricsConfirmed && jobActive;
 
   const impressions =
@@ -572,7 +669,7 @@ export function FacebookPageSyncDashboard({
     null;
 
   const rangeDisplayStatus = sync?.rangeDisplayStatus ?? null;
-  const badgeStatus = refreshingWithData
+  const badgeStatus = refreshingWithData || syncInProgress
     ? "syncing"
     : rangeDisplayStatus === "partial" || status === "degraded"
       ? "degraded"
@@ -581,10 +678,11 @@ export function FacebookPageSyncDashboard({
         : status;
   const badgeLabel = refreshingWithData
     ? "Refreshing"
-    : statusLabel(status, rangeDisplayStatus);
+    : syncInProgress
+      ? "Syncing"
+      : statusLabel(status, rangeDisplayStatus);
 
-  const showAnalyticsShell =
-    status !== "syncing" && status !== "idle";
+  const showAnalyticsShell = !syncInProgress;
 
   return (
     <div className="space-y-4">
@@ -678,24 +776,7 @@ export function FacebookPageSyncDashboard({
                   refreshedSelectorRef.current = false;
                   void (async () => {
                     await runSync(false);
-                    const poll = setInterval(() => {
-                      void (async () => {
-                        const next = await loadStatus();
-                        if (
-                          next &&
-                          next.status !== "syncing" &&
-                          next.status !== "idle" &&
-                          !isActiveSyncJob(next.operation)
-                        ) {
-                          if (!refreshedSelectorRef.current) {
-                            refreshedSelectorRef.current = true;
-                            requestSocialBrandSelectorRefresh();
-                          }
-                          clearInterval(poll);
-                        }
-                      })();
-                    }, 2500);
-                    window.setTimeout(() => clearInterval(poll), 120_000);
+                    pollUntilSettled();
                   })();
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:opacity-50"
@@ -729,7 +810,8 @@ export function FacebookPageSyncDashboard({
             (status === "failed" ||
               status === "action_required" ||
               status === "degraded" ||
-              status === "empty") && (
+              status === "empty" ||
+              (status === "idle" && !syncInProgress)) && (
               <button
                 type="button"
                 disabled={busy}
@@ -737,24 +819,7 @@ export function FacebookPageSyncDashboard({
                   refreshedSelectorRef.current = false;
                   void (async () => {
                     await runSync(status === "degraded");
-                    const poll = setInterval(() => {
-                      void (async () => {
-                        const next = await loadStatus();
-                        if (
-                          next &&
-                          next.status !== "syncing" &&
-                          next.status !== "idle" &&
-                          !isActiveSyncJob(next.operation)
-                        ) {
-                          if (!refreshedSelectorRef.current) {
-                            refreshedSelectorRef.current = true;
-                            requestSocialBrandSelectorRefresh();
-                          }
-                          clearInterval(poll);
-                        }
-                      })();
-                    }, 2500);
-                    window.setTimeout(() => clearInterval(poll), 120_000);
+                    pollUntilSettled();
                   })();
                 }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
@@ -764,12 +829,16 @@ export function FacebookPageSyncDashboard({
                 ) : (
                   <RefreshCw className="h-3.5 w-3.5" />
                 )}
-                {status === "degraded" ? "Resume sync" : "Retry sync"}
+                {status === "degraded"
+                  ? "Resume sync"
+                  : status === "idle"
+                    ? "Start sync"
+                    : "Retry sync"}
               </button>
             )}
         </div>
 
-        {status === "syncing" || status === "idle" ? (
+        {syncInProgress ? (
           <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#f4f5f7] px-4 py-3 text-sm text-[#505761]">
             <Loader2 className="h-4 w-4 animate-spin" />
             Synchronizing Page identity and engagement metrics…
@@ -811,7 +880,7 @@ export function FacebookPageSyncDashboard({
         ) : null}
       </section>
 
-      {status === "syncing" || status === "idle" ? (
+      {syncInProgress ? (
         <div className="space-y-3" aria-busy="true" aria-live="polite">
           <div className="h-28 animate-pulse rounded-[14px] bg-[#e8eaed]" />
           <div className="h-64 animate-pulse rounded-[14px] bg-[#e8eaed]" />

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { assertClientCanInviteTeam } from "@/lib/billing/social/entitlement-gates";
+import { assertClientCanInviteTeam, assertClientCanManageCustomRoles } from "@/lib/billing/social/entitlement-gates";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
@@ -105,12 +105,33 @@ export async function PATCH(
     );
   }
 
-  const requestedRole =
-    typeof body === "object" &&
-    body !== null &&
-    "role" in body
-      ? (body as { role: unknown }).role
+  const payload =
+    typeof body === "object" && body !== null
+      ? (body as { role?: unknown; customRoleId?: unknown })
       : null;
+
+  const customRoleIdRaw = payload?.customRoleId;
+  const customRoleId =
+    customRoleIdRaw === undefined || customRoleIdRaw === null
+      ? null
+      : typeof customRoleIdRaw === "string" && customRoleIdRaw.length > 0
+        ? customRoleIdRaw
+        : undefined;
+
+  if (customRoleId === undefined) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: "Select a valid custom role.",
+      },
+      400,
+    );
+  }
+
+  const requestedRole =
+    customRoleId
+      ? "viewer"
+      : payload?.role;
 
   if (!isRoleKey(requestedRole)) {
     return jsonResponse(
@@ -162,6 +183,35 @@ export async function PATCH(
     );
   }
 
+  if (customRoleId) {
+    try {
+      await assertClientCanManageCustomRoles(access.activeClientId);
+    } catch (error) {
+      if (isServiceError(error)) {
+        return jsonResponse(
+          { ok: false, message: error.message },
+          error.status,
+        );
+      }
+      throw error;
+    }
+
+    const customRole = await prisma.workspaceCustomRole.findFirst({
+      where: {
+        id: customRoleId,
+        clientId: access.activeClientId,
+      },
+      select: { id: true },
+    });
+
+    if (!customRole) {
+      return jsonResponse(
+        { ok: false, message: "The custom role could not be found." },
+        404,
+      );
+    }
+  }
+
   try {
     const targetMembership =
       await prisma.clientMembership.findFirst({
@@ -173,6 +223,7 @@ export async function PATCH(
           id: true,
           profileId: true,
           role: true,
+          customRoleId: true,
           status: true,
           profile: {
             select: {
@@ -258,7 +309,10 @@ export async function PATCH(
       }
     }
 
-    if (targetMembership.role === requestedRole) {
+    if (
+      targetMembership.role === requestedRole &&
+      (targetMembership.customRoleId ?? null) === customRoleId
+    ) {
       return jsonResponse(
         {
           ok: true,
@@ -278,6 +332,7 @@ export async function PATCH(
             },
             data: {
               role: requestedRole,
+              customRoleId,
             },
             select: {
               id: true,

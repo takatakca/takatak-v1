@@ -140,7 +140,8 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Settings",
     items: [
       { label: "Account settings", href: "/dashboard/profile", icon: UserRound },
-      { label: "User management", href: "/dashboard/team", icon: ShieldCheck },
+      { label: "User management", href: "/dashboard/users", icon: Users },
+      { label: "Team & Permissions", href: "/dashboard/team", icon: ShieldCheck },
       { label: "Notifications", href: "/dashboard/notifications", icon: Bell },
       { label: "Billing & Plans", href: "/dashboard/billing", icon: Wallet },
       { label: "Integrations", href: "/dashboard/integrations", icon: PlugZap },

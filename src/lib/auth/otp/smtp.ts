@@ -1,6 +1,7 @@
 import { connect as connectTcp } from "node:net";
 import { connect as connectTls, type TLSSocket } from "node:tls";
 import type { Socket } from "node:net";
+import { lookup } from "node:dns/promises";
 
 type SmtpSocket = Socket | TLSSocket;
 
@@ -53,17 +54,28 @@ async function sendCommand(
 
 function connectPlain(host: string, port: number): Promise<Socket> {
   return new Promise((resolve, reject) => {
-    const socket = connectTcp({ host, port });
+    const socket = connectTcp({ host, port, family: 4 });
     socket.once("connect", () => resolve(socket));
     socket.once("error", reject);
   });
 }
 
-function connectImplicitTls(host: string, port: number): Promise<TLSSocket> {
+async function connectImplicitTls(
+  host: string,
+  port: number,
+): Promise<TLSSocket> {
+  const { address } = await lookup(host, { family: 4 });
+
   return new Promise((resolve, reject) => {
-    const socket = connectTls({ host, port, servername: host }, () =>
-      resolve(socket),
+    const socket = connectTls(
+      {
+        host: address,
+        port,
+        servername: host,
+      },
+      () => resolve(socket),
     );
+
     socket.once("error", reject);
   });
 }

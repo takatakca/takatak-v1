@@ -5,9 +5,9 @@ import type { Prisma } from "@prisma/client";
 import { ServiceError } from "@/lib/services/service-error";
 import {
   isRoleKey,
-  ROLE_PERMISSIONS,
   type Permission,
 } from "@/lib/security/roles";
+import { resolveMembershipBasePermissions } from "@/lib/security/role-permissions";
 
 type DbClient =
   | Prisma.TransactionClient
@@ -40,6 +40,21 @@ export async function assertProfileCanManageSocialAccounts(
         role: true,
         customPermissions: true,
         deniedPermissions: true,
+        customRole: {
+          select: {
+            permissions: true,
+          },
+        },
+        client: {
+          select: {
+            rolePermissionOverrides: {
+              select: {
+                role: true,
+                permissions: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -60,12 +75,25 @@ export async function assertProfileCanManageSocialAccounts(
     );
   }
 
-  if (membership.role === "owner") {
+  if (membership.role === "owner" && !membership.customRole) {
     return;
   }
 
+  const roleOverride =
+    membership.client.rolePermissionOverrides.find(
+      (override) => override.role === membership.role,
+    ) ?? null;
+
   const permissions = new Set<Permission>([
-    ...ROLE_PERMISSIONS[membership.role],
+    ...resolveMembershipBasePermissions({
+      role: membership.role,
+      customRolePermissions: membership.customRole
+        ? (membership.customRole.permissions as Permission[])
+        : null,
+      roleOverridePermissions: roleOverride
+        ? (roleOverride.permissions as Permission[])
+        : null,
+    }),
     ...(membership.customPermissions as Permission[]),
   ]);
 

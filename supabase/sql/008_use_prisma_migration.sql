@@ -1,0 +1,4 @@
+-- Canonical RLS lives in:
+--   prisma/migrations/20260909170000_public_rls_and_fk_indexes/migration.sql
+-- Do not apply supabase/sql/001–007 (superseded; 001 contained an unsafe
+-- profiles_update_own Data API write policy).

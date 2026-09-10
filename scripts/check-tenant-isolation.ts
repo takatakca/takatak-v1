@@ -5,7 +5,9 @@
 //
 // Run with DATABASE_URL/DIRECT_URL pointing at a DISPOSABLE database:
 //   DATABASE_URL=... DIRECT_URL=... npx tsx scripts/check-tenant-isolation.ts
-import { PrismaClient } from "@prisma/client";
+// Run with DATABASE_URL/DIRECT_URL pointing at a DISPOSABLE database:
+//   DATABASE_URL=... DIRECT_URL=... npx tsx --require ./scripts/register-server-only.cjs scripts/check-tenant-isolation.ts
+import { getPrisma } from "../src/lib/db/prisma";
 import { getSocialOverviewData, getSocialPostsData } from "../src/lib/social/social-data";
 import { getWebHostingOverviewData } from "../src/lib/web-hosting/web-hosting-data";
 import { getAiStudioOverviewData } from "../src/lib/ai/ai-data";
@@ -16,7 +18,12 @@ import { getDashboardOverviewData } from "../src/lib/db/dashboard-data";
 import { getAdminClientsData } from "../src/lib/admin/admin-data";
 import type { TenantAccess } from "../src/lib/security/tenant-access";
 
-const prisma = new PrismaClient();
+const prismaOrNull = getPrisma();
+if (!prismaOrNull) {
+  console.error("[tenant-isolation] DATABASE_URL is required");
+  process.exit(1);
+}
+const prisma = prismaOrNull;
 let failures = 0;
 function assert(name: string, ok: boolean, detail = "") {
   if (ok) console.log(`  PASS ${name}`);

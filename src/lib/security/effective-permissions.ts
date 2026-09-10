@@ -18,12 +18,19 @@ export function getEffectivePermissions(
     return [];
   }
 
-  if (access.role === "owner") {
+  if (access.mode === "platform_admin") {
     return [...ROLE_PERMISSIONS.owner];
   }
 
+  if (access.role === "owner" && !access.customRoleId) {
+    return [...ROLE_PERMISSIONS.owner];
+  }
+
+  const basePermissions =
+    access.roleBasePermissions ?? ROLE_PERMISSIONS[access.role];
+
   const permissions = new Set<Permission>([
-    ...ROLE_PERMISSIONS[access.role],
+    ...basePermissions,
     ...access.customPermissions,
   ]);
 

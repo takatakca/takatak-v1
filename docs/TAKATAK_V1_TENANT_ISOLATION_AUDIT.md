@@ -40,9 +40,10 @@ verification remains a staging prerequisite.**
 
 ## RLS posture (documented decision)
 Server-side Prisma scoping is the PRIMARY enforcement (Prisma bypasses RLS
-by design of its direct connection). RLS 001–007 remain applied as
-SECONDARY defense for any Supabase-client access path. Both layers use the
-same membership model.
+by design of its direct connection). Public-schema RLS is the SECONDARY
+defense for the Supabase Data API. Canonical SQL is
+`prisma/migrations/20260909170000_public_rls_and_fk_indexes`. Do not apply
+`supabase/sql/001–007`. See `docs/SUPABASE_SECURITY_ADVISOR_REPORT.md`.
 
 ## Remaining before production (staging verification)
 1. Live Supabase E2E: real sign-in → profile-sync → bootstrap owner →

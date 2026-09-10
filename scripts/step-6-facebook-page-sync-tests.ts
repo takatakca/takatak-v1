@@ -731,6 +731,8 @@ async function main() {
         "src/lib/social/sync/facebook-page-initial-sync.ts",
       );
       assert(dash.includes("Synchronizing Page identity"), "syncing UI");
+      assert(dash.includes("never treat it as an in-flight snapshot"), "idle not in-flight");
+      assert(dash.includes("SYNC_POLL_TIMEOUT_MS"), "poll timeout");
       assert(dash.includes("No data available for this period"), "empty UI");
       assert(dash.includes("does not invent zero metrics"), "no fake zeros");
       assert(dash.includes("Analytics unavailable"), "failed UI");

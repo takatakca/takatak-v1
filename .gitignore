@@ -53,3 +53,7 @@ next-env.d.ts
 # Production artifacts (never commit secrets or full node_modules tarballs)
 /var/artifacts
 
+# Local / CI ephemeral Supabase volumes and generated seed
+/supabase/.temp
+/supabase/.branches
+

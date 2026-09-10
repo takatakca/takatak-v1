@@ -1,3 +1,6 @@
+-- SUPERSEDED. Do not apply this file.
+-- Canonical RLS is prisma/migrations/20260909170000_public_rls_and_fk_indexes.
+-- The previous using(true) report_templates policy is replaced by a workspace-membership predicate.
 -- ============================================================================
 -- TAKATAK User Official Dashboard V1 — Phase 10 Reporting RLS Foundation
 -- (Corrected during Phases 10–12 checkpoint audit: aligned to the final

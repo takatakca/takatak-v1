@@ -353,6 +353,8 @@ model Client {
   assignedProfile           Profile?                   @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
   subscription              ClientSubscription?
+  customRoles               WorkspaceCustomRole[]
+  rolePermissionOverrides   WorkspaceRolePermissionOverride[]
   userInvitations           UserInvitation[]
   businessBrands            BusinessBrand[]
   serviceInstances          ServiceInstance[]
@@ -396,6 +398,7 @@ model Client {
 
   @@index([status])
   @@index([createdAt])
+  @@index([assignedProfileId])
   @@map("clients")
 }
 
@@ -450,18 +453,21 @@ model ClientMembership {
   profileId         String           @db.Uuid
   clientId          String           @db.Uuid
   role              WorkspaceRole    @default(viewer)
+  customRoleId      String?          @db.Uuid
   status            MembershipStatus @default(active)
   customPermissions PermissionKey[]  @default([])
   deniedPermissions PermissionKey[]  @default([])
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
-  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  client  Client  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile    Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  client     Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  customRole WorkspaceCustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
 
   @@unique([profileId, clientId])
   @@index([clientId, status])
   @@index([profileId, status])
+  @@index([customRoleId])
   @@map("client_memberships")
 }
 
@@ -470,6 +476,7 @@ model UserInvitation {
   clientId           String           @db.Uuid
   email              String
   role               WorkspaceRole    @default(viewer)
+  customRoleId       String?          @db.Uuid
   status             InvitationStatus @default(pending)
   tokenHash          String           @unique
   customPermissions  PermissionKey[]  @default([])
@@ -481,14 +488,50 @@ model UserInvitation {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
-  client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  invitedBy Profile? @relation("InvitedByProfile", fields: [invitedByProfileId], references: [id], onDelete: SetNull)
+  client     Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invitedBy  Profile?             @relation("InvitedByProfile", fields: [invitedByProfileId], references: [id], onDelete: SetNull)
+  customRole WorkspaceCustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
 
   @@unique([clientId, email])
   @@index([clientId, status])
   @@index([email, status])
   @@index([expiresAt])
+  @@index([customRoleId])
+  @@index([invitedByProfileId])
   @@map("user_invitations")
+}
+
+/// Workspace-defined role. System roles stay on WorkspaceRole; these are extra.
+model WorkspaceCustomRole {
+  id          String          @id @default(uuid()) @db.Uuid
+  clientId    String          @db.Uuid
+  name        String
+  permissions PermissionKey[] @default([])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  client      Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  memberships ClientMembership[]
+  invitations UserInvitation[]
+
+  @@unique([clientId, name])
+  @@index([clientId])
+  @@map("workspace_custom_roles")
+}
+
+/// Per-workspace permission set for a built-in WorkspaceRole. Owner cannot be overridden.
+model WorkspaceRolePermissionOverride {
+  id          String          @id @default(uuid()) @db.Uuid
+  clientId    String          @db.Uuid
+  role        WorkspaceRole
+  permissions PermissionKey[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, role])
+  @@map("workspace_role_permission_overrides")
 }
 
 /// Business or brand owned by a client.
@@ -595,6 +638,7 @@ model BusinessLocation {
 
   @@index([clientId, status])
   @@index([businessBrandId, status])
+  @@index([businessBrandId, clientId])
   @@index([city])
   @@index([isPrimary])
   @@map("business_locations")
@@ -683,6 +727,7 @@ model IntegrationEvent {
   @@index([provider])
   @@index([status])
   @@index([createdAt])
+  @@index([integrationAccountId])
   @@map("integration_events")
 }
 
@@ -722,6 +767,7 @@ model Job {
   @@index([createdAt])
   @@index([leaseOwner])
   @@index([type, status, scheduledFor, leaseExpiresAt])
+  @@index([serviceInstanceId])
   @@map("jobs")
 }
 
@@ -1147,6 +1193,7 @@ model SocialProviderConnection {
   /// Partial unique: at most one pending_authorization per Brand+provider
   /// (spc_one_pending_per_brand_provider_key; subset of live unique).
   @@index([clientId, businessBrandId, provider])
+  @@index([businessBrandId, clientId])
   /// Same Meta user MAY authorize multiple Brands in one Client.
   /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
   @@unique([id, clientId], map: "spc_id_client_key")
@@ -1225,6 +1272,7 @@ model SocialBrandAccountAssignment {
   @@index([businessBrandId, status])
   @@index([socialAccountId, status])
   @@index([assignedByProfileId])
+  @@index([businessBrandId, clientId])
   @@map("social_brand_account_assignments")
 }
 
@@ -1263,6 +1311,8 @@ model SocialOAuthState {
   @@index([provider, status])
   @@index([expiresAt])
   @@index([createdByProfileId])
+  @@index([businessBrandId, clientId])
+  @@index([connectionId, clientId, businessBrandId, provider])
   @@map("social_oauth_states")
 }
 
@@ -1293,6 +1343,7 @@ model Campaign {
   @@index([status])
   @@index([startsAt])
   @@index([createdAt])
+  @@index([serviceInstanceId])
   @@map("campaigns")
 }
 
@@ -1379,6 +1430,7 @@ model SocialContentItem {
   @@index([socialAccountId, publishedAt])
   @@index([socialAccountId, availability])
   @@index([clientId, publishedAt])
+  @@index([businessBrandId])
   @@map("social_content_items")
 }
 
@@ -1427,6 +1479,7 @@ model SocialCompetitorTrack {
   @@index([clientId, businessBrandId, status])
   @@index([nextRefreshAt])
   @@index([dispatchJobId])
+  @@index([businessBrandId])
   @@map("social_competitor_tracks")
 }
 
@@ -1466,6 +1519,7 @@ model SocialCompetitorSnapshot {
   @@unique([competitorTrackId, snapshotDate], map: "scs_track_date_key")
   @@index([clientId, businessBrandId, snapshotDate])
   @@index([competitorTrackId, snapshotAt])
+  @@index([businessBrandId])
   @@map("social_competitor_snapshots")
 }
 
@@ -1495,6 +1549,8 @@ model Approval {
   @@index([socialPostId])
   @@index([status])
   @@index([requestedAt])
+  @@index([requestedByProfileId])
+  @@index([reviewedByProfileId])
   @@map("approvals")
 }
 
@@ -1530,6 +1586,7 @@ model SocialAnalyticsDaily {
   @@index([platform])
   @@index([date])
   @@index([source])
+  @@index([campaignId])
   @@map("social_analytics_daily")
 }
 
@@ -1578,6 +1635,7 @@ model SocialAdAccount {
   @@unique([id, clientId, businessBrandId], map: "social_ad_accounts_scope_key")
   @@index([clientId, status])
   @@index([businessBrandId, status])
+  @@index([businessBrandId, clientId])
   @@index([providerConnectionId])
   @@index([platform, status])
   @@index([lastSyncAt])
@@ -1610,6 +1668,8 @@ model SocialAdAnalyticsDaily {
   @@unique([adAccountId, date])
   @@index([clientId, date])
   @@index([businessBrandId, date])
+  @@index([businessBrandId, clientId])
+  @@index([adAccountId, clientId, businessBrandId])
   @@index([platform, date])
   @@index([source])
   @@map("social_ad_analytics_daily")
@@ -1975,6 +2035,7 @@ model AiContentJob {
   @@index([kind])
   @@index([status])
   @@index([createdAt])
+  @@index([brandVoiceId])
   @@map("ai_content_jobs")
 }
 
@@ -2006,6 +2067,8 @@ model SavedAiOutput {
   @@index([origin])
   @@index([status])
   @@index([createdAt])
+  @@index([brandVoiceId])
+  @@index([aiContentJobId])
   @@map("saved_ai_outputs")
 }
 

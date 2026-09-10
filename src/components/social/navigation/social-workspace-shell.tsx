@@ -1379,12 +1379,12 @@ function ModuleDrawer({
             <DrawerRow
               label="User management"
               href={withSocialPreview(
-                "/dashboard/team",
+                "/dashboard/social/users",
                 searchParams,
               )}
               icon={ShieldCheck}
               premiumLocked={premiumLocked}
-              active={pathname.startsWith("/dashboard/team")}
+              active={pathname.startsWith("/dashboard/social/users") || pathname.startsWith("/dashboard/users")}
               onClose={onClose}
             />
 
@@ -2337,7 +2337,7 @@ const effectiveData: SocialShellData =
           "/dashboard/billing",
           searchParams,
         )}
-        usersHref={withSocialPreview("/dashboard/team", searchParams)}
+        usersHref={withSocialPreview("/dashboard/social/users", searchParams)}
         onClose={() => setAddBrandOpen(false)}
         onSelectBrand={(brandId) => {
           void fetch("/api/social/brand-context", {

@@ -1,3 +1,5 @@
+import "server-only";
+
 import {
     createClient,
     type SupabaseClient,
@@ -25,10 +27,11 @@ import {
     try {
       const parsedUrl = new URL(url);
   
-      if (
-        parsedUrl.protocol !== "https:" &&
-        parsedUrl.hostname !== "localhost"
-      ) {
+      const loopback =
+        parsedUrl.hostname === "localhost" ||
+        parsedUrl.hostname === "127.0.0.1" ||
+        parsedUrl.hostname === "::1";
+      if (parsedUrl.protocol !== "https:" && !loopback) {
         return null;
       }
     } catch {

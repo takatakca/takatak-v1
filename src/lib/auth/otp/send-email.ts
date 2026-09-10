@@ -6,8 +6,10 @@ import {
   getSmtpHost,
   getSmtpPort,
   isGmailSmtpConfigured,
+  isMemoryOtpAdapter,
   isSendgridConfigured,
 } from "./env";
+import { sendOtpToMemory } from "./memory-store";
 import { sendMailViaSmtp } from "./smtp";
 
 function otpMessage(otp: string): string {
@@ -78,6 +80,11 @@ export async function sendOtpToEmail(
   email: string,
   otp: string,
 ): Promise<void> {
+  if (isMemoryOtpAdapter()) {
+    await sendOtpToMemory(email, otp);
+    return;
+  }
+
   if (isSendgridConfigured()) {
     await sendViaSendgrid(email, otp);
     return;

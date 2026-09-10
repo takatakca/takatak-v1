@@ -39,8 +39,14 @@ export function isGmailSmtpConfigured(): boolean {
   return Boolean(getGmailUser() && getGmailPassword());
 }
 
+export function isMemoryOtpAdapter(): boolean {
+  return process.env.OTP_EMAIL_ADAPTER?.trim() === "memory";
+}
+
 export function isEmailOtpConfigured(): boolean {
-  return isSendgridConfigured() || isGmailSmtpConfigured();
+  return (
+    isMemoryOtpAdapter() || isSendgridConfigured() || isGmailSmtpConfigured()
+  );
 }
 
 export function getTwilioAccountSid(): string {

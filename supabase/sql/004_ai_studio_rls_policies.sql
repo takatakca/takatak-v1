@@ -1,3 +1,5 @@
+-- SUPERSEDED. Do not apply this file.
+-- Canonical RLS is prisma/migrations/20260909170000_public_rls_and_fk_indexes.
 -- ============================================================================
 -- TAKATAK User Official Dashboard V1 — Phase 9 AI Studio RLS Foundation
 -- ============================================================================

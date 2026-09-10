@@ -11,6 +11,8 @@ export type WorkspaceMemberSummary = {
   displayName: string | null;
   email: string | null;
   role: RoleKey;
+  customRoleId: string | null;
+  customRoleName: string | null;
   status: "active" | "suspended";
   customPermissions: Permission[];
   deniedPermissions: Permission[];
@@ -21,11 +23,20 @@ export type WorkspaceInvitationSummary = {
   invitationId: string;
   email: string;
   role: RoleKey;
+  customRoleId: string | null;
+  customRoleName: string | null;
   status: "pending" | "accepted" | "expired" | "revoked";
   customPermissions: Permission[];
   deniedPermissions: Permission[];
   invitedBy: string | null;
   expiresAt: string;
+  createdAt: string;
+};
+
+export type WorkspaceCustomRoleSummary = {
+  id: string;
+  name: string;
+  permissions: Permission[];
   createdAt: string;
 };
 
@@ -57,6 +68,8 @@ export type WorkspaceTeamData =
       members: WorkspaceMemberSummary[];
       invitations: WorkspaceInvitationSummary[];
       brands: WorkspaceBrandSummary[];
+      customRoleDefinitions: WorkspaceCustomRoleSummary[];
+      systemRoleOverrides: Partial<Record<RoleKey, Permission[]>>;
       planName: string;
       teamManagement: boolean;
       customRoles: boolean;
@@ -69,10 +82,32 @@ export type WorkspaceTeamData =
       members: [];
       invitations: [];
       brands: [];
+      customRoleDefinitions: [];
+      systemRoleOverrides: Partial<Record<RoleKey, Permission[]>>;
       planName: null;
       teamManagement: false;
       customRoles: false;
     };
+
+function unavailableTeamData(
+  clientId: string,
+  message: string,
+): Extract<WorkspaceTeamData, { source: "unavailable" }> {
+  return {
+    source: "unavailable",
+    message,
+    clientId,
+    clientName: null,
+    members: [],
+    invitations: [],
+    brands: [],
+    customRoleDefinitions: [],
+    systemRoleOverrides: {},
+    planName: null,
+    teamManagement: false,
+    customRoles: false,
+  };
+}
 
 export async function getWorkspaceTeamData(
   access: ClientScopedAccess,
@@ -80,18 +115,10 @@ export async function getWorkspaceTeamData(
   const prisma = getPrisma();
 
   if (!prisma) {
-    return {
-      source: "unavailable",
-      message: "The database is unavailable.",
-      clientId: access.activeClientId,
-      clientName: null,
-      members: [],
-      invitations: [],
-      brands: [],
-      planName: null,
-      teamManagement: false,
-      customRoles: false,
-    };
+    return unavailableTeamData(
+      access.activeClientId,
+      "The database is unavailable.",
+    );
   }
 
   try {
@@ -110,6 +137,13 @@ export async function getWorkspaceTeamData(
             id: true,
             profileId: true,
             role: true,
+            customRoleId: true,
+            customRole: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
             status: true,
             customPermissions: true,
             deniedPermissions: true,
@@ -131,6 +165,13 @@ export async function getWorkspaceTeamData(
             id: true,
             email: true,
             role: true,
+            customRoleId: true,
+            customRole: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
             status: true,
             customPermissions: true,
             deniedPermissions: true,
@@ -168,6 +209,23 @@ export async function getWorkspaceTeamData(
             accessStatus: true,
           },
         },
+        customRoles: {
+          orderBy: {
+            createdAt: "asc",
+          },
+          select: {
+            id: true,
+            name: true,
+            permissions: true,
+            createdAt: true,
+          },
+        },
+        rolePermissionOverrides: {
+          select: {
+            role: true,
+            permissions: true,
+          },
+        },
         subscription: {
           select: {
             status: true,
@@ -181,18 +239,10 @@ export async function getWorkspaceTeamData(
     });
 
     if (!client) {
-      return {
-        source: "unavailable",
-        message: "The selected workspace could not be found.",
-        clientId: access.activeClientId,
-        clientName: null,
-        members: [],
-        invitations: [],
-        brands: [],
-        planName: null,
-        teamManagement: false,
-        customRoles: false,
-      };
+      return unavailableTeamData(
+        access.activeClientId,
+        "The selected workspace could not be found.",
+      );
     }
 
     const { entitlements } = resolveEffectiveSocialEntitlements({
@@ -213,6 +263,8 @@ export async function getWorkspaceTeamData(
         displayName: membership.profile.displayName,
         email: membership.profile.email,
         role: membership.role,
+        customRoleId: membership.customRoleId,
+        customRoleName: membership.customRole?.name ?? null,
         status: membership.status,
         customPermissions:
           membership.customPermissions as Permission[],
@@ -224,6 +276,8 @@ export async function getWorkspaceTeamData(
         invitationId: invitation.id,
         email: invitation.email,
         role: invitation.role,
+        customRoleId: invitation.customRoleId,
+        customRoleName: invitation.customRole?.name ?? null,
         status: invitation.status,
         customPermissions:
           invitation.customPermissions as Permission[],
@@ -256,6 +310,18 @@ export async function getWorkspaceTeamData(
           connectedPlatforms: listConnectedPlatformIcons(platforms),
         };
       }),
+      customRoleDefinitions: client.customRoles.map((role) => ({
+        id: role.id,
+        name: role.name,
+        permissions: role.permissions as Permission[],
+        createdAt: role.createdAt.toISOString(),
+      })),
+      systemRoleOverrides: Object.fromEntries(
+        client.rolePermissionOverrides.map((override) => [
+          override.role,
+          override.permissions as Permission[],
+        ]),
+      ),
       planName: entitlements.planName,
       teamManagement: entitlements.teamManagement,
       customRoles: entitlements.customRoles,
@@ -266,17 +332,9 @@ export async function getWorkspaceTeamData(
       error instanceof Error ? error.message : "Unknown error",
     );
 
-    return {
-      source: "unavailable",
-      message: "Team data is temporarily unavailable.",
-      clientId: access.activeClientId,
-      clientName: null,
-      members: [],
-      invitations: [],
-      brands: [],
-      planName: null,
-      teamManagement: false,
-      customRoles: false,
-    };
+    return unavailableTeamData(
+      access.activeClientId,
+      "Team data is temporarily unavailable.",
+    );
   }
 }

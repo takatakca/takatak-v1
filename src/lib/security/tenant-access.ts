@@ -11,6 +11,7 @@
 import { getSessionUser } from "@/lib/auth/supabase-server";
 import { getPrisma } from "@/lib/db/prisma";
 import { sessionMatchesProfile } from "@/lib/security/authenticated-identity";
+import { resolveMembershipBasePermissions } from "@/lib/security/role-permissions";
 import { getRuntimeInfo } from "@/lib/security/runtime-mode";
 import type {
   Permission,
@@ -391,12 +392,24 @@ export async function resolveTenantAccessBundle(
                 select: {
                   status: true,
                   name: true,
+                  rolePermissionOverrides: {
+                    select: {
+                      role: true,
+                      permissions: true,
+                    },
+                  },
                 },
               },
               role: true,
               status: true,
               customPermissions: true,
               deniedPermissions: true,
+              customRoleId: true,
+              customRole: {
+                select: {
+                  permissions: true,
+                },
+              },
             },
           },
         },
@@ -435,17 +448,35 @@ export async function resolveTenantAccessBundle(
         : null,
       memberships:
         profile?.memberships.map(
-          (membership) => ({
-            clientId: membership.clientId,
-            clientStatus:
-              membership.client.status,
-            role: membership.role,
-            status: membership.status,
-            customPermissions:
-              membership.customPermissions,
-            deniedPermissions:
-              membership.deniedPermissions,
-          }),
+          (membership) => {
+            const roleOverride =
+              membership.client.rolePermissionOverrides.find(
+                (override) => override.role === membership.role,
+              ) ?? null;
+
+            return {
+              clientId: membership.clientId,
+              clientStatus:
+                membership.client.status,
+              role: membership.role,
+              status: membership.status,
+              customPermissions:
+                membership.customPermissions,
+              deniedPermissions:
+                membership.deniedPermissions,
+              customRoleId: membership.customRoleId,
+              roleBasePermissions:
+                resolveMembershipBasePermissions({
+                  role: membership.role,
+                  customRolePermissions: membership.customRole
+                    ? (membership.customRole.permissions as Permission[])
+                    : null,
+                  roleOverridePermissions: roleOverride
+                    ? (roleOverride.permissions as Permission[])
+                    : null,
+                }),
+            };
+          },
         ) ?? [],
       requestedClientId:
         requestedClientId ?? null,
