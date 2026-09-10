@@ -15,7 +15,9 @@ import {
   };
   
   function getSupabaseAdminEnvironment(): SupabaseAdminEnvironment | null {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    const url =
+      process.env.SUPABASE_URL?.trim() ||
+      process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
     const secretKey =
       process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
       process.env.SUPABASE_SECRET_KEY?.trim();

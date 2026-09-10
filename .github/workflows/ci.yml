@@ -202,6 +202,10 @@ jobs:
           fi
 
       - name: Build (webpack)
+        env:
+          NEXT_PUBLIC_APP_URL: https://takatak.ca
+          NEXT_PUBLIC_SUPABASE_URL: https://pcjfahhlozsseqqevimi.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Hashed external detection and compiled-module loading
