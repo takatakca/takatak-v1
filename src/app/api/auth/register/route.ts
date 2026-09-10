@@ -31,12 +31,14 @@ function errorResponse(
   message: string,
   status: number,
   fieldErrors: RegistrationFieldErrors = {},
+  diagnosticCode?: string,
 ) {
   return NextResponse.json(
     {
       ok: false,
       message,
       fieldErrors,
+      ...(diagnosticCode ? { diagnosticCode } : {}),
     },
     {
       status,
@@ -56,7 +58,7 @@ function getFriendlySupabaseError(
   const message = error.message.toLowerCase();
 
   if (
-    code === "user_already_exists" ||
+    (code === "user_already_exists" || code === "email_exists") ||
     message.includes("already registered") ||
     message.includes("already been registered") ||
     message.includes("user already exists")
@@ -283,22 +285,33 @@ async function handleRegister(request: NextRequest) {
     if (error) {
       const friendlyError = getFriendlySupabaseError(error);
 
-      console.error(
-        "[registration] Supabase signup failed:",
-        error.code ?? error.message,
-      );
+      const diagnosticCode =
+        error.code?.trim() || `supabase_http_${error.status ?? "unknown"}`;
+
+      console.error("[registration] Supabase signup failed:", {
+        code: error.code ?? null,
+        status: error.status ?? null,
+        message: error.message,
+      });
 
       return errorResponse(
         friendlyError.message,
         friendlyError.status,
         friendlyError.fieldErrors,
+        diagnosticCode,
       );
     }
 
     if (!data.user) {
+      console.error(
+        "[registration] Supabase createUser succeeded without returning a user.",
+      );
+    
       return errorResponse(
         "Unable to create your account. Please try again.",
-        400,
+        502,
+        {},
+        "supabase_missing_user",
       );
     }
 
