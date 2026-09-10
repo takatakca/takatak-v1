@@ -91,6 +91,7 @@ const include = [
   "package-lock.json",
   "next.config.ts",
   "scripts/production-preflight.ts",
+  "src/lib/ops/env-preflight.ts",
   "scripts/check-module-load.ts",
   "scripts/check-compiled-modules.ts",
   "scripts/smoke-auth-json.ts",
