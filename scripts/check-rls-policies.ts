@@ -310,6 +310,23 @@ async function withPersona<T>(
   run: (client: import("pg").PoolClient) => Promise<T>,
 ): Promise<T> {
   const client = await pool.connect();
+  const wrapped = {
+    query: async (queryText: string, values?: unknown[]) => {
+      await client.query("SAVEPOINT rls_probe");
+      try {
+        const result = await client.query(queryText, values as never);
+        await client.query("RELEASE SAVEPOINT rls_probe");
+        return result;
+      } catch (error) {
+        try {
+          await client.query("ROLLBACK TO SAVEPOINT rls_probe");
+        } catch {
+          // Connection may already be aborted.
+        }
+        throw error;
+      }
+    },
+  } as import("pg").PoolClient;
   try {
     await client.query("BEGIN");
     if (persona.role === "anon") {
@@ -341,7 +358,7 @@ async function withPersona<T>(
       );
       await client.query("SET LOCAL ROLE authenticated");
     }
-    return await run(client);
+    return await run(wrapped);
   } finally {
     try {
       await client.query("ROLLBACK");
