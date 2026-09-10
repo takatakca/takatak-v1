@@ -37,6 +37,7 @@
     "qa:rls:static": "QA_RLS_STATIC_ONLY=1 tsx --require ./scripts/register-server-only.cjs scripts/check-rls-policies.ts",
     "qa:rls:advisor": "tsx --require ./scripts/register-server-only.cjs scripts/ci-rls-advisor-catalog.ts",
     "qa:ephemeral-seed": "tsx --require ./scripts/register-server-only.cjs scripts/ci-seed-ephemeral-identities.ts",
+    "qa:postgrest-reload": "node scripts/ci-reload-postgrest.cjs",
     "qa:ephemeral-app-flow": "tsx --require ./scripts/register-server-only.cjs scripts/ci-ephemeral-app-flow.ts",
     "qa:social-instagram": "tsx scripts/instagram-connection-tests.ts",
     "qa:social-tiktok": "tsx scripts/tiktok-connection-tests.ts",

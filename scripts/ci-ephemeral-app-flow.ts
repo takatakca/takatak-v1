@@ -58,11 +58,21 @@ async function passwordGrant(email: string, password: string): Promise<string> {
       Authorization: `Bearer ${anon}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, grant_type: "password" }),
   });
-  const body = (await response.json()) as { access_token?: string; error_description?: string };
+  const text = await response.text();
+  let body: { access_token?: string; error_description?: string; msg?: string } = {};
+  try {
+    body = JSON.parse(text) as typeof body;
+  } catch {
+    body = {};
+  }
   if (!response.ok || !body.access_token) {
-    throw new Error(body.error_description || `password grant failed (${response.status})`);
+    throw new Error(
+      body.error_description ||
+        body.msg ||
+        `password grant failed (${response.status}) ${text.slice(0, 180)}`,
+    );
   }
   return body.access_token;
 }

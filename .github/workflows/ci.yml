@@ -90,6 +90,7 @@ jobs:
           echo "ephemeral_db_identity=${DB##*@}"
           {
             echo "EPHEMERAL_SUPABASE=1"
+            echo "OTP_EMAIL_ADAPTER=memory"
             echo "OTP_MEMORY_PATH=/tmp/takatak-otp-memory.json"
             echo "EPHEMERAL_SEED_PATH=/tmp/takatak-ephemeral-seed.json"
             echo "NEXT_PUBLIC_APP_URL=http://localhost:3000"
@@ -134,22 +135,62 @@ jobs:
             echo "hosted project ref must not appear in ephemeral SQL"
             exit 1
           fi
+          {
+            echo "DATABASE_URL=${DATABASE_URL}"
+            echo "DIRECT_URL=${DIRECT_URL}"
+          } >> "$GITHUB_ENV"
 
       - name: Seed synthetic Auth identities
+        env:
+          NODE_ENV: development
         run: npm run qa:ephemeral-seed
 
+      - name: Reload PostgREST schema cache
+        run: npm run qa:postgrest-reload
+
       - name: Live RLS + PostgREST checks
-        run: npm run qa:rls
+        env:
+          NODE_ENV: development
+        run: |
+          set +e +o pipefail
+          npm run qa:rls 2>&1 | tee /tmp/qa-rls.log
+          status=${PIPESTATUS[0]}
+          set -euo pipefail
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=qa:rls::$(grep -E 'FAIL |crashed|Error:|PGRST' /tmp/qa-rls.log | tail -n 40 | tr '\n' ' | ')"
+            exit "$status"
+          fi
 
       - name: Security Advisor catalog equivalent
-        run: npm run qa:rls:advisor
+        env:
+          NODE_ENV: development
+        run: |
+          set +e +o pipefail
+          npm run qa:rls:advisor 2>&1 | tee /tmp/qa-advisor.log
+          status=${PIPESTATUS[0]}
+          set -euo pipefail
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=qa:rls:advisor::$(grep -E 'FAIL |Error:' /tmp/qa-advisor.log | tail -n 40 | tr '\n' ' | ')"
+            exit "$status"
+          fi
 
       - name: Application-flow tests (memory OTP adapter)
         env:
           OTP_EMAIL_ADAPTER: memory
-        run: npm run qa:ephemeral-app-flow
+          NODE_ENV: development
+        run: |
+          set +e +o pipefail
+          npm run qa:ephemeral-app-flow 2>&1 | tee /tmp/qa-app-flow.log
+          status=${PIPESTATUS[0]}
+          set -euo pipefail
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=qa:ephemeral-app-flow::$(grep -E 'FAIL |Error:|\\[app-flow\\]' /tmp/qa-app-flow.log | tail -n 40 | tr '\n' ' | ')"
+            exit "$status"
+          fi
 
       - name: Prisma tenant-isolation tests
+        env:
+          NODE_ENV: development
         run: npm run qa:tenant-isolation
 
       - name: Build (webpack)

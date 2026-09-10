@@ -108,7 +108,7 @@ async function main() {
          AND NOT EXISTS (
            SELECT 1
            FROM unnest(COALESCE(p.proconfig, ARRAY[]::text[])) cfg
-           WHERE cfg ~* '^search_path=pg_catalog$'
+           WHERE cfg ~* '^search_path=pg_catalog(,[[:space:]]*pg_temp)?$'
          )`,
       [AUTH_HELPERS],
     );

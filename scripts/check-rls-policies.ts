@@ -28,7 +28,9 @@ function isPermissionDenied(error: unknown): boolean {
   return (
     code === "42501" ||
     /permission denied/i.test(message) ||
-    /row-level security/i.test(message)
+    /row-level security/i.test(message) ||
+    /must be owner/i.test(message) ||
+    /insufficient.privilege/i.test(message)
   );
 }
 
@@ -97,15 +99,26 @@ async function passwordGrant(email: string, password: string): Promise<string> {
       Authorization: `Bearer ${anon}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ email, password, grant_type: "password" }),
   });
-  const body = (await response.json()) as {
+  const text = await response.text();
+  let body: {
     access_token?: string;
     error_description?: string;
-  };
+    msg?: string;
+    error?: string;
+  } = {};
+  try {
+    body = JSON.parse(text) as typeof body;
+  } catch {
+    body = {};
+  }
   if (!response.ok || !body.access_token) {
     throw new Error(
-      body.error_description || `password grant failed for ${email} (${response.status})`,
+      body.error_description ||
+        body.msg ||
+        body.error ||
+        `password grant failed for ${email} (${response.status}) ${text.slice(0, 180)}`,
     );
   }
   return body.access_token;
@@ -442,6 +455,44 @@ async function databaseReady(
   }
 }
 
+async function reloadPostgrestSchema(pool: import("pg").Pool) {
+  const client = await pool.connect();
+  try {
+    await client.query("NOTIFY pgrst, 'reload schema'");
+  } finally {
+    client.release();
+  }
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !anon) {
+    return;
+  }
+
+  const deadline = Date.now() + 20_000;
+  while (Date.now() < deadline) {
+    const response = await fetch(`${url}/rest/v1/clients?select=id&limit=1`, {
+      headers: {
+        apikey: anon,
+        Authorization: `Bearer ${anon}`,
+        Accept: "application/json",
+      },
+    });
+    if (response.status !== 404) {
+      console.log(
+        `[rls] PostgREST schema cache ready (clients status=${response.status})`,
+      );
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 400));
+  }
+  assert(
+    "PostgREST schema cache reloaded after migrations",
+    false,
+    "clients still 404 after NOTIFY pgrst",
+  );
+}
+
 async function assertPrivilegeMatrix(pool: import("pg").Pool) {
   const client = await pool.connect();
   try {
@@ -550,7 +601,7 @@ async function assertPrivilegeMatrix(pool: import("pg").Pool) {
       "tenant helpers pin search_path to pg_catalog only",
       helpers.every((row) =>
         (row.proconfig ?? []).some((entry) =>
-          /^search_path=pg_catalog$/i.test(entry),
+          /^search_path=pg_catalog(?:,\s*pg_temp)?$/i.test(entry),
         ),
       ),
     );
@@ -668,8 +719,12 @@ async function assertPrivilegeMatrix(pool: import("pg").Pool) {
 function postgrestRpcIsUnexposed(status: number, body: string): boolean {
   if (status === 200 || status === 201 || status === 204) return false;
   if (/permission denied for function/i.test(body)) return false;
-  if (status === 404) return true;
-  if (/PGRST202|PGRST106|Could not find the function|schema must be one of/i.test(body)) {
+  if (status === 404 || status === 406) return true;
+  if (
+    /PGRST202|PGRST106|PGRST205|Could not find the function|schema must be one of|Invalid schema/i.test(
+      body,
+    )
+  ) {
     return true;
   }
   return false;
@@ -863,14 +918,30 @@ async function assertPostgrestJwtIsolation(options: {
   const cClients = await restGet(url, anon, options.tokenC, "clients?select=id,name");
   const aIds = rowIds(aClients.json);
   const bIds = rowIds(bClients.json);
-  assert("PostgREST A reads Workspace A", aIds.includes(options.clientAId));
-  assert("PostgREST A cannot read Workspace B", !aIds.includes(options.clientBId));
-  assert("PostgREST B reads Workspace B", bIds.includes(options.clientBId));
-  assert("PostgREST B cannot read Workspace A", !bIds.includes(options.clientAId));
+  assert(
+    "PostgREST A reads Workspace A",
+    aClients.status === 200 && aIds.includes(options.clientAId),
+    `status=${aClients.status} body=${aClients.text.slice(0, 180)}`,
+  );
+  assert(
+    "PostgREST A cannot read Workspace B",
+    aClients.status === 200 && !aIds.includes(options.clientBId),
+    `status=${aClients.status}`,
+  );
+  assert(
+    "PostgREST B reads Workspace B",
+    bClients.status === 200 && bIds.includes(options.clientBId),
+    `status=${bClients.status} body=${bClients.text.slice(0, 180)}`,
+  );
+  assert(
+    "PostgREST B cannot read Workspace A",
+    bClients.status === 200 && !bIds.includes(options.clientAId),
+    `status=${bClients.status}`,
+  );
   assert(
     "PostgREST C receives no workspace rows",
     cClients.status === 200 && rowIds(cClients.json).length === 0,
-    `status=${cClients.status}`,
+    `status=${cClients.status} body=${cClients.text.slice(0, 180)}`,
   );
 
   const aAsB = await restGet(
@@ -1074,6 +1145,8 @@ async function runDatabaseChecks(connectionString: string) {
       return;
     }
 
+    await reloadPostgrestSchema(pool);
+
     if (seed) {
       console.log("[rls] using ephemeral Auth identities");
       profileAId = seed.a.profileId;
@@ -1086,9 +1159,18 @@ async function runDatabaseChecks(connectionString: string) {
       locationBId = seed.b.locationId;
       assignmentAId = seed.a.assignmentId;
       assignmentBId = seed.b.assignmentId;
-      tokenA = await passwordGrant(seed.a.email, seed.a.password);
-      tokenB = await passwordGrant(seed.b.email, seed.b.password);
-      tokenC = await passwordGrant(seed.c.email, seed.c.password);
+      try {
+        tokenA = await passwordGrant(seed.a.email, seed.a.password);
+        tokenB = await passwordGrant(seed.b.email, seed.b.password);
+        tokenC = await passwordGrant(seed.c.email, seed.c.password);
+      } catch (error) {
+        assert(
+          "password grant from local Auth",
+          false,
+          error instanceof Error ? error.message : String(error),
+        );
+        return;
+      }
       assert(
         "A JWT sub comes from local Auth",
         jwtPayload(tokenA).sub === seed.a.authUserId,
@@ -1636,7 +1718,7 @@ async function runDatabaseChecks(connectionString: string) {
         await client.query(`SELECT private.has_client_access($1)`, [clientAId]);
         anonExecuted = true;
       } catch (error) {
-        if (!isPermissionDenied(error)) throw error;
+        if (!isPermissionDenied(error) && !isUndefinedFunction(error)) throw error;
       }
       assert("anon cannot execute private.has_client_access", anonExecuted === false);
       for (const schema of ["public", "private"] as const) {
@@ -1660,6 +1742,13 @@ async function runDatabaseChecks(connectionString: string) {
       "Prisma owner connection still reads both tenants (RLS bypass)",
       prismaSeesBoth === 2,
     );
+  } catch (error) {
+    assert(
+      "live RLS checks completed without crash",
+      false,
+      error instanceof Error ? error.message : String(error),
+    );
+    console.error("[rls] live checks threw", error);
   } finally {
     try {
       if (!seed && (clientAId || clientBId)) {

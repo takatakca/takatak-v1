@@ -29,6 +29,38 @@ function forbidHosted(): void {
   }
 }
 
+async function passwordGrant(email: string, password: string): Promise<string> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  if (!url || !anon) {
+    throw new Error("local Auth URL/anon key missing for seed password grant");
+  }
+  const response = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: {
+      apikey: anon,
+      Authorization: `Bearer ${anon}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password, grant_type: "password" }),
+  });
+  const text = await response.text();
+  let body: { access_token?: string; error_description?: string; msg?: string } = {};
+  try {
+    body = JSON.parse(text) as typeof body;
+  } catch {
+    body = {};
+  }
+  if (!response.ok || !body.access_token) {
+    throw new Error(
+      body.error_description ||
+        body.msg ||
+        `seed password grant failed for ${email} (${response.status}) ${text.slice(0, 180)}`,
+    );
+  }
+  return body.access_token;
+}
+
 async function createAuthUser(
   admin: NonNullable<ReturnType<typeof getSupabaseAdminClient>>,
   email: string,
@@ -245,6 +277,16 @@ async function main() {
   };
 
   writeFileSync(SEED_PATH, JSON.stringify(seed, null, 2), { mode: 0o600 });
+  const tokenA = await passwordGrant(seed.a.email, seed.a.password);
+  const tokenB = await passwordGrant(seed.b.email, seed.b.password);
+  const tokenC = await passwordGrant(seed.c.email, seed.c.password);
+  const sub = (token: string) =>
+    JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString("utf8")) as {
+      sub?: string;
+    };
+  if (sub(tokenA).sub !== authA || sub(tokenB).sub !== authB || sub(tokenC).sub !== authC) {
+    throw new Error("seed Auth JWT sub does not match created GoTrue user ids");
+  }
   console.log(`[ephemeral-seed] wrote ${SEED_PATH}`);
   console.log(
     "[ephemeral-seed] account-a Workspace A, account-b Workspace B, account-c none, disabled profile",
