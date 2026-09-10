@@ -136,8 +136,19 @@ async function main() {
       confirmPassword: "Ephemeral#R1aaaa",
       acceptedTerms: true,
     }),
-  });
-  const registerResponse = await registerPost(registerRequest);
+    duplex: "half",
+  } as RequestInit);
+  let registerResponse: Response;
+  try {
+    registerResponse = await registerPost(registerRequest);
+  } catch (error) {
+    assert(
+      "registration route runs against ephemeral Auth",
+      false,
+      error instanceof Error ? error.stack ?? error.message : String(error),
+    );
+    throw error;
+  }
   const registerJson = (await registerResponse.json()) as { ok?: boolean; message?: string };
   assert(
     "registration creates a local Auth user + profile",
@@ -272,6 +283,7 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("[app-flow]", error instanceof Error ? error.message : error);
+  const message = error instanceof Error ? error.stack ?? error.message : String(error);
+  console.error("[app-flow] crashed:", message);
   process.exit(1);
 });

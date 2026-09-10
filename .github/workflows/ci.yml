@@ -184,7 +184,7 @@ jobs:
           status=${PIPESTATUS[0]}
           set -euo pipefail
           if [ "$status" -ne 0 ]; then
-            echo "::error title=qa:ephemeral-app-flow::$(grep -E 'FAIL |Error:|\\[app-flow\\]' /tmp/qa-app-flow.log | tail -n 40 | tr '\n' ' | ')"
+            echo "::error title=qa:ephemeral-app-flow::$(grep -E 'FAIL |crashed|app-flow|Error' /tmp/qa-app-flow.log | tail -n 40 | tr '\n' ' | ')"
             exit "$status"
           fi
 
