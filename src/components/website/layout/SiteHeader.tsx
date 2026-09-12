@@ -14,6 +14,7 @@ import { ProductLauncher } from "@/components/website/layout/ProductLauncher";
 import { MarketplaceCategoryRail } from "@/components/website/marketplace/MarketplaceCategoryRail";
 import { SiteMenuDrawer } from "@/components/website/layout/SiteMenuDrawer";
 import { useExclusiveOverlay } from "@/lib/website/overlay-manager";
+import { TakatakLogo } from "@/components/brand/takatak-logo";
 
 /**
  * Header priority: logo, universal search, Find my domain, QMAPS, FLEXS,
@@ -55,13 +56,12 @@ export function SiteHeader() {
         }`}
       >
         <Link to="/" className="flex shrink-0 items-center gap-1.5" aria-label="TAKATAK home">
-          <span className="text-[22px] font-extrabold tracking-tight text-foreground">TAKATAK</span>
-          <span className="mt-3 h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+          <TakatakLogo />
         </Link>
 
         {/* Priority discovery actions */}
         <div className="hidden min-w-0 flex-1 items-center gap-1.5 md:flex">
-          <div className="min-w-[170px] max-w-xl flex-1">
+          <div className="min-w-42.5 max-w-xl flex-1">
             <UniversalSearchPanel />
           </div>
           <HeaderDomainSearch />

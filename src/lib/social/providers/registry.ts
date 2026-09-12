@@ -12,22 +12,17 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
 > = {
   meta: {
     provider: "meta",
-    label: "Meta",
+    label: "Facebook",
     description:
-      "Facebook Pages, Instagram professional accounts, and Threads.",
-    platforms: [
-      "facebook",
-      "instagram",
-      "threads",
-    ],
+      "Facebook Pages through Facebook Login.",
+    platforms: ["facebook"],
     authorizationType:
       "oauth2_pkce",
     requiredEnvironment: [
       "META_APP_ID",
       "META_APP_SECRET",
     ],
-    // Facebook Login remains the Meta Page OAuth card.
-    // Instagram and Threads authorize independently.
+    // Instagram and Threads authorize through their own OAuth cards.
     implemented: true,
     connectable: true,
     supportsMultipleAccounts: false,

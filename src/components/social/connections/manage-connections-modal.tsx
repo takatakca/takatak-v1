@@ -1857,8 +1857,7 @@ export function ManageConnectionsModal({
 
   return (
     <div
-      // className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-[18px]"
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 px-[18px] pb-[18px] pt-10"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-2 [padding-bottom:max(0.5rem,env(safe-area-inset-bottom))] [padding-top:max(0.5rem,env(safe-area-inset-top))] sm:p-[18px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="manage-connections-title"
@@ -1871,33 +1870,25 @@ export function ManageConnectionsModal({
       />
 
       <section
-        className={`relative z-10 flex max-h-[calc(100vh-36px)] w-full max-w-[1400px] flex-col overflow-visible rounded-xl bg-white shadow-2xl transition-transform duration-150 ease-out ${
+        className={`relative z-10 flex max-h-[calc(100dvh-1rem)] w-full max-w-[1400px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl transition-transform duration-150 ease-out sm:max-h-[calc(100dvh-36px)] ${
           outsidePulse
             ? "scale-[0.975]"
             : "scale-100"
         }`}
       >
-        {/* <button
-          type="button"
-          onClick={closeModal}
-          aria-label="Close manage connections"
-          className="absolute right-5 top-0 z-20 flex h-14 w-14 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 bg-[#2a1728] text-[#dfff32] shadow-xl transition-transform hover:scale-105"
-        >
-          <X className="h-7 w-7" />
-        </button> */}
         <button
           type="button"
           onClick={closeModal}
           aria-label="Close manage connections"
-          className="absolute right-6 top-0 z-30 flex h-[50px] w-[50px] -translate-y-1/2 items-center justify-center rounded-full border-[1.5px] border-white bg-[#2a1728] text-[#dfff32]"
+          className="absolute right-2 top-2 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-[#2a1728] text-[#dfff32] shadow-lg transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff32] sm:right-4 sm:top-4 sm:h-11 sm:w-11"
         >
-          <X className="h-8 w-8 stroke-[1.0]" />
+          <X className="h-6 w-6" />
         </button>
 
-        <div className="flex max-h-[calc(100vh-58px)] min-h-0 w-full flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl bg-white">
 
 
-        <header className="shrink-0 border-b border-slate-200 px-9 py-7">
+        <header className="shrink-0 border-b border-slate-200 px-4 py-4 pr-16 sm:px-9 sm:py-7 sm:pr-20">
           <h2
             id="manage-connections-title"
             className="text-[22px] font-normal text-slate-950"
@@ -1906,7 +1897,7 @@ export function ManageConnectionsModal({
           </h2>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-9 py-8">
+        <div className="min-h-0 flex-1 overscroll-contain overflow-y-auto px-3 py-4 sm:px-9 sm:py-8">
           {notice ? (
             <div
               className={`mb-7 flex items-start gap-3 rounded-lg border px-4 py-3 text-sm ${

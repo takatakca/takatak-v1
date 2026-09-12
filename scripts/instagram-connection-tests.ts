@@ -51,20 +51,25 @@ function readSource(relative: string): string {
   return readFileSync(resolve(process.cwd(), relative), "utf8");
 }
 
-check("OAuth start includes Instagram identity scopes", () => {
+check("Facebook OAuth start excludes Instagram identity scopes", () => {
+  const facebookScopes: readonly string[] = META_OAUTH_START_SCOPES;
+
   assert(
-    META_OAUTH_START_SCOPES.includes("instagram_basic"),
-    "instagram_basic",
+    !facebookScopes.includes("instagram_basic"),
+    "instagram_basic leaked into Facebook Login",
   );
+
   assert(
-    META_OAUTH_START_SCOPES.includes("instagram_manage_insights"),
-    "instagram_manage_insights",
+    !facebookScopes.includes("instagram_manage_insights"),
+    "instagram_manage_insights leaked into Facebook Login",
   );
+
   assert(
     META_OAUTH_INSTAGRAM_SCOPES[0] === "instagram_basic",
-    "instagram scopes",
+    "linked Instagram scopes are unavailable",
   );
-  return "instagram_basic + instagram_manage_insights requested";
+
+  return "Facebook Page scopes only; linked Instagram scopes remain separate";
 });
 
 check("Facebook Page setup does not require Instagram scopes", () => {

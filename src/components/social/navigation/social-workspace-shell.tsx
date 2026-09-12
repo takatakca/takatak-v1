@@ -62,6 +62,7 @@ import { SocialBillingBanner } from "@/components/social/billing/social-billing-
 import type { SocialBillingBannerModel } from "@/lib/billing/social/billing-banner-policy";
 import { SocialOnboardingModal } from "@/components/social/onboarding/social-onboarding-modal";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { TakatakLogo } from "@/components/brand/takatak-logo";
 
 export interface SocialShellBrand {
   id: string;
@@ -790,15 +791,7 @@ function BrandSelector({
 }
 
 function TakatakMark() {
-  return (
-    <span
-      className="relative flex h-9 w-12 items-center justify-center"
-      aria-hidden="true"
-    >
-      <span className="absolute left-1.5 h-4 w-6 rotate-[-35deg] rounded-full border-[5px] border-white" />
-      <span className="absolute right-1.5 h-4 w-6 rotate-[35deg] rounded-full border-[5px] border-white" />
-    </span>
-  );
+  return <TakatakLogo iconOnly />;
 }
 
 function DrawerRow({

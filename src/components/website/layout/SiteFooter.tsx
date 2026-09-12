@@ -1,5 +1,6 @@
 import { Link } from "@/lib/website/nav";
 import { brand } from "@/lib/website/brand";
+import { TakatakLogo } from "@/components/brand/takatak-logo";
 
 const cols = [
   {
@@ -65,8 +66,7 @@ export function SiteFooter() {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
           <div className="col-span-2 md:col-span-1">
             <h3 className="flex items-center gap-1.5">
-              <span className="text-xl font-extrabold tracking-tight text-foreground">{brand.brandName}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-2.5" aria-hidden />
+              <TakatakLogo />
             </h3>
             <p className="mt-3 text-sm text-muted-foreground max-w-xs">
               {brand.positioning}
