@@ -271,43 +271,44 @@ enum SocialOnboardingStatus {
 
 /// App profile mapped to a Supabase Auth user (does NOT replace Supabase Auth).
 model Profile {
-  id          String        @id @default(uuid()) @db.Uuid
-  authUserId  String        @unique @db.Uuid
-  email       String        @unique
-  firstName   String?
-  lastName    String?
-  displayName String?
-  role        PlatformRole  @default(user)
-  status      ProfileStatus @default(invited)
+  id                    String        @id @default(uuid()) @db.Uuid
+  authUserId            String        @unique @db.Uuid
+  email                 String        @unique
+  firstName             String?
+  lastName              String?
+  displayName           String?
+  role                  PlatformRole  @default(user)
+  status                ProfileStatus @default(invited)
   /// Upmind billing customer id. TAKATAK remains the login; this only links checkout.
-  upmindClientId String?    @unique
-  phone              String?   @unique
-  otpHash            String?   // PostgreSQL TEXT; pending.v1 reservation fits with headroom
-  otpExpiresAt       DateTime?
-  lastOtpRequestedAt DateTime?
-  otpAttemptCount    Int       @default(0)
+  upmindClientId        String?       @unique
+  phone                 String?       @unique
+  otpHash               String? // PostgreSQL TEXT; pending.v1 reservation fits with headroom
+  otpExpiresAt          DateTime?
+  lastOtpRequestedAt    DateTime?
+  otpAttemptCount       Int           @default(0)
   /// UI language for Account settings. English is the only shipped locale.
-  language               String   @default("en")
-  timezone               String   @default("America/Toronto")
+  language              String        @default("en")
+  timezone              String        @default("America/Toronto")
   /// sunday | monday
-  weekStartsOn           String   @default("sunday")
-  monthlySummaryEnabled  Boolean  @default(true)
-  monthlySummaryEmail    String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  weekStartsOn          String        @default("sunday")
+  monthlySummaryEnabled Boolean       @default(true)
+  monthlySummaryEmail   String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
 
   memberships              ClientMembership[]
-  sentInvitations          UserInvitation[]           @relation("InvitedByProfile")
-  assignedClients          Client[]                   @relation("AssignedAdmin")
+  sentInvitations          UserInvitation[]               @relation("InvitedByProfile")
+  assignedClients          Client[]                       @relation("AssignedAdmin")
   notifications            Notification[]
   auditLogs                AuditLog[]
-  requestedApprovals       Approval[]                 @relation("RequestedApprovals")
-  reviewedApprovals        Approval[]                 @relation("ReviewedApprovals")
-  assignedLeads            Lead[]                     @relation("AssignedLeads")
-  createdSocialConnections SocialProviderConnection[] @relation("SocialConnectionCreatedBy")
-  createdSocialOAuthStates SocialOAuthState[]         @relation("SocialOAuthCreatedBy")
+  requestedApprovals       Approval[]                     @relation("RequestedApprovals")
+  reviewedApprovals        Approval[]                     @relation("ReviewedApprovals")
+  assignedLeads            Lead[]                         @relation("AssignedLeads")
+  createdSocialConnections SocialProviderConnection[]     @relation("SocialConnectionCreatedBy")
+  createdSocialOAuthStates SocialOAuthState[]             @relation("SocialOAuthCreatedBy")
   socialBrandAssignments   SocialBrandAccountAssignment[] @relation("SocialBrandAssignmentAssignedBy")
   socialOnboarding         SocialOnboarding?
+  masterIdentity           MasterIdentity?
 
   @@map("profiles")
 }
@@ -350,7 +351,7 @@ model Client {
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
-  assignedProfile           Profile?                   @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
+  assignedProfile           Profile?                          @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
   subscription              ClientSubscription?
   customRoles               WorkspaceCustomRole[]
@@ -536,35 +537,35 @@ model WorkspaceRolePermissionOverride {
 
 /// Business or brand owned by a client.
 model BusinessBrand {
-  id           String      @id @default(uuid()) @db.Uuid
-  clientId     String      @db.Uuid
-  name         String
-  legalName    String?
-  category     String?
-  website      String?
-  phone        String?
-  addressLine1 String?
-  addressLine2 String?
-  city         String?
-  region       String?
-  postalCode   String?
-  country      String      @default("Canada")
-  timezone     String      @default("America/Toronto")
+  id                          String      @id @default(uuid()) @db.Uuid
+  clientId                    String      @db.Uuid
+  name                        String
+  legalName                   String?
+  category                    String?
+  website                     String?
+  phone                       String?
+  addressLine1                String?
+  addressLine2                String?
+  city                        String?
+  region                      String?
+  postalCode                  String?
+  country                     String      @default("Canada")
+  timezone                    String      @default("America/Toronto")
   /// Explicitly uploaded brand/workspace image. Never overwritten by social connect.
-  imageUrl     String?
+  imageUrl                    String?
   /// Connected social account chosen as this brand's avatar in Brand settings.
-  imageSocialAccountId String? @db.Uuid
+  imageSocialAccountId        String?     @db.Uuid
   /// Engagement rate display multiplier: 100 (per 100 reached) or 1000 (per 1000 reached).
-  engagementRatio Int @default(100)
+  engagementRatio             Int         @default(100)
   /// Set by migration/runtime when Meta connection/Page identity was ambiguous.
   /// UI must force reconnect + Page reselection; never guess a canonical Page.
-  requiresMetaPageReselection Boolean @default(false)
-  status       BrandStatus @default(draft)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  requiresMetaPageReselection Boolean     @default(false)
+  status                      BrandStatus @default(draft)
+  createdAt                   DateTime    @default(now())
+  updatedAt                   DateTime    @updatedAt
 
-  client                    Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  imageSocialAccount        SocialAccount?             @relation("BrandSelectedDisplayImage", fields: [imageSocialAccountId], references: [id], onDelete: SetNull)
+  client                    Client                         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  imageSocialAccount        SocialAccount?                 @relation("BrandSelectedDisplayImage", fields: [imageSocialAccountId], references: [id], onDelete: SetNull)
   serviceInstances          ServiceInstance[]
   integrationAccounts       IntegrationAccount[]
   jobs                      Job[]
@@ -1013,41 +1014,41 @@ enum AnalyticsSource {
 /// Facebook Pages discovered via Meta are represented as platform=facebook
 /// with accountType="facebook_page".
 model SocialAccount {
-  id                   String                    @id @default(uuid()) @db.Uuid
-  clientId             String                    @db.Uuid
-  businessBrandId      String?                   @db.Uuid
-  integrationAccountId String?                   @db.Uuid
-  providerConnectionId String?                   @db.Uuid
-  businessLocationId   String?                   @db.Uuid
-  externalAccountId    String?
-  platform             SocialPlatform
-  handle               String?
-  displayName          String?
-  profileUrl           String?
-  profileImageUrl      String?
-  category             String?
-  accountType          String?
-  status               SocialAccountStatus       @default(not_connected)
-  accessStatus         SocialAccountAccessStatus @default(available)
-  isAvailableThroughAuth Boolean                 @default(true)
-  firstDiscoveredAt    DateTime?
-  lastDiscoveredAt     DateTime?
-  lastSyncAt           DateTime?
-  metadata             Json?
-  createdAt            DateTime                  @default(now())
-  updatedAt            DateTime                  @updatedAt
+  id                     String                    @id @default(uuid()) @db.Uuid
+  clientId               String                    @db.Uuid
+  businessBrandId        String?                   @db.Uuid
+  integrationAccountId   String?                   @db.Uuid
+  providerConnectionId   String?                   @db.Uuid
+  businessLocationId     String?                   @db.Uuid
+  externalAccountId      String?
+  platform               SocialPlatform
+  handle                 String?
+  displayName            String?
+  profileUrl             String?
+  profileImageUrl        String?
+  category               String?
+  accountType            String?
+  status                 SocialAccountStatus       @default(not_connected)
+  accessStatus           SocialAccountAccessStatus @default(available)
+  isAvailableThroughAuth Boolean                   @default(true)
+  firstDiscoveredAt      DateTime?
+  lastDiscoveredAt       DateTime?
+  lastSyncAt             DateTime?
+  metadata               Json?
+  createdAt              DateTime                  @default(now())
+  updatedAt              DateTime                  @updatedAt
 
-  client             Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  businessBrand      BusinessBrand?            @relation(fields: [businessBrandId], references: [id])
-  brandDisplaySelections BusinessBrand[]       @relation("BrandSelectedDisplayImage")
-  integrationAccount IntegrationAccount?       @relation(fields: [integrationAccountId], references: [id])
-  providerConnection SocialProviderConnection? @relation(fields: [providerConnectionId], references: [id], onDelete: SetNull)
-  businessLocation   BusinessLocation?         @relation(fields: [businessLocationId], references: [id], onDelete: SetNull)
-  posts              SocialPost[]
-  contentItems       SocialContentItem[]
-  analytics          SocialAnalyticsDaily[]
-  brandAssignments   SocialBrandAccountAssignment[]
-  syncState          SocialAccountSyncState?
+  client                 Client                         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand          BusinessBrand?                 @relation(fields: [businessBrandId], references: [id])
+  brandDisplaySelections BusinessBrand[]                @relation("BrandSelectedDisplayImage")
+  integrationAccount     IntegrationAccount?            @relation(fields: [integrationAccountId], references: [id])
+  providerConnection     SocialProviderConnection?      @relation(fields: [providerConnectionId], references: [id], onDelete: SetNull)
+  businessLocation       BusinessLocation?              @relation(fields: [businessLocationId], references: [id], onDelete: SetNull)
+  posts                  SocialPost[]
+  contentItems           SocialContentItem[]
+  analytics              SocialAnalyticsDaily[]
+  brandAssignments       SocialBrandAccountAssignment[]
+  syncState              SocialAccountSyncState?
 
   @@unique([integrationAccountId, platform, externalAccountId])
   @@unique([providerConnectionId, platform, externalAccountId])
@@ -1187,6 +1188,10 @@ model SocialProviderConnection {
   adAccounts     SocialAdAccount[]
   syncStates     SocialAccountSyncState[]
 
+  /// Same Meta user MAY authorize multiple Brands in one Client.
+  /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
+  @@unique([id, clientId], map: "spc_id_client_key")
+  @@unique([id, clientId, businessBrandId, provider], map: "spc_oauth_scope_key")
   /// Partial unique: at most one live shell
   /// (pending_authorization|authorized|connected) per Brand+provider
   /// — see migration spc_one_live_per_brand_provider_key.
@@ -1194,10 +1199,6 @@ model SocialProviderConnection {
   /// (spc_one_pending_per_brand_provider_key; subset of live unique).
   @@index([clientId, businessBrandId, provider])
   @@index([businessBrandId, clientId])
-  /// Same Meta user MAY authorize multiple Brands in one Client.
-  /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
-  @@unique([id, clientId], map: "spc_id_client_key")
-  @@unique([id, clientId, businessBrandId, provider], map: "spc_oauth_scope_key")
   @@index([clientId, status])
   @@index([businessBrandId, status])
   @@index([provider, status])
@@ -1246,16 +1247,16 @@ model SocialCredential {
 /// Provider authorization stays on SocialProviderConnection; this row is
 /// the Brand selection record. Tokens are never stored here.
 model SocialBrandAccountAssignment {
-  id                 String                      @id @default(uuid()) @db.Uuid
-  clientId           String                      @db.Uuid
-  businessBrandId    String                      @db.Uuid
-  socialAccountId    String                      @db.Uuid
-  status             SocialBrandAssignmentStatus @default(active)
-  assignedAt         DateTime                    @default(now())
-  assignedByProfileId String?                    @db.Uuid
-  unassignedAt       DateTime?
-  createdAt          DateTime                    @default(now())
-  updatedAt          DateTime                    @updatedAt
+  id                  String                      @id @default(uuid()) @db.Uuid
+  clientId            String                      @db.Uuid
+  businessBrandId     String                      @db.Uuid
+  socialAccountId     String                      @db.Uuid
+  status              SocialBrandAssignmentStatus @default(active)
+  assignedAt          DateTime                    @default(now())
+  assignedByProfileId String?                     @db.Uuid
+  unassignedAt        DateTime?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
 
   client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
   businessBrand BusinessBrand @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Cascade)
@@ -1386,44 +1387,44 @@ model SocialPost {
 /// Synced Facebook Page content (posts, reels, stories) from Meta.
 /// Provider object IDs stay server-side only — never returned to UI/logs.
 model SocialContentItem {
-  id                   String               @id @default(uuid()) @db.Uuid
-  clientId             String               @db.Uuid
-  businessBrandId      String               @db.Uuid
-  socialAccountId      String               @db.Uuid
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  businessBrandId  String    @db.Uuid
+  socialAccountId  String    @db.Uuid
   /// post | reel | story
-  contentType          String
+  contentType      String
   /// Opaque stable hash of provider object id (not reversible in UI).
-  externalIdHash       String
+  externalIdHash   String
   /// Encrypted/provider-only; never select in client APIs.
-  externalObjectId     String
-  publishedAt          DateTime
-  captionExcerpt       String?
-  permalinkUrl         String?
-  thumbnailUrl         String?
+  externalObjectId String
+  publishedAt      DateTime
+  captionExcerpt   String?
+  permalinkUrl     String?
+  thumbnailUrl     String?
   /// available | deleted | expired | unknown
-  availability         String               @default("available")
+  availability     String    @default("available")
   /// Confirmed metrics — null means unavailable (—), 0 means confirmed zero.
-  reach                Int?
-  views                Int?
-  reactions            Int?
-  comments             Int?
-  shares               Int?
-  engagement           Int?
+  reach            Int?
+  views            Int?
+  reactions        Int?
+  comments         Int?
+  shares           Int?
+  engagement       Int?
   /// Per-metric provenance/status JSON (confirmed|unavailable|partial|permission_denied|privacy_threshold).
-  metricStatus         Json?
-  graphApiVersion      String?
-  retrievedAt          DateTime?
-  firstSeenAt          DateTime             @default(now())
-  lastSeenAt           DateTime             @default(now())
-  deletedAt            DateTime?
-  expiredAt            DateTime?
-  metadata             Json?
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
+  metricStatus     Json?
+  graphApiVersion  String?
+  retrievedAt      DateTime?
+  firstSeenAt      DateTime  @default(now())
+  lastSeenAt       DateTime  @default(now())
+  deletedAt        DateTime?
+  expiredAt        DateTime?
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  businessBrand BusinessBrand  @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
-  socialAccount SocialAccount  @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
 
   @@unique([socialAccountId, contentType, externalIdHash], map: "sci_account_type_hash_key")
   @@index([clientId, businessBrandId, contentType, publishedAt])
@@ -1485,36 +1486,36 @@ model SocialCompetitorTrack {
 
 /// Dated public snapshot for one competitor track (separate from private Page analytics).
 model SocialCompetitorSnapshot {
-  id                   String   @id @default(uuid()) @db.Uuid
-  clientId             String   @db.Uuid
-  businessBrandId      String   @db.Uuid
-  competitorTrackId    String   @db.Uuid
-  snapshotAt           DateTime
+  id                  String   @id @default(uuid()) @db.Uuid
+  clientId            String   @db.Uuid
+  businessBrandId     String   @db.Uuid
+  competitorTrackId   String   @db.Uuid
+  snapshotAt          DateTime
   /// Calendar day of the snapshot (UTC) for idempotent upserts.
-  snapshotDate         DateTime @db.Date
-  followerCount        Int?
+  snapshotDate        DateTime @db.Date
+  followerCount       Int?
   /// followers_count | fan_count | null when unavailable
-  followerFieldSource  String?
-  pageName             String?
-  category             String?
-  profileImageUrl      String?
+  followerFieldSource String?
+  pageName            String?
+  category            String?
+  profileImageUrl     String?
   /// Public feed post count in probe window when PPCA permits; else null.
-  publicPostCount      Int?
-  publicReactionsSum   Int?
-  publicCommentsSum    Int?
-  publicSharesSum      Int?
+  publicPostCount     Int?
+  publicReactionsSum  Int?
+  publicCommentsSum   Int?
+  publicSharesSum     Int?
   /// confirmed | partial | stale | unavailable | permission_denied | rate_limited | failed
-  availability         String   @default("unavailable")
-  metricStatus         Json?
-  graphApiVersion      String?
-  retrievedAt          DateTime
-  metadata             Json?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  availability        String   @default("unavailable")
+  metricStatus        Json?
+  graphApiVersion     String?
+  retrievedAt         DateTime
+  metadata            Json?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  client           Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  businessBrand    BusinessBrand         @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
-  competitorTrack  SocialCompetitorTrack @relation(fields: [competitorTrackId], references: [id], onDelete: Cascade)
+  client          Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand   BusinessBrand         @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+  competitorTrack SocialCompetitorTrack @relation(fields: [competitorTrackId], references: [id], onDelete: Cascade)
 
   @@unique([competitorTrackId, snapshotDate], map: "scs_track_date_key")
   @@index([clientId, businessBrandId, snapshotDate])
@@ -2799,4 +2800,123 @@ model LeadActivity {
   @@index([dueAt])
   @@index([createdAt])
   @@map("lead_activities")
+}
+
+model MasterIdentity {
+  id                   String    @id @default(uuid()) @db.Uuid
+  profileId            String?   @unique @db.Uuid
+  firstName            String?
+  lastName             String?
+  primaryEmail         String?   @unique
+  primaryEmailVerified Boolean   @default(false)
+  primaryPhone         String?   @unique
+  primaryPhoneVerified Boolean   @default(false)
+  locale               String?
+  accountStatus        String?
+  registeredAt         DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  profile          Profile?                     @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  sourceProfiles   SourceProfile[]
+  addresses        SourceAddress[]
+  paymentSummaries SourcePaymentSummary[]
+  events           SourceSynchronizationEvent[]
+
+  @@index([primaryEmail])
+  @@index([primaryPhone])
+  @@map("master_identities")
+}
+
+model SourceProfile {
+  id                 String   @id @default(uuid()) @db.Uuid
+  identityId         String   @db.Uuid
+  sourceApplication  String
+  externalUserId     String
+  collectedFields    Json
+  verifiedFields     String[] @default([])
+  consentRecords     Json?
+  accountStatus      String?
+  lastSynchronizedAt DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  identity         MasterIdentity               @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  addresses        SourceAddress[]
+  paymentSummaries SourcePaymentSummary[]
+  events           SourceSynchronizationEvent[]
+
+  @@unique([sourceApplication, externalUserId])
+  @@index([identityId])
+  @@index([sourceApplication])
+  @@map("source_profiles")
+}
+
+model SourceAddress {
+  id                String   @id @default(uuid()) @db.Uuid
+  identityId        String   @db.Uuid
+  sourceProfileId   String   @db.Uuid
+  externalAddressId String
+  addressType       String
+  line1             String
+  line2             String?
+  city              String
+  province          String?
+  postalCode        String?
+  country           String
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  identity      MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  sourceProfile SourceProfile  @relation(fields: [sourceProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceProfileId, externalAddressId])
+  @@index([identityId])
+  @@map("source_addresses")
+}
+
+model SourcePaymentSummary {
+  id                      String   @id @default(uuid()) @db.Uuid
+  identityId              String   @db.Uuid
+  sourceProfileId         String   @db.Uuid
+  sourceApplication       String
+  bookingNumber           String
+  status                  String
+  amountMinor             Int
+  refundedAmountMinor     Int?
+  currency                String
+  transactionDate         DateTime
+  stripeCustomerReference String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  identity      MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  sourceProfile SourceProfile  @relation(fields: [sourceProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceApplication, bookingNumber])
+  @@index([identityId, transactionDate])
+  @@map("source_payment_summaries")
+}
+
+model SourceSynchronizationEvent {
+  id                String    @id @default(uuid()) @db.Uuid
+  eventId           String    @unique
+  eventType         String
+  sourceApplication String
+  sourceProfileId   String?   @db.Uuid
+  identityId        String?   @db.Uuid
+  payloadHash       String
+  responsePayload   Json?
+  status            String    @default("RECEIVED")
+  errorMessage      String?
+  processedAt       DateTime?
+  createdAt         DateTime  @default(now())
+
+  identity      MasterIdentity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+  sourceProfile SourceProfile?  @relation(fields: [sourceProfileId], references: [id], onDelete: SetNull)
+
+  @@index([sourceApplication, createdAt])
+  @@index([status])
+  @@map("source_synchronization_events")
 }
