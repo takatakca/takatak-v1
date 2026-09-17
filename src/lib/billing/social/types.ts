@@ -4,37 +4,35 @@
  */
 
 export const SOCIAL_PLAN_CODES = [
-  "social_free",
-  "social_starter_5",
-  "social_starter_10",
-  "social_advanced_15",
-  "social_advanced_25",
-  "social_advanced_50",
-  "social_custom",
+  'social_unsubscribed',
+  'social_essential_1',
+  'social_starter_5',
+  'social_starter_10',
+  'social_advanced_15',
+  'social_advanced_25',
+  'social_advanced_50',
+  'social_custom',
 ] as const;
 
 export type SocialPlanCode = (typeof SOCIAL_PLAN_CODES)[number];
 
 export const SOCIAL_BILLING_NETWORKS = [
-  "facebook",
-  "instagram",
-  "threads",
-  "tiktok",
-  "google_business",
-  "linkedin",
-  "x",
-  "youtube",
-  "pinterest",
-  "bluesky",
-  "twitch",
+  'facebook',
+  'instagram',
+  'threads',
+  'tiktok',
+  'google_business',
+  'linkedin',
+  'x',
+  'youtube',
+  'pinterest',
+  'bluesky',
+  'twitch',
 ] as const;
 
 export type SocialBillingNetwork = (typeof SOCIAL_BILLING_NETWORKS)[number];
 
-export const SOCIAL_ADDON_CODES = [
-  "x_account",
-  "advanced_analytics",
-] as const;
+export const SOCIAL_ADDON_CODES = ['x_account', 'advanced_analytics'] as const;
 
 export type SocialAddonCode = (typeof SOCIAL_ADDON_CODES)[number];
 
@@ -53,7 +51,7 @@ export type SocialEntitlements = {
   allowedNetworks: readonly SocialBillingNetwork[];
   /** null = unlimited / fair use. */
   monthlyPostAllowance: number | null;
-  /** null = no 30-day Free window. */
+  /** null = unlimited available analytics history. */
   analyticsHistoryDays: number | null;
   competitorAllowance: number;
   reports: boolean;
@@ -62,7 +60,7 @@ export type SocialEntitlements = {
   approvals: boolean;
   apiAccess: boolean;
   eligibleAddons: readonly SocialAddonCode[];
-  /** Effective X slots after add-ons (0 on Free). */
+  /** Effective paid X slots after add-ons. */
   xConnectionAllowance: number;
   advancedAnalytics: boolean;
   /**

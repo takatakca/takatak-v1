@@ -1,19 +1,15 @@
 /**
  * Pure Social entitlement gates. No database. No Stripe.
- * Lifecycle (paid / Free / blocked) is decided first; these answers
+ * Lifecycle (paid / blocked) is decided first; these answers
  * are the plan questions on top.
  */
 
-import { canConnectSocialNetwork } from "./entitlements";
-import type {
-  SocialBillingNetwork,
-  SocialEntitlements,
-} from "./types";
-import type { SocialSubscriptionAccess } from "./subscription-lifecycle";
+import { canConnectSocialNetwork } from './entitlements';
+import type { SocialBillingNetwork, SocialEntitlements } from './types';
+import type { SocialSubscriptionAccess } from './subscription-lifecycle';
 
 export type EntitlementGateDecision =
-  | { allowed: true }
-  | { allowed: false; message: string };
+  { allowed: true } | { allowed: false; message: string };
 
 export type SocialNetworkConnectInput = {
   provider: string;
@@ -23,23 +19,23 @@ export type SocialNetworkConnectInput = {
 };
 
 const PROVIDER_TO_NETWORK: Record<string, SocialBillingNetwork> = {
-  meta: "facebook",
-  instagram: "instagram",
-  threads: "threads",
-  google: "youtube",
-  linkedin: "linkedin",
-  tiktok: "tiktok",
-  pinterest: "pinterest",
-  x: "x",
-  bluesky: "bluesky",
-  twitch: "twitch",
+  meta: 'facebook',
+  instagram: 'instagram',
+  threads: 'threads',
+  google: 'youtube',
+  linkedin: 'linkedin',
+  tiktok: 'tiktok',
+  pinterest: 'pinterest',
+  x: 'x',
+  bluesky: 'bluesky',
+  twitch: 'twitch',
 };
 
 const BILLABLE_POST_STATUSES = [
-  "scheduled",
-  "published",
-  "pending_approval",
-  "approved",
+  'scheduled',
+  'published',
+  'pending_approval',
+  'approved',
 ] as const;
 
 export const SOCIAL_BILLABLE_POST_STATUSES: readonly string[] =
@@ -64,10 +60,10 @@ export function billingNetworkForConnectionProvider(
 export function evaluateWorkspaceWriteAccess(
   access: SocialSubscriptionAccess,
 ): EntitlementGateDecision {
-  if (access === "blocked") {
+  if (access === 'blocked') {
     return {
       allowed: false,
-      message: "Social features are not available for this workspace.",
+      message: 'Social features are not available for this workspace.',
     };
   }
 
@@ -81,37 +77,37 @@ export function evaluateSocialNetworkConnect(
   if (!network) {
     return {
       allowed: false,
-      message: "This social network is not available on the current plan.",
+      message: 'This social network is not available on the current plan.',
     };
   }
 
   if (!canConnectSocialNetwork(input.entitlements, network)) {
-    if (network === "linkedin") {
+    if (network === 'linkedin') {
       return {
         allowed: false,
-        message: "LinkedIn is included on Starter and Advanced plans.",
+        message: 'LinkedIn is included on Starter and Advanced plans.',
       };
     }
 
-    if (network === "x") {
+    if (network === 'x') {
       return {
         allowed: false,
-        message: "X is an add-on. Add X slots from Plans and billing.",
+        message: 'X is an add-on. Add X slots from Plans and billing.',
       };
     }
 
     return {
       allowed: false,
-      message: "This network is not included in the current plan.",
+      message: 'This network is not included in the current plan.',
     };
   }
 
-  if (network === "x" && !input.reconnect) {
+  if (network === 'x' && !input.reconnect) {
     const slots = input.entitlements.xConnectionAllowance;
     if (input.connectedXCount >= slots) {
       return {
         allowed: false,
-        message: "This workspace has used its X connection slots.",
+        message: 'This workspace has used its X connection slots.',
       };
     }
   }
@@ -140,9 +136,7 @@ export function evaluateSchedulePost(input: {
 }
 
 export function utcMonthBounds(now = new Date()): { start: Date; end: Date } {
-  const start = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
-  );
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const end = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
   );
@@ -220,7 +214,7 @@ export function evaluateAddCompetitor(input: {
       allowed: false,
       message:
         cap === 1
-          ? "This plan allows 1 competitor per brand."
+          ? 'This plan allows 1 competitor per brand.'
           : `This plan allows ${cap} competitors per brand.`,
     };
   }
@@ -234,7 +228,7 @@ export function evaluateTeamInvite(
   if (!entitlements.teamManagement) {
     return {
       allowed: false,
-      message: "Team management is included on Advanced plans.",
+      message: 'Team management is included on Advanced plans.',
     };
   }
 
@@ -247,7 +241,7 @@ export function evaluateCustomRoles(
   if (!entitlements.customRoles) {
     return {
       allowed: false,
-      message: "Custom roles are included on Advanced plans.",
+      message: 'Custom roles are included on Advanced plans.',
     };
   }
 
@@ -260,7 +254,7 @@ export function evaluateApprovals(
   if (!entitlements.approvals) {
     return {
       allowed: false,
-      message: "Approvals are included on Advanced plans.",
+      message: 'Approvals are included on Advanced plans.',
     };
   }
 
@@ -273,7 +267,7 @@ export function evaluateApiAccess(
   if (!entitlements.apiAccess) {
     return {
       allowed: false,
-      message: "API access is included on Advanced plans.",
+      message: 'API access is included on Advanced plans.',
     };
   }
 
@@ -286,7 +280,7 @@ export function evaluateReports(
   if (!entitlements.reports) {
     return {
       allowed: false,
-      message: "Reports are included on Starter and Advanced plans.",
+      message: 'Reports are included on Starter and Advanced plans.',
     };
   }
 

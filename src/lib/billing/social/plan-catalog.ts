@@ -2,23 +2,23 @@ import type {
   SocialAddonCode,
   SocialBillingNetwork,
   SocialPlanCode,
-} from "./types";
+} from './types';
 
-const FREE_NETWORKS: readonly SocialBillingNetwork[] = [
-  "facebook",
-  "instagram",
-  "threads",
-  "tiktok",
-  "google_business",
-  "youtube",
-  "pinterest",
-  "bluesky",
-  "twitch",
+const ESSENTIAL_NETWORKS: readonly SocialBillingNetwork[] = [
+  'facebook',
+  'instagram',
+  'threads',
+  'tiktok',
+  'google_business',
+  'youtube',
+  'pinterest',
+  'bluesky',
+  'twitch',
 ];
 
 const PAID_NETWORKS: readonly SocialBillingNetwork[] = [
-  ...FREE_NETWORKS,
-  "linkedin",
+  ...ESSENTIAL_NETWORKS,
+  'linkedin',
 ];
 
 type CatalogEntry = {
@@ -36,6 +36,10 @@ type CatalogEntry = {
   apiAccess: boolean;
   eligibleAddons: readonly SocialAddonCode[];
   displayMonthlyCad: number;
+  /**
+   * Monthly equivalent displayed when the customer chooses annual billing.
+   * The annual Stripe charge is this value multiplied by 12.
+   */
   displayAnnualMonthlyCad: number;
 };
 
@@ -49,7 +53,7 @@ const STARTER_FEATURES = {
   customRoles: false,
   approvals: false,
   apiAccess: false,
-  eligibleAddons: ["x_account", "advanced_analytics"] as const,
+  eligibleAddons: ['x_account', 'advanced_analytics'] as const,
 };
 
 const ADVANCED_FEATURES = {
@@ -61,18 +65,23 @@ const ADVANCED_FEATURES = {
 };
 
 /**
- * Social plans. Prices are placeholders in CAD until they match Stripe Price IDs.
- * Billing unit is active Brands on the Client, not seats or Pages.
+ * Social plans priced in CAD before applicable taxes.
+ *
+ * The billing unit is the number of active Brands on the Client workspace.
+ * Annual self-serve plans receive a 10% discount.
+ *
+ * social_unsubscribed is an internal zero-access state. It is never sold
+ * through Stripe and must never be presented as a free plan.
  */
 export const SOCIAL_PLAN_CATALOG: Record<SocialPlanCode, CatalogEntry> = {
-  social_free: {
-    planCode: "social_free",
-    planName: "Free",
-    brandAllowance: 1,
-    allowedNetworks: FREE_NETWORKS,
-    monthlyPostAllowance: 20,
-    analyticsHistoryDays: 30,
-    competitorAllowance: 5,
+  social_unsubscribed: {
+    planCode: 'social_unsubscribed',
+    planName: 'No Social subscription',
+    brandAllowance: 0,
+    allowedNetworks: [],
+    monthlyPostAllowance: 0,
+    analyticsHistoryDays: 0,
+    competitorAllowance: 0,
     reports: false,
     teamManagement: false,
     customRoles: false,
@@ -82,49 +91,73 @@ export const SOCIAL_PLAN_CATALOG: Record<SocialPlanCode, CatalogEntry> = {
     displayMonthlyCad: 0,
     displayAnnualMonthlyCad: 0,
   },
+
+  social_essential_1: {
+    planCode: 'social_essential_1',
+    planName: 'Social Essential',
+    brandAllowance: 1,
+    allowedNetworks: ESSENTIAL_NETWORKS,
+    monthlyPostAllowance: 20,
+    analyticsHistoryDays: 30,
+    competitorAllowance: 5,
+    reports: false,
+    teamManagement: false,
+    customRoles: false,
+    approvals: false,
+    apiAccess: false,
+    eligibleAddons: [],
+    displayMonthlyCad: 20,
+    displayAnnualMonthlyCad: 20 * 0.9,
+  },
+
   social_starter_5: {
-    planCode: "social_starter_5",
-    planName: "Starter 5",
+    planCode: 'social_starter_5',
+    planName: 'Starter 5',
     brandAllowance: 5,
     ...STARTER_FEATURES,
-    displayMonthlyCad: 35,
-    displayAnnualMonthlyCad: 28,
+    displayMonthlyCad: 54.79,
+    displayAnnualMonthlyCad: 54.79 * 0.9,
   },
+
   social_starter_10: {
-    planCode: "social_starter_10",
-    planName: "Starter 10",
+    planCode: 'social_starter_10',
+    planName: 'Starter 10',
     brandAllowance: 10,
     ...STARTER_FEATURES,
-    displayMonthlyCad: 49,
-    displayAnnualMonthlyCad: 39,
+    displayMonthlyCad: 82.63,
+    displayAnnualMonthlyCad: 82.63 * 0.9,
   },
+
   social_advanced_15: {
-    planCode: "social_advanced_15",
-    planName: "Advanced 15",
+    planCode: 'social_advanced_15',
+    planName: 'Advanced 15',
     brandAllowance: 15,
     ...ADVANCED_FEATURES,
-    displayMonthlyCad: 75,
-    displayAnnualMonthlyCad: 59,
+    displayMonthlyCad: 113.24,
+    displayAnnualMonthlyCad: 113.24 * 0.9,
   },
+
   social_advanced_25: {
-    planCode: "social_advanced_25",
-    planName: "Advanced 25",
+    planCode: 'social_advanced_25',
+    planName: 'Advanced 25',
     brandAllowance: 25,
     ...ADVANCED_FEATURES,
-    displayMonthlyCad: 99,
-    displayAnnualMonthlyCad: 79,
+    displayMonthlyCad: 168.91,
+    displayAnnualMonthlyCad: 168.91 * 0.9,
   },
+
   social_advanced_50: {
-    planCode: "social_advanced_50",
-    planName: "Advanced 50",
+    planCode: 'social_advanced_50',
+    planName: 'Advanced 50',
     brandAllowance: 50,
     ...ADVANCED_FEATURES,
-    displayMonthlyCad: 149,
-    displayAnnualMonthlyCad: 119,
+    displayMonthlyCad: 312.26,
+    displayAnnualMonthlyCad: 312.26 * 0.9,
   },
+
   social_custom: {
-    planCode: "social_custom",
-    planName: "Custom",
+    planCode: 'social_custom',
+    planName: 'Custom',
     brandAllowance: 50,
     ...ADVANCED_FEATURES,
     displayMonthlyCad: 0,
@@ -132,22 +165,36 @@ export const SOCIAL_PLAN_CATALOG: Record<SocialPlanCode, CatalogEntry> = {
   },
 };
 
-export const SOCIAL_FREE_PLAN_CODE: SocialPlanCode = "social_free";
-export const SOCIAL_FREE_PLAN_NAME = SOCIAL_PLAN_CATALOG.social_free.planName;
+export const SOCIAL_UNSUBSCRIBED_PLAN_CODE: SocialPlanCode =
+  'social_unsubscribed';
+
+export const SOCIAL_UNSUBSCRIBED_PLAN_NAME =
+  SOCIAL_PLAN_CATALOG.social_unsubscribed.planName;
+
+export const SOCIAL_ESSENTIAL_PLAN_CODE: SocialPlanCode = 'social_essential_1';
+
+export const SOCIAL_ESSENTIAL_PLAN_NAME =
+  SOCIAL_PLAN_CATALOG.social_essential_1.planName;
+
+export const ESSENTIAL_PLAN_CODES = ['social_essential_1'] as const;
 
 export const STARTER_PLAN_CODES = [
-  "social_starter_5",
-  "social_starter_10",
+  'social_starter_5',
+  'social_starter_10',
 ] as const;
 
 export const ADVANCED_PLAN_CODES = [
-  "social_advanced_15",
-  "social_advanced_25",
-  "social_advanced_50",
+  'social_advanced_15',
+  'social_advanced_25',
+  'social_advanced_50',
 ] as const;
 
-/** Self-serve Stripe Checkout. Custom is sales-only. Free is $0. */
+/**
+ * Plans available through self-serve Stripe Checkout.
+ * Custom plans remain sales-only.
+ */
 export const PAID_CHECKOUT_PLAN_CODES = [
+  ...ESSENTIAL_PLAN_CODES,
   ...STARTER_PLAN_CODES,
   ...ADVANCED_PLAN_CODES,
 ] as const;
@@ -158,37 +205,58 @@ export function isPaidCheckoutPlanCode(
   value: string | null | undefined,
 ): value is PaidCheckoutPlanCode {
   return (
-    typeof value === "string" &&
+    typeof value === 'string' &&
     (PAID_CHECKOUT_PLAN_CODES as readonly string[]).includes(value)
   );
 }
 
 export function planFamily(
   planCode: SocialPlanCode,
-): "free" | "starter" | "advanced" | "custom" {
-  if (planCode === "social_free") return "free";
-  if (planCode === "social_custom") return "custom";
-  if ((STARTER_PLAN_CODES as readonly string[]).includes(planCode)) {
-    return "starter";
+): 'unsubscribed' | 'essential' | 'starter' | 'advanced' | 'custom' {
+  if (planCode === 'social_unsubscribed') {
+    return 'unsubscribed';
   }
-  return "advanced";
+
+  if (planCode === 'social_essential_1') {
+    return 'essential';
+  }
+
+  if (planCode === 'social_custom') {
+    return 'custom';
+  }
+
+  if ((STARTER_PLAN_CODES as readonly string[]).includes(planCode)) {
+    return 'starter';
+  }
+
+  return 'advanced';
 }
 
 export function annualSavingsPercent(): number {
-  const monthly = SOCIAL_PLAN_CATALOG.social_starter_5.displayMonthlyCad;
-  const annual = SOCIAL_PLAN_CATALOG.social_starter_5.displayAnnualMonthlyCad;
+  const monthly = SOCIAL_PLAN_CATALOG.social_essential_1.displayMonthlyCad;
+
+  const annualMonthly =
+    SOCIAL_PLAN_CATALOG.social_essential_1.displayAnnualMonthlyCad;
+
   if (monthly <= 0) {
     return 0;
   }
-  return Math.round(((monthly - annual) / monthly) * 100);
+
+  return Math.round(((monthly - annualMonthly) / monthly) * 100);
 }
 
-export function isSocialPlanCode(value: string | null | undefined): value is SocialPlanCode {
+export function isSocialPlanCode(
+  value: string | null | undefined,
+): value is SocialPlanCode {
   if (!value) {
     return false;
   }
 
   return value in SOCIAL_PLAN_CATALOG;
+}
+
+export function essentialPlanHighlights(): string[] {
+  return paidPlanHighlights(SOCIAL_PLAN_CATALOG.social_essential_1);
 }
 
 export function starterPlanHighlights(): string[] {
@@ -197,14 +265,14 @@ export function starterPlanHighlights(): string[] {
 
 export function advancedPlanHighlights(): string[] {
   return [
-    "Everything in Starter",
+    'Everything in Starter',
     ...advancedOnlyHighlights(SOCIAL_PLAN_CATALOG.social_advanced_15),
   ];
 }
 
 export function customPlanHighlights(): string[] {
   return [
-    "Custom number of brands",
+    'Custom number of brands',
     ...advancedOnlyHighlights(SOCIAL_PLAN_CATALOG.social_custom),
   ];
 }
@@ -213,23 +281,27 @@ function paidPlanHighlights(plan: CatalogEntry): string[] {
   const items: string[] = [];
 
   if (plan.monthlyPostAllowance === null) {
-    items.push("Unlimited monthly publications");
+    items.push('Unlimited monthly publications');
   } else {
     items.push(`${plan.monthlyPostAllowance} publications / month`);
   }
 
   items.push(`${plan.competitorAllowance} competitor analysis`);
 
-  if (plan.eligibleAddons.includes("x_account")) {
-    items.push("Access to X add-on");
+  if (plan.analyticsHistoryDays !== null) {
+    items.push(`${plan.analyticsHistoryDays} days of analytics history`);
   }
 
-  if (plan.allowedNetworks.includes("linkedin")) {
-    items.push("LinkedIn connection");
+  if (plan.eligibleAddons.includes('x_account')) {
+    items.push('Access to X add-on');
+  }
+
+  if (plan.allowedNetworks.includes('linkedin')) {
+    items.push('LinkedIn connection');
   }
 
   if (plan.reports) {
-    items.push("Reports");
+    items.push('Reports');
   }
 
   return items;
@@ -239,19 +311,19 @@ function advancedOnlyHighlights(plan: CatalogEntry): string[] {
   const items: string[] = [];
 
   if (plan.teamManagement) {
-    items.push("Team and client management");
+    items.push('Team and client management');
   }
 
   if (plan.customRoles) {
-    items.push("Role management");
+    items.push('Role management');
   }
 
   if (plan.approvals) {
-    items.push("Content approval system");
+    items.push('Content approval system');
   }
 
   if (plan.apiAccess) {
-    items.push("TAKATAK API");
+    items.push('TAKATAK API');
   }
 
   return items;

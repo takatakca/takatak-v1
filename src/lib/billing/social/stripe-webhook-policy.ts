@@ -1,23 +1,23 @@
 import {
-  SOCIAL_FREE_PLAN_CODE,
-  SOCIAL_FREE_PLAN_NAME,
+  SOCIAL_UNSUBSCRIBED_PLAN_CODE,
+  SOCIAL_UNSUBSCRIBED_PLAN_NAME,
   SOCIAL_PLAN_CATALOG,
   isPaidCheckoutPlanCode,
   isSocialPlanCode,
-} from "./plan-catalog";
-import type { SocialSubscriptionStatusName } from "./subscription-lifecycle";
-import type { SocialAddonCode, SocialPlanCode } from "./types";
+} from './plan-catalog';
+import type { SocialSubscriptionStatusName } from './subscription-lifecycle';
+import type { SocialAddonCode, SocialPlanCode } from './types';
 
 /**
- * Fail on day 0, retry days 1 / 3 / 5 / 7, then Free.
- * Stripe `attempt_count` is 1 on the first failure.
+ * Stripe `incomplete` does not change the current TAKATAK subscription.
+ * Wait for `active`, `trialing`, or a terminal Stripe status.
  */
 export const SOCIAL_STRIPE_FAILED_PAYMENT_ATTEMPTS = 5;
 
-export const SOCIAL_STRIPE_PROVIDER = "stripe";
+export const SOCIAL_STRIPE_PROVIDER = 'stripe';
 
 export type StripeMappedPrice = {
-  cycle: "monthly" | "annual";
+  cycle: 'monthly' | 'annual';
   planCode?: SocialPlanCode;
   addonCode?: SocialAddonCode;
 };
@@ -58,9 +58,9 @@ export type SocialSubscriptionPatch = {
 };
 
 export type StripeSubscriptionApplyDecision =
-  | { action: "skip"; reason: string }
+  | { action: 'skip'; reason: string }
   | {
-      action: "apply";
+      action: 'apply';
       patch: SocialSubscriptionPatch;
       forceCancelStripe: boolean;
     };
@@ -68,7 +68,7 @@ export type StripeSubscriptionApplyDecision =
 export function unixSecondsToDate(
   value: number | null | undefined,
 ): Date | null {
-  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
     return null;
   }
 
@@ -76,13 +76,17 @@ export function unixSecondsToDate(
 }
 
 export function stripeCustomerId(
-  customer: SocialStripeSubscriptionLike["customer"],
+  customer: SocialStripeSubscriptionLike['customer'],
 ): string | null {
-  if (typeof customer === "string" && customer.trim()) {
+  if (typeof customer === 'string' && customer.trim()) {
     return customer.trim();
   }
 
-  if (customer && typeof customer === "object" && typeof customer.id === "string") {
+  if (
+    customer &&
+    typeof customer === 'object' &&
+    typeof customer.id === 'string'
+  ) {
     return customer.id.trim() || null;
   }
 
@@ -92,11 +96,11 @@ export function stripeCustomerId(
 export function stripeItemPriceId(
   price: { id?: string } | string | null | undefined,
 ): string | null {
-  if (typeof price === "string" && price.trim()) {
+  if (typeof price === 'string' && price.trim()) {
     return price.trim();
   }
 
-  if (price && typeof price === "object" && typeof price.id === "string") {
+  if (price && typeof price === 'object' && typeof price.id === 'string') {
     return price.id.trim() || null;
   }
 
@@ -138,10 +142,10 @@ export function resolveAddonsFromStripe(
 
     const mapped = priceMap[priceId];
     const quantity = Math.max(0, Math.floor(item.quantity ?? 1));
-    if (mapped?.addonCode === "x_account") {
+    if (mapped?.addonCode === 'x_account') {
       xAccountAllowance += quantity;
     }
-    if (mapped?.addonCode === "advanced_analytics" && quantity > 0) {
+    if (mapped?.addonCode === 'advanced_analytics' && quantity > 0) {
       advancedAnalytics = true;
     }
   }
@@ -149,7 +153,9 @@ export function resolveAddonsFromStripe(
   return { xAccountAllowance, advancedAnalytics };
 }
 
-export function stripeSubscriptionPeriod(subscription: SocialStripeSubscriptionLike): {
+export function stripeSubscriptionPeriod(
+  subscription: SocialStripeSubscriptionLike,
+): {
   start: Date | null;
   end: Date | null;
 } {
@@ -165,30 +171,30 @@ export function stripeSubscriptionPeriod(subscription: SocialStripeSubscriptionL
 }
 
 /**
- * Stripe `incomplete` must not lock a Free workspace that just clicked Upgrade.
- * Wait for `active` / `trialing` from a later event.
+ * Stripe `incomplete` does not change the current TAKATAK subscription.
+ * Wait for `active`, `trialing`, or a terminal Stripe status.
  */
 export function mapStripeSubscriptionStatus(
   status: string | null | undefined,
-): SocialSubscriptionStatusName | "skip" {
+): SocialSubscriptionStatusName | 'skip' {
   switch (status) {
-    case "trialing":
-      return "trial";
-    case "active":
-      return "active";
-    case "past_due":
-      return "past_due";
-    case "canceled":
-      return "canceled";
-    case "unpaid":
-    case "incomplete_expired":
-      return "free";
-    case "paused":
-      return "paused";
-    case "incomplete":
-      return "skip";
+    case 'trialing':
+      return 'trial';
+    case 'active':
+      return 'active';
+    case 'past_due':
+      return 'past_due';
+    case 'canceled':
+      return 'canceled';
+    case 'unpaid':
+    case 'incomplete_expired':
+      return 'expired';
+    case 'paused':
+      return 'paused';
+    case 'incomplete':
+      return 'skip';
     default:
-      return "skip";
+      return 'skip';
   }
 }
 
@@ -211,14 +217,14 @@ export function resolvePlanCodeFromStripe(input: {
   return null;
 }
 
-export function socialFreeSubscriptionPatch(input: {
+export function socialUnsubscribedSubscriptionPatch(input: {
   externalCustomerId?: string | null;
   externalSubscriptionId?: string | null;
 }): SocialSubscriptionPatch {
   return {
-    status: "free",
-    planCode: SOCIAL_FREE_PLAN_CODE,
-    planName: SOCIAL_FREE_PLAN_NAME,
+    status: 'expired',
+    planCode: SOCIAL_UNSUBSCRIBED_PLAN_CODE,
+    planName: SOCIAL_UNSUBSCRIBED_PLAN_NAME,
     provider: SOCIAL_STRIPE_PROVIDER,
     externalCustomerId: input.externalCustomerId ?? null,
     externalSubscriptionId: input.externalSubscriptionId ?? null,
@@ -230,11 +236,11 @@ export function socialFreeSubscriptionPatch(input: {
   };
 }
 
-export function shouldForceFreeAfterFailedInvoice(
+export function shouldBlockAfterFailedInvoice(
   attemptCount: number | null | undefined,
 ): boolean {
   return (
-    typeof attemptCount === "number" &&
+    typeof attemptCount === 'number' &&
     attemptCount >= SOCIAL_STRIPE_FAILED_PAYMENT_ATTEMPTS
   );
 }
@@ -245,23 +251,23 @@ export function interpretStripeSubscriptionEvent(
 ): StripeSubscriptionApplyDecision {
   const mapped = mapStripeSubscriptionStatus(subscription.status);
 
-  if (mapped === "skip") {
+  if (mapped === 'skip') {
     return {
-      action: "skip",
+      action: 'skip',
       reason: `Stripe subscription status "${subscription.status}" does not change TAKATAK billing yet.`,
     };
   }
 
   const customerId = stripeCustomerId(subscription.customer);
 
-  if (mapped === "free") {
+  if (mapped === 'expired') {
     return {
-      action: "apply",
-      forceCancelStripe: subscription.status === "unpaid",
-      patch: socialFreeSubscriptionPatch({
+      action: 'apply',
+      forceCancelStripe: subscription.status === 'unpaid',
+      patch: socialUnsubscribedSubscriptionPatch({
         externalCustomerId: customerId,
         externalSubscriptionId:
-          subscription.status === "incomplete_expired" ? null : subscription.id,
+          subscription.status === 'incomplete_expired' ? null : subscription.id,
       }),
     };
   }
@@ -272,10 +278,10 @@ export function interpretStripeSubscriptionEvent(
     priceMap,
   });
 
-  if (!planCode || planCode === SOCIAL_FREE_PLAN_CODE) {
+  if (!planCode || !isPaidCheckoutPlanCode(planCode)) {
     return {
-      action: "skip",
-      reason: "The Stripe subscription does not map to a TAKATAK Social plan.",
+      action: 'skip',
+      reason: 'The Stripe subscription does not map to a TAKATAK Social plan.',
     };
   }
 
@@ -283,7 +289,7 @@ export function interpretStripeSubscriptionEvent(
   const addOns = resolveAddonsFromStripe(subscription, priceMap);
 
   return {
-    action: "apply",
+    action: 'apply',
     forceCancelStripe: false,
     patch: {
       status: mapped,
@@ -308,16 +314,16 @@ export function interpretFailedStripeInvoice(input: {
 }): StripeSubscriptionApplyDecision {
   if (!input.subscription) {
     return {
-      action: "skip",
-      reason: "The failed invoice is not tied to a subscription.",
+      action: 'skip',
+      reason: 'The failed invoice is not tied to a subscription.',
     };
   }
 
-  if (shouldForceFreeAfterFailedInvoice(input.attemptCount)) {
+  if (shouldBlockAfterFailedInvoice(input.attemptCount)) {
     return {
-      action: "apply",
+      action: 'apply',
       forceCancelStripe: true,
-      patch: socialFreeSubscriptionPatch({
+      patch: socialUnsubscribedSubscriptionPatch({
         externalCustomerId: stripeCustomerId(input.subscription.customer),
         externalSubscriptionId: input.subscription.id,
       }),
@@ -329,7 +335,7 @@ export function interpretFailedStripeInvoice(input: {
     input.priceMap,
   );
 
-  if (decision.action === "skip") {
+  if (decision.action === 'skip') {
     const planCode = resolvePlanCodeFromStripe({
       metadataPlanCode: input.subscription.metadata?.planCode,
       priceId: stripePlanPriceId(input.subscription, input.priceMap),
@@ -343,10 +349,10 @@ export function interpretFailedStripeInvoice(input: {
     const period = stripeSubscriptionPeriod(input.subscription);
     const addOns = resolveAddonsFromStripe(input.subscription, input.priceMap);
     return {
-      action: "apply",
+      action: 'apply',
       forceCancelStripe: false,
       patch: {
-        status: "past_due",
+        status: 'past_due',
         planCode,
         planName: SOCIAL_PLAN_CATALOG[planCode].planName,
         provider: SOCIAL_STRIPE_PROVIDER,
@@ -365,7 +371,7 @@ export function interpretFailedStripeInvoice(input: {
     ...decision,
     patch: {
       ...decision.patch,
-      status: "past_due",
+      status: 'past_due',
     },
   };
 }
@@ -374,9 +380,9 @@ export function interpretDeletedStripeSubscription(
   subscription: SocialStripeSubscriptionLike,
 ): StripeSubscriptionApplyDecision {
   return {
-    action: "apply",
+    action: 'apply',
     forceCancelStripe: false,
-    patch: socialFreeSubscriptionPatch({
+    patch: socialUnsubscribedSubscriptionPatch({
       externalCustomerId: stripeCustomerId(subscription.customer),
       externalSubscriptionId: null,
     }),

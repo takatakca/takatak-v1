@@ -1,34 +1,37 @@
-import "server-only";
+import 'server-only';
 
-import type Stripe from "stripe";
+import type Stripe from 'stripe';
 
-import { ensureDefaultSocialSubscription } from "./ensure-free-subscription";
-import type { PaidCheckoutPlanCode } from "./plan-catalog";
-import { resolveEffectiveSocialEntitlements } from "./subscription-lifecycle";
-import { getStripe } from "./stripe-client";
+import { ensureDefaultSocialSubscription } from './ensure-default-subscription';
+import type { PaidCheckoutPlanCode } from './plan-catalog';
+import { resolveEffectiveSocialEntitlements } from './subscription-lifecycle';
+import { getStripe } from './stripe-client';
 import {
   isSocialBillingCycle,
   resolveSocialStripePlanChange,
   type SocialBillingCycle,
-} from "./stripe-checkout-policy";
+} from './stripe-checkout-policy';
 import {
   resolveSocialStripeAddonChange,
   type SocialAddonAction,
-} from "./stripe-addon-policy";
-import type { SocialAddonCode } from "./types";
-import { SOCIAL_STRIPE_PROVIDER, stripeItemPriceId } from "./stripe-webhook-policy";
+} from './stripe-addon-policy';
+import type { SocialAddonCode } from './types';
+import {
+  SOCIAL_STRIPE_PROVIDER,
+  stripeItemPriceId,
+} from './stripe-webhook-policy';
 import {
   getSocialStripeAddonPriceId,
   getSocialStripePriceId,
   isSocialStripeAddonCheckoutLive,
   isSocialStripeCheckoutLive,
   readSocialStripePriceMap,
-} from "./stripe-env";
-import { getApplicationOrigin } from "@/lib/config/app-origin";
-import { getPrisma } from "@/lib/db/prisma";
-import { ServiceError } from "@/lib/services/service-error";
+} from './stripe-env';
+import { getApplicationOrigin } from '@/lib/config/app-origin';
+import { getPrisma } from '@/lib/db/prisma';
+import { ServiceError } from '@/lib/services/service-error';
 
-const BILLING_RETURN_PATH = "/dashboard/social/settings?tab=billing";
+const BILLING_RETURN_PATH = '/dashboard/social/settings?tab=billing';
 
 function billingUrls(origin: string) {
   return {
@@ -38,12 +41,14 @@ function billingUrls(origin: string) {
   };
 }
 
-function expandId(value: string | { id?: string } | null | undefined): string | null {
-  if (typeof value === "string" && value.trim()) {
+function expandId(
+  value: string | { id?: string } | null | undefined,
+): string | null {
+  if (typeof value === 'string' && value.trim()) {
     return value.trim();
   }
 
-  if (value && typeof value === "object" && typeof value.id === "string") {
+  if (value && typeof value === 'object' && typeof value.id === 'string') {
     return value.id.trim() || null;
   }
 
@@ -51,7 +56,7 @@ function expandId(value: string | { id?: string } | null | undefined): string | 
 }
 
 function mappedPriceId(
-  price: Stripe.SubscriptionItem["price"] | undefined,
+  price: Stripe.SubscriptionItem['price'] | undefined,
 ): string | null {
   if (!price) {
     return null;
@@ -95,7 +100,10 @@ function currentPhaseItems(
     });
   }
 
-  if (planPriceOverride && !items.some((item) => item.price === planPriceOverride)) {
+  if (
+    planPriceOverride &&
+    !items.some((item) => item.price === planPriceOverride)
+  ) {
     const planItem = planSubscriptionItem(subscription);
     if (planItem) {
       items.push({
@@ -112,7 +120,10 @@ async function loadWorkspace(clientId: string) {
   const prisma = getPrisma();
 
   if (!prisma) {
-    throw new ServiceError("unavailable", "Billing is temporarily unavailable.");
+    throw new ServiceError(
+      'unavailable',
+      'Billing is temporarily unavailable.',
+    );
   }
 
   const client = await prisma.client.findUnique({
@@ -140,7 +151,10 @@ async function loadWorkspace(clientId: string) {
   });
 
   if (!client) {
-    throw new ServiceError("not_found", "The selected workspace could not be found.");
+    throw new ServiceError(
+      'not_found',
+      'The selected workspace could not be found.',
+    );
   }
 
   await ensureDefaultSocialSubscription(prisma, clientId);
@@ -184,14 +198,18 @@ async function persistStripeCustomerId(
   });
 }
 
-export async function ensureSocialStripeCustomer(clientId: string): Promise<string> {
+export async function ensureSocialStripeCustomer(
+  clientId: string,
+): Promise<string> {
   const { client, subscription } = await loadWorkspace(clientId);
   const stripe = getStripe();
 
   if (subscription?.externalCustomerId) {
     try {
-      const existing = await stripe.customers.retrieve(subscription.externalCustomerId);
-      if (!("deleted" in existing && existing.deleted)) {
+      const existing = await stripe.customers.retrieve(
+        subscription.externalCustomerId,
+      );
+      if (!('deleted' in existing && existing.deleted)) {
         return existing.id;
       }
     } catch {
@@ -223,7 +241,7 @@ export async function ensureSocialStripeCustomer(clientId: string): Promise<stri
     name: client.companyName?.trim() || client.name,
     metadata: {
       clientId,
-      product: "social",
+      product: 'social',
     },
   });
 
@@ -239,15 +257,17 @@ async function requirePriceId(
 
   if (!priceId) {
     throw new ServiceError(
-      "unavailable",
-      "This plan is not available for checkout yet. Add its Stripe Price ID first.",
+      'unavailable',
+      'This plan is not available for checkout yet. Add its Stripe Price ID first.',
     );
   }
 
   return priceId;
 }
 
-async function releaseExistingSchedule(subscription: Stripe.Subscription): Promise<void> {
+async function releaseExistingSchedule(
+  subscription: Stripe.Subscription,
+): Promise<void> {
   const scheduleId = expandId(subscription.schedule);
 
   if (!scheduleId) {
@@ -272,10 +292,15 @@ async function scheduleDowngrade(input: {
   const currentItems = currentPhaseItems(input.subscription);
   const nextItems = currentPhaseItems(input.subscription, input.priceId);
 
-  if (!currentItem || !currentPriceId || !periodEnd || currentItems.length === 0) {
+  if (
+    !currentItem ||
+    !currentPriceId ||
+    !periodEnd ||
+    currentItems.length === 0
+  ) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe could not schedule this downgrade. Open the customer portal or try again later.",
+      'unavailable',
+      'Stripe could not schedule this downgrade. Open the customer portal or try again later.',
     );
   }
 
@@ -289,13 +314,13 @@ async function scheduleDowngrade(input: {
 
   if (!currentPhase) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe could not schedule this downgrade. Open the customer portal or try again later.",
+      'unavailable',
+      'Stripe could not schedule this downgrade. Open the customer portal or try again later.',
     );
   }
 
   await stripe.subscriptionSchedules.update(schedule.id, {
-    end_behavior: "release",
+    end_behavior: 'release',
     phases: [
       {
         items: currentItems,
@@ -322,8 +347,8 @@ export async function startSocialStripeCheckout(input: {
 }): Promise<{ url: string } | { updated: true; message: string }> {
   if (!isSocialStripeCheckoutLive()) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe checkout is not live yet. Add the secret key, webhook secret, and at least one Price ID.",
+      'unavailable',
+      'Stripe checkout is not live yet. Add the secret key, webhook secret, and at least one Price ID.',
     );
   }
 
@@ -346,10 +371,10 @@ export async function startSocialStripeCheckout(input: {
     currentAccess: lifecycle.access,
   });
 
-  if (change === "forbidden") {
+  if (change === 'forbidden') {
     throw new ServiceError(
-      "invalid_input",
-      "Custom plans are not self-serve. Talk to us instead.",
+      'invalid_input',
+      'Custom plans are not self-serve. Talk to us instead.',
     );
   }
 
@@ -360,10 +385,10 @@ export async function startSocialStripeCheckout(input: {
   const urls = billingUrls(origin);
 
   if (
-    (change === "upgrade" ||
-      change === "downgrade" ||
-      change === "interval" ||
-      change === "noop") &&
+    (change === 'upgrade' ||
+      change === 'downgrade' ||
+      change === 'interval' ||
+      change === 'noop') &&
     subscription?.externalSubscriptionId
   ) {
     const current = await stripe.subscriptions.retrieve(
@@ -373,8 +398,8 @@ export async function startSocialStripeCheckout(input: {
 
     if (currentPrice === priceId) {
       throw new ServiceError(
-        "conflict",
-        "This workspace is already on that plan.",
+        'conflict',
+        'This workspace is already on that plan.',
       );
     }
 
@@ -382,12 +407,15 @@ export async function startSocialStripeCheckout(input: {
 
     if (!item) {
       throw new ServiceError(
-        "unavailable",
-        "Stripe could not update this subscription. Try checkout again later.",
+        'unavailable',
+        'Stripe could not update this subscription. Try checkout again later.',
       );
     }
 
-    if (change === "downgrade" || (change === "interval" && input.billingCycle === "monthly")) {
+    if (
+      change === 'downgrade' ||
+      (change === 'interval' && input.billingCycle === 'monthly')
+    ) {
       try {
         await scheduleDowngrade({
           subscription: current,
@@ -402,23 +430,26 @@ export async function startSocialStripeCheckout(input: {
         }
 
         throw new ServiceError(
-          "unavailable",
-          "This downgrade could not be scheduled at period end. Open the customer portal or try again later.",
+          'unavailable',
+          'This downgrade could not be scheduled at period end. Open the customer portal or try again later.',
         );
       }
 
       return {
         updated: true,
         message:
-          "The lower plan is scheduled for the end of the current billing period. TAKATAK updates when Stripe confirms it.",
+          'The lower plan is scheduled for the end of the current billing period. TAKATAK updates when Stripe confirms it.',
       };
     }
 
     await releaseExistingSchedule(current);
     await stripe.subscriptions.update(current.id, {
       items: [{ id: item.id, price: priceId }],
-      proration_behavior: "create_prorations",
+      proration_behavior: 'create_prorations',
       cancel_at_period_end: false,
+      automatic_tax: {
+        enabled: true,
+      },
       metadata: {
         clientId: input.clientId,
         planCode: input.planCode,
@@ -429,19 +460,29 @@ export async function startSocialStripeCheckout(input: {
     return {
       updated: true,
       message:
-        "Stripe is updating this plan. It appears here when the webhook confirms payment. This page does not unlock it.",
+        'Stripe is updating this plan. It appears here when the webhook confirms payment. This page does not unlock it.',
     };
   }
 
   const session = await stripe.checkout.sessions.create({
-    mode: "subscription",
+    mode: 'subscription',
     customer: customerId,
     client_reference_id: input.clientId,
     success_url: urls.success,
     cancel_url: urls.cancel,
     line_items: [{ price: priceId, quantity: 1 }],
     allow_promotion_codes: true,
-    billing_address_collection: "auto",
+    billing_address_collection: 'required',
+    automatic_tax: {
+      enabled: true,
+    },
+    tax_id_collection: {
+      enabled: true,
+    },
+    customer_update: {
+      address: 'auto',
+      name: 'auto',
+    },
     metadata: {
       clientId: input.clientId,
       planCode: input.planCode,
@@ -458,8 +499,8 @@ export async function startSocialStripeCheckout(input: {
 
   if (!session.url) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe Checkout did not return a URL.",
+      'unavailable',
+      'Stripe Checkout did not return a URL.',
     );
   }
 
@@ -472,8 +513,8 @@ export async function startSocialStripePortal(input: {
 }): Promise<{ url: string }> {
   if (!isSocialStripeCheckoutLive()) {
     throw new ServiceError(
-      "unavailable",
-      "The Stripe customer portal is not live yet.",
+      'unavailable',
+      'The Stripe customer portal is not live yet.',
     );
   }
 
@@ -481,8 +522,8 @@ export async function startSocialStripePortal(input: {
 
   if (!subscription?.externalCustomerId) {
     throw new ServiceError(
-      "invalid_input",
-      "This workspace does not have a Stripe customer yet. Upgrade a plan first.",
+      'invalid_input',
+      'This workspace does not have a Stripe customer yet. Upgrade a plan first.',
     );
   }
 
@@ -495,8 +536,8 @@ export async function startSocialStripePortal(input: {
 
   if (!session.url) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe did not return a customer portal URL.",
+      'unavailable',
+      'Stripe did not return a customer portal URL.',
     );
   }
 
@@ -520,7 +561,7 @@ function subscriptionBillingCycle(
     }
   }
 
-  return "monthly";
+  return 'monthly';
 }
 
 function addonItem(
@@ -543,8 +584,8 @@ function requireAddonPriceId(
   const priceId = getSocialStripeAddonPriceId(addonCode, cycle);
   if (!priceId) {
     throw new ServiceError(
-      "unavailable",
-      "This add-on is not available for checkout yet. Add its Stripe Price ID first.",
+      'unavailable',
+      'This add-on is not available for checkout yet. Add its Stripe Price ID first.',
     );
   }
   return priceId;
@@ -568,14 +609,14 @@ function itemsForAddonState(
 
   if (state.xAccountAllowance > 0) {
     items.push({
-      price: requireAddonPriceId("x_account", cycle),
+      price: requireAddonPriceId('x_account', cycle),
       quantity: state.xAccountAllowance,
     });
   }
 
   if (state.advancedAnalytics) {
     items.push({
-      price: requireAddonPriceId("advanced_analytics", cycle),
+      price: requireAddonPriceId('advanced_analytics', cycle),
       quantity: 1,
     });
   }
@@ -601,15 +642,15 @@ async function scheduleAddonChange(input: {
 
   if (!currentItem || !periodEnd || currentItems.length === 0) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe could not schedule this add-on change. Open the customer portal or try again later.",
+      'unavailable',
+      'Stripe could not schedule this add-on change. Open the customer portal or try again later.',
     );
   }
 
   if (expandId(input.subscription.schedule)) {
     throw new ServiceError(
-      "conflict",
-      "A billing change is already scheduled. Wait for it to finish or use the customer portal.",
+      'conflict',
+      'A billing change is already scheduled. Wait for it to finish or use the customer portal.',
     );
   }
 
@@ -620,13 +661,13 @@ async function scheduleAddonChange(input: {
 
   if (!currentPhase) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe could not schedule this add-on change. Open the customer portal or try again later.",
+      'unavailable',
+      'Stripe could not schedule this add-on change. Open the customer portal or try again later.',
     );
   }
 
   await stripe.subscriptionSchedules.update(schedule.id, {
-    end_behavior: "release",
+    end_behavior: 'release',
     phases: [
       {
         items: currentItems,
@@ -638,7 +679,7 @@ async function scheduleAddonChange(input: {
         metadata: {
           clientId: input.clientId,
           xAccountAllowance: String(input.xAccountAllowance),
-          advancedAnalytics: input.advancedAnalytics ? "true" : "false",
+          advancedAnalytics: input.advancedAnalytics ? 'true' : 'false',
         },
       },
     ],
@@ -652,8 +693,8 @@ export async function startSocialStripeAddonChange(input: {
 }): Promise<{ updated: true; message: string }> {
   if (!isSocialStripeCheckoutLive() || !isSocialStripeAddonCheckoutLive()) {
     throw new ServiceError(
-      "unavailable",
-      "Add-on checkout is not live yet. Add Stripe keys and add-on Price IDs first.",
+      'unavailable',
+      'Add-on checkout is not live yet. Add Stripe keys and add-on Price IDs first.',
     );
   }
 
@@ -669,10 +710,10 @@ export async function startSocialStripeAddonChange(input: {
     },
   });
 
-  if (lifecycle.status === "past_due" || lifecycle.status === "grace_period") {
+  if (lifecycle.status === 'past_due' || lifecycle.status === 'grace_period') {
     throw new ServiceError(
-      "forbidden",
-      "Update the payment method in the customer portal before changing add-ons.",
+      'forbidden',
+      'Update the payment method in the customer portal before changing add-ons.',
     );
   }
 
@@ -684,12 +725,12 @@ export async function startSocialStripeAddonChange(input: {
     action: input.action,
   });
 
-  if (decision.kind === "forbidden") {
-    throw new ServiceError("forbidden", decision.message);
+  if (decision.kind === 'forbidden') {
+    throw new ServiceError('forbidden', decision.message);
   }
 
-  if (decision.kind === "conflict") {
-    throw new ServiceError("conflict", decision.message);
+  if (decision.kind === 'conflict') {
+    throw new ServiceError('conflict', decision.message);
   }
 
   const stripe = getStripe();
@@ -697,16 +738,16 @@ export async function startSocialStripeAddonChange(input: {
     subscription!.externalSubscriptionId!,
   );
 
-  if (expandId(current.schedule) && decision.kind === "update_now") {
+  if (expandId(current.schedule) && decision.kind === 'update_now') {
     throw new ServiceError(
-      "conflict",
-      "A billing change is already scheduled. Wait for it to finish or use the customer portal.",
+      'conflict',
+      'A billing change is already scheduled. Wait for it to finish or use the customer portal.',
     );
   }
 
   const cycle = subscriptionBillingCycle(current);
 
-  if (decision.kind === "schedule_period_end") {
+  if (decision.kind === 'schedule_period_end') {
     await scheduleAddonChange({
       subscription: current,
       clientId: input.clientId,
@@ -718,32 +759,35 @@ export async function startSocialStripeAddonChange(input: {
     return {
       updated: true,
       message:
-        "This add-on will change at the end of the current billing period. TAKATAK updates when Stripe confirms it.",
+        'This add-on will change at the end of the current billing period. TAKATAK updates when Stripe confirms it.',
     };
   }
 
   const priceId = requireAddonPriceId(decision.addonCode, cycle);
   const existing = addonItem(current, decision.addonCode);
   const quantity =
-    decision.addonCode === "x_account" ? decision.xAccountAllowance : 1;
+    decision.addonCode === 'x_account' ? decision.xAccountAllowance : 1;
 
   await stripe.subscriptions.update(current.id, {
     items: existing
       ? [{ id: existing.id, quantity }]
       : [{ price: priceId, quantity }],
-    proration_behavior: "always_invoice",
-    payment_behavior: "error_if_incomplete",
+    proration_behavior: 'always_invoice',
+    payment_behavior: 'error_if_incomplete',
+    automatic_tax: {
+      enabled: true,
+    },
     metadata: {
       ...current.metadata,
       clientId: input.clientId,
       xAccountAllowance: String(decision.xAccountAllowance),
-      advancedAnalytics: decision.advancedAnalytics ? "true" : "false",
+      advancedAnalytics: decision.advancedAnalytics ? 'true' : 'false',
     },
   });
 
   return {
     updated: true,
     message:
-      "Stripe is updating this add-on. It appears here when the webhook confirms payment. This page does not unlock it.",
+      'Stripe is updating this add-on. It appears here when the webhook confirms payment. This page does not unlock it.',
   };
 }

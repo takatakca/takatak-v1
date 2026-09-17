@@ -1,11 +1,16 @@
-import { SOCIAL_PLAN_CATALOG, isSocialPlanCode } from "./plan-catalog";
+import {
+  SOCIAL_PLAN_CATALOG,
+  SOCIAL_UNSUBSCRIBED_PLAN_CODE,
+  isSocialPlanCode,
+} from './plan-catalog';
+
 import type {
   ResolveSocialEntitlementsInput,
   SocialAddonState,
   SocialBillingNetwork,
   SocialEntitlements,
   SocialPlanCode,
-} from "./types";
+} from './types';
 
 const EMPTY_ADDONS: SocialAddonState = {
   xAccountAllowance: 0,
@@ -31,12 +36,14 @@ function resolvePlanCode(planCode: string | null | undefined): SocialPlanCode {
     return planCode;
   }
 
-  return "social_free";
+  return SOCIAL_UNSUBSCRIBED_PLAN_CODE;
 }
 
 /**
- * Pure: plan + add-ons → entitlements.
- * Unknown or missing planCode falls back to Free. Never reads Stripe.
+ * Pure entitlement resolution.
+ *
+ * Unknown, legacy, or missing plan codes resolve to the internal
+ * zero-access unsubscribed state. No paid access is invented.
  */
 export function resolveSocialEntitlements(
   input: ResolveSocialEntitlementsInput = {},
@@ -46,16 +53,18 @@ export function resolveSocialEntitlements(
   const addOns = normalizeAddOns(input.addOns);
 
   const brandAllowance =
-    planCode === "social_custom" &&
-    typeof input.customBrandAllowance === "number" &&
+    planCode === 'social_custom' &&
+    typeof input.customBrandAllowance === 'number' &&
     input.customBrandAllowance >= 50
       ? Math.floor(input.customBrandAllowance)
       : plan.brandAllowance;
 
-  const xEligible = plan.eligibleAddons.includes("x_account");
-  const analyticsEligible = plan.eligibleAddons.includes("advanced_analytics");
+  const xEligible = plan.eligibleAddons.includes('x_account');
+
+  const analyticsEligible = plan.eligibleAddons.includes('advanced_analytics');
 
   const xConnectionAllowance = xEligible ? addOns.xAccountAllowance : 0;
+
   const advancedAnalytics = analyticsEligible && addOns.advancedAnalytics;
 
   return {
@@ -83,7 +92,7 @@ export function canConnectSocialNetwork(
   entitlements: SocialEntitlements,
   network: SocialBillingNetwork,
 ): boolean {
-  if (network === "x") {
+  if (network === 'x') {
     return entitlements.xConnectionAllowance > 0;
   }
 

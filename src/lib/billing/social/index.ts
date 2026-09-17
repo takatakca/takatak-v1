@@ -2,7 +2,7 @@ export {
   canConnectSocialNetwork,
   isUnlimitedPublishing,
   resolveSocialEntitlements,
-} from "./entitlements";
+} from './entitlements';
 export {
   analyticsHistoryCutoffDate,
   billingNetworkForConnectionProvider,
@@ -17,28 +17,32 @@ export {
   evaluateTeamInvite,
   evaluateWorkspaceWriteAccess,
   utcMonthBounds,
-} from "./entitlement-gates-policy";
+} from './entitlement-gates-policy';
 export {
   SOCIAL_BILLING_HREF,
   resolveSocialBillingBanner,
   socialFeatureLockRows,
-} from "./billing-banner-policy";
-export { ensureDefaultSocialSubscription } from "./ensure-free-subscription";
+} from './billing-banner-policy';
+export { ensureDefaultSocialSubscription } from './ensure-default-subscription';
 export {
-  SOCIAL_FREE_PLAN_CODE,
-  SOCIAL_FREE_PLAN_NAME,
+  SOCIAL_UNSUBSCRIBED_PLAN_CODE,
+  SOCIAL_UNSUBSCRIBED_PLAN_NAME,
+  SOCIAL_ESSENTIAL_PLAN_CODE,
+  SOCIAL_ESSENTIAL_PLAN_NAME,
   SOCIAL_PLAN_CATALOG,
+  ESSENTIAL_PLAN_CODES,
   STARTER_PLAN_CODES,
   ADVANCED_PLAN_CODES,
   PAID_CHECKOUT_PLAN_CODES,
   isPaidCheckoutPlanCode,
   annualSavingsPercent,
+  essentialPlanHighlights,
+  starterPlanHighlights,
   advancedPlanHighlights,
   customPlanHighlights,
   isSocialPlanCode,
   planFamily,
-  starterPlanHighlights,
-} from "./plan-catalog";
+} from './plan-catalog';
 export {
   SOCIAL_SUBSCRIPTION_STATUSES,
   resolveEffectiveSocialEntitlements,
@@ -47,7 +51,7 @@ export {
   type SocialSubscriptionAccess,
   type SocialSubscriptionLifecycle,
   type SocialSubscriptionStatusName,
-} from "./subscription-lifecycle";
+} from './subscription-lifecycle';
 export {
   SOCIAL_ADDON_CODES,
   SOCIAL_BILLING_NETWORKS,
@@ -58,4 +62,4 @@ export {
   type SocialBillingNetwork,
   type SocialEntitlements,
   type SocialPlanCode,
-} from "./types";
+} from './types';

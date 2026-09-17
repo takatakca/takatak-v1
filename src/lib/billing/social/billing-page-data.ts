@@ -1,19 +1,22 @@
-import "server-only";
+import 'server-only';
 
 import {
   resolveEffectiveSocialEntitlements,
   type SocialEntitlements,
   type SocialPlanCode,
   type SocialSubscriptionAccess,
-} from "@/lib/billing/social";
-import { previewSocialBrandAllowance } from "@/lib/billing/social/brand-allowance";
-import { isSocialStripeAddonCheckoutLive, isSocialStripeCheckoutLive } from "@/lib/billing/social/stripe-env";
-import { getPrisma } from "@/lib/db/prisma";
-import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
+} from '@/lib/billing/social';
+import { previewSocialBrandAllowance } from '@/lib/billing/social/brand-allowance';
+import {
+  isSocialStripeAddonCheckoutLive,
+  isSocialStripeCheckoutLive,
+} from '@/lib/billing/social/stripe-env';
+import { getPrisma } from '@/lib/db/prisma';
+import type { ClientScopedAccess } from '@/lib/security/workspace-guard';
 
 export type PlansBillingPageData =
   | {
-      source: "database";
+      source: 'database';
       workspaceName: string;
       companyName: string;
       vatTaxId: string;
@@ -51,7 +54,7 @@ export type PlansBillingPageData =
       stripeSubscriptionReady: boolean;
     }
   | {
-      source: "unavailable";
+      source: 'unavailable';
       message: string;
     };
 
@@ -62,8 +65,8 @@ export async function getPlansBillingPageData(
 
   if (!prisma) {
     return {
-      source: "unavailable",
-      message: "Billing data is temporarily unavailable.",
+      source: 'unavailable',
+      message: 'Billing data is temporarily unavailable.',
     };
   }
 
@@ -96,8 +99,8 @@ export async function getPlansBillingPageData(
 
     if (!client) {
       return {
-        source: "unavailable",
-        message: "The selected workspace could not be found.",
+        source: 'unavailable',
+        message: 'The selected workspace could not be found.',
       };
     }
 
@@ -106,8 +109,8 @@ export async function getPlansBillingPageData(
       prisma.socialAccount.count({
         where: {
           clientId: access.activeClientId,
-          platform: "x",
-          status: "connected",
+          platform: 'x',
+          status: 'connected',
         },
       }),
     ]);
@@ -126,19 +129,21 @@ export async function getPlansBillingPageData(
     const invoiceEmails =
       client.invoiceEmails.length > 0
         ? client.invoiceEmails
-        : [client.email].filter((email): email is string => Boolean(email?.trim()));
+        : [client.email].filter((email): email is string =>
+            Boolean(email?.trim()),
+          );
 
     return {
-      source: "database",
+      source: 'database',
       workspaceName: client.name,
       companyName: client.companyName?.trim() || client.name,
-      vatTaxId: client.vatTaxId ?? "",
-      billingAddress: client.billingAddress ?? "",
-      billingCountry: client.billingCountry || "Canada",
+      vatTaxId: client.vatTaxId ?? '',
+      billingAddress: client.billingAddress ?? '',
+      billingCountry: client.billingCountry || 'Canada',
       invoiceEmails,
       planCode: entitlements.planCode,
       planName: entitlements.planName,
-      subscriptionStatus: lifecycle.status ?? "missing",
+      subscriptionStatus: lifecycle.status ?? 'missing',
       subscriptionStatusLabel: lifecycle.label,
       subscriptionAccess: lifecycle.access,
       cancelAtPeriodEnd: Boolean(client.subscription?.cancelAtPeriodEnd),
@@ -166,13 +171,13 @@ export async function getPlansBillingPageData(
     };
   } catch (error) {
     console.error(
-      "[plans-billing] Query failed:",
-      error instanceof Error ? error.message : "Unknown error",
+      '[plans-billing] Query failed:',
+      error instanceof Error ? error.message : 'Unknown error',
     );
 
     return {
-      source: "unavailable",
-      message: "Plans and billing could not be loaded.",
+      source: 'unavailable',
+      message: 'Plans and billing could not be loaded.',
     };
   }
 }
