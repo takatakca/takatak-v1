@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   ArrowLeft,
@@ -28,41 +28,37 @@ import {
   Check,
   Tag,
   X,
-} from "lucide-react";
-import Link from "next/link";
-import {
-  usePathname,
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   useEffect,
   useRef,
   useState,
   useTransition,
   type ReactNode,
-} from "react";
-import { createPortal } from "react-dom";
+} from 'react';
+import { createPortal } from 'react-dom';
 
-import { AddBrandsModal } from "@/components/social/brands/add-brands-modal";
+import { AddBrandsModal } from '@/components/social/brands/add-brands-modal';
 import {
   ManageConnectionsModal,
   type ManageConnectionsConnection,
   type ManageConnectionsProvider,
-} from "@/components/social/connections/manage-connections-modal";
+} from '@/components/social/connections/manage-connections-modal';
 import {
   SocialPlatformIcon,
   type SocialPlatformKey,
-} from "@/components/social/navigation/social-platform-icon";
-import { SOCIAL_BRAND_SELECTOR_REFRESH_EVENT } from "@/components/social/navigation/social-brand-selector-events";
-import { FaLinkedin } from "react-icons/fa";
-import { brandInitials as resolveBrandInitials } from "@/lib/brands/brand-display-image";
-import { pickConnectedPlatformAccount } from "@/lib/social/connections/social-selected-page-identity";
-import { SocialBillingBanner } from "@/components/social/billing/social-billing-banner";
-import type { SocialBillingBannerModel } from "@/lib/billing/social/billing-banner-policy";
-import { SocialOnboardingModal } from "@/components/social/onboarding/social-onboarding-modal";
-import { withSocialPreview } from "@/components/social/preview/social-preview-query";
-import { TakatakLogo } from "@/components/brand/takatak-logo";
+} from '@/components/social/navigation/social-platform-icon';
+import { SOCIAL_BRAND_SELECTOR_REFRESH_EVENT } from '@/components/social/navigation/social-brand-selector-events';
+import { FaLinkedin } from 'react-icons/fa';
+import { brandInitials as resolveBrandInitials } from '@/lib/brands/brand-display-image';
+import { pickConnectedPlatformAccount } from '@/lib/social/connections/social-selected-page-identity';
+import { SocialBillingBanner } from '@/components/social/billing/social-billing-banner';
+import type { SocialBillingBannerModel } from '@/lib/billing/social/billing-banner-policy';
+import { SocialOnboardingModal } from '@/components/social/onboarding/social-onboarding-modal';
+import { withSocialPreview } from '@/components/social/preview/social-preview-query';
+import { TakatakLogo } from '@/components/brand/takatak-logo';
 
 export interface SocialShellBrand {
   id: string;
@@ -127,13 +123,13 @@ interface StarterPlatform {
 
 function isSocialSettingsPage(pathname: string): boolean {
   return (
-    pathname.startsWith("/dashboard/social/settings") ||
-    pathname.startsWith("/dashboard/social/brands") ||
-    pathname.startsWith("/dashboard/social/users") ||
-    pathname.startsWith("/dashboard/social/approvals") ||
-    pathname.startsWith("/dashboard/social/reports") ||
-    pathname.startsWith("/dashboard/social/inbox") ||
-    pathname.startsWith("/dashboard/social/calendar")
+    pathname.startsWith('/dashboard/social/settings') ||
+    pathname.startsWith('/dashboard/social/brands') ||
+    pathname.startsWith('/dashboard/social/users') ||
+    pathname.startsWith('/dashboard/social/approvals') ||
+    pathname.startsWith('/dashboard/social/reports') ||
+    pathname.startsWith('/dashboard/social/inbox') ||
+    pathname.startsWith('/dashboard/social/calendar')
   );
 }
 
@@ -143,45 +139,45 @@ function isAnalyticsPath(pathname: string): boolean {
   }
 
   return (
-    pathname === "/dashboard/social" ||
-    pathname.startsWith("/dashboard/social/")
+    pathname === '/dashboard/social' ||
+    pathname.startsWith('/dashboard/social/')
   );
 }
 
 const TOP_NAVIGATION = [
   {
-    label: "Analytics",
-    href: "/dashboard/social",
+    label: 'Analytics',
+    href: '/dashboard/social',
     icon: BarChart3,
     enabled: true,
   },
   {
-    label: "Reporting",
-    href: "/dashboard/social/reports",
+    label: 'Reporting',
+    href: '/dashboard/social/reports',
     icon: FileBarChart2,
     enabled: true,
   },
   {
-    label: "Inbox",
-    href: "/dashboard/social/inbox",
+    label: 'Inbox',
+    href: '/dashboard/social/inbox',
     icon: Inbox,
     enabled: true,
   },
   {
-    label: "Planning",
-    href: "/dashboard/social/calendar",
+    label: 'Planning',
+    href: '/dashboard/social/calendar',
     icon: CalendarDays,
     enabled: true,
   },
   {
-    label: "SmartLinks",
-    href: "/dashboard/social/smartlinks",
+    label: 'SmartLinks',
+    href: '/dashboard/social/smartlinks',
     icon: Link2,
     enabled: false,
   },
   {
-    label: "Ads",
-    href: "/dashboard/social/campaigns",
+    label: 'Ads',
+    href: '/dashboard/social/campaigns',
     icon: Megaphone,
     enabled: false,
   },
@@ -189,127 +185,109 @@ const TOP_NAVIGATION = [
 
 const STARTER_PLATFORMS: StarterPlatform[] = [
   {
-    platform: "instagram",
-    accountPlatform: "instagram",
-    label: "Instagram",
-    href: "/dashboard/social/instagram",
+    platform: 'instagram',
+    accountPlatform: 'instagram',
+    label: 'Instagram',
+    href: '/dashboard/social/instagram',
     premium: false,
   },
   {
-    platform: "facebook",
-    accountPlatform: "facebook",
-    label: "Facebook",
-    href: "/dashboard/social/facebook",
+    platform: 'facebook',
+    accountPlatform: 'facebook',
+    label: 'Facebook',
+    href: '/dashboard/social/facebook',
     premium: false,
   },
   {
-    platform: "tiktok",
-    accountPlatform: "tiktok",
-    label: "TikTok",
-    href: "/dashboard/social/tiktok",
+    platform: 'tiktok',
+    accountPlatform: 'tiktok',
+    label: 'TikTok',
+    href: '/dashboard/social/tiktok',
     premium: false,
   },
   {
-    platform: "youtube",
-    accountPlatform: "youtube",
-    label: "YouTube",
-    href: "/dashboard/social/youtube",
+    platform: 'youtube',
+    accountPlatform: 'youtube',
+    label: 'YouTube',
+    href: '/dashboard/social/youtube',
     premium: false,
   },
   {
-    platform: "linkedin",
-    accountPlatform: "linkedin",
-    label: "LinkedIn",
-    href: "/dashboard/social/linkedin",
+    platform: 'linkedin',
+    accountPlatform: 'linkedin',
+    label: 'LinkedIn',
+    href: '/dashboard/social/linkedin',
     premium: true,
   },
 ];
 
-function normalizePlatform(
-  platform: string,
-): SocialPlatformKey | null {
+function normalizePlatform(platform: string): SocialPlatformKey | null {
   const supported: SocialPlatformKey[] = [
-    "facebook",
-    "instagram",
-    "threads",
-    "x",
-    "bluesky",
-    "linkedin",
-    "pinterest",
-    "tiktok",
-    "google_business",
-    "youtube",
-    "twitch",
+    'facebook',
+    'instagram',
+    'threads',
+    'x',
+    'bluesky',
+    'linkedin',
+    'pinterest',
+    'tiktok',
+    'google_business',
+    'youtube',
+    'twitch',
   ];
 
-  return supported.includes(
-    platform as SocialPlatformKey,
-  )
+  return supported.includes(platform as SocialPlatformKey)
     ? (platform as SocialPlatformKey)
     : null;
 }
 
-function platformLabel(
-  platform: string,
-): string {
+function platformLabel(platform: string): string {
   const labels: Record<string, string> = {
-    facebook: "Facebook",
-    instagram: "Instagram",
-    threads: "Threads",
-    tiktok: "TikTok",
-    google_business:
-      "Google Business Profile",
-    linkedin: "LinkedIn",
-    x: "X",
-    youtube: "YouTube",
-    pinterest: "Pinterest",
-    bluesky: "Bluesky",
-    twitch: "Twitch",
+    facebook: 'Facebook',
+    instagram: 'Instagram',
+    threads: 'Threads',
+    tiktok: 'TikTok',
+    google_business: 'Google Business Profile',
+    linkedin: 'LinkedIn',
+    x: 'X',
+    youtube: 'YouTube',
+    pinterest: 'Pinterest',
+    bluesky: 'Bluesky',
+    twitch: 'Twitch',
   };
 
-  return (
-    labels[platform] ??
-    platform.replaceAll("_", " ")
-  );
+  return labels[platform] ?? platform.replaceAll('_', ' ');
 }
 
-function platformPageHref(
-  platform: string,
-): string {
-  return `/dashboard/social/${encodeURIComponent(
-    platform,
-  )}`;
+function platformPageHref(platform: string): string {
+  return `/dashboard/social/${encodeURIComponent(platform)}`;
 }
 
-function brandInitials(
-  name: string,
-): string {
+function brandInitials(name: string): string {
   return resolveBrandInitials(name);
 }
 
-function toPlatformIconKey(
-  platform: string,
-): SocialPlatformKey | null {
+function toPlatformIconKey(platform: string): SocialPlatformKey | null {
   const key = platform.trim().toLowerCase();
   const allowed: SocialPlatformKey[] = [
-    "web",
-    "blog",
-    "facebook",
-    "instagram",
-    "threads",
-    "x",
-    "bluesky",
-    "linkedin",
-    "pinterest",
-    "tiktok",
-    "tiktok_business",
-    "google_business",
-    "youtube",
-    "twitch",
-    "meta_ads",
-    "google_ads",
-    "tiktok_ads",
-    "looker_studio",
+    'web',
+    'blog',
+    'facebook',
+    'instagram',
+    'threads',
+    'x',
+    'bluesky',
+    'linkedin',
+    'pinterest',
+    'tiktok',
+    'tiktok_business',
+    'google_business',
+    'youtube',
+    'twitch',
+    'meta_ads',
+    'google_ads',
+    'tiktok_ads',
+    'looker_studio',
   ];
 
   return allowed.includes(key as SocialPlatformKey)
@@ -321,8 +299,8 @@ function BrandAvatar({
   name,
   imageUrl,
   empty = false,
-  sizeClassName = "h-8 w-8",
-  roundedClassName = "rounded-full",
+  sizeClassName = 'h-8 w-8',
+  roundedClassName = 'rounded-full',
 }: {
   name: string;
   imageUrl: string | null | undefined;
@@ -360,17 +338,13 @@ function BrandAvatar({
           onError={() => setBroken(true)}
         />
       ) : (
-        brandInitials(name) || "—"
+        brandInitials(name) || '—'
       )}
     </span>
   );
 }
 
-function ConnectedPlatformIcons({
-  platforms,
-}: {
-  platforms: string[];
-}) {
+function ConnectedPlatformIcons({ platforms }: { platforms: string[] }) {
   if (platforms.length === 0) {
     return null;
   }
@@ -392,11 +366,7 @@ function ConnectedPlatformIcons({
   );
 }
 
-function BrandSelector({
-  data,
-}: {
-  data: SocialShellData;
-}) {
+function BrandSelector({ data }: { data: SocialShellData }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -407,14 +377,13 @@ function BrandSelector({
   const [isPending, startTransition] = useTransition();
   const [message, setMessage] = useState<string | null>(null);
   const [brands, setBrands] = useState(data.brands);
-  const [activeBrandId, setActiveBrandId] = useState(
-    data.activeBrandId,
-  );
+  const [activeBrandId, setActiveBrandId] = useState(data.activeBrandId);
   const [activeDisplayLabel, setActiveDisplayLabel] = useState(
     data.activeBrandDisplayLabel ?? data.activeBrandName,
   );
-  const [activeDisplayImageUrl, setActiveDisplayImageUrl] =
-    useState(data.activeBrandDisplayImageUrl);
+  const [activeDisplayImageUrl, setActiveDisplayImageUrl] = useState(
+    data.activeBrandDisplayImageUrl,
+  );
   const [loadingBrands, setLoadingBrands] = useState(false);
   const [truncated, setTruncated] = useState(false);
   const [showTip, setShowTip] = useState(false);
@@ -426,9 +395,7 @@ function BrandSelector({
   useEffect(() => {
     setBrands(data.brands);
     setActiveBrandId(data.activeBrandId);
-    setActiveDisplayLabel(
-      data.activeBrandDisplayLabel ?? data.activeBrandName,
-    );
+    setActiveDisplayLabel(data.activeBrandDisplayLabel ?? data.activeBrandName);
     setActiveDisplayImageUrl(data.activeBrandDisplayImageUrl);
   }, [
     data.brands,
@@ -497,10 +464,10 @@ function BrandSelector({
     setLoadingBrands(true);
     const work = (async () => {
       try {
-        const response = await fetch("/api/social/brand-selector", {
-          method: "GET",
-          headers: { Accept: "application/json" },
-          cache: "no-store",
+        const response = await fetch('/api/social/brand-selector', {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
         });
         const body = (await response.json().catch(() => null)) as {
           ok?: boolean;
@@ -515,9 +482,7 @@ function BrandSelector({
         (refreshBrandSnapshot as { _at?: number })._at = Date.now();
         const active =
           body.brands.find((brand) => brand.id === activeBrandId) ??
-          body.brands.find(
-            (brand) => brand.id === data.activeBrandId,
-          ) ??
+          body.brands.find((brand) => brand.id === data.activeBrandId) ??
           null;
         if (active) {
           setActiveBrandId(active.id);
@@ -544,10 +509,7 @@ function BrandSelector({
       void refreshBrandSnapshot();
     }
 
-    window.addEventListener(
-      SOCIAL_BRAND_SELECTOR_REFRESH_EVENT,
-      onRefresh,
-    );
+    window.addEventListener(SOCIAL_BRAND_SELECTOR_REFRESH_EVENT, onRefresh);
     return () => {
       window.removeEventListener(
         SOCIAL_BRAND_SELECTOR_REFRESH_EVENT,
@@ -569,16 +531,16 @@ function BrandSelector({
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         setOpen(false);
       }
     }
 
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
     return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -587,9 +549,9 @@ function BrandSelector({
     setMessage(null);
 
     try {
-      const response = await fetch("/api/social/brand-context", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/social/brand-context', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brandId }),
       });
 
@@ -598,9 +560,7 @@ function BrandSelector({
       } | null;
 
       if (!response.ok) {
-        setMessage(
-          result?.message ?? "The brand could not be changed.",
-        );
+        setMessage(result?.message ?? 'The brand could not be changed.');
         return;
       }
 
@@ -614,15 +574,12 @@ function BrandSelector({
       setOpen(false);
       router.refresh();
     } catch {
-      setMessage("The brand could not be changed.");
+      setMessage('The brand could not be changed.');
     }
   }
 
-  const collapsedName =
-    activeDisplayLabel ?? "Empty brand";
-  const activeBrand = brands.find(
-    (brand) => brand.id === activeBrandId,
-  );
+  const collapsedName = activeDisplayLabel ?? 'Empty brand';
+  const activeBrand = brands.find((brand) => brand.id === activeBrandId);
   const activeIsEmpty =
     (activeBrand?.connectedPlatforms.length ?? 0) === 0 &&
     !activeDisplayImageUrl;
@@ -645,8 +602,8 @@ function BrandSelector({
         title={truncated ? collapsedName : undefined}
         className={`flex h-11 min-w-[200px] max-w-[260px] items-center gap-2.5 rounded-lg border px-2 text-left transition ${
           open
-            ? "border-white/30 bg-[#766f75]"
-            : "border-white/10 bg-white/10 hover:bg-white/15"
+            ? 'border-white/30 bg-[#766f75]'
+            : 'border-white/10 bg-white/10 hover:bg-white/15'
         }`}
       >
         <BrandAvatar
@@ -666,12 +623,12 @@ function BrandSelector({
 
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-white transition ${
-            open ? "rotate-180" : ""
+            open ? 'rotate-180' : ''
           }`}
         />
       </button>
 
-      {showTip && tipPos && typeof document !== "undefined"
+      {showTip && tipPos && typeof document !== 'undefined'
         ? createPortal(
             <span
               role="tooltip"
@@ -696,7 +653,7 @@ function BrandSelector({
           {data.canManageBrands ? (
             <Link
               href={withSocialPreview(
-                "/dashboard/social?addBrand=1",
+                '/dashboard/social?addBrand=1',
                 searchParams,
               )}
               onClick={() => {
@@ -722,7 +679,7 @@ function BrandSelector({
               const selected = brand.id === activeBrandId;
               const isEmpty = brand.connectedPlatforms.length === 0;
               const label = isEmpty
-                ? "Empty brand"
+                ? 'Empty brand'
                 : brand.displayLabel || brand.name;
 
               return (
@@ -738,9 +695,7 @@ function BrandSelector({
                     });
                   }}
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left transition disabled:cursor-wait ${
-                    selected
-                      ? "bg-[#ececee]"
-                      : "hover:bg-slate-50"
+                    selected ? 'bg-[#ececee]' : 'hover:bg-slate-50'
                   }`}
                 >
                   <BrandAvatar
@@ -817,15 +772,11 @@ function DrawerRow({
 }) {
   const rowClassName = `flex min-h-[46px] w-full items-center gap-2.5 px-4 text-left text-[14px] font-normal transition-colors ${
     active
-      ? "bg-[#e8ecee] text-slate-950"
+      ? 'bg-[#e8ecee] text-slate-950'
       : premiumLocked
-        ? "bg-[#f7fadf] text-[#2a2a2a]"
-        : "bg-white text-[#2a2a2a] hover:bg-slate-50"
-  } ${
-    disabled
-      ? "cursor-default"
-      : "cursor-pointer"
-  }`;
+        ? 'bg-[#f7fadf] text-[#2a2a2a]'
+        : 'bg-white text-[#2a2a2a] hover:bg-slate-50'
+  } ${disabled ? 'cursor-default' : 'cursor-pointer'}`;
 
   const content = (
     <>
@@ -835,16 +786,11 @@ function DrawerRow({
         </span>
       ) : (
         <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[#5368ff]">
-          <Icon
-            className="h-[18px] w-[18px]"
-            strokeWidth={1.9}
-          />
+          <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
         </span>
       )}
 
-      <span className="min-w-0 flex-1 truncate">
-        {label}
-      </span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
 
       {languageCode ? (
         <span className="inline-flex h-6 min-w-8 items-center justify-center rounded bg-[#d8e7ec] px-1.5 text-[11px] font-medium text-[#26343d]">
@@ -863,22 +809,14 @@ function DrawerRow({
 
   if (href && !disabled) {
     return (
-      <Link
-        href={href}
-        onClick={onClose}
-        className={rowClassName}
-      >
+      <Link href={href} onClick={onClose} className={rowClassName}>
         {content}
       </Link>
     );
   }
 
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      className={rowClassName}
-    >
+    <button type="button" disabled={disabled} className={rowClassName}>
       {content}
     </button>
   );
@@ -886,109 +824,87 @@ function DrawerRow({
 
 const SOCIAL_LANGUAGES = [
   {
-    label: "English",
-    code: "EN",
+    label: 'English',
+    code: 'EN',
   },
   {
-    label: "Español",
-    code: "ES",
+    label: 'Español',
+    code: 'ES',
   },
   {
-    label: "Français",
-    code: "FR",
+    label: 'Français',
+    code: 'FR',
   },
   {
-    label: "Português (Portugal)",
-    code: "PT",
+    label: 'Português (Portugal)',
+    code: 'PT',
   },
   {
-    label: "Português (Brasil)",
-    code: "BR",
+    label: 'Português (Brasil)',
+    code: 'BR',
   },
   {
-    label: "Deutsch",
-    code: "DE",
+    label: 'Deutsch',
+    code: 'DE',
   },
   {
-    label: "Italiano",
-    code: "IT",
+    label: 'Italiano',
+    code: 'IT',
   },
   {
-    label: "Dansk",
-    code: "DA",
+    label: 'Dansk',
+    code: 'DA',
   },
   {
-    label: "Nederlands",
-    code: "NL",
+    label: 'Nederlands',
+    code: 'NL',
   },
 ] as const;
 
 function LanguageFlyout() {
-  const anchorRef =
-    useRef<HTMLButtonElement | null>(
-      null,
-    );
+  const anchorRef = useRef<HTMLButtonElement | null>(null);
 
-  const closeTimerRef =
-    useRef<ReturnType<
-      typeof setTimeout
-    > | null>(null);
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [open, setOpen] =
-    useState(false);
+  const [open, setOpen] = useState(false);
 
-  const [position, setPosition] =
-    useState({
-      top: 12,
-      right: 348,
-    });
+  const [position, setPosition] = useState({
+    top: 12,
+    right: 348,
+  });
 
   function cancelClose() {
     if (closeTimerRef.current) {
-      clearTimeout(
-        closeTimerRef.current,
-      );
+      clearTimeout(closeTimerRef.current);
 
       closeTimerRef.current = null;
     }
   }
 
   function updatePosition() {
-    const anchor =
-      anchorRef.current;
+    const anchor = anchorRef.current;
 
     if (!anchor) {
       return;
     }
 
-    const rectangle =
-      anchor.getBoundingClientRect();
+    const rectangle = anchor.getBoundingClientRect();
 
-    const availableHeight =
-      window.innerHeight - 24;
+    const availableHeight = window.innerHeight - 24;
 
-    const estimatedPanelHeight =
-      Math.min(
-        570,
-        availableHeight,
-      );
+    const estimatedPanelHeight = Math.min(570, availableHeight);
 
     const top = Math.max(
       12,
       Math.min(
         rectangle.top - 12,
-        window.innerHeight -
-          estimatedPanelHeight -
-          12,
+        window.innerHeight - estimatedPanelHeight - 12,
       ),
     );
 
     setPosition({
       top,
-      right:
-        window.innerWidth -
-        rectangle.left +
-        12,
+      right: window.innerWidth - rectangle.left + 12,
     });
   }
 
@@ -1001,10 +917,9 @@ function LanguageFlyout() {
   function scheduleClose() {
     cancelClose();
 
-    closeTimerRef.current =
-      setTimeout(() => {
-        setOpen(false);
-      }, 140);
+    closeTimerRef.current = setTimeout(() => {
+      setOpen(false);
+    }, 140);
   }
 
   useEffect(() => {
@@ -1016,46 +931,24 @@ function LanguageFlyout() {
       updatePosition();
     }
 
-    function handleEscape(
-      event: KeyboardEvent,
-    ) {
-      if (event.key === "Escape") {
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
         setOpen(false);
       }
     }
 
-    window.addEventListener(
-      "resize",
-      handlePositionChange,
-    );
+    window.addEventListener('resize', handlePositionChange);
 
-    window.addEventListener(
-      "scroll",
-      handlePositionChange,
-      true,
-    );
+    window.addEventListener('scroll', handlePositionChange, true);
 
-    window.addEventListener(
-      "keydown",
-      handleEscape,
-    );
+    window.addEventListener('keydown', handleEscape);
 
     return () => {
-      window.removeEventListener(
-        "resize",
-        handlePositionChange,
-      );
+      window.removeEventListener('resize', handlePositionChange);
 
-      window.removeEventListener(
-        "scroll",
-        handlePositionChange,
-        true,
-      );
+      window.removeEventListener('scroll', handlePositionChange, true);
 
-      window.removeEventListener(
-        "keydown",
-        handleEscape,
-      );
+      window.removeEventListener('keydown', handleEscape);
     };
   }, [open]);
 
@@ -1084,20 +977,15 @@ function LanguageFlyout() {
         }}
         className={`flex min-h-[46px] w-full items-center gap-2.5 px-4 text-left text-[14px] font-normal transition-colors ${
           open
-            ? "bg-[#e8edf0] text-[#2a2a2a]"
-            : "bg-white text-[#2a2a2a] hover:bg-slate-50"
+            ? 'bg-[#e8edf0] text-[#2a2a2a]'
+            : 'bg-white text-[#2a2a2a] hover:bg-slate-50'
         }`}
       >
         <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[#5368ff]">
-          <Globe2
-            className="h-[18px] w-[18px]"
-            strokeWidth={1.9}
-          />
+          <Globe2 className="h-[18px] w-[18px]" strokeWidth={1.9} />
         </span>
 
-        <span className="min-w-0 flex-1 truncate">
-          Language
-        </span>
+        <span className="min-w-0 flex-1 truncate">Language</span>
 
         <span className="inline-flex h-6 min-w-8 items-center justify-center rounded bg-[#d8e7ec] px-1.5 text-[11px] font-medium text-[#26343d]">
           EN
@@ -1105,25 +993,19 @@ function LanguageFlyout() {
 
         <ChevronRight
           className={`h-[18px] w-[18px] shrink-0 text-[#5368ff] transition-transform ${
-            open ? "rotate-180" : ""
+            open ? 'rotate-180' : ''
           }`}
           strokeWidth={1.8}
         />
       </button>
 
-      {open &&
-      typeof document !==
-        "undefined"
+      {open && typeof document !== 'undefined'
         ? createPortal(
             <div
               role="menu"
               aria-label="Select language"
-              onMouseEnter={
-                cancelClose
-              }
-              onMouseLeave={
-                scheduleClose
-              }
+              onMouseEnter={cancelClose}
+              onMouseLeave={scheduleClose}
               style={{
                 top: position.top,
                 right: position.right,
@@ -1131,50 +1013,36 @@ function LanguageFlyout() {
               className="fixed z-[120] w-[300px] max-w-[calc(100vw-32px)] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
             >
               <div className="max-h-[calc(100vh-24px)] overflow-y-auto py-2">
-                {SOCIAL_LANGUAGES.map(
-                  (language) => {
-                    const selected =
-                      language.code ===
-                      "EN";
+                {SOCIAL_LANGUAGES.map((language) => {
+                  const selected = language.code === 'EN';
 
-                    return (
-                      <button
-                        key={
-                          language.code
-                        }
-                        type="button"
-                        role="menuitem"
-                        disabled={
-                          !selected
-                        }
-                        title={
-                          selected
-                            ? "Current language"
-                            : `${language.label} translation is not enabled yet.`
-                        }
-                        className={`flex min-h-[48px] w-full items-center gap-3 px-5 text-left text-[15px] transition ${
-                          selected
-                            ? "bg-[#e4e9ed] font-semibold text-slate-950"
-                            : "cursor-not-allowed bg-white text-slate-700"
-                        }`}
-                      >
-                        <span className="min-w-0 flex-1">
-                          {
-                            language.label
-                          }{" "}
-                          -{" "}
-                          {
-                            language.code
-                          }
-                        </span>
+                  return (
+                    <button
+                      key={language.code}
+                      type="button"
+                      role="menuitem"
+                      disabled={!selected}
+                      title={
+                        selected
+                          ? 'Current language'
+                          : `${language.label} translation is not enabled yet.`
+                      }
+                      className={`flex min-h-[48px] w-full items-center gap-3 px-5 text-left text-[15px] transition ${
+                        selected
+                          ? 'bg-[#e4e9ed] font-semibold text-slate-950'
+                          : 'cursor-not-allowed bg-white text-slate-700'
+                      }`}
+                    >
+                      <span className="min-w-0 flex-1">
+                        {language.label} - {language.code}
+                      </span>
 
-                        {selected ? (
-                          <Check className="h-5 w-5 shrink-0 text-[#5368ff]" />
-                        ) : null}
-                      </button>
-                    );
-                  },
-                )}
+                      {selected ? (
+                        <Check className="h-5 w-5 shrink-0 text-[#5368ff]" />
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>,
             document.body,
@@ -1200,21 +1068,19 @@ function ModuleDrawer({
     return null;
   }
 
-  const premiumLocked =
-    data.hasPaidPlan !== true;
+  const premiumLocked = data.hasPaidPlan !== true;
 
-  const settingsTab = searchParams.get("tab");
+  const settingsTab = searchParams.get('tab');
   const onBrandSettingsPage =
-    pathname === "/dashboard/social/brands" ||
-    pathname.startsWith("/dashboard/social/brands/");
+    pathname === '/dashboard/social/brands' ||
+    pathname.startsWith('/dashboard/social/brands/');
   const connectionsActive =
-    onBrandSettingsPage && settingsTab === "connections";
-  const aiConfigurationActive =
-    onBrandSettingsPage && settingsTab === "ai";
+    onBrandSettingsPage && settingsTab === 'connections';
+  const aiConfigurationActive = onBrandSettingsPage && settingsTab === 'ai';
   const brandSettingsActive =
     onBrandSettingsPage &&
-    settingsTab !== "connections" &&
-    settingsTab !== "ai";
+    settingsTab !== 'connections' &&
+    settingsTab !== 'ai';
 
   return (
     <div className="fixed inset-0 z-[90]">
@@ -1233,111 +1099,100 @@ function ModuleDrawer({
             aria-label="Close account menu"
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white transition hover:bg-white/15"
           >
-            <X
-              className="h-6 w-6"
-              strokeWidth={1.8}
-            />
+            <X className="h-6 w-6" strokeWidth={1.8} />
           </button>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-white">
           {/* Mobile top navigation */}
           <section className="border-b border-[#e5edef] py-1 lg:hidden">
-            {TOP_NAVIGATION.map(
-              (item) => {
-                const Icon = item.icon;
+            {TOP_NAVIGATION.map((item) => {
+              const Icon = item.icon;
 
-                const active =
-                  item.label === "Analytics"
-                    ? isAnalyticsPath(pathname)
-                    : pathname.startsWith(item.href);
+              const active =
+                item.label === 'Analytics'
+                  ? isAnalyticsPath(pathname)
+                  : pathname.startsWith(item.href);
 
-                const navigationContent = (
-                  <>
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[#5368ff]">
-                      <Icon
-                        className="h-[19px] w-[19px]"
-                        strokeWidth={1.9}
-                      />
+              const navigationContent = (
+                <>
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[#5368ff]">
+                    <Icon className="h-[19px] w-[19px]" strokeWidth={1.9} />
+                  </span>
+
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+
+                  {item.label === 'Reporting' ? (
+                    <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-medium text-emerald-700">
+                      New
                     </span>
+                  ) : null}
+                </>
+              );
 
-                    <span className="min-w-0 flex-1 truncate">
-                      {item.label}
-                    </span>
-
-                    {item.label ===
-                    "Reporting" ? (
-                      <span className="rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-medium text-emerald-700">
-                        New
-                      </span>
-                    ) : null}
-                  </>
-                );
-
-                if (!item.enabled) {
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      disabled
-                      title={`${item.label} will be activated when its real backend is implemented.`}
-                      className="flex min-h-[46px] w-full cursor-not-allowed items-center gap-2.5 px-4 text-left text-[14px] text-slate-500 opacity-70"
-                    >
-                      {navigationContent}
-                    </button>
-                  );
-                }
-
-                const itemClassName = `flex min-h-[46px] w-full items-center gap-2.5 px-4 text-left text-[14px] font-medium transition ${
-                  active
-                    ? "bg-slate-200 text-slate-950"
-                    : "text-[#2a2a2a] hover:bg-slate-50"
-                }`;
-
-                if (active) {
-                  return (
-                    <span
-                      key={item.label}
-                      aria-current="page"
-                      className={itemClassName}
-                    >
-                      {navigationContent}
-                    </span>
-                  );
-                }
-
+              if (!item.enabled) {
                 return (
-                  <Link
+                  <button
                     key={item.label}
-                    href={item.href}
-                    prefetch={false}
-                    onClick={onClose}
+                    type="button"
+                    disabled
+                    title={`${item.label} will be activated when its real backend is implemented.`}
+                    className="flex min-h-[46px] w-full cursor-not-allowed items-center gap-2.5 px-4 text-left text-[14px] text-slate-500 opacity-70"
+                  >
+                    {navigationContent}
+                  </button>
+                );
+              }
+
+              const itemClassName = `flex min-h-[46px] w-full items-center gap-2.5 px-4 text-left text-[14px] font-medium transition ${
+                active
+                  ? 'bg-slate-200 text-slate-950'
+                  : 'text-[#2a2a2a] hover:bg-slate-50'
+              }`;
+
+              if (active) {
+                return (
+                  <span
+                    key={item.label}
+                    aria-current="page"
                     className={itemClassName}
                   >
                     {navigationContent}
-                  </Link>
+                  </span>
                 );
-              },
-            )}
+              }
+
+              return (
+                <Link
+                  key={item.label}
+                  href={item.href}
+                  prefetch={false}
+                  onClick={onClose}
+                  className={itemClassName}
+                >
+                  {navigationContent}
+                </Link>
+              );
+            })}
           </section>
 
           <section className="border-b border-[#e5edef] py-1">
             <DrawerRow
               label="Add brand"
               href={withSocialPreview(
-                "/dashboard/social?addBrand=1",
+                '/dashboard/social?addBrand=1',
                 searchParams,
               )}
               icon={Plus}
               premiumLocked={premiumLocked}
-              active={searchParams.get("addBrand") === "1"}
+              active={searchParams.get('addBrand') === '1'}
               onClose={onClose}
             />
 
             <DrawerRow
               label="Connections"
               href={withSocialPreview(
-                "/dashboard/social/brands/settings?tab=connections",
+                '/dashboard/social/brands/settings?tab=connections',
                 searchParams,
               )}
               icon={Share2}
@@ -1348,7 +1203,7 @@ function ModuleDrawer({
             <DrawerRow
               label="AI Configuration"
               href={withSocialPreview(
-                "/dashboard/social/brands/settings?tab=ai",
+                '/dashboard/social/brands/settings?tab=ai',
                 searchParams,
               )}
               icon={Sparkles}
@@ -1359,7 +1214,7 @@ function ModuleDrawer({
             <DrawerRow
               label="Brand settings"
               href={withSocialPreview(
-                "/dashboard/social/brands/settings",
+                '/dashboard/social/brands/settings',
                 searchParams,
               )}
               icon={Settings2}
@@ -1371,27 +1226,27 @@ function ModuleDrawer({
           <section className="border-b border-[#e5edef] py-1">
             <DrawerRow
               label="User management"
-              href={withSocialPreview(
-                "/dashboard/social/users",
-                searchParams,
-              )}
+              href={withSocialPreview('/dashboard/social/users', searchParams)}
               icon={ShieldCheck}
               premiumLocked={premiumLocked}
-              active={pathname.startsWith("/dashboard/social/users") || pathname.startsWith("/dashboard/users")}
+              active={
+                pathname.startsWith('/dashboard/social/users') ||
+                pathname.startsWith('/dashboard/users')
+              }
               onClose={onClose}
             />
 
             <DrawerRow
               label="Plans and billing"
               href={withSocialPreview(
-                "/dashboard/social/settings?tab=billing",
+                '/dashboard/social/settings?tab=billing',
                 searchParams,
               )}
               icon={CreditCard}
               active={
-                (pathname.startsWith("/dashboard/social/settings") ||
-                  pathname.startsWith("/dashboard/profile")) &&
-                settingsTab === "billing"
+                (pathname.startsWith('/dashboard/social/settings') ||
+                  pathname.startsWith('/dashboard/profile')) &&
+                settingsTab === 'billing'
               }
               onClose={onClose}
             />
@@ -1399,12 +1254,12 @@ function ModuleDrawer({
             <DrawerRow
               label="My tasks"
               href={withSocialPreview(
-                "/dashboard/social/approvals",
+                '/dashboard/social/approvals',
                 searchParams,
               )}
               icon={ClipboardList}
               premiumLocked={premiumLocked}
-              active={pathname.startsWith("/dashboard/social/approvals")}
+              active={pathname.startsWith('/dashboard/social/approvals')}
               onClose={onClose}
             />
 
@@ -1413,15 +1268,15 @@ function ModuleDrawer({
             <DrawerRow
               label="Account settings"
               href={withSocialPreview(
-                "/dashboard/social/settings",
+                '/dashboard/social/settings',
                 searchParams,
               )}
               icon={Settings2}
               active={
-                (pathname.startsWith("/dashboard/social/settings") ||
-                  pathname.startsWith("/dashboard/profile") ||
-                  pathname === "/dashboard/settings") &&
-                settingsTab !== "billing"
+                (pathname.startsWith('/dashboard/social/settings') ||
+                  pathname.startsWith('/dashboard/profile') ||
+                  pathname === '/dashboard/settings') &&
+                settingsTab !== 'billing'
               }
               onClose={onClose}
             />
@@ -1432,7 +1287,7 @@ function ModuleDrawer({
               label="Help center"
               href="/dashboard/support"
               icon={CircleHelp}
-              active={pathname.startsWith("/dashboard/support")}
+              active={pathname.startsWith('/dashboard/support')}
               onClose={onClose}
             />
 
@@ -1440,7 +1295,7 @@ function ModuleDrawer({
               label="What's new"
               href="/dashboard/notifications"
               icon={Megaphone}
-              active={pathname.startsWith("/dashboard/notifications")}
+              active={pathname.startsWith('/dashboard/notifications')}
               onClose={onClose}
             />
 
@@ -1448,26 +1303,19 @@ function ModuleDrawer({
               label="Affiliation program"
               href="/marketplace"
               icon={Handshake}
-              active={pathname.startsWith("/marketplace")}
+              active={pathname.startsWith('/marketplace')}
               onClose={onClose}
             />
           </section>
         </div>
 
         <footer className="shrink-0 border-t border-slate-100 bg-white px-4 pb-4 pt-3">
-          <form
-            action="/auth/signout"
-            method="post"
-          >
+          <form action="/auth/signout" method="post">
             <button
               type="submit"
               className="flex items-center gap-2.5 text-[14px] font-normal text-[#303030] transition hover:text-rose-600"
             >
-              <LogOut
-                className="h-5 w-5 text-red-500"
-                strokeWidth={1.8}
-              />
-
+              <LogOut className="h-5 w-5 text-red-500" strokeWidth={1.8} />
               Logout
             </button>
           </form>
@@ -1494,8 +1342,7 @@ function SocialTopbar({
 }) {
   const pathname = usePathname();
 
-  const [drawerOpen, setDrawerOpen] =
-    useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <>
@@ -1520,67 +1367,64 @@ function SocialTopbar({
         </Link>
 
         <nav className="hidden h-full min-w-0 items-center gap-1 overflow-x-auto lg:flex">
-          {TOP_NAVIGATION.map(
-            (item) => {
-              const Icon = item.icon;
+          {TOP_NAVIGATION.map((item) => {
+            const Icon = item.icon;
 
-              const active =
-                item.label === "Analytics"
-                  ? isAnalyticsPath(pathname)
-                  : pathname.startsWith(item.href);
+            const active =
+              item.label === 'Analytics'
+                ? isAnalyticsPath(pathname)
+                : pathname.startsWith(item.href);
 
-              if (!item.enabled) {
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    disabled
-                    title={`${item.label} will be activated when its real backend is implemented.`}
-                    className="flex h-11 cursor-not-allowed items-center gap-2 rounded-lg px-4 text-sm font-medium text-white/70"
-                  >
-                    <Icon className="h-5 w-5" />
-                    {item.label}
-                  </button>
-                );
-              }
-
-              const itemClassName = `flex h-11 items-center gap-2 rounded-lg px-4 text-sm font-medium transition ${
-                active
-                  ? "bg-[#746f73] text-white"
-                  : "text-white/85 hover:bg-white/10 hover:text-white"
-              }`;
-
-              if (active) {
-                return (
-                  <span
-                    key={item.label}
-                    aria-current="page"
-                    className={itemClassName}
-                  >
-                    <Icon className="h-5 w-5" />
-                    {item.label}
-                  </span>
-                );
-              }
-
+            if (!item.enabled) {
               return (
-                <Link
+                <button
                   key={item.label}
-                  href={item.href}
-                  prefetch={false}
+                  type="button"
+                  disabled
+                  title={`${item.label} will be activated when its real backend is implemented.`}
+                  className="flex h-11 cursor-not-allowed items-center gap-2 rounded-lg px-4 text-sm font-medium text-white/70"
+                >
+                  <Icon className="h-5 w-5" />
+                  {item.label}
+                </button>
+              );
+            }
+
+            const itemClassName = `flex h-11 items-center gap-2 rounded-lg px-4 text-sm font-medium transition ${
+              active
+                ? 'bg-[#746f73] text-white'
+                : 'text-white/85 hover:bg-white/10 hover:text-white'
+            }`;
+
+            if (active) {
+              return (
+                <span
+                  key={item.label}
+                  aria-current="page"
                   className={itemClassName}
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}
-                </Link>
+                </span>
               );
-            },
-          )}
+            }
+
+            return (
+              <Link
+                key={item.label}
+                href={item.href}
+                prefetch={false}
+                className={itemClassName}
+              >
+                <Icon className="h-5 w-5" />
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          {data.hasPaidPlan !==
-          true ? (
+          {data.hasPaidPlan !== true ? (
             <Link
               href="/dashboard/social/settings?tab=billing"
               className="hidden h-10 items-center gap-2 rounded-lg bg-[#dfff32] px-4 text-sm font-semibold text-[#2a1728] transition hover:bg-[#d5f526] xl:flex"
@@ -1616,16 +1460,10 @@ function SocialTopbar({
   );
 }
 
-function AccountAvatar({
-  account,
-}: {
-  account: SocialShellAccount;
-}) {
+function AccountAvatar({ account }: { account: SocialShellAccount }) {
   const [broken, setBroken] = useState(false);
   const label =
-    account.displayName ||
-    account.handle ||
-    platformLabel(account.platform);
+    account.displayName || account.handle || platformLabel(account.platform);
 
   if (account.profileImageUrl && !broken) {
     return (
@@ -1646,7 +1484,7 @@ function AccountAvatar({
       title={label}
       className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-slate-100 text-[10px] font-bold text-slate-600"
     >
-      {brandInitials(label) || "•"}
+      {brandInitials(label) || '•'}
     </span>
   );
 }
@@ -1658,17 +1496,15 @@ function SidebarPlatformIcon({
   platform: SocialPlatformKey;
   active: boolean;
 }) {
-  if (platform === "linkedin") {
+  if (platform === 'linkedin') {
     return (
       <span
         aria-hidden="true"
         className={`flex  shrink-0 items-center justify-center rounded-xs text-[11px] font-black leading-none ${
-          active
-            ? "text-white"
-            : " text-[#0a66c2]"
+          active ? 'text-white' : ' text-[#0a66c2]'
         }`}
       >
-        <FaLinkedin size={25}/>
+        <FaLinkedin size={25} />
       </span>
     );
   }
@@ -1697,228 +1533,150 @@ function SocialSidebarContent({
 }) {
   const pathname = usePathname();
 
-  const searchParams =
-    useSearchParams();
+  const searchParams = useSearchParams();
 
-  const summaryActive =
-    pathname === "/dashboard/social";
+  const summaryActive = pathname === '/dashboard/social';
 
   const brandSettingsActive =
-    pathname === "/dashboard/social/brands" ||
-    pathname.startsWith("/dashboard/social/brands/");
+    pathname === '/dashboard/social/brands' ||
+    pathname.startsWith('/dashboard/social/brands/');
 
-  const starterPlatformSet =
-    new Set(
-      STARTER_PLATFORMS.map(
-        (item) =>
-          item.accountPlatform,
-      ),
-    );
+  const starterPlatformSet = new Set(
+    STARTER_PLATFORMS.map((item) => item.accountPlatform),
+  );
 
-  const extraAccounts =
-    data.accounts.filter(
-      (account) =>
-        !starterPlatformSet.has(
-          account.platform,
-        ),
-    );
+  const extraAccounts = data.accounts.filter(
+    (account) => !starterPlatformSet.has(account.platform),
+  );
 
   return (
     <div className="flex h-full flex-col bg-white">
       <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
         <Link
-          href={withSocialPreview("/dashboard/social", searchParams)}
+          href={withSocialPreview('/dashboard/social', searchParams)}
           onClick={onNavigate}
-          title={
-            collapsed
-              ? "Summary"
-              : undefined
-          }
+          title={collapsed ? 'Summary' : undefined}
           className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
             summaryActive
-              ? "bg-[#2a1728] text-white"
-              : "text-slate-700 hover:bg-slate-100"
+              ? 'bg-[#2a1728] text-white'
+              : 'text-slate-700 hover:bg-slate-100'
           }`}
         >
           <ClipboardList className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? (
-            <span>Summary</span>
-          ) : null}
+          {!collapsed ? <span>Summary</span> : null}
         </Link>
 
         <div className="mt-2 space-y-1">
-          {STARTER_PLATFORMS.map(
-            (item) => {
-              const account =
-                pickConnectedPlatformAccount(
-                  data.accounts,
-                  item.accountPlatform,
-                );
+          {STARTER_PLATFORMS.map((item) => {
+            const account = pickConnectedPlatformAccount(
+              data.accounts,
+              item.accountPlatform,
+            );
 
-              const active =
-                pathname === item.href ||
-                pathname.startsWith(
-                  `${item.href}/`,
-                );
+            const active =
+              pathname === item.href || pathname.startsWith(`${item.href}/`);
 
-              const href = withSocialPreview(
-                item.href,
-                searchParams,
-              );
+            const href = withSocialPreview(item.href, searchParams);
 
-              return (
-                <Link
-                  key={
-                    item.accountPlatform
-                  }
-                  href={href}
-                  onClick={onNavigate}
-                  title={
-                    collapsed
-                      ? item.label
-                      : undefined
-                  }
-                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
-                    active
-                      ? "bg-[#2a1728] text-white"
-                      : "text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  <SidebarPlatformIcon
-                    platform={
-                      item.platform
-                    }
-                    active={active}
-                  />
+            return (
+              <Link
+                key={item.accountPlatform}
+                href={href}
+                onClick={onNavigate}
+                title={collapsed ? item.label : undefined}
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+                  active
+                    ? 'bg-[#2a1728] text-white'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <SidebarPlatformIcon platform={item.platform} active={active} />
 
-                  {!collapsed ? (
-                    <span className="min-w-0 flex-1 truncate">
-                      {item.label}
+                {!collapsed ? (
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                ) : null}
+
+                {!collapsed ? (
+                  account ? (
+                    <AccountAvatar account={account} />
+                  ) : item.premium ? (
+                    <span
+                      title="Available with an upgraded plan"
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dfff32] text-[#2a1728]"
+                    >
+                      <Gem className="h-4 w-4" />
                     </span>
-                  ) : null}
-
-                  {!collapsed ? (
-                    account ? (
-                      <AccountAvatar
-                        account={
-                          account
-                        }
-                      />
-                    ) : item.premium ? (
-                      <span
-                        title="Available with an upgraded plan"
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dfff32] text-[#2a1728]"
-                      >
-                        <Gem className="h-4 w-4" />
-                      </span>
-                    ) : (
-                      <span
-                        aria-hidden="true"
-                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${
-                          active
-                            ? "border-white/70 text-white"
-                            : "border-slate-300 text-slate-400"
-                        }`}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </span>
-                    )
-                  ) : null}
-                </Link>
-              );
-            },
-          )}
-
-          {extraAccounts.map(
-            (account) => {
-              const platform =
-                normalizePlatform(
-                  account.platform,
-                );
-
-              if (!platform) {
-                return null;
-              }
-
-              const platformHref =
-                platformPageHref(
-                  account.platform,
-                );
-
-              const active =
-                pathname === platformHref ||
-                pathname.startsWith(`${platformHref}/`);
-
-              return (
-                <Link
-                  key={`${platform}:${account.displayName ?? account.handle ?? "account"}`}
-                  href={withSocialPreview(
-                    platformHref,
-                    searchParams,
-                  )}
-                  onClick={onNavigate}
-                  title={
-                    collapsed
-                      ? platformLabel(
-                          account.platform,
-                        )
-                      : undefined
-                  }
-                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
-                    active
-                      ? "bg-[#2a1728] text-white"
-                      : "text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  <SidebarPlatformIcon
-                    platform={platform}
-                    active={active}
-                  />
-
-                  {!collapsed ? (
-                    <span className="min-w-0 flex-1 truncate">
-                      {platformLabel(
-                        account.platform,
-                      )}
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${
+                        active
+                          ? 'border-white/70 text-white'
+                          : 'border-slate-300 text-slate-400'
+                      }`}
+                    >
+                      <Plus className="h-4 w-4" />
                     </span>
-                  ) : null}
+                  )
+                ) : null}
+              </Link>
+            );
+          })}
 
-                  {!collapsed ? (
-                    <AccountAvatar
-                      account={account}
-                    />
-                  ) : null}
-                </Link>
-              );
-            },
-          )}
+          {extraAccounts.map((account) => {
+            const platform = normalizePlatform(account.platform);
+
+            if (!platform) {
+              return null;
+            }
+
+            const platformHref = platformPageHref(account.platform);
+
+            const active =
+              pathname === platformHref ||
+              pathname.startsWith(`${platformHref}/`);
+
+            return (
+              <Link
+                key={`${platform}:${account.displayName ?? account.handle ?? 'account'}`}
+                href={withSocialPreview(platformHref, searchParams)}
+                onClick={onNavigate}
+                title={collapsed ? platformLabel(account.platform) : undefined}
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+                  active
+                    ? 'bg-[#2a1728] text-white'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <SidebarPlatformIcon platform={platform} active={active} />
+
+                {!collapsed ? (
+                  <span className="min-w-0 flex-1 truncate">
+                    {platformLabel(account.platform)}
+                  </span>
+                ) : null}
+
+                {!collapsed ? <AccountAvatar account={account} /> : null}
+              </Link>
+            );
+          })}
         </div>
 
         <Link
           href={withSocialPreview(
-            "/dashboard/social?connections=open",
+            '/dashboard/social?connections=open',
             searchParams,
           )}
           onClick={onNavigate}
-          title={
-            collapsed
-              ? "More connections"
-              : undefined
-          }
+          title={collapsed ? 'More connections' : undefined}
           className={`mt-3 flex items-center justify-center gap-2 rounded-xl border border-slate-900 text-sm font-medium text-slate-900 transition hover:bg-slate-100 ${
-            collapsed
-              ? "h-11 w-11 px-0"
-              : "px-3 py-2.5"
+            collapsed ? 'h-11 w-11 px-0' : 'px-3 py-2.5'
           }`}
         >
           <Plus className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? (
-            <span>
-              More connections
-            </span>
-          ) : null}
+          {!collapsed ? <span>More connections</span> : null}
         </Link>
       </div>
 
@@ -1950,9 +1708,7 @@ function SocialSidebarContent({
         >
           <FileBarChart2 className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? (
-            <span>Reports</span>
-          ) : null}
+          {!collapsed ? <span>Reports</span> : null}
         </button>
 
         <button
@@ -1963,80 +1719,68 @@ function SocialSidebarContent({
         >
           <Hash className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? (
-            <span>
-              Hashtag Tracker
-            </span>
-          ) : null}
+          {!collapsed ? <span>Hashtag Tracker</span> : null}
         </button>
 
         <Link
           href={withSocialPreview(
-            "/dashboard/social/brands/settings",
+            '/dashboard/social/brands/settings',
             searchParams,
           )}
           onClick={onNavigate}
-          title={
-            collapsed
-              ? "Brand settings"
-              : undefined
-          }
+          title={collapsed ? 'Brand settings' : undefined}
           className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
             brandSettingsActive
-              ? "bg-[#2a1728] text-white"
-              : "text-slate-700 hover:bg-slate-100"
+              ? 'bg-[#2a1728] text-white'
+              : 'text-slate-700 hover:bg-slate-100'
           }`}
         >
           <Settings2 className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? (
-            <span>
-              Brand settings
-            </span>
-          ) : null}
+          {!collapsed ? <span>Brand settings</span> : null}
         </Link>
       </div>
 
       <div className="shrink-0 border-t border-slate-200 px-3 py-3">
-  {!mobile && onToggleCollapsed ? (
-    <div className="space-y-2">
-      <Link
-        href="/dashboard"
-        onClick={onNavigate}
-        title={collapsed ? "Back to TAKATAK" : undefined}
-        className={`flex items-center rounded-xl py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 ${
-          collapsed ? "justify-center px-0" : "gap-3 px-3"
-        }`}
-      >
-        <ArrowLeft className="h-5 w-5 shrink-0" />
+        {!mobile && onToggleCollapsed ? (
+          <div className="space-y-2">
+            <Link
+              href="/dashboard"
+              onClick={onNavigate}
+              title={collapsed ? 'Back to TAKATAK' : undefined}
+              className={`flex items-center rounded-xl py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 ${
+                collapsed ? 'justify-center px-0' : 'gap-3 px-3'
+              }`}
+            >
+              <ArrowLeft className="h-5 w-5 shrink-0" />
 
-        {!collapsed ? <span>Back to TAKATAK</span> : null}
-      </Link>
+              {!collapsed ? <span>Back to TAKATAK</span> : null}
+            </Link>
 
-      <button
-        type="button"
-        onClick={onToggleCollapsed}
-        title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100"
-      >
-        {collapsed ? (
-          <ChevronRight className="h-5 w-5" />
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100"
+            >
+              {collapsed ? (
+                <ChevronRight className="h-5 w-5" />
+              ) : (
+                <ChevronLeft className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         ) : (
-          <ChevronLeft className="h-5 w-5" />
+          <Link
+            href="/dashboard"
+            onClick={onNavigate}
+            className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Back to TAKATAK
+          </Link>
         )}
-      </button>
-    </div>
-  ) : (
-    <Link
-      href="/dashboard"
-      onClick={onNavigate}
-      className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-    >
-      <ArrowLeft className="h-5 w-5" />
-      Back to TAKATAK
-    </Link>
-  )}
-</div>
+      </div>
     </div>
   );
 }
@@ -2046,61 +1790,48 @@ export function SocialWorkspaceShell({
   data,
 }: SocialWorkspaceShellProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] =
-    useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [addBrandOpen, setAddBrandOpen] = useState(false);
   const [oauthNotice, setOauthNotice] = useState<{
-    tone: "success" | "error";
+    tone: 'success' | 'error';
     message: string;
   } | null>(null);
 
-  const searchParams =
-  useSearchParams();
+  const searchParams = useSearchParams();
 
-const previewMode =
-  process.env.NODE_ENV !==
-  "production"
-    ? searchParams.get("preview")
-    : null;
+  const previewMode =
+    process.env.NODE_ENV !== 'production' ? searchParams.get('preview') : null;
 
-const effectiveData: SocialShellData =
-  previewMode === "new"
-    ? {
-        ...data,
-        hasPaidPlan: false,
-      }
-    : previewMode ===
-        "subscribed"
+  const effectiveData: SocialShellData =
+    previewMode === 'new'
       ? {
           ...data,
-          hasPaidPlan: true,
+          hasPaidPlan: false,
         }
-      : data;
+      : previewMode === 'subscribed'
+        ? {
+            ...data,
+            hasPaidPlan: true,
+          }
+        : data;
 
   useEffect(() => {
-    const frame =
-      window.requestAnimationFrame(
-        () => {
-          setCollapsed(
-            window.localStorage.getItem(
-              "takatak_social_sidebar_collapsed",
-            ) === "1",
-          );
-        },
+    const frame = window.requestAnimationFrame(() => {
+      setCollapsed(
+        window.localStorage.getItem('takatak_social_sidebar_collapsed') === '1',
       );
+    });
 
     return () => {
-      window.cancelAnimationFrame(
-        frame,
-      );
+      window.cancelAnimationFrame(frame);
     };
   }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("addBrand") !== "1") {
+    if (params.get('addBrand') !== '1') {
       return;
     }
     setAddBrandOpen(true);
@@ -2110,51 +1841,57 @@ const effectiveData: SocialShellData =
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const outcome = params.get("social_oauth");
+    const outcome = params.get('social_oauth');
     if (!outcome) {
       return;
     }
 
-    if (outcome === "accepted") {
+    if (outcome === 'accepted') {
       setOauthNotice({
-        tone: "success",
+        tone: 'success',
         message:
-          "Facebook authorization succeeded. Your connection was updated.",
+          'Facebook authorization succeeded. Your connection was updated.',
       });
-    } else if (outcome === "failed") {
+    } else if (outcome === 'failed') {
       setOauthNotice({
-        tone: "error",
-        message:
-          "Facebook authorization failed. You can try connecting again.",
+        tone: 'error',
+        message: 'Facebook authorization failed. You can try connecting again.',
       });
-    } else if (outcome === "cancelled") {
+    } else if (outcome === 'cancelled') {
       setOauthNotice({
-        tone: "error",
-        message: "Facebook authorization was cancelled.",
+        tone: 'error',
+        message: 'Facebook authorization was cancelled.',
       });
     }
 
     // Strip the param only when Next's history flag is present so the
     // patched replaceState does not dispatch ACTION_RESTORE.
-    const state = window.history.state as { __NA?: boolean; _N?: boolean } | null;
+    const state = window.history.state as {
+      __NA?: boolean;
+      _N?: boolean;
+    } | null;
     if (!state?.__NA && !state?._N) {
       return;
     }
-    params.delete("social_oauth");
+    params.delete('social_oauth');
     const query = params.toString();
-    window.history.replaceState(state, "", query ? `${pathname}?${query}` : pathname);
+    window.history.replaceState(
+      state,
+      '',
+      query ? `${pathname}?${query}` : pathname,
+    );
   }, [pathname]);
 
   const hideSidebar = isSocialSettingsPage(pathname);
-  const isPlanningPage = pathname.startsWith("/dashboard/social/calendar");
+  const isPlanningPage = pathname.startsWith('/dashboard/social/calendar');
 
   function toggleCollapsed() {
     setCollapsed((current) => {
       const next = !current;
 
       window.localStorage.setItem(
-        "takatak_social_sidebar_collapsed",
-        next ? "1" : "0",
+        'takatak_social_sidebar_collapsed',
+        next ? '1' : '0',
       );
 
       return next;
@@ -2163,7 +1900,7 @@ const effectiveData: SocialShellData =
 
   return (
     <div
-      className={`min-h-screen ${hideSidebar ? "bg-white" : "bg-[#eef1f3]"}`}
+      className={`min-h-screen ${hideSidebar ? 'bg-white' : 'bg-[#eef1f3]'}`}
     >
       <SocialTopbar
         data={effectiveData}
@@ -2176,7 +1913,7 @@ const effectiveData: SocialShellData =
       {hideSidebar ? null : (
         <aside
           className={`fixed bottom-0 left-0 top-[66px] z-30 hidden border-r border-slate-200 bg-white transition-[width] duration-200 lg:block ${
-            collapsed ? "w-[74px]" : "w-[238px]"
+            collapsed ? 'w-[74px]' : 'w-[238px]'
           }`}
         >
           <SocialSidebarContent
@@ -2236,26 +1973,26 @@ const effectiveData: SocialShellData =
         className={`pt-[66px] transition-[padding] duration-200 ${
           hideSidebar
             ? isPlanningPage
-              ? "h-screen overflow-hidden bg-[#eaeeef]"
-              : "min-h-screen bg-white"
-            : `min-h-screen ${collapsed ? "lg:pl-[74px]" : "lg:pl-[238px]"}`
+              ? 'h-screen overflow-hidden bg-[#eaeeef]'
+              : 'min-h-screen bg-white'
+            : `min-h-screen ${collapsed ? 'lg:pl-[74px]' : 'lg:pl-[238px]'}`
         }`}
       >
         {hideSidebar ? (
           <div
             className={
               isPlanningPage
-                ? "flex h-full min-h-0 flex-col overflow-hidden"
-                : "w-full"
+                ? 'flex h-full min-h-0 flex-col overflow-hidden'
+                : 'w-full'
             }
           >
             {oauthNotice ? (
               <div className="px-5 pt-4 sm:px-6">
                 <div
                   className={`flex items-start justify-between gap-3 rounded-[12px] border px-4 py-3 text-sm ${
-                    oauthNotice.tone === "success"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                      : "border-rose-200 bg-rose-50 text-rose-900"
+                    oauthNotice.tone === 'success'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                      : 'border-rose-200 bg-rose-50 text-rose-900'
                   }`}
                   role="status"
                 >
@@ -2284,9 +2021,9 @@ const effectiveData: SocialShellData =
             {oauthNotice ? (
               <div
                 className={`mb-4 flex items-start justify-between gap-3 rounded-[12px] border px-4 py-3 text-sm ${
-                  oauthNotice.tone === "success"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-                    : "border-rose-200 bg-rose-50 text-rose-900"
+                  oauthNotice.tone === 'success'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                    : 'border-rose-200 bg-rose-50 text-rose-900'
                 }`}
                 role="status"
               >
@@ -2321,22 +2058,18 @@ const effectiveData: SocialShellData =
         activeBrandId={effectiveData.activeBrandId}
         canAddBrand={
           Boolean(effectiveData.canManageBrands) &&
-          effectiveData.brands.length <
-            (effectiveData.brandAllowance ?? 1)
+          effectiveData.brands.length < (effectiveData.brandAllowance ?? 0)
         }
-        brandAllowance={effectiveData.brandAllowance ?? 1}
+        brandAllowance={effectiveData.brandAllowance ?? 0}
         hasPaidPlan={Boolean(effectiveData.hasPaidPlan)}
-        billingHref={withSocialPreview(
-          "/dashboard/billing",
-          searchParams,
-        )}
-        usersHref={withSocialPreview("/dashboard/social/users", searchParams)}
+        billingHref={withSocialPreview('/dashboard/billing', searchParams)}
+        usersHref={withSocialPreview('/dashboard/social/users', searchParams)}
         onClose={() => setAddBrandOpen(false)}
         onSelectBrand={(brandId) => {
-          void fetch("/api/social/brand-context", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: { "Content-Type": "application/json" },
+          void fetch('/api/social/brand-context', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ brandId }),
           }).then((response) => {
             if (response.ok) {
@@ -2351,25 +2084,12 @@ const effectiveData: SocialShellData =
       />
 
       <ManageConnectionsModal
-        key={
-          data.activeBrandId ??
-          "no-active-brand"
-        }
-        activeBrandId={
-          data.activeBrandId
-        }
-        activeBrandName={
-          data.activeBrandName
-        }
-        providers={
-          data.providers
-        }
-        initialConnections={
-          data.connections
-        }
-        canManage={
-          data.canManageSocialAccounts
-        }
+        key={data.activeBrandId ?? 'no-active-brand'}
+        activeBrandId={data.activeBrandId}
+        activeBrandName={data.activeBrandName}
+        providers={data.providers}
+        initialConnections={data.connections}
+        canManage={data.canManageSocialAccounts}
       />
     </div>
   );

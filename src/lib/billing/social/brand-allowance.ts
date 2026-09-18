@@ -127,6 +127,7 @@ export async function applySocialBrandAllowance(options: {
   frozenIds: string[];
   restoredIds: string[];
   blockedPostIds: string[];
+  restoredPostIds: string[];
 }> {
   const prisma = getPrisma();
 
@@ -147,7 +148,15 @@ export async function applySocialBrandAllowance(options: {
       }
     } else {
       const preview = planBrandFreeze(context.brands, context.allowance, null);
-      if (preview.overAllowance) {
+
+      /*
+       * A paid downgrade with remaining slots requires the owner to choose
+       * which brands stay active.
+       *
+       * A blocked/unsubscribed workspace has an allowance of zero, so there
+       * is no selection to make. Every live brand must freeze automatically.
+       */
+      if (preview.overAllowance && context.allowance > 0) {
         throw new ServiceError(
           'invalid_input',
           'This plan covers fewer brands than you have. Choose which brands stay active.',
@@ -190,7 +199,9 @@ export async function applySocialBrandAllowance(options: {
     const posts = await transaction.socialPost.findMany({
       where: {
         clientId: options.clientId,
-        status: 'scheduled',
+        status: {
+          in: ['scheduled', 'blocked_by_plan'],
+        },
       },
       select: {
         id: true,
@@ -200,31 +211,79 @@ export async function applySocialBrandAllowance(options: {
       },
     });
 
-    const blockedPostIds = planScheduledPostBlocks({
-      posts: posts.map((post) => ({
-        id: post.id,
-        brandId: post.businessBrandId,
-        status: post.status,
-        scheduledAt: post.scheduledAt,
-      })),
-      frozenBrandIds: frozenIds,
-      monthlyPostAllowance: context.monthlyPostAllowance,
+    const now = new Date();
+
+    /*
+     * Scheduled posts are always evaluated.
+     *
+     * A blocked_by_plan post is eligible for automatic restoration only when
+     * its scheduled time is still in the future. Missed posts remain blocked
+     * so they cannot suddenly publish late after a subscription renewal.
+     */
+    const reconciliationCandidates = posts.filter((post) => {
+      if (post.status === 'scheduled') {
+        return true;
+      }
+
+      return Boolean(post.scheduledAt && post.scheduledAt > now);
     });
+
+    const shouldRemainBlocked = new Set(
+      planScheduledPostBlocks({
+        posts: reconciliationCandidates.map((post) => ({
+          id: post.id,
+          brandId: post.businessBrandId,
+          status: 'scheduled',
+          scheduledAt: post.scheduledAt,
+        })),
+        frozenBrandIds: frozenIds,
+        monthlyPostAllowance: context.monthlyPostAllowance,
+      }),
+    );
+
+    const blockedPostIds = posts
+      .filter(
+        (post) =>
+          post.status === 'scheduled' && shouldRemainBlocked.has(post.id),
+      )
+      .map((post) => post.id);
+
+    const restoredPostIds = posts
+      .filter(
+        (post) =>
+          post.status === 'blocked_by_plan' &&
+          Boolean(post.scheduledAt && post.scheduledAt > now) &&
+          !shouldRemainBlocked.has(post.id),
+      )
+      .map((post) => post.id);
 
     if (blockedPostIds.length > 0) {
       await transaction.socialPost.updateMany({
         where: {
           clientId: options.clientId,
           id: { in: blockedPostIds },
+          status: 'scheduled',
         },
         data: { status: 'blocked_by_plan' },
+      });
+    }
+
+    if (restoredPostIds.length > 0) {
+      await transaction.socialPost.updateMany({
+        where: {
+          clientId: options.clientId,
+          id: { in: restoredPostIds },
+          status: 'blocked_by_plan',
+        },
+        data: { status: 'scheduled' },
       });
     }
 
     if (
       plan.freezeIds.length > 0 ||
       plan.restoreIds.length > 0 ||
-      blockedPostIds.length > 0
+      blockedPostIds.length > 0 ||
+      restoredPostIds.length > 0
     ) {
       await transaction.auditLog.create({
         data: {
@@ -237,6 +296,7 @@ export async function applySocialBrandAllowance(options: {
             freezeIds: plan.freezeIds,
             restoreIds: plan.restoreIds,
             blockedPostCount: blockedPostIds.length,
+            restoredPostCount: restoredPostIds.length,
             allowance: context.allowance,
           },
         },
@@ -247,6 +307,7 @@ export async function applySocialBrandAllowance(options: {
       frozenIds: plan.freezeIds,
       restoredIds: plan.restoreIds,
       blockedPostIds,
+      restoredPostIds,
     };
   });
 }
