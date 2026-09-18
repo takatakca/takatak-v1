@@ -1,24 +1,24 @@
-import "server-only";
+import 'server-only';
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from '@prisma/client';
 
 import {
   effectiveBrandAllowance,
   isKeepSelectionValid,
   planBrandFreeze,
   planScheduledPostBlocks,
-} from "@/lib/billing/social/brand-allowance-policy";
-import { resolveEffectiveSocialEntitlements } from "@/lib/billing/social/subscription-lifecycle";
-import { getPrisma } from "@/lib/db/prisma";
-import { ServiceError } from "@/lib/services/service-error";
+} from '@/lib/billing/social/brand-allowance-policy';
+import { resolveEffectiveSocialEntitlements } from '@/lib/billing/social/subscription-lifecycle';
+import { getPrisma } from '@/lib/db/prisma';
+import { ServiceError } from '@/lib/services/service-error';
 
 type DbClient =
   | Prisma.TransactionClient
   | {
-      clientSubscription: Prisma.TransactionClient["clientSubscription"];
-      businessBrand: Prisma.TransactionClient["businessBrand"];
-      socialPost: Prisma.TransactionClient["socialPost"];
-      auditLog: Prisma.TransactionClient["auditLog"];
+      clientSubscription: Prisma.TransactionClient['clientSubscription'];
+      businessBrand: Prisma.TransactionClient['businessBrand'];
+      socialPost: Prisma.TransactionClient['socialPost'];
+      auditLog: Prisma.TransactionClient['auditLog'];
     };
 
 async function loadAllowanceContext(db: DbClient, clientId: string) {
@@ -42,7 +42,7 @@ async function loadAllowanceContext(db: DbClient, clientId: string) {
         status: true,
         createdAt: true,
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     }),
   ]);
 
@@ -76,7 +76,7 @@ export async function previewSocialBrandAllowance(clientId: string) {
   const prisma = getPrisma();
 
   if (!prisma) {
-    throw new ServiceError("unavailable", "Brand allowance is unavailable.");
+    throw new ServiceError('unavailable', 'Brand allowance is unavailable.');
   }
 
   const context = await loadAllowanceContext(prisma, clientId);
@@ -84,7 +84,7 @@ export async function previewSocialBrandAllowance(clientId: string) {
 
   return {
     ...plan,
-    hasPaidPlan: context.lifecycle.access === "paid",
+    hasPaidPlan: context.lifecycle.access === 'paid',
     brands: context.brands.map((brand) => ({
       id: brand.id,
       name: brand.name,
@@ -98,23 +98,23 @@ export async function assertClientCanAddBrand(clientId: string): Promise<void> {
   const prisma = getPrisma();
 
   if (!prisma) {
-    throw new ServiceError("unavailable", "The brand service is unavailable.");
+    throw new ServiceError('unavailable', 'The brand service is unavailable.');
   }
 
   const context = await loadAllowanceContext(prisma, clientId);
   const billable = context.brands.filter(
     (brand) =>
-      brand.status === "active" ||
-      brand.status === "draft" ||
-      brand.status === "paused",
+      brand.status === 'active' ||
+      brand.status === 'draft' ||
+      brand.status === 'paused',
   ).length;
 
   if (billable >= context.allowance) {
     throw new ServiceError(
-      "forbidden",
+      'forbidden',
       context.allowance === 0
-        ? "This workspace cannot add brands while Social access is locked."
-        : `This plan allows ${context.allowance} active brand${context.allowance === 1 ? "" : "s"}. Freeze another brand or upgrade to add more.`,
+        ? 'This workspace cannot add brands while Social access is locked.'
+        : `This plan allows ${context.allowance} active brand${context.allowance === 1 ? '' : 's'}. Freeze another brand or upgrade to add more.`,
     );
   }
 }
@@ -127,11 +127,12 @@ export async function applySocialBrandAllowance(options: {
   frozenIds: string[];
   restoredIds: string[];
   blockedPostIds: string[];
+  restoredPostIds: string[];
 }> {
   const prisma = getPrisma();
 
   if (!prisma) {
-    throw new ServiceError("unavailable", "Brand allowance is unavailable.");
+    throw new ServiceError('unavailable', 'Brand allowance is unavailable.');
   }
 
   return prisma.$transaction(async (transaction) => {
@@ -141,16 +142,24 @@ export async function applySocialBrandAllowance(options: {
     if (keepIds) {
       if (!isKeepSelectionValid(context.brands, context.allowance, keepIds)) {
         throw new ServiceError(
-          "invalid_input",
+          'invalid_input',
           "Select which brands to keep, up to this plan's allowance.",
         );
       }
     } else {
       const preview = planBrandFreeze(context.brands, context.allowance, null);
-      if (preview.overAllowance) {
+
+      /*
+       * A paid downgrade with remaining slots requires the owner to choose
+       * which brands stay active.
+       *
+       * A blocked/unsubscribed workspace has an allowance of zero, so there
+       * is no selection to make. Every live brand must freeze automatically.
+       */
+      if (preview.overAllowance && context.allowance > 0) {
         throw new ServiceError(
-          "invalid_input",
-          "This plan covers fewer brands than you have. Choose which brands stay active.",
+          'invalid_input',
+          'This plan covers fewer brands than you have. Choose which brands stay active.',
         );
       }
     }
@@ -163,7 +172,7 @@ export async function applySocialBrandAllowance(options: {
           clientId: options.clientId,
           id: { in: plan.freezeIds },
         },
-        data: { status: "frozen" },
+        data: { status: 'frozen' },
       });
     }
 
@@ -173,7 +182,7 @@ export async function applySocialBrandAllowance(options: {
           clientId: options.clientId,
           id: { in: plan.restoreIds },
         },
-        data: { status: "active" },
+        data: { status: 'active' },
       });
     }
 
@@ -182,7 +191,7 @@ export async function applySocialBrandAllowance(options: {
       ...context.brands
         .filter(
           (brand) =>
-            brand.status === "frozen" && !plan.restoreIds.includes(brand.id),
+            brand.status === 'frozen' && !plan.restoreIds.includes(brand.id),
         )
         .map((brand) => brand.id),
     ];
@@ -190,7 +199,9 @@ export async function applySocialBrandAllowance(options: {
     const posts = await transaction.socialPost.findMany({
       where: {
         clientId: options.clientId,
-        status: "scheduled",
+        status: {
+          in: ['scheduled', 'blocked_by_plan'],
+        },
       },
       select: {
         id: true,
@@ -200,43 +211,92 @@ export async function applySocialBrandAllowance(options: {
       },
     });
 
-    const blockedPostIds = planScheduledPostBlocks({
-      posts: posts.map((post) => ({
-        id: post.id,
-        brandId: post.businessBrandId,
-        status: post.status,
-        scheduledAt: post.scheduledAt,
-      })),
-      frozenBrandIds: frozenIds,
-      monthlyPostAllowance: context.monthlyPostAllowance,
+    const now = new Date();
+
+    /*
+     * Scheduled posts are always evaluated.
+     *
+     * A blocked_by_plan post is eligible for automatic restoration only when
+     * its scheduled time is still in the future. Missed posts remain blocked
+     * so they cannot suddenly publish late after a subscription renewal.
+     */
+    const reconciliationCandidates = posts.filter((post) => {
+      if (post.status === 'scheduled') {
+        return true;
+      }
+
+      return Boolean(post.scheduledAt && post.scheduledAt > now);
     });
+
+    const shouldRemainBlocked = new Set(
+      planScheduledPostBlocks({
+        posts: reconciliationCandidates.map((post) => ({
+          id: post.id,
+          brandId: post.businessBrandId,
+          status: 'scheduled',
+          scheduledAt: post.scheduledAt,
+        })),
+        frozenBrandIds: frozenIds,
+        monthlyPostAllowance: context.monthlyPostAllowance,
+      }),
+    );
+
+    const blockedPostIds = posts
+      .filter(
+        (post) =>
+          post.status === 'scheduled' && shouldRemainBlocked.has(post.id),
+      )
+      .map((post) => post.id);
+
+    const restoredPostIds = posts
+      .filter(
+        (post) =>
+          post.status === 'blocked_by_plan' &&
+          Boolean(post.scheduledAt && post.scheduledAt > now) &&
+          !shouldRemainBlocked.has(post.id),
+      )
+      .map((post) => post.id);
 
     if (blockedPostIds.length > 0) {
       await transaction.socialPost.updateMany({
         where: {
           clientId: options.clientId,
           id: { in: blockedPostIds },
+          status: 'scheduled',
         },
-        data: { status: "blocked_by_plan" },
+        data: { status: 'blocked_by_plan' },
+      });
+    }
+
+    if (restoredPostIds.length > 0) {
+      await transaction.socialPost.updateMany({
+        where: {
+          clientId: options.clientId,
+          id: { in: restoredPostIds },
+          status: 'blocked_by_plan',
+        },
+        data: { status: 'scheduled' },
       });
     }
 
     if (
       plan.freezeIds.length > 0 ||
       plan.restoreIds.length > 0 ||
-      blockedPostIds.length > 0
+      blockedPostIds.length > 0 ||
+      restoredPostIds.length > 0
     ) {
       await transaction.auditLog.create({
         data: {
           profileId: options.actorProfileId ?? null,
           clientId: options.clientId,
-          action: "social_brand_allowance_applied",
-          entityType: "Client",
+          action: 'social_brand_allowance_applied',
+          entityType: 'Client',
           entityId: options.clientId,
           metadata: {
             freezeIds: plan.freezeIds,
             restoreIds: plan.restoreIds,
             blockedPostCount: blockedPostIds.length,
+            restoredPostCount: restoredPostIds.length,
             allowance: context.allowance,
           },
         },
@@ -247,6 +307,7 @@ export async function applySocialBrandAllowance(options: {
       frozenIds: plan.freezeIds,
       restoredIds: plan.restoreIds,
       blockedPostIds,
+      restoredPostIds,
     };
   });
 }

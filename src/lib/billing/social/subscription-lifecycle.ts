@@ -1,36 +1,39 @@
-import { resolveSocialEntitlements } from "./entitlements";
-import { SOCIAL_FREE_PLAN_CODE } from "./plan-catalog";
+import { resolveSocialEntitlements } from './entitlements';
+
+import { SOCIAL_UNSUBSCRIBED_PLAN_CODE } from './plan-catalog';
+
 import type {
   SocialAddonState,
   SocialEntitlements,
   SocialPlanCode,
-} from "./types";
+} from './types';
 
 export const SOCIAL_SUBSCRIPTION_STATUSES = [
-  "incomplete",
-  "trial",
-  "active",
-  "past_due",
-  "grace_period",
-  "canceled",
-  "expired",
-  "free",
-  "paused",
-  "suspended",
+  'incomplete',
+  'trial',
+  'active',
+  'past_due',
+  'grace_period',
+  'canceled',
+  'expired',
+  /**
+   * Legacy database status only.
+   * It grants no access and is not a customer plan.
+   */
+  'free',
+  'paused',
+  'suspended',
 ] as const;
 
 export type SocialSubscriptionStatusName =
   (typeof SOCIAL_SUBSCRIPTION_STATUSES)[number];
 
-export type SocialSubscriptionAccess = "paid" | "free" | "blocked";
+export type SocialSubscriptionAccess = 'paid' | 'blocked';
 
 export type SocialSubscriptionLifecycle = {
   access: SocialSubscriptionAccess;
   status: SocialSubscriptionStatusName | null;
-  displayKey:
-    | SocialSubscriptionStatusName
-    | "cancel_at_period_end"
-    | "missing";
+  displayKey: SocialSubscriptionStatusName | 'cancel_at_period_end' | 'missing';
   label: string;
   paidUntil: Date | null;
 };
@@ -42,29 +45,37 @@ export type ResolveSocialSubscriptionLifecycleInput = {
   now?: Date;
 };
 
-const LABELS: Record<SocialSubscriptionLifecycle["displayKey"], string> = {
-  incomplete: "Checkout incomplete",
-  trial: "Trial",
-  active: "Active",
-  past_due: "Payment past due",
-  grace_period: "Payment retry",
-  canceled: "Canceled",
-  expired: "Expired",
-  free: "Free",
-  paused: "Paused",
-  suspended: "Suspended",
-  cancel_at_period_end: "Cancels at period end",
-  missing: "No subscription",
+const LABELS: Record<SocialSubscriptionLifecycle['displayKey'], string> = {
+  incomplete: 'Checkout incomplete',
+  trial: 'Trial',
+  active: 'Active',
+  past_due: 'Payment past due',
+  grace_period: 'Payment retry',
+  canceled: 'Canceled',
+  expired: 'Expired',
+  free: 'Subscription required',
+  paused: 'Paused',
+  suspended: 'Suspended',
+  cancel_at_period_end: 'Cancels at period end',
+  missing: 'No active Social subscription',
 };
 
-function parsePeriodEnd(
-  value: Date | string | null | undefined,
-): Date | null {
+function isSocialSubscriptionStatus(
+  value: string | null | undefined,
+): value is SocialSubscriptionStatusName {
+  return (
+    typeof value === 'string' &&
+    (SOCIAL_SUBSCRIPTION_STATUSES as readonly string[]).includes(value)
+  );
+}
+
+function parsePeriodEnd(value: Date | string | null | undefined): Date | null {
   if (!value) {
     return null;
   }
 
   const date = value instanceof Date ? value : new Date(value);
+
   if (Number.isNaN(date.getTime())) {
     return null;
   }
@@ -76,69 +87,65 @@ function periodStillOpen(periodEnd: Date | null, now: Date): boolean {
   return Boolean(periodEnd && periodEnd.getTime() > now.getTime());
 }
 
-function isStatus(
-  value: string | null | undefined,
-): value is SocialSubscriptionStatusName {
-  return (
-    typeof value === "string" &&
-    (SOCIAL_SUBSCRIPTION_STATUSES as readonly string[]).includes(value)
-  );
+function blockedLifecycle(input: {
+  status: SocialSubscriptionStatusName | null;
+  displayKey: SocialSubscriptionLifecycle['displayKey'];
+}): SocialSubscriptionLifecycle {
+  return {
+    access: 'blocked',
+    status: input.status,
+    displayKey: input.displayKey,
+    label: LABELS[input.displayKey],
+    paidUntil: null,
+  };
 }
 
-/**
- * Pure: subscription row → paid / Free / blocked.
- * Expired and ended cancels fall back to Free. They do not delete data.
- */
 export function resolveSocialSubscriptionLifecycle(
   input: ResolveSocialSubscriptionLifecycleInput = {},
 ): SocialSubscriptionLifecycle {
   const now = input.now ?? new Date();
   const periodEnd = parsePeriodEnd(input.currentPeriodEnd);
-  const status = isStatus(input.status) ? input.status : null;
+
+  const status = isSocialSubscriptionStatus(input.status) ? input.status : null;
 
   if (!status) {
-    return {
-      access: "blocked",
+    return blockedLifecycle({
       status: null,
-      displayKey: "missing",
-      label: LABELS.missing,
-      paidUntil: null,
-    };
+      displayKey: 'missing',
+    });
   }
 
-  if (status === "incomplete" || status === "paused" || status === "suspended") {
-    return {
-      access: "blocked",
+  if (
+    status === 'incomplete' ||
+    status === 'paused' ||
+    status === 'suspended'
+  ) {
+    return blockedLifecycle({
       status,
       displayKey: status,
-      label: LABELS[status],
-      paidUntil: null,
-    };
+    });
   }
 
-  if (status === "trial" || status === "active") {
+  if (status === 'trial' || status === 'active') {
     if (input.cancelAtPeriodEnd && periodStillOpen(periodEnd, now)) {
       return {
-        access: "paid",
+        access: 'paid',
         status,
-        displayKey: "cancel_at_period_end",
+        displayKey: 'cancel_at_period_end',
         label: LABELS.cancel_at_period_end,
         paidUntil: periodEnd,
       };
     }
 
     if (input.cancelAtPeriodEnd && !periodStillOpen(periodEnd, now)) {
-      return {
-        access: "free",
+      return blockedLifecycle({
         status,
-        displayKey: "free",
-        label: LABELS.free,
-        paidUntil: null,
-      };
+        displayKey: 'expired',
+      });
     }
 
     return {
-      access: "paid",
+      access: 'paid',
       status,
       displayKey: status,
       label: LABELS[status],
@@ -146,9 +153,9 @@ export function resolveSocialSubscriptionLifecycle(
     };
   }
 
-  if (status === "past_due" || status === "grace_period") {
+  if (status === 'past_due' || status === 'grace_period') {
     return {
-      access: "paid",
+      access: 'paid',
       status,
       displayKey: status,
       label: LABELS[status],
@@ -156,47 +163,42 @@ export function resolveSocialSubscriptionLifecycle(
     };
   }
 
-  if (status === "canceled") {
+  if (status === 'canceled') {
     if (periodStillOpen(periodEnd, now)) {
       return {
-        access: "paid",
+        access: 'paid',
         status,
-        displayKey: "cancel_at_period_end",
+        displayKey: 'cancel_at_period_end',
         label: LABELS.cancel_at_period_end,
         paidUntil: periodEnd,
       };
     }
 
-    return {
-      access: "free",
+    return blockedLifecycle({
       status,
-      displayKey: "free",
-      label: LABELS.free,
-      paidUntil: null,
-    };
+      displayKey: 'canceled',
+    });
   }
 
-  if (status === "expired") {
-    return {
-      access: "free",
+  if (status === 'expired') {
+    return blockedLifecycle({
       status,
-      displayKey: "expired",
-      label: LABELS.expired,
-      paidUntil: null,
-    };
+      displayKey: 'expired',
+    });
   }
 
-  return {
-    access: "free",
-    status: "free",
-    displayKey: "free",
-    label: LABELS.free,
-    paidUntil: null,
-  };
+  /*
+   * Legacy "free" rows reach this branch.
+   * They are blocked and receive no Social entitlements.
+   */
+  return blockedLifecycle({
+    status: 'free',
+    displayKey: 'free',
+  });
 }
 
 export function socialSubscriptionStatusLabel(
-  displayKey: SocialSubscriptionLifecycle["displayKey"],
+  displayKey: SocialSubscriptionLifecycle['displayKey'],
 ): string {
   return LABELS[displayKey];
 }
@@ -215,9 +217,11 @@ export function resolveEffectiveSocialEntitlements(input: {
   effectivePlanCode: SocialPlanCode;
 } {
   const lifecycle = resolveSocialSubscriptionLifecycle(input);
-  const paid = lifecycle.access === "paid";
+
+  const paid = lifecycle.access === 'paid';
+
   const entitlements = resolveSocialEntitlements({
-    planCode: paid ? input.planCode : SOCIAL_FREE_PLAN_CODE,
+    planCode: paid ? input.planCode : SOCIAL_UNSUBSCRIBED_PLAN_CODE,
     addOns: paid ? input.addOns : undefined,
     customBrandAllowance: paid ? input.customBrandAllowance : undefined,
   });

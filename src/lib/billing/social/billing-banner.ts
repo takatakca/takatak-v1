@@ -1,18 +1,16 @@
-import "server-only";
+import 'server-only';
 
 import {
   resolveSocialBillingBanner,
   type SocialBillingBannerModel,
-} from "@/lib/billing/social/billing-banner-policy";
-import {
-  resolveEffectiveSocialEntitlements,
-} from "@/lib/billing/social/subscription-lifecycle";
+} from '@/lib/billing/social/billing-banner-policy';
+import { resolveEffectiveSocialEntitlements } from '@/lib/billing/social/subscription-lifecycle';
 import {
   effectiveBrandAllowance,
   planBrandFreeze,
-} from "@/lib/billing/social/brand-allowance-policy";
-import type { SocialEntitlements } from "@/lib/billing/social/types";
-import { getPrisma } from "@/lib/db/prisma";
+} from '@/lib/billing/social/brand-allowance-policy';
+import type { SocialEntitlements } from '@/lib/billing/social/types';
+import { getPrisma } from '@/lib/db/prisma';
 
 export type SocialShellBilling = {
   planName: string;
@@ -27,7 +25,7 @@ function periodEndLabel(value: Date | null | undefined): string | null {
   if (!value) {
     return null;
   }
-  return value.toLocaleDateString("en-CA");
+  return value.toLocaleDateString('en-CA');
 }
 
 export async function getSocialShellBilling(
@@ -59,7 +57,7 @@ export async function getSocialShellBilling(
           status: true,
           createdAt: true,
         },
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: 'asc' },
       }),
     ]);
 
@@ -88,7 +86,7 @@ export async function getSocialShellBilling(
 
     return {
       planName: entitlements.planName,
-      hasPaidPlan: lifecycle.access === "paid",
+      hasPaidPlan: lifecycle.access === 'paid',
       reports: entitlements.reports,
       analyticsHistoryDays: entitlements.analyticsHistoryDays,
       entitlements,
@@ -105,8 +103,8 @@ export async function getSocialShellBilling(
     };
   } catch (error) {
     console.error(
-      "[social-billing-banner] Could not load shell billing:",
-      error instanceof Error ? error.message : "Unknown error",
+      '[social-billing-banner] Could not load shell billing:',
+      error instanceof Error ? error.message : 'Unknown error',
     );
     return null;
   }

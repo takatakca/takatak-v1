@@ -9,17 +9,17 @@ import {
   socialPlanRank,
   socialStripePriceEnvKey,
   validateSocialStripeCheckoutInput,
-} from "../src/lib/billing/social/stripe-checkout-policy";
+} from '../src/lib/billing/social/stripe-checkout-policy';
 import {
   interpretDeletedStripeSubscription,
   interpretFailedStripeInvoice,
   interpretStripeSubscriptionEvent,
   mapStripeSubscriptionStatus,
   resolvePlanCodeFromStripe,
-  shouldForceFreeAfterFailedInvoice,
+  shouldBlockAfterFailedInvoice,
   SOCIAL_STRIPE_FAILED_PAYMENT_ATTEMPTS,
   stripeSubscriptionPeriod,
-} from "../src/lib/billing/social/stripe-webhook-policy";
+} from '../src/lib/billing/social/stripe-webhook-policy';
 
 type Row = { name: string; ok: boolean; detail: string };
 
@@ -33,163 +33,167 @@ function check(name: string, ok: boolean, detail: string) {
 }
 
 const priceMap = {
-  price_starter5_month: { planCode: "social_starter_5" as const, cycle: "monthly" as const },
+  price_starter5_month: {
+    planCode: 'social_starter_5' as const,
+    cycle: 'monthly' as const,
+  },
   price_advanced15_year: {
-    planCode: "social_advanced_15" as const,
-    cycle: "annual" as const,
+    planCode: 'social_advanced_15' as const,
+    cycle: 'annual' as const,
   },
 };
 
 function main() {
   check(
-    "checkout stays off without keys",
+    'checkout stays off without keys',
     resolveSocialCheckoutLive({
-      secretKey: "",
-      webhookSecret: "whsec_test",
+      secretKey: '',
+      webhookSecret: 'whsec_test',
       hasPrice: true,
     }) === false,
-    "missing secret key must keep buttons disabled",
+    'missing secret key must keep buttons disabled',
   );
 
   check(
-    "checkout stays off without a price",
+    'checkout stays off without a price',
     resolveSocialCheckoutLive({
-      secretKey: "sk_test_x",
-      webhookSecret: "whsec_test",
+      secretKey: 'sk_test_x',
+      webhookSecret: 'whsec_test',
       hasPrice: false,
     }) === false,
-    "keys without Price IDs must keep buttons disabled",
+    'keys without Price IDs must keep buttons disabled',
   );
 
   check(
-    "checkout live with keys and a price",
+    'checkout live with keys and a price',
     resolveSocialCheckoutLive({
-      secretKey: "sk_test_x",
-      webhookSecret: "whsec_test",
+      secretKey: 'sk_test_x',
+      webhookSecret: 'whsec_test',
       hasPrice: true,
     }) === true,
-    "secret, webhook secret, and one Price ID enable checkout",
+    'secret, webhook secret, and one Price ID enable checkout',
   );
 
   check(
-    "price env key name",
-    socialStripePriceEnvKey("social_starter_5", "monthly") ===
-      "STRIPE_PRICE_SOCIAL_STARTER_5_MONTHLY",
-    "Price IDs must use the catalog plan code",
+    'price env key name',
+    socialStripePriceEnvKey('social_starter_5', 'monthly') ===
+      'STRIPE_PRICE_SOCIAL_STARTER_5_MONTHLY',
+    'Price IDs must use the catalog plan code',
   );
 
   const custom = validateSocialStripeCheckoutInput({
-    planCode: "social_custom",
-    billingCycle: "monthly",
+    planCode: 'social_custom',
+    billingCycle: 'monthly',
   });
   check(
-    "Custom is not self-serve checkout",
+    'Custom is not self-serve checkout',
     custom.success === false,
-    "Custom must stay Talk to us",
+    'Custom must stay Talk to us',
   );
 
-  const free = validateSocialStripeCheckoutInput({
-    planCode: "social_free",
-    billingCycle: "monthly",
+  const unsubscribed = validateSocialStripeCheckoutInput({
+    planCode: 'social_unsubscribed',
+    billingCycle: 'monthly',
   });
+
   check(
-    "Free is not a Stripe checkout plan",
-    free.success === false,
-    "Free must not open Checkout",
+    'unsubscribed is not a Stripe checkout plan',
+    unsubscribed.success === false,
+    'the internal unsubscribed state must not open Checkout',
   );
 
   const starter = validateSocialStripeCheckoutInput({
-    planCode: "social_starter_5",
-    billingCycle: "annual",
+    planCode: 'social_starter_5',
+    billingCycle: 'annual',
   });
   check(
-    "Starter annual is a valid checkout request",
+    'Starter annual is a valid checkout request',
     starter.success === true,
-    "Starter 5 annual should pass validation",
+    'Starter 5 annual should pass validation',
   );
 
   check(
-    "Free to Starter is Checkout, not incomplete",
+    'unsubscribed to Starter uses Checkout',
     resolveSocialStripePlanChange({
-      currentPlanCode: "social_free",
-      targetPlanCode: "social_starter_5",
+      currentPlanCode: 'social_unsubscribed',
+      targetPlanCode: 'social_starter_5',
       hasStripeSubscription: false,
-      currentAccess: "free",
-    }) === "checkout",
-    "Upgrade from Free must wait for the webhook instead of setting incomplete",
+      currentAccess: 'blocked',
+    }) === 'checkout',
+    'a blocked workspace must wait for the Stripe webhook before unlocking',
   );
 
   check(
-    "paid Starter to Advanced is an immediate upgrade",
+    'paid Starter to Advanced is an immediate upgrade',
     resolveSocialStripePlanChange({
-      currentPlanCode: "social_starter_5",
-      targetPlanCode: "social_advanced_15",
+      currentPlanCode: 'social_starter_5',
+      targetPlanCode: 'social_advanced_15',
       hasStripeSubscription: true,
-      currentAccess: "paid",
-    }) === "upgrade",
-    "higher rank must prorate immediately",
+      currentAccess: 'paid',
+    }) === 'upgrade',
+    'higher rank must prorate immediately',
   );
 
   check(
-    "paid Advanced to Starter is a period-end downgrade",
+    'paid Advanced to Starter is a period-end downgrade',
     resolveSocialStripePlanChange({
-      currentPlanCode: "social_advanced_15",
-      targetPlanCode: "social_starter_5",
+      currentPlanCode: 'social_advanced_15',
+      targetPlanCode: 'social_starter_5',
       hasStripeSubscription: true,
-      currentAccess: "paid",
-    }) === "downgrade",
-    "lower rank must wait until period end",
+      currentAccess: 'paid',
+    }) === 'downgrade',
+    'lower rank must wait until period end',
   );
 
   check(
-    "Advanced ranks above Starter",
-    socialPlanRank("social_advanced_15") > socialPlanRank("social_starter_10"),
-    "family rank must beat brand count when comparing Starter 10 to Advanced 15",
+    'Advanced ranks above Starter',
+    socialPlanRank('social_advanced_15') > socialPlanRank('social_starter_10'),
+    'family rank must beat brand count when comparing Starter 10 to Advanced 15',
   );
 
   check(
-    "incomplete Stripe status is skipped",
-    mapStripeSubscriptionStatus("incomplete") === "skip",
-    "incomplete must not lock a workspace that just clicked Upgrade",
+    'incomplete Stripe status is skipped',
+    mapStripeSubscriptionStatus('incomplete') === 'skip',
+    'incomplete must not lock a workspace that just clicked Upgrade',
   );
 
   check(
-    "unpaid maps to Free",
-    mapStripeSubscriptionStatus("unpaid") === "free",
-    "Stripe unpaid is the exhausted-retry Free fallback",
+    'unpaid maps to expired',
+    mapStripeSubscriptionStatus('unpaid') === 'expired',
+    'Stripe unpaid must block Social access after retries are exhausted',
   );
 
   const active = interpretStripeSubscriptionEvent(
     {
-      id: "sub_1",
-      status: "active",
-      customer: "cus_1",
+      id: 'sub_1',
+      status: 'active',
+      customer: 'cus_1',
       cancel_at_period_end: false,
       items: {
         data: [
           {
-            price: { id: "price_starter5_month" },
+            price: { id: 'price_starter5_month' },
             current_period_start: 1_700_000_000,
             current_period_end: 1_702_592_000,
           },
         ],
       },
-      metadata: { planCode: "social_starter_5" },
+      metadata: { planCode: 'social_starter_5' },
     },
     priceMap,
   );
   check(
-    "active subscription unlocks Starter",
-    active.action === "apply" &&
-      active.patch.status === "active" &&
-      active.patch.planCode === "social_starter_5" &&
+    'active subscription unlocks Starter',
+    active.action === 'apply' &&
+      active.patch.status === 'active' &&
+      active.patch.planCode === 'social_starter_5' &&
       active.forceCancelStripe === false,
-    "webhook apply from active + metadata must set Starter",
+    'webhook apply from active + metadata must set Starter',
   );
 
   const period = stripeSubscriptionPeriod({
-    id: "sub_item_period",
-    status: "active",
+    id: 'sub_item_period',
+    status: 'active',
     items: {
       data: [
         {
@@ -200,94 +204,95 @@ function main() {
     },
   });
   check(
-    "period comes from subscription items",
+    'period comes from subscription items',
     Boolean(period.start && period.end),
-    "Stripe v22 stores current_period_end on the item",
+    'Stripe v22 stores current_period_end on the item',
   );
 
   const incomplete = interpretStripeSubscriptionEvent(
     {
-      id: "sub_incomplete",
-      status: "incomplete",
-      customer: "cus_1",
-      metadata: { planCode: "social_starter_5" },
+      id: 'sub_incomplete',
+      status: 'incomplete',
+      customer: 'cus_1',
+      metadata: { planCode: 'social_starter_5' },
     },
     priceMap,
   );
   check(
-    "incomplete event does not write incomplete locally",
-    incomplete.action === "skip",
-    "leave the workspace on Free until payment confirms",
+    'incomplete event does not write incomplete locally',
+    incomplete.action === 'skip',
+    'leave the workspace blocked until payment confirms',
   );
 
   check(
-    "plan from Price ID when metadata is missing",
+    'plan from Price ID when metadata is missing',
     resolvePlanCodeFromStripe({
       metadataPlanCode: null,
-      priceId: "price_advanced15_year",
+      priceId: 'price_advanced15_year',
       priceMap,
-    }) === "social_advanced_15",
-    "Price ID reverse map must recover the plan",
+    }) === 'social_advanced_15',
+    'Price ID reverse map must recover the plan',
   );
 
   check(
-    "four retries then Free",
-    shouldForceFreeAfterFailedInvoice(SOCIAL_STRIPE_FAILED_PAYMENT_ATTEMPTS) &&
-      !shouldForceFreeAfterFailedInvoice(2),
-    `attempt_count ${SOCIAL_STRIPE_FAILED_PAYMENT_ATTEMPTS} falls back to Free; 2 stays past due`,
+    'retry limit blocks Social access',
+    shouldBlockAfterFailedInvoice(SOCIAL_STRIPE_FAILED_PAYMENT_ATTEMPTS) &&
+      !shouldBlockAfterFailedInvoice(2),
+    `attempt_count ${SOCIAL_STRIPE_FAILED_PAYMENT_ATTEMPTS} blocks access; 2 stays past due`,
   );
 
   const retrying = interpretFailedStripeInvoice({
     attemptCount: 2,
     subscription: {
-      id: "sub_due",
-      status: "past_due",
-      customer: "cus_1",
-      metadata: { planCode: "social_starter_5" },
-      items: { data: [{ price: { id: "price_starter5_month" } }] },
+      id: 'sub_due',
+      status: 'past_due',
+      customer: 'cus_1',
+      metadata: { planCode: 'social_starter_5' },
+      items: { data: [{ price: { id: 'price_starter5_month' } }] },
     },
     priceMap,
   });
   check(
-    "failed invoice during retries keeps the paid plan",
-    retrying.action === "apply" &&
-      retrying.patch.status === "past_due" &&
-      retrying.patch.planCode === "social_starter_5" &&
+    'failed invoice during retries keeps the paid plan',
+    retrying.action === 'apply' &&
+      retrying.patch.status === 'past_due' &&
+      retrying.patch.planCode === 'social_starter_5' &&
       retrying.forceCancelStripe === false,
-    "past due must not drop to Free on the first failures",
+    'past due must keep paid access during the retry window',
   );
 
   const exhausted = interpretFailedStripeInvoice({
     attemptCount: 5,
     subscription: {
-      id: "sub_dead",
-      status: "past_due",
-      customer: "cus_1",
-      metadata: { planCode: "social_starter_5" },
+      id: 'sub_dead',
+      status: 'past_due',
+      customer: 'cus_1',
+      metadata: { planCode: 'social_starter_5' },
     },
     priceMap,
   });
   check(
-    "fifth failed invoice falls back to Free",
-    exhausted.action === "apply" &&
-      exhausted.patch.status === "free" &&
-      exhausted.patch.planCode === "social_free" &&
+    'fifth failed invoice blocks Social access',
+    exhausted.action === 'apply' &&
+      exhausted.patch.status === 'expired' &&
+      exhausted.patch.planCode === 'social_unsubscribed' &&
       exhausted.forceCancelStripe === true,
-    "retries exhausted must Free the workspace and cancel Stripe",
+    'exhausted retries must block the workspace and cancel Stripe',
   );
 
   const deleted = interpretDeletedStripeSubscription({
-    id: "sub_gone",
-    status: "canceled",
-    customer: "cus_1",
+    id: 'sub_gone',
+    status: 'canceled',
+    customer: 'cus_1',
   });
   check(
-    "deleted subscription is Free and clears the Stripe sub id",
-    deleted.action === "apply" &&
-      deleted.patch.status === "free" &&
+    'deleted subscription becomes unsubscribed and clears the Stripe sub id',
+    deleted.action === 'apply' &&
+      deleted.patch.status === 'expired' &&
+      deleted.patch.planCode === 'social_unsubscribed' &&
       deleted.patch.externalSubscriptionId === null &&
-      deleted.patch.externalCustomerId === "cus_1",
-    "keep the customer id, drop the subscription id",
+      deleted.patch.externalCustomerId === 'cus_1',
+    'keep the customer id, block access, and drop the subscription id',
   );
 
   console.log(`verify-social-stripe-webhook: ${rows.length} checks passed`);

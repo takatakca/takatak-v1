@@ -28,7 +28,7 @@ New:
 - `src/lib/billing/social/types.ts` — plan codes, networks, add-ons, entitlement shape
 - `src/lib/billing/social/plan-catalog.ts` — Free / Starter / Advanced / Custom (CAD placeholders, not charged)
 - `src/lib/billing/social/entitlements.ts` — `plan + add-ons → entitlements`
-- `src/lib/billing/social/ensure-free-subscription.ts` — insert Free row if the Client has none
+- `src/lib/billing/social/ensure-default-subscription.ts` — insert a blocked unsubscribed billing row if the Client has none
 - `src/lib/billing/social/index.ts` — re-exports
 - `scripts/verify-social-entitlements.ts` — catalog tests
 - `prisma/migrations/20260829000000_subscription_status_free/migration.sql` — adds `free` status

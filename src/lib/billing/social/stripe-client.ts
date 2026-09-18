@@ -1,9 +1,9 @@
-import "server-only";
+import 'server-only';
 
-import Stripe from "stripe";
+import Stripe from 'stripe';
 
-import { getStripeSecretKey } from "./stripe-env";
-import { ServiceError } from "@/lib/services/service-error";
+import { getStripeSecretKey } from './stripe-env';
+import { ServiceError } from '@/lib/services/service-error';
 
 const globalForStripe = globalThis as unknown as {
   socialStripe?: Stripe;
@@ -14,8 +14,8 @@ export function getStripe(): Stripe {
 
   if (!secret) {
     throw new ServiceError(
-      "unavailable",
-      "Stripe is not configured for Social billing.",
+      'unavailable',
+      'Stripe is not configured for Social billing.',
     );
   }
 

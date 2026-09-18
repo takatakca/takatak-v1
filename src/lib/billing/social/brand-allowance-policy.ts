@@ -6,7 +6,7 @@
 import {
   isFrozenBrandStatus,
   isLiveBrandStatus,
-} from "@/lib/brands/live-brand-where";
+} from '@/lib/brands/live-brand-where';
 
 export type BrandAllowanceRow = {
   id: string;
@@ -66,15 +66,15 @@ function oldestFirst(rows: BrandAllowanceRow[]): BrandAllowanceRow[] {
 }
 
 /**
- * When access is blocked (suspended / incomplete / paused), allowance is 0.
- * Missing subscription rows use the Free plan allowance (1), not zero.
+ * Paid access uses the plan's Brand allowance.
+ * Blocked access always has an effective allowance of 0.
  */
 export function effectiveBrandAllowance(
-  access: "paid" | "free" | "blocked",
+  access: 'paid' | 'blocked',
   brandAllowance: number,
-  displayKey?: string,
+  _displayKey?: string,
 ): number {
-  if (access === "blocked" && displayKey !== "missing") {
+  if (access === 'blocked') {
     return 0;
   }
 
@@ -86,7 +86,7 @@ export function planBrandFreeze(
   allowance: number,
   keepIds: string[] | null,
 ): BrandFreezePlan {
-  const usable = brands.filter((brand) => brand.status !== "archived");
+  const usable = brands.filter((brand) => brand.status !== 'archived');
   const billable = usable.filter((brand) => isLiveBrandStatus(brand.status));
   const frozen = usable.filter((brand) => isFrozenBrandStatus(brand.status));
   const cap = Math.max(0, Math.floor(allowance));
@@ -94,7 +94,8 @@ export function planBrandFreeze(
   const billableCount = billable.length;
   const frozenCount = frozen.length;
   const overAllowance = billableCount > cap;
-  const canAutoRestore = !overAllowance && frozenCount > 0 && cap > billableCount;
+  const canAutoRestore =
+    !overAllowance && frozenCount > 0 && cap > billableCount;
 
   if (keepIds) {
     const wanted = uniqueIds(keepIds);
@@ -111,7 +112,9 @@ export function planBrandFreeze(
         overAllowance,
         needsSelection: overAllowance,
         canAutoRestore,
-        defaultKeepIds: oldestFirst(billable).slice(0, cap).map((brand) => brand.id),
+        defaultKeepIds: oldestFirst(billable)
+          .slice(0, cap)
+          .map((brand) => brand.id),
         freezeIds: [],
         restoreIds: [],
       };
@@ -157,7 +160,9 @@ export function planBrandFreeze(
   }
 
   const slots = cap - billableCount;
-  const restoreIds = oldestFirst(frozen).slice(0, slots).map((brand) => brand.id);
+  const restoreIds = oldestFirst(frozen)
+    .slice(0, slots)
+    .map((brand) => brand.id);
 
   return {
     allowance: cap,
@@ -178,7 +183,7 @@ export function isKeepSelectionValid(
   keepIds: string[],
 ): boolean {
   const cap = Math.max(0, Math.floor(allowance));
-  const usable = brands.filter((brand) => brand.status !== "archived");
+  const usable = brands.filter((brand) => brand.status !== 'archived');
   const unique = uniqueIds(keepIds);
 
   if (unique.length !== keepIds.length) {
@@ -211,9 +216,7 @@ export function planScheduledPostBlocks(input: {
   monthlyPostAllowance: number | null;
 }): string[] {
   const frozen = new Set(input.frozenBrandIds);
-  const scheduled = input.posts.filter(
-    (post) => post.status === "scheduled",
-  );
+  const scheduled = input.posts.filter((post) => post.status === 'scheduled');
   const block = new Set<string>();
 
   for (const post of scheduled) {

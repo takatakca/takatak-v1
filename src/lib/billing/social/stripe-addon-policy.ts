@@ -2,34 +2,34 @@ import {
   invalidRequest,
   isRecord,
   type ValidationResult,
-} from "@/lib/validation/common";
-import { SOCIAL_X_SLOT_MAX } from "./addon-catalog";
+} from '@/lib/validation/common';
+import { SOCIAL_X_SLOT_MAX } from './addon-catalog';
 import {
   SOCIAL_ADDON_CODES,
   type SocialAddonCode,
   type SocialEntitlements,
-} from "./types";
-import type { SocialSubscriptionAccess } from "./subscription-lifecycle";
+} from './types';
+import type { SocialSubscriptionAccess } from './subscription-lifecycle';
 
-export const SOCIAL_ADDON_ACTIONS = ["add", "remove"] as const;
+export const SOCIAL_ADDON_ACTIONS = ['add', 'remove'] as const;
 
 export type SocialAddonAction = (typeof SOCIAL_ADDON_ACTIONS)[number];
 
 export type SocialStripeAddonChange =
   | {
-      kind: "update_now";
+      kind: 'update_now';
       addonCode: SocialAddonCode;
       xAccountAllowance: number;
       advancedAnalytics: boolean;
     }
   | {
-      kind: "schedule_period_end";
+      kind: 'schedule_period_end';
       addonCode: SocialAddonCode;
       xAccountAllowance: number;
       advancedAnalytics: boolean;
     }
-  | { kind: "forbidden"; message: string }
-  | { kind: "conflict"; message: string };
+  | { kind: 'forbidden'; message: string }
+  | { kind: 'conflict'; message: string };
 
 function isAddonCode(value: string): value is SocialAddonCode {
   return (SOCIAL_ADDON_CODES as readonly string[]).includes(value);
@@ -39,31 +39,36 @@ function isAddonAction(value: string): value is SocialAddonAction {
   return (SOCIAL_ADDON_ACTIONS as readonly string[]).includes(value);
 }
 
-export function validateSocialStripeAddonInput(value: unknown): ValidationResult<{
+export function validateSocialStripeAddonInput(
+  value: unknown,
+): ValidationResult<{
   addonCode: SocialAddonCode;
   action: SocialAddonAction;
 }> {
   if (!isRecord(value)) {
-    return invalidRequest({}, "Choose an add-on to continue.");
+    return invalidRequest({}, 'Choose an add-on to continue.');
   }
 
   const fieldErrors: Record<string, string> = {};
   const addonCode =
-    typeof value.addonCode === "string" ? value.addonCode.trim() : "";
-  const action = typeof value.action === "string" ? value.action.trim() : "";
+    typeof value.addonCode === 'string' ? value.addonCode.trim() : '';
+  const action = typeof value.action === 'string' ? value.action.trim() : '';
 
-  if (!isAddonCode(addonCode)) {
-    fieldErrors.addonCode = "Choose the X add-on or Advanced Analytics.";
+  if (addonCode === 'advanced_analytics') {
+    fieldErrors.addonCode =
+      'Advanced Analytics requires a custom quote. Contact TAKATAK support.';
+  } else if (!isAddonCode(addonCode)) {
+    fieldErrors.addonCode = 'Choose the X add-on.';
   }
 
   if (!isAddonAction(action)) {
-    fieldErrors.action = "Choose add or remove.";
+    fieldErrors.action = 'Choose add or remove.';
   }
 
   if (Object.keys(fieldErrors).length > 0) {
     return {
       success: false,
-      message: "This add-on request is invalid.",
+      message: 'This add-on request is invalid.',
       fieldErrors,
     };
   }
@@ -88,44 +93,52 @@ export function resolveSocialStripeAddonChange(input: {
   addonCode: SocialAddonCode;
   action: SocialAddonAction;
 }): SocialStripeAddonChange {
-  if (input.access !== "paid") {
+  if (input.addonCode === 'advanced_analytics') {
     return {
-      kind: "forbidden",
-      message: "Buy a Starter or Advanced plan before adding paid add-ons.",
+      kind: 'forbidden',
+      message:
+        'Advanced Analytics requires a custom quote. Contact TAKATAK support.',
+    };
+  }
+
+  if (input.access !== 'paid') {
+    return {
+      kind: 'forbidden',
+      message:
+        'Buy an eligible Starter or Advanced plan before adding X slots.',
     };
   }
 
   if (!input.entitlements.eligibleAddons.includes(input.addonCode)) {
     return {
-      kind: "forbidden",
-      message: "This add-on is not available on the Free plan.",
+      kind: 'forbidden',
+      message: 'The X add-on requires an eligible Starter or Advanced plan.',
     };
   }
 
   if (!input.hasStripeSubscription) {
     return {
-      kind: "forbidden",
-      message:
-        "Upgrade this workspace through Stripe first, then add X slots or Advanced Analytics.",
+      kind: 'forbidden',
+      message: 'Upgrade this workspace through Stripe first, then add X slots.',
     };
   }
 
   const currentX = input.entitlements.xConnectionAllowance;
   const currentAnalytics = input.entitlements.advancedAnalytics;
 
-  if (input.addonCode === "x_account") {
-    if (input.action === "add") {
+  if (input.addonCode === 'x_account') {
+    if (input.action === 'add') {
       const next = currentX + 1;
       if (next > SOCIAL_X_SLOT_MAX) {
         return {
-          kind: "conflict",
+          kind: 'conflict',
           message: `This workspace can have at most ${SOCIAL_X_SLOT_MAX} paid X slots.`,
         };
       }
 
       return {
-        kind: "update_now",
-        addonCode: "x_account",
+        kind: 'update_now',
+        addonCode: 'x_account',
         xAccountAllowance: next,
         advancedAnalytics: currentAnalytics,
       };
@@ -133,30 +146,30 @@ export function resolveSocialStripeAddonChange(input: {
 
     if (currentX <= 0) {
       return {
-        kind: "conflict",
-        message: "This workspace has no paid X slots to remove.",
+        kind: 'conflict',
+        message: 'This workspace has no paid X slots to remove.',
       };
     }
 
     return {
-      kind: "schedule_period_end",
-      addonCode: "x_account",
+      kind: 'schedule_period_end',
+      addonCode: 'x_account',
       xAccountAllowance: currentX - 1,
       advancedAnalytics: currentAnalytics,
     };
   }
 
-  if (input.action === "add") {
+  if (input.action === 'add') {
     if (currentAnalytics) {
       return {
-        kind: "conflict",
-        message: "Advanced Analytics is already on this workspace.",
+        kind: 'conflict',
+        message: 'Advanced Analytics is already on this workspace.',
       };
     }
 
     return {
-      kind: "update_now",
-      addonCode: "advanced_analytics",
+      kind: 'update_now',
+      addonCode: 'advanced_analytics',
       xAccountAllowance: currentX,
       advancedAnalytics: true,
     };
@@ -164,14 +177,14 @@ export function resolveSocialStripeAddonChange(input: {
 
   if (!currentAnalytics) {
     return {
-      kind: "conflict",
-      message: "Advanced Analytics is not on this workspace.",
+      kind: 'conflict',
+      message: 'Advanced Analytics is not on this workspace.',
     };
   }
 
   return {
-    kind: "schedule_period_end",
-    addonCode: "advanced_analytics",
+    kind: 'schedule_period_end',
+    addonCode: 'advanced_analytics',
     xAccountAllowance: currentX,
     advancedAnalytics: false,
   };

@@ -1,6 +1,6 @@
-import "server-only";
+import 'server-only';
 
-import type { PostStatus, Prisma } from "@prisma/client";
+import type { PostStatus, Prisma } from '@prisma/client';
 
 import {
   analyticsHistoryCutoffDate,
@@ -17,17 +17,17 @@ import {
   SOCIAL_BILLABLE_POST_STATUSES,
   utcMonthBounds,
   type AnalyticsDateRange,
-} from "@/lib/billing/social/entitlement-gates-policy";
-import { resolveEffectiveSocialEntitlements } from "@/lib/billing/social/subscription-lifecycle";
-import { getPrisma } from "@/lib/db/prisma";
-import { ServiceError } from "@/lib/services/service-error";
+} from '@/lib/billing/social/entitlement-gates-policy';
+import { resolveEffectiveSocialEntitlements } from '@/lib/billing/social/subscription-lifecycle';
+import { getPrisma } from '@/lib/db/prisma';
+import { ServiceError } from '@/lib/services/service-error';
 
 type SubscriptionDb =
   | Prisma.TransactionClient
   | {
-      clientSubscription: Prisma.TransactionClient["clientSubscription"];
-      socialAccount?: Prisma.TransactionClient["socialAccount"];
-      socialPost?: Prisma.TransactionClient["socialPost"];
+      clientSubscription: Prisma.TransactionClient['clientSubscription'];
+      socialAccount?: Prisma.TransactionClient['socialAccount'];
+      socialPost?: Prisma.TransactionClient['socialPost'];
     };
 
 const SUBSCRIPTION_SELECT = {
@@ -63,14 +63,17 @@ export async function loadClientSocialEntitlementContext(
 async function requireEntitlementContext(clientId: string) {
   const prisma = getPrisma();
   if (!prisma) {
-    throw new ServiceError("unavailable", "Billing is temporarily unavailable.");
+    throw new ServiceError(
+      'unavailable',
+      'Billing is temporarily unavailable.',
+    );
   }
 
   return loadClientSocialEntitlementContext(prisma, clientId);
 }
 
 function deny(decision: { allowed: false; message: string }): never {
-  throw new ServiceError("forbidden", decision.message);
+  throw new ServiceError('forbidden', decision.message);
 }
 
 export async function countConnectedXAccounts(
@@ -84,9 +87,9 @@ export async function countConnectedXAccounts(
   return db.socialAccount.count({
     where: {
       clientId,
-      platform: "x",
+      platform: 'x',
       status: {
-        in: ["connected", "expired", "error", "pending_connection"],
+        in: ['connected', 'expired', 'error', 'pending_connection'],
       },
     },
   });
@@ -141,11 +144,16 @@ export async function assertClientCanScheduleSocialPost(
 ): Promise<void> {
   const prisma = getPrisma();
   if (!prisma) {
-    throw new ServiceError("unavailable", "Publishing is temporarily unavailable.");
+    throw new ServiceError(
+      'unavailable',
+      'Publishing is temporarily unavailable.',
+    );
   }
 
-  const { lifecycle, entitlements } =
-    await loadClientSocialEntitlementContext(prisma, clientId);
+  const { lifecycle, entitlements } = await loadClientSocialEntitlementContext(
+    prisma,
+    clientId,
+  );
   const write = evaluateWorkspaceWriteAccess(lifecycle.access);
   if (!write.allowed) {
     deny(write);

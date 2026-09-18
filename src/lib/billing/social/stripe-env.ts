@@ -1,32 +1,32 @@
-import "server-only";
+import 'server-only';
 
 import {
   resolveSocialCheckoutLive,
   socialStripePriceEnvKey,
   socialStripePriceEnvKeys,
   type SocialBillingCycle,
-} from "./stripe-checkout-policy";
+} from './stripe-checkout-policy';
 import {
   socialStripeAddonPriceEnvKey,
   socialStripeAddonPriceEnvKeys,
-} from "./addon-catalog";
-import type { PaidCheckoutPlanCode } from "./plan-catalog";
-import type { SocialAddonCode } from "./types";
-import type { StripePricePlanLookup } from "./stripe-webhook-policy";
+} from './addon-catalog';
+import type { PaidCheckoutPlanCode } from './plan-catalog';
+import type { SocialAddonCode } from './types';
+import type { StripePricePlanLookup } from './stripe-webhook-policy';
 
 export function getStripeSecretKey(): string {
-  return process.env.STRIPE_SECRET_KEY?.trim() ?? "";
+  return process.env.STRIPE_SECRET_KEY?.trim() ?? '';
 }
 
 export function getStripeWebhookSecret(): string {
-  return process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? "";
+  return process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? '';
 }
 
 export function getSocialStripePriceId(
   planCode: PaidCheckoutPlanCode,
   cycle: SocialBillingCycle,
 ): string {
-  return process.env[socialStripePriceEnvKey(planCode, cycle)]?.trim() ?? "";
+  return process.env[socialStripePriceEnvKey(planCode, cycle)]?.trim() ?? '';
 }
 
 export function readSocialStripePriceMap(): StripePricePlanLookup {
@@ -39,12 +39,12 @@ export function readSocialStripePriceMap(): StripePricePlanLookup {
     }
 
     const match = key.match(/^STRIPE_PRICE_(SOCIAL_.+)_(MONTHLY|ANNUAL)$/);
-    if (!match || match[1].startsWith("SOCIAL_ADDON_")) {
+    if (!match || match[1].startsWith('SOCIAL_ADDON_')) {
       continue;
     }
 
     const planCode = match[1].toLowerCase();
-    const cycle = match[2] === "ANNUAL" ? "annual" : "monthly";
+    const cycle = match[2] === 'ANNUAL' ? 'annual' : 'monthly';
     map[priceId] = {
       planCode: planCode as PaidCheckoutPlanCode,
       cycle,
@@ -65,9 +65,8 @@ export function readSocialStripePriceMap(): StripePricePlanLookup {
     }
 
     map[priceId] = {
-      addonCode:
-        match[1] === "X_ACCOUNT" ? "x_account" : "advanced_analytics",
-      cycle: match[2] === "ANNUAL" ? "annual" : "monthly",
+      addonCode: match[1] === 'X_ACCOUNT' ? 'x_account' : 'advanced_analytics',
+      cycle: match[2] === 'ANNUAL' ? 'annual' : 'monthly',
     };
   }
 
@@ -78,15 +77,17 @@ export function getSocialStripeAddonPriceId(
   addonCode: SocialAddonCode,
   cycle: SocialBillingCycle,
 ): string {
-  return process.env[socialStripeAddonPriceEnvKey(addonCode, cycle)]?.trim() ?? "";
+  return (
+    process.env[socialStripeAddonPriceEnvKey(addonCode, cycle)]?.trim() ?? ''
+  );
 }
 
 export function isSocialStripeAddonCheckoutLive(): boolean {
   return resolveSocialCheckoutLive({
     secretKey: getStripeSecretKey(),
     webhookSecret: getStripeWebhookSecret(),
-    hasPrice: socialStripeAddonPriceEnvKeys().some(
-      (key) => Boolean(process.env[key]?.trim()),
+    hasPrice: socialStripeAddonPriceEnvKeys().some((key) =>
+      Boolean(process.env[key]?.trim()),
     ),
   });
 }

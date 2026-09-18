@@ -181,7 +181,7 @@ Files:
 - `src/lib/billing/social/types.ts`
 - `src/lib/billing/social/plan-catalog.ts`
 - `src/lib/billing/social/entitlements.ts`
-- `src/lib/billing/social/ensure-free-subscription.ts`
+- `src/lib/billing/social/ensure-default-subscription.ts`
 - `src/lib/billing/social/index.ts`
 - `src/lib/auth/profile-sync.ts` (new workspace → Free row)
 - `prisma/migrations/20260829000000_subscription_status_free/migration.sql`

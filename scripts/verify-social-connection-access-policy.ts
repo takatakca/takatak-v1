@@ -1,5 +1,5 @@
 /**
- * Isolated verification for social connection subscription policy +
+ * Isolated verification for Social connection subscription policy and
  * production-proof development bypass.
  *
  * Does not invent paid status. Does not accept browser preview values.
@@ -9,14 +9,19 @@ import {
   evaluateClientSocialConnectionAccess,
   isProductionSocialRuntime,
   isTrustedSocialConnectionDevBypassEnabled,
-} from "../src/lib/billing/client-subscription-access-policy";
+} from '../src/lib/billing/client-subscription-access-policy';
 
-type Row = { name: string; ok: boolean; detail: string };
+type Row = {
+  name: string;
+  ok: boolean;
+  detail: string;
+};
 
 const rows: Row[] = [];
 
 function check(name: string, ok: boolean, detail: string) {
   rows.push({ name, ok, detail });
+
   if (!ok) {
     throw new Error(`${name}: ${detail}`);
   }
@@ -24,190 +29,214 @@ function check(name: string, ok: boolean, detail: string) {
 
 function main() {
   check(
-    "active subscription allowed without bypass",
+    'active subscription allowed without bypass',
     evaluateClientSocialConnectionAccess({
-      status: "active",
+      status: 'active',
       developmentBypass: false,
-      nodeEnv: "production",
-      vercelEnv: "production",
+      nodeEnv: 'production',
+      vercelEnv: 'production',
       serverDevBypassFlag: null,
     }).allowed === true,
-    "active must remain allowed in production",
+    'active must remain allowed in production',
   );
 
   check(
-    "trial subscription allowed without bypass",
+    'trial subscription allowed without bypass',
     evaluateClientSocialConnectionAccess({
-      status: "trial",
+      status: 'trial',
       developmentBypass: false,
-      nodeEnv: "production",
-      vercelEnv: "production",
+      nodeEnv: 'production',
+      vercelEnv: 'production',
       serverDevBypassFlag: null,
-    }).via === "subscription",
-    "trial must use subscription path",
+    }).via === 'subscription',
+    'trial must use the paid subscription path',
   );
 
   check(
-    "free subscription allowed in production",
+    'legacy free subscription is denied in production',
     evaluateClientSocialConnectionAccess({
-      status: "free",
+      status: 'free',
       developmentBypass: false,
-      nodeEnv: "production",
-      vercelEnv: "production",
+      nodeEnv: 'production',
+      vercelEnv: 'production',
       serverDevBypassFlag: null,
-    }).via === "subscription",
-    "Free must be allowed to connect (one-brand plan, Brand cap is Step 3)",
+    }).allowed === false,
+    'the removed Free status must not permit Social connections',
   );
 
   check(
-    "expired falls back to Free in production",
+    'expired subscription is denied in production',
     evaluateClientSocialConnectionAccess({
-      status: "expired",
+      status: 'expired',
       developmentBypass: false,
-      nodeEnv: "production",
-      vercelEnv: "production",
+      nodeEnv: 'production',
+      vercelEnv: 'production',
       serverDevBypassFlag: null,
-    }).via === "subscription",
-    "expired must not stay locked; it becomes Free",
+    }).allowed === false,
+    'expired subscriptions must remain locked',
   );
 
   check(
-    "past_due keeps access in production",
+    'past_due keeps access in production',
     evaluateClientSocialConnectionAccess({
-      status: "past_due",
+      status: 'past_due',
       developmentBypass: false,
-      nodeEnv: "production",
-      vercelEnv: "production",
+      nodeEnv: 'production',
+      vercelEnv: 'production',
       serverDevBypassFlag: null,
     }).allowed === true,
-    "payment retry window must keep access",
+    'the payment retry window must keep paid access',
   );
 
-  for (const status of ["incomplete", "paused", "suspended"] as const) {
+  check(
+    'grace_period keeps access in production',
+    evaluateClientSocialConnectionAccess({
+      status: 'grace_period',
+      developmentBypass: false,
+      nodeEnv: 'production',
+      vercelEnv: 'production',
+      serverDevBypassFlag: null,
+    }).allowed === true,
+    'the payment grace period must keep paid access',
+  );
+
+  for (const status of ['incomplete', 'paused', 'suspended'] as const) {
     check(
-      `${status} denied in production even with DB+env bypass`,
+      `${status} denied in production even with DB and environment bypass`,
       evaluateClientSocialConnectionAccess({
         status,
         developmentBypass: true,
-        nodeEnv: "production",
-        vercelEnv: "production",
-        serverDevBypassFlag: "true",
+        nodeEnv: 'production',
+        vercelEnv: 'production',
+        serverDevBypassFlag: 'true',
       }).allowed === false,
-      "production must ignore trusted bypass flags on blocked statuses",
+      'production must ignore development bypass flags on blocked statuses',
     );
   }
 
   check(
-    "NODE_ENV=production blocks bypass",
+    'NODE_ENV production blocks bypass',
     evaluateClientSocialConnectionAccess({
-      status: "suspended",
+      status: 'suspended',
       developmentBypass: true,
-      nodeEnv: "production",
-      vercelEnv: "preview",
-      serverDevBypassFlag: "true",
+      nodeEnv: 'production',
+      vercelEnv: 'preview',
+      serverDevBypassFlag: 'true',
     }).allowed === false,
-    "NODE_ENV production alone must deny blocked statuses",
+    'NODE_ENV production alone must deny blocked statuses',
   );
 
   check(
-    "VERCEL_ENV=production blocks bypass",
+    'VERCEL_ENV production blocks bypass',
     evaluateClientSocialConnectionAccess({
-      status: "suspended",
+      status: 'suspended',
       developmentBypass: true,
-      nodeEnv: "development",
-      vercelEnv: "production",
-      serverDevBypassFlag: "true",
+      nodeEnv: 'development',
+      vercelEnv: 'production',
+      serverDevBypassFlag: 'true',
     }).allowed === false,
-    "VERCEL_ENV production alone must deny blocked statuses",
+    'VERCEL_ENV production alone must deny blocked statuses',
   );
 
   check(
-    "isProductionSocialRuntime covers both signals",
-    isProductionSocialRuntime("production", null) &&
-      isProductionSocialRuntime("development", "production") &&
-      !isProductionSocialRuntime("development", "preview"),
-    "runtime helper mismatch",
+    'production runtime helper covers both signals',
+    isProductionSocialRuntime('production', null) &&
+      isProductionSocialRuntime('development', 'production') &&
+      !isProductionSocialRuntime('development', 'preview'),
+    'the runtime helper must detect either production signal',
   );
 
   check(
-    "non-production runtime allows OAuth without paid status",
+    'non-production runtime allows OAuth through trusted bypass',
     evaluateClientSocialConnectionAccess({
-      status: "expired",
+      status: 'expired',
       developmentBypass: false,
-      nodeEnv: "development",
+      nodeEnv: 'development',
       vercelEnv: null,
       serverDevBypassFlag: null,
-    }).via === "trusted_dev_bypass",
-    "server NODE_ENV is the trusted signal (not ?preview=)",
+    }).via === 'trusted_dev_bypass',
+    'the server runtime may permit local OAuth testing without inventing paid status',
   );
 
   check(
-    "browser preview is not an access input",
+    'browser preview is not an access input',
     !isTrustedSocialConnectionDevBypassEnabled({
       developmentBypass: false,
-      nodeEnv: "production",
-      vercelEnv: "production",
+      nodeEnv: 'production',
+      vercelEnv: 'production',
       serverDevBypassFlag: null,
     }),
-    "production cannot be unlocked by any client preview value",
+    'production cannot be unlocked by a client preview value',
   );
 
   check(
-    "SOCIAL_CONNECTION_REQUIRE_SUBSCRIPTION forces checks in non-prod",
+    'require-subscription flag forces checks outside production',
     evaluateClientSocialConnectionAccess({
-      status: "suspended",
+      status: 'suspended',
       developmentBypass: false,
-      nodeEnv: "development",
+      nodeEnv: 'development',
       vercelEnv: null,
       serverDevBypassFlag: null,
-      requireSubscriptionFlag: "true",
+      requireSubscriptionFlag: 'true',
     }).allowed === false,
-    "require flag must deny suspended without explicit bypass",
+    'the require-subscription flag must deny blocked access without an explicit bypass',
   );
 
-  // Direct require-flag check on trusted helper
   check(
-    "require-subscription flag disables default non-prod bypass",
+    'require-subscription flag disables default non-production bypass',
     !isTrustedSocialConnectionDevBypassEnabled({
       developmentBypass: false,
-      nodeEnv: "development",
+      nodeEnv: 'development',
       vercelEnv: null,
       serverDevBypassFlag: null,
-      requireSubscriptionFlag: "true",
+      requireSubscriptionFlag: 'true',
     }),
-    "SOCIAL_CONNECTION_REQUIRE_SUBSCRIPTION=true must require real subscription or explicit bypass",
+    'SOCIAL_CONNECTION_REQUIRE_SUBSCRIPTION=true must require a real subscription or explicit server bypass',
   );
 
   check(
-    "explicit DB bypass still works when require-subscription is on",
+    'explicit database bypass works outside production',
     isTrustedSocialConnectionDevBypassEnabled({
       developmentBypass: true,
-      nodeEnv: "development",
+      nodeEnv: 'development',
       vercelEnv: null,
       serverDevBypassFlag: null,
-      requireSubscriptionFlag: "true",
+      requireSubscriptionFlag: 'true',
     }),
-    "DB developmentBypass should still unlock outside production",
+    'the database developmentBypass may unlock testing only outside production',
   );
 
-  console.log("Social connection access policy verification");
-  console.log("===========================================");
+  check(
+    'explicit environment bypass works outside production',
+    isTrustedSocialConnectionDevBypassEnabled({
+      developmentBypass: false,
+      nodeEnv: 'development',
+      vercelEnv: null,
+      serverDevBypassFlag: 'true',
+      requireSubscriptionFlag: 'true',
+    }),
+    'the trusted environment bypass may unlock testing only outside production',
+  );
+
+  console.log('Social connection access policy verification');
+  console.log('===========================================');
+
   for (const row of rows) {
-    console.log(`${row.ok ? "PASS" : "FAIL"}  ${row.name}`);
+    console.log(`${row.ok ? 'PASS' : 'FAIL'}  ${row.name}`);
     console.log(`      ${row.detail}`);
   }
-  console.log("");
+
+  console.log('');
   console.log(
-    `Result: ${rows.every((r) => r.ok) ? "ALL PASS" : "FAILED"} (${rows.length} checks)`,
+    `Result: ${
+      rows.every((row) => row.ok) ? 'ALL PASS' : 'FAILED'
+    } (${rows.length} checks)`,
   );
 }
 
 try {
   main();
 } catch (error) {
-  console.error(
-    "FAIL",
-    error instanceof Error ? error.message : error,
-  );
+  console.error('FAIL', error instanceof Error ? error.message : error);
   process.exitCode = 1;
 }
