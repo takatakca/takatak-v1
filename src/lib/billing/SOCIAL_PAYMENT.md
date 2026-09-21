@@ -52,25 +52,17 @@ npx prisma migrate deploy
 
 Billing unit is **how many Brands stay active**, not seats and not social profiles.
 
-**Networks on Free**  
-Facebook, Instagram, Threads, TikTok, Google Business Profile, YouTube, Pinterest, Bluesky, Twitch.
+### Unsubscribed — `social_unsubscribed`
 
-**Not on Free**  
-LinkedIn. X / Twitter (even as an add-on).
-
-**Paid networks (Starter and up)**  
-Everything on Free, plus LinkedIn. X only with the X add-on (Step 7).
-
-### Free — `social_free`
-
-Permanent plan. Also the fallback when a paid plan ends or all payment retries fail. **$0.**
+Internal zero-access state used when no paid Social subscription exists. It is
+not sold or displayed as a free plan.
 
 | Limit | Value |
 | --- | --- |
-| Active Brands | 1 |
-| Posts / month | 20 |
-| Analytics history | 30 days |
-| Competitors | 5 |
+| Active Brands | 0 |
+| Posts / month | 0 |
+| Analytics history | 0 days |
+| Competitors | 0 |
 | LinkedIn | No |
 | X | No |
 | Reports | No |
@@ -78,7 +70,11 @@ Permanent plan. Also the fallback when a paid plan ends or all payment retries f
 | API | No |
 | Add-ons | None |
 
-Who it is for: one business, basic publishing and short analytics.
+### Essential — `social_essential_1`
+
+One active Brand with Facebook, Instagram, Threads, TikTok, Google Business
+Profile, YouTube, Pinterest, Bluesky, and Twitch. LinkedIn is available on
+Starter and Advanced plans. X requires a paid X connection slot.
 
 ### Starter — `social_starter_5` and `social_starter_10`
 
@@ -93,7 +89,7 @@ For one person or a small company that needs several Brands, not a full agency t
 
 Same features on both:
 
-- Everything in Free, plus LinkedIn
+- Essential networks, plus LinkedIn
 - Unlimited publications (fair use)
 - Analytics without the 30-day cap
 - 100 competitors

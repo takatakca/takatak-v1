@@ -100,7 +100,7 @@ enum SubscriptionStatus {
   grace_period
   canceled
   expired
-  /// Permanent Free Social plan. Not a trial. Fallback after expire / failed retries.
+  /// Legacy database status only. It grants no Social access.
   free
   /// Billing intentionally paused.
   paused
@@ -405,7 +405,7 @@ model Client {
 
 /// Billing/subscription state for a TAKATAK client workspace (Social).
 /// Premium access must be derived from this record — never from frontend helpers.
-/// planCode uses Social catalog codes (social_free, social_starter_5, …).
+/// planCode uses Social catalog codes (social_unsubscribed, social_essential_1, …).
 /// Domains/hosting billing stays on Upmind, not this row.
 model ClientSubscription {
   id                     String             @id @default(uuid()) @db.Uuid

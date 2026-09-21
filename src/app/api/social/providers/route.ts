@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { loadClientSocialEntitlementContext } from "@/lib/billing/social/entitlement-gates";
+import { isSocialConnectionSetupClient } from "@/lib/billing/client-subscription-access-policy";
 import { evaluateSocialNetworkConnect } from "@/lib/billing/social/entitlement-gates-policy";
 import { getPrisma } from "@/lib/db/prisma";
 import {
@@ -29,6 +30,9 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const prisma = getPrisma();
+    const setupBypass = isSocialConnectionSetupClient(
+      gate.access.activeClientId,
+    );
     let entitlements = null as Awaited<
       ReturnType<typeof loadClientSocialEntitlementContext>
     >["entitlements"] | null;
@@ -50,14 +54,16 @@ export async function GET(): Promise<NextResponse> {
             definition.provider as SocialConnectionProviderValue,
           );
 
-        const planAllowsConnect = entitlements
-          ? evaluateSocialNetworkConnect({
-              provider: definition.provider,
-              entitlements,
-              connectedXCount: 0,
-              reconnect: true,
-            }).allowed
-          : true;
+        const planAllowsConnect =
+          setupBypass ||
+          (entitlements
+            ? evaluateSocialNetworkConnect({
+                provider: definition.provider,
+                entitlements,
+                connectedXCount: 0,
+                reconnect: true,
+              }).allowed
+            : true);
 
         return {
           provider:

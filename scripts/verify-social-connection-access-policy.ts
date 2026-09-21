@@ -8,6 +8,7 @@
 import {
   evaluateClientSocialConnectionAccess,
   isProductionSocialRuntime,
+  isSocialConnectionSetupClient,
   isTrustedSocialConnectionDevBypassEnabled,
 } from '../src/lib/billing/client-subscription-access-policy';
 
@@ -28,6 +29,32 @@ function check(name: string, ok: boolean, detail: string) {
 }
 
 function main() {
+  const setupClientId = '614c6e69-3006-422b-9aa8-00fba5f4ff94';
+
+  check(
+    'configured setup client is recognized',
+    isSocialConnectionSetupClient(
+      setupClientId,
+      `00000000-0000-4000-8000-000000000000, ${setupClientId.toUpperCase()}`,
+    ),
+    'the server allowlist must accept exact comma-separated UUIDs',
+  );
+
+  check(
+    'setup allowlist rejects malformed and partial values',
+    !isSocialConnectionSetupClient(
+      setupClientId,
+      `prefix-${setupClientId},not-a-uuid`,
+    ),
+    'malformed or partial values must never enable setup access',
+  );
+
+  check(
+    'invalid requested client ID is rejected',
+    !isSocialConnectionSetupClient('not-a-uuid', setupClientId),
+    'both the requested client and configured entries must be valid UUIDs',
+  );
+
   check(
     'active subscription allowed without bypass',
     evaluateClientSocialConnectionAccess({

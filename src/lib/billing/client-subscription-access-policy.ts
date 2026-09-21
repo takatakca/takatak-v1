@@ -26,6 +26,11 @@ export type SocialConnectionAccessEvaluationInput = {
 };
 
 export const SOCIAL_CONNECTION_DEV_BYPASS_ENV = 'SOCIAL_CONNECTION_DEV_BYPASS';
+export const SOCIAL_CONNECTION_SETUP_CLIENT_IDS_ENV =
+  'SOCIAL_CONNECTION_SETUP_CLIENT_IDS';
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function readEnv(name: string): string | undefined {
   return process.env[name];
@@ -54,6 +59,31 @@ function isTruthyServerFlag(value: string | null | undefined): boolean {
     normalized === 'yes' ||
     normalized === 'on'
   );
+}
+
+/**
+ * Temporary server-only OAuth setup allowlist.
+ *
+ * Remove a Client UUID from the environment variable when setup is finished.
+ * Invalid values are ignored and browser/request values are never accepted.
+ */
+export function isSocialConnectionSetupClient(
+  clientId: string,
+  configuredClientIds: string | null | undefined = readEnv(
+    SOCIAL_CONNECTION_SETUP_CLIENT_IDS_ENV,
+  ),
+): boolean {
+  const normalizedClientId = clientId.trim().toLowerCase();
+
+  if (!UUID_PATTERN.test(normalizedClientId) || !configuredClientIds) {
+    return false;
+  }
+
+  return configuredClientIds
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => UUID_PATTERN.test(value))
+    .includes(normalizedClientId);
 }
 
 /**

@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma/client";
 
 import {
   evaluateClientSocialConnectionAccess,
+  isSocialConnectionSetupClient,
 } from "@/lib/billing/client-subscription-access-policy";
 import { assertClientCanConnectSocialNetwork } from "@/lib/billing/social/entitlement-gates";
 import { ServiceError } from "@/lib/services/service-error";
@@ -11,8 +12,10 @@ import { ServiceError } from "@/lib/services/service-error";
 export {
   evaluateClientSocialConnectionAccess,
   isProductionSocialRuntime,
+  isSocialConnectionSetupClient,
   isTrustedSocialConnectionDevBypassEnabled,
   SOCIAL_CONNECTION_DEV_BYPASS_ENV,
+  SOCIAL_CONNECTION_SETUP_CLIENT_IDS_ENV,
   type SocialConnectionAccessDecision,
   type SocialConnectionAccessEvaluationInput,
 } from "@/lib/billing/client-subscription-access-policy";
@@ -49,6 +52,12 @@ export async function assertClientCanConnectSocial(
   clientId: string,
   options?: AssertClientCanConnectSocialOptions,
 ): Promise<void> {
+  // This bypass permits connection setup only. Publishing, analytics,
+  // reports, competitors, team, API, add-ons and Stripe remain gated.
+  if (isSocialConnectionSetupClient(clientId)) {
+    return;
+  }
+
   const subscription = await db.clientSubscription.findUnique({
     where: { clientId },
     select: {

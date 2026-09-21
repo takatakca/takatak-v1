@@ -21,6 +21,7 @@ import {
 } from '@/lib/social/providers/registry';
 import { getSocialShellBilling } from '@/lib/billing/social/billing-banner';
 import { evaluateSocialNetworkConnect } from '@/lib/billing/social/entitlement-gates-policy';
+import { isSocialConnectionSetupClient } from '@/lib/billing/client-subscription-access-policy';
 import {
   toAccountPictureSrc,
   toClientSocialImageUrl,
@@ -74,18 +75,21 @@ export default async function SocialLayout({
   ]);
   const planName = billing?.planName ?? null;
   const hasPaidPlan = billing?.hasPaidPlan ?? false;
+  const setupBypass = isSocialConnectionSetupClient(access.activeClientId);
 
   const providers: ManageConnectionsProvider[] =
     listSocialProviderReadiness().map((readiness) => {
       const definition = getSocialProviderDefinition(readiness.provider);
-      const planAllowsConnect = billing?.entitlements
-        ? evaluateSocialNetworkConnect({
-            provider: readiness.provider,
-            entitlements: billing.entitlements,
-            connectedXCount: 0,
-            reconnect: true,
-          }).allowed
-        : true;
+      const planAllowsConnect =
+        setupBypass ||
+        (billing?.entitlements
+          ? evaluateSocialNetworkConnect({
+              provider: readiness.provider,
+              entitlements: billing.entitlements,
+              connectedXCount: 0,
+              reconnect: true,
+            }).allowed
+          : true);
 
       return {
         provider: readiness.provider,
