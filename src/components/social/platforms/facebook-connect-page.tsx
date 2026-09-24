@@ -81,6 +81,7 @@ export function FacebookConnectPage({
   activeBrandName: _activeBrandName,
   canManage,
   isConnected,
+  hasSocialHistory,
   connectedLabel,
   profileImageUrl = null,
   initialSyncStatus: _initialSyncStatus = null,
@@ -90,6 +91,7 @@ export function FacebookConnectPage({
   activeBrandName: string | null;
   canManage: boolean;
   isConnected: boolean;
+  hasSocialHistory: boolean;
   connectedLabel: string | null;
   profileImageUrl?: string | null;
   initialSyncStatus?:
@@ -185,8 +187,40 @@ export function FacebookConnectPage({
     );
   }
 
-  if (subscribedPreview) {
-    return <FacebookSubscribedDashboard />;
+  if (subscribedPreview || hasSocialHistory) {
+    return (
+      <div className="space-y-6">
+        {!subscribedPreview ? (
+          <section className="flex flex-col gap-4 rounded-[14px] border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-[17px] font-semibold text-slate-950">
+                No Facebook Page connected
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Your saved Facebook history remains stored. Reconnect the same
+                Page to restore only that Page&apos;s analytics.
+              </p>
+              {error ? (
+                <p className="mt-2 text-sm text-rose-700" role="alert">
+                  {error}
+                </p>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              disabled={busy || !canManage || !activeBrandId}
+              onClick={() => {
+                void startFacebookOAuth();
+              }}
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {busy ? "Opening Facebook…" : "Reconnect Facebook"}
+            </button>
+          </section>
+        ) : null}
+        <FacebookSubscribedDashboard />
+      </div>
+    );
   }
 
   return (

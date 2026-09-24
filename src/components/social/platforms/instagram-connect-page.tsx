@@ -11,6 +11,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+import { InstagramSubscribedDashboard } from "@/components/social/platforms/instagram-subscribed-dashboard";
+import { ThreadsSubscribedDashboard } from "@/components/social/platforms/threads-subscribed-dashboard";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 
 type StartAuthorizationResponse = {
@@ -82,6 +84,7 @@ export function InstagramConnectPage({
   activeBrandId,
   canManage,
   isConnected,
+  hasSocialHistory,
   connectedLabel,
   profileImageUrl = null,
   resolutionIssue = null,
@@ -93,6 +96,7 @@ export function InstagramConnectPage({
   activeBrandId: string | null;
   canManage: boolean;
   isConnected: boolean;
+  hasSocialHistory: boolean;
   connectedLabel: string | null;
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
@@ -107,6 +111,7 @@ export function InstagramConnectPage({
       activeBrandId={activeBrandId}
       canManage={canManage}
       isConnected={isConnected}
+      hasSocialHistory={hasSocialHistory}
       connectedLabel={connectedLabel}
       profileImageUrl={profileImageUrl}
       resolutionIssue={resolutionIssue}
@@ -123,6 +128,7 @@ export function ThreadsConnectPage({
   activeBrandId,
   canManage,
   isConnected,
+  hasSocialHistory,
   connectedLabel,
   profileImageUrl = null,
   resolutionIssue = null,
@@ -135,6 +141,7 @@ export function ThreadsConnectPage({
   activeBrandId: string | null;
   canManage: boolean;
   isConnected: boolean;
+  hasSocialHistory: boolean;
   connectedLabel: string | null;
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
@@ -150,6 +157,7 @@ export function ThreadsConnectPage({
       activeBrandId={activeBrandId}
       canManage={canManage}
       isConnected={isConnected}
+      hasSocialHistory={hasSocialHistory}
       connectedLabel={connectedLabel}
       profileImageUrl={profileImageUrl}
       resolutionIssue={resolutionIssue}
@@ -167,6 +175,7 @@ function DirectLoginConnectPage({
   activeBrandId,
   canManage,
   isConnected,
+  hasSocialHistory,
   connectedLabel,
   profileImageUrl = null,
   resolutionIssue = null,
@@ -180,6 +189,7 @@ function DirectLoginConnectPage({
   activeBrandId: string | null;
   canManage: boolean;
   isConnected: boolean;
+  hasSocialHistory: boolean;
   connectedLabel: string | null;
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
@@ -319,44 +329,77 @@ function DirectLoginConnectPage({
     );
   }
 
-  if (isConnected) {
+  if (isConnected || hasSocialHistory) {
     return (
       <div className="space-y-7 px-1 pb-16 pt-2">
-        <header className="flex items-center gap-4">
-          {profileImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={profileImageUrl}
-              alt=""
-              referrerPolicy="no-referrer"
-              className="h-14 w-14 rounded-full object-cover"
-            />
-          ) : (
-            <span
-              className="flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold text-white"
-              style={{ backgroundColor: accent }}
-            >
-              {(connectedLabel ?? label).slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <div>
-            <p className="text-sm font-medium text-slate-500">{label}</p>
-            <h1 className="text-[28px] font-semibold leading-tight text-[#20242A]">
-              {connectedLabel ?? `${label} account`}
-            </h1>
-          </div>
-        </header>
+        {network === "threads" ? (
+          <header className="flex items-center gap-4">
+            {profileImageUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profileImageUrl}
+                alt=""
+                referrerPolicy="no-referrer"
+                className="h-14 w-14 rounded-full object-cover"
+              />
+            ) : (
+              <span
+                className="flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold text-white"
+                style={{ backgroundColor: accent }}
+              >
+                {(connectedLabel ?? label).slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <div>
+              <p className="text-sm font-medium text-slate-500">
+                {label}
+              </p>
+              <h1 className="text-[28px] font-semibold leading-tight text-[#20242A]">
+                {connectedLabel ?? `${label} account`}
+              </h1>
+            </div>
+          </header>
+        ) : null}
 
-        <section className="rounded-[18px] border border-slate-200 bg-white px-7 py-6">
-          <h2 className="text-[18px] font-semibold text-slate-950">
-            Account connected
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            {connectedVia === "facebook_page"
-              ? `This ${label} account is linked through your Facebook Page. Analytics will appear here after the next sync step.`
-              : `This ${label} account is connected independently. Analytics will appear here after the next sync step.`}
-          </p>
-        </section>
+        {!isConnected ? (
+          <section className="flex flex-col gap-4 rounded-[14px] border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-[17px] font-semibold text-slate-950">
+                No {label} account connected
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Your saved {label} history remains stored. Reconnect the
+                same account to restore only that account&apos;s analytics.
+              </p>
+            </div>
+
+            <Link
+              href={withSocialPreview(
+                `/dashboard/social/${network}?connections=open`,
+                searchParams,
+              )}
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
+            >
+              Reconnect {label}
+            </Link>
+          </section>
+        ) : null}
+
+        {network === "instagram" ? (
+          <InstagramSubscribedDashboard
+            accountName={connectedLabel ?? "Instagram account"}
+            profileImageUrl={profileImageUrl}
+            isConnected={isConnected}
+          />
+        ) : (
+          <div data-connected-via={connectedVia ?? undefined}>
+            <ThreadsSubscribedDashboard
+              accountName={connectedLabel ?? "Threads account"}
+              profileImageUrl={profileImageUrl}
+              isConnected={isConnected}
+            />
+          </div>
+        )}
       </div>
     );
   }

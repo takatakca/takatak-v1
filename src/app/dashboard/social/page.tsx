@@ -5,6 +5,8 @@ import {
   type SocialSummaryData,
 } from "@/components/social/analytics/social-summary-dashboard";
 import { getPrisma } from "@/lib/db/prisma";
+import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
+import { hasSocialHistory } from "@/lib/social/social-history";
 import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 
@@ -33,6 +35,7 @@ export default async function SocialSummaryPage() {
     hasConnectedAccounts:
       false,
 
+    hasSocialHistory: false,
     dataUnavailable:
       false,
 
@@ -60,6 +63,37 @@ export default async function SocialSummaryPage() {
   if (
     !brand.activeBrandId
   ) {
+    return (
+      <SocialSummaryDashboard
+        data={data}
+      />
+    );
+  }
+
+  // First-time onboarding and current access are different.
+  // Returning users keep the real dashboard permanently.
+  try {
+    data.hasSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
+  } catch (error) {
+    data.dataUnavailable = true;
+    console.error(
+      "[social-summary] Social history could not be determined:",
+      error instanceof Error ? error.message : "Unknown error",
+    );
+
+    return <SocialSummaryDashboard data={data} />;
+  }
+
+  // Analytics remain subscription-gated. The temporary setup allowlist
+  // permits OAuth connection only and must never expose saved analytics.
+  const billing = await getSocialShellBilling(
+    access.activeClientId,
+  );
+
+  if (!billing?.hasPaidPlan) {
     return (
       <SocialSummaryDashboard
         data={data}
@@ -111,6 +145,18 @@ export default async function SocialSummaryPage() {
               {
                 not: null,
               },
+            providerConnection: {
+              is: {
+                clientId:
+                  access.activeClientId,
+                businessBrandId:
+                  brand.activeBrandId,
+                status:
+                  "connected",
+                disconnectedAt:
+                  null,
+              },
+            },
           },
 
           select: {
@@ -147,6 +193,34 @@ export default async function SocialSummaryPage() {
 
             date: {
               gte: rangeStart,
+            },
+            socialAccount: {
+              is: {
+                clientId:
+                  access.activeClientId,
+                businessBrandId:
+                  brand.activeBrandId,
+                status:
+                  "connected",
+                providerConnectionId: {
+                  not: null,
+                },
+                externalAccountId: {
+                  not: null,
+                },
+                providerConnection: {
+                  is: {
+                    clientId:
+                      access.activeClientId,
+                    businessBrandId:
+                      brand.activeBrandId,
+                    status:
+                      "connected",
+                    disconnectedAt:
+                      null,
+                  },
+                },
+              },
             },
           },
 
@@ -195,6 +269,34 @@ export default async function SocialSummaryPage() {
                   },
               },
             ],
+            socialAccount: {
+              is: {
+                clientId:
+                  access.activeClientId,
+                businessBrandId:
+                  brand.activeBrandId,
+                status:
+                  "connected",
+                providerConnectionId: {
+                  not: null,
+                },
+                externalAccountId: {
+                  not: null,
+                },
+                providerConnection: {
+                  is: {
+                    clientId:
+                      access.activeClientId,
+                    businessBrandId:
+                      brand.activeBrandId,
+                    status:
+                      "connected",
+                    disconnectedAt:
+                      null,
+                  },
+                },
+              },
+            },
           },
 
           select: {
@@ -227,6 +329,18 @@ export default async function SocialSummaryPage() {
 
             status:
               "connected",
+            providerConnection: {
+              is: {
+                clientId:
+                  access.activeClientId,
+                businessBrandId:
+                  brand.activeBrandId,
+                status:
+                  "connected",
+                disconnectedAt:
+                  null,
+              },
+            },
           },
 
           select: {
@@ -265,6 +379,31 @@ export default async function SocialSummaryPage() {
 
             date: {
               gte: rangeStart,
+            },
+            adAccount: {
+              is: {
+                clientId:
+                  access.activeClientId,
+                businessBrandId:
+                  brand.activeBrandId,
+                status:
+                  "connected",
+                providerConnectionId: {
+                  not: null,
+                },
+                providerConnection: {
+                  is: {
+                    clientId:
+                      access.activeClientId,
+                    businessBrandId:
+                      brand.activeBrandId,
+                    status:
+                      "connected",
+                    disconnectedAt:
+                      null,
+                  },
+                },
+              },
             },
           },
 

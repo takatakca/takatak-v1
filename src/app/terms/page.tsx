@@ -5,8 +5,8 @@ export const metadata = {
   description:
     "Terms governing access to the TAKATAK User Official Dashboard.",
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
 };
 
@@ -136,6 +136,31 @@ export default function TermsPage() {
               technical limitations. TAKATAK does not control
               third-party platforms.
             </p>
+
+            <p className="mt-3">
+              When you connect Google or YouTube, your use of those
+              services is also subject to the{" "}
+              <a
+                href="https://policies.google.com/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                Google Terms of Service
+              </a>
+              , the{" "}
+              <a
+                href="https://www.youtube.com/t/terms"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                YouTube Terms of Service
+              </a>
+              , and their applicable privacy and developer policies.
+              You authorize TAKATAK to access only the information and
+              permissions presented during the OAuth consent process.
+            </p>
           </section>
 
           <section>
@@ -222,9 +247,14 @@ export default function TermsPage() {
             </h2>
 
             <p className="mt-2">
-              Questions concerning these Terms may be submitted
-              through the official TAKATAK support channel associated
-              with your account.
+              Questions concerning these Terms may be submitted to{" "}
+              <a
+                href="mailto:support@takatak.ca"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                support@takatak.ca
+              </a>
+              .
             </p>
           </section>
         </div>

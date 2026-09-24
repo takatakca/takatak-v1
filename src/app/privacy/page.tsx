@@ -5,8 +5,8 @@ export const metadata = {
   description:
     "Privacy practices for the TAKATAK User Official Dashboard.",
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
 };
 
@@ -145,6 +145,123 @@ export default function PrivacyPage() {
               Providers receive only the information reasonably
               required to perform their services and remain subject
               to applicable contractual and security obligations.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-slate-900">
+              Google and YouTube API Services
+            </h2>
+
+            <p className="mt-2">
+              When you choose to connect a Google or YouTube account,
+              TAKATAK uses Google OAuth 2.0 to request only the
+              permissions displayed on Google&apos;s consent screen.
+              Connecting an account is optional.
+            </p>
+
+            <p className="mt-3">
+              Depending on the features you authorize, TAKATAK may
+              access and process:
+            </p>
+
+            <ul className="mt-3 list-disc space-y-2 pl-6">
+              <li>
+                Your Google account identifier, name, email address,
+                and profile image.
+              </li>
+              <li>
+                Your YouTube channel identifier, channel name,
+                handle, profile image, and other read-only channel
+                metadata.
+              </li>
+              <li>
+                Read-only YouTube content information required to
+                display and organize your channel activity.
+              </li>
+              <li>
+                Read-only YouTube Analytics information, including
+                authorized channel-performance and audience-activity
+                metrics.
+              </li>
+              <li>
+                OAuth access tokens, refresh tokens, granted scopes,
+                and token-expiration information required to maintain
+                the connection you requested.
+              </li>
+            </ul>
+
+            <p className="mt-3">
+              TAKATAK uses this Google and YouTube information only to
+              connect the channel selected by you, synchronize
+              authorized information, display analytics in your
+              dashboard, maintain the requested integration, and
+              protect the integration against unauthorized access.
+            </p>
+
+            <p className="mt-3">
+              TAKATAK does not use Google or YouTube user data for
+              advertising, does not sell it, and does not transfer it
+              to unrelated third parties. Access is limited to the
+              user and authorized members of the applicable TAKATAK
+              workspace, along with service providers that process
+              information only as necessary to operate and secure the
+              requested service.
+            </p>
+
+            <p className="mt-3">
+              OAuth credentials are stored using protected,
+              access-controlled systems. TAKATAK limits access to
+              connected-account information according to workspace
+              permissions and uses the information only for the
+              user-facing functionality that authorized it.
+            </p>
+
+            <p className="mt-3">
+              You may disconnect YouTube from the TAKATAK dashboard.
+              You may also revoke TAKATAK&apos;s Google access from
+              your{" "}
+              <a
+                href="https://myaccount.google.com/connections"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                Google Account connections
+              </a>
+              . Revocation prevents future access but does not
+              automatically remove information that must temporarily
+              be retained for security, legal, or audit obligations.
+            </p>
+
+            <p className="mt-3">
+              You may request deletion of stored Google or YouTube
+              information by disconnecting the integration and
+              contacting{" "}
+              <a
+                href="mailto:support@takatak.ca"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                support@takatak.ca
+              </a>
+              . TAKATAK will delete or de-identify the applicable
+              information subject to legal, security, fraud
+              prevention, billing, and dispute-resolution
+              requirements.
+            </p>
+
+            <p className="mt-3">
+              TAKATAK&apos;s use and transfer of information received
+              from Google APIs adheres to the{" "}
+              <a
+                href="https://developers.google.com/terms/api-services-user-data-policy"
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                Google API Services User Data Policy
+              </a>
+              , including its Limited Use requirements.
             </p>
           </section>
 
@@ -308,9 +425,15 @@ export default function PrivacyPage() {
 
             <p className="mt-2">
               Requests concerning access, correction, deletion,
-              consent, or privacy concerns may be submitted through
-              the official TAKATAK support channel associated with
-              your account.
+              consent, connected Google or YouTube information, or
+              other privacy concerns may be submitted to{" "}
+              <a
+                href="mailto:support@takatak.ca"
+                className="font-semibold text-indigo-600 hover:text-indigo-500"
+              >
+                support@takatak.ca
+              </a>
+              .
             </p>
           </section>
 

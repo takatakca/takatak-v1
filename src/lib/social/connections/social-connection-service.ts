@@ -27,7 +27,10 @@ import {
   getSocialProviderDefinition,
   getSocialProviderReadiness,
 } from "@/lib/social/providers/registry";
-import { buildMetaAuthorizationUrl } from "@/lib/social/providers/meta-oauth";
+import {
+  buildMetaAuthorizationUrl,
+  type MetaOAuthScopeSet,
+} from "@/lib/social/providers/meta-oauth";
 import { buildInstagramAuthorizationUrl } from "@/lib/social/providers/instagram-oauth";
 import { buildThreadsAuthorizationUrl } from "@/lib/social/providers/threads-oauth";
 import { buildTikTokAuthorizationUrl } from "@/lib/social/providers/tiktok-oauth";
@@ -89,11 +92,13 @@ function buildAuthorizationUrl(options: {
   provider: SocialConnectionProviderValue;
   state: string;
   codeChallenge: string;
+  metaScopeSet?: MetaOAuthScopeSet;
 }): string {
   if (options.provider === "meta") {
     return buildMetaAuthorizationUrl({
       state: options.state,
       codeChallenge: options.codeChallenge,
+      scopeSet: options.metaScopeSet,
     });
   }
 
@@ -163,6 +168,7 @@ function readAuthorizationUrlFromMetadata(
 
 function prepareOAuthAttemptMaterial(options: {
   provider: SocialConnectionProviderValue;
+  metaScopeSet?: MetaOAuthScopeSet;
 }): {
   publicState: string;
   encryptedVerifier: {
@@ -198,6 +204,7 @@ function prepareOAuthAttemptMaterial(options: {
     provider: options.provider,
     state: publicState,
     codeChallenge,
+    metaScopeSet: options.metaScopeSet,
   });
 
   const expiresAt = new Date(
@@ -620,6 +627,7 @@ export async function startMetaFacebookReauthorization(options: {
   profileId: string;
   businessBrandId: string;
   returnPath: string;
+  purpose?: "facebook_reauthorization" | "facebook_linked_instagram";
 }): Promise<{
   authorizationUrl: string;
   expiresAt: string;
@@ -672,7 +680,13 @@ export async function startMetaFacebookReauthorization(options: {
     );
   }
 
-  const material = prepareOAuthAttemptMaterial({ provider: "meta" });
+  const material = prepareOAuthAttemptMaterial({
+    provider: "meta",
+    metaScopeSet:
+      options.purpose === "facebook_linked_instagram"
+        ? "facebook_linked_instagram"
+        : "facebook_pages",
+  });
 
   await runSocialDbTransaction(
     "social-oauth-reauth",
@@ -766,6 +780,61 @@ export async function startMetaFacebookReauthorization(options: {
     provider: "meta",
     mode: "reauthorization",
   };
+}
+
+/**
+ * Request the extra permissions required for the Instagram professional
+ * account linked to the selected Facebook Page.
+ *
+ * The Facebook connection and selected Page remain connected.
+ */
+export async function startLinkedInstagramAuthorization(options: {
+  clientId: string;
+  profileId: string;
+  connectionId: string;
+  returnPath: string;
+}): Promise<{
+  authorizationUrl: string;
+  expiresAt: string;
+  provider: "meta";
+  mode: "reauthorization";
+}> {
+  const prisma = requirePrisma();
+
+  await assertProfileCanManageSocialAccounts(prisma, {
+    clientId: options.clientId,
+    profileId: options.profileId,
+  });
+
+  const connection =
+    await prisma.socialProviderConnection.findFirst({
+      where: {
+        id: options.connectionId,
+        clientId: options.clientId,
+        provider: "meta",
+        status: {
+          in: ["connected", "reauthorization_required"],
+        },
+      },
+      select: {
+        businessBrandId: true,
+      },
+    });
+
+  if (!connection) {
+    throw new ServiceError(
+      "not_found",
+      "Connect a Facebook Page before connecting its Instagram account.",
+    );
+  }
+
+  return startMetaFacebookReauthorization({
+    clientId: options.clientId,
+    profileId: options.profileId,
+    businessBrandId: connection.businessBrandId,
+    returnPath: options.returnPath,
+    purpose: "facebook_linked_instagram",
+  });
 }
 
 /**

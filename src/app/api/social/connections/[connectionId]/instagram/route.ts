@@ -15,6 +15,7 @@ import {
   instagramErrorCategory,
 } from "@/lib/social/connections/social-instagram-account-service";
 import { MetaInstagramError } from "@/lib/social/providers/meta-instagram";
+import { startLinkedInstagramAuthorization } from "@/lib/social/connections/social-connection-service";
 import { toAccountPictureSrc } from "@/lib/social/media/remote-image";
 import { isUuid } from "@/lib/validation/common";
 
@@ -81,6 +82,44 @@ export async function POST(
       200,
     );
   } catch (error) {
+    if (
+      error instanceof MetaInstagramError &&
+      error.category === "permission_required"
+    ) {
+      try {
+        const authorization =
+          await startLinkedInstagramAuthorization({
+            clientId: gate.access.activeClientId,
+            profileId: gate.access.profileId,
+            connectionId,
+            returnPath:
+              "/dashboard/social?connections=open&platform=instagram",
+          });
+
+        return jsonResponse(
+          {
+            ok: true,
+            message:
+              "Continue to Facebook and grant Instagram access.",
+            authorization: {
+              authorizationUrl:
+                authorization.authorizationUrl,
+              expiresAt: authorization.expiresAt,
+              provider: authorization.provider,
+              mode: authorization.mode,
+            },
+          },
+          200,
+        );
+      } catch (authorizationError) {
+        return handleApiError(
+          "instagram-permission-upgrade",
+          authorizationError,
+          "Instagram permissions could not be requested.",
+        );
+      }
+    }
+
     if (error instanceof MetaInstagramError) {
       return jsonResponse(
         {

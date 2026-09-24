@@ -17,6 +17,7 @@ import {
   Hash,
   Inbox,
   Link2,
+  Loader2,
   LogOut,
   Megaphone,
   Menu,
@@ -1062,6 +1063,7 @@ function ModuleDrawer({
   onClose: () => void;
 }) {
   const pathname = usePathname();
+
   const searchParams = useSearchParams();
 
   if (!open) {
@@ -1532,8 +1534,11 @@ function SocialSidebarContent({
   mobile?: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const searchParams = useSearchParams();
+  const [isOpeningConnections, startConnectionsTransition] =
+    useTransition();
 
   const summaryActive = pathname === '/dashboard/social';
 
@@ -1663,21 +1668,38 @@ function SocialSidebarContent({
           })}
         </div>
 
-        <Link
-          href={withSocialPreview(
-            '/dashboard/social?connections=open',
-            searchParams,
-          )}
-          onClick={onNavigate}
+        <button
+          type="button"
+          disabled={isOpeningConnections}
+          aria-busy={isOpeningConnections}
+          onClick={() => {
+            onNavigate?.();
+            startConnectionsTransition(() => {
+              router.push(
+                withSocialPreview(
+                  '/dashboard/social?connections=open',
+                  searchParams,
+                ),
+              );
+            });
+          }}
           title={collapsed ? 'More connections' : undefined}
-          className={`mt-3 flex items-center justify-center gap-2 rounded-xl border border-slate-900 text-sm font-medium text-slate-900 transition hover:bg-slate-100 ${
+          className={`mt-3 flex items-center justify-center gap-2 rounded-xl border border-slate-900 text-sm font-medium text-slate-900 transition hover:bg-slate-100 disabled:cursor-wait disabled:opacity-70 ${
             collapsed ? 'h-11 w-11 px-0' : 'px-3 py-2.5'
           }`}
         >
-          <Plus className="h-5 w-5 shrink-0" />
+          {isOpeningConnections ? (
+            <Loader2 className="h-5 w-5 shrink-0 animate-spin" />
+          ) : (
+            <Plus className="h-5 w-5 shrink-0" />
+          )}
 
-          {!collapsed ? <span>More connections</span> : null}
-        </Link>
+          {!collapsed ? (
+            <span>
+              {isOpeningConnections ? 'Opening...' : 'More connections'}
+            </span>
+          ) : null}
+        </button>
       </div>
 
       <div className="shrink-0 border-t border-slate-200 px-3 py-3">

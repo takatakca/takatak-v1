@@ -16,6 +16,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useTransition,
 } from "react";
 
 import {
@@ -550,6 +551,10 @@ export function ManageConnectionsModal({
 
   const [notice, setNotice] =
     useState<Notice | null>(null);
+  const [isModalLoading, setIsModalLoading] =
+    useState(false);
+  const [isClosing, startCloseTransition] =
+    useTransition();
 
   const [outsidePulse, setOutsidePulse] =
     useState(false);
@@ -616,10 +621,23 @@ export function ManageConnectionsModal({
 
   useEffect(() => {
     if (!open || !activeBrandId) {
+      setIsModalLoading(false);
       return;
     }
 
-    void refreshConnectionsFromServer();
+    let cancelled = false;
+    setIsModalLoading(true);
+
+    void refreshConnectionsFromServer().finally(() => {
+      if (!cancelled) {
+        setIsModalLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+
     // Refetch whenever Manage connections opens so status/Page identity is live.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, activeBrandId]);
@@ -634,11 +652,13 @@ export function ManageConnectionsModal({
 
     const query = params.toString();
 
-    router.replace(
-      query
-        ? `${pathname}?${query}`
-        : pathname,
-    );
+    startCloseTransition(() => {
+      router.replace(
+        query
+          ? `${pathname}?${query}`
+          : pathname,
+      );
+    });
   }
 
   function pulseModal() {
@@ -1379,6 +1399,14 @@ export function ManageConnectionsModal({
         return;
       }
 
+      const authorizationUrl =
+        result.authorization?.authorizationUrl;
+
+      if (authorizationUrl) {
+        window.location.assign(authorizationUrl);
+        return;
+      }
+
       const displayName =
         result.selection?.displayName ?? "Instagram account";
 
@@ -1879,13 +1907,42 @@ export function ManageConnectionsModal({
         <button
           type="button"
           onClick={closeModal}
-          aria-label="Close manage connections"
-          className="absolute right-2 top-2 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-[#2a1728] text-[#dfff32] shadow-lg transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff32] sm:right-4 sm:top-4 sm:h-11 sm:w-11"
+          disabled={isClosing}
+          aria-busy={isClosing}
+          aria-label={
+            isClosing
+              ? "Closing manage connections"
+              : "Close manage connections"
+          }
+          className="absolute right-2 top-2 z-30 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-[#2a1728] text-[#dfff32] shadow-lg transition hover:scale-105 disabled:cursor-wait disabled:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#dfff32] sm:right-4 sm:top-4 sm:h-11 sm:w-11"
         >
-          <X className="h-6 w-6" />
+          {isClosing ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : (
+            <X className="h-6 w-6" />
+          )}
         </button>
 
-        <div className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl bg-white">
+        {isModalLoading ? (
+          <div
+            className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-white/95"
+            role="status"
+            aria-live="polite"
+            aria-label="Loading social connections"
+          >
+            <div className="flex flex-col items-center gap-3 text-[#2a1728]">
+              <Loader2 className="h-9 w-9 animate-spin" />
+              <p className="text-sm font-medium">
+                Loading connections...
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        <div
+          className="flex min-h-0 w-full flex-1 flex-col overflow-hidden rounded-xl bg-white"
+          aria-busy={isModalLoading || isClosing}
+        >
 
 
         <header className="shrink-0 border-b border-slate-200 px-4 py-4 pr-16 sm:px-9 sm:py-7 sm:pr-20">

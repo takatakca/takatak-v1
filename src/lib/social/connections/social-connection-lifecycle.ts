@@ -8,7 +8,10 @@ import {
   canDisconnectConnection,
   connectionMatchesProviderScope,
 } from "@/lib/social/connections/social-connection-lifecycle-policy";
-import { runSocialDbTransaction } from "@/lib/social/connections/social-db-transaction";
+import {
+  runSocialDbTransaction,
+  SOCIAL_DB_TRANSACTION_CANCEL_TIMEOUT_MS,
+} from "@/lib/social/connections/social-db-transaction";
 import { disconnectSocialConnection } from "@/lib/social/connections/social-connection-management";
 import {
   addAnotherSocialAccount,
@@ -180,6 +183,10 @@ export async function cancelPendingSocialConnection(options: {
       cancelledAt: cancelledAt.toISOString(),
     };
   },
+    {
+      maxWaitMs: SOCIAL_DB_TRANSACTION_CANCEL_TIMEOUT_MS,
+      timeoutMs: SOCIAL_DB_TRANSACTION_CANCEL_TIMEOUT_MS,
+    },
   );
 
   logSocialOAuthEvent("social-oauth-cancel-pending", {

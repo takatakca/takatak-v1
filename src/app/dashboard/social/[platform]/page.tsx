@@ -20,6 +20,7 @@ import { resolveCanonicalYoutubeDashboard } from "@/lib/social/connections/youtu
 import { resolveCanonicalXDashboard } from "@/lib/social/connections/x-dashboard-resolve";
 import { toAccountPictureSrc } from "@/lib/social/media/remote-image";
 import { getSelectedFacebookPageSyncSnapshot } from "@/lib/social/sync/facebook-page-initial-sync";
+import { hasSocialHistory } from "@/lib/social/social-history";
 
 const SOCIAL_PLATFORMS = {
   instagram: {
@@ -123,6 +124,10 @@ export default async function SocialPlatformPage({
       "/dashboard/social/instagram",
     );
     const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -187,6 +192,7 @@ export default async function SocialPlatformPage({
           "manage_social_accounts",
         )}
         isConnected={isConnected}
+        hasSocialHistory={hasPreviousSocialHistory}
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
         resolutionIssue={resolutionIssue}
@@ -204,6 +210,10 @@ export default async function SocialPlatformPage({
       "/dashboard/social/threads",
     );
     const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -276,6 +286,7 @@ export default async function SocialPlatformPage({
           "manage_social_accounts",
         )}
         isConnected={isConnected}
+        hasSocialHistory={hasPreviousSocialHistory}
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
         resolutionIssue={resolutionIssue}
@@ -294,6 +305,10 @@ export default async function SocialPlatformPage({
       "/dashboard/social/facebook",
     );
     const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -346,6 +361,7 @@ export default async function SocialPlatformPage({
           "manage_social_accounts",
         )}
         isConnected={isConnected}
+        hasSocialHistory={hasPreviousSocialHistory}
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
         initialSyncStatus={syncStatus}
@@ -360,6 +376,10 @@ export default async function SocialPlatformPage({
       "/dashboard/social/youtube",
     );
     const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -397,6 +417,7 @@ export default async function SocialPlatformPage({
           "manage_social_accounts",
         )}
         isConnected={isConnected}
+        hasSocialHistory={hasPreviousSocialHistory}
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
         resolutionIssue={resolutionIssue}
@@ -411,6 +432,10 @@ export default async function SocialPlatformPage({
       "/dashboard/social/tiktok",
     );
     const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -445,6 +470,7 @@ export default async function SocialPlatformPage({
           "manage_social_accounts",
         )}
         isConnected={isConnected}
+        hasSocialHistory={hasPreviousSocialHistory}
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
         resolutionIssue={resolutionIssue}
@@ -458,6 +484,10 @@ export default async function SocialPlatformPage({
       "/dashboard/social/x",
     );
     const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
 
     let isConnected = false;
     let connectedLabel: string | null = null;
@@ -492,6 +522,7 @@ export default async function SocialPlatformPage({
           "manage_social_accounts",
         )}
         isConnected={isConnected}
+        hasSocialHistory={hasPreviousSocialHistory}
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
         resolutionIssue={resolutionIssue}

@@ -1,35 +1,34 @@
-import "server-only";
+import 'server-only';
 
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient } from '@supabase/ssr';
 
-import { createAuthErrorId } from "@/lib/auth/auth-error-id";
-import { getSupabaseEnv } from "@/lib/auth/env";
-import { normalizeEmail } from "@/lib/auth/registration-validation";
-import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
+import { createAuthErrorId } from '@/lib/auth/auth-error-id';
+import { getSupabaseEnv } from '@/lib/auth/env';
+import { normalizeEmail } from '@/lib/auth/registration-validation';
+import { getSupabaseAdminClient } from '@/lib/auth/supabase-admin';
 import {
   expireAuthCookies,
   identitySessionCookies,
   workspaceCookieClears,
   type SessionCookieWrite,
-} from "@/lib/auth/workspace-session-cookies";
-import { logAuthFailure } from "@/lib/auth/auth-json";
-import { redactSecrets } from "@/lib/security/redact";
+} from '@/lib/auth/workspace-session-cookies';
+import { logAuthFailure } from '@/lib/auth/auth-json';
+import { redactSecrets } from '@/lib/security/redact';
 
 const AUTH_USER_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const SESSION_UNAVAILABLE_MESSAGE =
-  "Unable to start a session. Please try again.";
+  'Unable to start a session. Please try again.';
 
 export type SessionStage =
-  | "configuration"
-  | "auth_user_validation"
-  | "confirm_email"
-  | "generate_link"
-  | "cookie_preparation"
-  | "local_signout"
-  | "verify_magiclink"
-  | "session_validation";
+  | 'configuration'
+  | 'auth_user_validation'
+  | 'confirm_email'
+  | 'generate_link'
+  | 'cookie_preparation'
+  | 'verify_magiclink'
+  | 'session_validation';
 
 export type CreateSessionResult =
   | { ok: true; cookies: SessionCookieWrite[] }
@@ -51,10 +50,7 @@ type AdminAuth = {
         id: string,
         attributes: { email_confirm: boolean },
       ) => Promise<{ error: { message?: string } | null }>;
-      generateLink: (args: {
-        type: "magiclink";
-        email: string;
-      }) => Promise<{
+      generateLink: (args: { type: 'magiclink'; email: string }) => Promise<{
         data: { properties?: { hashed_token?: string | null } | null };
         error: { message?: string } | null;
       }>;
@@ -64,13 +60,7 @@ type AdminAuth = {
 
 type BrowserAuth = {
   auth: {
-    signOut: (args: { scope: "local" }) => Promise<{
-      error: { message?: string } | null;
-    }>;
-    verifyOtp: (args: {
-      type: "magiclink";
-      token_hash: string;
-    }) => Promise<{
+    verifyOtp: (args: { type: 'magiclink'; token_hash: string }) => Promise<{
       data: {
         user: { id: string; email?: string | null } | null;
         session: { access_token?: string; user?: { id: string } } | null;
@@ -91,12 +81,9 @@ export type SessionDependencies = {
   ) => BrowserAuth;
 };
 
-function fail(
-  stage: SessionStage,
-  error?: unknown,
-): CreateSessionResult {
+function fail(stage: SessionStage, error?: unknown): CreateSessionResult {
   const errorId = createAuthErrorId();
-  logAuthFailure("otp-session", stage, errorId, error);
+  logAuthFailure('otp-session', stage, errorId, error);
   return {
     ok: false,
     message: SESSION_UNAVAILABLE_MESSAGE,
@@ -120,7 +107,7 @@ function defaultCreateBrowserClient(
       getAll() {
         return existingCookies.map((cookie) => ({
           name: cookie.name,
-          value: cookie.value ?? "",
+          value: cookie.value ?? '',
         }));
       },
       setAll(cookiesToSet) {
@@ -128,7 +115,7 @@ function defaultCreateBrowserClient(
           writes.push({
             name,
             value,
-            options: options as SessionCookieWrite["options"],
+            options: options as SessionCookieWrite['options'],
           });
         });
       },
@@ -153,32 +140,32 @@ export async function createSessionForEmail(
     const env = getEnv();
     const admin = getAdmin();
     if (!admin || !env) {
-      return fail("configuration");
+      return fail('configuration');
     }
 
     const normalizedEmail = normalizeEmail(email);
     if (!authUserId || !isValidAuthUserId(authUserId) || !normalizedEmail) {
-      return fail("auth_user_validation");
+      return fail('auth_user_validation');
     }
 
     let authUser: { id: string; email?: string | null } | null = null;
     try {
       const lookup = await admin.auth.admin.getUserById(authUserId);
       if (lookup.error || !lookup.data.user) {
-        return fail("auth_user_validation", lookup.error?.message);
+        return fail('auth_user_validation', lookup.error?.message);
       }
       authUser = lookup.data.user;
     } catch (error) {
-      return fail("auth_user_validation", error);
+      return fail('auth_user_validation', error);
     }
 
     if (authUser.id !== authUserId) {
-      return fail("auth_user_validation");
+      return fail('auth_user_validation');
     }
 
-    const authEmail = normalizeEmail(authUser.email ?? "");
+    const authEmail = normalizeEmail(authUser.email ?? '');
     if (!authEmail || authEmail !== normalizedEmail) {
-      return fail("auth_user_validation");
+      return fail('auth_user_validation');
     }
 
     try {
@@ -187,24 +174,24 @@ export async function createSessionForEmail(
         { email_confirm: true },
       );
       if (confirmError) {
-        return fail("confirm_email", confirmError.message);
+        return fail('confirm_email', confirmError.message);
       }
     } catch (error) {
-      return fail("confirm_email", error);
+      return fail('confirm_email', error);
     }
 
-    let hashedToken = "";
+    let hashedToken = '';
     try {
       const { data, error } = await admin.auth.admin.generateLink({
-        type: "magiclink",
+        type: 'magiclink',
         email: normalizedEmail,
       });
-      hashedToken = data.properties?.hashed_token?.trim() ?? "";
+      hashedToken = data.properties?.hashed_token?.trim() ?? '';
       if (error || !hashedToken) {
-        return fail("generate_link", error?.message ?? "missing hashed_token");
+        return fail('generate_link', error?.message ?? 'missing hashed_token');
       }
     } catch (error) {
-      return fail("generate_link", error);
+      return fail('generate_link', error);
     }
 
     const writes: SessionCookieWrite[] = [];
@@ -214,61 +201,55 @@ export async function createSessionForEmail(
         ...workspaceCookieClears(),
       );
     } catch (error) {
-      return fail("cookie_preparation", error);
+      return fail('cookie_preparation', error);
     }
+
+    const cookiesWithoutAuthTokens = existingCookies.filter(
+      (cookie) => !cookie.name.includes('-auth-token'),
+    );
 
     const supabase = createBrowserClient(
       env.url,
       env.anonKey,
       writes,
-      existingCookies,
+      cookiesWithoutAuthTokens,
     );
 
-    try {
-      const { error: signOutError } = await supabase.auth.signOut({
-        scope: "local",
-      });
-      if (signOutError) {
-        return fail("local_signout", signOutError.message);
-      }
-    } catch (error) {
-      return fail("local_signout", error);
-    }
-
     let verifiedUser: { id: string; email?: string | null } | null = null;
-    let verifiedSession: { access_token?: string; user?: { id: string } } | null =
-      null;
+    let verifiedSession: {
+      access_token?: string;
+      user?: { id: string };
+    } | null = null;
     try {
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        type: "magiclink",
+        type: 'magiclink',
         token_hash: hashedToken,
       });
       if (verifyError) {
-        return fail("verify_magiclink", verifyError.message);
+        return fail('verify_magiclink', verifyError.message);
       }
       verifiedUser = data.user;
       verifiedSession = data.session;
     } catch (error) {
-      return fail("verify_magiclink", error);
+      return fail('verify_magiclink', error);
     }
 
-    const sessionUserId =
-      verifiedSession?.user?.id ?? verifiedUser?.id ?? "";
-    const sessionEmail = normalizeEmail(verifiedUser?.email ?? "");
+    const sessionUserId = verifiedSession?.user?.id ?? verifiedUser?.id ?? '';
+    const sessionEmail = normalizeEmail(verifiedUser?.email ?? '');
     if (
       !verifiedUser ||
       !verifiedSession?.access_token ||
       sessionUserId !== authUserId ||
       sessionEmail !== normalizedEmail
     ) {
-      return fail("session_validation");
+      return fail('session_validation');
     }
 
     writes.push(...identitySessionCookies(authUserId));
     return { ok: true, cookies: writes };
   } catch (error) {
     return fail(
-      "session_validation",
+      'session_validation',
       error instanceof Error ? redactSecrets(error.message) : error,
     );
   }

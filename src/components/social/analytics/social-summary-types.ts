@@ -7,6 +7,11 @@ export type SocialSummaryData = {
   activeBrandId: string | null;
   activeBrandName: string | null;
   hasConnectedAccounts: boolean;
+  /**
+   * Permanent returning-user signal. Once true, the real analytics
+   * dashboard remains visible even when billing or connections are inactive.
+   */
+  hasSocialHistory?: boolean;
   dataUnavailable: boolean;
 
   accounts: Array<{

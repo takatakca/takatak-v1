@@ -17,6 +17,7 @@ import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
  */
 export const SOCIAL_DB_TRANSACTION_MAX_WAIT_MS = 5_000;
 export const SOCIAL_DB_TRANSACTION_TIMEOUT_MS = 5_000;
+export const SOCIAL_DB_TRANSACTION_CANCEL_TIMEOUT_MS = 15_000;
 /** Page selection persists several scoped rows under pooler latency. */
 export const SOCIAL_DB_TRANSACTION_SELECTION_TIMEOUT_MS = 15_000;
 /** Bounded batch upsert of daily metrics (no Meta I/O inside). */

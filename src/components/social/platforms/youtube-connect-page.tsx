@@ -88,6 +88,7 @@ export function YoutubeConnectPage({
   activeBrandId,
   canManage,
   isConnected,
+  hasSocialHistory,
   connectedLabel,
   profileImageUrl = null,
   resolutionIssue = null,
@@ -96,6 +97,7 @@ export function YoutubeConnectPage({
   activeBrandId: string | null;
   canManage: boolean;
   isConnected: boolean;
+  hasSocialHistory: boolean;
   connectedLabel: string | null;
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
@@ -244,7 +246,7 @@ export function YoutubeConnectPage({
     );
   }
 
-  if (isConnected) {
+  if (isConnected || hasSocialHistory) {
     return (
       <div className="space-y-7 px-1 pb-16 pt-2">
         <header className="flex items-center gap-4">
@@ -271,13 +273,24 @@ export function YoutubeConnectPage({
 
         <section className="rounded-[18px] border border-slate-200 bg-white px-7 py-6">
           <h2 className="text-[18px] font-semibold text-slate-950">
-            Channel connected
+            {isConnected ? "Channel connected" : "No YouTube account connected"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            This YouTube channel is connected with Google. Analytics will appear
-            here after the next sync step. Google Business Profile stays
-            unavailable until Google approves API access.
+            {isConnected
+              ? "Channel connected. Analytics will appear here after the next sync step."
+              : "Your saved YouTube history remains stored. Reconnect the same account to restore only that account’s analytics."}
           </p>
+          {!isConnected ? (
+            <Link
+              href={withSocialPreview(
+                "/dashboard/social/youtube?connections=open",
+                searchParams,
+              )}
+              className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
+            >
+              Reconnect YouTube
+            </Link>
+          ) : null}
         </section>
       </div>
     );

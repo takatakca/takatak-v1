@@ -33,6 +33,25 @@ export const META_OAUTH_INSTAGRAM_SCOPES = [
  */
 export const META_OAUTH_START_SCOPES = META_OAUTH_PAGE_SCOPES;
 
+export type MetaOAuthScopeSet =
+  | "facebook_pages"
+  | "facebook_linked_instagram";
+
+export function resolveMetaOAuthScopes(
+  scopeSet: MetaOAuthScopeSet = "facebook_pages",
+): readonly string[] {
+  if (scopeSet === "facebook_linked_instagram") {
+    return [
+      ...new Set([
+        ...META_OAUTH_PAGE_SCOPES,
+        ...META_OAUTH_INSTAGRAM_SCOPES,
+      ]),
+    ];
+  }
+
+  return META_OAUTH_PAGE_SCOPES;
+}
+
 const DEFAULT_GRAPH_API_VERSION = "v21.0";
 
 function trimEnv(name: string): string | null {
@@ -108,6 +127,7 @@ export function getMetaGraphApiVersion(): string {
 export function buildMetaAuthorizationUrl(options: {
   state: string;
   codeChallenge: string;
+  scopeSet?: MetaOAuthScopeSet;
 }): string {
   if (!options.state.trim() || !options.codeChallenge.trim()) {
     throw new ServiceError(
@@ -131,7 +151,7 @@ export function buildMetaAuthorizationUrl(options: {
   url.searchParams.set("response_type", "code");
   url.searchParams.set(
     "scope",
-    META_OAUTH_START_SCOPES.join(","),
+    resolveMetaOAuthScopes(options.scopeSet).join(","),
   );
   url.searchParams.set(
     "code_challenge",

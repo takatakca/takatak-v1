@@ -407,8 +407,11 @@ export function SocialSummaryDashboard({
   const subscribedPreview = preview === "subscribed";
   const previewing = newPreview || subscribedPreview;
 
+  const hasSocialHistory =
+    data.hasSocialHistory ?? data.hasConnectedAccounts;
+
   const newUser =
-    newPreview || (!subscribedPreview && !data.hasConnectedAccounts);
+    newPreview || (!subscribedPreview && !hasSocialHistory);
 
   const { start, end } = useMemo(() => {
     const endDate = new Date();
