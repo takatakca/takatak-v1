@@ -1,4 +1,4 @@
-import { Activity, Bell, Briefcase, Building2, ClipboardList, HeartPulse, PlugZap, Settings, Users } from "lucide-react";
+import { Activity, Bell, Briefcase, Building2, ClipboardList, Database, HeartPulse, PlugZap, Settings, Users } from "lucide-react";
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminBoundaryWarning } from "@/components/admin/admin-boundary-warning";
 import { AdminHeader } from "@/components/admin/admin-header";
@@ -17,6 +17,7 @@ import { requireAdminAccess } from "@/lib/security/guard";
 export const dynamic = "force-dynamic";
 
 const OPERATIONS = [
+  { href: "/dashboard/admin/master-crm", title: "Master CRM", description: "Global TAKATAK people, companies, 1LV merchant relationships, and source orders.", icon: Database },
   { href: "/dashboard/admin/clients", title: "Clients", description: "Client accounts with brand, service, and member counts.", icon: Building2 },
   { href: "/dashboard/admin/users", title: "Users", description: "Profiles and client memberships (read-only).", icon: Users },
   { href: "/dashboard/admin/services", title: "Services", description: "Service instances across all clients.", icon: Briefcase },
