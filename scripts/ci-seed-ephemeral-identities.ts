@@ -86,6 +86,7 @@ async function main() {
   if (!admin || !prisma) {
     throw new Error("ephemeral seed requires local Supabase admin + DATABASE_URL");
   }
+  const db = prisma;
 
   const authA = await createAuthUser(admin, "account-a@example.test", PASSWORD);
   const authB = await createAuthUser(admin, "account-b@example.test", PASSWORD);
@@ -108,7 +109,7 @@ async function main() {
       status: "active" | "disabled";
     },
   ) {
-    const existing = await prisma.profile.findUnique({
+    const existing = await db.profile.findUnique({
       where: { authUserId },
       select: { id: true },
     });
@@ -119,7 +120,7 @@ async function main() {
       );
     }
 
-    return prisma.profile.update({
+    return db.profile.update({
       where: { id: existing.id },
       data: {
         email: data.email,
