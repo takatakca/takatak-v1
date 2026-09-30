@@ -61,6 +61,7 @@ BEGIN
 
   BEGIN
     INSERT INTO public.profiles (
+      id,
       "authUserId",
       email,
       "firstName",
@@ -70,6 +71,7 @@ BEGIN
       "updatedAt"
     )
     VALUES (
+      gen_random_uuid(),
       p_auth_user_id,
       v_email,
       v_first_name,
@@ -211,6 +213,7 @@ BEGIN
     RETURNING id INTO v_identity_id;
   ELSE
     INSERT INTO public.master_identities (
+      id,
       "profileId",
       "firstName",
       "lastName",
@@ -221,6 +224,7 @@ BEGIN
       "updatedAt"
     )
     VALUES (
+      gen_random_uuid(),
       v_profile_id,
       v_first_name,
       v_last_name,
