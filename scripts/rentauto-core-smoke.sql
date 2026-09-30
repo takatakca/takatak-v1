@@ -48,6 +48,11 @@ BEGIN
   VALUES (v_host, 'host'::rentauto.app_role)
   ON CONFLICT DO NOTHING;
 
+  -- The smoke test isolates booking/trip lifecycle. Use the trusted service-role
+  -- claim only for synthetic fixture creation so publication readiness does not
+  -- obscure the lifecycle assertions below.
+  PERFORM set_config('request.jwt.claim.role', 'service_role', true);
+
   INSERT INTO rentauto.cars (
     host_id, status, title, make, model, year,
     base_daily_price_cents, currency, included_km_per_day,
@@ -58,6 +63,8 @@ BEGIN
     10000, 'CAD', 200, 25, 'Montréal, QC', true
   )
   RETURNING id INTO v_car;
+
+  PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
 
   SELECT id INTO v_protection
   FROM rentauto.protection_plans
