@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     const parsed = z
       .object({
         threadId: z.string().uuid(),
-        messages: z.array(z.any()).max(200),
+        messages: z.array(z.unknown()).max(200),
       })
       .safeParse(body);
     if (!parsed.success) return json({ error: "Invalid request" }, 400);
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
     const { threadId } = parsed.data;
     const messages = parsed.data.messages as UIMessage[];
 
-    const { data: thread } = await admin
+    const { data: thread } = await db
       .from("concierge_threads")
       .select("id, user_id, title")
       .eq("id", threadId)
@@ -90,14 +90,14 @@ Deno.serve(async (req) => {
         thread_id: threadId,
         user_id: user.id,
         role: "user",
-        client_message_id: (last as any).id ?? null,
-        message: last as any,
+        client_message_id: last.id ?? null,
+        message: last,
       });
       if (insErr) console.error("persist user message failed", insErr.message);
 
       const text = (last.parts ?? [])
-        .filter((p: any) => p.type === "text")
-        .map((p: any) => p.text)
+        .filter((p) => p.type === "text")
+        .map((p) => (p.type === "text" ? p.text : ""))
         .join(" ")
         .trim();
       const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
           monthlyEligible: z.boolean().describe("Only monthly-eligible vehicles"),
         }),
         execute: async (i) => {
-          let q = admin
+          let q = db
             .from("cars")
             .select(
               "id,title,make,model,year,category,seats,doors,fuel_type,transmission,consumption_l_per_100km,base_daily_price_cents,included_km_per_day,extra_km_price_cents,location_label,airport_pickup_enabled,monthly_enabled,instant_book",
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
         description: "Get full detail for one vehicle by id, including host rating and reviews count.",
         inputSchema: z.object({ carId: z.string() }),
         execute: async ({ carId }) => {
-          const { data: car, error } = await admin
+          const { data: car, error } = await db
             .from("cars")
             .select(
               "id,title,make,model,year,trim,description,category,body_type,seats,doors,fuel_type,transmission,consumption_l_per_100km,features,rules,base_daily_price_cents,included_km_per_day,extra_km_price_cents,location_label,airport_pickup_enabled,monthly_enabled,instant_book,status,host_id",
@@ -149,12 +149,12 @@ Deno.serve(async (req) => {
             .eq("id", carId)
             .maybeSingle();
           if (error || !car) return { error: "Vehicle not found" };
-          const { data: reviews } = await admin
+          const { data: reviews } = await db
             .from("reviews")
             .select("rating_overall")
             .eq("car_id", carId);
-          const ratings = (reviews ?? []).map((r: any) => Number(r.rating_overall));
-          const { host_id, ...safe } = car as any;
+          const ratings = (reviews ?? []).map((review) => Number(review.rating_overall));
+          const { host_id: _hostId, ...safe } = car;
           return {
             vehicle: safe,
             rating_avg: ratings.length ? Number((ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1)) : null,
@@ -187,7 +187,7 @@ Deno.serve(async (req) => {
         description: "List active protection plans with pricing and deductibles.",
         inputSchema: z.object({}),
         execute: async () => {
-          const { data } = await admin
+          const { data } = await db
             .from("protection_plans")
             .select("id,name,tier,description,price_per_day_cents,deductible_cents,coverage_details")
             .eq("is_active", true)
@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
         description: "The signed-in user's own bookings, newest first. Use for trip-specific help.",
         inputSchema: z.object({}),
         execute: async () => {
-          const { data } = await admin
+          const { data } = await db
             .from("trips")
             .select("id,car_id,start_at,end_at,status,payment_status,total_cents,currency,pickup_location")
             .eq("guest_id", user.id)
@@ -255,11 +255,11 @@ Rules:
           thread_id: threadId,
           user_id: user.id,
           role: "assistant",
-          client_message_id: (responseMessage as any)?.id ?? null,
-          message: responseMessage as any,
+          client_message_id: responseMessage.id ?? null,
+          message: responseMessage,
         });
         if (error) console.error("persist assistant message failed", error.message);
-        await admin
+        await db
           .from("concierge_threads")
           .update({ updated_at: new Date().toISOString() })
           .eq("id", threadId);
