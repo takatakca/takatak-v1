@@ -96,49 +96,72 @@ async function main() {
     PASSWORD,
   );
 
-  const profileA = await prisma.profile.create({
+  // Shared-auth migrations now provision Profile rows from auth.users.
+  // The ephemeral seed enriches those rows instead of creating duplicates.
+  async function configureProfile(
+    authUserId: string,
     data: {
-      authUserId: authA,
-      email: "account-a@example.test",
-      displayName: "Account A",
-      firstName: "Ada",
-      lastName: "Alpha",
-      role: "user",
-      status: "active",
+      email: string;
+      displayName: string;
+      firstName: string;
+      lastName: string;
+      status: "active" | "disabled";
     },
+  ) {
+    const existing = await prisma.profile.findUnique({
+      where: { authUserId },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      throw new Error(
+        `shared auth trigger did not create profile for ${data.email}`,
+      );
+    }
+
+    return prisma.profile.update({
+      where: { id: existing.id },
+      data: {
+        email: data.email,
+        displayName: data.displayName,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: "user",
+        status: data.status,
+      },
+    });
+  }
+
+  const profileA = await configureProfile(authA, {
+    email: "account-a@example.test",
+    displayName: "Account A",
+    firstName: "Ada",
+    lastName: "Alpha",
+    status: "active",
   });
-  const profileB = await prisma.profile.create({
-    data: {
-      authUserId: authB,
-      email: "account-b@example.test",
-      displayName: "Account B",
-      firstName: "Bea",
-      lastName: "Bravo",
-      role: "user",
-      status: "active",
-    },
+
+  const profileB = await configureProfile(authB, {
+    email: "account-b@example.test",
+    displayName: "Account B",
+    firstName: "Bea",
+    lastName: "Bravo",
+    status: "active",
   });
-  const profileC = await prisma.profile.create({
-    data: {
-      authUserId: authC,
-      email: "account-c@example.test",
-      displayName: "Account C",
-      firstName: "Cara",
-      lastName: "Charlie",
-      role: "user",
-      status: "active",
-    },
+
+  const profileC = await configureProfile(authC, {
+    email: "account-c@example.test",
+    displayName: "Account C",
+    firstName: "Cara",
+    lastName: "Charlie",
+    status: "active",
   });
-  const profileDisabled = await prisma.profile.create({
-    data: {
-      authUserId: authDisabled,
-      email: "account-disabled@example.test",
-      displayName: "Account Disabled",
-      firstName: "Dee",
-      lastName: "Disabled",
-      role: "user",
-      status: "disabled",
-    },
+
+  const profileDisabled = await configureProfile(authDisabled, {
+    email: "account-disabled@example.test",
+    displayName: "Account Disabled",
+    firstName: "Dee",
+    lastName: "Disabled",
+    status: "disabled",
   });
 
   const workspaceA = await prisma.client.create({
