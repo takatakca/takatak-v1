@@ -2993,7 +2993,7 @@ model SourceMarketplaceOrder {
   sourceMerchant SourceMerchant? @relation(fields: [sourceMerchantId], references: [id], onDelete: SetNull)
   company        MasterCompany?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
 
-  @@unique([sourceApplication, externalOrderId, sourceMerchantId])
+  @@unique([sourceApplication, externalOrderId])
   @@index([identityId, occurredAt])
   @@index([companyId, occurredAt])
   @@index([sourceApplication, paymentStatus])
