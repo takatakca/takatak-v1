@@ -23,6 +23,10 @@ const route = readProjectFile(
   "src/lib/integrations/rentauto/events/route.ts",
 );
 
+const profileSync = readProjectFile(
+  "src/lib/auth/profile-sync.ts",
+);
+
 assert.match(
   schema,
   /model SourceSynchronizationEvent[\s\S]*responsePayload\s+Json\?/,
@@ -63,6 +67,30 @@ assert.match(
   route,
   /"Retry-After":\s*"30"/,
   "Temporary TAKATAK failures must provide Retry-After.",
+);
+
+assert.match(
+  applyEvent,
+  /transaction\.profile\.findUnique\([\s\S]*where:\s*\{\s*email\s*\}/,
+  "Verified Rentauto email must resolve an existing TAKATAK profile.",
+);
+
+assert.match(
+  applyEvent,
+  /profileId:\s*platformProfile\.id/,
+  "Rentauto synchronization must attach the master identity to the TAKATAK profile.",
+);
+
+assert.match(
+  profileSync,
+  /ensureMasterIdentityForVerifiedProfile/,
+  "TAKATAK auth profile synchronization must create or attach a master identity.",
+);
+
+assert.match(
+  profileSync,
+  /primaryEmailVerified:\s*true/,
+  "Verified TAKATAK email must promote the master identity verification state.",
 );
 
 console.log(
