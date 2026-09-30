@@ -176,6 +176,16 @@ BEGIN
 
   IF NOT EXISTS (
     SELECT 1
+    FROM rentauto.notifications
+    WHERE user_id = v_host
+      AND type = 'host_booking_confirmed'
+      AND payload->>'tripId' = v_trip::text
+  ) THEN
+    RAISE EXCEPTION 'rentauto_smoke_host_booking_notification_missing';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
     FROM public.source_payment_summaries
     WHERE "sourceApplication" = 'RENTAUTO'
       AND "bookingNumber" = v_booking_ref
@@ -200,6 +210,16 @@ BEGIN
 
   IF v_active->>'status' <> 'active' THEN
     RAISE EXCEPTION 'rentauto_smoke_checkin_failed';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM rentauto.notifications
+    WHERE user_id = v_host
+      AND type = 'host_trip_started'
+      AND payload->>'tripId' = v_trip::text
+  ) THEN
+    RAISE EXCEPTION 'rentauto_smoke_host_trip_started_notification_missing';
   END IF;
 
   INSERT INTO rentauto.vehicle_tracking_devices (
@@ -242,6 +262,16 @@ BEGIN
 
   IF v_completed->>'status' <> 'completed' THEN
     RAISE EXCEPTION 'rentauto_smoke_checkout_failed';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM rentauto.notifications
+    WHERE user_id = v_host
+      AND type = 'host_trip_completed'
+      AND payload->>'tripId' = v_trip::text
+  ) THEN
+    RAISE EXCEPTION 'rentauto_smoke_host_trip_completed_notification_missing';
   END IF;
 
   IF EXISTS (
