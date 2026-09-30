@@ -21,7 +21,7 @@ export function createLovableAiGatewayRunIdFetch(initialRunId?: string) {
   if (runId) publishRunId(runId);
 
   return {
-    fetch: async (input: any, init?: any) => {
+    fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
       const headers = new Headers(init?.headers);
       if (runId && !headers.has(LOVABLE_AIG_RUN_ID_HEADER)) {
         headers.set(LOVABLE_AIG_RUN_ID_HEADER, runId);
@@ -55,7 +55,7 @@ export function createLovableAiGatewayProvider(
       "Lovable-API-Key": lovableApiKey,
       "X-Lovable-AIG-SDK": "vercel-ai-sdk",
     },
-    fetch: runIdFetch.fetch as any,
+    fetch: runIdFetch.fetch,
   });
 
   return Object.assign(provider, {
