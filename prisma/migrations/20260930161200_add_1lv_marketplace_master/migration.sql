@@ -80,8 +80,8 @@ CREATE INDEX "marketplace_relationships_identityId_sourceApplication_idx"
   ON "marketplace_relationships"("identityId", "sourceApplication");
 CREATE INDEX "marketplace_relationships_companyId_sourceApplication_idx"
   ON "marketplace_relationships"("companyId", "sourceApplication");
-CREATE UNIQUE INDEX "source_marketplace_orders_sourceApplication_externalOrderId_sourceMerchantId_key"
-  ON "source_marketplace_orders"("sourceApplication", "externalOrderId", "sourceMerchantId");
+CREATE UNIQUE INDEX "source_marketplace_orders_sourceApplication_externalOrderId_key"
+  ON "source_marketplace_orders"("sourceApplication", "externalOrderId");
 CREATE INDEX "source_marketplace_orders_identityId_occurredAt_idx"
   ON "source_marketplace_orders"("identityId", "occurredAt");
 CREATE INDEX "source_marketplace_orders_companyId_occurredAt_idx"
