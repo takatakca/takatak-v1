@@ -39,6 +39,19 @@ same host unexpectedly.
 
 ## Gate 2 — identity mapping
 
+Run the read-only mapping gate before writing any identity links:
+
+```bash
+RENTAUTO_LEGACY_SUPABASE_URL="https://<legacy-project>.supabase.co" \
+RENTAUTO_LEGACY_SUPABASE_SERVICE_ROLE_KEY="<legacy service role>" \
+TAKATAK_SUPABASE_URL="https://pcjfahhlozsseqqevimi.supabase.co" \
+TAKATAK_SUPABASE_SERVICE_ROLE_KEY="<TAKATAK service role>" \
+npm run qa:rentauto-cutover-map-identities
+```
+
+The command compares only verified email/phone identifiers, prints aggregate
+counts only, and performs no writes. Any conflict stops automatic migration.
+
 For each legacy Rentauto user:
 
 1. Normalize verified email and verified phone.
