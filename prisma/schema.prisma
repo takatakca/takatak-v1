@@ -2822,6 +2822,8 @@ model MasterIdentity {
   addresses        SourceAddress[]
   paymentSummaries SourcePaymentSummary[]
   events           SourceSynchronizationEvent[]
+  marketplaceRelationships MarketplaceRelationship[]
+  sourceOrders      SourceMarketplaceOrder[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -2897,6 +2899,105 @@ model SourcePaymentSummary {
   @@unique([sourceApplication, bookingNumber])
   @@index([identityId, transactionDate])
   @@map("source_payment_summaries")
+}
+
+model MasterCompany {
+  id           String   @id @default(uuid()) @db.Uuid
+  legalName    String?
+  displayName  String
+  primaryEmail String?
+  primaryPhone String?
+  country      String?
+  province     String?
+  status       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sourceMerchants   SourceMerchant[]
+  relationships    MarketplaceRelationship[]
+  sourceOrders     SourceMarketplaceOrder[]
+
+  @@index([displayName])
+  @@index([primaryEmail])
+  @@map("master_companies")
+}
+
+model SourceMerchant {
+  id                 String   @id @default(uuid()) @db.Uuid
+  companyId          String   @db.Uuid
+  sourceApplication  String
+  externalMerchantId String
+  vertical           String
+  publicSlug         String?
+  collectedFields    Json
+  status             String?
+  lastSynchronizedAt DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  company       MasterCompany              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  relationships MarketplaceRelationship[]
+  sourceOrders  SourceMarketplaceOrder[]
+
+  @@unique([sourceApplication, externalMerchantId])
+  @@index([companyId])
+  @@index([sourceApplication, status])
+  @@map("source_merchants")
+}
+
+model MarketplaceRelationship {
+  id                    String    @id @default(uuid()) @db.Uuid
+  identityId            String?   @db.Uuid
+  companyId             String    @db.Uuid
+  sourceMerchantId      String    @db.Uuid
+  sourceApplication     String
+  sourceCustomerRef     String
+  relationshipType      String    @default("customer_of")
+  firstSeenAt           DateTime?
+  lastSeenAt            DateTime?
+  orderCount            Int?
+  lifetimeValue         Decimal?  @db.Decimal(14, 2)
+  currency              String    @default("CAD")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  identity       MasterIdentity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+  company        MasterCompany   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sourceMerchant SourceMerchant  @relation(fields: [sourceMerchantId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceApplication, sourceCustomerRef, sourceMerchantId, relationshipType])
+  @@index([identityId, sourceApplication])
+  @@index([companyId, sourceApplication])
+  @@map("marketplace_relationships")
+}
+
+model SourceMarketplaceOrder {
+  id                 String    @id @default(uuid()) @db.Uuid
+  sourceApplication  String
+  externalOrderId    String
+  externalOrderNumber String?
+  identityId         String?   @db.Uuid
+  sourceMerchantId   String?   @db.Uuid
+  companyId          String?   @db.Uuid
+  customerReference  String?
+  total              Decimal   @db.Decimal(14, 2)
+  currency           String    @default("CAD")
+  paymentStatus      String?
+  fulfillmentStatus  String?
+  occurredAt         DateTime
+  collectedFields    Json
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  identity       MasterIdentity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+  sourceMerchant SourceMerchant? @relation(fields: [sourceMerchantId], references: [id], onDelete: SetNull)
+  company        MasterCompany?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceApplication, externalOrderId, sourceMerchantId])
+  @@index([identityId, occurredAt])
+  @@index([companyId, occurredAt])
+  @@index([sourceApplication, paymentStatus])
+  @@map("source_marketplace_orders")
 }
 
 model SourceSynchronizationEvent {
