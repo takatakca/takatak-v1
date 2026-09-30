@@ -13,7 +13,8 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  v_is_admin := rentauto.has_role('admin'::rentauto.app_role);
+  v_is_admin := COALESCE(rentauto.has_role('admin'::rentauto.app_role), false)
+    OR COALESCE(auth.role() = 'service_role', false);
 
   IF v_is_admin THEN
     RETURN NEW;
