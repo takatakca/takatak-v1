@@ -9,6 +9,7 @@ import {
   Briefcase,
   Building2,
   CalendarClock,
+  CarFront,
   CircleCheck,
   Database,
   FileBarChart2,
@@ -100,6 +101,11 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Services",
     items: [
+      {
+        label: "Rentauto",
+        href: "/dashboard/rentauto",
+        icon: CarFront,
+      },
       {
         label: "Hosting",
         href: "/dashboard/hosting",
