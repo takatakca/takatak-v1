@@ -205,6 +205,9 @@ jobs:
             exit "$status"
           fi
 
+      - name: Rentauto booking lifecycle smoke test
+        run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
+
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
