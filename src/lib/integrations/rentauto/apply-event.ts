@@ -57,28 +57,6 @@ async function resolveIdentity(
   transaction: Transaction,
   event: RentautoProfileEvent,
 ) {
-  const existingSource =
-    await transaction.sourceProfile.findUnique({
-      where: {
-        sourceApplication_externalUserId: {
-          sourceApplication:
-            event.sourceApplication,
-          externalUserId: event.externalUserId,
-        },
-      },
-      include: {
-        identity: true,
-      },
-    });
-
-  if (existingSource) {
-    return {
-      identity: existingSource.identity,
-      sourceProfile: existingSource,
-      created: false,
-    };
-  }
-
   const email = normalizeEmail(
     event.collectedFields.email,
   );
@@ -95,6 +73,66 @@ async function resolveIdentity(
     Boolean(phone) &&
     event.verifiedFields.includes("phone");
 
+  const platformProfile =
+    emailVerified && email
+      ? await transaction.profile.findUnique({
+          where: { email },
+          include: { masterIdentity: true },
+        })
+      : null;
+
+  const existingSource =
+    await transaction.sourceProfile.findUnique({
+      where: {
+        sourceApplication_externalUserId: {
+          sourceApplication:
+            event.sourceApplication,
+          externalUserId: event.externalUserId,
+        },
+      },
+      include: {
+        identity: true,
+      },
+    });
+
+  if (existingSource) {
+    let identity = existingSource.identity;
+
+    if (
+      platformProfile &&
+      !identity.profileId
+    ) {
+      if (
+        platformProfile.masterIdentity &&
+        platformProfile.masterIdentity.id !== identity.id
+      ) {
+        throw new IdentityConflictError([
+          "profileId",
+          "email",
+        ]);
+      }
+
+      identity =
+        await transaction.masterIdentity.update({
+          where: { id: identity.id },
+          data: {
+            profileId: platformProfile.id,
+            primaryEmail:
+              identity.primaryEmail ?? email,
+            primaryEmailVerified:
+              identity.primaryEmailVerified ||
+              emailVerified,
+          },
+        });
+    }
+
+    return {
+      identity,
+      sourceProfile: existingSource,
+      created: false,
+    };
+  }
+
   const candidates =
     await transaction.masterIdentity.findMany({
       where: {
@@ -104,6 +142,9 @@ async function resolveIdentity(
             : []),
           ...(phoneVerified
             ? [{ primaryPhone: phone }]
+            : []),
+          ...(platformProfile?.masterIdentity
+            ? [{ id: platformProfile.masterIdentity.id }]
             : []),
         ],
       },
@@ -120,10 +161,11 @@ async function resolveIdentity(
     ]);
   }
 
-  const identity =
+  let identity =
     candidates[0] ??
     await transaction.masterIdentity.create({
       data: {
+        profileId: platformProfile?.id,
         firstName:
           event.collectedFields.firstName?.trim(),
         lastName:
@@ -143,6 +185,40 @@ async function resolveIdentity(
             : undefined,
       },
     });
+
+  if (
+    platformProfile &&
+    !identity.profileId
+  ) {
+    if (
+      platformProfile.masterIdentity &&
+      platformProfile.masterIdentity.id !== identity.id
+    ) {
+      throw new IdentityConflictError([
+        "profileId",
+        "email",
+      ]);
+    }
+
+    identity =
+      await transaction.masterIdentity.update({
+        where: { id: identity.id },
+        data: {
+          profileId: platformProfile.id,
+        },
+      });
+  }
+
+  if (
+    identity.profileId &&
+    platformProfile &&
+    identity.profileId !== platformProfile.id
+  ) {
+    throw new IdentityConflictError([
+      "profileId",
+      "email",
+    ]);
+  }
 
   const sourceProfile =
     await transaction.sourceProfile.create({
