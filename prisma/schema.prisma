@@ -135,6 +135,7 @@ enum ServiceType {
   billing
   support
   custom
+  rentauto
 }
 
 enum Provider {
@@ -147,6 +148,7 @@ enum Provider {
   stripe
   supabase
   internal
+  rentauto
 }
 
 enum ServiceStatus {

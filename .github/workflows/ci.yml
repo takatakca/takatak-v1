@@ -8,6 +8,7 @@ on:
       - main
       - master
       - fix/auth-identity-deployment-hardening
+      - codex/rentauto-integration
   workflow_dispatch:
 
 jobs:
@@ -59,6 +60,9 @@ jobs:
 
       - name: Identity-isolation tests
         run: npm run test:identity
+
+      - name: Rentauto synchronization safeguards
+        run: npm run qa:rentauto-sync
 
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
@@ -200,6 +204,9 @@ jobs:
             echo "::error title=qa:tenant-isolation::$(grep -E 'FAIL |crashed|Error' /tmp/qa-tenant.log | tail -n 40 | tr '\n' ' | ')"
             exit "$status"
           fi
+
+      - name: Rentauto booking lifecycle smoke test
+        run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
 
       - name: Build (webpack)
         env:
