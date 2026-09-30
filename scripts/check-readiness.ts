@@ -6,6 +6,10 @@ const database = bool(process.env.DATABASE_URL);
 const prodFoundationFlag = process.env.TAKATAK_FOUNDATION_MODE_ENABLED === "true";
 const seedOverride = process.env.ALLOW_FOUNDATION_SEED === "true";
 const healthDetails = process.env.HEALTH_DETAILS_ENABLED === "true";
+const oneLvSyncEnabled = process.env.TAKATAK_1LV_SYNC_ENABLED === "true";
+const oneLvApiKeyConfigured =
+  typeof process.env.TAKATAK_1LV_API_KEY === "string" &&
+  process.env.TAKATAK_1LV_API_KEY.length >= 32;
 
 console.log("TAKATAK V1 readiness (booleans only — never values)");
 console.log("---------------------------------------------------");
@@ -14,6 +18,8 @@ console.log("Database configured:           ", database);
 console.log("Prod foundation override:      ", prodFoundationFlag, prodFoundationFlag ? " ⚠ unsafe for public production" : "");
 console.log("Foundation seed override:      ", seedOverride, seedOverride ? " ⚠ never on customer DB" : "");
 console.log("Health details exposed:        ", healthDetails);
+console.log("1LV receiver enabled:          ", oneLvSyncEnabled);
+console.log("1LV API key configured:        ", oneLvApiKeyConfigured);
 console.log("");
 console.log("Static status:");
 console.log("  Foundation:        complete (Phases 0-13 + checkpoint)");
