@@ -1,4 +1,4 @@
-import { Activity, Bell, Briefcase, Building2, ClipboardList, HeartPulse, PlugZap, Settings, Users } from "lucide-react";
+import { Activity, Bell, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, PlugZap, Settings, Users } from "lucide-react";
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminBoundaryWarning } from "@/components/admin/admin-boundary-warning";
 import { AdminHeader } from "@/components/admin/admin-header";
@@ -25,6 +25,7 @@ const OPERATIONS = [
   { href: "/dashboard/admin/audit-logs", title: "Audit Logs", description: "System-internal audit trail with safe notes.", icon: ClipboardList },
   { href: "/dashboard/admin/notifications", title: "Notifications", description: "System notifications overview.", icon: Bell },
   { href: "/dashboard/admin/system-health", title: "System Health", description: "Env, auth, provider, and capability status.", icon: HeartPulse },
+  { href: "/dashboard/admin/rentauto", title: "Rentauto", description: "Master identity, verification, payment projection, and synchronization health.", icon: CarFront },
   { href: "/dashboard/admin/settings", title: "Settings", description: "Readiness checklists — no writes yet.", icon: Settings },
 ];
 
