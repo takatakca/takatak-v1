@@ -112,3 +112,31 @@ ALTER TABLE "source_marketplace_orders"
 ALTER TABLE "source_marketplace_orders"
   ADD CONSTRAINT "source_marketplace_orders_companyId_fkey"
   FOREIGN KEY ("companyId") REFERENCES "master_companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+
+-- Master marketplace tables are Prisma/server-only in this phase.
+-- Enable RLS and revoke Data API privileges explicitly because this migration
+-- runs after the canonical all-public-table lockdown migration.
+DO $$
+DECLARE
+  table_name text;
+  protected_tables text[] := ARRAY[
+    'master_companies',
+    'source_merchants',
+    'marketplace_relationships',
+    'source_marketplace_orders'
+  ];
+BEGIN
+  FOREACH table_name IN ARRAY protected_tables LOOP
+    EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', table_name);
+    EXECUTE format('REVOKE ALL ON TABLE public.%I FROM PUBLIC', table_name);
+
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+      EXECUTE format('REVOKE ALL ON TABLE public.%I FROM anon', table_name);
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+      EXECUTE format('REVOKE ALL ON TABLE public.%I FROM authenticated', table_name);
+    END IF;
+  END LOOP;
+END $$;
