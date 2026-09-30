@@ -72,13 +72,20 @@ async function applyCustomer(tx: Prisma.TransactionClient, event: OneLvEnvelope)
 
   // 1LV currently does not send verified-field provenance. Do not silently merge
   // a new source profile into an existing global person from unverified email/phone.
+  const emailOwner = normalizedEmail
+    ? await tx.masterIdentity.findUnique({ where: { primaryEmail: normalizedEmail } })
+    : null;
+  const phoneOwner = normalizedPhone
+    ? await tx.masterIdentity.findUnique({ where: { primaryPhone: normalizedPhone } })
+    : null;
+
   const identity = await tx.masterIdentity.create({
     data: {
       firstName: names.firstName,
       lastName: names.lastName,
-      primaryEmail: normalizedEmail,
+      primaryEmail: emailOwner ? null : normalizedEmail,
       primaryEmailVerified: false,
-      primaryPhone: normalizedPhone,
+      primaryPhone: phoneOwner ? null : normalizedPhone,
       primaryPhoneVerified: false,
       locale: str(p.preferred_language),
       accountStatus: "active",
