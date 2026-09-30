@@ -61,6 +61,9 @@ jobs:
       - name: Identity-isolation tests
         run: npm run test:identity
 
+      - name: 1LV master-ingestion contract tests
+        run: npm run qa:1lv-sync
+
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
