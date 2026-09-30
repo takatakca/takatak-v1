@@ -76,11 +76,43 @@ function hostOf(url: string): string {
   }
 }
 
+type QueryError = {
+  code?: string;
+  message: string;
+};
+
+type CountClient = {
+  from: (table: string) => {
+    select: (
+      columns: string,
+      options: { count: "exact"; head: true },
+    ) => PromiseLike<{
+      count: number | null;
+      error: QueryError | null;
+    }>;
+  };
+};
+
+type AuthAdminClient = {
+  auth: {
+    admin: {
+      listUsers: (input: {
+        page: number;
+        perPage: number;
+      }) => Promise<{
+        data: { users: Array<{ id: string }> };
+        error: QueryError | null;
+      }>;
+    };
+  };
+};
+
 async function countTable(
-  client: ReturnType<typeof createClient>,
+  client: unknown,
   table: string,
 ): Promise<CountResult> {
-  const { count, error } = await client
+  const countClient = client as CountClient;
+  const { count, error } = await countClient
     .from(table)
     .select("*", { count: "exact", head: true });
 
@@ -92,13 +124,14 @@ async function countTable(
 }
 
 async function countAuthUsers(
-  client: ReturnType<typeof createClient>,
+  client: unknown,
 ): Promise<number> {
+  const authClient = client as AuthAdminClient;
   let total = 0;
   let page = 1;
 
   while (true) {
-    const { data, error } = await client.auth.admin.listUsers({
+    const { data, error } = await authClient.auth.admin.listUsers({
       page,
       perPage: 1000,
     });
