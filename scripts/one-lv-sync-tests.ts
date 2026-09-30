@@ -31,10 +31,11 @@ assert.equal(
 );
 
 process.env.TAKATAK_1LV_SYNC_ENABLED = "true";
-process.env.TAKATAK_1LV_API_KEY = "12345678901234567890123456789012";
+const syntheticKey = Array.from({ length: 40 }, (_, index) => String.fromCharCode(97 + (index % 26))).join("");
+process.env.TAKATAK_1LV_API_KEY = syntheticKey;
 
 assert.equal(
-  verifyOneLvRequest(new Headers({ authorization: "Bearer 12345678901234567890123456789012" })).valid,
+  verifyOneLvRequest(new Headers({ authorization: `Bearer ${syntheticKey}` })).valid,
   true,
 );
 assert.equal(
