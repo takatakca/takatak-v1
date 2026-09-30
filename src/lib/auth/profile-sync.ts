@@ -75,6 +75,92 @@ function getProfileIdentity(user: User): {
   };
 }
 
+type PrismaClientInstance = NonNullable<ReturnType<typeof getPrisma>>;
+
+async function ensureMasterIdentityForVerifiedProfile(
+  prisma: PrismaClientInstance,
+  input: {
+    profileId: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    emailVerified: boolean;
+    registeredAt?: Date | null;
+  },
+): Promise<boolean> {
+  if (!input.emailVerified) {
+    return true;
+  }
+
+  return prisma.$transaction(async (transaction) => {
+    const [currentIdentity, emailIdentity] = await Promise.all([
+      transaction.masterIdentity.findUnique({
+        where: { profileId: input.profileId },
+      }),
+      transaction.masterIdentity.findUnique({
+        where: { primaryEmail: input.email },
+      }),
+    ]);
+
+    if (
+      emailIdentity?.profileId &&
+      emailIdentity.profileId !== input.profileId
+    ) {
+      return false;
+    }
+
+    if (currentIdentity) {
+      if (emailIdentity && emailIdentity.id !== currentIdentity.id) {
+        return false;
+      }
+
+      await transaction.masterIdentity.update({
+        where: { id: currentIdentity.id },
+        data: {
+          primaryEmail: input.email,
+          primaryEmailVerified: true,
+          firstName: currentIdentity.firstName ?? input.firstName,
+          lastName: currentIdentity.lastName ?? input.lastName,
+          registeredAt:
+            currentIdentity.registeredAt ?? input.registeredAt ?? undefined,
+        },
+      });
+
+      return true;
+    }
+
+    if (emailIdentity) {
+      await transaction.masterIdentity.update({
+        where: { id: emailIdentity.id },
+        data: {
+          profileId: input.profileId,
+          primaryEmailVerified: true,
+          firstName: emailIdentity.firstName ?? input.firstName,
+          lastName: emailIdentity.lastName ?? input.lastName,
+          registeredAt:
+            emailIdentity.registeredAt ?? input.registeredAt ?? undefined,
+        },
+      });
+
+      return true;
+    }
+
+    await transaction.masterIdentity.create({
+      data: {
+        profileId: input.profileId,
+        primaryEmail: input.email,
+        primaryEmailVerified: true,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        registeredAt: input.registeredAt ?? undefined,
+        accountStatus: 'active',
+      },
+    });
+
+    return true;
+  });
+}
+
 export async function ensurePersonalClientWorkspace(
   profileId: string,
   email: string,
@@ -224,6 +310,23 @@ export async function ensureProfileForSupabaseUser(
           );
         }
 
+        const masterIdentityLinked =
+          await ensureMasterIdentityForVerifiedProfile(prisma, {
+            profileId: existingProfile.id,
+            email: identity.email,
+            firstName,
+            lastName,
+            emailVerified: identity.emailVerified,
+            registeredAt: user.created_at ? new Date(user.created_at) : null,
+          });
+
+        if (!masterIdentityLinked) {
+          console.error(
+            '[profile-sync] Verified email conflicts with another master identity',
+          );
+          return { outcome: 'denied' };
+        }
+
         return {
           outcome: 'existing',
           profileId: existingProfile.id,
@@ -256,6 +359,23 @@ export async function ensureProfileForSupabaseUser(
         );
       }
 
+      const masterIdentityLinked =
+        await ensureMasterIdentityForVerifiedProfile(prisma, {
+          profileId: updatedProfile.id,
+          email: identity.email,
+          firstName,
+          lastName,
+          emailVerified: identity.emailVerified,
+          registeredAt: user.created_at ? new Date(user.created_at) : null,
+        });
+
+      if (!masterIdentityLinked) {
+        console.error(
+          '[profile-sync] Verified email conflicts with another master identity',
+        );
+        return { outcome: 'denied' };
+      }
+
       return {
         outcome: 'updated',
         profileId: updatedProfile.id,
@@ -284,6 +404,23 @@ export async function ensureProfileForSupabaseUser(
         identity.email,
         identity.displayName,
       );
+    }
+
+    const masterIdentityLinked =
+      await ensureMasterIdentityForVerifiedProfile(prisma, {
+        profileId: createdProfile.id,
+        email: identity.email,
+        firstName: identity.firstName,
+        lastName: identity.lastName,
+        emailVerified: identity.emailVerified,
+        registeredAt: user.created_at ? new Date(user.created_at) : null,
+      });
+
+    if (!masterIdentityLinked) {
+      console.error(
+        '[profile-sync] Verified email conflicts with another master identity',
+      );
+      return { outcome: 'denied' };
     }
 
     return {
