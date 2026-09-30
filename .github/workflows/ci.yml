@@ -60,6 +60,9 @@ jobs:
       - name: Identity-isolation tests
         run: npm run test:identity
 
+      - name: 1LV master-ingestion contract tests
+        run: npm run qa:1lv-sync
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
