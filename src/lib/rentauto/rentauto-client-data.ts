@@ -52,6 +52,13 @@ export type RentautoClientData = {
     completedTripCount: number;
     grossBookingValueCents: number;
     payoutsReady: boolean;
+    settlementPolicyConfigured: boolean;
+    payoutReleaseEnabled: boolean;
+    eligibleEarningsCents: number;
+    heldEarningsCents: number;
+    transferredEarningsCents: number;
+    reversalRequiredCount: number;
+    settlementCurrency: string;
   };
   paymentSummaries: PaymentSummary[];
 };
@@ -87,6 +94,13 @@ function emptyData(sourceLabel: string): RentautoClientData {
       completedTripCount: 0,
       grossBookingValueCents: 0,
       payoutsReady: false,
+      settlementPolicyConfigured: false,
+      payoutReleaseEnabled: false,
+      eligibleEarningsCents: 0,
+      heldEarningsCents: 0,
+      transferredEarningsCents: 0,
+      reversalRequiredCount: 0,
+      settlementCurrency: "CAD",
     },
     paymentSummaries: [],
   };
@@ -157,6 +171,13 @@ async function getOperationalSnapshot(
         completedTripCount: 0,
         grossBookingValueCents: 0,
         payoutsReady: false,
+        settlementPolicyConfigured: false,
+        payoutReleaseEnabled: false,
+        eligibleEarningsCents: 0,
+        heldEarningsCents: 0,
+        transferredEarningsCents: 0,
+        reversalRequiredCount: 0,
+        settlementCurrency: "CAD",
       },
     };
   }
@@ -177,6 +198,8 @@ async function getOperationalSnapshot(
     hostApplicationResult,
     verificationResult,
     stripeResult,
+    settlementPolicyResult,
+    hostSettlementsResult,
     notificationsResult,
     supportResult,
   ] = await Promise.all([
@@ -212,6 +235,17 @@ async function getOperationalSnapshot(
       .select("charges_enabled,payouts_enabled")
       .eq("user_id", authUserId)
       .maybeSingle(),
+    db
+      .from("settlement_policy")
+      .select("payouts_enabled,platform_fee_bps,dispute_window_hours")
+      .eq("id", 1)
+      .maybeSingle(),
+    db
+      .from("trip_settlements")
+      .select(
+        "status,host_amount_cents,reversed_amount_cents,currency,stripe_transfer_id",
+      )
+      .eq("host_id", authUserId),
     db
       .from("notifications")
       .select("id", { count: "exact", head: true })
@@ -314,6 +348,50 @@ async function getOperationalSnapshot(
   }
 
   const stripe = stripeResult.data;
+  const settlementPolicy = settlementPolicyResult.data;
+  const hostSettlements = hostSettlementsResult.data ?? [];
+  const settlementPolicyConfigured = Boolean(
+    settlementPolicy &&
+      typeof settlementPolicy.platform_fee_bps === "number" &&
+      typeof settlementPolicy.dispute_window_hours === "number",
+  );
+  const eligibleEarningsCents = hostSettlements
+    .filter((row) => row.status === "eligible")
+    .reduce(
+      (total, row) => total + Math.max(0, row.host_amount_cents ?? 0),
+      0,
+    );
+  const heldEarningsCents = hostSettlements
+    .filter(
+      (row) =>
+        !row.stripe_transfer_id &&
+        ["configuration_required", "pending_trip", "hold", "blocked", "failed"].includes(
+          String(row.status),
+        ),
+    )
+    .reduce(
+      (total, row) => total + Math.max(0, row.host_amount_cents ?? 0),
+      0,
+    );
+  const transferredEarningsCents = hostSettlements
+    .filter((row) => Boolean(row.stripe_transfer_id))
+    .reduce(
+      (total, row) =>
+        total +
+        Math.max(
+          0,
+          (row.host_amount_cents ?? 0) - (row.reversed_amount_cents ?? 0),
+        ),
+      0,
+    );
+  const reversalRequiredCount = hostSettlements.filter(
+    (row) => row.status === "reversal_required",
+  ).length;
+  const settlementCurrency =
+    hostSettlements.find(
+      (row) => typeof row.currency === "string" && row.currency,
+    )?.currency ?? "CAD";
+
   const hostActiveTripCount = hostTrips.filter((trip) =>
     activeStatuses.includes(String(trip.status)),
   ).length;
@@ -377,6 +455,15 @@ async function getOperationalSnapshot(
       payoutsReady: Boolean(
         stripe?.charges_enabled && stripe?.payouts_enabled,
       ),
+      settlementPolicyConfigured,
+      payoutReleaseEnabled: Boolean(
+        settlementPolicyConfigured && settlementPolicy?.payouts_enabled,
+      ),
+      eligibleEarningsCents,
+      heldEarningsCents,
+      transferredEarningsCents,
+      reversalRequiredCount,
+      settlementCurrency: String(settlementCurrency).toUpperCase(),
     },
   };
 }
