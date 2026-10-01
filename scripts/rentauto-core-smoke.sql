@@ -7,10 +7,14 @@ DECLARE
   v_guest uuid := gen_random_uuid();
   v_host uuid := gen_random_uuid();
   v_car uuid;
+  v_request_car uuid;
   v_protection uuid;
   v_quote jsonb;
   v_draft jsonb;
+  v_request jsonb;
+  v_request_review jsonb;
   v_trip uuid;
+  v_request_trip uuid;
   v_total integer;
   v_second_blocked boolean := false;
   v_unverified_driver_blocked boolean := false;
@@ -57,13 +61,26 @@ BEGIN
   INSERT INTO rentauto.cars (
     host_id, status, title, make, model, year,
     base_daily_price_cents, currency, included_km_per_day,
-    extra_km_price_cents, location_label, tracking_consent_required
+    extra_km_price_cents, location_label, tracking_consent_required,
+    instant_book
   )
   VALUES (
     v_host, 'active', 'Smoke Test Vehicle', 'Test', 'Model', 2026,
-    10000, 'CAD', 200, 25, 'Montréal, QC', true
+    10000, 'CAD', 200, 25, 'Montréal, QC', true, true
   )
   RETURNING id INTO v_car;
+
+  INSERT INTO rentauto.cars (
+    host_id, status, title, make, model, year,
+    base_daily_price_cents, currency, included_km_per_day,
+    extra_km_price_cents, location_label, tracking_consent_required,
+    instant_book
+  )
+  VALUES (
+    v_host, 'active', 'Request Smoke Vehicle', 'Test', 'Request', 2026,
+    9000, 'CAD', 200, 25, 'Montréal, QC', true, false
+  )
+  RETURNING id INTO v_request_car;
 
   PERFORM set_config('request.jwt.claim.role', 'authenticated', true);
 
@@ -134,6 +151,65 @@ BEGIN
     'approved',
     now()
   );
+
+  v_request := public.rentauto_create_booking_draft(
+    v_guest,
+    v_request_car,
+    now() + interval '10 days',
+    now() + interval '12 days',
+    ARRAY[]::uuid[],
+    NULL,
+    'Montréal, QC',
+    'Montréal, QC'
+  );
+
+  IF v_request->>'bookingMode' <> 'request'
+     OR v_request->>'nextAction' <> 'await_host' THEN
+    RAISE EXCEPTION 'rentauto_smoke_request_mode_invalid';
+  END IF;
+
+  v_request_trip := (v_request->>'tripId')::uuid;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM rentauto.trips
+    WHERE id = v_request_trip
+      AND status = 'requested'
+  ) THEN
+    RAISE EXCEPTION 'rentauto_smoke_request_status_invalid';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1
+    FROM rentauto.booking_holds
+    WHERE trip_id = v_request_trip
+      AND status = 'active'
+  ) THEN
+    RAISE EXCEPTION 'rentauto_smoke_request_hold_created_too_early';
+  END IF;
+
+  v_request_review := public.rentauto_review_booking_request(
+    v_host,
+    v_request_trip,
+    'approved'
+  );
+
+  IF v_request_review->>'decision' <> 'approved'
+     OR NOT EXISTS (
+       SELECT 1
+       FROM rentauto.trips
+       WHERE id = v_request_trip
+         AND status = 'approved'
+     )
+     OR NOT EXISTS (
+       SELECT 1
+       FROM rentauto.booking_holds
+       WHERE trip_id = v_request_trip
+         AND status = 'active'
+         AND expires_at > now()
+     ) THEN
+    RAISE EXCEPTION 'rentauto_smoke_request_approval_invalid';
+  END IF;
 
   v_draft := public.rentauto_create_booking_draft(
     v_guest,
