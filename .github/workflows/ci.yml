@@ -64,6 +64,9 @@ jobs:
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
+      - name: 1LV synchronization safeguards
+        run: npm run qa:1lv-sync
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
