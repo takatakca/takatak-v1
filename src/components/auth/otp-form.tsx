@@ -126,6 +126,23 @@ export function OtpForm() {
           return;
         }
 
+        const syncResponse = await fetch("/api/auth/sync-profile", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        const syncResult = await parseAuthResponse(syncResponse);
+        if (!syncResult.ok) {
+          setError(
+            formatAuthErrorMessage(syncResult) ||
+              "Your mobile was verified, but TAKATAK could not finalize your profile.",
+          );
+          return;
+        }
+
         sessionStorage.removeItem("verifyEmail");
         sessionStorage.removeItem("verifyPhone");
         sessionStorage.removeItem("otpAttempts");
