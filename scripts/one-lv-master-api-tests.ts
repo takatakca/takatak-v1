@@ -59,8 +59,6 @@ assert.match(
   "Master event ingestion must reject secret-bearing payloads.",
 );
 
-console.log("1LV master API safeguards: PASS");
-
 
 const otpSendRoute = readFileSync(
   resolve(process.cwd(), "src/app/api/v1/auth/otp/send/route.ts"),
@@ -119,10 +117,18 @@ assert.match(
 );
 
 
+const verifyPhoneCall = otpVerifyRoute.indexOf(
+  "verifyTakatakPhoneOtp(phone, code)",
+);
+const resolvePhoneCall = otpVerifyRoute.indexOf(
+  "resolveVerifiedPhoneIdentity(phone)",
+);
+
 assert.ok(
-  otpVerifyRoute.indexOf("verifyTakatakPhoneOtp") >= 0 &&
-    otpVerifyRoute.indexOf("resolveVerifiedPhoneIdentity") >= 0 &&
-    otpVerifyRoute.indexOf("verifyTakatakPhoneOtp") <
-      otpVerifyRoute.indexOf("resolveVerifiedPhoneIdentity"),
+  verifyPhoneCall >= 0 &&
+    resolvePhoneCall >= 0 &&
+    verifyPhoneCall < resolvePhoneCall,
   "Supabase verification must happen before phone-only identity resolution.",
 );
+
+console.log("1LV master API safeguards: PASS");
