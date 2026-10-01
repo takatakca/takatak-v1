@@ -60,3 +60,60 @@ assert.match(
 );
 
 console.log("1LV master API safeguards: PASS");
+
+
+const otpSendRoute = readFileSync(
+  resolve(process.cwd(), "src/app/api/v1/auth/otp/send/route.ts"),
+  "utf8",
+);
+const otpVerifyRoute = readFileSync(
+  resolve(process.cwd(), "src/app/api/v1/auth/otp/verify/route.ts"),
+  "utf8",
+);
+const phoneAuthority = readFileSync(
+  resolve(process.cwd(), "src/lib/integrations/master-api/supabase-phone.ts"),
+  "utf8",
+);
+
+assert.match(
+  otpSendRoute,
+  /sendTakatakPhoneOtp/,
+  "1LV OTP send must delegate to TAKATAK Supabase Phone Auth.",
+);
+assert.equal(
+  /sendOtpToPhone|sendPhoneOtp/.test(otpSendRoute),
+  false,
+  "1LV OTP send must not reintroduce a parallel phone OTP authority.",
+);
+assert.match(
+  otpVerifyRoute,
+  /verifyTakatakPhoneOtp/,
+  "1LV OTP verification must use TAKATAK Supabase Phone Auth.",
+);
+assert.match(
+  otpVerifyRoute,
+  /ensureProfileForSupabaseUser/,
+  "Verified 1LV phone must synchronize the TAKATAK master identity.",
+);
+assert.equal(
+  /checkOtpFromPhone|verifyPhoneOtp|resolveVerifiedPhoneIdentity/.test(
+    otpVerifyRoute,
+  ),
+  false,
+  "1LV OTP verification must not bypass shared TAKATAK Auth.",
+);
+assert.match(
+  phoneAuthority,
+  /signInWithOtp/,
+  "TAKATAK master phone authority must use Supabase signInWithOtp.",
+);
+assert.match(
+  phoneAuthority,
+  /verifyOtp/,
+  "TAKATAK master phone authority must use Supabase verifyOtp.",
+);
+assert.match(
+  phoneAuthority,
+  /persistSession:\s*false/,
+  "Federated 1LV verification must not persist a TAKATAK session server-side.",
+);
