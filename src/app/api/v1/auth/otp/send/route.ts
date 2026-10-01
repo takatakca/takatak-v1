@@ -1,14 +1,17 @@
 import { NextResponse } from "next/server";
 
-import { isPhoneOtpConfigured } from "@/lib/auth/otp/env";
 import { normalizePhone } from "@/lib/auth/otp/phone";
-import { sendOtpToPhone } from "@/lib/auth/otp/send-phone";
+import {
+  normalizeEmail,
+  validateEmail,
+} from "@/lib/auth/registration-validation";
 import { MasterApiInputError } from "@/lib/integrations/master-api/errors";
 import {
   authorizeMasterRequest,
   masterApiError,
   readMasterJson,
 } from "@/lib/integrations/master-api/http";
+import { sendTakatakPhoneOtp } from "@/lib/integrations/master-api/supabase-phone";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,20 +26,41 @@ export async function POST(request: Request) {
       typeof body["phone"] === "string"
         ? normalizePhone(body["phone"])
         : null;
+    const email =
+      typeof body["email"] === "string"
+        ? normalizeEmail(body["email"])
+        : "";
+    const fullName =
+      typeof body["full_name"] === "string"
+        ? body["full_name"].trim().slice(0, 200)
+        : null;
+    const preferredLanguage =
+      typeof body["preferred_language"] === "string"
+        ? body["preferred_language"].trim().slice(0, 16)
+        : null;
 
     if (!phone) {
       throw new MasterApiInputError("Valid phone number required.");
     }
 
-    if (!isPhoneOtpConfigured()) {
-      return NextResponse.json(
-        { ok: false, error: "Phone verification is not configured." },
-        { status: 503 },
-      );
+    const emailError = validateEmail(email);
+    if (emailError) {
+      throw new MasterApiInputError("Valid email address required.");
     }
 
-    await sendOtpToPhone(phone);
-    return NextResponse.json({ ok: true }, { status: 200 });
+    await sendTakatakPhoneOtp(phone, {
+      email,
+      fullName,
+      preferredLanguage,
+    });
+
+    return NextResponse.json(
+      {
+        ok: true,
+        authority: "takatak_supabase_phone",
+      },
+      { status: 200 },
+    );
   } catch (error) {
     return masterApiError(error);
   }
