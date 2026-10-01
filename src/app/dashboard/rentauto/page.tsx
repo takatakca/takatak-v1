@@ -88,6 +88,19 @@ export default async function RentautoDashboardPage() {
           href: "https://rentauto.ca/profile",
         }
       : null,
+    data.driverVerificationStatus !== "approved"
+      ? {
+          label:
+            data.driverVerificationStatus === "pending"
+              ? "Driver verification under review"
+              : "Verify your driver licence",
+          detail:
+            data.driverVerificationStatus === "pending"
+              ? "Rentauto must approve your licence before booking payment unlocks."
+              : "A verified driver licence is required to reserve and pay for vehicles.",
+          href: "https://rentauto.ca/dashboard/documents?focus=driver",
+        }
+      : null,
     hostVisible && data.host.verificationStatus !== "approved"
       ? {
           label: "Finish host identity review",
@@ -298,7 +311,7 @@ export default async function RentautoDashboardPage() {
       <Card>
         <CardHeader title="Account connection" subtitle={data.sourceLabel} />
         <CardBody>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-xl border border-slate-200 p-4">
               <div className="flex items-center gap-2">
                 <BadgeCheck
@@ -327,6 +340,26 @@ export default async function RentautoDashboardPage() {
               <p className="mt-2 text-sm text-slate-500">
                 {data.emailVerified ? "Verified" : "Not verified"}
               </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 p-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck
+                  className="h-4 w-4 text-slate-500"
+                  aria-hidden="true"
+                />
+                <span className="text-sm font-medium text-slate-900">
+                  Driver eligibility
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-slate-500">
+                {sentenceStatus(data.driverVerificationStatus)}
+              </p>
+              {data.driverLicenseExpiresOn ? (
+                <p className="mt-1 text-xs text-slate-400">
+                  Licence expiry: {data.driverLicenseExpiresOn}
+                </p>
+              ) : null}
             </div>
 
             <div className="rounded-xl border border-slate-200 p-4">
