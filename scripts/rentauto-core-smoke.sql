@@ -13,6 +13,7 @@ DECLARE
   v_trip uuid;
   v_total integer;
   v_second_blocked boolean := false;
+  v_unverified_driver_blocked boolean := false;
   v_active jsonb;
   v_completed jsonb;
   v_location jsonb;
@@ -86,6 +87,53 @@ BEGIN
   IF (v_quote->>'total_after_tax')::integer <= 0 THEN
     RAISE EXCEPTION 'rentauto_smoke_quote_total_invalid';
   END IF;
+
+  BEGIN
+    PERFORM public.rentauto_create_booking_draft(
+      v_guest,
+      v_car,
+      now() + interval '2 days',
+      now() + interval '5 days',
+      ARRAY[]::uuid[],
+      v_protection,
+      'Montréal, QC',
+      'Montréal, QC'
+    );
+  EXCEPTION
+    WHEN OTHERS THEN
+      IF SQLERRM LIKE '%driver_verification_required%' THEN
+        v_unverified_driver_blocked := true;
+      ELSE
+        RAISE;
+      END IF;
+  END;
+
+  IF NOT v_unverified_driver_blocked THEN
+    RAISE EXCEPTION 'rentauto_smoke_unverified_driver_not_blocked';
+  END IF;
+
+  INSERT INTO rentauto.driver_verifications (
+    user_id,
+    license_front_url,
+    license_back_url,
+    selfie_url,
+    license_country,
+    license_region,
+    license_expires_on,
+    status,
+    reviewed_at
+  )
+  VALUES (
+    v_guest,
+    v_guest::text || '/license_front/current',
+    v_guest::text || '/license_back/current',
+    v_guest::text || '/selfie/current',
+    'CA',
+    'QC',
+    current_date + 365,
+    'approved',
+    now()
+  );
 
   v_draft := public.rentauto_create_booking_draft(
     v_guest,
