@@ -1,15 +1,19 @@
 import { NextResponse } from "next/server";
 
-import { isPhoneOtpConfigured } from "@/lib/auth/otp/env";
 import { normalizePhone } from "@/lib/auth/otp/phone";
-import { checkOtpFromPhone } from "@/lib/auth/otp/send-phone";
-import { MasterApiInputError } from "@/lib/integrations/master-api/errors";
+import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
+import { getPrisma } from "@/lib/db/prisma";
+import {
+  MasterApiConflictError,
+  MasterApiInputError,
+  MasterApiUnavailableError,
+} from "@/lib/integrations/master-api/errors";
 import {
   authorizeMasterRequest,
   masterApiError,
   readMasterJson,
 } from "@/lib/integrations/master-api/http";
-import { resolveVerifiedPhoneIdentity } from "@/lib/integrations/master-api/identity";
+import { verifyTakatakPhoneOtp } from "@/lib/integrations/master-api/supabase-phone";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -35,29 +39,48 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!isPhoneOtpConfigured()) {
-      return NextResponse.json(
-        { ok: false, error: "Phone verification is not configured." },
-        { status: 503 },
+    const user = await verifyTakatakPhoneOtp(phone, code);
+
+    const profile = await ensureProfileForSupabaseUser(user, {
+      createPersonalWorkspace: false,
+    });
+
+    if (profile.outcome === "denied") {
+      throw new MasterApiConflictError(
+        "Verified phone conflicts with another TAKATAK identity.",
       );
     }
 
-    const verified = await checkOtpFromPhone(phone, code);
-    if (!verified) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid or expired verification code." },
-        { status: 400 },
+    if (profile.outcome === "unavailable" || profile.outcome === "error") {
+      throw new MasterApiUnavailableError(
+        "TAKATAK identity could not be synchronized.",
       );
     }
 
-    const identity = await resolveVerifiedPhoneIdentity(phone);
+    const prisma = getPrisma();
+    if (!prisma) {
+      throw new MasterApiUnavailableError(
+        "TAKATAK identity database is unavailable.",
+      );
+    }
+
+    const identity = await prisma.masterIdentity.findUnique({
+      where: { profileId: profile.profileId },
+    });
+
+    if (!identity || !identity.primaryPhoneVerified) {
+      throw new MasterApiUnavailableError(
+        "TAKATAK verified identity was not finalized.",
+      );
+    }
 
     return NextResponse.json({
       ok: true,
+      authority: "takatak_supabase_phone",
       identity: {
         id: identity.id,
-        phone: identity.phone,
-        email: identity.email,
+        phone: identity.primaryPhone,
+        email: identity.primaryEmail,
         first_name: identity.firstName,
         last_name: identity.lastName,
         locale: identity.locale,
