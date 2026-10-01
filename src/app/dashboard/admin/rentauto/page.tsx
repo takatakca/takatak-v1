@@ -52,6 +52,8 @@ export default async function RentautoAdminPage() {
     { label: "Host applications", value: data.operations.pendingHostApplications, icon: ClipboardCheck },
     { label: "Vehicle reviews", value: data.operations.pendingVehicleReviews, icon: BadgeCheck },
     { label: "Driver reviews", value: data.operations.pendingDriverVerifications, icon: BadgeCheck },
+    { label: "Booking requests", value: data.operations.pendingBookingRequests, icon: ClipboardCheck },
+    { label: "Approved / unpaid", value: data.operations.approvedAwaitingPayment, icon: Route },
     { label: "Open support", value: data.operations.openSupportTickets, icon: LifeBuoy },
     { label: "Open incidents", value: data.operations.openIncidents, icon: AlertTriangle },
   ];
@@ -71,7 +73,7 @@ export default async function RentautoAdminPage() {
       />
 
       <section aria-label="Rentauto key metrics">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-9">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-6">
           {kpis.map((item) => (
             <AdminKpiCard
               key={item.label}
