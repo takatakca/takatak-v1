@@ -47,7 +47,14 @@ export async function POST(request: Request) {
       (typeof user.user_metadata?.email === "string" &&
         Boolean(user.user_metadata.email.trim()));
 
-    let identity;
+    let verifiedIdentity: {
+      id: string;
+      phone: string;
+      email: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      locale: string | null;
+    } | null = null;
 
     if (hasEmail) {
       const profile = await ensureProfileForSupabaseUser(user, {
@@ -73,14 +80,38 @@ export async function POST(request: Request) {
         );
       }
 
-      identity = await prisma.masterIdentity.findUnique({
+      const identity = await prisma.masterIdentity.findUnique({
         where: { profileId: profile.profileId },
       });
+
+      if (
+        identity?.primaryPhoneVerified &&
+        identity.primaryPhone === phone
+      ) {
+        verifiedIdentity = {
+          id: identity.id,
+          phone: identity.primaryPhone,
+          email: identity.primaryEmail,
+          firstName: identity.firstName,
+          lastName: identity.lastName,
+          locale: identity.locale,
+        };
+      }
     } else {
-      identity = await resolveVerifiedPhoneIdentity(phone);
+      const identity = await resolveVerifiedPhoneIdentity(phone);
+      if (identity.phone === phone) {
+        verifiedIdentity = {
+          id: identity.id,
+          phone: identity.phone,
+          email: identity.email,
+          firstName: identity.firstName,
+          lastName: identity.lastName,
+          locale: identity.locale,
+        };
+      }
     }
 
-    if (!identity || !identity.primaryPhoneVerified) {
+    if (!verifiedIdentity) {
       throw new MasterApiUnavailableError(
         "TAKATAK verified identity was not finalized.",
       );
@@ -90,12 +121,12 @@ export async function POST(request: Request) {
       ok: true,
       authority: "takatak_supabase_phone",
       identity: {
-        id: identity.id,
-        phone: identity.primaryPhone,
-        email: identity.primaryEmail,
-        first_name: identity.firstName,
-        last_name: identity.lastName,
-        locale: identity.locale,
+        id: verifiedIdentity.id,
+        phone: verifiedIdentity.phone,
+        email: verifiedIdentity.email,
+        first_name: verifiedIdentity.firstName,
+        last_name: verifiedIdentity.lastName,
+        locale: verifiedIdentity.locale,
       },
     });
   } catch (error) {
