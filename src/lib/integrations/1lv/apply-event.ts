@@ -11,6 +11,13 @@ import {
 
 type Transaction = Prisma.TransactionClient;
 
+type AppliedEntity = {
+  remoteId: string;
+  result: string;
+  identityId?: string;
+  sourceProfileId?: string;
+};
+
 export type OneLvApplyResult = {
   duplicate: boolean;
   id: string;
@@ -97,7 +104,7 @@ async function applyCustomer(
   tx: Transaction,
   event: OneLvEvent,
   synchronizedAt: Date,
-) {
+): Promise<AppliedEntity> {
   const payload = event.payload;
   const isGuest = payload["is_guest"] === true;
   const normalizedEmail = email(payload["email"]);
@@ -259,7 +266,7 @@ async function applyMerchant(
   tx: Transaction,
   event: OneLvEvent,
   synchronizedAt: Date,
-) {
+): Promise<AppliedEntity> {
   const payload = event.payload;
   const storeName = text(payload["store_name"], 250);
   if (!storeName) {
@@ -283,7 +290,9 @@ async function applyMerchant(
       legalBusinessName: text(payload["legal_business_name"], 250),
       contactEmail: email(payload["contact_email"]),
       contactPhone: phone(payload["contact_phone"]),
-      address: address as Prisma.InputJsonValue | null,
+      address: address
+        ? (address as Prisma.InputJsonValue)
+        : Prisma.DbNull,
       marketplaceStatus: text(payload["marketplace_status"], 50),
       subscriptionStatus: text(payload["subscription_status"], 50),
       subscriptionPlan: text(payload["subscription_plan"], 100),
@@ -296,7 +305,9 @@ async function applyMerchant(
       legalBusinessName: text(payload["legal_business_name"], 250),
       contactEmail: email(payload["contact_email"]),
       contactPhone: phone(payload["contact_phone"]),
-      address: address as Prisma.InputJsonValue | null,
+      address: address
+        ? (address as Prisma.InputJsonValue)
+        : Prisma.DbNull,
       marketplaceStatus: text(payload["marketplace_status"], 50),
       subscriptionStatus: text(payload["subscription_status"], 50),
       subscriptionPlan: text(payload["subscription_plan"], 100),
@@ -311,7 +322,7 @@ async function applyOrder(
   tx: Transaction,
   event: OneLvEvent,
   synchronizedAt: Date,
-) {
+): Promise<AppliedEntity> {
   const payload = event.payload;
   const localOrderId = text(payload["local_order_id"], 200);
   const orderNumber = text(payload["order_number"], 200);
@@ -390,7 +401,7 @@ async function applyRelationship(
   tx: Transaction,
   event: OneLvEvent,
   synchronizedAt: Date,
-) {
+): Promise<AppliedEntity> {
   const payload = event.payload;
   const relationshipType = text(payload["relationship_type"], 100);
   const customerReference = text(payload["customer_local_reference"], 250);
@@ -472,7 +483,7 @@ async function processEvent(
   tx: Transaction,
   event: OneLvEvent,
   synchronizedAt: Date,
-) {
+): Promise<AppliedEntity> {
   if (event.aggregate_type === "customer") {
     return applyCustomer(tx, event, synchronizedAt);
   }
@@ -529,17 +540,19 @@ export async function applyOneLvEvent(
 
       const synchronizedAt = new Date();
       const applied = await processEvent(tx, event, synchronizedAt);
-      const isCustomer = "identityId" in applied;
+      const hasIdentity =
+        Boolean(applied.identityId) &&
+        Boolean(applied.sourceProfileId);
 
       const response: OneLvApplyResult = {
         duplicate: false,
         id: applied.remoteId,
         remote_id: applied.remoteId,
         result: applied.result,
-        ...(isCustomer
+        ...(hasIdentity
           ? {
-              identity_id: applied.identityId,
-              source_profile_id: applied.sourceProfileId,
+              identity_id: applied.identityId ?? null,
+              source_profile_id: applied.sourceProfileId ?? null,
             }
           : {}),
       };
@@ -549,8 +562,8 @@ export async function applyOneLvEvent(
           eventId: event.event_id,
           eventType: event.event_type,
           sourceApplication: ONELV_SOURCE_APPLICATION,
-          sourceProfileId: isCustomer ? applied.sourceProfileId : null,
-          identityId: isCustomer ? applied.identityId : null,
+          sourceProfileId: applied.sourceProfileId ?? null,
+          identityId: applied.identityId ?? null,
           payloadHash,
           responsePayload: response as Prisma.InputJsonValue,
           status: "PROCESSED",
