@@ -35,6 +35,7 @@ async function handleSyncProfile(request: NextRequest) {
   return authJson(
     {
       ok: true,
+      message: "TAKATAK profile synchronized.",
       profileId: result.profileId,
       outcome: result.outcome,
     },
