@@ -437,11 +437,19 @@ export default async function RentautoDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Payouts
+                  Stripe Connect
                 </p>
                 <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <WalletCards className="h-4 w-4 text-slate-500" aria-hidden="true" />
-                  {data.host.payoutsReady ? "Ready" : "Setup required"}
+                  {data.host.payoutsReady ? "Account ready" : "Setup required"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Rentauto settlement:{" "}
+                  {data.host.payoutReleaseEnabled
+                    ? "release enabled"
+                    : data.host.settlementPolicyConfigured
+                      ? "release disabled"
+                      : "policy not configured"}
                 </p>
               </div>
             </div>
@@ -466,7 +474,31 @@ export default async function RentautoDashboardPage() {
                   {money(data.host.grossBookingValueCents, "CAD")}
                 </p>
               </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Eligible earnings</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">
+                  {money(data.host.eligibleEarningsCents, data.host.settlementCurrency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Held / blocked</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">
+                  {money(data.host.heldEarningsCents, data.host.settlementCurrency)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Net transferred</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">
+                  {money(data.host.transferredEarningsCents, data.host.settlementCurrency)}
+                </p>
+              </div>
             </div>
+
+            {data.host.reversalRequiredCount > 0 ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                {data.host.reversalRequiredCount} payout{data.host.reversalRequiredCount === 1 ? "" : "s"} require a reversal review in Rentauto.
+              </div>
+            ) : null}
           </CardBody>
         </Card>
       ) : null}
