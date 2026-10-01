@@ -89,8 +89,20 @@ assert.match(
 
 assert.match(
   profileSync,
-  /primaryEmailVerified:\s*true/,
+  /primaryEmailVerified:[\s\S]*input\.emailVerified/,
   "Verified TAKATAK email must promote the master identity verification state.",
+);
+
+assert.match(
+  profileSync,
+  /primaryPhoneVerified:[\s\S]*input\.phoneVerified/,
+  "Verified TAKATAK phone must promote the master identity verification state.",
+);
+
+assert.match(
+  profileSync,
+  /!input\.emailVerified\s*&&\s*!input\.phoneVerified/,
+  "TAKATAK master identity must accept either verified email or verified phone.",
 );
 
 console.log(

@@ -20,53 +20,38 @@ function json(body: unknown, status = 200) {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  if (req.method !== "POST") {
-    return json({ error: "Method not allowed" }, 405);
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    return json({ error: "Unauthorized" }, 401);
-  }
+  if (!authHeader?.startsWith("Bearer ")) return json({ error: "Unauthorized" }, 401);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
   if (!supabaseUrl || !serviceRoleKey) {
     console.error("[rentauto-bootstrap-account] Server configuration missing");
     return json({ error: "Service unavailable" }, 503);
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const token = authHeader.slice(7);
-  const { data: userData, error: userError } = await admin.auth.getUser(token);
-
-  if (userError || !userData.user) {
-    return json({ error: "Unauthorized" }, 401);
-  }
+  const { data: userData, error: userError } = await admin.auth.getUser(
+    authHeader.slice(7),
+  );
+  if (userError || !userData.user) return json({ error: "Unauthorized" }, 401);
 
   const { data, error } = await admin.rpc("bootstrap_rentauto_account", {
     p_auth_user_id: userData.user.id,
   });
 
   if (error) {
-    if (
-      error.message?.includes("verified_master_identity_required")
-    ) {
+    if (error.message?.includes("verified_master_identity_required")) {
       return json(
         {
-          error: "Email verification required",
-          code: "EMAIL_VERIFICATION_REQUIRED",
+          error: "A verified TAKATAK email or mobile identity is required.",
+          code: "IDENTITY_VERIFICATION_REQUIRED",
         },
         409,
       );
@@ -76,18 +61,14 @@ Deno.serve(async (req: Request) => {
       "[rentauto-bootstrap-account] Bootstrap failed",
       error.code ?? "unknown",
     );
-
     return json(
       {
-        error: "Rentauto account could not be prepared",
+        error: "Rentauto access could not be authorized by TAKATAK.",
         code: "RENTAUTO_BOOTSTRAP_FAILED",
       },
       500,
     );
   }
 
-  return json({
-    ok: true,
-    account: data,
-  });
+  return json({ ok: true, account: data });
 });

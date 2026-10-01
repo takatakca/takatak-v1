@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { TriangleAlert } from "lucide-react";
 import { Link } from "@/lib/website/nav";
-import { LoginForm } from "@/components/auth/login-form";
+import { MasterPhoneLoginForm } from "@/components/auth/master-phone-login-form";
 import { isSupabaseConfigured } from "@/lib/auth/env";
 
 export const metadata = {
@@ -17,12 +17,12 @@ export default function LoginPage() {
       <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
         <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          We will send a one-time password to your email.
+          Your TAKATAK mobile identity is the default sign-in method. Email remains available for existing accounts.
         </p>
         <div className="mt-6">
           {configured ? (
             <Suspense>
-              <LoginForm />
+              <MasterPhoneLoginForm />
             </Suspense>
           ) : (
             <div className="space-y-3 text-center">
