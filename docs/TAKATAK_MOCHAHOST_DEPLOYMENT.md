@@ -115,12 +115,17 @@ cPanel Node.js usually points Application Root at one directory and startup file
 
 - Home page loads.
 - Login page loads.
-- Existing staging account lookup sends email OTP through Gmail App Password SMTP.
+- TAKATAK phone-first signup sends a real SMS through the Supabase Auth Phone provider.
+- TAKATAK phone-first login sends a real SMS through the Supabase Auth Phone provider.
+- SMS OTP verification creates a Supabase session without marking an unrelated email as verified.
+- Existing email-OTP accounts can still use the email fallback.
 - OTP page accepts the code.
 - Session cookies are set (`Secure`, `HttpOnly`, `SameSite=Lax`, `path=/`).
 - Redirect to `/dashboard` works and an authenticated request succeeds.
 - Logout clears auth and workspace cookies.
-- Registration, if enabled.
+- Registration by phone OTP.
+- SMS resend uses Supabase Phone Auth; the legacy server `/api/auth/resend-code` phone branch must remain disabled.
+- Legacy server `/api/auth/login` and `/api/auth/verify-otp` phone payloads return a 4xx migration response and never create a session.
 - Resend-code cooldown.
 - Invalid OTP and expired OTP return JSON messages.
 - Disabled account cannot sign in.
@@ -171,7 +176,9 @@ Manage `.env` only on the server, outside the artifact. Required names (values n
 - `NEXT_PUBLIC_APP_URL`
 - `EMAIL_USER` and `EMAIL_PASSWORD` (or SendGrid)
 
-Optional / feature-specific: Twilio, Stripe, Upmind. A missing optional integration must not crash login.
+Phone-first authentication is configured in the hosted Supabase Auth project, not with a browser-exposed or Passenger-side Twilio secret. Before promotion, Supabase Auth → Phone must be enabled and its SMS provider (Twilio/Twilio Verify or another supported provider) must be configured and tested with a real phone.
+
+Optional / feature-specific application integrations: Stripe, Upmind. Legacy server-side Twilio OTP variables may remain temporarily for rollback compatibility, but the public TAKATAK phone login/registration flow must use Supabase Phone Auth. A missing optional integration must not crash email fallback login.
 
 `PGSSL_REJECT_UNAUTHORIZED=false` is used on MochaHost because the platform TLS chain is not in the default trust store. That is a host constraint, not an invitation to disable TLS on localhost.
 
