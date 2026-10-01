@@ -2824,6 +2824,7 @@ model MasterIdentity {
   addresses        SourceAddress[]
   paymentSummaries SourcePaymentSummary[]
   events           SourceSynchronizationEvent[]
+  sourceOtpChallenges SourceOtpChallenge[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -2999,4 +3000,27 @@ model SourceRelationship {
   @@index([sourceApplication, merchantExternalReference])
   @@index([customerExternalReference])
   @@map("source_relationships")
+}
+
+
+/// Short-lived, source-scoped OTP verification challenge.
+/// The OTP code itself is never stored: Twilio Verify remains the code authority.
+model SourceOtpChallenge {
+  id                String    @id @default(uuid()) @db.Uuid
+  sourceApplication String
+  identityId        String    @db.Uuid
+  channel           String
+  status            String    @default("PENDING")
+  requestedAt       DateTime  @default(now())
+  expiresAt         DateTime
+  attemptCount      Int       @default(0)
+  verifiedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([sourceApplication, identityId, requestedAt])
+  @@index([status, expiresAt])
+  @@map("source_otp_challenges")
 }
