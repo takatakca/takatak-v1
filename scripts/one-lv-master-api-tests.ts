@@ -96,7 +96,7 @@ assert.match(
   "Verified 1LV phone must synchronize the TAKATAK master identity.",
 );
 assert.equal(
-  /checkOtpFromPhone|verifyPhoneOtp|resolveVerifiedPhoneIdentity/.test(
+  /checkOtpFromPhone|verifyPhoneOtp/.test(
     otpVerifyRoute,
   ),
   false,
@@ -116,4 +116,13 @@ assert.match(
   phoneAuthority,
   /persistSession:\s*false/,
   "Federated 1LV verification must not persist a TAKATAK session server-side.",
+);
+
+
+assert.ok(
+  otpVerifyRoute.indexOf("verifyTakatakPhoneOtp") >= 0 &&
+    otpVerifyRoute.indexOf("resolveVerifiedPhoneIdentity") >= 0 &&
+    otpVerifyRoute.indexOf("verifyTakatakPhoneOtp") <
+      otpVerifyRoute.indexOf("resolveVerifiedPhoneIdentity"),
+  "Supabase verification must happen before phone-only identity resolution.",
 );
