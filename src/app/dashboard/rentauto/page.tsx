@@ -1,14 +1,18 @@
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowUpRight,
   BadgeCheck,
   Bell,
   CalendarDays,
   CarFront,
+  CheckCircle2,
   CircleDollarSign,
+  LifeBuoy,
   MailCheck,
   PhoneCall,
   ShieldCheck,
+  TrendingUp,
   WalletCards,
 } from "lucide-react";
 
@@ -75,6 +79,54 @@ export default async function RentautoDashboardPage() {
     data.roles.includes("host") ||
     data.roles.includes("admin") ||
     Boolean(data.host.applicationStatus);
+
+  const actionItems = [
+    !data.emailVerified
+      ? {
+          label: "Verify your email",
+          detail: "Required for a fully verified TAKATAK identity.",
+          href: "https://rentauto.ca/profile",
+        }
+      : null,
+    hostVisible && data.host.verificationStatus !== "approved"
+      ? {
+          label: "Finish host identity review",
+          detail: "Host verification must be approved before publishing vehicles.",
+          href: "https://rentauto.ca/host/onboarding",
+        }
+      : null,
+    hostVisible && !data.host.payoutsReady
+      ? {
+          label: "Finish payout setup",
+          detail: "Stripe charges and payouts must both be enabled.",
+          href: "https://rentauto.ca/host/onboarding",
+        }
+      : null,
+    data.host.pendingVehicleReviewCount > 0
+      ? {
+          label: `${data.host.pendingVehicleReviewCount} vehicle review${data.host.pendingVehicleReviewCount === 1 ? "" : "s"} pending`,
+          detail: "TAKATAK administration is reviewing registration and insurance.",
+          href: "https://rentauto.ca/host/cars",
+        }
+      : null,
+    data.openSupportCount > 0
+      ? {
+          label: `${data.openSupportCount} open support request${data.openSupportCount === 1 ? "" : "s"}`,
+          detail: "Track replies and unresolved requests.",
+          href: "https://rentauto.ca/dashboard/support",
+        }
+      : null,
+    data.unreadNotifications > 0
+      ? {
+          label: `${data.unreadNotifications} unread Rentauto notice${data.unreadNotifications === 1 ? "" : "s"}`,
+          detail: "Booking, payment, verification and trip updates.",
+          href: "https://rentauto.ca/dashboard/notifications",
+        }
+      : null,
+  ].filter(
+    (item): item is { label: string; detail: string; href: string } =>
+      item !== null,
+  );
 
   return (
     <div className="space-y-6">
@@ -177,6 +229,73 @@ export default async function RentautoDashboardPage() {
       ) : null}
 
       <Card>
+        <CardHeader
+          title="Rentauto command center"
+          subtitle="Live operational state from the shared TAKATAK backend — not a delayed reporting snapshot."
+        />
+        <CardBody>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Completed trips</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{data.completedTripCount}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Lifetime paid</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950">{money(data.lifetimePaidCents, "CAD")}</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Open support</p>
+              <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-slate-950">
+                <LifeBuoy className="h-5 w-5 text-slate-400" aria-hidden="true" />
+                {data.openSupportCount}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Open incidents</p>
+              <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-slate-950">
+                <AlertTriangle className="h-5 w-5 text-slate-400" aria-hidden="true" />
+                {data.openIncidentCount}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 border-t border-slate-100 pt-5">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Action center</p>
+                <p className="text-xs text-slate-500">Only items that need your attention appear here.</p>
+              </div>
+              {actionItems.length === 0 ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                  <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                  All clear
+                </span>
+              ) : null}
+            </div>
+            {actionItems.length ? (
+              <div className="divide-y divide-slate-100 rounded-xl border border-slate-200">
+                {actionItems.map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="flex items-center justify-between gap-4 p-4 transition hover:bg-slate-50"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{item.label}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{item.detail}</p>
+                    </div>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No verification, payout, vehicle, support or notification action is waiting.</p>
+            )}
+          </div>
+        </CardBody>
+      </Card>
+
+      <Card>
         <CardHeader title="Account connection" subtitle={data.sourceLabel} />
         <CardBody>
           <div className="grid gap-3 sm:grid-cols-3">
@@ -274,14 +393,13 @@ export default async function RentautoDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Vehicles
+                  Fleet
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">
                   {data.host.activeVehicleCount} active / {data.host.vehicleCount} total
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
-                  {data.host.upcomingTripCount} upcoming host trip
-                  {data.host.upcomingTripCount === 1 ? "" : "s"}
+                  {data.host.draftVehicleCount} draft · {data.host.pendingVehicleReviewCount} awaiting review
                 </p>
               </div>
               <div>
@@ -294,13 +412,35 @@ export default async function RentautoDashboardPage() {
                 </p>
               </div>
             </div>
+
+            <div className="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Upcoming bookings</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.upcomingTripCount}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Active rentals</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.activeTripCount}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Completed rentals</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.completedTripCount}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Gross booking value</p>
+                <p className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-slate-950">
+                  <TrendingUp className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                  {money(data.host.grossBookingValueCents, "CAD")}
+                </p>
+              </div>
+            </div>
           </CardBody>
         </Card>
       ) : null}
 
       <Card>
         <CardHeader
-          title="Rentauto payments"
+          title="Rentauto payment projection"
           subtitle="Customer-facing booking summaries synchronized from Rentauto. Processor IDs are never shown."
           action={
             data.unreadNotifications > 0 ? (

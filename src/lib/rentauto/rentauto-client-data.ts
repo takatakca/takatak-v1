@@ -23,7 +23,11 @@ export type RentautoClientData = {
   roles: string[];
   upcomingTripCount: number;
   activeTripCount: number;
+  completedTripCount: number;
+  lifetimePaidCents: number;
   unreadNotifications: number;
+  openSupportCount: number;
+  openIncidentCount: number;
   nextTrip: {
     id: string;
     bookingReference: string;
@@ -39,7 +43,12 @@ export type RentautoClientData = {
     verificationStatus: string | null;
     vehicleCount: number;
     activeVehicleCount: number;
+    draftVehicleCount: number;
+    pendingVehicleReviewCount: number;
     upcomingTripCount: number;
+    activeTripCount: number;
+    completedTripCount: number;
+    grossBookingValueCents: number;
     payoutsReady: boolean;
   };
   paymentSummaries: PaymentSummary[];
@@ -56,14 +65,23 @@ function emptyData(sourceLabel: string): RentautoClientData {
     roles: [],
     upcomingTripCount: 0,
     activeTripCount: 0,
+    completedTripCount: 0,
+    lifetimePaidCents: 0,
     unreadNotifications: 0,
+    openSupportCount: 0,
+    openIncidentCount: 0,
     nextTrip: null,
     host: {
       applicationStatus: null,
       verificationStatus: null,
       vehicleCount: 0,
       activeVehicleCount: 0,
+      draftVehicleCount: 0,
+      pendingVehicleReviewCount: 0,
       upcomingTripCount: 0,
+      activeTripCount: 0,
+      completedTripCount: 0,
+      grossBookingValueCents: 0,
       payoutsReady: false,
     },
     paymentSummaries: [],
@@ -95,7 +113,11 @@ type OperationalSnapshot = Pick<
   | "roles"
   | "upcomingTripCount"
   | "activeTripCount"
+  | "completedTripCount"
+  | "lifetimePaidCents"
   | "unreadNotifications"
+  | "openSupportCount"
+  | "openIncidentCount"
   | "nextTrip"
   | "host"
 >;
@@ -109,21 +131,31 @@ async function getOperationalSnapshot(
       roles: [],
       upcomingTripCount: 0,
       activeTripCount: 0,
+      completedTripCount: 0,
+      lifetimePaidCents: 0,
       unreadNotifications: 0,
+      openSupportCount: 0,
+      openIncidentCount: 0,
       nextTrip: null,
       host: {
         applicationStatus: null,
         verificationStatus: null,
         vehicleCount: 0,
         activeVehicleCount: 0,
+        draftVehicleCount: 0,
+        pendingVehicleReviewCount: 0,
         upcomingTripCount: 0,
+        activeTripCount: 0,
+        completedTripCount: 0,
+        grossBookingValueCents: 0,
         payoutsReady: false,
       },
     };
   }
 
-  // Selecting the module should provision the least-privileged Rentauto account
-  // for an already-verified shared TAKATAK identity. This never grants host/admin.
+  // Opening the TAKATAK module provisions only the least-privileged Rentauto
+  // guest account for an already verified shared identity. Host/admin are never
+  // granted here.
   await admin.rpc("bootstrap_rentauto_account", {
     p_auth_user_id: authUserId,
   });
@@ -137,22 +169,19 @@ async function getOperationalSnapshot(
     verificationResult,
     stripeResult,
     notificationsResult,
+    supportResult,
   ] = await Promise.all([
-    db
-      .from("account_roles")
-      .select("role")
-      .eq("auth_user_id", authUserId),
+    db.from("account_roles").select("role").eq("auth_user_id", authUserId),
     db
       .from("trips")
       .select(
-        "id,booking_reference,status,start_at,end_at,total_cents,currency,car_id",
+        "id,booking_reference,status,payment_status,start_at,end_at,total_cents,currency,car_id",
       )
       .eq("guest_id", authUserId)
-      .not("status", "in", '("completed","cancelled")')
       .order("start_at", { ascending: true }),
     db
       .from("cars")
-      .select("id,status")
+      .select("id,status,insurance_status")
       .eq("host_id", authUserId),
     db
       .from("host_applications")
@@ -174,6 +203,11 @@ async function getOperationalSnapshot(
       .select("id", { count: "exact", head: true })
       .eq("user_id", authUserId)
       .is("read_at", null),
+    db
+      .from("support_tickets")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", authUserId)
+      .not("status", "in", '("resolved","closed")'),
   ]);
 
   const roles = (rolesResult.data ?? [])
@@ -181,24 +215,26 @@ async function getOperationalSnapshot(
     .filter(Boolean);
 
   const guestTrips = guestTripsResult.data ?? [];
+  const activeStatuses = ["check_in_pending", "active", "check_out_pending"];
+  const upcomingStatuses = ["confirmed", "check_in_pending", "active", "check_out_pending"];
+
   const activeTripCount = guestTrips.filter((trip) =>
-    ["check_in_pending", "active", "check_out_pending"].includes(
-      String(trip.status),
-    ),
+    activeStatuses.includes(String(trip.status)),
   ).length;
+  const upcomingTripCount = guestTrips.filter((trip) =>
+    upcomingStatuses.includes(String(trip.status)),
+  ).length;
+  const completedTripCount = guestTrips.filter(
+    (trip) => String(trip.status) === "completed",
+  ).length;
+  const lifetimePaidCents = guestTrips.reduce((total, trip) => {
+    if (String(trip.payment_status) !== "paid") return total;
+    return total + (typeof trip.total_cents === "number" ? Math.max(0, trip.total_cents) : 0);
+  }, 0);
 
-  const carIds = (carsResult.data ?? []).map((car) => String(car.id));
-  let hostUpcomingTripCount = 0;
-  if (carIds.length > 0) {
-    const hostTripsResult = await db
-      .from("trips")
-      .select("id", { count: "exact", head: true })
-      .in("car_id", carIds)
-      .not("status", "in", '("completed","cancelled")');
-    hostUpcomingTripCount = hostTripsResult.count ?? 0;
-  }
-
-  const next = guestTrips[0] ?? null;
+  const next =
+    guestTrips.find((trip) => upcomingStatuses.includes(String(trip.status))) ??
+    null;
   let nextTrip: OperationalSnapshot["nextTrip"] = null;
 
   if (next) {
@@ -224,8 +260,7 @@ async function getOperationalSnapshot(
       endAt: String(next.end_at),
       totalCents:
         typeof next.total_cents === "number" ? next.total_cents : null,
-      currency:
-        typeof next.currency === "string" ? next.currency : "CAD",
+      currency: typeof next.currency === "string" ? next.currency : "CAD",
       vehicleName:
         car && typeof car.title === "string" && car.title.trim()
           ? car.title
@@ -234,13 +269,60 @@ async function getOperationalSnapshot(
   }
 
   const cars = carsResult.data ?? [];
+  const carIds = cars.map((car) => String(car.id));
+  let hostTrips: Array<{
+    id: unknown;
+    status: unknown;
+    payment_status: unknown;
+    total_cents: unknown;
+  }> = [];
+
+  if (carIds.length > 0) {
+    const hostTripsResult = await db
+      .from("trips")
+      .select("id,status,payment_status,total_cents")
+      .in("car_id", carIds);
+    hostTrips = hostTripsResult.data ?? [];
+  }
+
+  const relevantTripIds = [
+    ...guestTrips.map((trip) => String(trip.id)),
+    ...hostTrips.map((trip) => String(trip.id)),
+  ];
+  let openIncidentCount = 0;
+  if (relevantTripIds.length > 0) {
+    const incidentResult = await db
+      .from("trip_incidents")
+      .select("id", { count: "exact", head: true })
+      .in("trip_id", [...new Set(relevantTripIds)])
+      .eq("status", "open");
+    openIncidentCount = incidentResult.count ?? 0;
+  }
+
   const stripe = stripeResult.data;
+  const hostActiveTripCount = hostTrips.filter((trip) =>
+    activeStatuses.includes(String(trip.status)),
+  ).length;
+  const hostUpcomingTripCount = hostTrips.filter((trip) =>
+    upcomingStatuses.includes(String(trip.status)),
+  ).length;
+  const hostCompletedTripCount = hostTrips.filter(
+    (trip) => String(trip.status) === "completed",
+  ).length;
+  const grossBookingValueCents = hostTrips.reduce((total, trip) => {
+    if (String(trip.payment_status) !== "paid") return total;
+    return total + (typeof trip.total_cents === "number" ? Math.max(0, trip.total_cents) : 0);
+  }, 0);
 
   return {
     roles,
-    upcomingTripCount: guestTrips.length,
+    upcomingTripCount,
     activeTripCount,
+    completedTripCount,
+    lifetimePaidCents,
     unreadNotifications: notificationsResult.count ?? 0,
+    openSupportCount: supportResult.count ?? 0,
+    openIncidentCount,
     nextTrip,
     host: {
       applicationStatus:
@@ -253,7 +335,14 @@ async function getOperationalSnapshot(
           : null,
       vehicleCount: cars.length,
       activeVehicleCount: cars.filter((car) => car.status === "active").length,
+      draftVehicleCount: cars.filter((car) => car.status === "draft").length,
+      pendingVehicleReviewCount: cars.filter(
+        (car) => car.insurance_status === "pending",
+      ).length,
       upcomingTripCount: hostUpcomingTripCount,
+      activeTripCount: hostActiveTripCount,
+      completedTripCount: hostCompletedTripCount,
+      grossBookingValueCents,
       payoutsReady: Boolean(
         stripe?.charges_enabled && stripe?.payouts_enabled,
       ),
@@ -346,7 +435,7 @@ export async function getRentautoClientData(): Promise<RentautoClientData> {
 
   if (!source) {
     return {
-      ...emptyData("Rentauto is ready to link after shared identity verification."),
+      ...emptyData("Rentauto operational account is connected; master-data projection is not synchronized yet."),
       emailVerified: profile.masterIdentity.primaryEmailVerified,
       phoneVerified: profile.masterIdentity.primaryPhoneVerified,
       ...operational,
@@ -356,7 +445,7 @@ export async function getRentautoClientData(): Promise<RentautoClientData> {
   return {
     linked: true,
     sourceLabel:
-      "Live Rentauto account connected to your TAKATAK master identity.",
+      "Live Rentauto operations connected to your TAKATAK master identity.",
     accountStatus: source.accountStatus,
     emailVerified:
       source.verifiedFields.includes("email") ||

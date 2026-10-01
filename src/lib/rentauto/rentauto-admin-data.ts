@@ -1,5 +1,6 @@
 import "server-only";
 
+import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
 import { getPrisma } from "@/lib/db/prisma";
 import { getPlatformAdminAccess } from "@/lib/security/platform-admin-access";
 
@@ -7,6 +8,7 @@ export type RentautoAdminData = {
   available: boolean;
   sourceLabel: string;
   customers: number;
+  projectedCustomers: number;
   verifiedEmailProfiles: number;
   verifiedPhoneProfiles: number;
   paymentSummaries: number;
@@ -14,6 +16,20 @@ export type RentautoAdminData = {
   refundedAmountMinor: number;
   currency: string;
   lastSynchronizedAt: string | null;
+  operations: {
+    hosts: number;
+    pendingHostApplications: number;
+    approvedHostApplications: number;
+    vehicles: number;
+    activeVehicles: number;
+    pendingVehicleReviews: number;
+    trips: number;
+    activeTrips: number;
+    completedTrips: number;
+    grossBookingValueMinor: number;
+    openSupportTickets: number;
+    openIncidents: number;
+  };
   recentEvents: Array<{
     id: string;
     eventType: string;
@@ -23,10 +39,26 @@ export type RentautoAdminData = {
   }>;
 };
 
+const emptyOperations = (): RentautoAdminData["operations"] => ({
+  hosts: 0,
+  pendingHostApplications: 0,
+  approvedHostApplications: 0,
+  vehicles: 0,
+  activeVehicles: 0,
+  pendingVehicleReviews: 0,
+  trips: 0,
+  activeTrips: 0,
+  completedTrips: 0,
+  grossBookingValueMinor: 0,
+  openSupportTickets: 0,
+  openIncidents: 0,
+});
+
 const emptyData = (sourceLabel: string): RentautoAdminData => ({
   available: false,
   sourceLabel,
   customers: 0,
+  projectedCustomers: 0,
   verifiedEmailProfiles: 0,
   verifiedPhoneProfiles: 0,
   paymentSummaries: 0,
@@ -34,8 +66,106 @@ const emptyData = (sourceLabel: string): RentautoAdminData => ({
   refundedAmountMinor: 0,
   currency: "CAD",
   lastSynchronizedAt: null,
+  operations: emptyOperations(),
   recentEvents: [],
 });
+
+async function getOperationalData() {
+  const admin = getSupabaseAdminClient();
+  if (!admin) return null;
+
+  const db = admin.schema("rentauto");
+  const [
+    accounts,
+    hosts,
+    pendingHosts,
+    approvedHosts,
+    vehicles,
+    activeVehicles,
+    pendingVehicleReviews,
+    trips,
+    activeTrips,
+    completedTrips,
+    paidTrips,
+    openSupport,
+    openIncidents,
+  ] = await Promise.all([
+    db.from("accounts").select("auth_user_id", { count: "exact", head: true }),
+    db
+      .from("account_roles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "host"),
+    db
+      .from("host_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
+    db
+      .from("host_applications")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "approved"),
+    db.from("cars").select("id", { count: "exact", head: true }),
+    db
+      .from("cars")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active"),
+    db
+      .from("cars")
+      .select("id", { count: "exact", head: true })
+      .eq("insurance_status", "pending"),
+    db.from("trips").select("id", { count: "exact", head: true }),
+    db
+      .from("trips")
+      .select("id", { count: "exact", head: true })
+      .in("status", ["check_in_pending", "active", "check_out_pending"]),
+    db
+      .from("trips")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "completed"),
+    db
+      .from("trips")
+      .select("total_cents,currency")
+      .eq("payment_status", "paid"),
+    db
+      .from("support_tickets")
+      .select("id", { count: "exact", head: true })
+      .not("status", "in", '("resolved","closed")'),
+    db
+      .from("trip_incidents")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "open"),
+  ]);
+
+  const grossBookingValueMinor = (paidTrips.data ?? []).reduce(
+    (total, trip) =>
+      total +
+      (typeof trip.total_cents === "number" ? Math.max(0, trip.total_cents) : 0),
+    0,
+  );
+
+  const currency =
+    (paidTrips.data ?? []).find(
+      (trip) => typeof trip.currency === "string" && trip.currency,
+    )?.currency ?? "CAD";
+
+  return {
+    customers: accounts.count ?? 0,
+    currency: String(currency).toUpperCase(),
+    operations: {
+      hosts: hosts.count ?? 0,
+      pendingHostApplications: pendingHosts.count ?? 0,
+      approvedHostApplications: approvedHosts.count ?? 0,
+      vehicles: vehicles.count ?? 0,
+      activeVehicles: activeVehicles.count ?? 0,
+      pendingVehicleReviews: pendingVehicleReviews.count ?? 0,
+      trips: trips.count ?? 0,
+      activeTrips: activeTrips.count ?? 0,
+      completedTrips: completedTrips.count ?? 0,
+      grossBookingValueMinor,
+      openSupportTickets: openSupport.count ?? 0,
+      openIncidents: openIncidents.count ?? 0,
+    },
+  };
+}
 
 export async function getRentautoAdminData(): Promise<RentautoAdminData> {
   const access = await getPlatformAdminAccess();
@@ -50,7 +180,8 @@ export async function getRentautoAdminData(): Promise<RentautoAdminData> {
   }
 
   try {
-    const [profiles, payments, recentEvents] = await Promise.all([
+    const [operational, profiles, payments, recentEvents] = await Promise.all([
+      getOperationalData(),
       prisma.sourceProfile.findMany({
         where: { sourceApplication: "RENTAUTO" },
         select: {
@@ -91,10 +222,11 @@ export async function getRentautoAdminData(): Promise<RentautoAdminData> {
       profile.verifiedFields.includes("phone"),
     ).length;
 
-    const paid = payments.filter((payment) =>
-      payment.status === "PAID" ||
-      payment.status === "PARTIALLY_REFUNDED" ||
-      payment.status === "REFUNDED",
+    const paid = payments.filter(
+      (payment) =>
+        payment.status === "PAID" ||
+        payment.status === "PARTIALLY_REFUNDED" ||
+        payment.status === "REFUNDED",
     );
 
     const paidAmountMinor = paid.reduce(
@@ -130,22 +262,25 @@ export async function getRentautoAdminData(): Promise<RentautoAdminData> {
         .filter((value): value is Date => value instanceof Date)
         .sort((a, b) => b.getTime() - a.getTime())[0] ?? null;
 
-    const currency =
+    const projectionCurrency =
       payments.find((payment) => payment.currency)?.currency?.toUpperCase() ??
-      "CAD";
+      null;
 
     return {
-      available: true,
-      sourceLabel:
-        "Live TAKATAK master-data projection from Rentauto. Rental operations remain authoritative in Rentauto.",
-      customers: profiles.length,
+      available: Boolean(operational),
+      sourceLabel: operational
+        ? "Live Rentauto operational data from the shared TAKATAK Supabase backend. Master-data projection remains isolated for CRM/reporting."
+        : "Rentauto operational database is unavailable; projection metrics may still be visible.",
+      customers: operational?.customers ?? profiles.length,
+      projectedCustomers: profiles.length,
       verifiedEmailProfiles,
       verifiedPhoneProfiles,
       paymentSummaries: payments.length,
       paidAmountMinor,
       refundedAmountMinor,
-      currency,
+      currency: operational?.currency ?? projectionCurrency ?? "CAD",
       lastSynchronizedAt: lastSynchronized?.toISOString() ?? null,
+      operations: operational?.operations ?? emptyOperations(),
       recentEvents: recentEvents.map((event) => ({
         id: event.id,
         eventType: event.eventType,
@@ -156,10 +291,10 @@ export async function getRentautoAdminData(): Promise<RentautoAdminData> {
     };
   } catch (error) {
     console.error(
-      "[rentauto-admin] Projection query failed:",
+      "[rentauto-admin] Operational/projection query failed:",
       error instanceof Error ? error.message : "unknown_error",
     );
 
-    return emptyData("Rentauto projection data is temporarily unavailable.");
+    return emptyData("Rentauto operational data is temporarily unavailable.");
   }
 }
