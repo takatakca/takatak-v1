@@ -17,6 +17,7 @@ import {
   resolveMasterMerchant,
   type MasterMerchantPayload,
 } from "./merchant";
+import { assertMasterPayloadSafe } from "./payload-safety";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -43,6 +44,22 @@ const AGGREGATE_TYPES = new Set([
   "order",
   "relationship",
 ]);
+
+const EXPECTED_AGGREGATE: Record<string, string> = {
+  "customer.created": "customer",
+  "customer.updated": "customer",
+  "merchant.application.created": "merchant",
+  "merchant.approved": "merchant",
+  "merchant.suspended": "merchant",
+  "merchant.updated": "merchant",
+  "customer.vendor.first_order": "relationship",
+  "customer.vendor.order_completed": "relationship",
+  "customer.vendor.dispute_opened": "relationship",
+  "order.created": "order",
+  "order.paid": "order",
+  "order.fulfilled": "order",
+  "order.refunded": "order",
+};
 
 export type MasterEventInput = {
   event_id?: string;
@@ -82,6 +99,12 @@ function parseInput(input: MasterEventInput) {
   ) {
     throw new MasterApiInputError("Event payload is required.");
   }
+  if (EXPECTED_AGGREGATE[eventType] !== aggregateType) {
+    throw new MasterApiInputError(
+      "Event type does not match aggregate type.",
+    );
+  }
+  assertMasterPayloadSafe(input.payload);
 
   return {
     eventId,
