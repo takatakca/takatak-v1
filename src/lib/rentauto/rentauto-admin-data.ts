@@ -23,6 +23,7 @@ export type RentautoAdminData = {
     vehicles: number;
     activeVehicles: number;
     pendingVehicleReviews: number;
+    pendingDriverVerifications: number;
     trips: number;
     activeTrips: number;
     completedTrips: number;
@@ -46,6 +47,7 @@ const emptyOperations = (): RentautoAdminData["operations"] => ({
   vehicles: 0,
   activeVehicles: 0,
   pendingVehicleReviews: 0,
+  pendingDriverVerifications: 0,
   trips: 0,
   activeTrips: 0,
   completedTrips: 0,
@@ -83,6 +85,7 @@ async function getOperationalData() {
     vehicles,
     activeVehicles,
     pendingVehicleReviews,
+    pendingDriverVerifications,
     trips,
     activeTrips,
     completedTrips,
@@ -112,6 +115,10 @@ async function getOperationalData() {
       .from("cars")
       .select("id", { count: "exact", head: true })
       .eq("insurance_status", "pending"),
+    db
+      .from("driver_verifications")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
     db.from("trips").select("id", { count: "exact", head: true }),
     db
       .from("trips")
@@ -157,6 +164,7 @@ async function getOperationalData() {
       vehicles: vehicles.count ?? 0,
       activeVehicles: activeVehicles.count ?? 0,
       pendingVehicleReviews: pendingVehicleReviews.count ?? 0,
+      pendingDriverVerifications: pendingDriverVerifications.count ?? 0,
       trips: trips.count ?? 0,
       activeTrips: activeTrips.count ?? 0,
       completedTrips: completedTrips.count ?? 0,
