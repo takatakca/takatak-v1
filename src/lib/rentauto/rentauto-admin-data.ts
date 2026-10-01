@@ -24,6 +24,8 @@ export type RentautoAdminData = {
     activeVehicles: number;
     pendingVehicleReviews: number;
     pendingDriverVerifications: number;
+    pendingBookingRequests: number;
+    approvedAwaitingPayment: number;
     trips: number;
     activeTrips: number;
     completedTrips: number;
@@ -48,6 +50,8 @@ const emptyOperations = (): RentautoAdminData["operations"] => ({
   activeVehicles: 0,
   pendingVehicleReviews: 0,
   pendingDriverVerifications: 0,
+  pendingBookingRequests: 0,
+  approvedAwaitingPayment: 0,
   trips: 0,
   activeTrips: 0,
   completedTrips: 0,
@@ -86,6 +90,8 @@ async function getOperationalData() {
     activeVehicles,
     pendingVehicleReviews,
     pendingDriverVerifications,
+    pendingBookingRequests,
+    approvedAwaitingPayment,
     trips,
     activeTrips,
     completedTrips,
@@ -119,6 +125,14 @@ async function getOperationalData() {
       .from("driver_verifications")
       .select("id", { count: "exact", head: true })
       .eq("status", "pending"),
+    db
+      .from("trips")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "requested"),
+    db
+      .from("trips")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "approved"),
     db.from("trips").select("id", { count: "exact", head: true }),
     db
       .from("trips")
@@ -165,6 +179,8 @@ async function getOperationalData() {
       activeVehicles: activeVehicles.count ?? 0,
       pendingVehicleReviews: pendingVehicleReviews.count ?? 0,
       pendingDriverVerifications: pendingDriverVerifications.count ?? 0,
+      pendingBookingRequests: pendingBookingRequests.count ?? 0,
+      approvedAwaitingPayment: approvedAwaitingPayment.count ?? 0,
       trips: trips.count ?? 0,
       activeTrips: activeTrips.count ?? 0,
       completedTrips: completedTrips.count ?? 0,
