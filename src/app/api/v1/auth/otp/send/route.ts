@@ -27,9 +27,9 @@ export async function POST(request: Request) {
         ? normalizePhone(body["phone"])
         : null;
     const email =
-      typeof body["email"] === "string"
+      typeof body["email"] === "string" && body["email"].trim()
         ? normalizeEmail(body["email"])
-        : "";
+        : null;
     const fullName =
       typeof body["full_name"] === "string"
         ? body["full_name"].trim().slice(0, 200)
@@ -43,9 +43,11 @@ export async function POST(request: Request) {
       throw new MasterApiInputError("Valid phone number required.");
     }
 
-    const emailError = validateEmail(email);
-    if (emailError) {
-      throw new MasterApiInputError("Valid email address required.");
+    if (email) {
+      const emailError = validateEmail(email);
+      if (emailError) {
+        throw new MasterApiInputError("Email address is invalid.");
+      }
     }
 
     await sendTakatakPhoneOtp(phone, {
