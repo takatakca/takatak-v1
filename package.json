@@ -71,6 +71,7 @@
     "qa:social-stripe-webhook": "tsx scripts/verify-social-stripe-webhook.ts",
     "qa:social-stripe-addons": "tsx scripts/verify-social-stripe-addons.ts",
     "qa:rentauto-sync": "tsx --require ./scripts/register-server-only.cjs scripts/rentauto-sync-tests.ts",
+    "qa:1lv-sync": "tsx --require ./scripts/register-server-only.cjs scripts/one-lv-sync-tests.ts",
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts"
   },
   "dependencies": {
