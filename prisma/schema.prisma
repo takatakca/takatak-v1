@@ -3006,17 +3006,19 @@ model SourceRelationship {
 /// Short-lived, source-scoped OTP verification challenge.
 /// The OTP code itself is never stored: Twilio Verify remains the code authority.
 model SourceOtpChallenge {
-  id                String    @id @default(uuid()) @db.Uuid
-  sourceApplication String
-  identityId        String    @db.Uuid
-  channel           String
-  status            String    @default("PENDING")
-  requestedAt       DateTime  @default(now())
-  expiresAt         DateTime
-  attemptCount      Int       @default(0)
-  verifiedAt        DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                    String    @id @default(uuid()) @db.Uuid
+  sourceApplication     String
+  identityId            String    @db.Uuid
+  channel               String
+  status                String    @default("PENDING")
+  requestId             String?   @unique
+  verificationRequestId String?   @unique
+  requestedAt           DateTime  @default(now())
+  expiresAt             DateTime
+  attemptCount          Int       @default(0)
+  verifiedAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
 
