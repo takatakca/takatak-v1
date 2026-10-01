@@ -4,10 +4,12 @@ import { getPrisma } from '@/lib/db/prisma';
 import {
   normalizeEmail,
   normalizePersonName,
+  validateEmail,
   validateFirstName,
   validateLastName,
 } from '@/lib/auth/registration-validation';
 import { getSessionUser } from '@/lib/auth/supabase-server';
+import { normalizePhone } from '@/lib/auth/otp/phone';
 
 export type ProfileSyncOutcome =
   | { outcome: 'existing'; profileId: string }
@@ -52,26 +54,51 @@ function getMetadataName(
 
 function getProfileIdentity(user: User): {
   email: string;
+  phone: string | null;
   firstName: string | null;
   lastName: string | null;
   displayName: string;
   emailVerified: boolean;
+  phoneVerified: boolean;
+  verified: boolean;
 } | null {
-  if (!user.email) {
+  const authEmail =
+    typeof user.email === 'string' && user.email.trim()
+      ? normalizeEmail(user.email)
+      : '';
+  const metadataEmail =
+    typeof user.user_metadata?.email === 'string'
+      ? normalizeEmail(user.user_metadata.email)
+      : '';
+  const email = authEmail || metadataEmail;
+
+  if (!email || validateEmail(email)) {
     return null;
   }
 
-  const email = normalizeEmail(user.email);
+  const authPhone =
+    typeof user.phone === 'string' ? normalizePhone(user.phone) : null;
+  const metadataPhone =
+    typeof user.user_metadata?.phone === 'string'
+      ? normalizePhone(user.user_metadata.phone)
+      : null;
+  const phone = authPhone || metadataPhone;
+
   const firstName = getMetadataName(user, 'first_name');
   const lastName = getMetadataName(user, 'last_name');
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
+  const emailVerified = Boolean(authEmail && user.email_confirmed_at);
+  const phoneVerified = Boolean(authPhone && user.phone_confirmed_at);
 
   return {
     email,
+    phone,
     firstName,
     lastName,
     displayName: fullName || email.split('@')[0] || 'User',
-    emailVerified: Boolean(user.email_confirmed_at),
+    emailVerified,
+    phoneVerified,
+    verified: emailVerified || phoneVerified,
   };
 }
 
@@ -258,6 +285,7 @@ export async function ensureProfileForSupabaseUser(
       select: {
         id: true,
         email: true,
+        phone: true,
         firstName: true,
         lastName: true,
         displayName: true,
@@ -283,12 +311,13 @@ export async function ensureProfileForSupabaseUser(
       const status =
         existingProfile.status === 'disabled'
           ? 'disabled'
-          : identity.emailVerified
+          : identity.verified
             ? 'active'
             : existingProfile.status;
 
       const requiresUpdate =
         existingProfile.email !== identity.email ||
+        existingProfile.phone !== identity.phone ||
         existingProfile.firstName !== firstName ||
         existingProfile.lastName !== lastName ||
         existingProfile.displayName !== displayName ||
@@ -299,7 +328,7 @@ export async function ensureProfileForSupabaseUser(
       if (!requiresUpdate) {
         if (
           shouldCreatePersonalWorkspace &&
-          identity.emailVerified &&
+          identity.verified &&
           existingProfile.status !== 'disabled' &&
           !hasWorkspace
         ) {
@@ -339,6 +368,7 @@ export async function ensureProfileForSupabaseUser(
         },
         data: {
           email: identity.email,
+          phone: identity.phone,
           firstName,
           lastName,
           displayName,
@@ -348,7 +378,7 @@ export async function ensureProfileForSupabaseUser(
 
       if (
         shouldCreatePersonalWorkspace &&
-        identity.emailVerified &&
+        identity.verified &&
         updatedProfile.status !== 'disabled' &&
         !hasWorkspace
       ) {
@@ -386,17 +416,18 @@ export async function ensureProfileForSupabaseUser(
       data: {
         authUserId: user.id,
         email: identity.email,
+        phone: identity.phone,
         firstName: identity.firstName,
         lastName: identity.lastName,
         displayName: identity.displayName,
         role: 'user',
-        status: identity.emailVerified ? 'active' : 'invited',
+        status: identity.verified ? 'active' : 'invited',
       },
     });
 
     if (
       shouldCreatePersonalWorkspace &&
-      identity.emailVerified &&
+      identity.verified &&
       createdProfile.status !== 'disabled'
     ) {
       await ensurePersonalClientWorkspace(
@@ -447,19 +478,39 @@ export async function ensureProfileForSupabaseUser(
           };
         }
 
-        const emailCollision = await prisma.profile.findUnique({
-          where: {
-            email: identity.email,
-          },
-          select: {
-            id: true,
-            authUserId: true,
-          },
-        });
+        const [emailCollision, phoneCollision] = await Promise.all([
+          prisma.profile.findUnique({
+            where: {
+              email: identity.email,
+            },
+            select: {
+              id: true,
+              authUserId: true,
+            },
+          }),
+          identity.phone
+            ? prisma.profile.findUnique({
+                where: {
+                  phone: identity.phone,
+                },
+                select: {
+                  id: true,
+                  authUserId: true,
+                },
+              })
+            : Promise.resolve(null),
+        ]);
 
         if (emailCollision && emailCollision.authUserId !== user.id) {
           console.error(
             '[profile-sync] Email is already bound to a different auth user',
+          );
+          return { outcome: 'denied' };
+        }
+
+        if (phoneCollision && phoneCollision.authUserId !== user.id) {
+          console.error(
+            '[profile-sync] Phone is already bound to a different auth user',
           );
           return { outcome: 'denied' };
         }
