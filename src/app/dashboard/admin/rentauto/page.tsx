@@ -17,6 +17,7 @@ import { AdminKpiCard } from "@/components/admin/admin-kpi-card";
 import { AdminSourceBanner } from "@/components/admin/source-banner";
 import { RentautoDriverVerificationsCard } from "@/components/rentauto/rentauto-driver-verifications-card";
 import { RentautoHostApplicationsCard } from "@/components/rentauto/rentauto-host-applications-card";
+import { RentautoHostVerificationsCard } from "@/components/rentauto/rentauto-host-verifications-card";
 import { RentautoVehicleReviewsCard } from "@/components/rentauto/rentauto-vehicle-reviews-card";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -253,6 +254,7 @@ export default async function RentautoAdminPage() {
 
       <RentautoDriverVerificationsCard />
       <RentautoHostApplicationsCard />
+      <RentautoHostVerificationsCard />
       <RentautoVehicleReviewsCard />
 
       <Card>
