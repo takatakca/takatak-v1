@@ -4,7 +4,6 @@ import {
   BadgeCheck,
   CarFront,
   ClipboardCheck,
-  CreditCard,
   LifeBuoy,
   Route,
   ShieldCheck,
