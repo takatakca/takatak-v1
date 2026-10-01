@@ -2922,3 +2922,81 @@ model SourceSynchronizationEvent {
   @@index([status])
   @@map("source_synchronization_events")
 }
+
+
+/// Merchant identity observed by an external source such as 1LV.
+/// Kept separate from TAKATAK Client/BusinessBrand: a marketplace seller is
+/// not automatically a GROUPE TAKATAK managed client or brand.
+model SourceMerchantProfile {
+  id                  String   @id @default(uuid()) @db.Uuid
+  sourceApplication   String
+  externalMerchantId  String
+  ownerExternalUserId String?
+  storeName           String
+  storeSlug           String?
+  legalBusinessName   String?
+  contactEmail        String?
+  contactPhone        String?
+  address             Json?
+  marketplaceStatus   String?
+  subscriptionStatus  String?
+  subscriptionPlan    String?
+  lastSynchronizedAt  DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([sourceApplication, externalMerchantId])
+  @@index([sourceApplication])
+  @@index([contactEmail])
+  @@map("source_merchant_profiles")
+}
+
+/// Normalized order snapshot supplied by a source commerce application.
+/// Payment card data and gateway secrets are never stored here.
+model SourceCommerceOrder {
+  id                        String   @id @default(uuid()) @db.Uuid
+  sourceApplication         String
+  externalOrderId           String
+  orderNumber               String
+  customerExternalReference String?
+  customerIsGuest           Boolean  @default(false)
+  merchantExternalIds       String[] @default([])
+  splits                    Json
+  totalMinor                Int
+  currency                  String
+  paymentStatus             String
+  fulfillmentStatus         String
+  occurredAt                DateTime
+  lastSynchronizedAt        DateTime
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@unique([sourceApplication, externalOrderId])
+  @@index([sourceApplication, occurredAt])
+  @@index([orderNumber])
+  @@map("source_commerce_orders")
+}
+
+/// Source-scoped customer ↔ merchant relationship metrics.
+/// Cross-merchant graph data stays private inside TAKATAK.
+model SourceRelationship {
+  id                        String   @id @default(uuid()) @db.Uuid
+  sourceApplication         String
+  relationshipType          String
+  customerExternalReference String
+  customerIsGuest           Boolean  @default(false)
+  merchantExternalReference String
+  firstSeenAt               DateTime?
+  lastSeenAt                DateTime?
+  orderCount                Int?
+  lifetimeValueMinor        Int?
+  currency                  String
+  lastSynchronizedAt        DateTime
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@unique([sourceApplication, relationshipType, customerExternalReference, merchantExternalReference])
+  @@index([sourceApplication, merchantExternalReference])
+  @@index([customerExternalReference])
+  @@map("source_relationships")
+}
