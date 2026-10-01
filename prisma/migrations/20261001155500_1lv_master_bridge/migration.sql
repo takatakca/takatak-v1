@@ -66,15 +66,7 @@ ALTER TABLE public.source_merchants ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.master_merchants FROM PUBLIC;
 REVOKE ALL ON TABLE public.source_merchants FROM PUBLIC;
 
-DO $
-BEGIN
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-    REVOKE ALL ON TABLE public.master_merchants FROM anon;
-    REVOKE ALL ON TABLE public.source_merchants FROM anon;
-  END IF;
-
-  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-    REVOKE ALL ON TABLE public.master_merchants FROM authenticated;
-    REVOKE ALL ON TABLE public.source_merchants FROM authenticated;
-  END IF;
-END $;
+REVOKE ALL ON TABLE public.master_merchants FROM anon;
+REVOKE ALL ON TABLE public.source_merchants FROM anon;
+REVOKE ALL ON TABLE public.master_merchants FROM authenticated;
+REVOKE ALL ON TABLE public.source_merchants FROM authenticated;
