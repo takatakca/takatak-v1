@@ -117,6 +117,7 @@ export async function resolveOneLvPerson(payload: JsonRecord) {
   if (!prisma) throw new Error("database_unavailable");
 
   const externalUserId = customerExternalId(payload);
+  const masterIdentityId = asString(payload.master_identity_id);
   const email = normalizeEmail(payload.email);
   const phone = normalizePhone(payload.phone);
   const names = splitFullName(payload.full_name);
@@ -140,6 +141,16 @@ export async function resolveOneLvPerson(payload: JsonRecord) {
 
     if (existingSource) {
       const current = existingSource.identity;
+
+      if (
+        masterIdentityId &&
+        current.id !== masterIdentityId
+      ) {
+        throw new OneLvIdentityConflictError([
+          "master_identity_id",
+        ]);
+      }
+
       const update: Prisma.MasterIdentityUpdateInput = {};
 
       if (!current.firstName && names.firstName) update.firstName = names.firstName;
@@ -172,22 +183,44 @@ export async function resolveOneLvPerson(payload: JsonRecord) {
       };
     }
 
-    const candidates = await transaction.masterIdentity.findMany({
-      where: {
-        OR: [
-          ...(email ? [{ primaryEmail: email }] : []),
-          ...(phone ? [{ primaryPhone: phone }] : []),
-        ],
-      },
-      take: 3,
-    });
+    const [hintedIdentity, candidates] = await Promise.all([
+      masterIdentityId
+        ? transaction.masterIdentity.findUnique({
+            where: { id: masterIdentityId },
+          })
+        : Promise.resolve(null),
+      transaction.masterIdentity.findMany({
+        where: {
+          OR: [
+            ...(email ? [{ primaryEmail: email }] : []),
+            ...(phone ? [{ primaryPhone: phone }] : []),
+          ],
+        },
+        take: 3,
+      }),
+    ]);
+
+    if (masterIdentityId && !hintedIdentity) {
+      throw new OneLvIdentityConflictError([
+        "master_identity_id",
+      ]);
+    }
 
     const candidateIds = new Set(candidates.map((candidate) => candidate.id));
+    if (hintedIdentity) {
+      candidateIds.add(hintedIdentity.id);
+    }
+
     if (candidateIds.size > 1) {
-      throw new OneLvIdentityConflictError(["email", "phone"]);
+      throw new OneLvIdentityConflictError([
+        "master_identity_id",
+        "email",
+        "phone",
+      ]);
     }
 
     const identity =
+      hintedIdentity ??
       candidates[0] ??
       (await transaction.masterIdentity.create({
         data: {
@@ -219,7 +252,7 @@ export async function resolveOneLvPerson(payload: JsonRecord) {
     return {
       id: identity.id,
       sourceProfileId: sourceProfile.id,
-      created: candidates.length === 0,
+      created: !hintedIdentity && candidates.length === 0,
     };
   });
 }
