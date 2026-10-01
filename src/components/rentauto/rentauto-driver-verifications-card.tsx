@@ -188,11 +188,6 @@ export function RentautoDriverVerificationsCard() {
           <div className="divide-y divide-slate-100">
             {verifications.map((verification) => {
               const disabled = busyId === verification.id;
-              const expiry = verification.licenseExpiresOn
-                ? new Date(`${verification.licenseExpiresOn}T23:59:59Z`).getTime()
-                : 0;
-              const expiresSoon =
-                expiry > 0 && expiry - Date.now() < 1000 * 60 * 60 * 24 * 90;
 
               return (
                 <div
@@ -207,7 +202,6 @@ export function RentautoDriverVerificationsCard() {
                           "Rentauto driver"}
                       </p>
                       <Badge tone="warning">Review pending</Badge>
-                      {expiresSoon ? <Badge tone="warning">Licence expires soon</Badge> : null}
                     </div>
 
                     <div className="mt-2 grid gap-1 text-xs text-slate-500 sm:grid-cols-2">
