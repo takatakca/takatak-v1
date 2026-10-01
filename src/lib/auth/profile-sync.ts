@@ -109,63 +109,105 @@ async function ensureMasterIdentityForVerifiedProfile(
   input: {
     profileId: string;
     email: string;
+    phone: string | null;
     firstName: string | null;
     lastName: string | null;
     emailVerified: boolean;
+    phoneVerified: boolean;
     registeredAt?: Date | null;
   },
 ): Promise<boolean> {
-  if (!input.emailVerified) {
+  if (!input.emailVerified && !input.phoneVerified) {
     return true;
   }
 
   return prisma.$transaction(async (transaction) => {
-    const [currentIdentity, emailIdentity] = await Promise.all([
+    const [currentIdentity, emailIdentity, phoneIdentity] = await Promise.all([
       transaction.masterIdentity.findUnique({
         where: { profileId: input.profileId },
       }),
-      transaction.masterIdentity.findUnique({
-        where: { primaryEmail: input.email },
-      }),
+      input.emailVerified
+        ? transaction.masterIdentity.findUnique({
+            where: { primaryEmail: input.email },
+          })
+        : Promise.resolve(null),
+      input.phoneVerified && input.phone
+        ? transaction.masterIdentity.findUnique({
+            where: { primaryPhone: input.phone },
+          })
+        : Promise.resolve(null),
     ]);
 
     if (
-      emailIdentity?.profileId &&
-      emailIdentity.profileId !== input.profileId
+      emailIdentity &&
+      phoneIdentity &&
+      emailIdentity.id !== phoneIdentity.id
     ) {
       return false;
     }
 
+    for (const identity of [emailIdentity, phoneIdentity]) {
+      if (identity?.profileId && identity.profileId !== input.profileId) {
+        return false;
+      }
+    }
+
     if (currentIdentity) {
-      if (emailIdentity && emailIdentity.id !== currentIdentity.id) {
+      if (
+        (emailIdentity && emailIdentity.id !== currentIdentity.id) ||
+        (phoneIdentity && phoneIdentity.id !== currentIdentity.id)
+      ) {
         return false;
       }
 
       await transaction.masterIdentity.update({
         where: { id: currentIdentity.id },
         data: {
-          primaryEmail: input.email,
-          primaryEmailVerified: true,
+          primaryEmail: input.emailVerified
+            ? input.email
+            : currentIdentity.primaryEmail,
+          primaryEmailVerified:
+            currentIdentity.primaryEmailVerified || input.emailVerified,
+          primaryPhone:
+            input.phoneVerified && input.phone
+              ? input.phone
+              : currentIdentity.primaryPhone,
+          primaryPhoneVerified:
+            currentIdentity.primaryPhoneVerified || input.phoneVerified,
           firstName: currentIdentity.firstName ?? input.firstName,
           lastName: currentIdentity.lastName ?? input.lastName,
           registeredAt:
             currentIdentity.registeredAt ?? input.registeredAt ?? undefined,
+          accountStatus: currentIdentity.accountStatus ?? 'active',
         },
       });
 
       return true;
     }
 
-    if (emailIdentity) {
+    const candidateIdentity = phoneIdentity ?? emailIdentity;
+
+    if (candidateIdentity) {
       await transaction.masterIdentity.update({
-        where: { id: emailIdentity.id },
+        where: { id: candidateIdentity.id },
         data: {
           profileId: input.profileId,
-          primaryEmailVerified: true,
-          firstName: emailIdentity.firstName ?? input.firstName,
-          lastName: emailIdentity.lastName ?? input.lastName,
+          primaryEmail: input.emailVerified
+            ? input.email
+            : candidateIdentity.primaryEmail,
+          primaryEmailVerified:
+            candidateIdentity.primaryEmailVerified || input.emailVerified,
+          primaryPhone:
+            input.phoneVerified && input.phone
+              ? input.phone
+              : candidateIdentity.primaryPhone,
+          primaryPhoneVerified:
+            candidateIdentity.primaryPhoneVerified || input.phoneVerified,
+          firstName: candidateIdentity.firstName ?? input.firstName,
+          lastName: candidateIdentity.lastName ?? input.lastName,
           registeredAt:
-            emailIdentity.registeredAt ?? input.registeredAt ?? undefined,
+            candidateIdentity.registeredAt ?? input.registeredAt ?? undefined,
+          accountStatus: candidateIdentity.accountStatus ?? 'active',
         },
       });
 
@@ -175,8 +217,11 @@ async function ensureMasterIdentityForVerifiedProfile(
     await transaction.masterIdentity.create({
       data: {
         profileId: input.profileId,
-        primaryEmail: input.email,
-        primaryEmailVerified: true,
+        primaryEmail: input.emailVerified ? input.email : null,
+        primaryEmailVerified: input.emailVerified,
+        primaryPhone:
+          input.phoneVerified && input.phone ? input.phone : null,
+        primaryPhoneVerified: input.phoneVerified,
         firstName: input.firstName,
         lastName: input.lastName,
         registeredAt: input.registeredAt ?? undefined,
@@ -187,7 +232,6 @@ async function ensureMasterIdentityForVerifiedProfile(
     return true;
   });
 }
-
 export async function ensurePersonalClientWorkspace(
   profileId: string,
   email: string,
@@ -343,15 +387,17 @@ export async function ensureProfileForSupabaseUser(
           await ensureMasterIdentityForVerifiedProfile(prisma, {
             profileId: existingProfile.id,
             email: identity.email,
+            phone: identity.phone,
             firstName,
             lastName,
             emailVerified: identity.emailVerified,
+            phoneVerified: identity.phoneVerified,
             registeredAt: user.created_at ? new Date(user.created_at) : null,
           });
 
         if (!masterIdentityLinked) {
           console.error(
-            '[profile-sync] Verified email conflicts with another master identity',
+            '[profile-sync] Verified contact conflicts with another master identity',
           );
           return { outcome: 'denied' };
         }
@@ -393,15 +439,17 @@ export async function ensureProfileForSupabaseUser(
         await ensureMasterIdentityForVerifiedProfile(prisma, {
           profileId: updatedProfile.id,
           email: identity.email,
+          phone: identity.phone,
           firstName,
           lastName,
           emailVerified: identity.emailVerified,
+          phoneVerified: identity.phoneVerified,
           registeredAt: user.created_at ? new Date(user.created_at) : null,
         });
 
       if (!masterIdentityLinked) {
         console.error(
-          '[profile-sync] Verified email conflicts with another master identity',
+          '[profile-sync] Verified contact conflicts with another master identity',
         );
         return { outcome: 'denied' };
       }
@@ -441,15 +489,17 @@ export async function ensureProfileForSupabaseUser(
       await ensureMasterIdentityForVerifiedProfile(prisma, {
         profileId: createdProfile.id,
         email: identity.email,
+        phone: identity.phone,
         firstName: identity.firstName,
         lastName: identity.lastName,
         emailVerified: identity.emailVerified,
+        phoneVerified: identity.phoneVerified,
         registeredAt: user.created_at ? new Date(user.created_at) : null,
       });
 
     if (!masterIdentityLinked) {
       console.error(
-        '[profile-sync] Verified email conflicts with another master identity',
+        '[profile-sync] Verified contact conflicts with another master identity',
       );
       return { outcome: 'denied' };
     }
