@@ -19,6 +19,8 @@ export type RentautoClientData = {
   accountStatus: string | null;
   emailVerified: boolean;
   phoneVerified: boolean;
+  driverVerificationStatus: string | null;
+  driverLicenseExpiresOn: string | null;
   lastSynchronizedAt: string | null;
   roles: string[];
   upcomingTripCount: number;
@@ -61,6 +63,8 @@ function emptyData(sourceLabel: string): RentautoClientData {
     accountStatus: null,
     emailVerified: false,
     phoneVerified: false,
+    driverVerificationStatus: null,
+    driverLicenseExpiresOn: null,
     lastSynchronizedAt: null,
     roles: [],
     upcomingTripCount: 0,
@@ -111,6 +115,8 @@ function paymentRows(
 type OperationalSnapshot = Pick<
   RentautoClientData,
   | "roles"
+  | "driverVerificationStatus"
+  | "driverLicenseExpiresOn"
   | "upcomingTripCount"
   | "activeTripCount"
   | "completedTripCount"
@@ -129,6 +135,8 @@ async function getOperationalSnapshot(
   if (!admin) {
     return {
       roles: [],
+      driverVerificationStatus: null,
+      driverLicenseExpiresOn: null,
       upcomingTripCount: 0,
       activeTripCount: 0,
       completedTripCount: 0,
@@ -163,6 +171,7 @@ async function getOperationalSnapshot(
   const db = admin.schema("rentauto");
   const [
     rolesResult,
+    driverVerificationResult,
     guestTripsResult,
     carsResult,
     hostApplicationResult,
@@ -172,6 +181,11 @@ async function getOperationalSnapshot(
     supportResult,
   ] = await Promise.all([
     db.from("account_roles").select("role").eq("auth_user_id", authUserId),
+    db
+      .from("driver_verifications")
+      .select("status,license_expires_on")
+      .eq("user_id", authUserId)
+      .maybeSingle(),
     db
       .from("trips")
       .select(
@@ -316,6 +330,14 @@ async function getOperationalSnapshot(
 
   return {
     roles,
+    driverVerificationStatus:
+      typeof driverVerificationResult.data?.status === "string"
+        ? driverVerificationResult.data.status
+        : "not_started",
+    driverLicenseExpiresOn:
+      typeof driverVerificationResult.data?.license_expires_on === "string"
+        ? driverVerificationResult.data.license_expires_on
+        : null,
     upcomingTripCount,
     activeTripCount,
     completedTripCount,
