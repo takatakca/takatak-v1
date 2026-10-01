@@ -15,6 +15,7 @@ import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminKpiCard } from "@/components/admin/admin-kpi-card";
 import { AdminSourceBanner } from "@/components/admin/source-banner";
+import { RentautoDriverVerificationsCard } from "@/components/rentauto/rentauto-driver-verifications-card";
 import { RentautoHostApplicationsCard } from "@/components/rentauto/rentauto-host-applications-card";
 import { RentautoVehicleReviewsCard } from "@/components/rentauto/rentauto-vehicle-reviews-card";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ export default async function RentautoAdminPage() {
     { label: "Active trips", value: data.operations.activeTrips, icon: Route },
     { label: "Host applications", value: data.operations.pendingHostApplications, icon: ClipboardCheck },
     { label: "Vehicle reviews", value: data.operations.pendingVehicleReviews, icon: BadgeCheck },
+    { label: "Driver reviews", value: data.operations.pendingDriverVerifications, icon: BadgeCheck },
     { label: "Open support", value: data.operations.openSupportTickets, icon: LifeBuoy },
     { label: "Open incidents", value: data.operations.openIncidents, icon: AlertTriangle },
   ];
@@ -70,7 +72,7 @@ export default async function RentautoAdminPage() {
       />
 
       <section aria-label="Rentauto key metrics">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-9">
           {kpis.map((item) => (
             <AdminKpiCard
               key={item.label}
@@ -170,6 +172,7 @@ export default async function RentautoAdminPage() {
         </CardBody>
       </Card>
 
+      <RentautoDriverVerificationsCard />
       <RentautoHostApplicationsCard />
       <RentautoVehicleReviewsCard />
 
