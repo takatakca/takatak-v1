@@ -24,6 +24,8 @@ export type RentautoClientData = {
   lastSynchronizedAt: string | null;
   roles: string[];
   upcomingTripCount: number;
+  pendingRequestCount: number;
+  approvedAwaitingPaymentCount: number;
   activeTripCount: number;
   completedTripCount: number;
   lifetimePaidCents: number;
@@ -48,6 +50,8 @@ export type RentautoClientData = {
     draftVehicleCount: number;
     pendingVehicleReviewCount: number;
     upcomingTripCount: number;
+    pendingRequestCount: number;
+    approvedAwaitingPaymentCount: number;
     activeTripCount: number;
     completedTripCount: number;
     grossBookingValueCents: number;
@@ -68,6 +72,8 @@ function emptyData(sourceLabel: string): RentautoClientData {
     lastSynchronizedAt: null,
     roles: [],
     upcomingTripCount: 0,
+    pendingRequestCount: 0,
+    approvedAwaitingPaymentCount: 0,
     activeTripCount: 0,
     completedTripCount: 0,
     lifetimePaidCents: 0,
@@ -83,6 +89,8 @@ function emptyData(sourceLabel: string): RentautoClientData {
       draftVehicleCount: 0,
       pendingVehicleReviewCount: 0,
       upcomingTripCount: 0,
+      pendingRequestCount: 0,
+      approvedAwaitingPaymentCount: 0,
       activeTripCount: 0,
       completedTripCount: 0,
       grossBookingValueCents: 0,
@@ -118,6 +126,8 @@ type OperationalSnapshot = Pick<
   | "driverVerificationStatus"
   | "driverLicenseExpiresOn"
   | "upcomingTripCount"
+  | "pendingRequestCount"
+  | "approvedAwaitingPaymentCount"
   | "activeTripCount"
   | "completedTripCount"
   | "lifetimePaidCents"
@@ -231,12 +241,19 @@ async function getOperationalSnapshot(
   const guestTrips = guestTripsResult.data ?? [];
   const activeStatuses = ["check_in_pending", "active", "check_out_pending"];
   const upcomingStatuses = ["confirmed", "check_in_pending", "active", "check_out_pending"];
+  const relevantStatuses = ["requested", "approved", ...upcomingStatuses];
 
   const activeTripCount = guestTrips.filter((trip) =>
     activeStatuses.includes(String(trip.status)),
   ).length;
   const upcomingTripCount = guestTrips.filter((trip) =>
     upcomingStatuses.includes(String(trip.status)),
+  ).length;
+  const pendingRequestCount = guestTrips.filter(
+    (trip) => String(trip.status) === "requested",
+  ).length;
+  const approvedAwaitingPaymentCount = guestTrips.filter(
+    (trip) => String(trip.status) === "approved",
   ).length;
   const completedTripCount = guestTrips.filter(
     (trip) => String(trip.status) === "completed",
@@ -247,7 +264,7 @@ async function getOperationalSnapshot(
   }, 0);
 
   const next =
-    guestTrips.find((trip) => upcomingStatuses.includes(String(trip.status))) ??
+    guestTrips.find((trip) => relevantStatuses.includes(String(trip.status))) ??
     null;
   let nextTrip: OperationalSnapshot["nextTrip"] = null;
 
@@ -320,6 +337,12 @@ async function getOperationalSnapshot(
   const hostUpcomingTripCount = hostTrips.filter((trip) =>
     upcomingStatuses.includes(String(trip.status)),
   ).length;
+  const hostPendingRequestCount = hostTrips.filter(
+    (trip) => String(trip.status) === "requested",
+  ).length;
+  const hostApprovedAwaitingPaymentCount = hostTrips.filter(
+    (trip) => String(trip.status) === "approved",
+  ).length;
   const hostCompletedTripCount = hostTrips.filter(
     (trip) => String(trip.status) === "completed",
   ).length;
@@ -348,6 +371,8 @@ async function getOperationalSnapshot(
     driverVerificationStatus,
     driverLicenseExpiresOn,
     upcomingTripCount,
+    pendingRequestCount,
+    approvedAwaitingPaymentCount,
     activeTripCount,
     completedTripCount,
     lifetimePaidCents,
@@ -371,6 +396,8 @@ async function getOperationalSnapshot(
         (car) => car.insurance_status === "pending",
       ).length,
       upcomingTripCount: hostUpcomingTripCount,
+      pendingRequestCount: hostPendingRequestCount,
+      approvedAwaitingPaymentCount: hostApprovedAwaitingPaymentCount,
       activeTripCount: hostActiveTripCount,
       completedTripCount: hostCompletedTripCount,
       grossBookingValueCents,
