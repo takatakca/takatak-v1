@@ -112,6 +112,17 @@ export function collectEnvPreflight(): PreflightResult {
     checks.push(check("TWILIO_ACCOUNT_SID", "optional"));
   }
 
+  checks.push(check("TAKATAK_MASTER_API_KEY", "optional", {
+    formatOk:
+      !present("TAKATAK_MASTER_API_KEY") ||
+      (process.env.TAKATAK_MASTER_API_KEY?.trim().length ?? 0) >= 32,
+    message:
+      present("TAKATAK_MASTER_API_KEY") &&
+      (process.env.TAKATAK_MASTER_API_KEY?.trim().length ?? 0) < 32
+        ? "TAKATAK_MASTER_API_KEY must be at least 32 characters"
+        : undefined,
+  }));
+
   const stripeEnabled =
     present("STRIPE_SECRET_KEY") || present("STRIPE_WEBHOOK_SECRET");
   if (stripeEnabled) {
