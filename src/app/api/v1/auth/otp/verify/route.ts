@@ -13,6 +13,7 @@ import {
   masterApiError,
   readMasterJson,
 } from "@/lib/integrations/master-api/http";
+import { resolveVerifiedPhoneIdentity } from "@/lib/integrations/master-api/identity";
 import { verifyTakatakPhoneOtp } from "@/lib/integrations/master-api/supabase-phone";
 
 export const dynamic = "force-dynamic";
@@ -41,32 +42,43 @@ export async function POST(request: Request) {
 
     const user = await verifyTakatakPhoneOtp(phone, code);
 
-    const profile = await ensureProfileForSupabaseUser(user, {
-      createPersonalWorkspace: false,
-    });
+    const hasEmail =
+      Boolean(user.email?.trim()) ||
+      (typeof user.user_metadata?.email === "string" &&
+        Boolean(user.user_metadata.email.trim()));
 
-    if (profile.outcome === "denied") {
-      throw new MasterApiConflictError(
-        "Verified phone conflicts with another TAKATAK identity.",
-      );
+    let identity;
+
+    if (hasEmail) {
+      const profile = await ensureProfileForSupabaseUser(user, {
+        createPersonalWorkspace: false,
+      });
+
+      if (profile.outcome === "denied") {
+        throw new MasterApiConflictError(
+          "Verified phone conflicts with another TAKATAK identity.",
+        );
+      }
+
+      if (profile.outcome === "unavailable" || profile.outcome === "error") {
+        throw new MasterApiUnavailableError(
+          "TAKATAK identity could not be synchronized.",
+        );
+      }
+
+      const prisma = getPrisma();
+      if (!prisma) {
+        throw new MasterApiUnavailableError(
+          "TAKATAK identity database is unavailable.",
+        );
+      }
+
+      identity = await prisma.masterIdentity.findUnique({
+        where: { profileId: profile.profileId },
+      });
+    } else {
+      identity = await resolveVerifiedPhoneIdentity(phone);
     }
-
-    if (profile.outcome === "unavailable" || profile.outcome === "error") {
-      throw new MasterApiUnavailableError(
-        "TAKATAK identity could not be synchronized.",
-      );
-    }
-
-    const prisma = getPrisma();
-    if (!prisma) {
-      throw new MasterApiUnavailableError(
-        "TAKATAK identity database is unavailable.",
-      );
-    }
-
-    const identity = await prisma.masterIdentity.findUnique({
-      where: { profileId: profile.profileId },
-    });
 
     if (!identity || !identity.primaryPhoneVerified) {
       throw new MasterApiUnavailableError(
