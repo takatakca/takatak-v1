@@ -115,6 +115,11 @@ jobs:
       - name: Fail if hosted Supabase leaked into ephemeral env
         run: node scripts/ci-fail-if-hosted-supabase.cjs
 
+      - name: Seed legacy 1LV production schema fixture
+        env:
+          NODE_ENV: development
+        run: npm run qa:1lv-legacy-seed
+
       - name: Apply Prisma migrations (never db push)
         run: |
           set -euo pipefail
@@ -146,6 +151,11 @@ jobs:
             echo "DATABASE_URL=${DATABASE_URL}"
             echo "DIRECT_URL=${DIRECT_URL}"
           } >> "$GITHUB_ENV"
+
+      - name: Verify legacy 1LV schema upgrade
+        env:
+          NODE_ENV: development
+        run: npm run qa:1lv-legacy-upgrade
 
       - name: Seed synthetic Auth identities
         env:
