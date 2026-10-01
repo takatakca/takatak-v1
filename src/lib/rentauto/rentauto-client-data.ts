@@ -328,16 +328,25 @@ async function getOperationalSnapshot(
     return total + (typeof trip.total_cents === "number" ? Math.max(0, trip.total_cents) : 0);
   }, 0);
 
+  const rawDriverStatus =
+    typeof driverVerificationResult.data?.status === "string"
+      ? driverVerificationResult.data.status
+      : "not_started";
+  const driverLicenseExpiresOn =
+    typeof driverVerificationResult.data?.license_expires_on === "string"
+      ? driverVerificationResult.data.license_expires_on
+      : null;
+  const today = new Date().toISOString().slice(0, 10);
+  const driverVerificationStatus =
+    rawDriverStatus === "approved" &&
+    (!driverLicenseExpiresOn || driverLicenseExpiresOn < today)
+      ? "expired"
+      : rawDriverStatus;
+
   return {
     roles,
-    driverVerificationStatus:
-      typeof driverVerificationResult.data?.status === "string"
-        ? driverVerificationResult.data.status
-        : "not_started",
-    driverLicenseExpiresOn:
-      typeof driverVerificationResult.data?.license_expires_on === "string"
-        ? driverVerificationResult.data.license_expires_on
-        : null,
+    driverVerificationStatus,
+    driverLicenseExpiresOn,
     upcomingTripCount,
     activeTripCount,
     completedTripCount,
