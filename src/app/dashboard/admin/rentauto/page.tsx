@@ -8,6 +8,7 @@ import {
   Route,
   ShieldCheck,
   Users,
+  WalletCards,
 } from "lucide-react";
 
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
@@ -140,6 +141,85 @@ export default async function RentautoAdminPage() {
           </CardBody>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader
+          title="Rentauto settlements"
+          subtitle="Read-only financial control view. Stripe transfer authority stays inside Rentauto."
+          action={
+            <a
+              href="https://rentauto.ca/admin/payouts"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-950"
+            >
+              Open payout authority
+              <WalletCards className="h-3.5 w-3.5" aria-hidden="true" />
+            </a>
+          }
+        />
+        <CardBody>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Payout policy
+              </p>
+              <p className="mt-2 text-sm font-semibold text-slate-900">
+                {data.settlements.policyConfigured
+                  ? data.settlements.payoutsEnabled
+                    ? "Configured · release enabled"
+                    : "Configured · release disabled"
+                  : "Not configured"}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {data.settlements.platformFeeBps === null
+                  ? "No platform fee configured"
+                  : `Fee ${(data.settlements.platformFeeBps / 100).toFixed(2)}%`}
+                {data.settlements.disputeWindowHours === null
+                  ? ""
+                  : ` · ${data.settlements.disputeWindowHours}h dispute window`}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Eligible host earnings
+              </p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">
+                {money(data.settlements.eligibleAmountMinor, data.currency)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {data.settlements.eligibleCount} settlement{data.settlements.eligibleCount === 1 ? "" : "s"}
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Held / blocked
+              </p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">
+                {money(data.settlements.heldAmountMinor, data.currency)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {data.settlements.heldCount} held · {data.settlements.blockedCount} blocked
+              </p>
+            </div>
+            <div className="rounded-xl border border-slate-200 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                Net transferred
+              </p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">
+                {money(data.settlements.transferredNetMinor, data.currency)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                {data.settlements.transferredCount} transfer{data.settlements.transferredCount === 1 ? "" : "s"} · {data.settlements.reversalRequiredCount} reversal required
+              </p>
+            </div>
+          </div>
+
+          {data.settlements.reversalRequiredCount > 0 ? (
+            <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+              {data.settlements.reversalRequiredCount} transferred settlement{data.settlements.reversalRequiredCount === 1 ? "" : "s"} require a Rentauto reversal review before the financial record is clear.
+            </div>
+          ) : null}
+        </CardBody>
+      </Card>
 
       <Card>
         <CardHeader
