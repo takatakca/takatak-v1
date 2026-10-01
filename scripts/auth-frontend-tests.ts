@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   formatAuthErrorMessage,
   isRetryableAuthFailure,
@@ -17,6 +19,35 @@ function assert(name: string, ok: boolean, detail = "") {
 
 async function main() {
   console.log("[auth-frontend] OTP response parsing");
+
+  const loginRoute = readFileSync(
+    resolve(process.cwd(), "src/app/api/auth/login/route.ts"),
+    "utf8",
+  );
+  const verifyRoute = readFileSync(
+    resolve(process.cwd(), "src/app/api/auth/verify-otp/route.ts"),
+    "utf8",
+  );
+  const resendRoute = readFileSync(
+    resolve(process.cwd(), "src/app/api/auth/resend-code/route.ts"),
+    "utf8",
+  );
+
+  assert(
+    "legacy login route cannot send server-side phone OTP",
+    !loginRoute.includes("sendPhoneOtp(") &&
+      loginRoute.includes("phone_auth_migrated"),
+  );
+  assert(
+    "legacy verify route cannot convert Twilio phone proof into an email-confirmed session",
+    !verifyRoute.includes("verifyPhoneOtp(") &&
+      verifyRoute.includes("phone_auth_migrated"),
+  );
+  assert(
+    "legacy resend route cannot use the old phone OTP sender",
+    !resendRoute.includes("sendPhoneOtp(") &&
+      resendRoute.includes("phone_auth_migrated"),
+  );
 
   const json = await parseAuthResponse(
     new Response(JSON.stringify({ ok: false, message: "Invalid OTP recheck!", code: "invalid_otp" }), {
