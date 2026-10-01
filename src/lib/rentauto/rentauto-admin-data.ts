@@ -16,6 +16,21 @@ export type RentautoAdminData = {
   refundedAmountMinor: number;
   currency: string;
   lastSynchronizedAt: string | null;
+  settlements: {
+    policyConfigured: boolean;
+    payoutsEnabled: boolean;
+    platformFeeBps: number | null;
+    disputeWindowHours: number | null;
+    eligibleCount: number;
+    eligibleAmountMinor: number;
+    heldCount: number;
+    heldAmountMinor: number;
+    blockedCount: number;
+    transferredCount: number;
+    transferredNetMinor: number;
+    reversalRequiredCount: number;
+    refundedAmountMinor: number;
+  };
   operations: {
     hosts: number;
     pendingHostApplications: number;
@@ -39,6 +54,22 @@ export type RentautoAdminData = {
     processedAt: string | null;
   }>;
 };
+
+const emptySettlements = (): RentautoAdminData["settlements"] => ({
+  policyConfigured: false,
+  payoutsEnabled: false,
+  platformFeeBps: null,
+  disputeWindowHours: null,
+  eligibleCount: 0,
+  eligibleAmountMinor: 0,
+  heldCount: 0,
+  heldAmountMinor: 0,
+  blockedCount: 0,
+  transferredCount: 0,
+  transferredNetMinor: 0,
+  reversalRequiredCount: 0,
+  refundedAmountMinor: 0,
+});
 
 const emptyOperations = (): RentautoAdminData["operations"] => ({
   hosts: 0,
@@ -68,6 +99,7 @@ const emptyData = (sourceLabel: string): RentautoAdminData => ({
   refundedAmountMinor: 0,
   currency: "CAD",
   lastSynchronizedAt: null,
+  settlements: emptySettlements(),
   operations: emptyOperations(),
   recentEvents: [],
 });
@@ -92,6 +124,8 @@ async function getOperationalData() {
     paidTrips,
     openSupport,
     openIncidents,
+    settlementPolicyResult,
+    settlementsResult,
   ] = await Promise.all([
     db.from("accounts").select("auth_user_id", { count: "exact", head: true }),
     db
@@ -140,6 +174,16 @@ async function getOperationalData() {
       .from("trip_incidents")
       .select("id", { count: "exact", head: true })
       .eq("status", "open"),
+    db
+      .from("settlement_policy")
+      .select("payouts_enabled,platform_fee_bps,dispute_window_hours")
+      .eq("id", 1)
+      .maybeSingle(),
+    db
+      .from("trip_settlements")
+      .select(
+        "status,host_amount_cents,reversed_amount_cents,refunded_cents,currency,stripe_transfer_id",
+      ),
   ]);
 
   const grossBookingValueMinor = (paidTrips.data ?? []).reduce(
@@ -149,14 +193,80 @@ async function getOperationalData() {
     0,
   );
 
+  const settlementRows = settlementsResult.data ?? [];
+  const settlementPolicy = settlementPolicyResult.data;
+  const policyConfigured = Boolean(
+    settlementPolicy &&
+      typeof settlementPolicy.platform_fee_bps === "number" &&
+      typeof settlementPolicy.dispute_window_hours === "number",
+  );
+
+  const eligibleRows = settlementRows.filter((row) => row.status === "eligible");
+  const heldRows = settlementRows.filter(
+    (row) =>
+      !row.stripe_transfer_id &&
+      ["configuration_required", "pending_trip", "hold", "blocked", "failed"].includes(
+        String(row.status),
+      ),
+  );
+  const transferredRows = settlementRows.filter((row) =>
+    Boolean(row.stripe_transfer_id),
+  );
+
+  const settlements = {
+    policyConfigured,
+    payoutsEnabled: Boolean(settlementPolicy?.payouts_enabled && policyConfigured),
+    platformFeeBps:
+      typeof settlementPolicy?.platform_fee_bps === "number"
+        ? settlementPolicy.platform_fee_bps
+        : null,
+    disputeWindowHours:
+      typeof settlementPolicy?.dispute_window_hours === "number"
+        ? settlementPolicy.dispute_window_hours
+        : null,
+    eligibleCount: eligibleRows.length,
+    eligibleAmountMinor: eligibleRows.reduce(
+      (total, row) => total + Math.max(0, row.host_amount_cents ?? 0),
+      0,
+    ),
+    heldCount: heldRows.length,
+    heldAmountMinor: heldRows.reduce(
+      (total, row) => total + Math.max(0, row.host_amount_cents ?? 0),
+      0,
+    ),
+    blockedCount: settlementRows.filter((row) => row.status === "blocked").length,
+    transferredCount: transferredRows.length,
+    transferredNetMinor: transferredRows.reduce(
+      (total, row) =>
+        total +
+        Math.max(
+          0,
+          (row.host_amount_cents ?? 0) - (row.reversed_amount_cents ?? 0),
+        ),
+      0,
+    ),
+    reversalRequiredCount: settlementRows.filter(
+      (row) => row.status === "reversal_required",
+    ).length,
+    refundedAmountMinor: settlementRows.reduce(
+      (total, row) => total + Math.max(0, row.refunded_cents ?? 0),
+      0,
+    ),
+  };
+
   const currency =
+    settlementRows.find(
+      (row) => typeof row.currency === "string" && row.currency,
+    )?.currency ??
     (paidTrips.data ?? []).find(
       (trip) => typeof trip.currency === "string" && trip.currency,
-    )?.currency ?? "CAD";
+    )?.currency ??
+    "CAD";
 
   return {
     customers: accounts.count ?? 0,
     currency: String(currency).toUpperCase(),
+    settlements,
     operations: {
       hosts: hosts.count ?? 0,
       pendingHostApplications: pendingHosts.count ?? 0,
@@ -288,6 +398,7 @@ export async function getRentautoAdminData(): Promise<RentautoAdminData> {
       refundedAmountMinor,
       currency: operational?.currency ?? projectionCurrency ?? "CAD",
       lastSynchronizedAt: lastSynchronized?.toISOString() ?? null,
+      settlements: operational?.settlements ?? emptySettlements(),
       operations: operational?.operations ?? emptyOperations(),
       recentEvents: recentEvents.map((event) => ({
         id: event.id,
