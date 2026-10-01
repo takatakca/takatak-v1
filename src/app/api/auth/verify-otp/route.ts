@@ -6,7 +6,7 @@ import {
   readTrustedJsonBody,
   wrapAuthRoute,
 } from "@/lib/auth/auth-json";
-import { verifyEmailOtp, verifyPhoneOtp } from "@/lib/auth/otp/service";
+import { verifyEmailOtp } from "@/lib/auth/otp/service";
 import { applySessionCookies } from "@/lib/auth/workspace-session-cookies";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 
@@ -44,25 +44,11 @@ async function handleVerifyOtp(request: NextRequest) {
   const existingCookies = request.cookies.getAll();
 
   if (phone) {
-    const result = await verifyPhoneOtp(phone, otp, { existingCookies });
-    const response = authJson(
-      {
-        ok: result.ok,
-        message: result.message,
-        ...(result.code ? { code: result.code } : {}),
-        redirectTo: result.ok ? next : undefined,
-      },
-      result.status,
+    return authErrorResponse(
+      "Phone verification is handled directly by TAKATAK Supabase Phone Auth. This legacy phone verification endpoint is disabled.",
+      409,
+      { code: "phone_auth_migrated" },
     );
-    if (result.ok && result.cookies) {
-      const cookies = applySessionCookies(response, result.cookies);
-      if (!cookies.ok) {
-        return authErrorResponse(cookies.message, 500, {
-          code: "session_unavailable",
-        });
-      }
-    }
-    return response;
   }
 
   if (email) {
