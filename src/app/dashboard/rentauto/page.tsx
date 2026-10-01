@@ -55,6 +55,8 @@ function tripTone(status: string): "success" | "warning" | "neutral" | "danger" 
   if (status === "active" || status === "confirmed") return "success";
   if (
     status === "pending_payment" ||
+    status === "requested" ||
+    status === "approved" ||
     status === "check_in_pending" ||
     status === "check_out_pending" ||
     status === "draft"
@@ -86,6 +88,20 @@ export default async function RentautoDashboardPage() {
           label: "Verify your email",
           detail: "Required for a fully verified TAKATAK identity.",
           href: "https://rentauto.ca/profile",
+        }
+      : null,
+    data.approvedAwaitingPaymentCount > 0
+      ? {
+          label: `${data.approvedAwaitingPaymentCount} approved booking${data.approvedAwaitingPaymentCount === 1 ? "" : "s"} ready for payment`,
+          detail: "The host approved your request. Complete payment while the vehicle hold is active.",
+          href: "https://rentauto.ca/trips",
+        }
+      : null,
+    data.pendingRequestCount > 0
+      ? {
+          label: `${data.pendingRequestCount} booking request${data.pendingRequestCount === 1 ? "" : "s"} awaiting host`,
+          detail: "No payment has been taken while the host reviews the request.",
+          href: "https://rentauto.ca/trips",
         }
       : null,
     data.driverVerificationStatus !== "approved"
@@ -231,10 +247,14 @@ export default async function RentautoDashboardPage() {
             </div>
 
             <Link
-              href={`https://rentauto.ca/trips/${data.nextTrip.id}`}
+              href={
+                data.nextTrip.status === "approved"
+                  ? `https://rentauto.ca/checkout/${data.nextTrip.id}`
+                  : `https://rentauto.ca/trips/${data.nextTrip.id}`
+              }
               className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-lg bg-white px-4 text-sm font-semibold text-slate-950 transition hover:bg-slate-100"
             >
-              View trip
+              {data.nextTrip.status === "approved" ? "Complete payment" : "View trip"}
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
@@ -454,7 +474,15 @@ export default async function RentautoDashboardPage() {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-6">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Booking requests</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.pendingRequestCount}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Approved / unpaid</p>
+                <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.approvedAwaitingPaymentCount}</p>
+              </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Upcoming bookings</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.upcomingTripCount}</p>
