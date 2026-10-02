@@ -15,6 +15,9 @@ const client = new Client({
 
 const COMPANY_ID = "11111111-1111-4111-8111-111111111111";
 const SOURCE_MERCHANT_ID = "22222222-2222-4222-8222-222222222222";
+const LEGACY_AUTH_USER_ID = "44444444-4444-4444-8444-444444444444";
+const LEGACY_IDENTITY_ID = "55555555-5555-4555-8555-555555555555";
+const OTHER_AUTH_USER_ID = "66666666-6666-4666-8666-666666666666";
 const MIGRATION_PATH = resolve(
   process.cwd(),
   "prisma/migrations/20261001155500_1lv_master_bridge/migration.sql",
@@ -94,6 +97,21 @@ async function verifyUpgradedState(label: string) {
   `);
   assert.equal(authUserColumn.rowCount, 1);
 
+  const legacyAuthBinding = await client.query(
+    `
+      SELECT "authUserId"
+      FROM public.master_identities
+      WHERE id = $1
+    `,
+    [LEGACY_IDENTITY_ID],
+  );
+  assert.equal(legacyAuthBinding.rowCount, 1);
+  assert.equal(
+    legacyAuthBinding.rows[0].authUserId,
+    LEGACY_AUTH_USER_ID,
+    `${label}: legacy profile Auth UUID was backfilled into master identity`,
+  );
+
   const authUserUnique = await client.query(`
     SELECT 1
     FROM pg_indexes
@@ -152,7 +170,36 @@ async function main() {
 
     await verifyUpgradedState("second apply");
 
-    console.log("1LV legacy production-schema upgrade + idempotence: PASS");
+    await client.query(
+      `
+        DO $
+        BEGIN
+          BEGIN
+            UPDATE public.master_identities
+            SET "authUserId" = '${OTHER_AUTH_USER_ID}'::uuid
+            WHERE id = '${LEGACY_IDENTITY_ID}'::uuid;
+
+            RAISE EXCEPTION 'immutable Auth UUID update unexpectedly succeeded';
+          EXCEPTION
+            WHEN check_violation THEN
+              NULL;
+          END;
+        END
+        $;
+      `,
+    );
+
+    const immutableBinding = await client.query(
+      `
+        SELECT "authUserId"
+        FROM public.master_identities
+        WHERE id = $1
+      `,
+      [LEGACY_IDENTITY_ID],
+    );
+    assert.equal(immutableBinding.rows[0].authUserId, LEGACY_AUTH_USER_ID);
+
+    console.log("1LV legacy production-schema upgrade + idempotence + Auth UUID backfill: PASS");
   } finally {
     await client.end();
   }
