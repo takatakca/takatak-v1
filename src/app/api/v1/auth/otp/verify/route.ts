@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { normalizePhone } from "@/lib/auth/otp/phone";
-import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
-import { getPrisma } from "@/lib/db/prisma";
 import {
-  MasterApiConflictError,
   MasterApiInputError,
   MasterApiUnavailableError,
 } from "@/lib/integrations/master-api/errors";
@@ -42,74 +39,19 @@ export async function POST(request: Request) {
 
     const user = await verifyTakatakPhoneOtp(phone, code);
 
-    const hasEmail =
-      Boolean(user.email?.trim()) ||
-      (typeof user.user_metadata?.email === "string" &&
-        Boolean(user.user_metadata.email.trim()));
+    const identity = await resolveVerifiedPhoneIdentity(phone);
 
-    let verifiedIdentity: {
-      id: string;
-      phone: string;
-      email: string | null;
-      firstName: string | null;
-      lastName: string | null;
-      locale: string | null;
-    } | null = null;
-
-    if (hasEmail) {
-      const profile = await ensureProfileForSupabaseUser(user, {
-        createPersonalWorkspace: false,
-      });
-
-      if (profile.outcome === "denied") {
-        throw new MasterApiConflictError(
-          "Verified phone conflicts with another TAKATAK identity.",
-        );
-      }
-
-      if (profile.outcome === "unavailable" || profile.outcome === "error") {
-        throw new MasterApiUnavailableError(
-          "TAKATAK identity could not be synchronized.",
-        );
-      }
-
-      const prisma = getPrisma();
-      if (!prisma) {
-        throw new MasterApiUnavailableError(
-          "TAKATAK identity database is unavailable.",
-        );
-      }
-
-      const identity = await prisma.masterIdentity.findUnique({
-        where: { profileId: profile.profileId },
-      });
-
-      if (
-        identity?.primaryPhoneVerified &&
-        identity.primaryPhone === phone
-      ) {
-        verifiedIdentity = {
-          id: identity.id,
-          phone: identity.primaryPhone,
-          email: identity.primaryEmail,
-          firstName: identity.firstName,
-          lastName: identity.lastName,
-          locale: identity.locale,
-        };
-      }
-    } else {
-      const identity = await resolveVerifiedPhoneIdentity(phone);
-      if (identity.phone === phone) {
-        verifiedIdentity = {
-          id: identity.id,
-          phone: identity.phone,
-          email: identity.email,
-          firstName: identity.firstName,
-          lastName: identity.lastName,
-          locale: identity.locale,
-        };
-      }
-    }
+    const verifiedIdentity =
+      identity.phone === phone
+        ? {
+            id: identity.id,
+            phone: identity.phone,
+            email: identity.email,
+            firstName: identity.firstName,
+            lastName: identity.lastName,
+            locale: identity.locale,
+          }
+        : null;
 
     if (!verifiedIdentity) {
       throw new MasterApiUnavailableError(
