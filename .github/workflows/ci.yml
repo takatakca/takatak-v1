@@ -67,6 +67,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Food Hub unit tests (memory store, no network)
+        run: npm run qa:food-hub
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
