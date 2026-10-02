@@ -32,8 +32,15 @@ assert.equal(
   "profile-2",
 );
 assert.equal(
-  sourceCustomerReference({ guest_reference: "guest:ORDER-1001" }),
-  "guest:ORDER-1001",
+  sourceCustomerReference({ guest_reference: "order:ORDER-1001" }),
+  "order:ORDER-1001",
+);
+assert.equal(
+  sourceCustomerReference({
+    customer_local_reference: "guest:ORDER-1002",
+    customer_is_guest: true,
+  }),
+  "order:ORDER-1002",
 );
 assert.equal(
   sourceCustomerReference({
