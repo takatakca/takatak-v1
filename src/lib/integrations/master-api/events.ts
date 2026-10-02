@@ -116,6 +116,23 @@ function parseInput(input: MasterEventInput) {
   };
 }
 
+export function sourceCustomerReference(
+  payload: Record<string, unknown>,
+): string | null {
+  for (const key of [
+    "customer_local_id",
+    "customer_local_reference",
+    "guest_reference",
+  ] as const) {
+    const value = payload[key];
+    if (typeof value !== "string") continue;
+    const normalized = value.trim();
+    if (normalized && normalized.length <= 200) return normalized;
+  }
+
+  return null;
+}
+
 export async function applyMasterEvent(
   rawBody: string,
   input: MasterEventInput,
@@ -171,17 +188,14 @@ export async function applyMasterEvent(
     );
     merchantId = merchant.id;
   } else {
-    const customerLocalId =
-      typeof parsed.payload["customer_local_id"] === "string"
-        ? parsed.payload["customer_local_id"]
-        : null;
+    const customerReference = sourceCustomerReference(parsed.payload);
 
-    if (customerLocalId) {
+    if (customerReference) {
       const sourceProfile = await prisma.sourceProfile.findUnique({
         where: {
           sourceApplication_externalUserId: {
             sourceApplication: "1lv",
-            externalUserId: customerLocalId,
+            externalUserId: customerReference,
           },
         },
       });
