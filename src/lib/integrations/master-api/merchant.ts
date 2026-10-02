@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 
 import { getPrisma } from "@/lib/db/prisma";
 import {
+  MasterApiConflictError,
   MasterApiInputError,
   MasterApiUnavailableError,
 } from "./errors";
@@ -67,6 +68,12 @@ export async function resolveMasterMerchant(
     });
 
     if (existing) {
+      if (explicitId && explicitId !== existing.merchantId) {
+        throw new MasterApiConflictError(
+          "This source merchant is already linked to another master merchant.",
+        );
+      }
+
       const merchant = await tx.masterMerchant.update({
         where: { id: existing.merchantId },
         data: {
