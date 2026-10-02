@@ -127,7 +127,17 @@ export function sourceCustomerReference(
     const value = payload[key];
     if (typeof value !== "string") continue;
     const normalized = value.trim();
-    if (normalized && normalized.length <= 200) return normalized;
+    if (!normalized || normalized.length > 200) continue;
+
+    if (
+      key === "customer_local_reference" &&
+      payload["customer_is_guest"] === true &&
+      normalized.startsWith("guest:")
+    ) {
+      return `order:${normalized.slice("guest:".length)}`;
+    }
+
+    return normalized;
   }
 
   return null;
