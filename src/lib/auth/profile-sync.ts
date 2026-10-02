@@ -108,6 +108,7 @@ async function ensureMasterIdentityForVerifiedProfile(
   prisma: PrismaClientInstance,
   input: {
     profileId: string;
+    authUserId: string;
     email: string;
     phone: string | null;
     firstName: string | null;
@@ -122,38 +123,53 @@ async function ensureMasterIdentityForVerifiedProfile(
   }
 
   return prisma.$transaction(async (transaction) => {
-    const [currentIdentity, emailIdentity, phoneIdentity] = await Promise.all([
-      transaction.masterIdentity.findUnique({
-        where: { profileId: input.profileId },
-      }),
-      input.emailVerified
-        ? transaction.masterIdentity.findUnique({
-            where: { primaryEmail: input.email },
-          })
-        : Promise.resolve(null),
-      input.phoneVerified && input.phone
-        ? transaction.masterIdentity.findUnique({
-            where: { primaryPhone: input.phone },
-          })
-        : Promise.resolve(null),
-    ]);
+    const [currentIdentity, authIdentity, emailIdentity, phoneIdentity] =
+      await Promise.all([
+        transaction.masterIdentity.findUnique({
+          where: { profileId: input.profileId },
+        }),
+        transaction.masterIdentity.findUnique({
+          where: { authUserId: input.authUserId },
+        }),
+        input.emailVerified
+          ? transaction.masterIdentity.findUnique({
+              where: { primaryEmail: input.email },
+            })
+          : Promise.resolve(null),
+        input.phoneVerified && input.phone
+          ? transaction.masterIdentity.findUnique({
+              where: { primaryPhone: input.phone },
+            })
+          : Promise.resolve(null),
+      ]);
 
-    if (
-      emailIdentity &&
-      phoneIdentity &&
-      emailIdentity.id !== phoneIdentity.id
-    ) {
+    const candidateIds = new Set(
+      [authIdentity, emailIdentity, phoneIdentity]
+        .map((identity) => identity?.id ?? null)
+        .filter((id): id is string => id !== null),
+    );
+
+    if (candidateIds.size > 1) {
       return false;
     }
 
-    for (const identity of [emailIdentity, phoneIdentity]) {
+    for (const identity of [authIdentity, emailIdentity, phoneIdentity]) {
       if (identity?.profileId && identity.profileId !== input.profileId) {
+        return false;
+      }
+      if (
+        identity?.authUserId &&
+        identity.authUserId !== input.authUserId
+      ) {
         return false;
       }
     }
 
     if (currentIdentity) {
       if (
+        (currentIdentity.authUserId &&
+          currentIdentity.authUserId !== input.authUserId) ||
+        (authIdentity && authIdentity.id !== currentIdentity.id) ||
         (emailIdentity && emailIdentity.id !== currentIdentity.id) ||
         (phoneIdentity && phoneIdentity.id !== currentIdentity.id)
       ) {
@@ -163,6 +179,7 @@ async function ensureMasterIdentityForVerifiedProfile(
       await transaction.masterIdentity.update({
         where: { id: currentIdentity.id },
         data: {
+          authUserId: currentIdentity.authUserId ?? input.authUserId,
           primaryEmail: input.emailVerified
             ? input.email
             : currentIdentity.primaryEmail,
@@ -185,13 +202,14 @@ async function ensureMasterIdentityForVerifiedProfile(
       return true;
     }
 
-    const candidateIdentity = phoneIdentity ?? emailIdentity;
+    const candidateIdentity = authIdentity ?? phoneIdentity ?? emailIdentity;
 
     if (candidateIdentity) {
       await transaction.masterIdentity.update({
         where: { id: candidateIdentity.id },
         data: {
           profileId: input.profileId,
+          authUserId: candidateIdentity.authUserId ?? input.authUserId,
           primaryEmail: input.emailVerified
             ? input.email
             : candidateIdentity.primaryEmail,
@@ -217,6 +235,7 @@ async function ensureMasterIdentityForVerifiedProfile(
     await transaction.masterIdentity.create({
       data: {
         profileId: input.profileId,
+        authUserId: input.authUserId,
         primaryEmail: input.emailVerified ? input.email : null,
         primaryEmailVerified: input.emailVerified,
         primaryPhone:
@@ -386,6 +405,7 @@ export async function ensureProfileForSupabaseUser(
         const masterIdentityLinked =
           await ensureMasterIdentityForVerifiedProfile(prisma, {
             profileId: existingProfile.id,
+            authUserId: user.id,
             email: identity.email,
             phone: identity.phone,
             firstName,
@@ -438,6 +458,7 @@ export async function ensureProfileForSupabaseUser(
       const masterIdentityLinked =
         await ensureMasterIdentityForVerifiedProfile(prisma, {
           profileId: updatedProfile.id,
+          authUserId: user.id,
           email: identity.email,
           phone: identity.phone,
           firstName,
@@ -488,6 +509,7 @@ export async function ensureProfileForSupabaseUser(
     const masterIdentityLinked =
       await ensureMasterIdentityForVerifiedProfile(prisma, {
         profileId: createdProfile.id,
+        authUserId: user.id,
         email: identity.email,
         phone: identity.phone,
         firstName: identity.firstName,

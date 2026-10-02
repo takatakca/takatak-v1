@@ -2807,6 +2807,7 @@ model LeadActivity {
 model MasterIdentity {
   id                   String    @id @default(uuid()) @db.Uuid
   profileId            String?   @unique @db.Uuid
+  authUserId           String?   @unique @db.Uuid
   firstName            String?
   lastName             String?
   primaryEmail         String?   @unique
@@ -2909,6 +2910,7 @@ model SourceSynchronizationEvent {
   sourceProfileId   String?   @db.Uuid
   identityId        String?   @db.Uuid
   payloadHash       String
+  payload           Json?
   responsePayload   Json?
   status            String    @default("RECEIVED")
   errorMessage      String?
@@ -2921,4 +2923,43 @@ model SourceSynchronizationEvent {
   @@index([sourceApplication, createdAt])
   @@index([status])
   @@map("source_synchronization_events")
+}
+
+model MasterMerchant {
+  id           String   @id @default(uuid()) @db.Uuid
+  legalName    String?
+  primaryEmail String?
+  primaryPhone String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sourceMerchants SourceMerchant[]
+
+  @@index([primaryEmail])
+  @@index([primaryPhone])
+  @@map("master_merchants")
+}
+
+model SourceMerchant {
+  id                  String   @id @default(uuid()) @db.Uuid
+  merchantId          String   @db.Uuid
+  sourceApplication   String
+  externalMerchantId  String
+  ownerExternalUserId String?
+  storeName           String
+  storeSlug           String?
+  collectedFields     Json
+  marketplaceStatus   String?
+  subscriptionStatus  String?
+  subscriptionPlan    String?
+  lastSynchronizedAt  DateTime
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  merchant MasterMerchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceApplication, externalMerchantId])
+  @@index([merchantId])
+  @@index([sourceApplication, lastSynchronizedAt])
+  @@map("source_merchants")
 }

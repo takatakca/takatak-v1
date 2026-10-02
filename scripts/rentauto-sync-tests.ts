@@ -86,6 +86,18 @@ assert.match(
   /ensureMasterIdentityForVerifiedProfile/,
   "TAKATAK auth profile synchronization must create or attach a master identity.",
 );
+assert.match(
+  profileSync,
+  /where:\s*\{ authUserId: input\.authUserId \}/,
+  "Dashboard profile sync must resolve a pre-existing master identity by Supabase Auth UUID.",
+);
+
+assert.match(
+  profileSync,
+  /authUserId:\s*user\.id/,
+  "Every dashboard profile-to-master-identity link must carry the authenticated Supabase Auth UUID.",
+);
+
 
 assert.match(
   profileSync,

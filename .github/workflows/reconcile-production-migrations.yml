@@ -1,0 +1,83 @@
+name: Reconcile TAKATAK production migrations
+
+on:
+  push:
+    branches:
+      - integration/1lv-mastermind-bridge
+    paths:
+      - "prisma/migrations/**"
+      - "scripts/reconcile-production-migrations.mjs"
+      - ".github/workflows/reconcile-production-migrations.yml"
+
+  workflow_dispatch:
+    inputs:
+      confirm_project_ref:
+        description: "Type the TAKATAK production Supabase project ref"
+        required: true
+        type: string
+      apply:
+        description: "Apply reconciliation + pending 1LV migration"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-production-migrations
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Audit or reconcile production migration history
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TAKATAK_PRODUCTION_DATABASE_URL: ${{ secrets.TAKATAK_PRODUCTION_DATABASE_URL }}
+      CONFIRM_PROJECT_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_project_ref || 'pcjfahhlozsseqqevimi' }}
+      RECONCILE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.apply && 'apply' || 'audit' }}
+
+    steps:
+      - name: Checkout exact branch or commit
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npm run db:generate
+
+      - name: Validate production secret presence
+        id: production-secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${TAKATAK_PRODUCTION_DATABASE_URL:-}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=false" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "ERROR: TAKATAK_PRODUCTION_DATABASE_URL secret is missing."
+            exit 1
+          fi
+
+          echo "::warning title=TAKATAK production audit skipped::TAKATAK_PRODUCTION_DATABASE_URL is not configured in GitHub Actions."
+
+      - name: Audit or reconcile production
+        if: steps.production-secret.outputs.available == 'true'
+        run: node scripts/reconcile-production-migrations.mjs
+
+      - name: Report unavailable automatic production audit
+        if: steps.production-secret.outputs.available != 'true' && github.event_name != 'workflow_dispatch'
+        run: |
+          echo "TAKATAK production migration audit was not executed because the production database URL secret is unavailable."

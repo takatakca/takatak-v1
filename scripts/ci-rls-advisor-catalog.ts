@@ -29,6 +29,8 @@ const SECRET_TABLES = [
   "integration_events",
   "audit_logs",
   "ai_provider_events",
+  "master_merchants",
+  "source_merchants",
   "_prisma_migrations",
 ];
 

@@ -64,6 +64,9 @@ jobs:
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
+      - name: 1LV master API safeguards
+        run: npm run qa:1lv-master-api
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
@@ -112,7 +115,7 @@ jobs:
       - name: Fail if hosted Supabase leaked into ephemeral env
         run: node scripts/ci-fail-if-hosted-supabase.cjs
 
-      - name: Apply Prisma migrations (never db push)
+      - name: Normalize ephemeral database URLs
         run: |
           set -euo pipefail
           append_ssl() {
@@ -122,10 +125,49 @@ jobs:
               *) printf '%s?sslmode=disable\n' "$1" ;;
             esac
           }
-          export DATABASE_URL="$(append_ssl "${DATABASE_URL/localhost/127.0.0.1}")"
-          export DIRECT_URL="$(append_ssl "${DIRECT_URL/localhost/127.0.0.1}")"
+          DATABASE_URL="$(append_ssl "${DATABASE_URL/localhost/127.0.0.1}")"
+          DIRECT_URL="$(append_ssl "${DIRECT_URL/localhost/127.0.0.1}")"
+          {
+            echo "DATABASE_URL=${DATABASE_URL}"
+            echo "DIRECT_URL=${DIRECT_URL}"
+          } >> "$GITHUB_ENV"
+          export DATABASE_URL DIRECT_URL
           echo "ephemeral_db_identity=${DATABASE_URL#*@}"
           node -e "const {Client}=require('pg'); const c=new Client({connectionString:process.env.DATABASE_URL,ssl:false}); c.connect().then(()=>c.query('select current_user, current_database()')).then((r)=>{console.log('pg_ok', r.rows[0]); return c.end();}).catch((e)=>{console.error('pg_fail', e.message); process.exit(1);})"
+
+      - name: Apply Prisma baseline before legacy 1LV fixture
+        run: |
+          set -euo pipefail
+          migration_dir="prisma/migrations/20261001155500_1lv_master_bridge"
+          held_dir="/tmp/20261001155500_1lv_master_bridge"
+          test -d "$migration_dir"
+          rm -rf "$held_dir"
+          mv "$migration_dir" "$held_dir"
+          restore_migration() {
+            if [ -d "$held_dir" ]; then
+              mv "$held_dir" "$migration_dir"
+            fi
+          }
+          trap restore_migration EXIT
+          set +e +o pipefail
+          npx prisma migrate deploy 2>&1 | tee /tmp/prisma-baseline.log
+          status=${PIPESTATUS[0]}
+          set -euo pipefail
+          restore_migration
+          trap - EXIT
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=prisma baseline deploy::$(tail -n 30 /tmp/prisma-baseline.log | tr '\n' ' | ')"
+            exit "$status"
+          fi
+
+      - name: Seed legacy 1LV production schema fixture
+        env:
+          NODE_ENV: development
+        run: npm run qa:1lv-legacy-seed
+
+      - name: Apply 1LV compatibility migration
+        run: |
+          set -euo pipefail
           set +e +o pipefail
           npx prisma migrate deploy 2>&1 | tee /tmp/prisma-migrate.log
           status=${PIPESTATUS[0]}
@@ -134,15 +176,16 @@ jobs:
             echo "::error title=prisma migrate deploy::$(tail -n 30 /tmp/prisma-migrate.log | tr '\n' ' | ')"
             exit "$status"
           fi
-          npx prisma migrate status || true
+          npx prisma migrate status
           if grep -R "pcjfahhlozsseqqevimi" supabase prisma/migrations >/dev/null 2>&1; then
             echo "hosted project ref must not appear in ephemeral SQL"
             exit 1
           fi
-          {
-            echo "DATABASE_URL=${DATABASE_URL}"
-            echo "DIRECT_URL=${DIRECT_URL}"
-          } >> "$GITHUB_ENV"
+
+      - name: Verify legacy 1LV schema upgrade
+        env:
+          NODE_ENV: development
+        run: npm run qa:1lv-legacy-upgrade
 
       - name: Seed synthetic Auth identities
         env:
