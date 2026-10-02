@@ -54,6 +54,8 @@ const KNOWN_PRODUCTION_ONLY_MIGRATIONS = [
   "20261001070000_meta_ads_uniqueness",
   "20261001080000_google_ads_provider",
   "20261001090000_google_ads_uniqueness",
+  "20261001100000_looker_studio_provider",
+  "20261001110000_looker_studio_uniqueness",
 ];
 
 const SERVICE_ROLE_HOTFIX_MIGRATIONS = new Set([
