@@ -7,6 +7,15 @@
 -- deliberately an in-place compatibility upgrade and must work on both a
 -- fresh database and that legacy production shape.
 
+-- Bind a master identity to the exact verified Supabase Auth user.
+-- Phone uniqueness alone is not enough protection against a future recycled
+-- or reassigned number.
+ALTER TABLE public.master_identities
+  ADD COLUMN IF NOT EXISTS "authUserId" uuid;
+
+CREATE UNIQUE INDEX IF NOT EXISTS "master_identities_authUserId_key"
+ON public.master_identities("authUserId");
+
 ALTER TABLE "source_synchronization_events"
 ADD COLUMN IF NOT EXISTS "payload" JSONB;
 
