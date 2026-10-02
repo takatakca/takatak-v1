@@ -317,6 +317,11 @@ export async function resolveMasterPerson(
 export async function resolveVerifiedPhoneIdentity(
   rawPhone: string,
   verifiedAuthUserId: string,
+  metadata: {
+    firstName?: string | null;
+    lastName?: string | null;
+    locale?: string | null;
+  } = {},
 ): Promise<ResolvedMasterIdentity> {
   const prisma = getPrisma();
   if (!prisma) {
@@ -330,6 +335,10 @@ export async function resolveVerifiedPhoneIdentity(
   if (!UUID_RE.test(verifiedAuthUserId)) {
     throw new MasterApiInputError("Invalid verified auth user id.");
   }
+
+  const firstName = metadata.firstName?.trim().slice(0, 100) || null;
+  const lastName = metadata.lastName?.trim().slice(0, 100) || null;
+  const locale = metadata.locale?.trim().slice(0, 16) || null;
 
   const emailForResponse = (identity: {
     primaryEmail: string | null;
@@ -356,7 +365,12 @@ export async function resolveVerifiedPhoneIdentity(
 
         const updated = await tx.masterIdentity.update({
           where: { id: existing.id },
-          data: { primaryPhoneVerified: true },
+          data: {
+            primaryPhoneVerified: true,
+            firstName: existing.firstName ?? firstName,
+            lastName: existing.lastName ?? lastName,
+            locale: existing.locale ?? locale,
+          },
           include: { profile: true },
         });
 
@@ -397,6 +411,9 @@ export async function resolveVerifiedPhoneIdentity(
           data: {
             primaryPhone: phone,
             primaryPhoneVerified: true,
+            firstName: profile.masterIdentity.firstName ?? profile.firstName ?? firstName,
+            lastName: profile.masterIdentity.lastName ?? profile.lastName ?? lastName,
+            locale: profile.masterIdentity.locale ?? profile.language ?? locale,
           },
         });
 
@@ -415,13 +432,13 @@ export async function resolveVerifiedPhoneIdentity(
         const created = await tx.masterIdentity.create({
           data: {
             profileId: profile.id,
-            firstName: profile.firstName,
-            lastName: profile.lastName,
+            firstName: profile.firstName ?? firstName,
+            lastName: profile.lastName ?? lastName,
             primaryEmail: null,
             primaryEmailVerified: false,
             primaryPhone: phone,
             primaryPhoneVerified: true,
-            locale: profile.language,
+            locale: profile.language ?? locale,
             accountStatus: profile.status,
             registeredAt: profile.createdAt,
           },
@@ -442,6 +459,9 @@ export async function resolveVerifiedPhoneIdentity(
         data: {
           primaryPhone: phone,
           primaryPhoneVerified: true,
+          firstName,
+          lastName,
+          locale,
           accountStatus: "active",
         },
       });
@@ -478,7 +498,12 @@ export async function resolveVerifiedPhoneIdentity(
 
         const updated = await prisma.masterIdentity.update({
           where: { id: existing.id },
-          data: { primaryPhoneVerified: true },
+          data: {
+            primaryPhoneVerified: true,
+            firstName: existing.firstName ?? firstName,
+            lastName: existing.lastName ?? lastName,
+            locale: existing.locale ?? locale,
+          },
           include: { profile: true },
         });
 
