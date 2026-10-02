@@ -167,7 +167,7 @@ const verifyPhoneCall = otpVerifyRoute.indexOf(
   "verifyTakatakPhoneOtp(phone, code)",
 );
 const resolvePhoneCall = otpVerifyRoute.indexOf(
-  "resolveVerifiedPhoneIdentity(phone)",
+  "resolveVerifiedPhoneIdentity(\n      phone,\n      verifiedUser.id,",
 );
 
 assert.ok(
@@ -180,6 +180,21 @@ assert.ok(
 const identityResolver = readFileSync(
   resolve(process.cwd(), "src/lib/integrations/master-api/identity.ts"),
   "utf8",
+);
+assert.match(
+  identityResolver,
+  /existing\.profile\.authUserId !== verifiedAuthUserId/,
+  "A verified phone must not take over a master identity bound to another Supabase Auth user.",
+);
+assert.match(
+  identityResolver,
+  /profile\.authUserId !== verifiedAuthUserId/,
+  "Phone-profile fallback must require the same verified Supabase Auth user.",
+);
+assert.match(
+  identityResolver,
+  /primaryEmailVerified \? identity\.primaryEmail : null/,
+  "1LV OTP responses must never expose an unverified TAKATAK email.",
 );
 assert.match(
   identityResolver,
