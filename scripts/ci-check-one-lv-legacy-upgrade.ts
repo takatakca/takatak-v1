@@ -172,7 +172,7 @@ async function main() {
 
     await client.query(
       `
-        DO $
+        DO $verify$
         BEGIN
           BEGIN
             UPDATE public.master_identities
@@ -185,7 +185,7 @@ async function main() {
               NULL;
           END;
         END
-        $;
+        $verify$;
       `,
     );
 
