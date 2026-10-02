@@ -1,0 +1,59 @@
+name: Reconcile TAKATAK production migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_project_ref:
+        description: "Type the TAKATAK production Supabase project ref"
+        required: true
+        type: string
+      apply:
+        description: "Apply reconciliation + pending 1LV migration"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-production-migrations
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Audit or reconcile production migration history
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TAKATAK_PRODUCTION_DATABASE_URL: ${{ secrets.TAKATAK_PRODUCTION_DATABASE_URL }}
+      CONFIRM_PROJECT_REF: ${{ inputs.confirm_project_ref }}
+      RECONCILE_MODE: ${{ inputs.apply && 'apply' || 'audit' }}
+
+    steps:
+      - name: Checkout exact branch or commit
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npm run db:generate
+
+      - name: Validate production secret presence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${TAKATAK_PRODUCTION_DATABASE_URL:-}" || {
+            echo "ERROR: TAKATAK_PRODUCTION_DATABASE_URL secret is missing."
+            exit 1
+          }
+
+      - name: Audit or reconcile production
+        run: node scripts/reconcile-production-migrations.mjs
