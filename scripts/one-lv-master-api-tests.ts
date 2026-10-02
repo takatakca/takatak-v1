@@ -119,8 +119,15 @@ assert.match(
 );
 assert.match(
   otpVerifyRoute,
-  /ensureProfileForSupabaseUser/,
-  "Verified 1LV phone must synchronize the TAKATAK master identity.",
+  /resolveVerifiedPhoneIdentity\(phone\)/,
+  "Verified 1LV phone must resolve the TAKATAK master identity from the verified phone.",
+);
+assert.equal(
+  /ensureProfileForSupabaseUser|user\.user_metadata\?\.email/.test(
+    otpVerifyRoute,
+  ),
+  false,
+  "1LV OTP verification must not trust an unverified metadata email.",
 );
 assert.equal(
   /checkOtpFromPhone|verifyPhoneOtp/.test(
@@ -143,6 +150,16 @@ assert.match(
   phoneAuthority,
   /persistSession:\s*false/,
   "Federated 1LV verification must not persist a TAKATAK session server-side.",
+);
+assert.equal(
+  /metadata\.email|\.\.\.\(metadata\.email/.test(phoneAuthority),
+  false,
+  "1LV phone OTP must never write an unverified email into TAKATAK Auth metadata.",
+);
+assert.equal(
+  /body\["email"\]|normalizeEmail|validateEmail/.test(otpSendRoute),
+  false,
+  "The 1LV master OTP endpoint must ignore unverified email input.",
 );
 
 
