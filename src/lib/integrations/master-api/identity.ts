@@ -85,8 +85,6 @@ async function updateMissingIdentityFields(
   identity: MasterIdentity,
   payload: MasterPersonPayload,
 ): Promise<MasterIdentity> {
-  const email = normalizeEmail(payload.email);
-  const phone = payload.phone ? normalizePhone(payload.phone) : null;
   const name = parseName(payload.full_name);
   const data: Prisma.MasterIdentityUpdateInput = {};
 
@@ -95,15 +93,6 @@ async function updateMissingIdentityFields(
   if (!identity.locale && payload.preferred_language) {
     data.locale = payload.preferred_language.slice(0, 16);
   }
-  if (!identity.primaryEmail && email) {
-    data.primaryEmail = email;
-    data.primaryEmailVerified = false;
-  }
-  if (!identity.primaryPhone && phone) {
-    data.primaryPhone = phone;
-    data.primaryPhoneVerified = false;
-  }
-
   if (Object.keys(data).length === 0) return identity;
 
   return tx.masterIdentity.update({
@@ -112,67 +101,28 @@ async function updateMissingIdentityFields(
   });
 }
 
-async function resolveCandidate(
+async function resolveExplicitIdentity(
   tx: Tx,
   payload: MasterPersonPayload,
 ): Promise<MasterIdentity | null> {
   const explicitId = payload.master_identity_id?.trim() ?? "";
+  if (!explicitId) return null;
 
-  if (explicitId) {
-    if (!UUID_RE.test(explicitId)) {
-      throw new MasterApiInputError("Invalid master identity id.");
-    }
-
-    const identity = await tx.masterIdentity.findUnique({
-      where: { id: explicitId },
-    });
-
-    if (!identity) {
-      throw new MasterApiConflictError(
-        "Master identity link does not exist.",
-      );
-    }
-
-    return identity;
+  if (!UUID_RE.test(explicitId)) {
+    throw new MasterApiInputError("Invalid master identity id.");
   }
 
-  const email = normalizeEmail(payload.email);
-  const phone = payload.phone ? normalizePhone(payload.phone) : null;
-  const candidates = new Map<string, MasterIdentity>();
+  const identity = await tx.masterIdentity.findUnique({
+    where: { id: explicitId },
+  });
 
-  if (phone) {
-    const byPhone = await tx.masterIdentity.findUnique({
-      where: { primaryPhone: phone },
-    });
-    if (byPhone?.primaryPhoneVerified) {
-      candidates.set(byPhone.id, byPhone);
-    }
-  }
-
-  if (email) {
-    const byEmail = await tx.masterIdentity.findUnique({
-      where: { primaryEmail: email },
-    });
-    if (byEmail?.primaryEmailVerified) {
-      candidates.set(byEmail.id, byEmail);
-    }
-
-    const profile = await tx.profile.findUnique({
-      where: { email },
-      include: { masterIdentity: true },
-    });
-    if (profile?.masterIdentity) {
-      candidates.set(profile.masterIdentity.id, profile.masterIdentity);
-    }
-  }
-
-  if (candidates.size > 1) {
+  if (!identity) {
     throw new MasterApiConflictError(
-      "Verified identifiers resolve to different master identities.",
+      "Master identity link does not exist.",
     );
   }
 
-  return [...candidates.values()][0] ?? null;
+  return identity;
 }
 
 export async function resolveMasterPerson(
@@ -207,16 +157,64 @@ export async function resolveMasterPerson(
     });
 
     if (existingSource) {
-      const explicitId = payload.master_identity_id?.trim();
+      const explicitId = payload.master_identity_id?.trim() ?? "";
+      let linkedIdentity = existingSource.identity;
+
       if (explicitId && explicitId !== existingSource.identityId) {
-        throw new MasterApiConflictError(
-          "This source profile is already linked to another master identity.",
-        );
+        if (!UUID_RE.test(explicitId)) {
+          throw new MasterApiInputError("Invalid master identity id.");
+        }
+
+        const verifiedTarget = await tx.masterIdentity.findUnique({
+          where: { id: explicitId },
+        });
+        if (!verifiedTarget) {
+          throw new MasterApiConflictError(
+            "Master identity link does not exist.",
+          );
+        }
+
+        const sourceOnlyIdentity =
+          !existingSource.identity.profileId &&
+          !existingSource.identity.primaryEmailVerified &&
+          !existingSource.identity.primaryPhoneVerified;
+
+        const sourceProfileCount = await tx.sourceProfile.count({
+          where: { identityId: existingSource.identityId },
+        });
+
+        if (!sourceOnlyIdentity || sourceProfileCount !== 1) {
+          throw new MasterApiConflictError(
+            "This source profile is already linked to another master identity.",
+          );
+        }
+
+        // A source-only placeholder may be promoted only after TAKATAK has
+        // supplied an explicit verified master identity. Unverified source
+        // email/phone values never perform this merge.
+        await tx.sourceAddress.updateMany({
+          where: { sourceProfileId: existingSource.id },
+          data: { identityId: verifiedTarget.id },
+        });
+        await tx.sourcePaymentSummary.updateMany({
+          where: { sourceProfileId: existingSource.id },
+          data: { identityId: verifiedTarget.id },
+        });
+        await tx.sourceSynchronizationEvent.updateMany({
+          where: { sourceProfileId: existingSource.id },
+          data: { identityId: verifiedTarget.id },
+        });
+        await tx.sourceProfile.update({
+          where: { id: existingSource.id },
+          data: { identityId: verifiedTarget.id },
+        });
+
+        linkedIdentity = verifiedTarget;
       }
 
       const identity = await updateMissingIdentityFields(
         tx,
-        existingSource.identity,
+        linkedIdentity,
         payload,
       );
 
@@ -254,20 +252,21 @@ export async function resolveMasterPerson(
       };
     }
 
-    let identity = await resolveCandidate(tx, payload);
-    const name = parseName(payload.full_name);
+    let identity = await resolveExplicitIdentity(tx, payload);
 
     if (!identity) {
       identity = await tx.masterIdentity.create({
         data: {
-          firstName: name.firstName,
-          lastName: name.lastName,
-          primaryEmail: email,
+          // Unverified source identifiers stay only in SourceProfile.
+          // They must never become global TAKATAK identity keys.
+          firstName: null,
+          lastName: null,
+          primaryEmail: null,
           primaryEmailVerified: false,
-          primaryPhone: phone,
+          primaryPhone: null,
           primaryPhoneVerified: false,
-          locale: payload.preferred_language?.slice(0, 16) || null,
-          accountStatus: payload.is_guest ? "guest" : "active",
+          locale: null,
+          accountStatus: "source_only",
           registeredAt: payload.account_created_at
             ? new Date(payload.account_created_at)
             : undefined,
