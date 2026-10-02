@@ -107,6 +107,11 @@ assert.match(
   /sendTakatakPhoneOtp/,
   "1LV OTP send must delegate to TAKATAK Supabase Phone Auth.",
 );
+assert.match(
+  otpSendRoute,
+  /rawIntent !== "login" && rawIntent !== "signup"/,
+  "TAKATAK OTP send must validate login versus signup intent.",
+);
 assert.equal(
   /sendOtpToPhone|sendPhoneOtp/.test(otpSendRoute),
   false,
@@ -140,6 +145,11 @@ assert.match(
   phoneAuthority,
   /signInWithOtp/,
   "TAKATAK master phone authority must use Supabase signInWithOtp.",
+);
+assert.match(
+  phoneAuthority,
+  /shouldCreateUser:\s*intent === "signup"/,
+  "TAKATAK login OTP must never create an Auth user; only signup may create.",
 );
 assert.match(
   phoneAuthority,
