@@ -2807,6 +2807,7 @@ model LeadActivity {
 model MasterIdentity {
   id                   String    @id @default(uuid()) @db.Uuid
   profileId            String?   @unique @db.Uuid
+  authUserId           String?   @unique @db.Uuid
   firstName            String?
   lastName             String?
   primaryEmail         String?   @unique
