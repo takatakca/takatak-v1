@@ -12,6 +12,7 @@ import {
   useState,
 } from "react";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
+import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 import {
   formatAuthErrorMessage,
   parseAuthResponse,
@@ -35,6 +36,7 @@ export function OtpForm() {
   const [emailDraft, setEmailDraft] = useState("");
 
   const next = sanitizeNextPath(searchParams.get("next"));
+  const provider = searchParams.get("provider");
 
   useEffect(() => {
     const queryEmail = searchParams.get("email")?.trim() ?? "";
@@ -101,6 +103,53 @@ export function OtpForm() {
     setError(null);
 
     try {
+      if (provider === "supabase-phone" && phone) {
+        const supabase = createSupabaseBrowserClient();
+        if (!supabase) {
+          setError("TAKATAK authentication is not configured.");
+          return;
+        }
+
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          phone,
+          token: digits.join(""),
+          type: "sms",
+        });
+
+        if (verifyError || !data.session || !data.user) {
+          setError(
+            verifyError?.message?.toLowerCase().includes("expired")
+              ? "That SMS code has expired. Request a new code."
+              : "The SMS code is invalid or has expired.",
+          );
+          setAttempts((current) => current + 1);
+          return;
+        }
+
+        const syncResponse = await fetch("/api/auth/sync-profile", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+          },
+        });
+
+        const syncResult = await parseAuthResponse(syncResponse);
+        if (!syncResult.ok) {
+          setError(
+            formatAuthErrorMessage(syncResult) ||
+              "Your mobile was verified, but TAKATAK could not finalize your profile.",
+          );
+          return;
+        }
+
+        sessionStorage.removeItem("verifyEmail");
+        sessionStorage.removeItem("verifyPhone");
+        sessionStorage.removeItem("otpAttempts");
+        window.location.assign(next);
+        return;
+      }
+
       const response = await fetch("/api/auth/verify-otp", {
         method: "POST",
         credentials: "same-origin",
@@ -231,6 +280,30 @@ export function OtpForm() {
     setCanResend(false);
 
     try {
+      if (provider === "supabase-phone" && phone) {
+        const supabase = createSupabaseBrowserClient();
+        if (!supabase) {
+          setError("TAKATAK authentication is not configured.");
+          setCanResend(true);
+          return;
+        }
+
+        const { error: resendError } = await supabase.auth.resend({
+          type: "sms",
+          phone,
+        });
+
+        if (resendError) {
+          setError("Unable to resend the TAKATAK SMS code. Please try again.");
+          setCanResend(true);
+          return;
+        }
+
+        setAttempts(0);
+        setLocked(false);
+        return;
+      }
+
       const response = await fetch("/api/auth/resend-code", {
         method: "POST",
         credentials: "same-origin",

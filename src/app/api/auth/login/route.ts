@@ -6,10 +6,7 @@ import {
   readTrustedJsonBody,
   wrapAuthRoute,
 } from "@/lib/auth/auth-json";
-import {
-  sendEmailOtp,
-  sendPhoneOtp,
-} from "@/lib/auth/otp/service";
+import { sendEmailOtp } from "@/lib/auth/otp/service";
 import { normalizeEmail, validateEmail } from "@/lib/auth/registration-validation";
 
 export const runtime = "nodejs";
@@ -35,14 +32,10 @@ async function handleLogin(request: NextRequest) {
   const email = typeof input.email === "string" ? input.email.trim() : "";
 
   if (phone) {
-    const result = await sendPhoneOtp(phone);
-    return authJson(
-      {
-        ok: result.ok,
-        message: result.message,
-        ...(result.code ? { code: result.code } : {}),
-      },
-      result.status,
+    return authErrorResponse(
+      "Phone verification is handled by TAKATAK Supabase Phone Auth. Start the SMS flow from the TAKATAK login screen.",
+      409,
+      { code: "phone_auth_migrated" },
     );
   }
 

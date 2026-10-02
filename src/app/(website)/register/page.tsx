@@ -1,6 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import { Link } from "@/lib/website/nav";
-import { RegistrationForm } from "@/components/auth/registration-form";
+import { MasterPhoneRegistrationForm } from "@/components/auth/master-phone-registration-form";
 import { SignupPromoPanel } from "@/components/website/promotions/SignupPromoPanel";
 import { isSupabaseConfigured } from "@/lib/auth/env";
 
@@ -26,7 +26,7 @@ export default function RegisterPage() {
         </p>
         <div className="mt-6">
           {configured ? (
-            <RegistrationForm />
+            <MasterPhoneRegistrationForm />
           ) : (
             <div className="space-y-3 text-center">
               <TriangleAlert className="mx-auto h-6 w-6 text-warning" />
