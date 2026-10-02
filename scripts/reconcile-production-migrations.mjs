@@ -403,6 +403,22 @@ try {
            and table_name = 'source_synchronization_events'
            and column_name = 'payload'
        ) as event_payload,
+       exists (
+         select 1
+         from information_schema.columns
+         where table_schema = 'public'
+           and table_name = 'master_identities'
+           and column_name = 'authUserId'
+           and data_type = 'uuid'
+       ) as master_auth_user_link,
+       exists (
+         select 1
+         from pg_indexes
+         where schemaname = 'public'
+           and tablename = 'master_identities'
+           and indexname = 'master_identities_authUserId_key'
+           and indexdef ilike '%UNIQUE%'
+       ) as master_auth_user_unique,
        coalesce((
          select c.relrowsecurity
          from pg_class c
@@ -426,6 +442,8 @@ try {
     !state?.master_merchants ||
     !state?.source_merchant_link ||
     !state?.event_payload ||
+    !state?.master_auth_user_link ||
+    !state?.master_auth_user_unique ||
     !state?.master_merchants_rls ||
     !state?.source_merchants_rls ||
     !state?.master_anon_denied ||
