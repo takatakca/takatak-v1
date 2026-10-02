@@ -104,6 +104,15 @@ async function verifyUpgradedState(label: string) {
   `);
   assert.equal(authUserUnique.rowCount, 1);
 
+  const authUserBindingTrigger = await client.query(`
+    SELECT 1
+    FROM pg_trigger
+    WHERE tgname = 'master_identity_auth_user_binding'
+      AND tgrelid = 'public.master_identities'::regclass
+      AND NOT tgisinternal
+  `);
+  assert.equal(authUserBindingTrigger.rowCount, 1);
+
   const fk = await client.query(`
     SELECT 1
     FROM pg_constraint
