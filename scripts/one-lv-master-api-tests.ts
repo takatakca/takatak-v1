@@ -285,6 +285,31 @@ assert.match(
   "The master Auth UUID binding must be unique.",
 );
 
+const productionReconciliation = readFileSync(
+  resolve(process.cwd(), "scripts/reconcile-production-migrations.mjs"),
+  "utf8",
+);
+assert.match(
+  productionReconciliation,
+  /TARGET_SUPABASE_HISTORY_NAMES/,
+  "Production reconciliation must recognize verified Supabase history aliases for the 1LV bridge.",
+);
+assert.match(
+  productionReconciliation,
+  /targetAppliedOutsidePrisma/,
+  "Production reconciliation must distinguish SQL already applied outside Prisma.",
+);
+assert.match(
+  productionReconciliation,
+  /runPrisma\(\["resolve", "--applied", TARGET_MIGRATION\]/,
+  "An already-applied bridge must be recorded in Prisma without replaying its SQL.",
+);
+assert.match(
+  productionReconciliation,
+  /Target migration SQL in Supabase history does not match the repository/,
+  "Supabase history must match repository SQL before resolve-only reconciliation.",
+);
+
 const merchantResolver = readFileSync(
   resolve(process.cwd(), "src/lib/integrations/master-api/merchant.ts"),
   "utf8",
