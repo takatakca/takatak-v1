@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 import { assertMasterPayloadSafe } from "../src/lib/integrations/master-api/payload-safety";
 import { MasterApiInputError } from "../src/lib/integrations/master-api/errors";
 import { verifyMasterApiRequest } from "../src/lib/integrations/master-api/auth";
+import { sourceCustomerReference } from "../src/lib/integrations/master-api/events";
 
 const key = "abcdefghijklmnopqrstuvwxyz0123456789ABCD";
 process.env.TAKATAK_1LV_API_KEY = key;
@@ -20,6 +21,27 @@ assert.equal(
     new Headers({ authorization: "Bearer wrong" }),
   ).valid,
   false,
+);
+
+assert.equal(
+  sourceCustomerReference({ customer_local_id: "profile-1" }),
+  "profile-1",
+);
+assert.equal(
+  sourceCustomerReference({ customer_local_reference: "profile-2" }),
+  "profile-2",
+);
+assert.equal(
+  sourceCustomerReference({ guest_reference: "guest:ORDER-1001" }),
+  "guest:ORDER-1001",
+);
+assert.equal(
+  sourceCustomerReference({
+    customer_local_id: "profile-priority",
+    customer_local_reference: "relationship-fallback",
+    guest_reference: "guest-fallback",
+  }),
+  "profile-priority",
 );
 
 assert.doesNotThrow(() =>
