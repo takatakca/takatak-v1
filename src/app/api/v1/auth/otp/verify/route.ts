@@ -37,9 +37,12 @@ export async function POST(request: Request) {
       );
     }
 
-    await verifyTakatakPhoneOtp(phone, code);
+    const verifiedUser = await verifyTakatakPhoneOtp(phone, code);
 
-    const identity = await resolveVerifiedPhoneIdentity(phone);
+    const identity = await resolveVerifiedPhoneIdentity(
+      phone,
+      verifiedUser.id,
+    );
 
     const verifiedIdentity =
       identity.phone === phone
