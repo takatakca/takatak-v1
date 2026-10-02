@@ -316,6 +316,7 @@ export async function resolveMasterPerson(
 
 export async function resolveVerifiedPhoneIdentity(
   rawPhone: string,
+  verifiedAuthUserId: string,
 ): Promise<ResolvedMasterIdentity> {
   const prisma = getPrisma();
   if (!prisma) {
@@ -326,6 +327,15 @@ export async function resolveVerifiedPhoneIdentity(
 
   const phone = normalizePhone(rawPhone);
   if (!phone) throw new MasterApiInputError("Invalid phone number.");
+  if (!UUID_RE.test(verifiedAuthUserId)) {
+    throw new MasterApiInputError("Invalid verified auth user id.");
+  }
+
+  const emailForResponse = (identity: {
+    primaryEmail: string | null;
+    primaryEmailVerified: boolean;
+  }): string | null =>
+    identity.primaryEmailVerified ? identity.primaryEmail : null;
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -335,6 +345,15 @@ export async function resolveVerifiedPhoneIdentity(
       });
 
       if (existing) {
+        if (
+          existing.profile &&
+          existing.profile.authUserId !== verifiedAuthUserId
+        ) {
+          throw new MasterApiConflictError(
+            "This verified phone is linked to another TAKATAK auth user.",
+          );
+        }
+
         const updated = await tx.masterIdentity.update({
           where: { id: existing.id },
           data: { primaryPhoneVerified: true },
@@ -344,7 +363,7 @@ export async function resolveVerifiedPhoneIdentity(
         return {
           id: updated.id,
           phone: updated.primaryPhone,
-          email: updated.primaryEmail ?? updated.profile?.email ?? null,
+          email: emailForResponse(updated),
           firstName: updated.firstName ?? updated.profile?.firstName ?? null,
           lastName: updated.lastName ?? updated.profile?.lastName ?? null,
           locale: updated.locale ?? updated.profile?.language ?? null,
@@ -356,6 +375,12 @@ export async function resolveVerifiedPhoneIdentity(
         where: { phone },
         include: { masterIdentity: true },
       });
+
+      if (profile && profile.authUserId !== verifiedAuthUserId) {
+        throw new MasterApiConflictError(
+          "This verified phone is linked to another TAKATAK auth user.",
+        );
+      }
 
       if (profile?.masterIdentity) {
         if (
@@ -378,7 +403,7 @@ export async function resolveVerifiedPhoneIdentity(
         return {
           id: updated.id,
           phone,
-          email: updated.primaryEmail ?? profile.email,
+          email: emailForResponse(updated),
           firstName: updated.firstName ?? profile.firstName,
           lastName: updated.lastName ?? profile.lastName,
           locale: updated.locale ?? profile.language,
@@ -392,7 +417,7 @@ export async function resolveVerifiedPhoneIdentity(
             profileId: profile.id,
             firstName: profile.firstName,
             lastName: profile.lastName,
-            primaryEmail: profile.email,
+            primaryEmail: null,
             primaryEmailVerified: false,
             primaryPhone: phone,
             primaryPhoneVerified: true,
@@ -405,7 +430,7 @@ export async function resolveVerifiedPhoneIdentity(
         return {
           id: created.id,
           phone,
-          email: profile.email,
+          email: null,
           firstName: profile.firstName,
           lastName: profile.lastName,
           locale: profile.language,
@@ -442,13 +467,28 @@ export async function resolveVerifiedPhoneIdentity(
       });
 
       if (existing) {
+        if (
+          existing.profile &&
+          existing.profile.authUserId !== verifiedAuthUserId
+        ) {
+          throw new MasterApiConflictError(
+            "This verified phone is linked to another TAKATAK auth user.",
+          );
+        }
+
+        const updated = await prisma.masterIdentity.update({
+          where: { id: existing.id },
+          data: { primaryPhoneVerified: true },
+          include: { profile: true },
+        });
+
         return {
-          id: existing.id,
-          phone: existing.primaryPhone,
-          email: existing.primaryEmail ?? existing.profile?.email ?? null,
-          firstName: existing.firstName ?? existing.profile?.firstName ?? null,
-          lastName: existing.lastName ?? existing.profile?.lastName ?? null,
-          locale: existing.locale ?? existing.profile?.language ?? null,
+          id: updated.id,
+          phone: updated.primaryPhone,
+          email: emailForResponse(updated),
+          firstName: updated.firstName ?? updated.profile?.firstName ?? null,
+          lastName: updated.lastName ?? updated.profile?.lastName ?? null,
+          locale: updated.locale ?? updated.profile?.language ?? null,
           sourceProfileId: null,
         };
       }
