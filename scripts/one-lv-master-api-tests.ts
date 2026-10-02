@@ -153,4 +153,59 @@ assert.ok(
   "Supabase verification must happen before phone-only identity resolution.",
 );
 
+const identityResolver = readFileSync(
+  resolve(process.cwd(), "src/lib/integrations/master-api/identity.ts"),
+  "utf8",
+);
+assert.match(
+  identityResolver,
+  /resolveExplicitIdentity/,
+  "1LV source events may link an existing master identity only by explicit master UUID.",
+);
+assert.equal(
+  /async function resolveCandidate/.test(identityResolver),
+  false,
+  "Unverified source email/phone must never select a global master identity.",
+);
+assert.match(
+  identityResolver,
+  /Unverified source identifiers stay only in SourceProfile/,
+  "Unverified 1LV identifiers must remain source-scoped.",
+);
+assert.match(
+  identityResolver,
+  /sourceOnlyIdentity/,
+  "A source-only placeholder must be explicitly promoted after TAKATAK verification.",
+);
+assert.match(
+  identityResolver,
+  /sourceProfileCount !== 1/,
+  "Placeholder promotion must fail closed when the old identity is shared.",
+);
+
+const masterApiAuth = readFileSync(
+  resolve(process.cwd(), "src/lib/integrations/master-api/auth.ts"),
+  "utf8",
+);
+assert.match(
+  masterApiAuth,
+  /TAKATAK_1LV_API_KEY/,
+  "1LV must use an application-scoped TAKATAK server credential.",
+);
+assert.equal(
+  /process\.env\.TAKATAK_MASTER_API_KEY/.test(masterApiAuth),
+  false,
+  "TAKATAK must not expose a single global child-application API credential.",
+);
+
+const merchantResolver = readFileSync(
+  resolve(process.cwd(), "src/lib/integrations/master-api/merchant.ts"),
+  "utf8",
+);
+assert.match(
+  merchantResolver,
+  /explicitId && explicitId !== existing\.merchantId/,
+  "An existing 1LV merchant source link must fail closed on master-ID mismatch.",
+);
+
 console.log("1LV master API safeguards: PASS");
