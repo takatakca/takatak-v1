@@ -38,6 +38,22 @@ const RECONCILE_MIGRATIONS = [
   "20261001012100_rentauto_driver_verification_authority",
   "20261001015000_rentauto_request_to_book",
   "20261001021500_rentauto_driver_verification_reviewer_index",
+  "20261001114000_takatak_phone_first_identity_authority",
+  "20261001114500_takatak_phone_identity_update_trigger",
+];
+
+const KNOWN_PRODUCTION_ONLY_MIGRATIONS = [
+  "20260924010000_bluesky_oauth_encrypted_store",
+  "20260924030000_google_business_independent_provider",
+  "20261001010000_web_site_provider",
+  "20261001020000_web_site_uniqueness",
+  "20261001030000_blog_provider",
+  "20261001040000_blog_uniqueness",
+  "20261001050000_twitch_account_uniqueness",
+  "20261001060000_meta_ads_provider",
+  "20261001070000_meta_ads_uniqueness",
+  "20261001080000_google_ads_provider",
+  "20261001090000_google_ads_uniqueness",
 ];
 
 const SERVICE_ROLE_HOTFIX_MIGRATIONS = new Set([
@@ -155,13 +171,38 @@ try {
     prismaRows.rows.map((row) => String(row.migration_name)),
   );
 
+  const productionOnly = new Set(KNOWN_PRODUCTION_ONLY_MIGRATIONS);
+
+  const unexpectedlyRestored = KNOWN_PRODUCTION_ONLY_MIGRATIONS.filter(
+    (name) => repoMigrations.includes(name),
+  );
+  if (unexpectedlyRestored.length > 0) {
+    fail(
+      "A production-only migration file reappeared locally. Verify its original checksum before removing the exception: " +
+        unexpectedlyRestored.join(", "),
+    );
+  }
+
+  const missingProductionOnly = KNOWN_PRODUCTION_ONLY_MIGRATIONS.filter(
+    (name) => !prismaApplied.has(name),
+  );
+  if (missingProductionOnly.length > 0) {
+    fail(
+      "Expected production-only Prisma history entries are missing: " +
+        missingProductionOnly.join(", "),
+    );
+  }
+
   const appliedMissingFromRepo = [...prismaApplied].filter(
     (name) => !repoMigrations.includes(name),
   );
-  if (appliedMissingFromRepo.length > 0) {
+  const unexpectedAppliedMissing = appliedMissingFromRepo.filter(
+    (name) => !productionOnly.has(name),
+  );
+  if (unexpectedAppliedMissing.length > 0) {
     fail(
-      "Prisma production history contains migrations missing from this checkout: " +
-        appliedMissingFromRepo.join(", "),
+      "Unexpected applied migrations are missing from this checkout: " +
+        unexpectedAppliedMissing.join(", "),
     );
   }
 
@@ -268,6 +309,10 @@ try {
     missingHistory.length,
   );
   console.log(
+    "[production-migrations] Known historical Prisma entries without local files:",
+    KNOWN_PRODUCTION_ONLY_MIGRATIONS.length,
+  );
+  console.log(
     "[production-migrations] 1LV target already applied:",
     targetAlreadyApplied,
   );
@@ -342,16 +387,38 @@ try {
          where table_schema = 'public'
            and table_name = 'source_synchronization_events'
            and column_name = 'payload'
-       ) as event_payload`,
+       ) as event_payload,
+       coalesce((
+         select c.relrowsecurity
+         from pg_class c
+         join pg_namespace n on n.oid = c.relnamespace
+         where n.nspname = 'public' and c.relname = 'master_merchants'
+       ), false) as master_merchants_rls,
+       coalesce((
+         select c.relrowsecurity
+         from pg_class c
+         join pg_namespace n on n.oid = c.relnamespace
+         where n.nspname = 'public' and c.relname = 'source_merchants'
+       ), false) as source_merchants_rls,
+       not has_table_privilege('anon', 'public.master_merchants', 'SELECT') as master_anon_denied,
+       not has_table_privilege('authenticated', 'public.master_merchants', 'SELECT') as master_authenticated_denied,
+       not has_table_privilege('anon', 'public.source_merchants', 'SELECT') as source_anon_denied,
+       not has_table_privilege('authenticated', 'public.source_merchants', 'SELECT') as source_authenticated_denied`,
   );
 
   const state = schemaCheck.rows[0];
   if (
     !state?.master_merchants ||
     !state?.source_merchant_link ||
-    !state?.event_payload
+    !state?.event_payload ||
+    !state?.master_merchants_rls ||
+    !state?.source_merchants_rls ||
+    !state?.master_anon_denied ||
+    !state?.master_authenticated_denied ||
+    !state?.source_anon_denied ||
+    !state?.source_authenticated_denied
   ) {
-    fail("Post-deploy 1LV master bridge schema verification failed.");
+    fail("Post-deploy 1LV master bridge schema/RLS verification failed.");
   }
 
   console.log(
