@@ -84,6 +84,26 @@ async function verifyUpgradedState(label: string) {
   `);
   assert.equal(payloadColumn.rowCount, 1);
 
+  const authUserColumn = await client.query(`
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'master_identities'
+      AND column_name = 'authUserId'
+      AND data_type = 'uuid'
+  `);
+  assert.equal(authUserColumn.rowCount, 1);
+
+  const authUserUnique = await client.query(`
+    SELECT 1
+    FROM pg_indexes
+    WHERE schemaname = 'public'
+      AND tablename = 'master_identities'
+      AND indexname = 'master_identities_authUserId_key'
+      AND indexdef ILIKE '%UNIQUE%'
+  `);
+  assert.equal(authUserUnique.rowCount, 1);
+
   const fk = await client.query(`
     SELECT 1
     FROM pg_constraint
