@@ -55,13 +55,29 @@ jobs:
         run: npm run db:generate
 
       - name: Validate production secret presence
+        id: production-secret
         shell: bash
         run: |
           set -euo pipefail
-          test -n "${TAKATAK_PRODUCTION_DATABASE_URL:-}" || {
+          if [ -n "${TAKATAK_PRODUCTION_DATABASE_URL:-}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "available=false" >> "$GITHUB_OUTPUT"
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
             echo "ERROR: TAKATAK_PRODUCTION_DATABASE_URL secret is missing."
             exit 1
-          }
+          fi
+
+          echo "::warning title=TAKATAK production audit skipped::TAKATAK_PRODUCTION_DATABASE_URL is not configured in GitHub Actions."
 
       - name: Audit or reconcile production
+        if: steps.production-secret.outputs.available == 'true'
         run: node scripts/reconcile-production-migrations.mjs
+
+      - name: Report unavailable automatic production audit
+        if: steps.production-secret.outputs.available != 'true' && github.event_name != 'workflow_dispatch'
+        run: |
+          echo "TAKATAK production migration audit was not executed because the production database URL secret is unavailable."
