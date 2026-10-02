@@ -12,6 +12,9 @@ const client = new Client({
 
 const COMPANY_ID = "11111111-1111-4111-8111-111111111111";
 const SOURCE_MERCHANT_ID = "22222222-2222-4222-8222-222222222222";
+const LEGACY_PROFILE_ID = "33333333-3333-4333-8333-333333333333";
+const LEGACY_AUTH_USER_ID = "44444444-4444-4444-8444-444444444444";
+const LEGACY_IDENTITY_ID = "55555555-5555-4555-8555-555555555555";
 
 
 async function main() {
@@ -64,6 +67,43 @@ async function main() {
       REVOKE ALL ON TABLE public.source_merchants FROM PUBLIC, anon, authenticated;
     `);
   
+    await client.query(
+      `
+        INSERT INTO public.profiles (
+          "id",
+          "authUserId",
+          "email",
+          "displayName",
+          "status",
+          "updatedAt"
+        )
+        VALUES (
+          $1,
+          $2,
+          'legacy-auth-fixture@example.ca',
+          'Legacy Auth Fixture',
+          'active'::"ProfileStatus",
+          now()
+        )
+        ON CONFLICT ("id") DO NOTHING
+      `,
+      [LEGACY_PROFILE_ID, LEGACY_AUTH_USER_ID],
+    );
+
+    await client.query(
+      `
+        INSERT INTO public.master_identities (
+          "id",
+          "profileId",
+          "accountStatus",
+          "updatedAt"
+        )
+        VALUES ($1, $2, 'active', now())
+        ON CONFLICT ("id") DO NOTHING
+      `,
+      [LEGACY_IDENTITY_ID, LEGACY_PROFILE_ID],
+    );
+
     await client.query(
       `
         INSERT INTO public.master_companies (
