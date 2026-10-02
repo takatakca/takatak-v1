@@ -145,8 +145,8 @@ async function ensureMasterIdentityForVerifiedProfile(
 
     const candidateIds = new Set(
       [authIdentity, emailIdentity, phoneIdentity]
-        .filter((identity): identity is NonNullable<typeof identity> => Boolean(identity))
-        .map((identity) => identity.id),
+        .map((identity) => identity?.id ?? null)
+        .filter((id): id is string => id !== null),
     );
 
     if (candidateIds.size > 1) {
