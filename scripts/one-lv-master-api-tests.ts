@@ -167,7 +167,7 @@ const verifyPhoneCall = otpVerifyRoute.indexOf(
   "verifyTakatakPhoneOtp(phone, code)",
 );
 const resolvePhoneCall = otpVerifyRoute.indexOf(
-  "resolveVerifiedPhoneIdentity(\n      phone,\n      verifiedUser.id,",
+  "resolveVerifiedPhoneIdentity(",
 );
 
 assert.ok(
@@ -175,6 +175,16 @@ assert.ok(
     resolvePhoneCall >= 0 &&
     verifyPhoneCall < resolvePhoneCall,
   "Supabase verification must happen before phone-only identity resolution.",
+);
+assert.match(
+  otpVerifyRoute,
+  /verifiedUserPhone !== phone \|\| !verifiedUser\.phone_confirmed_at/,
+  "OTP verification must prove the Supabase user has the exact confirmed phone.",
+);
+assert.match(
+  otpVerifyRoute,
+  /verifiedUser\.id/,
+  "Phone identity resolution must be bound to the verified Supabase Auth user.",
 );
 
 const identityResolver = readFileSync(
