@@ -13,12 +13,14 @@ export function verifyMasterApiRequest(
 ):
   | { valid: true }
   | { valid: false; status: 401 | 503; error: string } {
-  const expected = process.env.TAKATAK_MASTER_API_KEY?.trim() ?? "";
+  // This API surface is scoped to the 1LV integration. Never reuse one
+  // child-application credential as a global master key.
+  const expected = process.env.TAKATAK_1LV_API_KEY?.trim() ?? "";
   if (expected.length < 32) {
     return {
       valid: false,
       status: 503,
-      error: "TAKATAK master API is not configured.",
+      error: "TAKATAK 1LV integration API is not configured.",
     };
   }
 
