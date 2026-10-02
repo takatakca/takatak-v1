@@ -7,6 +7,10 @@ const { Client } = pg;
 
 const EXPECTED_PROJECT_REF = "pcjfahhlozsseqqevimi";
 const TARGET_MIGRATION = "20261001155500_1lv_master_bridge";
+const TARGET_SUPABASE_HISTORY_NAMES = new Set([
+  "1lv_master_bridge",
+  "takatak_1lv_master_bridge_20261001155500",
+]);
 
 const RECONCILE_MIGRATIONS = [
   "20260930164500_add_rentauto_vertical_enums",
@@ -216,6 +220,37 @@ try {
     supabaseRows.rows.map((row) => [String(row.name), row]),
   );
 
+  const targetMigrationPath = join(
+    migrationsRoot,
+    TARGET_MIGRATION,
+    "migration.sql",
+  );
+  if (!existsSync(targetMigrationPath)) {
+    fail("Target 1LV migration SQL file is missing.");
+  }
+
+  const targetRepoSql = readFileSync(targetMigrationPath, "utf8");
+  const targetHistoryRows = supabaseRows.rows.filter((row) =>
+    TARGET_SUPABASE_HISTORY_NAMES.has(String(row.name)),
+  );
+
+  for (const row of targetHistoryRows) {
+    const productionSql = Array.isArray(row.statements)
+      ? row.statements.join("\n")
+      : "";
+
+    if (canonicalSql(productionSql) !== canonicalSql(targetRepoSql)) {
+      fail(
+        "Target migration SQL in Supabase history does not match the repository: " +
+          String(row.name) +
+          "@" +
+          String(row.version),
+      );
+    }
+  }
+
+  const targetAppliedOutsidePrisma = targetHistoryRows.length > 0;
+
   const hotfix = supabaseByName.get(
     "rentauto_vehicle_authority_service_role_fix",
   );
@@ -315,8 +350,16 @@ try {
     KNOWN_PRODUCTION_ONLY_MIGRATIONS.length,
   );
   console.log(
-    "[production-migrations] 1LV target already applied:",
+    "[production-migrations] 1LV target already applied in Prisma:",
     targetAlreadyApplied,
+  );
+  console.log(
+    "[production-migrations] Matching 1LV target entries already applied via Supabase:",
+    targetHistoryRows.map((row) => String(row.version) + ":" + String(row.name)),
+  );
+  console.log(
+    "[production-migrations] Target was applied outside Prisma:",
+    targetAppliedOutsidePrisma,
   );
 
   if (mode === "audit") {
@@ -356,7 +399,7 @@ try {
     }
 
     console.log(
-      "[production-migrations] Target migration already applied; skipping Prisma deploy.",
+      "[production-migrations] Target migration already recorded in Prisma; no target SQL execution required.",
     );
   } else {
     if (
@@ -371,7 +414,36 @@ try {
       );
     }
 
-    runPrisma(["deploy"], databaseUrl);
+    if (targetAppliedOutsidePrisma) {
+      console.log(
+        "[production-migrations] Target SQL is already present in verified Supabase history; recording it in Prisma without replay.",
+      );
+      runPrisma(["resolve", "--applied", TARGET_MIGRATION], databaseUrl);
+    } else {
+      console.log(
+        "[production-migrations] Target SQL is not present in production history; applying with Prisma migrate deploy.",
+      );
+      runPrisma(["deploy"], databaseUrl);
+    }
+  }
+
+  const finalRows = await client.query(
+    `select migration_name
+       from public._prisma_migrations
+       where finished_at is not null and rolled_back_at is null`,
+  );
+  prismaApplied = new Set(
+    finalRows.rows.map((row) => String(row.migration_name)),
+  );
+
+  const finalPending = repoMigrations.filter(
+    (name) => !prismaApplied.has(name),
+  );
+  if (finalPending.length !== 0) {
+    fail(
+      "Production still has pending repository migrations after reconciliation: " +
+        finalPending.join(", "),
+    );
   }
 
   const post = await client.query(
@@ -463,7 +535,7 @@ try {
   }
 
   console.log(
-    "[production-migrations] APPLY PASS. Prisma history reconciled and 1LV master bridge deployed.",
+    "[production-migrations] APPLY PASS. Prisma history reconciled and 1LV master bridge verified.",
   );
 } finally {
   await client.end();
