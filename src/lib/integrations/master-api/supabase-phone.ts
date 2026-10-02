@@ -38,6 +38,7 @@ function splitName(fullName: string | null | undefined) {
 export async function sendTakatakPhoneOtp(
   phone: string,
   metadata: MasterPhoneMetadata,
+  intent: "login" | "signup",
 ): Promise<void> {
   const supabase = client();
   const name = splitName(metadata.fullName);
@@ -45,7 +46,7 @@ export async function sendTakatakPhoneOtp(
   const { error } = await supabase.auth.signInWithOtp({
     phone,
     options: {
-      shouldCreateUser: true,
+      shouldCreateUser: intent === "signup",
       data: {
         phone,
         full_name: metadata.fullName?.trim() || null,
