@@ -13,8 +13,68 @@
 ALTER TABLE public.master_identities
   ADD COLUMN IF NOT EXISTS "authUserId" uuid;
 
+-- Existing dashboard-linked identities inherit the immutable Supabase Auth
+-- UUID from their TAKATAK profile before the uniqueness constraint is created.
+UPDATE public.master_identities m
+SET "authUserId" = p."authUserId"
+FROM public.profiles p
+WHERE m."profileId" = p.id
+  AND m."authUserId" IS NULL;
+
 CREATE UNIQUE INDEX IF NOT EXISTS "master_identities_authUserId_key"
 ON public.master_identities("authUserId");
+
+CREATE OR REPLACE FUNCTION public.enforce_master_identity_auth_user_binding()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $function$
+DECLARE
+  v_profile_auth_user_id uuid;
+BEGIN
+  IF
+    TG_OP = 'UPDATE'
+    AND OLD."authUserId" IS NOT NULL
+    AND NEW."authUserId" IS DISTINCT FROM OLD."authUserId"
+  THEN
+    RAISE EXCEPTION 'master_identity_auth_user_immutable'
+      USING ERRCODE = '23514';
+  END IF;
+
+  IF NEW."profileId" IS NOT NULL THEN
+    SELECT p."authUserId"
+    INTO v_profile_auth_user_id
+    FROM public.profiles p
+    WHERE p.id = NEW."profileId";
+
+    IF v_profile_auth_user_id IS NULL THEN
+      RAISE EXCEPTION 'master_identity_profile_auth_user_missing'
+        USING ERRCODE = '23514';
+    END IF;
+
+    IF
+      NEW."authUserId" IS NOT NULL
+      AND NEW."authUserId" <> v_profile_auth_user_id
+    THEN
+      RAISE EXCEPTION 'master_identity_profile_auth_user_conflict'
+        USING ERRCODE = '23514';
+    END IF;
+
+    NEW."authUserId" := v_profile_auth_user_id;
+  END IF;
+
+  RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS master_identity_auth_user_binding
+ON public.master_identities;
+
+CREATE TRIGGER master_identity_auth_user_binding
+BEFORE INSERT OR UPDATE OF "profileId", "authUserId"
+ON public.master_identities
+FOR EACH ROW
+EXECUTE FUNCTION public.enforce_master_identity_auth_user_binding();
 
 ALTER TABLE "source_synchronization_events"
 ADD COLUMN IF NOT EXISTS "payload" JSONB;
