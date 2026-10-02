@@ -1,6 +1,14 @@
 name: Reconcile TAKATAK production migrations
 
 on:
+  push:
+    branches:
+      - integration/1lv-mastermind-bridge
+    paths:
+      - "prisma/migrations/**"
+      - "scripts/reconcile-production-migrations.mjs"
+      - ".github/workflows/reconcile-production-migrations.yml"
+
   workflow_dispatch:
     inputs:
       confirm_project_ref:
@@ -27,8 +35,8 @@ jobs:
     timeout-minutes: 25
     env:
       TAKATAK_PRODUCTION_DATABASE_URL: ${{ secrets.TAKATAK_PRODUCTION_DATABASE_URL }}
-      CONFIRM_PROJECT_REF: ${{ inputs.confirm_project_ref }}
-      RECONCILE_MODE: ${{ inputs.apply && 'apply' || 'audit' }}
+      CONFIRM_PROJECT_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_project_ref || 'pcjfahhlozsseqqevimi' }}
+      RECONCILE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.apply && 'apply' || 'audit' }}
 
     steps:
       - name: Checkout exact branch or commit
