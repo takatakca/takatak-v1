@@ -38,10 +38,28 @@ export async function POST(request: Request) {
     }
 
     const verifiedUser = await verifyTakatakPhoneOtp(phone, code);
+    const verifiedUserPhone =
+      typeof verifiedUser.phone === "string"
+        ? normalizePhone(verifiedUser.phone)
+        : null;
 
+    if (verifiedUserPhone !== phone || !verifiedUser.phone_confirmed_at) {
+      throw new MasterApiInputError(
+        "TAKATAK phone verification did not confirm this phone.",
+      );
+    }
+
+    const meta = verifiedUser.user_metadata ?? {};
     const identity = await resolveVerifiedPhoneIdentity(
       phone,
       verifiedUser.id,
+      {
+        firstName:
+          typeof meta["first_name"] === "string" ? meta["first_name"] : null,
+        lastName:
+          typeof meta["last_name"] === "string" ? meta["last_name"] : null,
+        locale: typeof meta["locale"] === "string" ? meta["locale"] : null,
+      },
     );
 
     const verifiedIdentity =
