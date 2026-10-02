@@ -6,7 +6,6 @@ import { getSupabaseEnv } from "@/lib/auth/env";
 import { MasterApiInputError, MasterApiUnavailableError } from "./errors";
 
 type MasterPhoneMetadata = {
-  email?: string | null;
   fullName?: string | null;
   preferredLanguage?: string | null;
 };
@@ -48,7 +47,6 @@ export async function sendTakatakPhoneOtp(
     options: {
       shouldCreateUser: true,
       data: {
-        ...(metadata.email ? { email: metadata.email } : {}),
         phone,
         full_name: metadata.fullName?.trim() || null,
         display_name: metadata.fullName?.trim() || null,
