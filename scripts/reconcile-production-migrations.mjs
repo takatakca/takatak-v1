@@ -345,19 +345,32 @@ try {
     (name) => !prismaApplied.has(name),
   );
 
-  if (
-    pendingAfterResolve.length !== 1 ||
-    pendingAfterResolve[0] !== TARGET_MIGRATION
-  ) {
-    fail(
-      "After reconciliation, the only pending migration must be " +
-        TARGET_MIGRATION +
-        "; found: " +
-        pendingAfterResolve.join(", "),
-    );
-  }
+  if (targetAlreadyApplied) {
+    if (pendingAfterResolve.length !== 0) {
+      fail(
+        "Target migration is already applied, but other repository migrations remain pending: " +
+          pendingAfterResolve.join(", "),
+      );
+    }
 
-  runPrisma(["deploy"], databaseUrl);
+    console.log(
+      "[production-migrations] Target migration already applied; skipping Prisma deploy.",
+    );
+  } else {
+    if (
+      pendingAfterResolve.length !== 1 ||
+      pendingAfterResolve[0] !== TARGET_MIGRATION
+    ) {
+      fail(
+        "After reconciliation, the only pending migration must be " +
+          TARGET_MIGRATION +
+          "; found: " +
+          pendingAfterResolve.join(", "),
+      );
+    }
+
+    runPrisma(["deploy"], databaseUrl);
+  }
 
   const post = await client.query(
     `select migration_name
