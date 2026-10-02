@@ -346,43 +346,111 @@ export async function resolveVerifiedPhoneIdentity(
   }): string | null =>
     identity.primaryEmailVerified ? identity.primaryEmail : null;
 
+  const resultFromIdentity = (
+    identity: {
+      id: string;
+      primaryPhone: string | null;
+      primaryEmail: string | null;
+      primaryEmailVerified: boolean;
+      firstName: string | null;
+      lastName: string | null;
+      locale: string | null;
+      profile?: {
+        email: string;
+        firstName: string | null;
+        lastName: string | null;
+        language: string;
+      } | null;
+    },
+  ): ResolvedMasterIdentity => ({
+    id: identity.id,
+    phone: identity.primaryPhone,
+    email: emailForResponse(identity),
+    firstName: identity.firstName ?? identity.profile?.firstName ?? null,
+    lastName: identity.lastName ?? identity.profile?.lastName ?? null,
+    locale: identity.locale ?? identity.profile?.language ?? null,
+    sourceProfileId: null,
+  });
+
+  const assertCompatible = (
+    identity: {
+      authUserId: string | null;
+      profile?: { authUserId: string } | null;
+    },
+  ) => {
+    if (identity.authUserId && identity.authUserId !== verifiedAuthUserId) {
+      throw new MasterApiConflictError(
+        "This verified phone is linked to another TAKATAK auth user.",
+      );
+    }
+    if (
+      identity.profile &&
+      identity.profile.authUserId !== verifiedAuthUserId
+    ) {
+      throw new MasterApiConflictError(
+        "This verified phone is linked to another TAKATAK auth user.",
+      );
+    }
+  };
+
   try {
     return await prisma.$transaction(async (tx) => {
-      const existing = await tx.masterIdentity.findUnique({
-        where: { primaryPhone: phone },
+      // Auth UUID is the durable identity binding. This allows a legitimately
+      // re-verified phone change without letting a recycled number take over an
+      // unrelated master identity.
+      const byAuthUser = await tx.masterIdentity.findUnique({
+        where: { authUserId: verifiedAuthUserId },
         include: { profile: true },
       });
 
-      if (existing) {
-        if (
-          existing.profile &&
-          existing.profile.authUserId !== verifiedAuthUserId
-        ) {
+      if (byAuthUser) {
+        assertCompatible(byAuthUser);
+
+        const phoneOwner = await tx.masterIdentity.findUnique({
+          where: { primaryPhone: phone },
+        });
+        if (phoneOwner && phoneOwner.id !== byAuthUser.id) {
           throw new MasterApiConflictError(
-            "This verified phone is linked to another TAKATAK auth user.",
+            "This verified phone belongs to another master identity.",
           );
         }
 
         const updated = await tx.masterIdentity.update({
-          where: { id: existing.id },
+          where: { id: byAuthUser.id },
           data: {
+            primaryPhone: phone,
             primaryPhoneVerified: true,
-            firstName: existing.firstName ?? firstName,
-            lastName: existing.lastName ?? lastName,
-            locale: existing.locale ?? locale,
+            firstName: byAuthUser.firstName ?? firstName,
+            lastName: byAuthUser.lastName ?? lastName,
+            locale: byAuthUser.locale ?? locale,
           },
           include: { profile: true },
         });
 
-        return {
-          id: updated.id,
-          phone: updated.primaryPhone,
-          email: emailForResponse(updated),
-          firstName: updated.firstName ?? updated.profile?.firstName ?? null,
-          lastName: updated.lastName ?? updated.profile?.lastName ?? null,
-          locale: updated.locale ?? updated.profile?.language ?? null,
-          sourceProfileId: null,
-        };
+        return resultFromIdentity(updated);
+      }
+
+      const byPhone = await tx.masterIdentity.findUnique({
+        where: { primaryPhone: phone },
+        include: { profile: true },
+      });
+
+      if (byPhone) {
+        assertCompatible(byPhone);
+
+        const updated = await tx.masterIdentity.update({
+          where: { id: byPhone.id },
+          data: {
+            authUserId: verifiedAuthUserId,
+            primaryPhoneVerified: true,
+            firstName: byPhone.firstName ?? firstName,
+            lastName: byPhone.lastName ?? lastName,
+            locale: byPhone.locale ?? locale,
+          },
+          include: { profile: true },
+        });
+
+        return resultFromIdentity(updated);
       }
 
       const profile = await tx.profile.findUnique({
@@ -397,41 +465,35 @@ export async function resolveVerifiedPhoneIdentity(
       }
 
       if (profile?.masterIdentity) {
-        if (
-          profile.masterIdentity.primaryPhone &&
-          profile.masterIdentity.primaryPhone !== phone
-        ) {
-          throw new MasterApiConflictError(
-            "This dashboard profile is linked to another verified phone.",
-          );
-        }
+        assertCompatible({
+          authUserId: profile.masterIdentity.authUserId,
+          profile,
+        });
 
         const updated = await tx.masterIdentity.update({
           where: { id: profile.masterIdentity.id },
           data: {
+            authUserId: verifiedAuthUserId,
             primaryPhone: phone,
             primaryPhoneVerified: true,
-            firstName: profile.masterIdentity.firstName ?? profile.firstName ?? firstName,
-            lastName: profile.masterIdentity.lastName ?? profile.lastName ?? lastName,
-            locale: profile.masterIdentity.locale ?? profile.language ?? locale,
+            firstName:
+              profile.masterIdentity.firstName ?? profile.firstName ?? firstName,
+            lastName:
+              profile.masterIdentity.lastName ?? profile.lastName ?? lastName,
+            locale:
+              profile.masterIdentity.locale ?? profile.language ?? locale,
           },
+          include: { profile: true },
         });
 
-        return {
-          id: updated.id,
-          phone,
-          email: emailForResponse(updated),
-          firstName: updated.firstName ?? profile.firstName,
-          lastName: updated.lastName ?? profile.lastName,
-          locale: updated.locale ?? profile.language,
-          sourceProfileId: null,
-        };
+        return resultFromIdentity(updated);
       }
 
       if (profile) {
         const created = await tx.masterIdentity.create({
           data: {
             profileId: profile.id,
+            authUserId: verifiedAuthUserId,
             firstName: profile.firstName ?? firstName,
             lastName: profile.lastName ?? lastName,
             primaryEmail: null,
@@ -442,21 +504,15 @@ export async function resolveVerifiedPhoneIdentity(
             accountStatus: profile.status,
             registeredAt: profile.createdAt,
           },
+          include: { profile: true },
         });
 
-        return {
-          id: created.id,
-          phone,
-          email: null,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          locale: profile.language,
-          sourceProfileId: null,
-        };
+        return resultFromIdentity(created);
       }
 
       const created = await tx.masterIdentity.create({
         data: {
+          authUserId: verifiedAuthUserId,
           primaryPhone: phone,
           primaryPhoneVerified: true,
           firstName,
@@ -464,41 +520,46 @@ export async function resolveVerifiedPhoneIdentity(
           locale,
           accountStatus: "active",
         },
+        include: { profile: true },
       });
 
-      return {
-        id: created.id,
-        phone,
-        email: null,
-        firstName: null,
-        lastName: null,
-        locale: null,
-        sourceProfileId: null,
-      };
+      return resultFromIdentity(created);
     });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      const existing = await prisma.masterIdentity.findUnique({
-        where: { primaryPhone: phone },
-        include: { profile: true },
-      });
+      const [byAuthUser, byPhone] = await Promise.all([
+        prisma.masterIdentity.findUnique({
+          where: { authUserId: verifiedAuthUserId },
+          include: { profile: true },
+        }),
+        prisma.masterIdentity.findUnique({
+          where: { primaryPhone: phone },
+          include: { profile: true },
+        }),
+      ]);
 
+      if (
+        byAuthUser &&
+        byPhone &&
+        byAuthUser.id !== byPhone.id
+      ) {
+        throw new MasterApiConflictError(
+          "Verified Auth user and phone resolve to different master identities.",
+        );
+      }
+
+      const existing = byAuthUser ?? byPhone;
       if (existing) {
-        if (
-          existing.profile &&
-          existing.profile.authUserId !== verifiedAuthUserId
-        ) {
-          throw new MasterApiConflictError(
-            "This verified phone is linked to another TAKATAK auth user.",
-          );
-        }
+        assertCompatible(existing);
 
         const updated = await prisma.masterIdentity.update({
           where: { id: existing.id },
           data: {
+            authUserId: verifiedAuthUserId,
+            primaryPhone: phone,
             primaryPhoneVerified: true,
             firstName: existing.firstName ?? firstName,
             lastName: existing.lastName ?? lastName,
@@ -507,15 +568,7 @@ export async function resolveVerifiedPhoneIdentity(
           include: { profile: true },
         });
 
-        return {
-          id: updated.id,
-          phone: updated.primaryPhone,
-          email: emailForResponse(updated),
-          firstName: updated.firstName ?? updated.profile?.firstName ?? null,
-          lastName: updated.lastName ?? updated.profile?.lastName ?? null,
-          locale: updated.locale ?? updated.profile?.language ?? null,
-          sourceProfileId: null,
-        };
+        return resultFromIdentity(updated);
       }
     }
 
