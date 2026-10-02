@@ -1,0 +1,58 @@
+[
+  {"brand_name":"Nutrition Shake","store_name":"Nutrition","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12606537"},
+  {"brand_name":"Nutrition Shake","store_name":"Nutrition Shake Saint Leonard","location_code":"SAINT_LEONARD","address_line_1":"5837 Rue Jean-Talon E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12606537"},
+  {"brand_name":"Nutrition Shake","store_name":"Nutrition Shake (NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12606537"},
+  {"brand_name":"Nutrition Shake","store_name":"Nutrition Shake (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12606537"},
+
+  {"brand_name":"OOeuf","store_name":"OOEUF Express NDG","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12748843"},
+  {"brand_name":"OOeuf","store_name":"OOEUF SUPREME","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12748843"},
+  {"brand_name":"OOeuf","store_name":"OOEUF (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12748843"},
+  {"brand_name":"OOeuf","store_name":"OOEUF (NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12748843"},
+
+  {"brand_name":"Po Poulet","store_name":"Po Poulet NDG","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12796649"},
+  {"brand_name":"Po Poulet","store_name":"Poulet Poulet (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12796649"},
+  {"brand_name":"Po Poulet","store_name":"Po Poulet (ST LEONARD)","location_code":"SAINT_LEONARD","address_line_1":"5837 Rue Jean-Talon E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12796649"},
+  {"brand_name":"Po Poulet","store_name":"Po Poulet Hochelaga","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12796649","needs_review":true,"review_note":"Name says Hochelaga but address is NDG MAIN."},
+
+  {"brand_name":"Pi Pita","store_name":"Pi Pita","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12798384"},
+  {"brand_name":"Pi Pita","store_name":"Pi Pita (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12798384"},
+  {"brand_name":"Pi Pita","store_name":"Pi Pita (Montréal NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12798384"},
+
+  {"brand_name":"OCRÊPE","store_name":"OCRÊPE","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12798510"},
+  {"brand_name":"OCRÊPE","store_name":"OCRÊPE (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12798510"},
+  {"brand_name":"OCRÊPE","store_name":"OCRÊPE (NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12798510"},
+
+  {"brand_name":"PPP Pizzeria","store_name":"PPP Pizzeria (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12820103"},
+  {"brand_name":"PPP Pizzeria","store_name":"PPP Pizzeria","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12820103"},
+  {"brand_name":"PPP Pizzeria","store_name":"PPP Pizzeria (NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12820103"},
+
+  {"brand_name":"Bin molle & Bin Dure","store_name":"Bin Molle & Bin Dure (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12844632"},
+  {"brand_name":"Bin molle & Bin Dure","store_name":"Bin molle & Bin Dure NDG","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12844632"},
+
+  {"brand_name":"Gateau Montreal","store_name":"Gateau Montréal (NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12847317"},
+  {"brand_name":"Gateau Montreal","store_name":"Gâteau Montréal (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12847317"},
+  {"brand_name":"Gateau Montreal","store_name":"Gateau Montreal","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12847317"},
+
+  {"brand_name":"Pizza Inntime","store_name":"Pizza INNTIME Montréal","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12885507"},
+  {"brand_name":"Pizza Inntime","store_name":"Pizza INNTIME","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"12885507"},
+  {"brand_name":"Pizza Inntime","store_name":"PIZZA INNTIME (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"12885507"},
+
+  {"brand_name":"Place Afrique","store_name":"PLACE AFRIQUE NDG","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13838349"},
+  {"brand_name":"Place Afrique","store_name":"Place D'Afrique HOCHELAGA","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13838349"},
+  {"brand_name":"Place Afrique","store_name":"PlaceAfrique(NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13838349"},
+
+  {"brand_name":"Mythos 2 Go","store_name":"Mythos 2 Go NDG","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13837955"},
+  {"brand_name":"Mythos 2 Go","store_name":"Mythos 2 Go HOCHELAGA","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13837955"},
+  {"brand_name":"Mythos 2 Go","store_name":"Mythos 2 Go(NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13837955"},
+
+  {"brand_name":"Cafe Bolon","store_name":"Cafe Bolon NDG","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13080151"},
+  {"brand_name":"Cafe Bolon","store_name":"Cafe Bolon(NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13080151"},
+  {"brand_name":"Cafe Bolon","store_name":"Cafe Bolon (HOCHELAGA)","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13080151"},
+
+  {"brand_name":"Taco Mexican","store_name":"Taco Mexican (NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"13080099"},
+  {"brand_name":"Taco Mexican","store_name":"Taco Mexican HOCHELAGA","location_code":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"13080099"},
+  {"brand_name":"Taco Mexican","store_name":"Taco Mexican NDG","location_code":"NDG_6284","address_line_1":"6284 Av Somerled","activation_status":"active","open_status":"closed","status_symbol":"Z","external_business_id":"13080099"},
+
+  {"brand_name":"Crèmerie Bin Molle Bin Dure","store_name":"Crèmerie Bin Molle Bin Dure ST LÉONARD","location_code":"SAINT_LEONARD","address_line_1":"5837 Rue Jean-Talon E","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"14353843"},
+  {"brand_name":"Crèmerie Bin Molle Bin Dure","store_name":"Crèmerie Bin Molle Bin Dure (NOTRE-DAME-DE-GRÂCE)","location_code":"NDG_MAIN","address_line_1":"6280 Av Somerled","activation_status":"deactivated","open_status":"unknown","status_symbol":"grey_circle","external_business_id":"14353843"}
+]

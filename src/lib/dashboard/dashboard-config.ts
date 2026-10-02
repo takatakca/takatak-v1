@@ -10,6 +10,8 @@ import {
   Building2,
   CalendarClock,
   CarFront,
+  ChefHat,
+  ClipboardList,
   CircleCheck,
   Database,
   FileBarChart2,
@@ -44,6 +46,7 @@ import {
   UserPlus,
   UserRound,
   Users,
+  UtensilsCrossed,
   Wallet,
 } from "lucide-react";
 
@@ -101,6 +104,22 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Services",
     items: [
+      {
+        label: "Food Hub",
+        href: "/dashboard/food-hub",
+        icon: UtensilsCrossed,
+        hasDropdown: true,
+        children: [
+          { label: "Command Center", href: "/dashboard/food-hub", icon: LayoutDashboard },
+          { label: "Order Board", href: "/dashboard/food-hub/board", icon: ChefHat },
+          { label: "Orders", href: "/dashboard/food-hub/orders", icon: ClipboardList },
+          { label: "Menus", href: "/dashboard/food-hub/menu", icon: FileText },
+          { label: "Stores", href: "/dashboard/food-hub/stores", icon: MapPin },
+          { label: "Payouts & Money", href: "/dashboard/food-hub/finance", icon: Receipt },
+          { label: "Reports", href: "/dashboard/food-hub/reports", icon: FileBarChart2 },
+          { label: "Channels & Setup", href: "/dashboard/food-hub/channels", icon: PlugZap },
+        ],
+      },
       {
         label: "Rentauto",
         href: "/dashboard/rentauto",

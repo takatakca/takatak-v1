@@ -74,13 +74,16 @@
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
     "qa:1lv-master-api": "tsx --require ./scripts/register-server-only.cjs scripts/one-lv-master-api-tests.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",
-    "qa:1lv-legacy-upgrade": "tsx scripts/ci-check-one-lv-legacy-upgrade.ts"
+    "qa:1lv-legacy-upgrade": "tsx scripts/ci-check-one-lv-legacy-upgrade.ts",
+    "qa:food-hub": "tsx --require ./scripts/register-server-only.cjs scripts/food-hub-tests.ts",
+    "food-hub:setup": "node scripts/food-hub-setup.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "6.19.3",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
+    "fflate": "^0.8.3",
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
     "pg": "^8.23.0",
