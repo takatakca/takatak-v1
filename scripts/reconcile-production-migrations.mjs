@@ -419,6 +419,13 @@ try {
            and indexname = 'master_identities_authUserId_key'
            and indexdef ilike '%UNIQUE%'
        ) as master_auth_user_unique,
+       exists (
+         select 1
+         from pg_trigger
+         where tgname = 'master_identity_auth_user_binding'
+           and tgrelid = 'public.master_identities'::regclass
+           and not tgisinternal
+       ) as master_auth_user_trigger,
        coalesce((
          select c.relrowsecurity
          from pg_class c
@@ -444,6 +451,7 @@ try {
     !state?.event_payload ||
     !state?.master_auth_user_link ||
     !state?.master_auth_user_unique ||
+    !state?.master_auth_user_trigger ||
     !state?.master_merchants_rls ||
     !state?.source_merchants_rls ||
     !state?.master_anon_denied ||
