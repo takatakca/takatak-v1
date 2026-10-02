@@ -7,7 +7,7 @@ import { MasterApiInputError } from "../src/lib/integrations/master-api/errors";
 import { verifyMasterApiRequest } from "../src/lib/integrations/master-api/auth";
 
 const key = "abcdefghijklmnopqrstuvwxyz0123456789ABCD";
-process.env.TAKATAK_MASTER_API_KEY = key;
+process.env.TAKATAK_1LV_API_KEY = key;
 
 assert.equal(
   verifyMasterApiRequest(
