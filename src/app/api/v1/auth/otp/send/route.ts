@@ -30,15 +30,25 @@ export async function POST(request: Request) {
       typeof body["preferred_language"] === "string"
         ? body["preferred_language"].trim().slice(0, 16)
         : null;
+    const rawIntent =
+      typeof body["intent"] === "string" ? body["intent"].trim() : "login";
+    if (rawIntent !== "login" && rawIntent !== "signup") {
+      throw new MasterApiInputError("Invalid authentication intent.");
+    }
+    const intent: "login" | "signup" = rawIntent;
 
     if (!phone) {
       throw new MasterApiInputError("Valid phone number required.");
     }
 
-    await sendTakatakPhoneOtp(phone, {
-      fullName,
-      preferredLanguage,
-    });
+    await sendTakatakPhoneOtp(
+      phone,
+      {
+        fullName,
+        preferredLanguage,
+      },
+      intent,
+    );
 
     return NextResponse.json(
       {
