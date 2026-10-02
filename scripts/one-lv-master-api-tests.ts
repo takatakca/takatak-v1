@@ -119,8 +119,8 @@ assert.match(
 );
 assert.match(
   otpVerifyRoute,
-  /resolveVerifiedPhoneIdentity\(phone\)/,
-  "Verified 1LV phone must resolve the TAKATAK master identity from the verified phone.",
+  /resolveVerifiedPhoneIdentity\(\s*phone,\s*verifiedUser\.id,/,
+  "Verified 1LV phone must resolve the TAKATAK master identity from the exact verified Auth user.",
 );
 assert.equal(
   /ensureProfileForSupabaseUser|user\.user_metadata\?\.email/.test(
