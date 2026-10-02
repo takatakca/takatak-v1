@@ -203,8 +203,18 @@ const identityResolver = readFileSync(
 );
 assert.match(
   identityResolver,
-  /existing\.profile\.authUserId !== verifiedAuthUserId/,
+  /where: \{ authUserId: verifiedAuthUserId \}/,
+  "Verified phone resolution must look up the durable Supabase Auth UUID first.",
+);
+assert.match(
+  identityResolver,
+  /identity\.authUserId && identity\.authUserId !== verifiedAuthUserId/,
   "A verified phone must not take over a master identity bound to another Supabase Auth user.",
+);
+assert.match(
+  identityResolver,
+  /authUserId: verifiedAuthUserId/,
+  "The verified Supabase Auth UUID must be persisted on the master identity.",
 );
 assert.match(
   identityResolver,
@@ -255,6 +265,24 @@ assert.equal(
   /process\.env\.TAKATAK_MASTER_API_KEY/.test(masterApiAuth),
   false,
   "TAKATAK must not expose a single global child-application API credential.",
+);
+
+const bridgeMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "prisma/migrations/20261001155500_1lv_master_bridge/migration.sql",
+  ),
+  "utf8",
+);
+assert.match(
+  bridgeMigration,
+  /ADD COLUMN IF NOT EXISTS "authUserId" uuid/,
+  "The production bridge migration must persist the verified Supabase Auth UUID.",
+);
+assert.match(
+  bridgeMigration,
+  /master_identities_authUserId_key/,
+  "The master Auth UUID binding must be unique.",
 );
 
 const merchantResolver = readFileSync(
