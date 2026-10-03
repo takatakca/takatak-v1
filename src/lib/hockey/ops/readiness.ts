@@ -3,7 +3,8 @@ export type AhmvCapability =
   | "supporter_credit"
   | "event_sync"
   | "sms_delivery"
-  | "google_calendar";
+  | "google_calendar"
+  | "smart_departure";
 
 export type AhmvReadinessCheck = {
   capability: AhmvCapability;
@@ -219,7 +220,51 @@ export function collectAhmvBackendReadiness(
     ],
   );
 
-  const checks = [stripe, supporter, eventSync, sms, google];
+  const smartDeparture = checkCapability(
+    "smart_departure",
+    enabled(env, "HOCKEY_SMART_DEPARTURE_ENABLED"),
+    [
+      {
+        name: "GOOGLE_MAPS_ROUTES_API_KEY",
+        present: Boolean(value(env, "GOOGLE_MAPS_ROUTES_API_KEY")),
+      },
+      {
+        name: "HOCKEY_TRAVEL_ENCRYPTION_KEY_V1",
+        present: Boolean(value(env, "HOCKEY_TRAVEL_ENCRYPTION_KEY_V1")),
+        valid: encryptionKeyOk(value(env, "HOCKEY_TRAVEL_ENCRYPTION_KEY_V1")),
+      },
+      {
+        name: "HOCKEY_DELIVERY_WORKER_ENABLED",
+        present: enabled(env, "HOCKEY_DELIVERY_WORKER_ENABLED"),
+      },
+      {
+        name: "HOCKEY_DELIVERY_WORKER_SECRET",
+        present: Boolean(value(env, "HOCKEY_DELIVERY_WORKER_SECRET")),
+        valid: secretLengthOk(env, "HOCKEY_DELIVERY_WORKER_SECRET"),
+      },
+      {
+        name: "HOCKEY_SMS_ENABLED",
+        present: enabled(env, "HOCKEY_SMS_ENABLED"),
+      },
+      {
+        name: "TWILIO_ACCOUNT_SID",
+        present: Boolean(value(env, "TWILIO_ACCOUNT_SID")),
+      },
+      {
+        name: "TWILIO_AUTH_TOKEN",
+        present: Boolean(value(env, "TWILIO_AUTH_TOKEN")),
+      },
+      {
+        name: "TWILIO_MESSAGING_SERVICE_SID_OR_SMS_FROM",
+        present: Boolean(
+          value(env, "TWILIO_MESSAGING_SERVICE_SID") ||
+            value(env, "TWILIO_SMS_FROM"),
+        ),
+      },
+    ],
+  );
+
+  const checks = [stripe, supporter, eventSync, sms, google, smartDeparture];
   const ready = checks.every((item) => item.ready);
 
   const productionSafe =
