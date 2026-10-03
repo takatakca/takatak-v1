@@ -15,7 +15,7 @@ import {
 } from "@/lib/security/api-response";
 import { requirePlatformAdminApiAccess } from "@/lib/security/platform-admin-api";
 import { readJsonBody } from "@/lib/security/write-request";
-import { isUuid } from "@/lib/validation/common";
+import { isRecord, isUuid } from "@/lib/validation/common";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -66,6 +66,16 @@ export async function PUT(
         message: bodyResult.message,
       },
       bodyResult.status,
+    );
+  }
+
+  if (!isRecord(bodyResult.body)) {
+    return jsonResponse(
+      {
+        ok: false,
+        message: "The request body must be a JSON object.",
+      },
+      400,
     );
   }
 
