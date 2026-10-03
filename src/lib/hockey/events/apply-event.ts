@@ -17,6 +17,16 @@ type DeliveryKind =
   | "sms_event_change"
   | "departure_alert";
 
+export class HockeyUnknownPublicTeamError extends Error {
+  readonly teamId: string;
+
+  constructor(teamId: string) {
+    super("The exact public AHMV team ID is not active in the verified team directory.");
+    this.name = "HockeyUnknownPublicTeamError";
+    this.teamId = teamId;
+  }
+}
+
 export async function applyAhmvTeamEvent(
   envelope: AhmvTeamEventEnvelope,
   now = new Date(),
@@ -28,6 +38,22 @@ export async function applyAhmvTeamEvent(
 
   const incoming = envelope.event;
   const payloadHash = hockeyEventPayloadHash(incoming);
+
+  const publicTeam = await prisma.hockeyPublicTeam.findUnique({
+    where: {
+      sourceApplication_teamId: {
+        sourceApplication: HOCKEY_SOURCE_APPLICATION,
+        teamId: incoming.teamId,
+      },
+    },
+    select: {
+      active: true,
+    },
+  });
+
+  if (!publicTeam?.active) {
+    throw new HockeyUnknownPublicTeamError(incoming.teamId);
+  }
 
   const existing = await prisma.hockeyTeamEvent.findUnique({
     where: {

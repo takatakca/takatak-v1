@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { applyAhmvTeamEvent } from "@/lib/hockey/events/apply-event";
+import { applyAhmvTeamEvent, HockeyUnknownPublicTeamError } from "@/lib/hockey/events/apply-event";
 import { parseAhmvTeamEventEnvelope } from "@/lib/hockey/events/parser";
 import { verifyAhmvTeamEventRequest } from "@/lib/hockey/events/signature";
 import { validateAhmvEventSourceUrl } from "@/lib/hockey/events/source-policy";
@@ -67,6 +67,19 @@ export async function POST(request: Request) {
     const result = await applyAhmvTeamEvent(parsed.envelope);
     return NextResponse.json({ accepted: true, ...result }, { status: 200 });
   } catch (error) {
+    if (error instanceof HockeyUnknownPublicTeamError) {
+      return NextResponse.json(
+        {
+          accepted: false,
+          code: "unknown_team",
+          error:
+            "The exact public team ID is not active in the verified AHMV team directory.",
+          retryable: true,
+        },
+        { status: 409, headers: { "Retry-After": "30" } },
+      );
+    }
+
     console.error(
       "[ahmv-team-events] Apply failed:",
       error instanceof Error ? error.message : "unknown_error",
