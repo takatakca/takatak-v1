@@ -70,7 +70,7 @@
     "qa:social-billing-banner": "tsx scripts/verify-social-billing-banner.ts",
     "qa:social-stripe-webhook": "tsx scripts/verify-social-stripe-webhook.ts",
     "qa:social-stripe-addons": "tsx scripts/verify-social-stripe-addons.ts",
-    "qa:hockey-membership": "tsx scripts/verify-hockey-membership.ts",
+    "qa:hockey-membership": "tsx scripts/verify-hockey-membership.ts && tsx scripts/verify-hockey-parent-preferences.ts",
     "qa:rentauto-sync": "tsx --require ./scripts/register-server-only.cjs scripts/rentauto-sync-tests.ts",
     "qa:rentauto-service-access": "tsx scripts/rentauto-service-entitlement-tests.ts",
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
