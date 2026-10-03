@@ -113,11 +113,13 @@ Every served ad receives a short-lived HMAC-signed token when `ADS_EVENT_SIGNING
 - one-time serve nonce
 - expiry
 
+The serve response also exposes the same nonce as an opaque attribution id and supplies a TAKATAK signed click redirect. The redirect records the click server-side before sending the visitor to the advertiser. It appends only `ttclid=<opaque-id>` to the advertiser destination.
+
 The database deduplicates each event type for a serve nonce.
 
 No raw IP address, email address, phone number, or browser fingerprint is stored in `AdEvent`.
 
-FLEXS will later write lead/call/form/conversion attribution server-to-server; those conversion types are not accepted from public browsers.
+FLEXS attribution is implemented server-to-server at `POST /api/integrations/ads/flexs/events`. It requires `ADS_FLEXS_SERVICE_TOKEN`, accepts only opaque event/reference identifiers, and maps verified `lead`, `call`, `form_submit` and `conversion` events back to a previously recorded TAKATAK click through `ttclid`. Those conversion types are never accepted from public browsers.
 
 ## Required environment
 
@@ -125,9 +127,10 @@ Generate a strong secret of at least 32 characters and configure:
 
 ```bash
 ADS_EVENT_SIGNING_SECRET=...
+ADS_FLEXS_SERVICE_TOKEN=...
 ```
 
-If it is absent or too short, ads can still be selected but tracking tokens are not issued and the public event endpoint cannot validate events.
+Both are server-only values and must be at least 32 characters. If the signing secret is absent or too short, ads can still be selected but signed click tracking is disabled. If the FLEXS token is absent or too short, FLEXS attribution returns a service-unavailable response.
 
 ## Data model
 
@@ -171,9 +174,13 @@ Use this prompt when implementing the QMAPS adapter:
 
 > Build the QMAPS -> TAKATAK ADS targeting adapter. QMAPS is enrichment input, never the authority for authentication or billing. Resolve business category, municipality, region, postal prefix and service radius into normalized AdsTargetingRules. Never copy private contact details into ad targeting. Cache only non-sensitive targeting facts. Fail closed when a requested geographic rule cannot be normalized. Add deterministic QA for Quebec/Canada city, region, postal-prefix and radius edge cases.
 
-## FLEXS integration prompt
+## FLEXS integration status
 
-> Build FLEXS -> TAKATAK ADS server-to-server attribution. Accept only authenticated integration events. Map lead, call, form and verified conversion outcomes to campaignId, creativeId and placementId using a TAKATAK attribution identifier. Never trust browser-submitted conversion values. Make ingestion idempotent, preserve tenant isolation, do not delete historical attribution when a subscription is canceled, and calculate CPL/CPA only from verified events.
+The first FLEXS -> TAKATAK ADS attribution contract is now implemented. The remaining FLEXS work is to call the integration endpoint from the FLEXS runtime whenever an opaque `ttclid` becomes a verified lead, call, form submission or conversion. Browser-submitted conversion values remain untrusted, and CPL/CPA billing stays disabled until verified billing rules and reconciliation are completed.
+
+Reference implementation prompt for the FLEXS-side caller:
+
+> Read the opaque `ttclid` carried into FLEXS from a TAKATAK ADS destination. On a verified lead, call, form submission or conversion, POST only attributionId, an idempotent externalEventId, eventType, optional opaque sourceReference, optional non-negative valueCents/currency and occurredAt to the authenticated TAKATAK ADS FLEXS integration. Never send email, phone, customer name, street address or raw form contents in the attribution payload. Retry safely with the same externalEventId.
 
 ## Local Lab creative prompt
 
@@ -189,7 +196,7 @@ Use this prompt when implementing the QMAPS adapter:
 2. Seed/register AHMV as the first publisher and define real placements.
 3. Publisher SDK.
 4. QMAPS enrichment adapter.
-5. FLEXS attribution adapter.
+5. Connect the FLEXS runtime caller to the implemented attribution endpoint.
 6. Local Lab creative workflow.
 7. Stripe/central Product Catalog checkout for ADS plans.
 8. CPM aggregation, verified CPL billing, fraud signals and frequency caps.
