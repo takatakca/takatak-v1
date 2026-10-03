@@ -134,7 +134,7 @@ export function sourceCustomerReference(
   return null;
 }
 
-function sourceMerchantReference(
+export function sourceMerchantReference(
   payload: Record<string, unknown>,
 ): string | null {
   const value = payload["vendor_local_reference"];
@@ -167,7 +167,11 @@ function relationshipOrderCount(
 ): number | null {
   const value = payload["order_count"];
   if (value === null || value === undefined) return null;
-  if (!Number.isSafeInteger(value) || Number(value) < 0) {
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    value < 0
+  ) {
     throw new MasterApiInputError(
       "order_count must be a non-negative integer.",
     );
