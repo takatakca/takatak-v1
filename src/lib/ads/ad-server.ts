@@ -14,7 +14,7 @@ import {
   matchesAdsTargeting,
   parseAdsTargetingRules,
 } from "./targeting";
-import { createAdsTrackingToken } from "./tracking-token";
+import { createAdsTrackingGrant } from "./tracking-token";
 import type {
   AdsFeature,
   AdsTargetingContext,
@@ -81,6 +81,22 @@ function isSafeDestinationUrl(value: string): boolean {
     return false;
   }
 }
+
+function withAttributionId(
+  destinationUrl: string,
+  attributionId: string | null,
+): string {
+  if (!attributionId) return destinationUrl;
+
+  try {
+    const url = new URL(destinationUrl);
+    url.searchParams.set("ttclid", attributionId);
+    return url.toString();
+  } catch {
+    return destinationUrl;
+  }
+}
+
 
 function candidateScore(candidate: Candidate): number {
   const scopeScore =
@@ -304,11 +320,12 @@ export async function serveAds(
   const creative = campaign?.creatives[0];
   if (!campaign || !creative) return null;
 
-  const trackingToken = createAdsTrackingToken({
+  const trackingGrant = createAdsTrackingGrant({
     campaignId: campaign.id,
     creativeId: creative.id,
     placementId: placement.id,
   });
+  const attributionId = trackingGrant?.attributionId ?? null;
 
   const locale = (context.locale ?? "").toLowerCase();
   return {
@@ -318,11 +335,15 @@ export async function serveAds(
     headline: creative.headline,
     body: creative.body,
     callToAction: creative.callToAction,
-    destinationUrl: creative.destinationUrl,
+    destinationUrl: withAttributionId(
+      creative.destinationUrl,
+      attributionId,
+    ),
     imageUrl: creative.imageUrl,
     label: locale.startsWith("fr") ? "Publicité" : "Advertisement",
-    trackingToken,
-    trackingEnabled: Boolean(trackingToken),
+    trackingToken: trackingGrant?.token ?? null,
+    attributionId,
+    trackingEnabled: Boolean(trackingGrant),
   };
 }
 
