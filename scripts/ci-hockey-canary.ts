@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { disconnectPrisma, getPrisma } from "../src/lib/db/prisma";
 import { getHockeyMembershipSnapshot } from "../src/lib/billing/hockey/membership-service";
 import { saveHockeyParentTeamPreference } from "../src/lib/billing/hockey/parent-preference-service";
-import { applyAhmvTeamEvent } from "../src/lib/hockey/events/apply-event";
+import { applyAhmvTeamEvent, HockeyUnknownPublicTeamError } from "../src/lib/hockey/events/apply-event";
 import type { AhmvTeamEventEnvelope } from "../src/lib/hockey/events/types";
 import {
   addHockeyFamilyChild,
@@ -156,6 +156,25 @@ async function main() {
       sourceUpdatedAt: now,
     },
   };
+
+  let unknownTeamRejected = false;
+  try {
+    await applyAhmvTeamEvent(
+      {
+        ...exactEnvelope,
+        eventId: "ci-envelope-unknown-team",
+        event: {
+          ...exactEnvelope.event,
+          sourceEventId: "ci-ahmv-event-unknown-team",
+          teamId: "ci-ahmv-team-unknown",
+        },
+      },
+      now,
+    );
+  } catch (error) {
+    unknownTeamRejected = error instanceof HockeyUnknownPublicTeamError;
+  }
+  assert.equal(unknownTeamRejected, true);
 
   const first = await applyAhmvTeamEvent(exactEnvelope, now);
   assert.equal(first.applied, true);
