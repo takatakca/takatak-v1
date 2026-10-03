@@ -170,7 +170,10 @@ Before frontend integration:
 12. verify smart-departure coordinates remain encrypted and route/location history is not persisted;
 13. verify a second guardian cannot see a family before accepting a valid invitation;
 14. verify the accepted guardian can see the shared family afterward;
-15. verify the same guardian invitation cannot be replayed.
+15. verify the same guardian invitation cannot be replayed;
+16. verify a child can be assigned a driver only when that child is assigned to the event's exact public team;
+17. verify the selected driver is an authenticated guardian in the same family;
+18. verify shared driving responsibility stores no route history or precise pickup/dropoff coordinates.
 
 ## Gate 9 — developer integration handoff
 

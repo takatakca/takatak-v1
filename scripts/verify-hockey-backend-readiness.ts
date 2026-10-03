@@ -81,7 +81,7 @@ const complete = collectAhmvBackendReadiness({
   AHMV_EVENT_SYNC_WEBHOOK_SECRET: "e".repeat(40),
   AHMV_EVENT_REQUIRE_SOURCE_URL: "true",
   AHMV_EVENT_ALLOWED_SOURCE_HOSTS:
-    "ahmverdun.com,scoresheets.ca,page.spordle.com,www.wllv.org",
+    "ahmverdun.ca,scoresheets.ca,page.spordle.com,www.wllv.org",
 
   HOCKEY_SMS_ENABLED: "true",
   HOCKEY_DELIVERY_WORKER_ENABLED: "true",
