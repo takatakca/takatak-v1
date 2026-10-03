@@ -17,6 +17,7 @@ if (good.success) {
   assert.deepEqual(enabledPreferenceFeatures(good.data).sort(), [
     "calendar_sync",
     "game_reminders",
+    "smart_departure",
   ]);
 }
 
