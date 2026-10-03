@@ -619,6 +619,7 @@ model BusinessBrand {
   socialProviderConnections SocialProviderConnection[]
   socialOAuthStates         SocialOAuthState[]
   socialBrandAssignments    SocialBrandAccountAssignment[]
+  adCampaigns               AdCampaign[]
 
   @@unique([id, clientId])
   @@index([clientId])
