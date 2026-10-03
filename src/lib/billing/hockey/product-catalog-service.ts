@@ -79,3 +79,41 @@ export function hasAhmvEntitlement(
 ): boolean {
   return entitlements.includes(entitlement);
 }
+
+
+export async function getAhmvStripePriceMap(): Promise<
+  Record<string, { planCode: string; planName: string }>
+> {
+  const prisma = getPrisma();
+  if (!prisma) return {};
+
+  const now = new Date();
+  const prices = await prisma.productPrice.findMany({
+    where: {
+      provider: "stripe",
+      active: true,
+      providerPriceId: { not: null },
+      startsAt: { lte: now },
+      OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+      plan: {
+        status: "active",
+        product: { code: AHMV_PRODUCT_CODE, status: "active" },
+      },
+    },
+    select: {
+      providerPriceId: true,
+      plan: { select: { code: true, name: true } },
+    },
+  });
+
+  const result: Record<string, { planCode: string; planName: string }> = {};
+  for (const price of prices) {
+    if (price.providerPriceId) {
+      result[price.providerPriceId] = {
+        planCode: price.plan.code,
+        planName: price.plan.name,
+      };
+    }
+  }
+  return result;
+}
