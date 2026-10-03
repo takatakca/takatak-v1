@@ -11,6 +11,7 @@ export type OneLvMasterAdminData = {
   verifiedPhone: number;
   masterMerchants: number;
   sourceMerchants: number;
+  customerMerchantRelationships: number;
   processedEvents: number;
   failedEvents: number;
   lastSynchronizedAt: string | null;
@@ -40,6 +41,7 @@ const EMPTY: OneLvMasterAdminData = {
   verifiedPhone: 0,
   masterMerchants: 0,
   sourceMerchants: 0,
+  customerMerchantRelationships: 0,
   processedEvents: 0,
   failedEvents: 0,
   lastSynchronizedAt: null,
@@ -58,6 +60,7 @@ export async function getOneLvMasterAdminData(): Promise<OneLvMasterAdminData> {
       verifiedEmail,
       verifiedPhone,
       sourceMerchants,
+      customerMerchantRelationships,
       processedEvents,
       failedEvents,
       latestProfile,
@@ -95,6 +98,9 @@ export async function getOneLvMasterAdminData(): Promise<OneLvMasterAdminData> {
         },
       }),
       prisma.sourceMerchant.count({
+        where: { sourceApplication: "1lv" },
+      }),
+      prisma.marketplaceRelationship.count({
         where: { sourceApplication: "1lv" },
       }),
       prisma.sourceSynchronizationEvent.count({
@@ -178,6 +184,7 @@ export async function getOneLvMasterAdminData(): Promise<OneLvMasterAdminData> {
       verifiedPhone,
       masterMerchants,
       sourceMerchants,
+      customerMerchantRelationships,
       processedEvents,
       failedEvents,
       lastSynchronizedAt,
