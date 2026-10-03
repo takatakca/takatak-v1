@@ -4,8 +4,14 @@ const PUBLISHER_CODE = "ahmv";
 
 const PLACEMENTS = [
   {
-    code: "home-hero-01",
-    name: "AHMV Home — Primary sponsor",
+    code: "site-inline-01",
+    name: "AHMV Site — General inline",
+    pagePattern: "/*",
+    format: "responsive-display",
+  },
+  {
+    code: "home-main-01",
+    name: "AHMV Home — Main sponsor",
     pagePattern: "/",
     format: "responsive-display",
   },
@@ -51,9 +57,12 @@ async function main(): Promise<void> {
       category: "hockey",
       country: "Canada",
       region: "Quebec",
+      city: "Verdun",
       allowedOrigins: [
         "https://ahmverdun.com",
         "https://www.ahmverdun.com",
+        "https://ahmverdun.ca",
+        "https://www.ahmverdun.ca",
       ],
       status: "active",
     },
@@ -64,9 +73,12 @@ async function main(): Promise<void> {
       category: "hockey",
       country: "Canada",
       region: "Quebec",
+      city: "Verdun",
       allowedOrigins: [
         "https://ahmverdun.com",
         "https://www.ahmverdun.com",
+        "https://ahmverdun.ca",
+        "https://www.ahmverdun.ca",
       ],
       status: "active",
     },
