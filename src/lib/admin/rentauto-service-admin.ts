@@ -82,6 +82,17 @@ export async function setRentautoServiceStatus(params: {
   }
 
   return prisma.$transaction(async (transaction) => {
+    /*
+     * ServiceInstance has a nullable businessBrandId, so the existing compound
+     * unique key alone cannot prevent two client-level NULL rows under a race.
+     * Serialize Rentauto provisioning per workspace inside PostgreSQL.
+     */
+    await transaction.$queryRaw`
+      SELECT pg_advisory_xact_lock(
+        hashtext(${`rentauto-service:${params.clientId}`})
+      )
+    `;
+
     const client = await transaction.client.findUnique({
       where: {
         id: params.clientId,
