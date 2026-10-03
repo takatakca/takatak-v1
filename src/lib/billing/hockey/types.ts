@@ -10,6 +10,7 @@ export const HOCKEY_MEMBERSHIP_FEATURES = [
   "ad_free",
   "ai_assistant",
   "game_reminders",
+  "smart_departure",
   "calendar_sync",
   "team_community",
   "parent_messaging",
