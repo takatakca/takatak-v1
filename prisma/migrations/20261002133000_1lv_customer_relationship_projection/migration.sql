@@ -80,7 +80,7 @@ END
 $$;
 
 CREATE UNIQUE INDEX IF NOT EXISTS
-  "marketplace_relationships_sourceApplication_sourceCustomerRef_sourceMerchantId_relationshipType_key"
+  "marketplace_relationships_sourceApplication_sourceCustomerRef_s"
 ON public.marketplace_relationships(
   "sourceApplication",
   "sourceCustomerRef",
