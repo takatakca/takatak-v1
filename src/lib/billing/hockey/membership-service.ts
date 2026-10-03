@@ -1,9 +1,10 @@
 import "server-only";
 
 import {
-  HOCKEY_MEMBERSHIP_CATALOG,
-  isHockeyMembershipPlanCode,
-} from "./plan-catalog";
+  AHMV_ACCESS_ENTITLEMENT,
+  getAhmvCatalogPlan,
+  hasAhmvEntitlement,
+} from "./product-catalog-service";
 import {
   HOCKEY_SOURCE_APPLICATION,
   resolveHockeyMembershipAccess,
@@ -18,9 +19,13 @@ export async function getHockeyMembershipSnapshot(authUserId: string) {
       access: "blocked" as const,
       status: null,
       planCode: null,
+      legacyPlanCode: null,
       planName: null,
-      displayWeeklyCad: null,
+      price: null,
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
       features: [] as string[],
+      hasAhmvAccess: false,
     };
   }
 
@@ -43,33 +48,40 @@ export async function getHockeyMembershipSnapshot(authUserId: string) {
   });
 
   const membership = identity?.hockeyMemberships[0] ?? null;
-  const access = resolveHockeyMembershipAccess(membership?.status ?? null);
+  const billingAccess = resolveHockeyMembershipAccess(membership?.status ?? null);
+  const catalogPlan = membership
+    ? await getAhmvCatalogPlan(membership.planCode)
+    : null;
 
-  if (!membership || !isHockeyMembershipPlanCode(membership.planCode)) {
-    return {
-      available: true as const,
-      access: "blocked" as const,
-      status: membership?.status ?? null,
-      planCode: null,
-      planName: null,
-      displayWeeklyCad: null,
-      currentPeriodEnd: membership?.currentPeriodEnd?.toISOString() ?? null,
-      cancelAtPeriodEnd: membership?.cancelAtPeriodEnd ?? false,
-      features: [] as string[],
-    };
-  }
-
-  const plan = HOCKEY_MEMBERSHIP_CATALOG[membership.planCode];
+  const features =
+    billingAccess === "paid" && catalogPlan
+      ? [...catalogPlan.entitlements]
+      : [];
+  const hasAhmvAccess =
+    billingAccess === "paid" &&
+    hasAhmvEntitlement(features, AHMV_ACCESS_ENTITLEMENT);
 
   return {
     available: true as const,
-    access,
-    status: membership.status,
-    planCode: membership.planCode,
-    planName: plan.planName,
-    displayWeeklyCad: plan.displayWeeklyCad,
-    currentPeriodEnd: membership.currentPeriodEnd?.toISOString() ?? null,
-    cancelAtPeriodEnd: membership.cancelAtPeriodEnd,
-    features: access === "paid" ? [...plan.features] : [],
+    identityId: identity?.id ?? null,
+    access: hasAhmvAccess ? ("paid" as const) : ("blocked" as const),
+    status: membership?.status ?? null,
+    planCode: catalogPlan?.code ?? null,
+    legacyPlanCode: membership?.planCode ?? null,
+    planName: catalogPlan?.name ?? membership?.planName ?? null,
+    price: catalogPlan?.price
+      ? {
+          currency: catalogPlan.price.currency,
+          unitAmountMinor: catalogPlan.price.unitAmountMinor,
+          billingInterval: catalogPlan.price.billingInterval,
+          intervalCount: catalogPlan.price.intervalCount,
+          provider: catalogPlan.price.provider,
+          providerPriceId: catalogPlan.price.providerPriceId,
+        }
+      : null,
+    currentPeriodEnd: membership?.currentPeriodEnd?.toISOString() ?? null,
+    cancelAtPeriodEnd: membership?.cancelAtPeriodEnd ?? false,
+    features,
+    hasAhmvAccess,
   };
 }
