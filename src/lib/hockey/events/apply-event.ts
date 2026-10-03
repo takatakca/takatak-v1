@@ -27,6 +27,21 @@ export async function applyAhmvTeamEvent(
   }
 
   const incoming = envelope.event;
+
+  const registeredTeam = await prisma.hockeyPublicTeam.findUnique({
+    where: {
+      sourceApplication_teamId: {
+        sourceApplication: HOCKEY_SOURCE_APPLICATION,
+        teamId: incoming.teamId,
+      },
+    },
+    select: { active: true },
+  });
+
+  if (!registeredTeam?.active) {
+    throw new Error("hockey_public_team_not_registered");
+  }
+
   const payloadHash = hockeyEventPayloadHash(incoming);
 
   const existing = await prisma.hockeyTeamEvent.findUnique({
