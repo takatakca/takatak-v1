@@ -55,7 +55,7 @@
     "qa:social-step6-routing": "tsx scripts/step-6-facebook-dashboard-routing-tests.ts",
     "qa:social-step6-reauth": "tsx scripts/step-6-meta-reauth-durability-tests.ts",
     "qa:social-step7-analytics": "tsx scripts/step-7-facebook-analytics-tests.ts",
-    "qa:social-step8-content": "node --import tsx scripts/step-8-facebook-content-tests.ts",
+    "qa:social-step8-content": "tsx --require ./scripts/register-server-only.cjs scripts/step-8-facebook-content-tests.ts",
     "qa:social-step9-competitors": "node --import tsx scripts/step-9-facebook-competitor-tests.ts",
     "qa:brand-selector": "tsx scripts/brand-selector-tests.ts",
     "dev:reset-meta-facebook": "tsx scripts/dev-reset-meta-facebook-connection.ts",
