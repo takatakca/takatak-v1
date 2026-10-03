@@ -1,12 +1,7 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import {
-  HOCKEY_MEMBERSHIP_CATALOG,
-  isHockeySelfServePlanCode,
-} from "../src/lib/billing/hockey/plan-catalog";
-import {
-  hockeyMembershipAllows,
-  hockeyStripePriceEnvKey,
   resolveHockeyCheckoutLive,
   resolveHockeyMembershipAccess,
   validateHockeyCheckoutInput,
@@ -16,23 +11,6 @@ import {
   mapHockeyStripeStatus,
 } from "../src/lib/billing/hockey/stripe-webhook-policy";
 
-const member = HOCKEY_MEMBERSHIP_CATALOG.hockey_member_weekly_10;
-const vip = HOCKEY_MEMBERSHIP_CATALOG.hockey_vip_weekly_30;
-
-assert.equal(member.displayWeeklyCad, 10);
-assert.equal(member.selfServeEligible, true);
-assert.equal(member.launchState, "pilot");
-assert.equal(vip.displayWeeklyCad, 30);
-assert.equal(vip.selfServeEligible, false);
-assert.equal(vip.launchState, "planned");
-
-assert.equal(isHockeySelfServePlanCode("hockey_member_weekly_10"), true);
-assert.equal(isHockeySelfServePlanCode("hockey_vip_weekly_30"), false);
-assert.equal(
-  hockeyStripePriceEnvKey("hockey_member_weekly_10"),
-  "STRIPE_PRICE_HOCKEY_MEMBER_WEEKLY_10",
-);
-
 assert.equal(resolveHockeyMembershipAccess("active"), "paid");
 assert.equal(resolveHockeyMembershipAccess("past_due"), "paid");
 assert.equal(resolveHockeyMembershipAccess("grace_period"), "paid");
@@ -40,57 +18,24 @@ assert.equal(resolveHockeyMembershipAccess("incomplete"), "blocked");
 assert.equal(resolveHockeyMembershipAccess("canceled"), "blocked");
 assert.equal(resolveHockeyMembershipAccess("suspended"), "blocked");
 
-for (const feature of [
-  "ad_free",
-  "ai_assistant",
-  "game_reminders",
-  "calendar_sync",
-  "team_community",
-  "parent_messaging",
-  "parent_rideshare",
-] as const) {
-  assert.equal(
-    hockeyMembershipAllows(
-      { status: "active", planCode: "hockey_member_weekly_10" },
-      feature,
-    ),
-    true,
-  );
-}
-
 assert.equal(
-  hockeyMembershipAllows(
-    { status: "active", planCode: "hockey_member_weekly_10" },
-    "tournament_travel",
-  ),
-  false,
-);
-assert.equal(
-  hockeyMembershipAllows(
-    { status: "canceled", planCode: "hockey_member_weekly_10" },
-    "ai_assistant",
-  ),
-  false,
-);
-
-assert.equal(
-  validateHockeyCheckoutInput({ planCode: "hockey_member_weekly_10" }).success,
+  validateHockeyCheckoutInput({ planCode: "parent_essential" }).success,
   true,
 );
-const vipCheckout = validateHockeyCheckoutInput({
-  planCode: "hockey_vip_weekly_30",
-});
-assert.equal(vipCheckout.success, false);
-if (!vipCheckout.success) {
-  assert.match(vipCheckout.fieldErrors.planCode ?? "", /not being sold yet/i);
-}
+assert.equal(
+  validateHockeyCheckoutInput({ planCode: "parent_premium" }).success,
+  true,
+);
+assert.equal(
+  validateHockeyCheckoutInput({ planCode: "../../admin" }).success,
+  false,
+);
 
 assert.equal(
   resolveHockeyCheckoutLive({
     enabled: false,
     secretKey: "sk_test",
     webhookSecret: "whsec_test",
-    priceId: "price_test",
   }),
   false,
 );
@@ -99,7 +44,6 @@ assert.equal(
     enabled: true,
     secretKey: "",
     webhookSecret: "whsec_test",
-    priceId: "price_test",
   }),
   false,
 );
@@ -108,13 +52,9 @@ assert.equal(
     enabled: true,
     secretKey: "sk_test",
     webhookSecret: "whsec_test",
-    priceId: "price_test",
   }),
   true,
 );
-
-console.log("verify-hockey-membership: all checks passed");
-
 
 assert.equal(mapHockeyStripeStatus("active"), "active");
 assert.equal(mapHockeyStripeStatus("past_due"), "past_due");
@@ -124,47 +64,70 @@ assert.equal(mapHockeyStripeStatus("unpaid"), "expired");
 
 const webhookDecision = interpretHockeyStripeSubscription(
   {
-    id: "sub_hockey_test",
+    id: "sub_ahmv_test",
     status: "active",
-    customer: "cus_hockey_test",
+    customer: "cus_ahmv_test",
     cancel_at_period_end: false,
     items: {
       data: [
         {
-          price: { id: "price_hockey_member_test" },
+          price: { id: "price_parent_essential_test" },
           current_period_start: 1_800_000_000,
-          current_period_end: 1_800_604_800,
+          current_period_end: 1_802_678_400,
         },
       ],
     },
     metadata: {
       billingDomain: "hockey_membership",
-      planCode: "hockey_member_weekly_10",
+      planCode: "forged_plan_should_not_grant_access",
     },
   },
   {
-    price_hockey_member_test: {
-      planCode: "hockey_member_weekly_10",
+    price_parent_essential_test: {
+      planCode: "parent_essential",
+      planName: "AHMV Parent Essential",
     },
   },
 );
 assert.equal(webhookDecision.action, "apply");
 if (webhookDecision.action === "apply") {
   assert.equal(webhookDecision.patch.status, "active");
-  assert.equal(webhookDecision.patch.planCode, "hockey_member_weekly_10");
-  assert.equal(webhookDecision.patch.planName, "AHMV Member");
-  assert.equal(webhookDecision.patch.externalCustomerId, "cus_hockey_test");
-  assert.equal(webhookDecision.patch.externalSubscriptionId, "sub_hockey_test");
+  assert.equal(webhookDecision.patch.planCode, "parent_essential");
+  assert.equal(webhookDecision.patch.planName, "AHMV Parent Essential");
+  assert.equal(webhookDecision.patch.externalCustomerId, "cus_ahmv_test");
+  assert.equal(webhookDecision.patch.externalSubscriptionId, "sub_ahmv_test");
 }
 
-const vipWebhookDecision = interpretHockeyStripeSubscription(
+const unknownPriceDecision = interpretHockeyStripeSubscription(
   {
-    id: "sub_vip_test",
+    id: "sub_unknown",
     status: "active",
-    customer: "cus_vip_test",
-    items: { data: [{ price: { id: "price_vip_test" } }] },
-    metadata: { planCode: "hockey_vip_weekly_30" },
+    customer: "cus_unknown",
+    items: { data: [{ price: { id: "price_not_in_catalog" } }] },
+    metadata: { planCode: "parent_essential" },
   },
   {},
 );
-assert.equal(vipWebhookDecision.action, "skip");
+assert.equal(unknownPriceDecision.action, "skip");
+
+const forbiddenPricePatterns = [
+  /displayWeeklyCad/,
+  /Expected CAD 10\.00 billed weekly/,
+  /unit_amount\s*===\s*1000/,
+  /VITE_PARENT_PREMIUM_WEEKLY_PRICE_CAD/,
+];
+
+for (const path of [
+  "src/lib/billing/hockey/types.ts",
+  "src/lib/billing/hockey/plan-catalog.ts",
+  "src/lib/billing/hockey/membership-policy.ts",
+  "src/lib/billing/hockey/stripe-env.ts",
+  "src/lib/billing/hockey/stripe-service.ts",
+]) {
+  const source = readFileSync(path, "utf8");
+  for (const pattern of forbiddenPricePatterns) {
+    assert.doesNotMatch(source, pattern, `${path} contains legacy hard-coded pricing: ${pattern}`);
+  }
+}
+
+console.log("verify-hockey-membership: catalog-driven checks passed");
