@@ -94,6 +94,13 @@ function main() {
     "ambiguous client-level entitlements must block instead of selecting a random record",
   );
 
+  check(
+    "Concurrent provisioning is serialized per workspace",
+    /pg_advisory_xact_lock/.test(provisioning) &&
+      /rentauto-service:/.test(provisioning),
+    "two platform admins must not race two client-level Rentauto records into existence",
+  );
+
   const apiRoute = read(
     "src/app/api/admin/clients/[clientId]/services/rentauto/route.ts",
   );
