@@ -39,6 +39,11 @@ export default async function OneLvAdminPage() {
     { label: "Verified phone", value: data.verifiedPhone, icon: Smartphone },
     { label: "Master merchants", value: data.masterMerchants, icon: Building2 },
     { label: "1LV stores", value: data.sourceMerchants, icon: ShoppingBag },
+    {
+      label: "Customer ↔ store links",
+      value: data.customerMerchantRelationships,
+      icon: Users,
+    },
     { label: "Processed events", value: data.processedEvents, icon: Activity },
     { label: "Failed events", value: data.failedEvents, icon: CircleAlert },
   ];
@@ -88,8 +93,9 @@ export default async function OneLvAdminPage() {
             </span>
           </div>
           <p className="text-xs leading-5 text-slate-500">
-            TAKATAK stores normalized identity and merchant projections only.
-            Passwords, OTP codes, session tokens, card data and provider
+            TAKATAK stores normalized identity, merchant and customer↔store
+            relationship projections only. Passwords, OTP codes, session
+            tokens, payment amounts, payout data, card data and provider
             secrets are rejected by the master API contract.
           </p>
         </CardBody>
