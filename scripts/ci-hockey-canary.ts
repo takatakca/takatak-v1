@@ -16,6 +16,10 @@ import {
   createHockeyFamilyGuardianInvite,
   hashHockeyFamilyInviteTokenForTest,
 } from "../src/lib/hockey/family/guardian-invite-service";
+import {
+  listHockeyFamilyEventPlans,
+  saveHockeyFamilyEventPlan,
+} from "../src/lib/hockey/family/game-logistics-service";
 import { ServiceError } from "../src/lib/services/service-error";
 
 const prismaCandidate = getPrisma();
@@ -336,6 +340,38 @@ async function main() {
   }
   assert.equal(replayBlocked, true);
 
+  const exactEvent = await prisma.hockeyTeamEvent.findUnique({
+    where: {
+      sourceApplication_sourceEventId: {
+        sourceApplication: "ahmverdun",
+        sourceEventId: sourceEventExact,
+      },
+    },
+    select: { id: true },
+  });
+  assert.ok(exactEvent);
+
+  const responsibility = await saveHockeyFamilyEventPlan({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    teamEventId: exactEvent.id,
+    childMemberId: child.id,
+    driverMemberId: accepted.guardian.id,
+    status: "confirmed",
+  });
+  assert.equal(responsibility.child.id, child.id);
+  assert.equal(responsibility.driver.id, accepted.guardian.id);
+  assert.equal(responsibility.status, "confirmed");
+
+  const sharedLogistics = await listHockeyFamilyEventPlans({
+    authUserId: authUserB,
+    familyId: family.familyId,
+    teamEventId: exactEvent.id,
+  });
+  assert.equal(sharedLogistics.plans.length, 1);
+  assert.equal(sharedLogistics.plans[0]?.child.id, child.id);
+  assert.equal(sharedLogistics.plans[0]?.driver.id, accepted.guardian.id);
+
   const jobs = await prisma.hockeyDeliveryJob.findMany({
     where: { identityId: identityA.id },
     select: { kind: true, status: true },
@@ -347,7 +383,7 @@ async function main() {
   assert.ok(jobs.some((job) => job.status === "skipped"));
 
   console.log(
-    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, event revisions and delivery queue passed",
+    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, shared driving responsibility, event revisions and delivery queue passed",
   );
 }
 
