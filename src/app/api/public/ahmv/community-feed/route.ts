@@ -163,6 +163,7 @@ export async function GET(request: NextRequest) {
       id: row.id,
       source: kind === "page_tagged" ? "community" : "official",
       network: "facebook" as const,
+      association: "AHM Verdun",
       contentType: row.contentType,
       publishedAt: row.publishedAt.toISOString(),
       text: row.captionExcerpt,
