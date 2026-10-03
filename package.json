@@ -70,7 +70,7 @@
     "qa:social-billing-banner": "tsx scripts/verify-social-billing-banner.ts",
     "qa:social-stripe-webhook": "tsx scripts/verify-social-stripe-webhook.ts",
     "qa:social-stripe-addons": "tsx scripts/verify-social-stripe-addons.ts",
-    "qa:hockey-membership": "tsx scripts/verify-hockey-membership.ts && tsx scripts/verify-hockey-parent-preferences.ts && npm run qa:hockey-supporter-credit && npm run qa:hockey-event-engine && npm run qa:hockey-sms-worker && npm run qa:hockey-google-calendar && npm run qa:hockey-source-filter && npm run qa:hockey-readiness",
+    "qa:hockey-membership": "tsx scripts/verify-hockey-membership.ts && tsx scripts/verify-hockey-parent-preferences.ts && npm run qa:hockey-supporter-credit && npm run qa:hockey-event-engine && npm run qa:hockey-sms-worker && npm run qa:hockey-google-calendar && npm run qa:hockey-source-filter && npm run qa:hockey-readiness && npm run qa:hockey-family-isolation",
     "qa:rentauto-sync": "tsx --require ./scripts/register-server-only.cjs scripts/rentauto-sync-tests.ts",
     "qa:rentauto-service-access": "tsx scripts/rentauto-service-entitlement-tests.ts",
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
@@ -83,7 +83,8 @@
     "qa:hockey-sms-worker": "tsx --require ./scripts/register-server-only.cjs scripts/verify-hockey-sms-worker.ts",
     "qa:hockey-google-calendar": "tsx --require ./scripts/register-server-only.cjs scripts/verify-hockey-google-calendar.ts",
     "qa:hockey-source-filter": "tsx --require ./scripts/register-server-only.cjs scripts/verify-hockey-source-filter.ts",
-    "qa:hockey-readiness": "tsx scripts/verify-hockey-backend-readiness.ts"
+    "qa:hockey-readiness": "tsx scripts/verify-hockey-backend-readiness.ts",
+    "qa:hockey-family-isolation": "tsx scripts/verify-hockey-family-isolation.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "6.19.3",
