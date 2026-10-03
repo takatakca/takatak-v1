@@ -17,7 +17,7 @@ import {
   resolveMasterMerchant,
   type MasterMerchantPayload,
 } from "./merchant";
-import { assertMasterPayloadSafe } from "./payload-safety";
+import { assertOneLvCustomerProjectionSafe } from "./payload-safety";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -32,16 +32,11 @@ const EVENT_TYPES = new Set([
   "customer.vendor.first_order",
   "customer.vendor.order_completed",
   "customer.vendor.dispute_opened",
-  "order.created",
-  "order.paid",
-  "order.fulfilled",
-  "order.refunded",
 ]);
 
 const AGGREGATE_TYPES = new Set([
   "customer",
   "merchant",
-  "order",
   "relationship",
 ]);
 
@@ -55,10 +50,6 @@ const EXPECTED_AGGREGATE: Record<string, string> = {
   "customer.vendor.first_order": "relationship",
   "customer.vendor.order_completed": "relationship",
   "customer.vendor.dispute_opened": "relationship",
-  "order.created": "order",
-  "order.paid": "order",
-  "order.fulfilled": "order",
-  "order.refunded": "order",
 };
 
 export type MasterEventInput = {
@@ -104,7 +95,7 @@ function parseInput(input: MasterEventInput) {
       "Event type does not match aggregate type.",
     );
   }
-  assertMasterPayloadSafe(input.payload);
+  assertOneLvCustomerProjectionSafe(input.payload);
 
   return {
     eventId,
@@ -141,6 +132,47 @@ export function sourceCustomerReference(
   }
 
   return null;
+}
+
+function sourceMerchantReference(
+  payload: Record<string, unknown>,
+): string | null {
+  const value = payload["vendor_local_reference"];
+  if (typeof value !== "string") return null;
+
+  const normalized = value.trim();
+  return normalized && normalized.length <= 200 ? normalized : null;
+}
+
+function relationshipTimestamp(
+  payload: Record<string, unknown>,
+  key: "first_seen_at" | "last_seen_at",
+): Date | null {
+  const value = payload[key];
+  if (value === null || value === undefined || value === "") return null;
+  if (typeof value !== "string") {
+    throw new MasterApiInputError(`${key} must be an ISO timestamp.`);
+  }
+
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) {
+    throw new MasterApiInputError(`${key} must be an ISO timestamp.`);
+  }
+
+  return parsed;
+}
+
+function relationshipOrderCount(
+  payload: Record<string, unknown>,
+): number | null {
+  const value = payload["order_count"];
+  if (value === null || value === undefined) return null;
+  if (!Number.isSafeInteger(value) || Number(value) < 0) {
+    throw new MasterApiInputError(
+      "order_count must be a non-negative integer.",
+    );
+  }
+  return Number(value);
 }
 
 export async function applyMasterEvent(
@@ -185,6 +217,7 @@ export async function applyMasterEvent(
   let identityId: string | null = null;
   let sourceProfileId: string | null = null;
   let merchantId: string | null = null;
+  let relationshipId: string | null = null;
 
   if (parsed.aggregateType === "customer") {
     const person = await resolveMasterPerson(
@@ -197,21 +230,89 @@ export async function applyMasterEvent(
       parsed.payload as MasterMerchantPayload,
     );
     merchantId = merchant.id;
-  } else {
+  } else if (parsed.aggregateType === "relationship") {
     const customerReference = sourceCustomerReference(parsed.payload);
+    const vendorReference = sourceMerchantReference(parsed.payload);
 
-    if (customerReference) {
-      const sourceProfile = await prisma.sourceProfile.findUnique({
+    if (!customerReference || !vendorReference) {
+      throw new MasterApiInputError(
+        "Relationship events require customer and merchant references.",
+      );
+    }
+
+    const [sourceProfile, sourceMerchant] = await Promise.all([
+      prisma.sourceProfile.findUnique({
         where: {
           sourceApplication_externalUserId: {
             sourceApplication: "1lv",
             externalUserId: customerReference,
           },
         },
-      });
-      identityId = sourceProfile?.identityId ?? null;
-      sourceProfileId = sourceProfile?.id ?? null;
+      }),
+      prisma.sourceMerchant.findUnique({
+        where: {
+          sourceApplication_externalMerchantId: {
+            sourceApplication: "1lv",
+            externalMerchantId: vendorReference,
+          },
+        },
+      }),
+    ]);
+
+    if (!sourceProfile) {
+      throw new MasterApiConflictError(
+        "1LV customer source profile must be synchronized before its relationship.",
+      );
     }
+    if (!sourceMerchant) {
+      throw new MasterApiConflictError(
+        "1LV merchant must be synchronized before its customer relationship.",
+      );
+    }
+
+    identityId = sourceProfile.identityId;
+    sourceProfileId = sourceProfile.id;
+    merchantId = sourceMerchant.merchantId;
+
+    const firstSeenAt = relationshipTimestamp(
+      parsed.payload,
+      "first_seen_at",
+    );
+    const lastSeenAt = relationshipTimestamp(
+      parsed.payload,
+      "last_seen_at",
+    );
+    const orderCount = relationshipOrderCount(parsed.payload);
+
+    const relationship = await prisma.marketplaceRelationship.upsert({
+      where: {
+        sourceApplication_sourceCustomerRef_sourceMerchantId_relationshipType: {
+          sourceApplication: "1lv",
+          sourceCustomerRef: customerReference,
+          sourceMerchantId: sourceMerchant.id,
+          relationshipType: "customer_of",
+        },
+      },
+      create: {
+        identityId,
+        sourceMerchantId: sourceMerchant.id,
+        sourceApplication: "1lv",
+        sourceCustomerRef: customerReference,
+        relationshipType: "customer_of",
+        firstSeenAt,
+        lastSeenAt,
+        orderCount:
+          orderCount ??
+          (parsed.eventType === "customer.vendor.first_order" ? 1 : null),
+      },
+      update: {
+        identityId,
+        ...(firstSeenAt ? { firstSeenAt } : {}),
+        ...(lastSeenAt ? { lastSeenAt } : {}),
+        ...(orderCount !== null ? { orderCount } : {}),
+      },
+    });
+    relationshipId = relationship.id;
   }
 
   const responsePayload: Prisma.InputJsonObject = {
@@ -219,6 +320,7 @@ export async function applyMasterEvent(
     aggregate_id: parsed.aggregateId,
     ...(identityId ? { identity_id: identityId } : {}),
     ...(merchantId ? { merchant_id: merchantId } : {}),
+    ...(relationshipId ? { relationship_id: relationshipId } : {}),
   };
 
   try {
