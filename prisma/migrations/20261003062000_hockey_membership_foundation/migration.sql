@@ -70,3 +70,8 @@ ALTER TABLE "hockey_stripe_webhook_events"
   ADD CONSTRAINT "hockey_stripe_webhook_events_identityId_fkey"
   FOREIGN KEY ("identityId") REFERENCES "master_identities"("id")
   ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Billing tables are backend-only. RLS is enabled with zero Data API policies:
+-- Prisma/service-role may access them; anon/authenticated browser roles cannot.
+ALTER TABLE "hockey_memberships" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "hockey_stripe_webhook_events" ENABLE ROW LEVEL SECURITY;
