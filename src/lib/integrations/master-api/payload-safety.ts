@@ -49,3 +49,55 @@ export function assertMasterPayloadSafe(value: unknown): void {
     );
   }
 }
+
+
+const ONE_LV_FINANCIAL_KEY_PATTERNS = [
+  /^amount(?:minor)?$/,
+  /^total$/,
+  /^subtotal$/,
+  /^currency$/,
+  /^payment/,
+  /^refund/,
+  /^payout/,
+  /^commission/,
+  /^fee(?:s)?$/,
+  /^invoice/,
+  /^ledger/,
+  /^lifetimevalue$/,
+  /^stripe/,
+] as const;
+
+function containsOneLvFinancialField(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.some(containsOneLvFinancialField);
+  }
+
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  return Object.entries(value as Record<string, unknown>).some(
+    ([key, nested]) => {
+      const normalized = normalizedKey(key);
+      return (
+        ONE_LV_FINANCIAL_KEY_PATTERNS.some((pattern) =>
+          pattern.test(normalized),
+        ) || containsOneLvFinancialField(nested)
+      );
+    },
+  );
+}
+
+/**
+ * 1LV remains the transaction/financial authority. The TAKATAK master API may
+ * receive identity, merchant and customer-relationship context only.
+ */
+export function assertOneLvCustomerProjectionSafe(value: unknown): void {
+  assertMasterPayloadSafe(value);
+
+  if (containsOneLvFinancialField(value)) {
+    throw new MasterApiInputError(
+      "1LV financial data is not accepted by the TAKATAK master control plane.",
+    );
+  }
+}
