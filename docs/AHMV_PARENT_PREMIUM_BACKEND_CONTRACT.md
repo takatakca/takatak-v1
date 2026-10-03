@@ -207,6 +207,41 @@ Input:
 
 The accepting person must already be authenticated through TAKATAK Auth. The token is one-time, expires after seven days, is replay-protected and cannot be accepted by the inviter. Acceptance links the authenticated identity to the existing family as an active guardian. No child roster identity is created from the invitation.
 
+## Family game responsibility
+
+This is the first family logistics layer behind the `parent_rideshare` entitlement. It is intentionally family-only at this stage: it coordinates which authenticated guardian is responsible for driving one child to one exact public team event. It does not expose a public carpool marketplace and does not store route history, pickup coordinates or free-form child notes.
+
+### GET /api/hockey/family/:familyId/events/:teamEventId/responsibility
+
+Returns the family's current responsibility rows for that exact event.
+
+### PUT /api/hockey/family/:familyId/events/:teamEventId/responsibility
+
+Input:
+
+```json
+{
+  "childMemberId": "<family child UUID>",
+  "driverMemberId": "<authenticated guardian member UUID>",
+  "status": "confirmed"
+}
+```
+
+Rules:
+
+- the caller must be an active guardian in the family;
+- the family owner must currently hold the `parent_rideshare` entitlement;
+- the child must be actively assigned to the event's exact public team;
+- the driver must be an authenticated active guardian in the same family;
+- cancelled events cannot receive an active plan;
+- one responsibility row exists per family/event/child.
+
+### DELETE /api/hockey/family/:familyId/events/:teamEventId/responsibility
+
+Removes the responsibility for the supplied child.
+
+This design lets an invited mom/dad/authorized caregiver coordinate driving under the family owner's Premium entitlement without copying roster data or persisting precise transport history.
+
 ## Google Calendar
 
 ### POST /api/hockey/calendar/google/start
