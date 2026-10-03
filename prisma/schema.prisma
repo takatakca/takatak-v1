@@ -2843,6 +2843,7 @@ model MasterIdentity {
   hockeyDeliveryJobs        HockeyDeliveryJob[]
   hockeyCalendarConnections HockeyCalendarConnection[]
   hockeyCalendarOAuthStates HockeyCalendarOAuthState[]
+  hockeyTravelProfiles      HockeyTravelProfile[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -3092,6 +3093,27 @@ model HockeyCalendarEventMapping {
   @@index([providerEventId])
   @@index([teamEventId])
   @@map("hockey_calendar_event_mappings")
+}
+
+
+/// One explicitly approved routing origin for Parent Premium departure alerts.
+/// TAKATAK stores no continuous location history in this model.
+model HockeyTravelProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  identityId        String   @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  provider          String   @default("google_routes")
+  originLabel       String?
+  originAddress     String
+  consentAt         DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication])
+  @@index([identityId])
+  @@map("hockey_travel_profiles")
 }
 
 model SourceProfile {
