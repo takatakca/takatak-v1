@@ -25,6 +25,7 @@ import {
   isHockeyGoogleCalendarEnabled,
 } from "./google-config";
 import { exchangeHockeyGoogleCode } from "./google-token";
+import { queueHockeyCalendarBackfill } from "./calendar-backfill";
 
 const OAUTH_TTL_MS = 10 * 60 * 1000;
 const RETURN_PATH = "/dashboard?service=ahmv-membership&calendar=1";
@@ -395,6 +396,8 @@ export async function completeHockeyGoogleCalendarOAuth(input: {
         },
       }),
     ]);
+
+    await queueHockeyCalendarBackfill(oauthState.identityId, now);
 
     return fail("connected", "Google Calendar connected successfully.", returnPath);
   } catch (error) {
