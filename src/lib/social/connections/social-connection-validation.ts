@@ -6,6 +6,7 @@ export type CreateSocialOAuthStateInput = {
   provider: SocialConnectionProviderValue;
   businessBrandId: string;
   returnPath: string;
+  communityContent: boolean;
 };
 
 export type ValidationResult<T> =
@@ -76,6 +77,8 @@ export function validateCreateSocialOAuthState(
     suppliedReturnPath ||
     "/dashboard/social/accounts";
 
+  const communityContent = record.communityContent === true;
+
   const fieldErrors: Record<
     string,
     string
@@ -125,6 +128,7 @@ export function validateCreateSocialOAuthState(
         provider as SocialConnectionProviderValue,
       businessBrandId,
       returnPath,
+      communityContent,
     },
   };
 }
