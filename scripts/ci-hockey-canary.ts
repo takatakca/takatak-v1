@@ -16,6 +16,7 @@ import {
   createHockeyFamilyGuardianInvite,
   hashHockeyFamilyInviteTokenForTest,
 } from "../src/lib/hockey/family/guardian-invite-service";
+import { deactivateHockeyFamilyGuardian } from "../src/lib/hockey/family/guardian-access-service";
 import {
   listHockeyFamilyEventPlans,
   saveHockeyFamilyEventPlan,
@@ -412,6 +413,68 @@ async function main() {
   assert.equal(sharedRsvp.rsvps[0]?.child.id, child.id);
   assert.equal(sharedRsvp.rsvps[0]?.status, "going");
 
+  const inviteCreatedBySecondGuardian =
+    await createHockeyFamilyGuardianInvite({
+      authUserId: authUserB,
+      familyId: family.familyId,
+      now: new Date(now.getTime() + 180_000),
+    });
+
+  let ownerRemovalBlocked = false;
+  try {
+    await deactivateHockeyFamilyGuardian({
+      authUserId: authUserA,
+      familyId: family.familyId,
+      guardianMemberId: family.guardian.id,
+    });
+  } catch (error) {
+    ownerRemovalBlocked =
+      error instanceof ServiceError && error.code === "conflict";
+  }
+  assert.equal(ownerRemovalBlocked, true);
+
+  const removedGuardian = await deactivateHockeyFamilyGuardian({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    guardianMemberId: accepted.guardian.id,
+  });
+  assert.equal(removedGuardian.guardianMemberId, accepted.guardian.id);
+  assert.equal(removedGuardian.leftVoluntarily, false);
+  assert.equal(removedGuardian.cancelledFutureDrivingPlans, 1);
+  assert.equal(removedGuardian.revokedPendingInvites, 1);
+
+  const revokedInvite = await prisma.hockeyFamilyInvite.findUnique({
+    where: { id: inviteCreatedBySecondGuardian.invite.id },
+    select: { status: true },
+  });
+  assert.equal(revokedInvite?.status, "revoked");
+
+  const cancelledPlan = await prisma.hockeyFamilyEventPlan.findUnique({
+    where: {
+      familyId_teamEventId_childMemberId: {
+        familyId: family.familyId,
+        teamEventId: exactEvent.id,
+        childMemberId: child.id,
+      },
+    },
+    select: { status: true },
+  });
+  assert.equal(cancelledPlan?.status, "cancelled");
+
+  let removedGuardianDenied = false;
+  try {
+    await getHockeyFamilySchedule({
+      authUserId: authUserB,
+      familyId: family.familyId,
+      from: new Date("2026-10-09T00:00:00.000Z"),
+      to: new Date("2026-10-12T23:59:59.000Z"),
+    });
+  } catch (error) {
+    removedGuardianDenied =
+      error instanceof ServiceError && error.code === "forbidden";
+  }
+  assert.equal(removedGuardianDenied, true);
+
   const jobs = await prisma.hockeyDeliveryJob.findMany({
     where: { identityId: identityA.id },
     select: { kind: true, status: true },
@@ -423,7 +486,7 @@ async function main() {
   assert.ok(jobs.some((job) => job.status === "skipped"));
 
   console.log(
-    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, shared driving responsibility, private family RSVP, event revisions and delivery queue passed",
+    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, shared driving responsibility, private family RSVP, guardian access revocation, event revisions and delivery queue passed",
   );
 }
 

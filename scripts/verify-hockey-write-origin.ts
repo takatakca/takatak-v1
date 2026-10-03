@@ -17,6 +17,7 @@ const browserWriteRoutes = [
   "src/app/api/hockey/family/invites/accept/route.ts",
   "src/app/api/hockey/family/[familyId]/events/[teamEventId]/responsibility/route.ts",
   "src/app/api/hockey/family/[familyId]/events/[teamEventId]/rsvp/route.ts",
+  "src/app/api/hockey/family/[familyId]/guardians/[guardianMemberId]/route.ts",
 ];
 
 for (const path of browserWriteRoutes) {

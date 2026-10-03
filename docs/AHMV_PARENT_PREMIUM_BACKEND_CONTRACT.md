@@ -207,6 +207,24 @@ Input:
 
 The family owner must currently hold the `family_sync` entitlement, and the accepting person must already be authenticated through TAKATAK Auth. The token is one-time, expires after seven days, is replay-protected and cannot be accepted by the inviter. Acceptance links the authenticated identity to the existing family as an active guardian. No child roster identity is created from the invitation.
 
+## Guardian access lifecycle
+
+Family sharing must be reversible even when a subscription later expires.
+
+### DELETE /api/hockey/family/:familyId/guardians/:guardianMemberId
+
+Rules:
+
+- the family owner may deactivate another active guardian;
+- a non-owner guardian may deactivate only their own family membership;
+- the family owner cannot be removed through this endpoint;
+- deactivation is status-based rather than destructive deletion;
+- future planned/confirmed driving responsibilities for that guardian are cancelled;
+- pending family invitations created by that guardian are revoked;
+- removal itself does not require an active Premium entitlement, so access can always be withdrawn for security.
+
+Historical family coordination records remain auditable, but the removed identity can no longer read or manage the family.
+
 ## Family game responsibility
 
 This is the first family logistics layer behind the `parent_rideshare` entitlement. It is intentionally family-only at this stage: it coordinates which authenticated guardian is responsible for driving one child to one exact public team event. It does not expose a public carpool marketplace and does not store route history, pickup coordinates or free-form child notes.
