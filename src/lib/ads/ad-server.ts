@@ -158,7 +158,6 @@ export async function serveAds(
   const candidates = await prisma.adCampaign.findMany({
     where: {
       status: "active",
-      spentCents: { lt: prisma.adCampaign.fields.budgetCents },
       AND: [
         {
           OR: [
@@ -242,6 +241,10 @@ export async function serveAds(
 
   const eligible = (candidates as Candidate[])
     .filter((candidate) => {
+      if (candidate.budgetCents <= 0 || candidate.spentCents >= candidate.budgetCents) {
+        return false;
+      }
+
       const subscription = candidate.client.adSubscription;
       if (!subscription) return false;
 
