@@ -2,10 +2,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { assertMasterPayloadSafe } from "../src/lib/integrations/master-api/payload-safety";
+import {
+  assertMasterPayloadSafe,
+  assertOneLvCustomerProjectionSafe,
+} from "../src/lib/integrations/master-api/payload-safety";
 import { MasterApiInputError } from "../src/lib/integrations/master-api/errors";
 import { verifyMasterApiRequest } from "../src/lib/integrations/master-api/auth";
-import { sourceCustomerReference } from "../src/lib/integrations/master-api/events";
+import {
+  sourceCustomerReference,
+  sourceMerchantReference,
+} from "../src/lib/integrations/master-api/events";
 
 const key = "abcdefghijklmnopqrstuvwxyz0123456789ABCD";
 process.env.TAKATAK_1LV_API_KEY = key;
@@ -51,6 +57,16 @@ assert.equal(
   "profile-priority",
 );
 
+assert.equal(
+  sourceMerchantReference({ vendor_local_reference: "vendor-123" }),
+  "vendor-123",
+);
+assert.equal(
+  sourceMerchantReference({ vendor_local_reference: " ".repeat(4) }),
+  null,
+);
+
+
 assert.doesNotThrow(() =>
   assertMasterPayloadSafe({
     source_application: "1lv",
@@ -73,6 +89,36 @@ for (const payload of [
   );
 }
 
+assert.doesNotThrow(() =>
+  assertOneLvCustomerProjectionSafe({
+    source_application: "1lv",
+    customer_local_reference: "profile-1",
+    vendor_local_reference: "vendor-1",
+    first_seen_at: "2026-10-02T00:00:00.000Z",
+    last_seen_at: "2026-10-02T01:00:00.000Z",
+    order_count: 2,
+    local_order_id: "order-local-reference",
+  }),
+);
+
+for (const payload of [
+  { total: 10 },
+  { subtotal: 9 },
+  { payment_status: "paid" },
+  { currency: "CAD" },
+  { refund_amount: 5 },
+  { vendor_payout_amount: 8 },
+  { lifetime_value: 100 },
+  { stripe_transfer_id: "tr_test" },
+  { nested: { commission_amount: 1 } },
+]) {
+  assert.throws(
+    () => assertOneLvCustomerProjectionSafe(payload),
+    MasterApiInputError,
+  );
+}
+
+
 const events = readFileSync(
   resolve(process.cwd(), "src/lib/integrations/master-api/events.ts"),
   "utf8",
@@ -84,8 +130,28 @@ assert.match(
 );
 assert.match(
   events,
-  /assertMasterPayloadSafe\(input\.payload\)/,
-  "Master event ingestion must reject secret-bearing payloads.",
+  /assertOneLvCustomerProjectionSafe\(input\.payload\)/,
+  "Master event ingestion must reject secrets and 1LV financial payloads.",
+);
+assert.equal(
+  events.includes('"order.created"'),
+  false,
+  "TAKATAK 1LV master events must not accept order lifecycle projections.",
+);
+assert.match(
+  events,
+  /prisma\.marketplaceRelationship\.upsert/,
+  "Customer/vendor events must materialize the TAKATAK customer relationship graph.",
+);
+assert.match(
+  events,
+  /sourceApplication_externalMerchantId/,
+  "Relationship projection must resolve the exact 1LV source merchant.",
+);
+assert.match(
+  events,
+  /1LV customer source profile must be synchronized before its relationship/,
+  "Relationship projection must fail closed when the customer source profile is missing.",
 );
 
 
@@ -274,6 +340,37 @@ const bridgeMigration = readFileSync(
   ),
   "utf8",
 );
+
+const relationshipMigration = readFileSync(
+  resolve(
+    process.cwd(),
+    "prisma/migrations/20261002133000_1lv_customer_relationship_projection/migration.sql",
+  ),
+  "utf8",
+);
+assert.match(
+  relationshipMigration,
+  /ALTER COLUMN "companyId" DROP NOT NULL/,
+  "Legacy companyId must not be required for modern 1LV customer relationships.",
+);
+assert.match(
+  relationshipMigration,
+  /ALTER TABLE public\.marketplace_relationships ENABLE ROW LEVEL SECURITY/,
+  "1LV relationship projection must enable RLS.",
+);
+assert.match(
+  relationshipMigration,
+  /REVOKE ALL ON TABLE public\.marketplace_relationships FROM authenticated/,
+  "Authenticated browser users must not read the master relationship graph.",
+);
+assert.equal(
+  /lifetimeValue|amountMinor|paymentStatus|payout/i.test(
+    relationshipMigration,
+  ),
+  false,
+  "The modern 1LV relationship migration must not create financial projection fields.",
+);
+
 assert.match(
   bridgeMigration,
   /ADD COLUMN IF NOT EXISTS "authUserId" uuid/,
