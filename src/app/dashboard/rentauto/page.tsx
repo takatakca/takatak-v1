@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -19,6 +20,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getRentautoClientData } from "@/lib/rentauto/rentauto-client-data";
+import { getServerAccessContext } from "@/lib/security/access-context";
+import { hasEnabledServiceModule } from "@/lib/services/service-access";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +78,13 @@ function sentenceStatus(value: string | null): string {
 }
 
 export default async function RentautoDashboardPage() {
+  const { access } = await getServerAccessContext();
+  const enabled = await hasEnabledServiceModule(access, "rentauto");
+
+  if (!enabled) {
+    redirect("/dashboard");
+  }
+
   const data = await getRentautoClientData();
 
   const hostVisible =
