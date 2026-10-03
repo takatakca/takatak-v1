@@ -21,9 +21,11 @@ export interface AdminRentautoProvisioningRow {
   duplicateCount: number;
 }
 
-export async function getAdminRentautoProvisioningData(): Promise<
-  AdminRentautoProvisioningRow[]
-> {
+export async function getAdminRentautoProvisioningData(
+  authorized: boolean,
+): Promise<AdminRentautoProvisioningRow[]> {
+  if (!authorized) return [];
+
   const prisma = getPrisma();
   if (!prisma) return [];
 
