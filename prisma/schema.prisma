@@ -80,6 +80,8 @@ enum PermissionKey {
   view_reports
   view_social
   manage_social_accounts
+  view_ads
+  manage_ads
 }
 
 enum ClientStatus {
@@ -409,6 +411,8 @@ model Client {
   leads                     Lead[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
+  adSubscription            AdSubscription?
+  adCampaigns               AdCampaign[]
 
   @@index([status])
   @@index([createdAt])
@@ -615,6 +619,7 @@ model BusinessBrand {
   socialProviderConnections SocialProviderConnection[]
   socialOAuthStates         SocialOAuthState[]
   socialBrandAssignments    SocialBrandAccountAssignment[]
+  adCampaigns               AdCampaign[]
 
   @@unique([id, clientId])
   @@index([clientId])
@@ -3040,4 +3045,231 @@ model SourceMerchant {
   @@index([merchantId])
   @@index([sourceApplication, lastSynchronizedAt])
   @@map("source_merchants")
+}
+
+enum AdsPublisherStatus {
+  active
+  paused
+  retired
+}
+
+enum AdsPlacementStatus {
+  active
+  paused
+  retired
+}
+
+enum AdsCampaignStatus {
+  draft
+  active
+  paused
+  completed
+  canceled
+}
+
+enum AdsCampaignScope {
+  single_site
+  local_network
+  max_lead_pro
+}
+
+enum AdsPricingModel {
+  cpm
+  cpc
+  cpl
+  fixed
+}
+
+enum AdsCreativeStatus {
+  draft
+  active
+  paused
+  rejected
+  archived
+}
+
+enum AdsEventType {
+  impression
+  click
+  lead
+  call
+  form_submit
+  conversion
+}
+
+/// Public site/application participating in the TAKATAK-owned ad network.
+/// V1 publishers are platform-managed; external publisher revenue-share can be
+/// added later without changing advertiser ownership.
+model AdPublisher {
+  id        String             @id @default(uuid()) @db.Uuid
+  code      String             @unique
+  name      String
+  domain    String
+  category  String?
+  country   String             @default("Canada")
+  region    String?
+  city      String?
+  postalPrefix String?
+  allowedOrigins String[]      @default([])
+  status    AdsPublisherStatus @default(active)
+  metadata  Json?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  placements AdPlacement[]
+
+  @@index([status])
+  @@index([domain])
+  @@map("ad_publishers")
+}
+
+/// Named inventory slot embedded on a TAKATAK publisher.
+model AdPlacement {
+  id             String             @id @default(uuid()) @db.Uuid
+  publisherId    String             @db.Uuid
+  code           String
+  name           String
+  pagePattern    String?
+  format         String             @default("display")
+  width          Int?
+  height         Int?
+  device         String?
+  status         AdsPlacementStatus @default(active)
+  floorCpmCents  Int                @default(0)
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  publisher          AdPublisher          @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+  campaignPlacements AdCampaignPlacement[]
+  events             AdEvent[]
+
+  @@unique([publisherId, code])
+  @@index([code])
+  @@index([status])
+  @@map("ad_placements")
+}
+
+/// ADS subscription is intentionally separate from the Social subscription.
+/// Entitlements are derived server-side from planCode + lifecycle status.
+model AdSubscription {
+  id                     String             @id @default(uuid()) @db.Uuid
+  clientId               String             @unique @db.Uuid
+  status                 SubscriptionStatus @default(trial)
+  planCode               String?
+  planName               String?
+  provider               String?
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([planCode])
+  @@index([externalCustomerId])
+  @@index([externalSubscriptionId])
+  @@map("ad_subscriptions")
+}
+
+/// Advertiser campaign. It is separate from the existing Social Campaign model.
+model AdCampaign {
+  id              String            @id @default(uuid()) @db.Uuid
+  clientId        String            @db.Uuid
+  businessBrandId String?           @db.Uuid
+  name            String
+  status          AdsCampaignStatus @default(draft)
+  scope           AdsCampaignScope
+  objective       String?
+  pricingModel    AdsPricingModel   @default(fixed)
+  budgetCents     Int
+  dailyBudgetCents Int?
+  spentCents      Int               @default(0)
+  bidCents        Int?
+  currency        String            @default("CAD")
+  startsAt        DateTime?
+  endsAt          DateTime?
+  targeting       Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  client             Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand?        @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  creatives          AdCreative[]
+  placements         AdCampaignPlacement[]
+  events             AdEvent[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([status])
+  @@index([scope])
+  @@index([startsAt, endsAt])
+  @@map("ad_campaigns")
+}
+
+model AdCreative {
+  id             String            @id @default(uuid()) @db.Uuid
+  campaignId     String            @db.Uuid
+  name           String
+  headline       String
+  body           String?
+  callToAction   String?
+  destinationUrl String
+  imageUrl       String?
+  status         AdsCreativeStatus @default(draft)
+  metadata       Json?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  campaign AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  events   AdEvent[]
+
+  @@index([campaignId, status])
+  @@map("ad_creatives")
+}
+
+model AdCampaignPlacement {
+  campaignId  String   @db.Uuid
+  placementId String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  campaign  AdCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  placement AdPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, placementId])
+  @@index([placementId])
+  @@map("ad_campaign_placements")
+}
+
+/// Event ledger intentionally stores no raw IP address, email, phone number or
+/// browser fingerprint. Lead/call conversion linkage is added server-to-server
+/// through FLEXS in a later integration layer.
+model AdEvent {
+  id           String       @id @default(uuid()) @db.Uuid
+  campaignId   String       @db.Uuid
+  creativeId   String?      @db.Uuid
+  placementId  String       @db.Uuid
+  type         AdsEventType
+  dedupeKey    String?      @unique
+  occurredAt   DateTime     @default(now())
+  country      String?
+  region       String?
+  city         String?
+  postalPrefix String?
+  locale       String?
+  metadata     Json?
+
+  campaign  AdCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creative  AdCreative? @relation(fields: [creativeId], references: [id], onDelete: SetNull)
+  placement AdPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, occurredAt])
+  @@index([creativeId, occurredAt])
+  @@index([placementId, occurredAt])
+  @@index([type, occurredAt])
+  @@map("ad_events")
 }
