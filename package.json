@@ -26,7 +26,7 @@
     "artifact:audit": "node scripts/audit-production-artifact.cjs",
     "artifact:smoke": "node scripts/artifact-startup-smoke.cjs",
     "smoke:auth": "tsx scripts/smoke-auth-json.ts",
-    "qa": "npm run db:generate && npm run check:sources && npm run typecheck && npm run lint && npm run test:auth && npm run test:identity && npm run build && npm run check:modules",
+    "qa": "npm run db:generate && npm run check:sources && npm run typecheck && npm run lint && npm run test:auth && npm run test:identity && npm run build && npm run check:modules && npm run qa:ads",
     "qa:auth": "npm run test:auth",
     "qa:secrets": "tsx scripts/check-secrets.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
@@ -76,7 +76,8 @@
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
     "qa:1lv-master-api": "tsx --require ./scripts/register-server-only.cjs scripts/one-lv-master-api-tests.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",
-    "qa:1lv-legacy-upgrade": "tsx scripts/ci-check-one-lv-legacy-upgrade.ts"
+    "qa:1lv-legacy-upgrade": "tsx scripts/ci-check-one-lv-legacy-upgrade.ts",
+    "qa:ads": "tsx scripts/verify-takatak-ads.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "6.19.3",
