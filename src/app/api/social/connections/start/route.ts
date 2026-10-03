@@ -81,6 +81,9 @@ export async function POST(
 
         returnPath:
           validation.data.returnPath,
+
+        communityContent:
+          validation.data.communityContent,
       });
 
     revalidatePath(
