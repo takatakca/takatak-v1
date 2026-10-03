@@ -108,6 +108,17 @@ enum SubscriptionStatus {
   suspended
 }
 
+enum HockeyMembershipStatus {
+  incomplete
+  active
+  past_due
+  grace_period
+  canceled
+  expired
+  paused
+  suspended
+}
+
 enum BrandStatus {
   draft
   active
@@ -2820,15 +2831,64 @@ model MasterIdentity {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
 
-  profile          Profile?                     @relation(fields: [profileId], references: [id], onDelete: SetNull)
-  sourceProfiles   SourceProfile[]
-  addresses        SourceAddress[]
-  paymentSummaries SourcePaymentSummary[]
-  events           SourceSynchronizationEvent[]
+  profile             Profile?                     @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  sourceProfiles      SourceProfile[]
+  addresses           SourceAddress[]
+  paymentSummaries    SourcePaymentSummary[]
+  events              SourceSynchronizationEvent[]
+  hockeyMemberships   HockeyMembership[]
+  hockeyStripeEvents  HockeyStripeWebhookEvent[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
+}
+
+/// Person/family hockey membership owned by the TAKATAK master identity.
+/// Entitlements are derived server-side from planCode and status; they are not
+/// writable booleans on this row. sourceApplication keeps the model reusable
+/// across future hockey associations without mixing subscriptions.
+model HockeyMembership {
+  id                     String                 @id @default(uuid()) @db.Uuid
+  identityId             String                 @db.Uuid
+  sourceApplication      String                 @default("ahmverdun")
+  status                 HockeyMembershipStatus @default(incomplete)
+  planCode               String
+  planName               String
+  provider               String                 @default("stripe")
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean                @default(false)
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication])
+  @@index([status])
+  @@index([planCode])
+  @@index([externalCustomerId])
+  @@index([externalSubscriptionId])
+  @@map("hockey_memberships")
+}
+
+/// Idempotency ledger for hockey Stripe events. Raw webhook payloads are never
+/// stored here.
+model HockeyStripeWebhookEvent {
+  id                String          @id @default(uuid()) @db.Uuid
+  stripeEventId     String          @unique
+  type              String
+  identityId        String?         @db.Uuid
+  sourceApplication String          @default("ahmverdun")
+  createdAt         DateTime        @default(now())
+
+  identity MasterIdentity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+
+  @@index([identityId])
+  @@index([sourceApplication])
+  @@map("hockey_stripe_webhook_events")
 }
 
 model SourceProfile {
