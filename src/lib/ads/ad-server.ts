@@ -339,6 +339,7 @@ export async function serveAds(
       creative.destinationUrl,
       attributionId,
     ),
+    clickUrl: null,
     imageUrl: creative.imageUrl,
     label: locale.startsWith("fr") ? "Publicité" : "Advertisement",
     trackingToken: trackingGrant?.token ?? null,
