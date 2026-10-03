@@ -79,6 +79,9 @@ jobs:
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
+      - name: TAKATAK ADS safeguards
+        run: npm run qa:ads
+
       - name: Secret scan
         run: npm run qa:secrets
 
