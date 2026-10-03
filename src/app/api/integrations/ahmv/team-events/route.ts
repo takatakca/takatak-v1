@@ -67,6 +67,20 @@ export async function POST(request: Request) {
     const result = await applyAhmvTeamEvent(parsed.envelope);
     return NextResponse.json({ accepted: true, ...result }, { status: 200 });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "hockey_public_team_not_registered"
+    ) {
+      return NextResponse.json(
+        {
+          accepted: false,
+          error:
+            "Synchronize the exact AHMV public team directory before sending events for this team ID.",
+        },
+        { status: 409 },
+      );
+    }
+
     console.error(
       "[ahmv-team-events] Apply failed:",
       error instanceof Error ? error.message : "unknown_error",
