@@ -1,6 +1,7 @@
-import type {
-  HockeyMembershipEntitlements,
-  HockeyMembershipPlanCode,
+import {
+  HOCKEY_MEMBERSHIP_PLAN_CODES,
+  type HockeyMembershipEntitlements,
+  type HockeyMembershipPlanCode,
 } from "./types";
 
 export const HOCKEY_MEMBERSHIP_CATALOG: Record<
