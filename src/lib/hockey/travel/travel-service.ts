@@ -118,7 +118,7 @@ async function requireTravelIdentity(authUserId: string) {
 
 async function requireTravelPremium(authUserId: string) {
   const membership = await getHockeyMembershipSnapshot(authUserId);
-  if (!membership.features.includes("game_reminders")) {
+  if (!membership.features.includes("smart_departure")) {
     throw new ServiceError(
       "forbidden",
       "An active AHMV Parent Premium entitlement is required for smart departure.",
