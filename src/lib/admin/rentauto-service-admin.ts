@@ -141,7 +141,9 @@ export async function setRentautoServiceStatus(params: {
       };
     }
 
-    const previousStatus = current?.status ?? "not_provisioned";
+    const previousStatus: string = current
+      ? current.status
+      : "not_provisioned";
 
     const service = current
       ? await transaction.serviceInstance.update({
