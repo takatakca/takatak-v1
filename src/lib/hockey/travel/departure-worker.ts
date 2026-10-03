@@ -303,13 +303,17 @@ export async function runHockeyDepartureDeliveryBatch(input?: {
         });
         retried += 1;
       } else {
-        await finishJob(
-          job.id,
-          "failed",
-          now,
-          "departure_failed",
-          errorMessage,
-        );
+        await prisma.hockeyDeliveryJob.update({
+          where: { id: job.id },
+          data: {
+            status: "failed",
+            completedAt: now,
+            lockedAt: null,
+            attemptCount: { increment: 1 },
+            lastErrorCode: "departure_failed",
+            lastErrorMessage: errorMessage.slice(0, 500),
+          },
+        });
         failed += 1;
       }
     }
