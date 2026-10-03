@@ -89,7 +89,9 @@ export async function deactivateHockeyFamilyGuardian(input: {
     );
   }
 
-  if (target.linkedIdentityId === family.ownerIdentityId) {
+  const targetIdentityId = target.linkedIdentityId;
+
+  if (targetIdentityId === family.ownerIdentityId) {
     throw new ServiceError(
       "conflict",
       "The hockey family owner cannot be removed from the family.",
@@ -97,7 +99,7 @@ export async function deactivateHockeyFamilyGuardian(input: {
   }
 
   const callerIsOwner = identity.id === family.ownerIdentityId;
-  const callerIsTarget = identity.id === target.linkedIdentityId;
+  const callerIsTarget = identity.id === targetIdentityId;
 
   if (!callerIsOwner && !callerIsTarget) {
     throw new ServiceError(
@@ -115,7 +117,7 @@ export async function deactivateHockeyFamilyGuardian(input: {
         familyId: family.id,
         memberType: "guardian",
         status: "active",
-        linkedIdentityId: target.linkedIdentityId,
+        linkedIdentityId: targetIdentityId,
       },
       data: {
         status: "inactive",
@@ -146,7 +148,7 @@ export async function deactivateHockeyFamilyGuardian(input: {
     const revokedInvites = await tx.hockeyFamilyInvite.updateMany({
       where: {
         familyId: family.id,
-        inviterIdentityId: target.linkedIdentityId,
+        inviterIdentityId: targetIdentityId,
         status: "pending",
       },
       data: {
@@ -158,7 +160,7 @@ export async function deactivateHockeyFamilyGuardian(input: {
     return {
       familyId: family.id,
       guardianMemberId: target.id,
-      removedIdentityId: target.linkedIdentityId,
+      removedIdentityId: targetIdentityId,
       leftVoluntarily: callerIsTarget,
       cancelledFutureDrivingPlans: cancelledPlans.count,
       revokedPendingInvites: revokedInvites.count,
