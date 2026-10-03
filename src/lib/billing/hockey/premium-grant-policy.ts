@@ -6,7 +6,7 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function supporterGrantExpiresAt(
   activatedAt: Date,
-  weeks = SUPPORTER_THANK_YOU_WEEKS,
+  weeks: number = SUPPORTER_THANK_YOU_WEEKS,
 ): Date {
   if (!Number.isInteger(weeks) || weeks < 1 || weeks > 52) {
     throw new Error("invalid_supporter_grant_weeks");
