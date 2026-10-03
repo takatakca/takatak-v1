@@ -3136,3 +3136,31 @@ model ExperienceLaunchCode {
   @@index([expiresAt])
   @@map("experience_launch_codes")
 }
+
+
+// Voluntary product-development support. This is intentionally separate from
+// membership subscriptions and does not imply charitable/tax receipt status.
+model SupportContribution {
+  id                       String   @id @default(uuid()) @db.Uuid
+  customerId               String?  @db.Uuid
+  organizationId           String?  @db.Uuid
+  productCode              String   @default("ahmv")
+  amountMinor              Int
+  currency                 String   @default("CAD")
+  frequency                String   @default("one_time")
+  provider                 String   @default("stripe")
+  stripePaymentIntentId    String?  @unique
+  stripeSubscriptionId     String?  @unique
+  status                   String
+  source                   String?
+  campaign                 String?
+  feesMinor                Int      @default(0)
+  netAmountMinor           Int
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([productCode, status, createdAt])
+  @@index([customerId])
+  @@index([organizationId])
+  @@map("support_contributions")
+}
