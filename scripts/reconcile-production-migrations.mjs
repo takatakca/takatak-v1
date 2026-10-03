@@ -318,16 +318,21 @@ try {
   }
 
   const knownReconciliation = new Set(RECONCILE_MIGRATIONS);
+  const postTargetMigrations = repoMigrations.filter(
+    (name) => name > TARGET_MIGRATION,
+  );
+  const postTargetSet = new Set(postTargetMigrations);
   const unexpectedPending = repoMigrations.filter(
     (name) =>
       !prismaApplied.has(name) &&
       !knownReconciliation.has(name) &&
-      name !== TARGET_MIGRATION,
+      name !== TARGET_MIGRATION &&
+      !postTargetSet.has(name),
   );
 
   if (unexpectedPending.length > 0) {
     fail(
-      "Unexpected pending Prisma migrations exist: " +
+      "Unexpected pending pre-bridge Prisma migrations exist: " +
         unexpectedPending.join(", "),
     );
   }
@@ -361,6 +366,10 @@ try {
     "[production-migrations] Target was applied outside Prisma:",
     targetAppliedOutsidePrisma,
   );
+  console.log(
+    "[production-migrations] Normal post-bridge migrations pending:",
+    postTargetMigrations.filter((name) => !prismaApplied.has(name)),
+  );
 
   if (mode === "audit") {
     console.log(
@@ -389,28 +398,21 @@ try {
   const pendingAfterResolve = repoMigrations.filter(
     (name) => !prismaApplied.has(name),
   );
+  const invalidPendingBeforeTarget = pendingAfterResolve.filter(
+    (name) => name < TARGET_MIGRATION,
+  );
 
-  if (targetAlreadyApplied) {
-    if (pendingAfterResolve.length !== 0) {
-      fail(
-        "Target migration is already applied, but other repository migrations remain pending: " +
-          pendingAfterResolve.join(", "),
-      );
-    }
-
-    console.log(
-      "[production-migrations] Target migration already recorded in Prisma; no target SQL execution required.",
+  if (invalidPendingBeforeTarget.length > 0) {
+    fail(
+      "Unexpected pre-bridge migrations remain pending after reconciliation: " +
+        invalidPendingBeforeTarget.join(", "),
     );
-  } else {
-    if (
-      pendingAfterResolve.length !== 1 ||
-      pendingAfterResolve[0] !== TARGET_MIGRATION
-    ) {
+  }
+
+  if (!targetAlreadyApplied) {
+    if (!pendingAfterResolve.includes(TARGET_MIGRATION)) {
       fail(
-        "After reconciliation, the only pending migration must be " +
-          TARGET_MIGRATION +
-          "; found: " +
-          pendingAfterResolve.join(", "),
+        "1LV target migration is neither recorded by Prisma nor pending in the repository migration chain.",
       );
     }
 
@@ -421,10 +423,49 @@ try {
       runPrisma(["resolve", "--applied", TARGET_MIGRATION], databaseUrl);
     } else {
       console.log(
-        "[production-migrations] Target SQL is not present in production history; applying with Prisma migrate deploy.",
+        "[production-migrations] Target SQL is not present in production history; Prisma will apply it with the normal post-bridge chain.",
       );
-      runPrisma(["deploy"], databaseUrl);
     }
+  } else {
+    console.log(
+      "[production-migrations] Target migration already recorded in Prisma.",
+    );
+  }
+
+  const beforeDeployRows = await client.query(
+    `select migration_name
+       from public._prisma_migrations
+       where finished_at is not null and rolled_back_at is null`,
+  );
+  prismaApplied = new Set(
+    beforeDeployRows.rows.map((row) => String(row.migration_name)),
+  );
+
+  const deployablePending = repoMigrations.filter(
+    (name) => !prismaApplied.has(name),
+  );
+
+  if (deployablePending.length > 0) {
+    if (
+      deployablePending.some(
+        (name) => name !== TARGET_MIGRATION && name <= TARGET_MIGRATION,
+      )
+    ) {
+      fail(
+        "Refusing to deploy an unexpected migration at or before the reconciled 1LV bridge: " +
+          deployablePending.join(", "),
+      );
+    }
+
+    console.log(
+      "[production-migrations] Applying normal pending Prisma migrations:",
+      deployablePending,
+    );
+    runPrisma(["deploy"], databaseUrl);
+  } else {
+    console.log(
+      "[production-migrations] No normal Prisma migrations remain to deploy.",
+    );
   }
 
   const finalRows = await client.query(
