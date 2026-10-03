@@ -148,6 +148,8 @@ export async function serveAds(
           category: true,
           country: true,
           region: true,
+          city: true,
+          postalPrefix: true,
           allowedOrigins: true,
         },
       },
@@ -246,6 +248,12 @@ export async function serveAds(
     region:
       input.context?.region ??
       placement.publisher.region,
+    city:
+      input.context?.city ??
+      placement.publisher.city,
+    postalPrefix:
+      input.context?.postalPrefix ??
+      placement.publisher.postalPrefix,
     category:
       placement.publisher.category ??
       input.context?.category,
