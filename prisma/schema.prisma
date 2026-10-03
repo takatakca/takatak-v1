@@ -3047,8 +3047,9 @@ model HockeyFamily {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  owner   MasterIdentity       @relation("HockeyFamilyOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
-  members HockeyFamilyMember[]
+  owner      MasterIdentity            @relation("HockeyFamilyOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
+  members    HockeyFamilyMember[]
+  selections HockeyFamilyTeamSelection[]
 
   @@unique([ownerIdentityId, sourceApplication])
   @@index([status])
