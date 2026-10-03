@@ -59,5 +59,6 @@ export type ServedAd = {
   imageUrl: string | null;
   label: "Publicité" | "Advertisement";
   trackingToken: string | null;
+  attributionId: string | null;
   trackingEnabled: boolean;
 };
