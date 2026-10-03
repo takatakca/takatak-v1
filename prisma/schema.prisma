@@ -2821,10 +2821,11 @@ model MasterIdentity {
   updatedAt            DateTime  @updatedAt
 
   profile          Profile?                     @relation(fields: [profileId], references: [id], onDelete: SetNull)
-  sourceProfiles   SourceProfile[]
-  addresses        SourceAddress[]
-  paymentSummaries SourcePaymentSummary[]
-  events           SourceSynchronizationEvent[]
+  sourceProfiles            SourceProfile[]
+  addresses                 SourceAddress[]
+  paymentSummaries          SourcePaymentSummary[]
+  events                    SourceSynchronizationEvent[]
+  marketplaceRelationships  MarketplaceRelationship[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -2956,10 +2957,37 @@ model SourceMerchant {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  merchant MasterMerchant @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  merchant      MasterMerchant            @relation(fields: [merchantId], references: [id], onDelete: Cascade)
+  relationships MarketplaceRelationship[]
 
   @@unique([sourceApplication, externalMerchantId])
   @@index([merchantId])
   @@index([sourceApplication, lastSynchronizedAt])
   @@map("source_merchants")
+}
+
+model MarketplaceRelationship {
+  id                 String   @id @default(uuid()) @db.Uuid
+  identityId         String?  @db.Uuid
+  companyId          String?  @db.Uuid
+  sourceMerchantId   String   @db.Uuid
+  sourceApplication  String
+  sourceCustomerRef  String
+  relationshipType   String   @default("customer_of")
+  firstSeenAt        DateTime?
+  lastSeenAt         DateTime?
+  orderCount         Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  identity       MasterIdentity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
+  sourceMerchant SourceMerchant  @relation(fields: [sourceMerchantId], references: [id], onDelete: Cascade)
+
+  @@unique(
+    [sourceApplication, sourceCustomerRef, sourceMerchantId, relationshipType],
+    map: "marketplace_relationships_sourceApplication_sourceCustomerRef_sourceMerchantId_relationshipType_key"
+  )
+  @@index([identityId, sourceApplication], map: "marketplace_relationships_identityId_sourceApplication_idx")
+  @@index([sourceMerchantId], map: "marketplace_relationships_sourceMerchantId_idx")
+  @@map("marketplace_relationships")
 }
