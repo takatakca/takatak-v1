@@ -5,6 +5,8 @@ import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
 
 /** Incremental cadence: every 6 hours with per-Page jitter. */
 export const FACEBOOK_INCREMENTAL_INTERVAL_MS = 6 * 60 * 60 * 1000;
+/** AHMV Community feed cadence; cron itself runs every minute. */
+export const FACEBOOK_AHMV_COMMUNITY_INTERVAL_MS = 15 * 60 * 1000;
 /** Jitter band so Pages do not sync simultaneously (±30 minutes). */
 export const FACEBOOK_INCREMENTAL_JITTER_MS = 30 * 60 * 1000;
 /** Overlap days re-fetched to capture delayed Meta corrections. */
@@ -253,12 +255,19 @@ export function computeIncrementalJitterMs(socialAccountId: string): number {
 export function computeNextIncrementalAt(
   socialAccountId: string,
   from: Date = new Date(),
+  intervalMs: number = FACEBOOK_INCREMENTAL_INTERVAL_MS,
 ): Date {
-  return new Date(
-    from.getTime() +
-      FACEBOOK_INCREMENTAL_INTERVAL_MS +
-      computeIncrementalJitterMs(socialAccountId),
-  );
+  const jitterBand =
+    intervalMs < FACEBOOK_INCREMENTAL_INTERVAL_MS
+      ? Math.min(FACEBOOK_INCREMENTAL_JITTER_MS, 60_000)
+      : FACEBOOK_INCREMENTAL_JITTER_MS;
+  const rawJitter = computeIncrementalJitterMs(socialAccountId);
+  const jitter =
+    jitterBand === FACEBOOK_INCREMENTAL_JITTER_MS
+      ? rawJitter
+      : Math.max(-jitterBand, Math.min(jitterBand, rawJitter));
+
+  return new Date(from.getTime() + intervalMs + jitter);
 }
 
 /**
@@ -363,12 +372,22 @@ export async function scheduleDueFacebookPageIncrementalSyncs(options?: {
 
       if (result.claimed) {
         enqueued += 1;
+        const brand = await prisma.businessBrand.findFirst({
+          where: {
+            id: row.businessBrandId,
+            clientId: row.clientId,
+          },
+          select: { website: true },
+        });
         await prisma.socialAccountSyncState.updateMany({
           where: { id: row.id },
           data: {
             nextIncrementalAt: computeNextIncrementalAt(
               row.socialAccountId,
               now,
+              brand?.website === "https://ahmverdun.ca"
+                ? FACEBOOK_AHMV_COMMUNITY_INTERVAL_MS
+                : undefined,
             ),
             lastSyncMode: window.mode,
           },
