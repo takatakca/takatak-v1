@@ -45,7 +45,7 @@
     container.setAttribute("data-takatak-ad-filled", "true");
 
     var link = document.createElement("a");
-    link.href = ad.destinationUrl;
+    link.href = ad.clickUrl || ad.destinationUrl;
     link.rel = "sponsored noopener noreferrer";
     link.target = options.target || "_blank";
     link.style.display = "block";
