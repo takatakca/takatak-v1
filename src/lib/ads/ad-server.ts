@@ -25,6 +25,7 @@ export type ServeAdsInput = {
   publisherCode: string;
   placementCode: string;
   context?: AdsTargetingContext;
+  callerOrigin?: string | null;
   now?: Date;
 };
 
@@ -147,12 +148,23 @@ export async function serveAds(
           category: true,
           country: true,
           region: true,
+          allowedOrigins: true,
         },
       },
     },
   });
 
   if (!placement) return null;
+
+  const allowedOrigins = placement.publisher.allowedOrigins
+    .map((value) => value.trim().replace(/\/$/, ""))
+    .filter(Boolean);
+  if (allowedOrigins.length > 0) {
+    const callerOrigin = input.callerOrigin?.trim().replace(/\/$/, "") ?? "";
+    if (!callerOrigin || !allowedOrigins.includes(callerOrigin)) {
+      return null;
+    }
+  }
 
   const now = input.now ?? new Date();
   const candidates = await prisma.adCampaign.findMany({
@@ -235,8 +247,8 @@ export async function serveAds(
       input.context?.region ??
       placement.publisher.region,
     category:
-      input.context?.category ??
-      placement.publisher.category,
+      placement.publisher.category ??
+      input.context?.category,
   });
 
   const eligible = (candidates as Candidate[])
