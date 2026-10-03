@@ -162,6 +162,7 @@ export async function GET(request: NextRequest) {
     return {
       id: row.id,
       source: kind === "page_tagged" ? "community" : "official",
+      network: "facebook" as const,
       contentType: row.contentType,
       publishedAt: row.publishedAt.toISOString(),
       text: row.captionExcerpt,
