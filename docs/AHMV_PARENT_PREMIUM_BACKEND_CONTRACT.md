@@ -207,6 +207,18 @@ Input:
 
 The family owner must currently hold the `family_sync` entitlement, and the accepting person must already be authenticated through TAKATAK Auth. The token is one-time, expires after seven days, is replay-protected and cannot be accepted by the inviter. Acceptance links the authenticated identity to the existing family as an active guardian. No child roster identity is created from the invitation.
 
+## Family event RSVP
+
+Family RSVP is private coordination under the `family_sync` entitlement. It is not an official roster or attendance record.
+
+`GET /api/hockey/family/:familyId/events/:teamEventId/rsvp` returns private family RSVP rows.
+
+`PUT /api/hockey/family/:familyId/events/:teamEventId/rsvp` accepts a family child UUID and one of `going`, `not_going`, or `unsure`. The child must be assigned to the event's exact verified public team. A cancelled event cannot be marked `going`.
+
+`DELETE /api/hockey/family/:familyId/events/:teamEventId/rsvp` removes the private RSVP.
+
+No medical reason, absence explanation, free-form note, roster identity or public team attendance signal is stored by this layer.
+
 ## Google Calendar
 
 ### POST /api/hockey/calendar/google/start
