@@ -38,7 +38,7 @@ const raw = JSON.stringify({
 
 const parsed = parseAhmvTeamEventEnvelope(raw);
 assert.equal(parsed.valid, true);
-if (!parsed.valid) throw new Error(parsed.error);
+if (!parsed.valid) throw new Error("Expected a valid normalized hockey event.");
 
 const hash = hockeyEventPayloadHash(parsed.envelope.event);
 assert.match(hash, /^[a-f0-9]{64}$/);
