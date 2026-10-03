@@ -2845,6 +2845,8 @@ model MasterIdentity {
   hockeyCalendarOAuthStates HockeyCalendarOAuthState[]
   hockeyFamiliesOwned       HockeyFamily[] @relation("HockeyFamilyOwner")
   hockeyFamilyMemberships   HockeyFamilyMember[] @relation("HockeyFamilyLinkedIdentity")
+  hockeyFamilyInvitesCreated HockeyFamilyInvite[] @relation("HockeyFamilyInviteCreator")
+  hockeyFamilyInvitesAccepted HockeyFamilyInvite[] @relation("HockeyFamilyInviteAccepted")
   hockeyTravelProfiles      HockeyTravelProfile[]
 
   @@index([primaryEmail])
@@ -3111,6 +3113,7 @@ model HockeyPublicTeam {
   updatedAt         DateTime @updatedAt
 
   selections HockeyFamilyTeamSelection[]
+  invites     HockeyFamilyInvite[]
 
   @@unique([sourceApplication, teamId])
   @@index([sourceApplication, active])
@@ -3182,6 +3185,34 @@ model HockeyFamilyTeamSelection {
   @@index([familyId, selectionType])
   @@index([publicTeamId])
   @@map("hockey_family_team_selections")
+}
+
+
+/// One-time invitation that lets another authenticated TAKATAK identity join a
+/// hockey family as a guardian. Only a SHA-256 token hash is stored; the bearer
+/// token is returned once to the inviter and is never persisted in plaintext.
+model HockeyFamilyInvite {
+  id                 String   @id @default(uuid()) @db.Uuid
+  familyId           String   @db.Uuid
+  inviterIdentityId  String   @db.Uuid
+  acceptedIdentityId String?  @db.Uuid
+  tokenHash          String   @unique
+  role               String   @default("guardian")
+  status             String   @default("pending")
+  expiresAt          DateTime
+  acceptedAt         DateTime?
+  revokedAt          DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  family           HockeyFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  inviterIdentity  MasterIdentity  @relation("HockeyFamilyInviteCreator", fields: [inviterIdentityId], references: [id], onDelete: Cascade)
+  acceptedIdentity MasterIdentity? @relation("HockeyFamilyInviteAccepted", fields: [acceptedIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([familyId, status, expiresAt])
+  @@index([inviterIdentityId, status])
+  @@index([acceptedIdentityId])
+  @@map("hockey_family_invites")
 }
 
 model HockeyTravelProfile {
