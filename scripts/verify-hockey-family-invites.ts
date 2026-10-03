@@ -25,6 +25,7 @@ assert.match(service, /INVITE_TTL_MS = 7 \* 24 \* 60 \* 60 \* 1000/);
 assert.match(service, /status: "accepted"/);
 assert.match(service, /expiresAt: \{ gt: now \}/);
 assert.match(service, /inviterIdentityId === identity\.id/);
+assert.match(service, /features\.has\("family_sync"\)/);
 assert.doesNotMatch(service, /primaryEmail/);
 assert.doesNotMatch(service, /primaryPhone/);
 
