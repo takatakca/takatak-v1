@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import {
   canUseSelectionType,
@@ -117,5 +118,13 @@ const duplicate = parseAhmvTeamDirectoryEnvelope(
   }),
 );
 assert.equal(duplicate.valid, false);
+
+const preferenceService = readFileSync(
+  "src/lib/billing/hockey/parent-preference-service.ts",
+  "utf8",
+);
+assert.match(preferenceService, /hockeyPublicTeam\.findUnique/);
+assert.match(preferenceService, /sourceApplication_teamId/);
+assert.match(preferenceService, /publicTeam\?\.active/);
 
 console.log("verify-hockey-family-isolation: all checks passed");
