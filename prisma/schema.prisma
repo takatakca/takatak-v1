@@ -2838,6 +2838,7 @@ model MasterIdentity {
   events              SourceSynchronizationEvent[]
   hockeyMemberships   HockeyMembership[]
   hockeyStripeEvents  HockeyStripeWebhookEvent[]
+  hockeyParentPreferences HockeyParentTeamPreference[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -2889,6 +2890,34 @@ model HockeyStripeWebhookEvent {
   @@index([identityId])
   @@index([sourceApplication])
   @@map("hockey_stripe_webhook_events")
+}
+
+
+/// Per-parent preferences for one exact public hockey team.
+/// This is a TAKATAK convenience layer only; teamId is a public routing key,
+/// never a roster/player identifier. Consent timestamps are recorded when a
+/// premium channel is explicitly enabled and cleared when disabled.
+model HockeyParentTeamPreference {
+  id                    String   @id @default(uuid()) @db.Uuid
+  identityId            String   @db.Uuid
+  sourceApplication     String   @default("ahmverdun")
+  teamId                String
+  smsReminders          Boolean  @default(false)
+  calendarSync          Boolean  @default(false)
+  departureAlerts       Boolean  @default(false)
+  arrivalBufferMinutes  Int      @default(30)
+  smsConsentAt          DateTime?
+  calendarConsentAt     DateTime?
+  departureConsentAt    DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication, teamId])
+  @@index([identityId, sourceApplication])
+  @@index([sourceApplication, teamId])
+  @@map("hockey_parent_team_preferences")
 }
 
 model SourceProfile {
