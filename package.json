@@ -86,7 +86,8 @@
     "qa:hockey-family-isolation": "tsx scripts/verify-hockey-family-isolation.ts",
     "qa:hockey-smart-departure": "tsx --require ./scripts/register-server-only.cjs scripts/verify-hockey-smart-departure.ts",
     "qa:hockey-write-origin": "tsx scripts/verify-hockey-write-origin.ts",
-    "qa:hockey-readiness": "tsx scripts/verify-hockey-backend-readiness.ts"
+    "qa:hockey-readiness": "tsx scripts/verify-hockey-backend-readiness.ts",
+    "qa:hockey-canary": "tsx --require ./scripts/register-server-only.cjs scripts/ci-hockey-canary.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "6.19.3",

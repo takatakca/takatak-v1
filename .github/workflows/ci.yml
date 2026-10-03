@@ -254,6 +254,19 @@ jobs:
             exit "$status"
           fi
 
+      - name: AHMV Parent Premium ephemeral canary
+        env:
+          NODE_ENV: development
+        run: |
+          set +e +o pipefail
+          npm run qa:hockey-canary 2>&1 | tee /tmp/qa-hockey-canary.log
+          status=${PIPESTATUS[0]}
+          set -euo pipefail
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=qa:hockey-canary::$(grep -E 'AssertionError|Error:|canary' /tmp/qa-hockey-canary.log | tail -n 60 | tr '\n' ' | ')"
+            exit "$status"
+          fi
+
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
 
