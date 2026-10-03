@@ -22,6 +22,11 @@ const MIGRATION_PATH = resolve(
   process.cwd(),
   "prisma/migrations/20261001155500_1lv_master_bridge/migration.sql",
 );
+const RELATIONSHIP_MIGRATION_PATH = resolve(
+  process.cwd(),
+  "prisma/migrations/20261002133000_1lv_customer_relationship_projection/migration.sql",
+);
+const RELATIONSHIP_ID = "77777777-7777-4777-8777-777777777777";
 
 async function verifyUpgradedState(label: string) {
   const source = await client.query(
@@ -143,10 +148,30 @@ async function verifyUpgradedState(label: string) {
     SELECT grantee, privilege_type
     FROM information_schema.role_table_grants
     WHERE table_schema = 'public'
-      AND table_name IN ('master_merchants', 'source_merchants')
+      AND table_name IN (
+        'master_merchants',
+        'source_merchants',
+        'marketplace_relationships'
+      )
       AND grantee IN ('anon', 'authenticated')
   `);
   assert.equal(leakedPrivileges.rowCount, 0);
+
+  const relationshipShape = await client.query(`
+    SELECT
+      c.is_nullable AS company_nullable,
+      cls.relrowsecurity AS rls_enabled
+    FROM information_schema.columns c
+    JOIN pg_class cls
+      ON cls.relname = c.table_name
+     AND cls.relnamespace = 'public'::regnamespace
+    WHERE c.table_schema = 'public'
+      AND c.table_name = 'marketplace_relationships'
+      AND c.column_name = 'companyId'
+  `);
+  assert.equal(relationshipShape.rowCount, 1);
+  assert.equal(relationshipShape.rows[0].company_nullable, 'YES');
+  assert.equal(relationshipShape.rows[0].rls_enabled, true);
 
   const duplicateMaster = await client.query(
     `
@@ -165,10 +190,87 @@ async function main() {
   try {
     await verifyUpgradedState("first apply");
 
+    await client.query(
+      `
+        INSERT INTO public.marketplace_relationships (
+          id,
+          "identityId",
+          "sourceMerchantId",
+          "sourceApplication",
+          "sourceCustomerRef",
+          "relationshipType",
+          "firstSeenAt",
+          "lastSeenAt",
+          "orderCount",
+          "updatedAt"
+        )
+        VALUES (
+          $1::uuid,
+          $2::uuid,
+          $3::uuid,
+          '1lv',
+          'legacy-fixture-customer',
+          'customer_of',
+          now(),
+          now(),
+          1,
+          now()
+        )
+        ON CONFLICT (
+          "sourceApplication",
+          "sourceCustomerRef",
+          "sourceMerchantId",
+          "relationshipType"
+        )
+        DO UPDATE SET
+          "identityId" = EXCLUDED."identityId",
+          "lastSeenAt" = EXCLUDED."lastSeenAt",
+          "orderCount" = EXCLUDED."orderCount",
+          "updatedAt" = now()
+      `,
+      [RELATIONSHIP_ID, LEGACY_IDENTITY_ID, SOURCE_MERCHANT_ID],
+    );
+
+    const projectedRelationship = await client.query(
+      `
+        SELECT "companyId", "identityId", "sourceMerchantId", "orderCount"
+        FROM public.marketplace_relationships
+        WHERE id = $1::uuid
+      `,
+      [RELATIONSHIP_ID],
+    );
+    assert.equal(projectedRelationship.rowCount, 1);
+    assert.equal(projectedRelationship.rows[0].companyId, null);
+    assert.equal(projectedRelationship.rows[0].identityId, LEGACY_IDENTITY_ID);
+    assert.equal(
+      projectedRelationship.rows[0].sourceMerchantId,
+      SOURCE_MERCHANT_ID,
+    );
+    assert.equal(projectedRelationship.rows[0].orderCount, 1);
+
     const migrationSql = readFileSync(MIGRATION_PATH, "utf8");
     await client.query(migrationSql);
+    const relationshipMigrationSql = readFileSync(
+      RELATIONSHIP_MIGRATION_PATH,
+      "utf8",
+    );
+    await client.query(relationshipMigrationSql);
 
     await verifyUpgradedState("second apply");
+
+    const relationshipCount = await client.query(
+      `
+        SELECT count(*)::int AS count
+        FROM public.marketplace_relationships
+        WHERE id = $1::uuid
+      `,
+      [RELATIONSHIP_ID],
+    );
+    assert.equal(
+      relationshipCount.rows[0].count,
+      1,
+      "relationship migration is idempotent and preserves existing rows",
+    );
 
     await client.query(
       `
@@ -199,7 +301,9 @@ async function main() {
     );
     assert.equal(immutableBinding.rows[0].authUserId, LEGACY_AUTH_USER_ID);
 
-    console.log("1LV legacy production-schema upgrade + idempotence + Auth UUID backfill: PASS");
+    console.log(
+      "1LV legacy production-schema upgrade + relationship projection + idempotence + Auth UUID backfill: PASS",
+    );
   } finally {
     await client.end();
   }

@@ -3,7 +3,9 @@ name: Reconcile TAKATAK production migrations
 on:
   push:
     branches:
+      - main
       - integration/1lv-mastermind-bridge
+      - hardening/1lv-customer-relationship-projection
     paths:
       - "prisma/migrations/**"
       - "scripts/reconcile-production-migrations.mjs"
@@ -53,6 +55,16 @@ jobs:
 
       - name: Prisma generate
         run: npm run db:generate
+
+      - name: Validate production mutation ref
+        if: env.RECONCILE_MODE == 'apply'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "ERROR: TAKATAK production migration apply is allowed only from refs/heads/main."
+            exit 1
+          fi
 
       - name: Validate production secret presence
         id: production-secret
