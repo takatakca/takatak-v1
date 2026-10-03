@@ -1,9 +1,11 @@
 import type { TenantAccess } from "@/lib/security/tenant-access";
 import { getPrisma } from "@/lib/db/prisma";
-
-export type DashboardServiceModule = "rentauto";
-
-const DASHBOARD_SERVICE_MODULES: DashboardServiceModule[] = ["rentauto"];
+import {
+  DASHBOARD_SERVICE_MODULES,
+  ENABLED_SERVICE_STATUSES,
+  isDashboardServiceModule,
+  type DashboardServiceModule,
+} from "@/lib/services/service-modules";
 
 /**
  * ServiceInstance is the commercial source of truth for optional TAKATAK modules.
@@ -29,8 +31,8 @@ export async function getEnabledServiceModules(
   const services = await prisma.serviceInstance.findMany({
     where: {
       clientId: access.activeClientId,
-      serviceType: { in: DASHBOARD_SERVICE_MODULES },
-      status: { in: ["active", "pending_setup"] },
+      serviceType: { in: [...DASHBOARD_SERVICE_MODULES] },
+      status: { in: [...ENABLED_SERVICE_STATUSES] },
     },
     select: {
       serviceType: true,
@@ -41,11 +43,8 @@ export async function getEnabledServiceModules(
     ...new Set(
       services
         .map((service) => service.serviceType)
-        .filter(
-          (serviceType): serviceType is DashboardServiceModule =>
-            DASHBOARD_SERVICE_MODULES.includes(
-              serviceType as DashboardServiceModule,
-            ),
+        .filter((serviceType): serviceType is DashboardServiceModule =>
+          isDashboardServiceModule(serviceType),
         ),
     ),
   ];
