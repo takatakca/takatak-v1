@@ -460,3 +460,83 @@ export async function getHockeyGoogleCalendarStatus(authUserId: string) {
     lastValidatedAt: connection?.lastValidatedAt?.toISOString() ?? null,
   };
 }
+
+
+export async function disconnectHockeyGoogleCalendar(
+  authUserId: string,
+): Promise<{ disconnected: boolean }> {
+  const prisma = getPrisma();
+  if (!prisma) {
+    throw new ServiceError("unavailable", "Calendar connection is temporarily unavailable.");
+  }
+
+  const identity = await prisma.masterIdentity.findUnique({
+    where: { authUserId },
+    select: {
+      id: true,
+      hockeyCalendarConnections: {
+        where: {
+          sourceApplication: HOCKEY_SOURCE_APPLICATION,
+          provider: "google",
+        },
+        take: 1,
+        select: { id: true },
+      },
+    },
+  });
+
+  if (!identity) {
+    throw new ServiceError("forbidden", "Verify your TAKATAK identity first.");
+  }
+
+  const connection = identity.hockeyCalendarConnections[0] ?? null;
+  if (!connection) {
+    return { disconnected: false };
+  }
+
+  const now = new Date();
+
+  await prisma.$transaction([
+    prisma.hockeyCalendarConnection.update({
+      where: { id: connection.id },
+      data: {
+        status: "revoked",
+        tokenCiphertext: null,
+        tokenIv: null,
+        tokenAuthTag: null,
+        accessTokenExpiresAt: null,
+        lastValidatedAt: now,
+        lastErrorCode: null,
+        lastErrorMessage: null,
+      },
+    }),
+    prisma.hockeyCalendarOAuthState.updateMany({
+      where: {
+        identityId: identity.id,
+        sourceApplication: HOCKEY_SOURCE_APPLICATION,
+        provider: "google",
+        status: { in: ["pending", "processing"] },
+      },
+      data: {
+        status: "cancelled",
+        consumedAt: now,
+        errorMessage: "Calendar connection was disconnected by the user.",
+      },
+    }),
+    prisma.hockeyDeliveryJob.updateMany({
+      where: {
+        identityId: identity.id,
+        kind: "calendar_sync",
+        status: "queued",
+      },
+      data: {
+        status: "skipped",
+        completedAt: now,
+        lastErrorCode: "calendar_disconnected",
+        lastErrorMessage: "Google Calendar is disconnected.",
+      },
+    }),
+  ]);
+
+  return { disconnected: true };
+}
