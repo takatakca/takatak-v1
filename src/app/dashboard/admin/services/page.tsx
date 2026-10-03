@@ -1,10 +1,12 @@
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminSourceBanner } from "@/components/admin/source-banner";
+import { AdminRentautoProvisioning } from "@/components/admin/admin-rentauto-provisioning";
 import { AdminTable, type AdminColumn } from "@/components/admin/admin-table";
 import { Badge } from "@/components/ui/badge";
 import { adminToneForStatus } from "@/lib/admin/status";
 import { getAdminServicesData } from "@/lib/admin/admin-data";
+import { getAdminRentautoProvisioningData } from "@/lib/admin/rentauto-service-admin";
 import type { AdminServiceSummary } from "@/lib/admin/types";
 import { requireAdminAccess } from "@/lib/security/guard";
 
@@ -22,13 +24,24 @@ const columns: AdminColumn<AdminServiceSummary>[] = [
 
 export default async function AdminServicesPage() {
   const access = await requireAdminAccess();
-  const data = await getAdminServicesData();
+  const [data, rentautoRows] = await Promise.all([
+    getAdminServicesData(),
+    getAdminRentautoProvisioningData(access.enforced),
+  ]);
   return (
     <div className="space-y-5">
-      <AdminHeader title="Services" subtitle="Service instances across all clients. Activation and cancellation are not active in Phase 13." badges={["View only"]} />
+      <AdminHeader
+        title="Services"
+        subtitle="Provision optional services for client workspaces and inspect all service instances."
+        badges={[access.enforced ? "Provisioning controls" : "Foundation preview"]}
+      />
       <AdminAccessBanner enforced={access.enforced} role={access.role} />
       <AdminSourceBanner source={data.source} label={data.sourceLabel} />
-      <AdminTable columns={columns} rows={data.services} rowKey={(s) => s.id} caption="Service instances (view only)" />
+      <AdminRentautoProvisioning
+        rows={rentautoRows}
+        enabled={access.enforced}
+      />
+      <AdminTable columns={columns} rows={data.services} rowKey={(s) => s.id} caption="Service instances" />
     </div>
   );
 }

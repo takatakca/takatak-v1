@@ -50,6 +50,13 @@ function NavRow({
     if (childActive || (hasChildren && active)) setOpen(true);
   }, [childActive, hasChildren, active]);
 
+  if (
+    item.serviceModule &&
+    !session.enabledServiceModules.includes(item.serviceModule)
+  ) {
+    return null;
+  }
+
   const isPlatformAdminItem =
     item.href === "/dashboard/admin" || item.href.startsWith("/dashboard/admin/");
   const hasPlatformAdminAccess =

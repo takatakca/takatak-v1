@@ -64,6 +64,9 @@ jobs:
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
+      - name: Rentauto service entitlement safeguards
+        run: npm run qa:rentauto-service-access
+
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
