@@ -170,3 +170,37 @@ export async function exchangeAhmvExperienceLaunch(rawCode: string) {
     expiresAt: expiresAt.toISOString(),
   };
 }
+
+
+export async function introspectAhmvExperienceIdentity(identityId: string) {
+  const prisma = getPrisma();
+  if (!prisma) {
+    throw new ServiceError("unavailable", "AHMV access is temporarily unavailable.");
+  }
+
+  const identity = await prisma.masterIdentity.findUnique({
+    where: { id: identityId },
+    select: { authUserId: true, accountStatus: true },
+  });
+
+  if (
+    !identity?.authUserId ||
+    (identity.accountStatus && identity.accountStatus !== "active")
+  ) {
+    return { active: false as const };
+  }
+
+  const membership = await getHockeyMembershipSnapshot(identity.authUserId);
+  if (!membership.hasAhmvAccess || membership.identityId !== identityId) {
+    return { active: false as const };
+  }
+
+  return {
+    active: true as const,
+    product: AHMV_PRODUCT_CODE,
+    entitlement: AHMV_ACCESS_ENTITLEMENT,
+    planCode: membership.planCode,
+    status: membership.status,
+    currentPeriodEnd: membership.currentPeriodEnd,
+  };
+}
