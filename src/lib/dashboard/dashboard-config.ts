@@ -41,6 +41,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Trophy,
   UserPlus,
   UserRound,
   Users,
@@ -101,6 +102,11 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     title: "Services",
     items: [
+      {
+        label: "Hockey / AHMV",
+        href: "/dashboard/hockey",
+        icon: Trophy,
+      },
       {
         label: "Rentauto",
         href: "/dashboard/rentauto",
@@ -179,6 +185,9 @@ export function pageTitleForPath(pathname: string): string {
 }
 
 export function pageSubtitleForPath(pathname: string): string | null {
+  if (pathname === "/dashboard/hockey" || pathname.startsWith("/dashboard/hockey/")) {
+    return "Manage your personal AHMV membership, premium entitlements, Stripe billing and future family hockey services.";
+  }
   if (pathname === "/dashboard/web-hosting/domains" || pathname.startsWith("/dashboard/web-hosting/domains/")) {
     return "Manage your domains, DNS settings, renewals, redirects, and connection status.";
   }

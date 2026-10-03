@@ -61,6 +61,9 @@ jobs:
       - name: Identity-isolation tests
         run: npm run test:identity
 
+      - name: AHMV hockey membership safeguards
+        run: npm run qa:hockey-membership
+
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
