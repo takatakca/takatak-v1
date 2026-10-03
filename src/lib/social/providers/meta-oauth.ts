@@ -19,6 +19,16 @@ export const META_OAUTH_PAGE_SCOPES = [
 ] as const;
 
 /**
+ * Optional permission used by community-driven Pages that intentionally ingest
+ * public posts in which the Page was tagged. Keep this separate from the base
+ * Page permission set so existing clients are never forced into a broader
+ * consent surface just to connect Facebook.
+ */
+export const META_OAUTH_PAGE_COMMUNITY_SCOPES = [
+  "pages_read_user_content",
+] as const;
+
+/**
  * Permissions reserved for an explicit Facebook-linked Instagram flow.
  * They are never included in the default Facebook Page authorization.
  */
@@ -35,6 +45,7 @@ export const META_OAUTH_START_SCOPES = META_OAUTH_PAGE_SCOPES;
 
 export type MetaOAuthScopeSet =
   | "facebook_pages"
+  | "facebook_pages_community"
   | "facebook_linked_instagram";
 
 export function resolveMetaOAuthScopes(
@@ -45,6 +56,15 @@ export function resolveMetaOAuthScopes(
       ...new Set([
         ...META_OAUTH_PAGE_SCOPES,
         ...META_OAUTH_INSTAGRAM_SCOPES,
+      ]),
+    ];
+  }
+
+  if (scopeSet === "facebook_pages_community") {
+    return [
+      ...new Set([
+        ...META_OAUTH_PAGE_SCOPES,
+        ...META_OAUTH_PAGE_COMMUNITY_SCOPES,
       ]),
     ];
   }
