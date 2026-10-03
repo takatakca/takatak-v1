@@ -45,6 +45,7 @@ for (const feature of [
   "ai_assistant",
   "game_reminders",
   "calendar_sync",
+  "family_sync",
   "team_community",
   "parent_messaging",
   "parent_rideshare",

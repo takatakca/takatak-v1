@@ -179,6 +179,34 @@ Returns:
 
 The backend does not use fuzzy team-name matching. Near-match IDs must not cross between children.
 
+## Guardian sharing
+
+A hockey family can include multiple authenticated guardians without importing roster data or storing invitation email/phone addresses.
+
+### POST /api/hockey/family/:familyId/invites
+
+Creates a one-time guardian invitation. The backend returns the bearer token once. Only its SHA-256 hash is stored.
+
+### GET /api/hockey/family/:familyId/invites
+
+Returns safe invitation metadata only; invitation bearer tokens are never returned again.
+
+### DELETE /api/hockey/family/:familyId/invites/:inviteId
+
+Revokes a pending invitation.
+
+### POST /api/hockey/family/invites/accept
+
+Input:
+
+```json
+{
+  "token": "<one-time invitation token>"
+}
+```
+
+The family owner must currently hold the `family_sync` entitlement, and the accepting person must already be authenticated through TAKATAK Auth. The token is one-time, expires after seven days, is replay-protected and cannot be accepted by the inviter. Acceptance links the authenticated identity to the existing family as an active guardian. No child roster identity is created from the invitation.
+
 ## Google Calendar
 
 ### POST /api/hockey/calendar/google/start
