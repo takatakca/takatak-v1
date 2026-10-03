@@ -5,7 +5,7 @@ import type Stripe from "stripe";
 
 import { HOCKEY_SOURCE_APPLICATION } from "./membership-policy";
 import { getHockeyStripe } from "./stripe-client";
-import { readHockeyStripePriceMap } from "./stripe-env";
+import { getAhmvStripePriceMap } from "./product-catalog-service";
 import {
   hockeyStripeCustomerId,
   interpretHockeyStripeSubscription,
@@ -249,7 +249,7 @@ export async function applyHockeyStripeWebhookEvent(
 
   if (!getPrisma()) throw new Error("Database is unavailable.");
 
-  const priceMap = readHockeyStripePriceMap();
+  const priceMap = await getAhmvStripePriceMap();
   let identityId: string | null = null;
   let reason = "Event ignored.";
   let skipped = true;

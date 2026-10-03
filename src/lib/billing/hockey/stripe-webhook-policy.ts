@@ -1,15 +1,8 @@
-import {
-  HOCKEY_MEMBERSHIP_CATALOG,
-  isHockeyMembershipPlanCode,
-  isHockeySelfServePlanCode,
-  type HockeySelfServePlanCode,
-} from "./plan-catalog";
-
 export const HOCKEY_STRIPE_PROVIDER = "stripe" as const;
 
 export type HockeyStripePriceLookup = Record<
   string,
-  { planCode: HockeySelfServePlanCode }
+  { planCode: string; planName: string }
 >;
 
 export type HockeyStripeSubscriptionLike = {
@@ -41,7 +34,7 @@ export type HockeyMembershipStatusName =
 
 export type HockeyMembershipPatch = {
   status: HockeyMembershipStatusName;
-  planCode: HockeySelfServePlanCode;
+  planCode: string;
   planName: string;
   provider: typeof HOCKEY_STRIPE_PROVIDER;
   externalCustomerId: string | null;
@@ -120,25 +113,6 @@ export function mapHockeyStripeStatus(
   }
 }
 
-export function resolveHockeyPlanFromStripe(input: {
-  metadataPlanCode?: string | null;
-  priceId?: string | null;
-  priceMap: HockeyStripePriceLookup;
-}): HockeySelfServePlanCode | null {
-  if (
-    isHockeyMembershipPlanCode(input.metadataPlanCode) &&
-    isHockeySelfServePlanCode(input.metadataPlanCode)
-  ) {
-    return input.metadataPlanCode;
-  }
-
-  if (input.priceId) {
-    return input.priceMap[input.priceId]?.planCode ?? null;
-  }
-
-  return null;
-}
-
 export function interpretHockeyStripeSubscription(
   subscription: HockeyStripeSubscriptionLike,
   priceMap: HockeyStripePriceLookup,
@@ -147,21 +121,19 @@ export function interpretHockeyStripeSubscription(
   if (status === "skip") {
     return {
       action: "skip",
-      reason: `Stripe status "${subscription.status}" does not grant or change hockey membership access.`,
+      reason: `Stripe status "${subscription.status}" does not grant or change AHMV access.`,
     };
   }
 
   const priceId = hockeyStripePriceId(subscription.items?.data?.[0]?.price);
-  const planCode = resolveHockeyPlanFromStripe({
-    metadataPlanCode: subscription.metadata?.planCode,
-    priceId,
-    priceMap,
-  });
+  const mappedPlan = priceId ? priceMap[priceId] : undefined;
 
-  if (!planCode) {
+  // The configured ProductPrice -> Stripe price map is authoritative.
+  // Stripe metadata is descriptive only and cannot grant a plan by itself.
+  if (!mappedPlan) {
     return {
       action: "skip",
-      reason: "Stripe subscription does not map to a self-serve hockey membership.",
+      reason: "Stripe subscription price is not mapped to an active AHMV catalog plan.",
     };
   }
 
@@ -171,8 +143,8 @@ export function interpretHockeyStripeSubscription(
     action: "apply",
     patch: {
       status,
-      planCode,
-      planName: HOCKEY_MEMBERSHIP_CATALOG[planCode].planName,
+      planCode: mappedPlan.planCode,
+      planName: mappedPlan.planName,
       provider: HOCKEY_STRIPE_PROVIDER,
       externalCustomerId: hockeyStripeCustomerId(subscription.customer),
       externalSubscriptionId: subscription.id,
