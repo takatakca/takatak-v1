@@ -1,5 +1,3 @@
-import "server-only";
-
 import { timingSafeEqual } from "node:crypto";
 
 import { resolveEffectiveSocialEntitlements } from "@/lib/billing/social/subscription-lifecycle";
