@@ -2840,6 +2840,7 @@ model MasterIdentity {
   hockeyStripeEvents     HockeyStripeWebhookEvent[]
   hockeyParentPreferences HockeyParentTeamPreference[]
   hockeyPremiumGrants    HockeyPremiumGrant[]
+  hockeyDeliveryJobs     HockeyDeliveryJob[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -2946,6 +2947,67 @@ model HockeyPremiumGrant {
   @@index([identityId, sourceApplication, status])
   @@index([identityId, expiresAt])
   @@map("hockey_premium_grants")
+}
+
+
+/// Normalized public team event received from an approved hockey source.
+/// It carries no roster or player identity and never replaces the official
+/// schedule source.
+model HockeyTeamEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  sourceEventId     String
+  teamId            String
+  eventType         String
+  title             String
+  startsAt          DateTime
+  endsAt            DateTime?
+  timezone          String   @default("America/Toronto")
+  arenaName         String?
+  arenaAddress      String?
+  arenaLatitude     Float?
+  arenaLongitude    Float?
+  status            String   @default("confirmed")
+  sourceUrl         String?
+  sourceUpdatedAt   DateTime
+  payloadHash       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  deliveryJobs HockeyDeliveryJob[]
+
+  @@unique([sourceApplication, sourceEventId])
+  @@index([sourceApplication, teamId, startsAt])
+  @@index([startsAt, status])
+  @@map("hockey_team_events")
+}
+
+/// Idempotent delivery work derived from a normalized team event.
+/// Workers re-check consent and premium entitlement before any external action.
+model HockeyDeliveryJob {
+  id             String   @id @default(uuid()) @db.Uuid
+  identityId     String   @db.Uuid
+  teamEventId    String   @db.Uuid
+  kind           String
+  status         String   @default("queued")
+  scheduledAt    DateTime
+  dedupeKey      String   @unique
+  eventRevision  String
+  attemptCount   Int      @default(0)
+  lockedAt       DateTime?
+  completedAt    DateTime?
+  lastErrorCode  String?
+  lastErrorMessage String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  identity  MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledAt])
+  @@index([identityId, status])
+  @@index([teamEventId, kind])
+  @@map("hockey_delivery_jobs")
 }
 
 model SourceProfile {
