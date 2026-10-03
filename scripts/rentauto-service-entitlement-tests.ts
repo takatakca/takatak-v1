@@ -68,6 +68,42 @@ function main() {
     "direct URL access must be gated before Rentauto bootstrap/data reads",
   );
 
+  const provisioning = read(
+    "src/lib/admin/rentauto-service-admin.ts",
+  );
+  check(
+    "Provisioning reuses ServiceInstance instead of creating a parallel entitlement store",
+    /serviceInstance\.findMany/.test(provisioning) &&
+      /serviceType:\s*"rentauto"/.test(provisioning) &&
+      /serviceInstance\.(create|update)/.test(provisioning),
+    "Rentauto commercial access must remain on the existing ServiceInstance model",
+  );
+
+  check(
+    "Provisioning writes an audit trail",
+    /auditLog\.create/.test(provisioning) &&
+      /rentauto_service_provisioned/.test(provisioning) &&
+      /rentauto_service_paused/.test(provisioning),
+    "platform service changes must be auditable",
+  );
+
+  check(
+    "Duplicate Rentauto services fail closed",
+    /existing\.length\s*>\s*1/.test(provisioning) &&
+      /Multiple Rentauto service records exist/.test(provisioning),
+    "ambiguous client-level entitlements must block instead of selecting a random record",
+  );
+
+  const apiRoute = read(
+    "src/app/api/admin/clients/[clientId]/services/rentauto/route.ts",
+  );
+  check(
+    "Provisioning API requires platform-admin authorization",
+    /requirePlatformAdminApiAccess/.test(apiRoute) &&
+      /isUuid\(clientId\)/.test(apiRoute),
+    "write endpoint must verify platform authority and workspace identity",
+  );
+
   console.log("Rentauto service entitlement verification");
   console.log("========================================");
   for (const row of rows) {
