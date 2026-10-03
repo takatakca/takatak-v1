@@ -52,6 +52,16 @@ const eventSync = badSourceList.checks.find(
 assert.ok(eventSync);
 assert.ok(eventSync.invalid.includes("AHMV_EVENT_ALLOWED_SOURCE_HOSTS"));
 
+const incompleteTeamFeed = collectAhmvBackendReadiness({
+  AHMV_TEAM_FEED_ENABLED: "true",
+  AHMV_TEAM_FEED_SHARED_TOKEN: "too-short",
+});
+const teamFeed = incompleteTeamFeed.checks.find(
+  (check) => check.capability === "team_feed",
+);
+assert.ok(teamFeed);
+assert.ok(teamFeed.invalid.includes("AHMV_TEAM_FEED_SHARED_TOKEN"));
+
 const incompleteDeparture = collectAhmvBackendReadiness({
   HOCKEY_SMART_DEPARTURE_ENABLED: "true",
   GOOGLE_MAPS_ROUTES_API_KEY: "routes-key",
@@ -101,6 +111,9 @@ const complete = collectAhmvBackendReadiness({
   GOOGLE_MAPS_ROUTES_API_KEY: "routes-api-key",
   HOCKEY_TRAVEL_ENCRYPTION_KEY_V1:
     Buffer.alloc(32, 2).toString("base64"),
+
+  AHMV_TEAM_FEED_ENABLED: "true",
+  AHMV_TEAM_FEED_SHARED_TOKEN: "f".repeat(40),
 });
 assert.equal(complete.ready, true);
 assert.equal(complete.productionSafe, true);
