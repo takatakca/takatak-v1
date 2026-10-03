@@ -52,6 +52,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: AHMV team feed bridge safeguards
+        run: npm run verify:ahmv-team-feed
+
       - name: Lint
         run: npm run lint
 
