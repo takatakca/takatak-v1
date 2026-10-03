@@ -13,10 +13,11 @@ import {
 } from "../src/lib/hockey/family/family-service";
 import { ServiceError } from "../src/lib/services/service-error";
 
-const prisma = getPrisma();
-if (!prisma) {
+const prismaCandidate = getPrisma();
+if (!prismaCandidate) {
   throw new Error("DATABASE_URL must point to the ephemeral CI database.");
 }
+const prisma = prismaCandidate;
 
 const authUserA = "00000000-0000-4000-8000-00000000a001";
 const authUserB = "00000000-0000-4000-8000-00000000a002";
