@@ -169,8 +169,57 @@ function verifyPrivacyAndRoutes(): void {
     ),
     true,
   );
+  assert.equal(
+    fs.existsSync(
+      path.join(root, "src", "app", "api", "ads", "click", "route.ts"),
+    ),
+    true,
+  );
+  assert.equal(
+    fs.existsSync(
+      path.join(
+        root,
+        "src",
+        "app",
+        "api",
+        "integrations",
+        "ads",
+        "flexs",
+        "events",
+        "route.ts",
+      ),
+    ),
+    true,
+  );
+
+  const publicEventsRoute = fs.readFileSync(
+    path.join(root, "src", "app", "api", "ads", "events", "route.ts"),
+    "utf8",
+  );
+  assert.ok(publicEventsRoute.includes('body.eventType === "impression"'));
+  assert.ok(publicEventsRoute.includes('body.eventType === "click"'));
+  assert.equal(publicEventsRoute.includes('body.eventType === "lead"'), false);
+  assert.equal(publicEventsRoute.includes('body.eventType === "conversion"'), false);
+
+  const flexsRoute = fs.readFileSync(
+    path.join(
+      root,
+      "src",
+      "app",
+      "api",
+      "integrations",
+      "ads",
+      "flexs",
+      "events",
+      "route.ts",
+    ),
+    "utf8",
+  );
+  assert.equal(/raw\.(email|phone|name|address)/.test(flexsRoute), false);
+
   pass("public ADS event ledger avoids direct personal identifiers");
-  pass("serve and event APIs exist");
+  pass("serve, signed click and FLEXS attribution APIs exist");
+  pass("browser event API cannot submit lead or conversion events");
 }
 
 console.log("TAKATAK ADS foundation verification");
