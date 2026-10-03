@@ -41,7 +41,9 @@ and explicitly configure:
 
 `AHMV_EVENT_ALLOWED_SOURCE_HOSTS=`
 
-with the exact verified public schedule hosts in use at cutover.
+with the exact verified public schedule hosts in use at cutover. See `docs/AHMV_PUBLIC_SOURCE_INVENTORY.md` for the current review inventory.
+
+There is no implicit fallback allowlist. If signed AHMV event synchronization is enabled without an explicit allowlist, ingestion fails closed.
 
 The source-host comparison is exact. A hostname such as `scoresheets.ca.evil.example` is rejected.
 

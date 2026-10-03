@@ -259,7 +259,8 @@ Signed HMAC event used to upsert normalized public games/practices/events.
 
 Production event ingestion must require:
 
-- an approved exact HTTPS source host;
+- an approved exact HTTPS source host from the explicit production allowlist;
+- no implicit fallback domain list;
 - a valid integration ID;
 - event ID;
 - timestamp inside the replay window;
@@ -303,7 +304,7 @@ Do not switch the AHM frontend to live backend behavior until:
 - Prisma migrations pass on ephemeral Supabase;
 - RLS/PostgREST checks are green;
 - build/artifact/startup tests are green;
-- exact source allowlist is configured;
+- exact source allowlist is configured from the reviewed public source inventory;
 - Stripe webhook and approved Price IDs are configured;
 - Twilio sender/messaging service and worker secret are configured;
 - Google OAuth callback and encryption keys are configured;

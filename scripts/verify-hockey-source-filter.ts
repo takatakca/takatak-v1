@@ -8,43 +8,60 @@ import {
 
 delete process.env.AHMV_EVENT_ALLOWED_SOURCE_HOSTS;
 delete process.env.AHMV_EVENT_REQUIRE_SOURCE_URL;
+delete process.env.AHMV_EVENT_SYNC_ENABLED;
+
+// No implicit trust list: an event without provenance is rejected even while
+// the connector is disabled.
+let decision = validateAhmvEventSourceUrl(null);
+assert.equal(decision.allowed, false);
+if (!decision.allowed) {
+  assert.equal(decision.code, "source_required");
+}
+
+// If someone enables the signed connector before configuring exact hosts, the
+// endpoint fails closed instead of falling back to hard-coded domains.
+process.env.AHMV_EVENT_SYNC_ENABLED = "true";
+decision = validateAhmvEventSourceUrl(
+  "https://ahmverdun.com/schedules?teamId=123",
+);
+assert.equal(decision.allowed, false);
+if (!decision.allowed) {
+  assert.equal(decision.code, "source_allowlist_unconfigured");
+  assert.equal(decision.status, 503);
+}
+
+process.env.AHMV_EVENT_REQUIRE_SOURCE_URL = "true";
+process.env.AHMV_EVENT_ALLOWED_SOURCE_HOSTS =
+  "ahmverdun.com,scoresheets.ca,page.spordle.com,www.wllv.org";
 
 for (const url of [
-  "https://ahmverdun.ca/schedules?teamId=123",
-  "https://www.ahmverdun.com/schedules?teamId=123",
-  "https://scoresheets.ca/tournament-game-scoresheet.php?gameId=1500",
-  "https://www.retroaction.ca/Schedule/intro/example",
+  "https://ahmverdun.com/schedules?teamId=123",
+  "https://scoresheets.ca/tournament.php?id=17",
+  "https://page.spordle.com/fr/ahm-de-verdun/register",
+  "https://www.wllv.org/schedules",
 ]) {
   assert.equal(validateAhmvEventSourceUrl(url).allowed, true, url);
 }
 
+// Canonical AHMV presentation domain is not automatically treated as the
+// authoritative schedule source. It can be explicitly added later if the
+// approved data flow changes.
 assert.equal(
-  validateAhmvEventSourceUrl("https://scoresheets.ca.evil.example/game").allowed,
+  validateAhmvEventSourceUrl(
+    "https://ahmverdun.ca/schedules?teamId=123",
+  ).allowed,
   false,
 );
-assert.equal(
-  validateAhmvEventSourceUrl("http://scoresheets.ca/game").allowed,
-  false,
-);
-assert.equal(validateAhmvEventSourceUrl(null).allowed, true);
 
-process.env.AHMV_EVENT_REQUIRE_SOURCE_URL = "true";
-const missing = validateAhmvEventSourceUrl(null);
-assert.equal(missing.allowed, false);
-if (!missing.allowed) {
-  assert.equal(missing.code, "source_required");
+for (const unsafe of [
+  "https://scoresheets.ca.evil.example/game",
+  "http://scoresheets.ca/game",
+  "https://user:pass@scoresheets.ca/game",
+  "https://scoresheets.ca:8443/game",
+  "https://retroaction.ca/Schedule/intro/example",
+]) {
+  assert.equal(validateAhmvEventSourceUrl(unsafe).allowed, false, unsafe);
 }
-
-process.env.AHMV_EVENT_ALLOWED_SOURCE_HOSTS =
-  "ahmverdun.ca,scoresheets.ca";
-assert.equal(
-  validateAhmvEventSourceUrl("https://ahmverdun.ca/game/1").allowed,
-  true,
-);
-assert.equal(
-  validateAhmvEventSourceUrl("https://retroaction.ca/game/1").allowed,
-  false,
-);
 
 const raw = JSON.stringify({
   eventId: "evt-filter-001",
@@ -63,7 +80,8 @@ const raw = JSON.stringify({
     arenaLatitude: 45.46,
     arenaLongitude: -73.57,
     status: "confirmed",
-    sourceUrl: "https://ahmverdun.ca/schedules?teamId=2025191400017862",
+    sourceUrl:
+      "https://ahmverdun.com/schedules?teamId=2025191400017862",
     sourceUpdatedAt: "2026-10-03T11:59:00.000Z",
 
     // Deliberately injected fields that must never enter the normalized model.
@@ -95,7 +113,13 @@ for (const forbidden of [
 }
 
 const summary = ahmvSourcePolicySummary();
-assert.deepEqual(summary.allowedHosts, ["ahmverdun.ca", "scoresheets.ca"]);
+assert.deepEqual(summary.allowedHosts, [
+  "ahmverdun.com",
+  "page.spordle.com",
+  "scoresheets.ca",
+  "www.wllv.org",
+]);
+assert.equal(summary.allowlistConfigured, true);
 assert.equal(summary.requireSourceUrl, true);
 
 console.log("verify-hockey-source-filter: all checks passed");
