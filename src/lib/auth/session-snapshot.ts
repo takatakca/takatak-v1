@@ -3,7 +3,7 @@ import type {
   PlatformRoleKey,
   RoleKey,
 } from "@/lib/security/roles";
-import type { DashboardServiceModule } from "@/lib/services/service-access";
+import type { DashboardServiceModule } from "@/lib/services/service-modules";
 
 export interface SessionSnapshot {
   configured: boolean;
