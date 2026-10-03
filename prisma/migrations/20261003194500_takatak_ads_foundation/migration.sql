@@ -21,6 +21,8 @@ CREATE TABLE "ad_publishers" (
   "category" TEXT,
   "country" TEXT NOT NULL DEFAULT 'Canada',
   "region" TEXT,
+  "city" TEXT,
+  "postalPrefix" TEXT,
   "allowedOrigins" TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   "status" "AdsPublisherStatus" NOT NULL DEFAULT 'active',
   "metadata" JSONB,
