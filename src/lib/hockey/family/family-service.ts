@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import { HOCKEY_SOURCE_APPLICATION } from "@/lib/billing/hockey/membership-policy";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
+import { canUseSelectionType, exactTeamEventProjection } from "./family-isolation-policy";
 
 export type HockeyFamilySelectionType = "assigned" | "favorite";
 
@@ -265,8 +266,10 @@ export async function addHockeyFamilyTeamSelection(input: {
   }
 
   if (
-    input.selectionType === "assigned" &&
-    member.memberType !== "child"
+    !canUseSelectionType({
+      memberType: member.memberType,
+      selectionType: input.selectionType,
+    })
   ) {
     throw new ServiceError(
       "invalid_input",
@@ -438,20 +441,17 @@ export async function getHockeyFamilySchedule(input: {
           },
         });
 
-  const byTeam = new Map<string, typeof events>();
-  for (const event of events) {
-    const list = byTeam.get(event.teamId) ?? [];
-    list.push(event);
-    byTeam.set(event.teamId, list);
-  }
-
-  const projectedMembers = members.map((member) => {
-    const exactIds = new Set(
-      member.selections
+  const projection = exactTeamEventProjection(
+    members.map((member) => ({
+      memberId: member.id,
+      exactTeamIds: member.selections
         .filter((selection) => selection.publicTeam.active)
         .map((selection) => selection.publicTeam.teamId),
-    );
+    })),
+    events,
+  );
 
+  const projectedMembers = members.map((member) => {
     return {
       id: member.id,
       memberCode: member.memberCode,
@@ -461,7 +461,7 @@ export async function getHockeyFamilySchedule(input: {
         selectionType: selection.selectionType,
         ...selection.publicTeam,
       })),
-      events: events.filter((event) => exactIds.has(event.teamId)),
+      events: projection.get(member.id) ?? [],
     };
   });
 
