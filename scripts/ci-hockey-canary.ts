@@ -16,6 +16,10 @@ import {
   createHockeyFamilyGuardianInvite,
   hashHockeyFamilyInviteTokenForTest,
 } from "../src/lib/hockey/family/guardian-invite-service";
+import {
+  listHockeyFamilyEventRsvps,
+  saveHockeyFamilyEventRsvp,
+} from "../src/lib/hockey/family/rsvp-service";
 import { ServiceError } from "../src/lib/services/service-error";
 
 const prismaCandidate = getPrisma();
@@ -337,6 +341,36 @@ async function main() {
   }
   assert.equal(replayBlocked, true);
 
+  const exactEvent = await prisma.hockeyTeamEvent.findUnique({
+    where: {
+      sourceApplication_sourceEventId: {
+        sourceApplication: "ahmverdun",
+        sourceEventId: sourceEventExact,
+      },
+    },
+    select: { id: true },
+  });
+  assert.ok(exactEvent);
+
+  const familyRsvp = await saveHockeyFamilyEventRsvp({
+    authUserId: authUserB,
+    familyId: family.familyId,
+    teamEventId: exactEvent.id,
+    childMemberId: child.id,
+    status: "going",
+  });
+  assert.equal(familyRsvp.child.id, child.id);
+  assert.equal(familyRsvp.status, "going");
+
+  const sharedRsvps = await listHockeyFamilyEventRsvps({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    teamEventId: exactEvent.id,
+  });
+  assert.equal(sharedRsvps.rsvps.length, 1);
+  assert.equal(sharedRsvps.rsvps[0]?.child.id, child.id);
+  assert.equal(sharedRsvps.rsvps[0]?.status, "going");
+
   const jobs = await prisma.hockeyDeliveryJob.findMany({
     where: { identityId: identityA.id },
     select: { kind: true, status: true },
@@ -348,7 +382,7 @@ async function main() {
   assert.ok(jobs.some((job) => job.status === "skipped"));
 
   console.log(
-    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, event revisions and delivery queue passed",
+    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, shared family RSVP, event revisions and delivery queue passed",
   );
 }
 
