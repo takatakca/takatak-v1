@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 
+import { HOCKEY_MEMBERSHIP_CATALOG } from "../src/lib/billing/hockey/plan-catalog";
+import { HOCKEY_PARENT_PREFERENCE_FEATURES } from "../src/lib/billing/hockey/parent-preference-policy";
+
 import { buildHockeyDepartureSms } from "../src/lib/hockey/travel/departure-message";
 import {
   hockeyLeaveBy,
@@ -19,7 +22,22 @@ import { validateHockeyTravelOriginInput } from "../src/lib/hockey/travel/travel
 
 
 async function main() {
-  process.env.HOCKEY_TRAVEL_ACTIVE_KEY_VERSION = "1";
+  assert.equal(
+  HOCKEY_PARENT_PREFERENCE_FEATURES.departureAlerts,
+  "smart_departure",
+);
+assert.ok(
+  HOCKEY_MEMBERSHIP_CATALOG.hockey_member_weekly_10.features.includes(
+    "smart_departure",
+  ),
+);
+assert.ok(
+  HOCKEY_MEMBERSHIP_CATALOG.hockey_vip_weekly_30.features.includes(
+    "smart_departure",
+  ),
+);
+
+process.env.HOCKEY_TRAVEL_ACTIVE_KEY_VERSION = "1";
   process.env.HOCKEY_TRAVEL_ENCRYPTION_KEY_V1 =
     Buffer.alloc(32, 9).toString("base64");
   
