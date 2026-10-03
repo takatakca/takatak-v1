@@ -1,4 +1,6 @@
 name: Reconcile TAKATAK production migrations
+# Automatic branch pushes are audit-only. Production writes require an explicit
+# workflow_dispatch with apply=true and the exact production project ref.
 
 on:
   push:
