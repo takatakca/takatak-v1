@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { runHockeySmsDeliveryBatch } from "@/lib/hockey/delivery/sms-worker";
+import { runHockeyDepartureDeliveryBatch } from "@/lib/hockey/travel/departure-worker";
 import { verifyHockeyDeliveryWorker } from "@/lib/hockey/delivery/worker-auth";
 
 export const runtime = "nodejs";
@@ -16,8 +17,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await runHockeySmsDeliveryBatch({ limit: 25 });
-    return NextResponse.json({ ok: true, ...result }, { status: 200 });
+    const sms = await runHockeySmsDeliveryBatch({ limit: 25 });
+    const departure = await runHockeyDepartureDeliveryBatch({ limit: 20 });
+    return NextResponse.json({ ok: true, sms, departure }, { status: 200 });
   } catch (error) {
     console.error(
       "[hockey-delivery-worker] Batch failed:",
