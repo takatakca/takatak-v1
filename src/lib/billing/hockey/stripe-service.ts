@@ -218,3 +218,34 @@ export async function startHockeyMembershipCheckout(input: {
 
   return { url: session.url };
 }
+
+
+export async function startHockeyMembershipPortal(input: {
+  authUserId: string;
+  requestOrigin: string;
+}): Promise<{ url: string }> {
+  const { identity, membership } = await requireMasterIdentity(input.authUserId);
+
+  if (!membership?.externalCustomerId) {
+    throw new ServiceError(
+      "not_found",
+      "No Stripe-managed AHMV membership exists for this identity.",
+    );
+  }
+
+  const stripe = getHockeyStripe();
+  const session = await stripe.billingPortal.sessions.create({
+    customer: membership.externalCustomerId,
+    return_url: `${input.requestOrigin}${HOCKEY_BILLING_RETURN_PATH}`,
+  });
+
+  if (!session.url) {
+    throw new ServiceError(
+      "unavailable",
+      "Stripe did not return a billing portal URL.",
+    );
+  }
+
+  void identity;
+  return { url: session.url };
+}
