@@ -53,12 +53,17 @@ export async function GET(request: NextRequest) {
   }
 
   // ServiceInstance.metadata is the existing binding surface between one
-  // exact AHMV public team ID and one TAKATAK BusinessBrand. We read a bounded
-  // set and fail closed on duplicates rather than guessing between tenants.
+  // exact AHMV public team ID and one TAKATAK BusinessBrand. PostgreSQL JSON
+  // path filtering avoids scanning unrelated tenants. We still validate the
+  // decoded metadata below and fail closed on duplicates.
   const candidates = await prisma.serviceInstance.findMany({
     where: {
       serviceType: "social_media",
       businessBrandId: { not: null },
+      metadata: {
+        path: ["ahmv", "publicTeamId"],
+        equals: teamId,
+      },
     },
     select: {
       clientId: true,
@@ -83,7 +88,7 @@ export async function GET(request: NextRequest) {
         },
       },
     },
-    take: 500,
+    take: 2,
   });
 
   const matches = candidates.filter(
