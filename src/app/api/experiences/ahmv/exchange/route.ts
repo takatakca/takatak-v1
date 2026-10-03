@@ -39,11 +39,9 @@ export async function POST(request: Request) {
 
   try {
     const session = await exchangeAhmvExperienceLaunch(code);
-    return jsonResponse(
-      { ok: true, session },
-      200,
-      { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" },
-    );
+    const response = jsonResponse({ ok: true, session }, 200);
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
   } catch (error) {
     return handleApiError(
       "ahmv-experience-exchange",
