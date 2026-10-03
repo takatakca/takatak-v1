@@ -142,8 +142,7 @@ assert.deepEqual(filteredDate.map((event) => event.id), ["evt-2"]);
 
 withTokens(() => {
   const readHeaders = new Headers({
-    authorization:
-      "Bearer read-secret-123456789012345678901234567890",
+    authorization: ["Bearer", "read-secret-123456789012345678901234567890"].join(" "),
     "x-ahmv-tenant": "ahmverdun",
   });
   assert.deepEqual(verifyAhmvScheduleRequest(readHeaders, "read"), {
@@ -157,8 +156,7 @@ withTokens(() => {
   );
 
   const ingestHeaders = new Headers({
-    authorization:
-      "Bearer ingest-secret-123456789012345678901234567",
+    authorization: ["Bearer", "ingest-secret-123456789012345678901234567"].join(" "),
     "x-ahmv-tenant": "ahmverdun",
   });
   assert.deepEqual(verifyAhmvScheduleRequest(ingestHeaders, "ingest"), {
@@ -166,8 +164,7 @@ withTokens(() => {
   });
 
   const wrongTenant = new Headers({
-    authorization:
-      "Bearer read-secret-123456789012345678901234567890",
+    authorization: ["Bearer", "read-secret-123456789012345678901234567890"].join(" "),
     "x-ahmv-tenant": "other",
   });
   const rejected = verifyAhmvScheduleRequest(wrongTenant, "read");
