@@ -73,9 +73,24 @@ export async function POST(
       callerOrigin: request.headers.get("origin"),
     });
 
+    const responseAd =
+      ad && ad.trackingToken
+        ? {
+            ...ad,
+            clickUrl: new URL(
+              `/api/ads/click?t=${encodeURIComponent(ad.trackingToken)}`,
+              request.nextUrl.origin,
+            ).toString(),
+          }
+        : ad;
+
     return withCors(
       NextResponse.json(
-        { ok: true, filled: Boolean(ad), ad },
+        {
+          ok: true,
+          filled: Boolean(responseAd),
+          ad: responseAd,
+        },
         { status: 200 },
       ),
     );
