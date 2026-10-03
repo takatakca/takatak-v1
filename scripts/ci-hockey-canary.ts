@@ -116,6 +116,7 @@ async function main() {
   assert.ok(membership.features.includes("game_reminders"));
   assert.ok(membership.features.includes("calendar_sync"));
   assert.ok(membership.features.includes("smart_departure"));
+  assert.ok(membership.features.includes("family_sync"));
 
   const family = await ensureDefaultHockeyFamily(authUserA);
   const child = await addHockeyFamilyChild({
