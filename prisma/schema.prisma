@@ -3091,6 +3091,8 @@ model AdPublisher {
   category  String?
   country   String             @default("Canada")
   region    String?
+  city      String?
+  postalPrefix String?
   allowedOrigins String[]      @default([])
   status    AdsPublisherStatus @default(active)
   metadata  Json?
