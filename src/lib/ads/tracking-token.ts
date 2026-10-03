@@ -29,12 +29,17 @@ function sign(encodedPayload: string, secret: string): string {
     .digest("base64url");
 }
 
-export function createAdsTrackingToken(input: {
+export type AdsTrackingGrant = {
+  token: string;
+  attributionId: string;
+};
+
+export function createAdsTrackingGrant(input: {
   campaignId: string;
   creativeId: string;
   placementId: string;
   ttlSeconds?: number;
-}): string | null {
+}): AdsTrackingGrant | null {
   const secret = signingSecret();
   if (!secret) return null;
 
@@ -54,7 +59,19 @@ export function createAdsTrackingToken(input: {
     "utf8",
   ).toString("base64url");
 
-  return `${encodedPayload}.${sign(encodedPayload, secret)}`;
+  return {
+    token: `${encodedPayload}.${sign(encodedPayload, secret)}`,
+    attributionId: payload.nonce,
+  };
+}
+
+export function createAdsTrackingToken(input: {
+  campaignId: string;
+  creativeId: string;
+  placementId: string;
+  ttlSeconds?: number;
+}): string | null {
+  return createAdsTrackingGrant(input)?.token ?? null;
 }
 
 export function verifyAdsTrackingToken(
