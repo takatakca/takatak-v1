@@ -2848,6 +2848,7 @@ model MasterIdentity {
   hockeyFamilyInvitesCreated HockeyFamilyInvite[] @relation("HockeyFamilyInviteCreator")
   hockeyFamilyInvitesAccepted HockeyFamilyInvite[] @relation("HockeyFamilyInviteAccepted")
   hockeyFamilyPlansCreated    HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanCreator")
+  hockeyFamilyResponsesCreated HockeyFamilyEventResponse[] @relation("HockeyFamilyResponseCreator")
   hockeyTravelProfiles      HockeyTravelProfile[]
 
   @@index([primaryEmail])
@@ -2985,6 +2986,7 @@ model HockeyTeamEvent {
   deliveryJobs     HockeyDeliveryJob[]
   calendarMappings HockeyCalendarEventMapping[]
   familyPlans      HockeyFamilyEventPlan[]
+  familyResponses  HockeyFamilyEventResponse[]
 
   @@unique([sourceApplication, sourceEventId])
   @@index([sourceApplication, teamId, startsAt])
@@ -3136,8 +3138,9 @@ model HockeyFamily {
   owner      MasterIdentity            @relation("HockeyFamilyOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
   members    HockeyFamilyMember[]
   selections HockeyFamilyTeamSelection[]
-  invites     HockeyFamilyInvite[]
-  eventPlans  HockeyFamilyEventPlan[]
+  invites        HockeyFamilyInvite[]
+  eventPlans     HockeyFamilyEventPlan[]
+  eventResponses HockeyFamilyEventResponse[]
 
   @@unique([ownerIdentityId, sourceApplication])
   @@index([status])
@@ -3161,8 +3164,9 @@ model HockeyFamilyMember {
   family         HockeyFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
   linkedIdentity MasterIdentity? @relation("HockeyFamilyLinkedIdentity", fields: [linkedIdentityId], references: [id], onDelete: SetNull)
   selections     HockeyFamilyTeamSelection[]
-  plansAsChild   HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanChild")
-  plansAsDriver  HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanDriver")
+  plansAsChild    HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanChild")
+  plansAsDriver   HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanDriver")
+  eventResponses  HockeyFamilyEventResponse[]
 
   @@unique([familyId, linkedIdentityId])
   @@index([familyId, memberType, status])
@@ -3246,6 +3250,31 @@ model HockeyFamilyEventPlan {
   @@index([teamEventId, status])
   @@index([driverMemberId, status])
   @@map("hockey_family_event_plans")
+}
+
+
+/// Structured child attendance response for one exact public hockey event.
+/// No free-form notes, medical information or roster identity is stored here.
+model HockeyFamilyEventResponse {
+  id                    String   @id @default(uuid()) @db.Uuid
+  familyId              String   @db.Uuid
+  teamEventId           String   @db.Uuid
+  memberId              String   @db.Uuid
+  respondedByIdentityId String   @db.Uuid
+  response              String
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  family      HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  teamEvent   HockeyTeamEvent    @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  member      HockeyFamilyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  respondedBy MasterIdentity     @relation("HockeyFamilyResponseCreator", fields: [respondedByIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, teamEventId, memberId])
+  @@index([familyId, response])
+  @@index([teamEventId, response])
+  @@index([memberId, response])
+  @@map("hockey_family_event_responses")
 }
 
 model HockeyTravelProfile {
