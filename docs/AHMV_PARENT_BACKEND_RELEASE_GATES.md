@@ -178,7 +178,10 @@ Before frontend integration:
 20. verify RSVP requires the child's exact verified team assignment and stores no medical reason, free-form absence note or official roster attendance;
 21. verify the family owner can revoke another guardian without requiring Premium entitlement;
 22. verify the family owner cannot remove themselves;
-23. verify a removed guardian loses family access immediately, their future driving plans are cancelled and their pending invitations are revoked.
+23. verify a removed guardian loses family access immediately, their future driving plans are cancelled and their pending invitations are revoked;
+24. verify only the family owner can rename/deactivate/reactivate child profiles;
+25. verify a deactivated child disappears from active schedules, future driving plans are cancelled and future private RSVP rows are removed;
+26. verify child profiles contain no date of birth, medical, diagnosis or school fields.
 
 ## Gate 9 — developer integration handoff
 
