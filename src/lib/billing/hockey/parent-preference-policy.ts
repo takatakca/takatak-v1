@@ -3,7 +3,7 @@ import type { HockeyMembershipFeature } from "./types";
 export const HOCKEY_PARENT_PREFERENCE_FEATURES = {
   smsReminders: "game_reminders",
   calendarSync: "calendar_sync",
-  departureAlerts: "game_reminders",
+  departureAlerts: "smart_departure",
 } as const satisfies Record<
   "smsReminders" | "calendarSync" | "departureAlerts",
   HockeyMembershipFeature

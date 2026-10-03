@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { runHockeySmsDeliveryBatch } from "@/lib/hockey/delivery/sms-worker";
 import { runHockeyCalendarDeliveryBatch } from "@/lib/hockey/calendar/calendar-worker";
+import { runHockeyDepartureDeliveryBatch } from "@/lib/hockey/travel/departure-worker";
 import { verifyHockeyDeliveryWorker } from "@/lib/hockey/delivery/worker-auth";
 
 export const runtime = "nodejs";
@@ -19,7 +20,11 @@ export async function POST(request: Request) {
   try {
     const sms = await runHockeySmsDeliveryBatch({ limit: 25 });
     const calendar = await runHockeyCalendarDeliveryBatch({ limit: 20 });
-    return NextResponse.json({ ok: true, sms, calendar }, { status: 200 });
+    const departure = await runHockeyDepartureDeliveryBatch({ limit: 20 });
+    return NextResponse.json(
+      { ok: true, sms, calendar, departure },
+      { status: 200 },
+    );
   } catch (error) {
     console.error(
       "[hockey-delivery-worker] Batch failed:",
