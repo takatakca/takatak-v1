@@ -3113,7 +3113,6 @@ model HockeyPublicTeam {
   updatedAt         DateTime @updatedAt
 
   selections HockeyFamilyTeamSelection[]
-  invites     HockeyFamilyInvite[]
 
   @@unique([sourceApplication, teamId])
   @@index([sourceApplication, active])
@@ -3135,6 +3134,7 @@ model HockeyFamily {
   owner      MasterIdentity            @relation("HockeyFamilyOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
   members    HockeyFamilyMember[]
   selections HockeyFamilyTeamSelection[]
+  invites     HockeyFamilyInvite[]
 
   @@unique([ownerIdentityId, sourceApplication])
   @@index([status])
