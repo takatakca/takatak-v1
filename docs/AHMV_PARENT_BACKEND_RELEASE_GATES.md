@@ -152,6 +152,8 @@ Any incomplete connector stays disabled. The machine-readable readiness check mu
 
 ## Gate 8 — staging/canary
 
+For multi-guardian family sharing, invitation bearer tokens must be returned once, stored only as hashes, expire automatically, remain capped per family and be replay-protected. The accepting person must authenticate through TAKATAK Auth; an invitation never creates a roster identity.
+
 Before frontend integration:
 
 1. use synthetic TAKATAK identities;
@@ -165,7 +167,10 @@ Before frontend integration:
 9. verify logs contain no secrets or raw OAuth tokens;
 10. verify an unknown or inactive team ID cannot enable parent Premium preferences;
 11. verify cross-origin browser writes are rejected;
-12. verify smart-departure coordinates remain encrypted and route/location history is not persisted.
+12. verify smart-departure coordinates remain encrypted and route/location history is not persisted;
+13. verify a second guardian cannot see a family before accepting a valid invitation;
+14. verify the accepted guardian can see the shared family afterward;
+15. verify the same guardian invitation cannot be replayed.
 
 ## Gate 9 — developer integration handoff
 
