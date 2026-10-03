@@ -2836,9 +2836,10 @@ model MasterIdentity {
   addresses           SourceAddress[]
   paymentSummaries    SourcePaymentSummary[]
   events              SourceSynchronizationEvent[]
-  hockeyMemberships   HockeyMembership[]
-  hockeyStripeEvents  HockeyStripeWebhookEvent[]
+  hockeyMemberships      HockeyMembership[]
+  hockeyStripeEvents     HockeyStripeWebhookEvent[]
   hockeyParentPreferences HockeyParentTeamPreference[]
+  hockeyPremiumGrants    HockeyPremiumGrant[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -2918,6 +2919,33 @@ model HockeyParentTeamPreference {
   @@index([identityId, sourceApplication])
   @@index([sourceApplication, teamId])
   @@map("hockey_parent_team_preferences")
+}
+
+
+/// Complimentary Parent Premium entitlement awarded by a trusted backend event.
+/// A supporter thank-you grant is not a charitable receipt or tax record.
+/// Paid subscribers keep the grant banked until it is explicitly redeemable.
+model HockeyPremiumGrant {
+  id                String   @id @default(uuid()) @db.Uuid
+  identityId        String   @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  grantType         String   @default("supporter_thank_you")
+  sourceReference   String
+  status            String   @default("available")
+  planCode          String   @default("hockey_member_weekly_10")
+  grantedWeeks      Int      @default(4)
+  activatedAt       DateTime?
+  expiresAt         DateTime?
+  revokedAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceApplication, sourceReference])
+  @@index([identityId, sourceApplication, status])
+  @@index([identityId, expiresAt])
+  @@map("hockey_premium_grants")
 }
 
 model SourceProfile {
