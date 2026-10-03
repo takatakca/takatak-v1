@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { applyAhmvTeamEvent } from "@/lib/hockey/events/apply-event";
 import { parseAhmvTeamEventEnvelope } from "@/lib/hockey/events/parser";
 import { verifyAhmvTeamEventRequest } from "@/lib/hockey/events/signature";
+import { validateAhmvEventSourceUrl } from "@/lib/hockey/events/source-policy";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -45,6 +46,20 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { accepted: false, error: "Event ID header and body do not match." },
       { status: 401 },
+    );
+  }
+
+  const sourceDecision = validateAhmvEventSourceUrl(
+    parsed.envelope.event.sourceUrl,
+  );
+  if (!sourceDecision.allowed) {
+    return NextResponse.json(
+      {
+        accepted: false,
+        code: sourceDecision.code,
+        error: sourceDecision.message,
+      },
+      { status: sourceDecision.status },
     );
   }
 
