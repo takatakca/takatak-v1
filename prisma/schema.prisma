@@ -2983,10 +2983,7 @@ model MarketplaceRelationship {
   identity       MasterIdentity? @relation(fields: [identityId], references: [id], onDelete: SetNull)
   sourceMerchant SourceMerchant  @relation(fields: [sourceMerchantId], references: [id], onDelete: Cascade)
 
-  @@unique(
-    [sourceApplication, sourceCustomerRef, sourceMerchantId, relationshipType],
-    map: "marketplace_relationships_sourceApplication_sourceCustomerRef_sourceMerchantId_relationshipType_key"
-  )
+  @@unique([sourceApplication, sourceCustomerRef, sourceMerchantId, relationshipType], map: "marketplace_relationships_sourceApplication_sourceCustomerRef_sourceMerchantId_relationshipType_key")
   @@index([identityId, sourceApplication], map: "marketplace_relationships_identityId_sourceApplication_idx")
   @@index([sourceMerchantId], map: "marketplace_relationships_sourceMerchantId_idx")
   @@map("marketplace_relationships")
