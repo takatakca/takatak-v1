@@ -26,7 +26,7 @@ export default async function AdminServicesPage() {
   const access = await requireAdminAccess();
   const [data, rentautoRows] = await Promise.all([
     getAdminServicesData(),
-    getAdminRentautoProvisioningData(),
+    getAdminRentautoProvisioningData(access.enforced),
   ]);
   return (
     <div className="space-y-5">
