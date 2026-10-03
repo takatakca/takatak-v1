@@ -12,7 +12,7 @@ import {
   saveHockeyParentTeamPreference,
 } from "@/lib/billing/hockey/parent-preference-service";
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
-import { readJsonBody } from "@/lib/security/write-request";
+import { hasValidWriteOrigin, readJsonBody } from "@/lib/security/write-request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -70,6 +70,13 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  if (!hasValidWriteOrigin(request)) {
+    return jsonResponse(
+      { ok: false, message: "The request origin could not be verified." },
+      403,
+    );
+  }
+
   const gate = await requireIdentityUser();
   if (!gate.ok) return gate.response;
 
