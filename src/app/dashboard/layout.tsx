@@ -17,6 +17,7 @@ import { Building2 } from "lucide-react";
 import { getPrisma } from "@/lib/db/prisma";
 import { setActiveClient } from "@/app/dashboard/select-client/actions";
 import { getEffectivePermissions } from "@/lib/security/effective-permissions";
+import { getEnabledServiceModules } from "@/lib/services/service-access";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -182,6 +183,9 @@ export default async function DashboardLayout({
     }
   }
 
+  const enabledServiceModules =
+    await getEnabledServiceModules(access);
+
   const session: SessionSnapshot = {
     configured:
       runtime.mode !== "development_foundation" ||
@@ -228,6 +232,8 @@ export default async function DashboardLayout({
         : null,
   
     activeClientName,
+
+    enabledServiceModules,
   };
   // Foundation mode keeps configured=false so the existing warning renders.
   if (access.mode === "foundation_demo") session.configured = false;
