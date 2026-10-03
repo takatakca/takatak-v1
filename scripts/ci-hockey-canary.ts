@@ -373,6 +373,22 @@ async function main() {
   assert.equal(sharedLogistics.plans[0]?.child.id, child.id);
   assert.equal(sharedLogistics.plans[0]?.driver.id, accepted.guardian.id);
 
+  const sharedScheduleAfterPlan = await getHockeyFamilySchedule({
+    authUserId: authUserB,
+    familyId: family.familyId,
+    from: new Date("2026-10-09T00:00:00.000Z"),
+    to: new Date("2026-10-12T23:59:59.000Z"),
+  });
+  assert.equal(sharedScheduleAfterPlan.responsibilities.length, 1);
+  assert.equal(
+    sharedScheduleAfterPlan.responsibilities[0]?.teamEventId,
+    exactEvent.id,
+  );
+  assert.equal(
+    sharedScheduleAfterPlan.responsibilities[0]?.driver.id,
+    accepted.guardian.id,
+  );
+
   const jobs = await prisma.hockeyDeliveryJob.findMany({
     where: { identityId: identityA.id },
     select: { kind: true, status: true },
