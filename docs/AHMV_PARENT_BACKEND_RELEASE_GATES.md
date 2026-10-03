@@ -173,7 +173,9 @@ Before frontend integration:
 15. verify the same guardian invitation cannot be replayed;
 16. verify a child can be assigned a driver only when that child is assigned to the event's exact public team;
 17. verify the selected driver is an authenticated guardian in the same family;
-18. verify shared driving responsibility stores no route history or precise pickup/dropoff coordinates.
+18. verify shared driving responsibility stores no route history or precise pickup/dropoff coordinates;
+19. verify private family RSVP is visible only to authenticated guardians in the same family;
+20. verify RSVP requires the child's exact verified team assignment and stores no medical reason, free-form absence note or official roster attendance.
 
 ## Gate 9 — developer integration handoff
 
