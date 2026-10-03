@@ -170,7 +170,12 @@ withTokens(() => {
       "Bearer read-secret-123456789012345678901234567890",
     "x-ahmv-tenant": "other",
   });
-  assert.equal(verifyAhmvScheduleRequest(wrongTenant, "read").status, 403);
+  const rejected = verifyAhmvScheduleRequest(wrongTenant, "read");
+  assert.equal(rejected.valid, false);
+  if (rejected.valid) {
+    throw new Error("Wrong tenant unexpectedly authorized.");
+  }
+  assert.equal(rejected.status, 403);
 });
 
 const migration = readFileSync(
