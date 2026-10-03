@@ -3,7 +3,7 @@
 // database (Phase 4) and real integrations (Phase 6+) exist.
 
 import type { LucideIcon } from "lucide-react";
-import type { DashboardServiceModule } from "@/lib/services/service-access";
+import type { DashboardServiceModule } from "@/lib/services/service-modules";
 
 /** Honest status vocabulary. "connected" may only be used once a real
  *  credentialed API call has succeeded (see architecture docs §25/§28). */
