@@ -11,6 +11,10 @@ import {
   resolveHockeyMembershipAccess,
   validateHockeyCheckoutInput,
 } from "../src/lib/billing/hockey/membership-policy";
+import {
+  interpretHockeyStripeSubscription,
+  mapHockeyStripeStatus,
+} from "../src/lib/billing/hockey/stripe-webhook-policy";
 
 const member = HOCKEY_MEMBERSHIP_CATALOG.hockey_member_weekly_10;
 const vip = HOCKEY_MEMBERSHIP_CATALOG.hockey_vip_weekly_30;
@@ -110,3 +114,57 @@ assert.equal(
 );
 
 console.log("verify-hockey-membership: all checks passed");
+
+
+assert.equal(mapHockeyStripeStatus("active"), "active");
+assert.equal(mapHockeyStripeStatus("past_due"), "past_due");
+assert.equal(mapHockeyStripeStatus("trialing"), "skip");
+assert.equal(mapHockeyStripeStatus("incomplete"), "skip");
+assert.equal(mapHockeyStripeStatus("unpaid"), "expired");
+
+const webhookDecision = interpretHockeyStripeSubscription(
+  {
+    id: "sub_hockey_test",
+    status: "active",
+    customer: "cus_hockey_test",
+    cancel_at_period_end: false,
+    items: {
+      data: [
+        {
+          price: { id: "price_hockey_member_test" },
+          current_period_start: 1_800_000_000,
+          current_period_end: 1_800_604_800,
+        },
+      ],
+    },
+    metadata: {
+      billingDomain: "hockey_membership",
+      planCode: "hockey_member_weekly_10",
+    },
+  },
+  {
+    price_hockey_member_test: {
+      planCode: "hockey_member_weekly_10",
+    },
+  },
+);
+assert.equal(webhookDecision.action, "apply");
+if (webhookDecision.action === "apply") {
+  assert.equal(webhookDecision.patch.status, "active");
+  assert.equal(webhookDecision.patch.planCode, "hockey_member_weekly_10");
+  assert.equal(webhookDecision.patch.planName, "AHMV Member");
+  assert.equal(webhookDecision.patch.externalCustomerId, "cus_hockey_test");
+  assert.equal(webhookDecision.patch.externalSubscriptionId, "sub_hockey_test");
+}
+
+const vipWebhookDecision = interpretHockeyStripeSubscription(
+  {
+    id: "sub_vip_test",
+    status: "active",
+    customer: "cus_vip_test",
+    items: { data: [{ price: { id: "price_vip_test" } }] },
+    metadata: { planCode: "hockey_vip_weekly_30" },
+  },
+  {},
+);
+assert.equal(vipWebhookDecision.action, "skip");
