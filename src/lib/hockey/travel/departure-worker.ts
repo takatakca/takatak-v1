@@ -180,13 +180,13 @@ export async function runHockeyDepartureDeliveryBatch(input?: {
     }
 
     const features = await getIdentityHockeyFeatures(job.identityId, now);
-    if (!features.has("game_reminders")) {
+    if (!features.has("smart_departure")) {
       await finishJob(
         job.id,
         "skipped",
         now,
         "premium_required",
-        "Current premium entitlement does not include game reminders.",
+        "Current premium entitlement does not include smart departure.",
       );
       skipped += 1;
       continue;
