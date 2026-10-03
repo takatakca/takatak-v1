@@ -343,3 +343,51 @@ export async function updateAdsCampaignStatus(
     },
   });
 }
+
+
+export async function updateAdsCreativeStatus(
+  clientId: string,
+  creativeId: string,
+  status: "draft" | "active" | "paused" | "rejected" | "archived",
+) {
+  const prisma = requirePrisma();
+
+  const creative = await prisma.adCreative.findFirst({
+    where: {
+      id: creativeId,
+      campaign: { clientId },
+    },
+    select: {
+      id: true,
+      campaignId: true,
+      destinationUrl: true,
+      headline: true,
+    },
+  });
+
+  if (!creative) {
+    throw new ServiceError("not_found", "Creative not found.");
+  }
+
+  if (
+    status === "active" &&
+    (!creative.headline.trim() || !creative.destinationUrl.trim())
+  ) {
+    throw new ServiceError(
+      "conflict",
+      "A headline and destination URL are required before activation.",
+    );
+  }
+
+  return prisma.adCreative.update({
+    where: { id: creative.id },
+    data: { status },
+    select: {
+      id: true,
+      campaignId: true,
+      name: true,
+      status: true,
+      updatedAt: true,
+    },
+  });
+}
