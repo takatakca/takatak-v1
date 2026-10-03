@@ -482,6 +482,29 @@ export async function getHockeyFamilySchedule(input: {
           },
         });
 
+  const rsvpResponses =
+    events.length === 0
+      ? []
+      : await prisma.hockeyFamilyEventResponse.findMany({
+          where: {
+            familyId: input.familyId,
+            teamEventId: { in: events.map((event) => event.id) },
+          },
+          orderBy: [{ teamEvent: { startsAt: "asc" } }, { createdAt: "asc" }],
+          select: {
+            id: true,
+            teamEventId: true,
+            response: true,
+            member: {
+              select: {
+                id: true,
+                memberCode: true,
+                displayName: true,
+              },
+            },
+          },
+        });
+
   const projectedMembers = members.map((member) => {
     return {
       id: member.id,
@@ -508,6 +531,12 @@ export async function getHockeyFamilySchedule(input: {
       status: plan.status,
       child: plan.child,
       driver: plan.driver,
+    })),
+    rsvpResponses: rsvpResponses.map((row) => ({
+      id: row.id,
+      teamEventId: row.teamEventId,
+      response: row.response,
+      child: row.member,
     })),
   };
 }
