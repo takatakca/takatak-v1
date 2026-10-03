@@ -45,7 +45,9 @@ with the exact verified public schedule hosts in use at cutover.
 
 The source-host comparison is exact. A hostname such as `scoresheets.ca.evil.example` is rejected.
 
-## Gate 3 — server authentication
+## Gate 3 — request authentication and browser write isolation
+
+Browser-authenticated AHMV write routes must reject requests whose origin cannot be verified. Public/server callbacks such as Stripe webhooks, signed AHMV synchronization and the internal worker use their dedicated signature/token boundary instead of browser-origin checks.
 
 Server-to-server AHMV integration requests require:
 
@@ -67,7 +69,9 @@ New operational tables must:
 - avoid raw webhook bodies when not required
 - avoid provider credentials in public/team data
 
-## Gate 5 — entitlement and consent
+## Gate 5 — entitlement, consent and exact-team validation
+
+New or re-enabled parent preferences must resolve the exact public team ID against the active verified AHMV team registry. Fuzzy display-name matching is not accepted. Existing settings may still be turned off after a team becomes inactive.
 
 External side effects must re-check immediately before execution:
 
@@ -135,7 +139,14 @@ Google Calendar:
 - hockey token encryption key
 - validated calendar scopes
 
-Any incomplete connector stays disabled.
+Smart departure:
+- `HOCKEY_SMART_DEPARTURE_ENABLED=true`
+- restricted Google Maps Routes API key
+- dedicated hockey travel encryption key
+- SMS delivery and internal worker enabled
+- encrypted parent-approved origin only; no continuous-location history
+
+Any incomplete connector stays disabled. The machine-readable readiness check must report the capability as not ready rather than partially enabling it.
 
 ## Gate 8 — staging/canary
 
@@ -149,7 +160,10 @@ Before frontend integration:
 6. verify an opted-out identity receives no SMS/calendar side effect;
 7. verify cancellation/update behavior;
 8. verify retry behavior without duplicate external messages/events;
-9. verify logs contain no secrets or raw OAuth tokens.
+9. verify logs contain no secrets or raw OAuth tokens;
+10. verify an unknown or inactive team ID cannot enable parent Premium preferences;
+11. verify cross-origin browser writes are rejected;
+12. verify smart-departure coordinates remain encrypted and route/location history is not persisted.
 
 ## Gate 9 — developer integration handoff
 

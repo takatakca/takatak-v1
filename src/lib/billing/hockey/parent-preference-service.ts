@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { HockeyParentPreferenceInput } from "./parent-preference-policy";
+import { enabledPreferenceFeatures, type HockeyParentPreferenceInput } from "./parent-preference-policy";
 import { HOCKEY_SOURCE_APPLICATION } from "./membership-policy";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
@@ -80,11 +80,36 @@ export async function saveHockeyParentTeamPreference(
   const existing = await prisma.hockeyParentTeamPreference.findUnique({
     where: key,
     select: {
+      id: true,
       smsConsentAt: true,
       calendarConsentAt: true,
       departureConsentAt: true,
     },
   });
+
+  const mustVerifyPublicTeam =
+    !existing || enabledPreferenceFeatures(input).length > 0;
+
+  if (mustVerifyPublicTeam) {
+    const publicTeam = await prisma.hockeyPublicTeam.findUnique({
+      where: {
+        sourceApplication_teamId: {
+          sourceApplication: HOCKEY_SOURCE_APPLICATION,
+          teamId: input.teamId,
+        },
+      },
+      select: {
+        active: true,
+      },
+    });
+
+    if (!publicTeam?.active) {
+      throw new ServiceError(
+        "not_found",
+        "The exact public AHMV team ID is not active in the verified team directory.",
+      );
+    }
+  }
 
   const now = new Date();
 

@@ -6,12 +6,19 @@ import { validateHockeyCheckoutInput } from "@/lib/billing/hockey/membership-pol
 import { startHockeyMembershipCheckout } from "@/lib/billing/hockey/stripe-service";
 import { originFromRequest } from "@/lib/config/app-origin";
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
-import { readJsonBody } from "@/lib/security/write-request";
+import { hasValidWriteOrigin, readJsonBody } from "@/lib/security/write-request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
+  if (!hasValidWriteOrigin(request)) {
+    return jsonResponse(
+      { ok: false, message: "The request origin could not be verified." },
+      403,
+    );
+  }
+
   const user = await getSessionUser();
   if (!user) {
     return jsonResponse({ ok: false, message: "Sign in to continue." }, 401);
