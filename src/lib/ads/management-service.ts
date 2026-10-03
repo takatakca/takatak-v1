@@ -219,7 +219,7 @@ export async function createAdsCampaign(
       bidCents: input.bidCents,
       startsAt: input.startsAt,
       endsAt: input.endsAt,
-      targeting: input.targeting,
+      targeting: JSON.parse(JSON.stringify(input.targeting)) as Record<string, string[]>,
       status: "draft",
       creatives: {
         create: {
