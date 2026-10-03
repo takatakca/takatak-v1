@@ -2843,6 +2843,8 @@ model MasterIdentity {
   hockeyDeliveryJobs        HockeyDeliveryJob[]
   hockeyCalendarConnections HockeyCalendarConnection[]
   hockeyCalendarOAuthStates HockeyCalendarOAuthState[]
+  hockeyFamiliesOwned       HockeyFamily[] @relation("HockeyFamilyOwner")
+  hockeyFamilyMemberships   HockeyFamilyMember[] @relation("HockeyFamilyLinkedIdentity")
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -3092,6 +3094,96 @@ model HockeyCalendarEventMapping {
   @@index([providerEventId])
   @@index([teamEventId])
   @@map("hockey_calendar_event_mappings")
+}
+
+
+/// Public team registry keyed only by the exact public team ID.
+/// No roster or player identity is stored here.
+model HockeyPublicTeam {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  teamId            String
+  categorySlug      String?
+  level             String?
+  name              String
+  seasonCode        String?
+  active            Boolean  @default(true)
+  sourceUpdatedAt   DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  selections HockeyFamilyTeamSelection[]
+
+  @@unique([sourceApplication, teamId])
+  @@index([sourceApplication, active])
+  @@index([categorySlug, level])
+  @@map("hockey_public_teams")
+}
+
+/// A household/family container. Access is resolved from authenticated linked
+/// identities, never from a family id supplied by the browser.
+model HockeyFamily {
+  id                String   @id @default(uuid()) @db.Uuid
+  ownerIdentityId   String   @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  displayName       String?
+  status            String   @default("active")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  owner      MasterIdentity             @relation("HockeyFamilyOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
+  members    HockeyFamilyMember[]
+  selections HockeyFamilyTeamSelection[]
+
+  @@unique([ownerIdentityId, sourceApplication])
+  @@index([status])
+  @@map("hockey_families")
+}
+
+/// Parent/guardian or child profile inside one family. A member may optionally
+/// link to a TAKATAK identity. Unlinked child profiles use a stable memberCode
+/// and display label without requiring roster data.
+model HockeyFamilyMember {
+  id               String   @id @default(uuid()) @db.Uuid
+  familyId         String   @db.Uuid
+  linkedIdentityId String?  @db.Uuid
+  memberCode       String   @unique
+  memberType       String
+  displayName      String
+  status           String   @default("active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  family         HockeyFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  linkedIdentity MasterIdentity? @relation("HockeyFamilyLinkedIdentity", fields: [linkedIdentityId], references: [id], onDelete: SetNull)
+  selections     HockeyFamilyTeamSelection[]
+
+  @@unique([familyId, linkedIdentityId])
+  @@index([familyId, memberType, status])
+  @@index([linkedIdentityId, status])
+  @@map("hockey_family_members")
+}
+
+/// Exact team assignment/favourite for one family member.
+/// publicTeamId is a foreign key to the verified public-team registry, which
+/// prevents name-based or fuzzy team crossover.
+model HockeyFamilyTeamSelection {
+  id            String   @id @default(uuid()) @db.Uuid
+  familyId      String   @db.Uuid
+  memberId      String   @db.Uuid
+  publicTeamId  String   @db.Uuid
+  selectionType String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  family     HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  member     HockeyFamilyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  publicTeam HockeyPublicTeam   @relation(fields: [publicTeamId], references: [id], onDelete: Restrict)
+
+  @@unique([memberId, publicTeamId, selectionType])
+  @@index([familyId, selectionType])
+  @@index([publicTeamId])
+  @@map("hockey_family_team_selections")
 }
 
 model SourceProfile {
