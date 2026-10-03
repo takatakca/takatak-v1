@@ -8,11 +8,11 @@ import { handleApiError, jsonResponse } from "@/lib/security/api-response";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.redirect(
-      new URL("/login?next=%2Fapi%2Fexperiences%2Fahmv%2Flaunch", process.env.NEXT_PUBLIC_APP_URL),
+      new URL("/login?next=%2Fapi%2Fexperiences%2Fahmv%2Flaunch", request.url),
     );
   }
 
@@ -29,10 +29,9 @@ export async function GET() {
 
   try {
     const launch = await createAhmvExperienceLaunch(user.id);
-    return NextResponse.redirect(launch.url, {
-      status: 303,
-      headers: { "Cache-Control": "no-store" },
-    });
+    const response = NextResponse.redirect(launch.url, 303);
+    response.headers.set("Cache-Control", "no-store");
+    return response;
   } catch (error) {
     return handleApiError(
       "ahmv-experience-launch",
