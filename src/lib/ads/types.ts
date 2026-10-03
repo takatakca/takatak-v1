@@ -56,6 +56,7 @@ export type ServedAd = {
   body: string | null;
   callToAction: string | null;
   destinationUrl: string;
+  clickUrl: string | null;
   imageUrl: string | null;
   label: "Publicité" | "Advertisement";
   trackingToken: string | null;
