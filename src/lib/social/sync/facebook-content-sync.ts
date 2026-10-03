@@ -33,6 +33,7 @@ export async function persistFacebookContentItems(options: {
   until: string;
   items: FacebookContentItemDraft[];
   generation: number;
+  markMissing?: boolean;
 }): Promise<{ upserted: number; markedDeleted: number; markedExpired: number }> {
   const prisma = getPrisma();
   if (!prisma) {
@@ -97,6 +98,7 @@ export async function persistFacebookContentItems(options: {
           metadata: {
             provider: "meta",
             period: "lifetime_object",
+            sourceKind: item.sourceKind,
           },
         },
         update: {
@@ -118,10 +120,19 @@ export async function persistFacebookContentItems(options: {
             item.availability === "expired" ? new Date(item.retrievedAt) : null,
           deletedAt: null,
           externalObjectId: item.externalObjectId,
+          metadata: {
+            provider: "meta",
+            period: "lifetime_object",
+            sourceKind: item.sourceKind,
+          },
         },
       });
       upserted += 1;
     }
+  }
+
+  if (options.markMissing === false) {
+    return { upserted, markedDeleted: 0, markedExpired: 0 };
   }
 
   const sinceDate = new Date(`${options.since}T00:00:00.000Z`);
@@ -198,6 +209,12 @@ export async function syncFacebookPageContent(options: {
     until: options.until,
     items: fetched.items,
     generation: options.generation,
+    markMissing: fetched.report.every(
+      (row) =>
+        row.status === "received" ||
+        row.status === "empty" ||
+        row.status === "unsupported",
+    ),
   });
 
   logSocialOAuthEvent("facebook-page-content-sync", {

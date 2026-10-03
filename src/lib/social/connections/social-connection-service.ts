@@ -323,6 +323,7 @@ export async function createSocialOAuthState(options: {
   businessBrandId: string;
   provider: SocialConnectionProviderValue;
   returnPath: string;
+  communityContent?: boolean;
 }): Promise<CreatedSocialOAuthState> {
   const prisma = requirePrisma();
 
@@ -462,6 +463,10 @@ export async function createSocialOAuthState(options: {
 
   const material = prepareOAuthAttemptMaterial({
     provider: options.provider,
+    metaScopeSet:
+      options.provider === "meta" && options.communityContent
+        ? "facebook_pages_community"
+        : undefined,
   });
 
   const connection = await runSocialDbTransaction(

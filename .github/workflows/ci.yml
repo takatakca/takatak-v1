@@ -55,6 +55,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Facebook content ingest safeguards
+        run: npm run qa:social-step8-content
+
       - name: Authentication tests
         run: npm run test:auth
 
