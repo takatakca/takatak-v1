@@ -2839,8 +2839,10 @@ model MasterIdentity {
   hockeyMemberships      HockeyMembership[]
   hockeyStripeEvents     HockeyStripeWebhookEvent[]
   hockeyParentPreferences HockeyParentTeamPreference[]
-  hockeyPremiumGrants    HockeyPremiumGrant[]
-  hockeyDeliveryJobs     HockeyDeliveryJob[]
+  hockeyPremiumGrants       HockeyPremiumGrant[]
+  hockeyDeliveryJobs        HockeyDeliveryJob[]
+  hockeyCalendarConnections HockeyCalendarConnection[]
+  hockeyCalendarOAuthStates HockeyCalendarOAuthState[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -2974,7 +2976,8 @@ model HockeyTeamEvent {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  deliveryJobs HockeyDeliveryJob[]
+  deliveryJobs     HockeyDeliveryJob[]
+  calendarMappings HockeyCalendarEventMapping[]
 
   @@unique([sourceApplication, sourceEventId])
   @@index([sourceApplication, teamId, startsAt])
@@ -3008,6 +3011,87 @@ model HockeyDeliveryJob {
   @@index([identityId, status])
   @@index([teamEventId, kind])
   @@map("hockey_delivery_jobs")
+}
+
+
+/// Identity-scoped Google Calendar authorization for Parent Premium.
+/// OAuth credentials are encrypted server-side and are never sent to AHMV.
+model HockeyCalendarConnection {
+  id                   String   @id @default(uuid()) @db.Uuid
+  identityId           String   @db.Uuid
+  sourceApplication    String   @default("ahmverdun")
+  provider             String   @default("google")
+  status               String   @default("pending")
+  externalAccountId    String?
+  displayName          String?
+  calendarId           String   @default("primary")
+  scopes               String[] @default([])
+  tokenCiphertext      String?
+  tokenIv              String?
+  tokenAuthTag         String?
+  tokenKeyVersion      Int      @default(1)
+  accessTokenExpiresAt DateTime?
+  connectedAt          DateTime?
+  lastValidatedAt      DateTime?
+  lastErrorCode        String?
+  lastErrorMessage     String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  mappings HockeyCalendarEventMapping[]
+
+  @@unique([identityId, sourceApplication, provider])
+  @@index([status])
+  @@index([identityId, status])
+  @@map("hockey_calendar_connections")
+}
+
+/// Short-lived PKCE state for Google Calendar OAuth.
+model HockeyCalendarOAuthState {
+  id                   String   @id @default(uuid()) @db.Uuid
+  identityId           String   @db.Uuid
+  sourceApplication    String   @default("ahmverdun")
+  provider             String   @default("google")
+  stateHash            String   @unique
+  verifierCiphertext   String
+  verifierIv           String
+  verifierAuthTag      String
+  verifierKeyVersion   Int      @default(1)
+  status               String   @default("pending")
+  returnPath           String
+  expiresAt            DateTime
+  consumedAt           DateTime?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, status])
+  @@index([expiresAt])
+  @@map("hockey_calendar_oauth_states")
+}
+
+/// Stable mapping between a TAKATAK team event and the user's Google event.
+model HockeyCalendarEventMapping {
+  id              String   @id @default(uuid()) @db.Uuid
+  connectionId    String   @db.Uuid
+  teamEventId     String   @db.Uuid
+  providerEventId String
+  eventRevision   String
+  status          String   @default("active")
+  lastSyncedAt    DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  connection HockeyCalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  teamEvent  HockeyTeamEvent @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, teamEventId])
+  @@index([providerEventId])
+  @@index([teamEventId])
+  @@map("hockey_calendar_event_mappings")
 }
 
 model SourceProfile {
