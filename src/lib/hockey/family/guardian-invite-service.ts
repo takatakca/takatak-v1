@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 
 import { HOCKEY_SOURCE_APPLICATION } from "@/lib/billing/hockey/membership-policy";
 import { getPrisma } from "@/lib/db/prisma";
+import { getIdentityHockeyFeatures } from "@/lib/hockey/delivery/entitlement";
 import { ServiceError } from "@/lib/services/service-error";
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -71,13 +72,32 @@ async function requireGuardianAccess(identityId: string, familyId: string) {
         status: "active",
       },
     },
-    select: { id: true },
+    select: {
+      id: true,
+      family: {
+        select: {
+          ownerIdentityId: true,
+        },
+      },
+    },
   });
 
   if (!member) {
     throw new ServiceError(
       "forbidden",
       "This TAKATAK identity cannot manage invitations for that hockey family.",
+    );
+  }
+
+  return member;
+}
+
+async function requireFamilySyncEntitlement(ownerIdentityId: string) {
+  const features = await getIdentityHockeyFeatures(ownerIdentityId);
+  if (!features.has("family_sync")) {
+    throw new ServiceError(
+      "forbidden",
+      "This hockey family does not currently include Premium family sync.",
     );
   }
 }
@@ -104,7 +124,8 @@ export async function createHockeyFamilyGuardianInvite(input: {
   now?: Date;
 }) {
   const { prisma, identity } = await requireIdentity(input.authUserId);
-  await requireGuardianAccess(identity.id, input.familyId);
+  const guardian = await requireGuardianAccess(identity.id, input.familyId);
+  await requireFamilySyncEntitlement(guardian.family.ownerIdentityId);
 
   const now = input.now ?? new Date();
   await expireStaleInvites(input.familyId, now);
@@ -250,6 +271,7 @@ export async function acceptHockeyFamilyGuardianInvite(input: {
         select: {
           sourceApplication: true,
           status: true,
+          ownerIdentityId: true,
         },
       },
     },
@@ -265,6 +287,8 @@ export async function acceptHockeyFamilyGuardianInvite(input: {
   ) {
     throw new ServiceError("not_found", "Hockey family is not active.");
   }
+
+  await requireFamilySyncEntitlement(invite.family.ownerIdentityId);
 
   if (invite.status !== "pending") {
     throw new ServiceError(
