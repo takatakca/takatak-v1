@@ -70,6 +70,7 @@ export async function POST(
       publisherCode,
       placementCode,
       context,
+      callerOrigin: request.headers.get("origin"),
     });
 
     return withCors(
