@@ -295,12 +295,22 @@ async function main() {
   );
 }
 
-try {
-  await main();
-} finally {
+async function runCanary() {
   try {
-    await cleanup();
+    await main();
   } finally {
-    await disconnectPrisma();
+    try {
+      await cleanup();
+    } finally {
+      await disconnectPrisma();
+    }
   }
 }
+
+void runCanary().catch((error) => {
+  console.error(
+    "ci-hockey-canary failed:",
+    error instanceof Error ? error.message : error,
+  );
+  process.exitCode = 1;
+});
