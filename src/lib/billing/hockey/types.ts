@@ -12,6 +12,7 @@ export const HOCKEY_MEMBERSHIP_FEATURES = [
   "game_reminders",
   "calendar_sync",
   "smart_departure",
+  "family_sync",
   "team_community",
   "parent_messaging",
   "parent_rideshare",
