@@ -2841,6 +2841,7 @@ model MasterIdentity {
   hockeyParentPreferences HockeyParentTeamPreference[]
   hockeyPremiumGrants    HockeyPremiumGrant[]
   hockeyDeliveryJobs     HockeyDeliveryJob[]
+  hockeyTravelProfiles   HockeyTravelProfile[]
 
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -3008,6 +3009,33 @@ model HockeyDeliveryJob {
   @@index([identityId, status])
   @@index([teamEventId, kind])
   @@map("hockey_delivery_jobs")
+}
+
+
+/// Parent-approved start point used only for game-day departure calculations.
+/// The precise coordinates are encrypted at rest. No continuous location history
+/// is stored by this model.
+model HockeyTravelProfile {
+  id                 String   @id @default(uuid()) @db.Uuid
+  identityId         String   @db.Uuid
+  sourceApplication  String   @default("ahmverdun")
+  status             String   @default("active")
+  originLabel        String?
+  originCiphertext   String
+  originIv           String
+  originAuthTag      String
+  originKeyVersion   Int      @default(1)
+  departureConsentAt DateTime
+  lastUsedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication])
+  @@index([status])
+  @@index([identityId, status])
+  @@map("hockey_travel_profiles")
 }
 
 model SourceProfile {
