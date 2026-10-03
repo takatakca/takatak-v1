@@ -105,6 +105,7 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Rentauto",
         href: "/dashboard/rentauto",
         icon: CarFront,
+        serviceModule: "rentauto",
       },
       {
         label: "Hosting",
