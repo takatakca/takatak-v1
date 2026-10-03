@@ -207,6 +207,37 @@ Input:
 
 The family owner must currently hold the `family_sync` entitlement, and the accepting person must already be authenticated through TAKATAK Auth. The token is one-time, expires after seven days, is replay-protected and cannot be accepted by the inviter. Acceptance links the authenticated identity to the existing family as an active guardian. No child roster identity is created from the invitation.
 
+## Child profile lifecycle
+
+Child profiles in TAKATAK are lightweight family coordination records, not official roster identities. Only the hockey family owner can rename, deactivate or reactivate them.
+
+### PATCH /api/hockey/family/:familyId/children/:childMemberId
+
+Supports:
+
+```json
+{
+  "displayName": "Prénom affiché",
+  "status": "active"
+}
+```
+
+Only `displayName` and `status` (`active` or `inactive`) are accepted.
+
+### DELETE /api/hockey/family/:familyId/children/:childMemberId
+
+Performs a non-destructive deactivation.
+
+When a child is deactivated:
+
+- future planned/confirmed driving responsibilities for that child are cancelled;
+- future private family RSVP rows for that child are removed;
+- exact team selections remain stored for controlled reactivation;
+- the child disappears from active family schedules;
+- no official roster, registration or league record is changed.
+
+The child profile stores no date of birth, medical condition, diagnosis or school information.
+
 ## Guardian access lifecycle
 
 Family sharing must be reversible even when a subscription later expires.
