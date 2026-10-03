@@ -3,7 +3,6 @@ import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth/supabase-server";
 import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
 import { getHockeyMembershipSnapshot } from "@/lib/billing/hockey/membership-service";
-import { hockeyMembershipAllows } from "@/lib/billing/hockey/membership-policy";
 import {
   enabledPreferenceFeatures,
   validateHockeyParentPreferenceInput,
@@ -99,16 +98,8 @@ export async function PUT(request: NextRequest) {
   if (enabledFeatures.length > 0) {
     const membership = await getHockeyMembershipSnapshot(gate.user.id);
 
-    const missing = enabledFeatures.filter(
-      (feature) =>
-        !hockeyMembershipAllows(
-          {
-            status: membership.status,
-            planCode: membership.planCode,
-          },
-          feature,
-        ),
-    );
+    const enabled = new Set(membership.features);
+    const missing = enabledFeatures.filter((feature) => !enabled.has(feature));
 
     if (missing.length > 0) {
       return jsonResponse(
