@@ -11,6 +11,11 @@ import {
   ensureDefaultHockeyFamily,
   getHockeyFamilySchedule,
 } from "../src/lib/hockey/family/family-service";
+import {
+  acceptHockeyFamilyGuardianInvite,
+  createHockeyFamilyGuardianInvite,
+  hashHockeyFamilyInviteTokenForTest,
+} from "../src/lib/hockey/family/guardian-invite-service";
 import { ServiceError } from "../src/lib/services/service-error";
 
 const prismaCandidate = getPrisma();
@@ -280,6 +285,57 @@ async function main() {
   }
   assert.equal(denied, true);
 
+  const guardianInvite = await createHockeyFamilyGuardianInvite({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    now,
+  });
+  assert.match(guardianInvite.token, /^[A-Za-z0-9_-]{43,128}$/);
+
+  const persistedInvite = await prisma.hockeyFamilyInvite.findUnique({
+    where: { id: guardianInvite.invite.id },
+    select: { tokenHash: true, status: true },
+  });
+  assert.ok(persistedInvite);
+  assert.equal(persistedInvite.status, "pending");
+  assert.notEqual(persistedInvite.tokenHash, guardianInvite.token);
+  assert.equal(
+    persistedInvite.tokenHash,
+    hashHockeyFamilyInviteTokenForTest(guardianInvite.token),
+  );
+
+  const accepted = await acceptHockeyFamilyGuardianInvite({
+    authUserId: authUserB,
+    token: guardianInvite.token,
+    now: new Date(now.getTime() + 60_000),
+  });
+  assert.equal(accepted.familyId, family.familyId);
+  assert.equal(accepted.guardian.memberType, "guardian");
+
+  const sharedSchedule = await getHockeyFamilySchedule({
+    authUserId: authUserB,
+    familyId: family.familyId,
+    from: new Date("2026-10-09T00:00:00.000Z"),
+    to: new Date("2026-10-12T23:59:59.000Z"),
+  });
+  assert.equal(sharedSchedule.familyId, family.familyId);
+  assert.ok(
+    sharedSchedule.members.some((member) => member.id === child.id),
+  );
+
+  let replayBlocked = false;
+  try {
+    await acceptHockeyFamilyGuardianInvite({
+      authUserId: authUserB,
+      token: guardianInvite.token,
+      now: new Date(now.getTime() + 120_000),
+    });
+  } catch (error) {
+    replayBlocked =
+      error instanceof ServiceError && error.code === "conflict";
+  }
+  assert.equal(replayBlocked, true);
+
   const jobs = await prisma.hockeyDeliveryJob.findMany({
     where: { identityId: identityA.id },
     select: { kind: true, status: true },
@@ -291,7 +347,7 @@ async function main() {
   assert.ok(jobs.some((job) => job.status === "skipped"));
 
   console.log(
-    "ci-hockey-canary: membership, exact-team family isolation, event revisions and delivery queue passed",
+    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, event revisions and delivery queue passed",
   );
 }
 
