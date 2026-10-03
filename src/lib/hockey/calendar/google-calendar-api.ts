@@ -12,6 +12,13 @@ export class GoogleCalendarUnauthorizedError extends Error {
   }
 }
 
+export class GoogleCalendarNotFoundError extends Error {
+  constructor() {
+    super("Google Calendar event was not found.");
+    this.name = "GoogleCalendarNotFoundError";
+  }
+}
+
 type GoogleEventInput = {
   summary: string;
   description: string;
@@ -83,6 +90,9 @@ async function googleRequest(
     if (response.status === 404 && method === "DELETE") {
       return null;
     }
+    if (response.status === 404) {
+      throw new GoogleCalendarNotFoundError();
+    }
 
     if (!response.ok) {
       throw new ServiceError(
@@ -103,6 +113,7 @@ async function googleRequest(
   } catch (error) {
     if (
       error instanceof GoogleCalendarUnauthorizedError ||
+      error instanceof GoogleCalendarNotFoundError ||
       error instanceof ServiceError
     ) {
       throw error;
