@@ -6,6 +6,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "verify:ahmv-team-feed": "tsx scripts/verify-ahmv-team-feed-bridge.ts",
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
