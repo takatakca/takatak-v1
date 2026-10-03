@@ -2876,6 +2876,24 @@ model HockeyMembership {
 
 /// Idempotency ledger for hockey Stripe events. Raw webhook payloads are never
 /// stored here.
+/// Latest normalized public AHMV schedule snapshot consumed by AHMV Phone/SMS/Voice.
+/// This is public schedule data only: no roster, child or family data belongs here.
+model AhmvScheduleSnapshot {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenant          String   @unique @default("ahmverdun")
+  status          String
+  sourceUrl       String
+  sourceUpdatedAt DateTime
+  events          Json
+  eventCount      Int      @default(0)
+  contentHash     String
+  receivedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([sourceUpdatedAt])
+  @@map("ahmv_schedule_snapshots")
+}
+
 model HockeyStripeWebhookEvent {
   id                String          @id @default(uuid()) @db.Uuid
   stripeEventId     String          @unique
