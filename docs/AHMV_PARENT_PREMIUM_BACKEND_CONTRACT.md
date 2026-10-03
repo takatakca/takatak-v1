@@ -242,6 +242,41 @@ Removes the responsibility for the supplied child.
 
 This design lets an invited mom/dad/authorized caregiver coordinate driving under the family owner's Premium entitlement without copying roster data or persisting precise transport history.
 
+## Family event RSVP
+
+Family RSVP is private household coordination under the `family_sync` entitlement. It is not an official roster or attendance record.
+
+### GET /api/hockey/family/:familyId/events/:teamEventId/rsvp
+
+Returns the current private family RSVP rows for that exact event.
+
+### PUT /api/hockey/family/:familyId/events/:teamEventId/rsvp
+
+Input:
+
+```json
+{
+  "childMemberId": "<family child UUID>",
+  "status": "going"
+}
+```
+
+Accepted statuses are `going`, `not_going` and `unsure`.
+
+Rules:
+
+- caller must be an active guardian in the family;
+- family owner must currently hold `family_sync`;
+- child must be assigned to the event's exact verified public team;
+- a cancelled event cannot be marked `going`;
+- only one private RSVP exists per family/event/child.
+
+### DELETE /api/hockey/family/:familyId/events/:teamEventId/rsvp
+
+Removes that child's private family RSVP.
+
+No medical reason, absence explanation, free-form note, roster identity or public team attendance signal is stored.
+
 ## Google Calendar
 
 ### POST /api/hockey/calendar/google/start

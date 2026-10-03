@@ -2848,6 +2848,7 @@ model MasterIdentity {
   hockeyFamilyInvitesCreated HockeyFamilyInvite[] @relation("HockeyFamilyInviteCreator")
   hockeyFamilyInvitesAccepted HockeyFamilyInvite[] @relation("HockeyFamilyInviteAccepted")
   hockeyFamilyPlansCreated    HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanCreator")
+  hockeyFamilyRsvpsUpdated     HockeyFamilyEventRsvp[] @relation("HockeyFamilyRsvpUpdater")
   hockeyTravelProfiles      HockeyTravelProfile[]
 
   @@index([primaryEmail])
@@ -2985,6 +2986,7 @@ model HockeyTeamEvent {
   deliveryJobs     HockeyDeliveryJob[]
   calendarMappings HockeyCalendarEventMapping[]
   familyPlans      HockeyFamilyEventPlan[]
+  familyRsvps      HockeyFamilyEventRsvp[]
 
   @@unique([sourceApplication, sourceEventId])
   @@index([sourceApplication, teamId, startsAt])
@@ -3138,6 +3140,7 @@ model HockeyFamily {
   selections HockeyFamilyTeamSelection[]
   invites     HockeyFamilyInvite[]
   eventPlans  HockeyFamilyEventPlan[]
+  eventRsvps   HockeyFamilyEventRsvp[]
 
   @@unique([ownerIdentityId, sourceApplication])
   @@index([status])
@@ -3163,6 +3166,7 @@ model HockeyFamilyMember {
   selections     HockeyFamilyTeamSelection[]
   plansAsChild   HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanChild")
   plansAsDriver  HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanDriver")
+  eventRsvps     HockeyFamilyEventRsvp[]
 
   @@unique([familyId, linkedIdentityId])
   @@index([familyId, memberType, status])
@@ -3246,6 +3250,30 @@ model HockeyFamilyEventPlan {
   @@index([teamEventId, status])
   @@index([driverMemberId, status])
   @@map("hockey_family_event_plans")
+}
+
+
+/// Family attendance intent for one child at one exact public hockey event.
+/// This is private family coordination, not an official team attendance record.
+model HockeyFamilyEventRsvp {
+  id                  String   @id @default(uuid()) @db.Uuid
+  familyId            String   @db.Uuid
+  teamEventId         String   @db.Uuid
+  childMemberId       String   @db.Uuid
+  updatedByIdentityId String   @db.Uuid
+  status              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  family    HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent    @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  child     HockeyFamilyMember @relation(fields: [childMemberId], references: [id], onDelete: Cascade)
+  updatedBy MasterIdentity     @relation("HockeyFamilyRsvpUpdater", fields: [updatedByIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, teamEventId, childMemberId])
+  @@index([familyId, status])
+  @@index([teamEventId, status])
+  @@map("hockey_family_event_rsvps")
 }
 
 model HockeyTravelProfile {
