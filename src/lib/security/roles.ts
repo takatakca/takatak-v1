@@ -182,6 +182,7 @@ export const MODULE_ACCESS: Record<
   "/dashboard/locations": "manage_brands",
   "/dashboard/services": "manage_services",
   "/dashboard/social": "view_social",
+  "/dashboard/contributions": "approve_content",
   "/dashboard/integrations": "manage_integrations",
   "/dashboard/jobs": "manage_jobs",
   "/dashboard/activity": "view_activity_log",
