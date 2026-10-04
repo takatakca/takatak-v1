@@ -69,3 +69,125 @@ export function contributionPoints(resourceType: ContentResourceType): number {
   if (resourceType === "schedule") return 15;
   return 10;
 }
+
+
+const PROTECTED_CONTENT_FIELDS = new Set([
+  "id",
+  "clientId",
+  "businessBrandId",
+  "publisherCode",
+  "tenant",
+  "resourceType",
+  "resourceKey",
+  "teamId",
+  "publicTeamId",
+  "category",
+  "division",
+  "slug",
+  "internalId",
+  "externalId",
+  "sourceKind",
+  "authoritativeSourceId",
+  "createdAt",
+  "updatedAt",
+]);
+
+const EDITABLE_CONTENT_FIELDS: Record<ContentResourceType, readonly string[]> = {
+  news: [
+    "title","summary","excerpt","body","description","imageUrl","imageAlt",
+    "sourceUrl","publishedAt","author","links","tags",
+  ],
+  post: [
+    "title","summary","excerpt","body","description","imageUrl","imageAlt",
+    "sourceUrl","publishedAt","author","links","tags",
+  ],
+  photo: [
+    "imageUrl","thumbnailUrl","caption","alt","credit","sourceUrl","takenAt",
+    "description","tags",
+  ],
+  image: [
+    "imageUrl","thumbnailUrl","caption","alt","credit","sourceUrl","takenAt",
+    "description","tags",
+  ],
+  gallery: [
+    "title","description","coverImageUrl","photos","sourceUrl","publishedAt",
+  ],
+  schedule: [
+    "date","start","end","venue","activity","status","notes","sourceUrl",
+    "sourcePage","sourceRow","homeTeam","awayTeam","homeScore","awayScore",
+  ],
+  arena: [
+    "address","website","officialPhotoPage","phone","phoneExtension","description",
+    "facilities","activities","amenities","accessibility","parking","publicStatus",
+    "photoUrl","photoAlt","sourceUrl","sourceVerifiedAt","directionsNotes",
+  ],
+  team: [
+    "description","heroImageUrl","heroImageAlt","website","scheduleUrl",
+    "resultsUrl","socialLinks","contact","gallery","news","notes",
+  ],
+  page: [
+    "title","description","body","heroImageUrl","heroImageAlt","links","sourceUrl",
+  ],
+  faq: ["question","answer","sourceUrl","links"],
+  sponsor: [
+    "displayName","description","logoUrl","imageUrl","website","phone","address",
+    "ctaLabel","ctaUrl","sourceUrl",
+  ],
+  other: [
+    "title","description","body","imageUrl","imageAlt","sourceUrl","links","notes",
+  ],
+};
+
+export function editableFieldsForResource(
+  resourceType: ContentResourceType,
+): readonly string[] {
+  return EDITABLE_CONTENT_FIELDS[resourceType];
+}
+
+export function contributionPatchPolicy(options: {
+  resourceType: ContentResourceType;
+  patch: Record<string, unknown>;
+  registryEditableFields?: readonly string[];
+}): {
+  valid: boolean;
+  protectedFields: string[];
+  disallowedFields: string[];
+  editableFields: string[];
+} {
+  const configured = options.registryEditableFields?.length
+    ? options.registryEditableFields
+    : editableFieldsForResource(options.resourceType);
+  const allowed = new Set(configured.filter((field) => !PROTECTED_CONTENT_FIELDS.has(field)));
+  const protectedFields: string[] = [];
+  const disallowedFields: string[] = [];
+
+  for (const field of Object.keys(options.patch)) {
+    if (PROTECTED_CONTENT_FIELDS.has(field)) protectedFields.push(field);
+    else if (!allowed.has(field)) disallowedFields.push(field);
+  }
+
+  return {
+    valid: protectedFields.length === 0 && disallowedFields.length === 0,
+    protectedFields,
+    disallowedFields,
+    editableFields: Array.from(allowed),
+  };
+}
+
+export type ContributorReward = {
+  code: "membership_week_credit";
+  thresholdPoints: number;
+  weeks: number;
+};
+
+export const CONTRIBUTOR_REWARDS: readonly ContributorReward[] = [
+  { code: "membership_week_credit", thresholdPoints: 250, weeks: 1 },
+  { code: "membership_week_credit", thresholdPoints: 750, weeks: 2 },
+  { code: "membership_week_credit", thresholdPoints: 1500, weeks: 4 },
+];
+
+export function earnedMembershipWeekMilestones(points: number): number {
+  return CONTRIBUTOR_REWARDS
+    .filter((reward) => points >= reward.thresholdPoints)
+    .reduce((total, reward) => total + reward.weeks, 0);
+}
