@@ -5,11 +5,14 @@ import { getPrisma } from "@/lib/db/prisma";
 import { getHockeyMembershipSnapshot } from "@/lib/billing/hockey/membership-service";
 import { AHMV_PUBLISHER } from "./publishers";
 import {
+  CONTRIBUTOR_REWARDS,
   contributorBadge,
+  contributionPatchPolicy,
   contributionPoints,
   contributionPriority,
   contributionReviewDueAt,
   contributionSlaLabel,
+  editableFieldsForResource,
   publicationMayBeQueued,
 } from "./policy";
 import { screenContribution } from "./screening";
@@ -160,16 +163,16 @@ async function awardApprovedContribution(options: {
     publishedCount: nextPublished,
   });
 
-  await prisma.$transaction([
-    prisma.contributionPointLedger.create({
+  await prisma.$transaction(async (tx) => {
+    await tx.contributionPointLedger.create({
       data: {
         reputationId: reputation.id,
         contributionId: options.contributionId,
         points,
         reason: "approved_contribution",
       },
-    }),
-    prisma.contributorReputation.update({
+    });
+    await tx.contributorReputation.update({
       where: { id: reputation.id },
       data: {
         points: nextPoints,
@@ -177,8 +180,29 @@ async function awardApprovedContribution(options: {
         publishedCount: nextPublished,
         currentBadge: badge,
       },
-    }),
-  ]);
+    });
+
+    for (const reward of CONTRIBUTOR_REWARDS) {
+      if (nextPoints < reward.thresholdPoints) continue;
+      await tx.contributionRewardLedger.upsert({
+        where: {
+          reputationId_code_thresholdPoints: {
+            reputationId: reputation.id,
+            code: reward.code,
+            thresholdPoints: reward.thresholdPoints,
+          },
+        },
+        create: {
+          reputationId: reputation.id,
+          code: reward.code,
+          thresholdPoints: reward.thresholdPoints,
+          units: reward.weeks,
+          status: "available",
+        },
+        update: {},
+      });
+    }
+  });
 }
 
 export async function syncAhmvManagedContent(items: readonly ContentRegistryInput[]) {
@@ -222,7 +246,11 @@ export async function syncAhmvManagedContent(items: readonly ContentRegistryInpu
         sourceKind: item.sourceKind.slice(0, 80),
         sourceUrl: item.sourceUrl,
         snapshot: asInputJson(item.snapshot),
-        editableFields: (item.editableFields ?? []).slice(0, 50),
+        editableFields: (
+          item.editableFields?.length
+            ? item.editableFields
+            : editableFieldsForResource(item.resourceType)
+        ).slice(0, 50),
         version,
       },
       update: {
@@ -231,7 +259,11 @@ export async function syncAhmvManagedContent(items: readonly ContentRegistryInpu
         sourceKind: item.sourceKind.slice(0, 80),
         sourceUrl: item.sourceUrl,
         snapshot: asInputJson(item.snapshot),
-        editableFields: (item.editableFields ?? []).slice(0, 50),
+        editableFields: (
+          item.editableFields?.length
+            ? item.editableFields
+            : editableFieldsForResource(item.resourceType)
+        ).slice(0, 50),
         version,
         lastSyncedAt: new Date(),
       },
@@ -249,7 +281,7 @@ export async function submitAhmvContribution(input: ContributionInput) {
   const contributor = await resolveContributor(input.contributorAuthUserId);
   const priority = contributionPriority(contributor.tier);
   const dueAt = contributionReviewDueAt(now, contributor.tier);
-  const screening = screenContribution(input);
+  let screening = screenContribution(input);
 
   const managed = await prisma.managedContentItem.findUnique({
     where: {
@@ -259,8 +291,27 @@ export async function submitAhmvContribution(input: ContributionInput) {
         resourceKey: input.resourceKey,
       },
     },
-    select: { id: true, version: true, snapshot: true },
+    select: { id: true, version: true, snapshot: true, editableFields: true },
   });
+
+  const patchPolicy = contributionPatchPolicy({
+    resourceType: input.resourceType,
+    patch: input.proposedPatch,
+    ...(managed?.editableFields?.length
+      ? { registryEditableFields: managed.editableFields }
+      : {}),
+  });
+  if (!patchPolicy.valid) {
+    screening = {
+      ...screening,
+      status: "flagged",
+      flags: Array.from(new Set([
+        ...screening.flags,
+        ...patchPolicy.protectedFields.map((field) => `protected_field:${field}`),
+        ...patchPolicy.disallowedFields.map((field) => `disallowed_field:${field}`),
+      ])),
+    };
+  }
 
   const existing = await prisma.contentContribution.findUnique({
     where: {
@@ -697,7 +748,7 @@ export async function acknowledgeAhmvPublication(options: {
       },
     });
     if (contribution?.contributorProfileId) {
-      await prisma.contributorReputation.update({
+      const reputation = await prisma.contributorReputation.findUnique({
         where: {
           clientId_profileId_publisherCode: {
             clientId: contribution.clientId,
@@ -705,8 +756,21 @@ export async function acknowledgeAhmvPublication(options: {
             publisherCode: contribution.publisherCode,
           },
         },
-        data: { publishedCount: { increment: 1 } },
       });
+      if (reputation) {
+        const publishedCount = reputation.publishedCount + 1;
+        await prisma.contributorReputation.update({
+          where: { id: reputation.id },
+          data: {
+            publishedCount,
+            currentBadge: contributorBadge({
+              points: reputation.points,
+              approvedCount: reputation.approvedCount,
+              publishedCount,
+            }),
+          },
+        });
+      }
     }
   }
 
@@ -747,6 +811,18 @@ export async function getAhmvContributorSnapshot(authUserId: string) {
       rejectedCount: true,
       currentBadge: true,
       lastContributionAt: true,
+      rewardLedger: {
+        where: { status: "available", code: "membership_week_credit" },
+        orderBy: { thresholdPoints: "asc" },
+        select: {
+          id: true,
+          code: true,
+          thresholdPoints: true,
+          units: true,
+          status: true,
+          issuedAt: true,
+        },
+      },
     },
   });
 
@@ -789,7 +865,10 @@ export async function getAhmvContributorSnapshot(authUserId: string) {
       rejectedCount: 0,
       currentBadge: "new_contributor",
       lastContributionAt: null,
+      rewardLedger: [],
     },
+    availableMembershipWeeks:
+      reputation?.rewardLedger.reduce((total, reward) => total + reward.units, 0) ?? 0,
     recentContributions,
   };
 }
