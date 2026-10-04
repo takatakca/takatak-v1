@@ -73,6 +73,9 @@ jobs:
       - name: AHMV exact-team games safeguards
         run: npm run qa:ahmv-team-games
 
+      - name: TAKATAK AHMV managed-association control safeguards
+        run: npm run qa:ahmv-control-plane
+
       - name: TAKATAK community content moderation safeguards
         run: npm run qa:content-contributions
 
