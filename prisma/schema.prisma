@@ -2727,7 +2727,8 @@ model ContributorReputation {
 
   client    Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
   profile   Profile                    @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  pointLedger ContributionPointLedger[]
+  pointLedger  ContributionPointLedger[]
+  rewardLedger ContributionRewardLedger[]
 
   @@unique([clientId, profileId, publisherCode], map: "contributor_reputation_scope_key")
   @@index([clientId, publisherCode, points])
@@ -2752,6 +2753,29 @@ model ContributionPointLedger {
   @@index([contributionId])
   @@map("contribution_point_ledger")
 }
+
+model ContributionRewardLedger {
+  id              String   @id @default(uuid()) @db.Uuid
+  reputationId    String   @db.Uuid
+  code            String
+  thresholdPoints Int
+  units           Int
+  status          String   @default("available")
+  issuedAt        DateTime @default(now())
+  redeemedAt      DateTime?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reputation ContributorReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+
+  @@unique([reputationId, code, thresholdPoints], map: "contribution_reward_milestone_key")
+  @@index([reputationId, status])
+  @@index([code, status])
+  @@index([issuedAt])
+  @@map("contribution_reward_ledger")
+}
+
 
 // ════════════════════════════════════════════════════════════
 // Phase 12 — Leads / FLEXS Module Foundation
