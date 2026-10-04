@@ -95,22 +95,22 @@ const PROTECTED_CONTENT_FIELDS = new Set([
 const EDITABLE_CONTENT_FIELDS: Record<ContentResourceType, readonly string[]> = {
   news: [
     "title","summary","excerpt","body","description","imageUrl","imageAlt",
-    "sourceUrl","publishedAt","author","links","tags",
+    "sourceUrl","publishedAt","author","links","tags","text","url",
   ],
   post: [
     "title","summary","excerpt","body","description","imageUrl","imageAlt",
-    "sourceUrl","publishedAt","author","links","tags",
+    "sourceUrl","publishedAt","author","links","tags","text","url",
   ],
   photo: [
     "imageUrl","thumbnailUrl","caption","alt","credit","sourceUrl","takenAt",
-    "description","tags",
+    "description","tags","url","alt","label",
   ],
   image: [
     "imageUrl","thumbnailUrl","caption","alt","credit","sourceUrl","takenAt",
-    "description","tags",
+    "description","tags","url","alt","label",
   ],
   gallery: [
-    "title","description","coverImageUrl","photos","sourceUrl","publishedAt",
+    "title","description","coverImageUrl","coverUrl","photos","sourceUrl","publishedAt","date",
   ],
   schedule: [
     "date","start","end","venue","activity","status","notes","sourceUrl",
@@ -126,7 +126,7 @@ const EDITABLE_CONTENT_FIELDS: Record<ContentResourceType, readonly string[]> = 
     "resultsUrl","socialLinks","contact","gallery","news","notes",
   ],
   page: [
-    "title","description","body","heroImageUrl","heroImageAlt","links","sourceUrl",
+    "title","description","body","heroImageUrl","heroImageAlt","links","sourceUrl","notes",
   ],
   faq: ["question","answer","sourceUrl","links"],
   sponsor: [
@@ -162,8 +162,13 @@ export function contributionPatchPolicy(options: {
   const disallowedFields: string[] = [];
 
   for (const field of Object.keys(options.patch)) {
-    if (PROTECTED_CONTENT_FIELDS.has(field)) protectedFields.push(field);
-    else if (!allowed.has(field)) disallowedFields.push(field);
+    const root = field.split(".")[0]?.trim() ?? "";
+    if (!root) {
+      disallowedFields.push(field);
+      continue;
+    }
+    if (PROTECTED_CONTENT_FIELDS.has(root)) protectedFields.push(field);
+    else if (!allowed.has(root)) disallowedFields.push(field);
   }
 
   return {

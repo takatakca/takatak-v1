@@ -361,3 +361,32 @@ The backend is intentionally generic enough to later support:
 - TAKATAK Creative Studio integration.
 
 External editing products are not part of this foundation. TAKATAK owns the workflow and can integrate creative tools later without making them the authority.
+
+
+## Nested public fields
+
+A publisher may target a localized or nested public field with dotted paths, for example:
+
+```text
+description.fr
+description.en
+alt.fr
+label.fr
+directionsNotes.fr
+```
+
+TAKATAK validates the root field against the resource policy. Protected roots such as `publicTeamId`, `teamId`, `category`, `division`, `slug` and tenant/internal identifiers remain immutable even when a dotted path is supplied.
+
+## Membership-week contribution rewards
+
+Reputation can issue internal TAKATAK reward credits:
+
+| Points reached | New membership-week credits |
+| ---: | ---: |
+| 250 | 1 week |
+| 750 | 2 weeks |
+| 1500 | 4 weeks |
+
+These are additive milestones, for a maximum of seven issued weeks at the initial 1500-point tier.
+
+Credits are recorded in `contribution_reward_ledger` as `membership_week_credit`. They are not applied to Stripe automatically. A future redemption flow must explicitly consume an available credit and record the billing/entitlement action, preserving an auditable financial boundary.

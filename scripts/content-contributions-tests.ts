@@ -83,10 +83,29 @@ const arenaPatch = contributionPatchPolicy({
 });
 assert.equal(arenaPatch.valid, true);
 
+const localizedArenaPatch = contributionPatchPolicy({
+  resourceType: "arena",
+  patch: {
+    "description.fr": "Nouvelle description vérifiée",
+    "directionsNotes.fr": "Utiliser la porte arrière sur la rue Exemple",
+  },
+});
+assert.equal(localizedArenaPatch.valid, true);
+
+const photoPatch = contributionPatchPolicy({
+  resourceType: "photo",
+  patch: {
+    url: "https://cdn.example.test/new-photo.jpg",
+    "alt.fr": "Nouvelle description de la photo",
+    "label.fr": "Nouvelle légende",
+  },
+});
+assert.equal(photoPatch.valid, true);
+
 const protectedTeamIdentity = contributionPatchPolicy({
   resourceType: "team",
   patch: {
-    publicTeamId: "do-not-change",
+    "publicTeamId.value": "do-not-change",
     category: "M99",
     description: "Useful external description correction",
   },
@@ -94,7 +113,7 @@ const protectedTeamIdentity = contributionPatchPolicy({
 assert.equal(protectedTeamIdentity.valid, false);
 assert.deepEqual(
   protectedTeamIdentity.protectedFields.sort(),
-  ["category", "publicTeamId"],
+  ["category", "publicTeamId.value"],
 );
 
 const teamExternalContent = contributionPatchPolicy({
