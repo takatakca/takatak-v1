@@ -97,6 +97,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Local Listings", href: "/dashboard/local-listings", icon: MapPin },
       { label: "Leads", href: "/dashboard/leads", icon: Filter },
       { label: "AI Studio", href: "/dashboard/ai-studio", icon: Sparkles },
+      { label: "Content Moderation", href: "/dashboard/contributions", icon: ListChecks },
     ],
   },
   {
@@ -187,6 +188,9 @@ export function pageTitleForPath(pathname: string): string {
 export function pageSubtitleForPath(pathname: string): string | null {
   if (pathname === "/dashboard/hockey" || pathname.startsWith("/dashboard/hockey/")) {
     return "Manage your personal AHMV membership, premium entitlements, Stripe billing and future family hockey services.";
+  }
+  if (pathname === "/dashboard/contributions" || pathname.startsWith("/dashboard/contributions/")) {
+    return "Moderate community-proposed content changes, contributor reputation and publisher delivery.";
   }
   if (pathname === "/dashboard/web-hosting/domains" || pathname.startsWith("/dashboard/web-hosting/domains/")) {
     return "Manage your domains, DNS settings, renewals, redirects, and connection status.";

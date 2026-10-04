@@ -322,6 +322,10 @@ model Profile {
   socialBrandAssignments   SocialBrandAccountAssignment[] @relation("SocialBrandAssignmentAssignedBy")
   socialOnboarding         SocialOnboarding?
   masterIdentity           MasterIdentity?
+  contentContributions     ContentContribution[]          @relation("ContributionContributor")
+  moderatedContributions   ContentContribution[]          @relation("ContributionModerator")
+  contributionEvents       ContentContributionEvent[]     @relation("ContributionEventActor")
+  contributorReputations   ContributorReputation[]
 
   @@map("profiles")
 }
@@ -380,6 +384,11 @@ model Client {
   socialAccounts            SocialAccount[]
   socialProviderConnections SocialProviderConnection[]
   socialBrandAssignments    SocialBrandAccountAssignment[]
+  managedContentItems        ManagedContentItem[]
+  contentContributions       ContentContribution[]
+  contentPublications        ContentPublication[]
+  contributionAssets          ContributionAsset[]
+  contributorReputations      ContributorReputation[]
   socialOAuthStates         SocialOAuthState[]
   socialAccountSyncStates   SocialAccountSyncState[]
   campaigns                 Campaign[]
@@ -615,6 +624,10 @@ model BusinessBrand {
   socialProviderConnections SocialProviderConnection[]
   socialOAuthStates         SocialOAuthState[]
   socialBrandAssignments    SocialBrandAccountAssignment[]
+  managedContentItems        ManagedContentItem[]
+  contentContributions       ContentContribution[]
+  contentPublications        ContentPublication[]
+  contributionAssets          ContributionAsset[]
 
   @@unique([id, clientId])
   @@index([clientId])
@@ -2561,6 +2574,241 @@ model LocalVisibilitySnapshot {
   @@index([createdAt])
   @@map("local_visibility_snapshots")
 }
+
+// ════════════════════════════════════════════════════════════
+// TAKATAK COMMUNITY CONTENT / CONTRIBUTOR MODERATION
+// Generic tenant-scoped engine. AHMV is the first publisher.
+// Human moderation remains authoritative; community edits never write
+// directly to source-of-truth hockey systems.
+// ════════════════════════════════════════════════════════════
+
+model ManagedContentItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  publisherCode   String
+  resourceType    String
+  resourceKey     String
+  title           String?
+  canonicalUrl    String?
+  sourceKind      String
+  sourceUrl       String?
+  snapshot        Json
+  editableFields  String[] @default([])
+  version         Int      @default(1)
+  lastSyncedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client            Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand     BusinessBrand?        @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  contributions     ContentContribution[]
+  publications      ContentPublication[]
+
+  @@unique([publisherCode, resourceType, resourceKey], map: "managed_content_publisher_resource_key")
+  @@index([clientId, publisherCode])
+  @@index([businessBrandId, publisherCode])
+  @@index([resourceType, resourceKey])
+  @@index([lastSyncedAt])
+  @@map("managed_content_items")
+}
+
+model ContentContribution {
+  id                    String   @id @default(uuid()) @db.Uuid
+  clientId              String   @db.Uuid
+  businessBrandId       String?  @db.Uuid
+  managedContentItemId  String?  @db.Uuid
+  publisherCode         String
+  idempotencyKey        String
+  resourceType          String
+  resourceKey           String
+  action                String
+  targetUrl             String?
+  originalVersion       Int?
+  originalSnapshot      Json?
+  proposedPatch         Json
+  reason                String?
+  evidenceUrls          String[] @default([])
+  attachmentUrls        String[] @default([])
+  contributorProfileId  String?  @db.Uuid
+  contributorAuthUserId String?  @db.Uuid
+  contributorTier       String   @default("guest")
+  priority              String   @default("standard")
+  reviewDueAt           DateTime
+  status                String   @default("pending_review")
+  aiReviewStatus        String   @default("pending")
+  aiReview              Json?
+  moderatorProfileId    String?  @db.Uuid
+  moderatorComment      String?
+  reviewedAt            DateTime?
+  approvedAt            DateTime?
+  publishedAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  client             Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand?        @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  managedContentItem ManagedContentItem?   @relation(fields: [managedContentItemId], references: [id], onDelete: SetNull)
+  contributor        Profile?              @relation("ContributionContributor", fields: [contributorProfileId], references: [id], onDelete: SetNull)
+  moderator          Profile?              @relation("ContributionModerator", fields: [moderatorProfileId], references: [id], onDelete: SetNull)
+  events             ContentContributionEvent[]
+  publication        ContentPublication?
+  pointLedger        ContributionPointLedger[]
+  assets             ContributionAsset[]
+
+  @@unique([publisherCode, idempotencyKey], map: "content_contribution_publisher_idempotency_key")
+  @@index([clientId, status, priority])
+  @@index([businessBrandId, status])
+  @@index([publisherCode, status, reviewDueAt])
+  @@index([resourceType, resourceKey])
+  @@index([contributorProfileId, createdAt])
+  @@index([moderatorProfileId, reviewedAt])
+  @@map("content_contributions")
+}
+
+model ContributionAsset {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  contributionId  String?  @db.Uuid
+  publisherCode   String
+  storageBucket   String
+  storagePath     String
+  originalName    String
+  mimeType        String
+  sizeBytes       Int
+  status          String   @default("quarantined")
+  expiresAt       DateTime
+  approvedAt      DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?       @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  contribution  ContentContribution? @relation(fields: [contributionId], references: [id], onDelete: SetNull)
+
+  @@unique([storageBucket, storagePath], map: "contribution_asset_storage_key")
+  @@index([clientId, publisherCode, status])
+  @@index([businessBrandId, status])
+  @@index([contributionId, status])
+  @@index([expiresAt, status])
+  @@map("contribution_assets")
+}
+
+model ContentContributionEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  contributionId String   @db.Uuid
+  actorProfileId String?  @db.Uuid
+  eventType      String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  contribution ContentContribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  actor        Profile?            @relation("ContributionEventActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+
+  @@index([contributionId, createdAt])
+  @@index([actorProfileId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("content_contribution_events")
+}
+
+model ContentPublication {
+  id                   String   @id @default(uuid()) @db.Uuid
+  clientId             String   @db.Uuid
+  businessBrandId      String?  @db.Uuid
+  contributionId       String   @unique @db.Uuid
+  managedContentItemId String?  @db.Uuid
+  publisherCode        String
+  resourceType         String
+  resourceKey          String
+  patch                Json
+  version              Int
+  status               String   @default("ready")
+  active               Boolean  @default(true)
+  acknowledgedAt       DateTime?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  client             Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand?       @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  contribution       ContentContribution  @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  managedContentItem ManagedContentItem?  @relation(fields: [managedContentItemId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, publisherCode, active])
+  @@index([businessBrandId, active])
+  @@index([publisherCode, resourceType, resourceKey, active])
+  @@index([status, createdAt])
+  @@map("content_publications")
+}
+
+model ContributorReputation {
+  id                 String   @id @default(uuid()) @db.Uuid
+  clientId           String   @db.Uuid
+  profileId          String   @db.Uuid
+  publisherCode      String
+  points             Int      @default(0)
+  submittedCount     Int      @default(0)
+  approvedCount      Int      @default(0)
+  publishedCount     Int      @default(0)
+  rejectedCount      Int      @default(0)
+  currentBadge       String   @default("new_contributor")
+  lastContributionAt DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  client    Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile   Profile                    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  pointLedger  ContributionPointLedger[]
+  rewardLedger ContributionRewardLedger[]
+
+  @@unique([clientId, profileId, publisherCode], map: "contributor_reputation_scope_key")
+  @@index([clientId, publisherCode, points])
+  @@index([profileId, publisherCode])
+  @@index([currentBadge])
+  @@map("contributor_reputations")
+}
+
+model ContributionPointLedger {
+  id             String   @id @default(uuid()) @db.Uuid
+  reputationId   String   @db.Uuid
+  contributionId String?  @db.Uuid
+  points         Int
+  reason         String
+  createdAt      DateTime @default(now())
+
+  reputation   ContributorReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+  contribution ContentContribution?  @relation(fields: [contributionId], references: [id], onDelete: SetNull)
+
+  @@unique([reputationId, contributionId, reason], map: "contribution_points_idempotency_key")
+  @@index([reputationId, createdAt])
+  @@index([contributionId])
+  @@map("contribution_point_ledger")
+}
+
+model ContributionRewardLedger {
+  id              String   @id @default(uuid()) @db.Uuid
+  reputationId    String   @db.Uuid
+  code            String
+  thresholdPoints Int
+  units           Int
+  status          String   @default("available")
+  issuedAt        DateTime @default(now())
+  redeemedAt      DateTime?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reputation ContributorReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+
+  @@unique([reputationId, code, thresholdPoints], map: "contribution_reward_milestone_key")
+  @@index([reputationId, status])
+  @@index([code, status])
+  @@index([issuedAt])
+  @@map("contribution_reward_ledger")
+}
+
 
 // ════════════════════════════════════════════════════════════
 // Phase 12 — Leads / FLEXS Module Foundation
