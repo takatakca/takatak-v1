@@ -130,7 +130,7 @@ export async function ingestAhmvScheduleSnapshot(
 }
 
 export async function readAhmvScheduleSnapshot(
-  input: { team?: string; category?: string; date?: string },
+  input: { team?: string; teamId?: string; category?: string; date?: string },
   env: Record<string, string | undefined> = process.env,
   now = new Date(),
 ) {

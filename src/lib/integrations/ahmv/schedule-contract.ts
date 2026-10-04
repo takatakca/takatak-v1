@@ -1,18 +1,24 @@
 export type AhmvScheduleStatus = "active" | "no_match";
-export type AhmvScheduleEventStatus = "scheduled" | "cancelled";
+export type AhmvScheduleEventStatus = "scheduled" | "cancelled" | "final";
 
 export interface AhmvScheduleEvent {
   id: string;
   type: string;
   team?: string;
+  teamId?: string;
   category?: string;
   startsAt: string;
   endsAt?: string;
   status: AhmvScheduleEventStatus;
   opponent?: string;
+  homeTeam?: string;
+  awayTeam?: string;
+  homeScore?: number;
+  awayScore?: number;
   venue?: string;
   venueAddress?: string;
   officialUrl?: string;
+  scoresheetUrl?: string;
   sourceUrl?: string;
 }
 
@@ -35,6 +41,12 @@ function iso(value: unknown): string | undefined {
   const timestamp = Date.parse(candidate);
   return Number.isFinite(timestamp)
     ? new Date(timestamp).toISOString()
+    : undefined;
+}
+
+function nonNegativeInteger(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
     : undefined;
 }
 
@@ -64,7 +76,7 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
     !id ||
     !type ||
     !startsAt ||
-    (status !== "scheduled" && status !== "cancelled")
+    (status !== "scheduled" && status !== "cancelled" && status !== "final")
   ) {
     return undefined;
   }
@@ -79,12 +91,15 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
   const optionalText: Array<
     [keyof Pick<
       AhmvScheduleEvent,
-      "team" | "category" | "opponent" | "venue" | "venueAddress"
+      "team" | "teamId" | "category" | "opponent" | "homeTeam" | "awayTeam" | "venue" | "venueAddress"
     >, unknown, number]
   > = [
     ["team", raw.team, 160],
+    ["teamId", raw.teamId, 80],
     ["category", raw.category, 80],
     ["opponent", raw.opponent, 160],
+    ["homeTeam", raw.homeTeam, 180],
+    ["awayTeam", raw.awayTeam, 180],
     ["venue", raw.venue, 180],
     ["venueAddress", raw.venueAddress, 500],
   ];
@@ -100,9 +115,19 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
     result.endsAt = endsAt;
   }
 
+  const homeScore = nonNegativeInteger(raw.homeScore);
+  const awayScore = nonNegativeInteger(raw.awayScore);
+  if ((homeScore === undefined) !== (awayScore === undefined)) return undefined;
+  if (homeScore !== undefined && awayScore !== undefined) {
+    result.homeScore = homeScore;
+    result.awayScore = awayScore;
+  }
+
   const officialUrl = https(raw.officialUrl);
+  const scoresheetUrl = https(raw.scoresheetUrl);
   const sourceUrl = https(raw.sourceUrl);
   if (officialUrl) result.officialUrl = officialUrl;
+  if (scoresheetUrl) result.scoresheetUrl = scoresheetUrl;
   if (sourceUrl) result.sourceUrl = sourceUrl;
 
   return result;
@@ -192,11 +217,12 @@ export function torontoDate(value: string): string {
 
 export function filterAhmvScheduleEvents(
   events: readonly AhmvScheduleEvent[],
-  input: { team?: string; category?: string; date?: string },
+  input: { team?: string; teamId?: string; category?: string; date?: string },
 ): AhmvScheduleEvent[] {
   const team = input.team
     ? normalizeAhmvScheduleLookup(input.team)
     : "";
+  const teamId = input.teamId?.trim() ?? "";
   const category = input.category
     ? normalizeAhmvScheduleLookup(input.category)
     : "";
@@ -207,6 +233,9 @@ export function filterAhmvScheduleEvents(
         team &&
         normalizeAhmvScheduleLookup(item.team ?? "") !== team
       ) {
+        return false;
+      }
+      if (teamId && item.teamId !== teamId) {
         return false;
       }
       if (

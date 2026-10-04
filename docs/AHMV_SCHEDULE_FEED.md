@@ -22,6 +22,8 @@ GET /api/integrations/ahmv/schedule
         +--> ahmverdun.ca SMS
         +--> AHMV Voice AI
         +--> reminder worker
+        +--> GET /api/integrations/ahmv/team-games
+             +--> exact-team mini-sites on ahmverdun.ca
 ```
 
 TAKATAK is the secure distribution/cache layer. The upstream source remains the authority.
@@ -105,8 +107,33 @@ Rules:
 - event IDs must be unique.
 - `active` requires at least one event.
 - `no_match` requires zero events.
-- only `scheduled` and `cancelled` are accepted today.
+- `scheduled`, `cancelled` and `final` are accepted.
+- exact-team consumers may receive the optional public fields `teamId`, `homeTeam`, `awayTeam`, `homeScore`, `awayScore` and `scoresheetUrl` when the authoritative source supplies them.
+- score values must arrive as a complete home/away pair; partial score data is rejected.
 - no roster, player, child, guardian, email or phone data belongs in this payload.
+
+
+## Exact-team games API
+
+```
+GET /api/integrations/ahmv/team-games?teamId={PUBLIC_TEAM_ID}
+Authorization: Bearer <TAKATAK_AHMV_SERVICE_TOKEN>
+X-AHMV-Tenant: ahmverdun
+X-AHMV-Team-Id: {PUBLIC_TEAM_ID}
+```
+
+The query parameter and the team-scope header must match exactly. This prevents a tenant-scoped consumer from silently crossing into a different public team.
+
+This endpoint is intentionally conservative:
+
+- it only joins on the exact public `teamId`;
+- it does not infer home/away sides from a display name or opponent field;
+- a future game is exposed only when `homeTeam` and `awayTeam` are both present;
+- a final result is exposed only when both official scores are present;
+- if the source is fresh but lacks the exact-team fields, the endpoint returns `not_connected` and the AHMV website keeps its official-link fallback;
+- standings remain on the official provider until an authoritative standing feed is connected.
+
+No new database table is required: these approved public fields remain inside the normalized schedule snapshot JSON and inherit the same provenance, freshness and backend-only RLS boundary.
 
 ## Ordering/idempotency
 
