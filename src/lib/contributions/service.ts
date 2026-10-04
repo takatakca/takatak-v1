@@ -705,3 +705,110 @@ export async function acknowledgeAhmvPublication(options: {
 
   return { status: options.applied ? "applied" : "failed" };
 }
+
+
+export async function getAhmvContributorSnapshot(authUserId: string) {
+  const { prisma, brand } = await ahmvScope();
+  const profile = await prisma.profile.findUnique({
+    where: { authUserId },
+    select: { id: true, displayName: true, firstName: true, lastName: true },
+  });
+
+  if (!profile) {
+    return {
+      registered: false,
+      membership: "guest",
+      reputation: null,
+      recentContributions: [],
+    };
+  }
+
+  const membership = await getHockeyMembershipSnapshot(authUserId);
+  const reputation = await prisma.contributorReputation.findUnique({
+    where: {
+      clientId_profileId_publisherCode: {
+        clientId: brand.clientId,
+        profileId: profile.id,
+        publisherCode: AHMV_PUBLISHER.code,
+      },
+    },
+    select: {
+      points: true,
+      submittedCount: true,
+      approvedCount: true,
+      publishedCount: true,
+      rejectedCount: true,
+      currentBadge: true,
+      lastContributionAt: true,
+    },
+  });
+
+  const recentContributions = await prisma.contentContribution.findMany({
+    where: {
+      clientId: brand.clientId,
+      publisherCode: AHMV_PUBLISHER.code,
+      contributorProfileId: profile.id,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+    select: {
+      id: true,
+      resourceType: true,
+      resourceKey: true,
+      action: true,
+      priority: true,
+      status: true,
+      reviewDueAt: true,
+      createdAt: true,
+      reviewedAt: true,
+      publishedAt: true,
+    },
+  });
+
+  return {
+    registered: true,
+    membership: membership.access === "paid" ? "member" : "registered",
+    profile: {
+      displayName:
+        profile.displayName ||
+        [profile.firstName, profile.lastName].filter(Boolean).join(" ") ||
+        "AHMV contributor",
+    },
+    reputation: reputation ?? {
+      points: 0,
+      submittedCount: 0,
+      approvedCount: 0,
+      publishedCount: 0,
+      rejectedCount: 0,
+      currentBadge: "new_contributor",
+      lastContributionAt: null,
+    },
+    recentContributions,
+  };
+}
+
+export async function getAhmvContributionStatus(contributionId: string) {
+  const { prisma, brand } = await ahmvScope();
+  return prisma.contentContribution.findFirst({
+    where: {
+      id: contributionId,
+      clientId: brand.clientId,
+      publisherCode: AHMV_PUBLISHER.code,
+    },
+    select: {
+      id: true,
+      resourceType: true,
+      resourceKey: true,
+      action: true,
+      priority: true,
+      reviewDueAt: true,
+      status: true,
+      aiReviewStatus: true,
+      moderatorComment: true,
+      reviewedAt: true,
+      approvedAt: true,
+      publishedAt: true,
+      createdAt: true,
+    },
+  });
+}
