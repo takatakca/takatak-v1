@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { verifyAhmvScheduleRequest } from "../src/lib/integrations/ahmv/auth";
+import { buildAhmvTeamGames } from "../src/lib/integrations/ahmv/team-games";
 import {
   filterAhmvScheduleEvents,
   normalizeAhmvScheduleLookup,
@@ -21,6 +22,7 @@ function payload(overrides: Record<string, unknown> = {}) {
         id: "evt-1",
         type: "Match",
         team: "M13 A",
+        teamId: "2025191400018816",
         category: "M13",
         startsAt: "2026-10-03T20:00:00-04:00",
         endsAt: "2026-10-03T21:30:00-04:00",
@@ -135,10 +137,79 @@ assert.equal(
 const filteredTeam = filterAhmvScheduleEvents(valid.events, { team: "m13-a" });
 assert.deepEqual(filteredTeam.map((event) => event.id), ["evt-1"]);
 
+const filteredTeamId = filterAhmvScheduleEvents(valid.events, {
+  teamId: "2025191400018816",
+});
+assert.deepEqual(filteredTeamId.map((event) => event.id), ["evt-1"]);
+
 const filteredDate = filterAhmvScheduleEvents(valid.events, {
   date: "2026-10-04",
 });
 assert.deepEqual(filteredDate.map((event) => event.id), ["evt-2"]);
+
+
+const gameSnapshot = validateAhmvScheduleSnapshot(
+  payload({
+    events: [
+      {
+        id: "game-next",
+        type: "Match",
+        team: "M13 A",
+        teamId: "2025191400018816",
+        startsAt: "2026-10-03T20:00:00-04:00",
+        status: "scheduled",
+        homeTeam: "COYOTES VERDUN",
+        awayTeam: "VISITEURS",
+        venue: "Auditorium de Verdun",
+        venueAddress: "4110 Boulevard LaSalle, Montréal, QC",
+        officialUrl: "https://official.example/game-next",
+      },
+      {
+        id: "game-final",
+        type: "Match",
+        team: "M13 A",
+        teamId: "2025191400018816",
+        startsAt: "2026-10-03T14:00:00-04:00",
+        status: "final",
+        homeTeam: "COYOTES VERDUN",
+        awayTeam: "VISITEURS",
+        homeScore: 4,
+        awayScore: 2,
+        officialUrl: "https://official.example/game-final",
+        scoresheetUrl: "https://official.example/scoresheet/game-final",
+      },
+    ],
+  }),
+  now,
+);
+assert.ok(gameSnapshot, "explicit official team games should validate");
+const projectedGames = buildAhmvTeamGames(gameSnapshot.events, now);
+assert.equal(projectedGames.nextGame?.id, "game-next");
+assert.equal(projectedGames.latestResult?.id, "game-final");
+assert.equal(projectedGames.latestResult?.homeScore, 4);
+assert.equal(projectedGames.recentResults.length, 1);
+
+assert.equal(
+  validateAhmvScheduleSnapshot(
+    payload({
+      events: [
+        {
+          id: "bad-final",
+          type: "Match",
+          teamId: "2025191400018816",
+          startsAt: "2026-10-03T14:00:00-04:00",
+          status: "final",
+          homeTeam: "COYOTES VERDUN",
+          awayTeam: "VISITEURS",
+          homeScore: 4,
+        },
+      ],
+    }),
+    now,
+  ),
+  null,
+  "final games must include both official scores",
+);
 
 withTokens(() => {
   const readHeaders = new Headers({
@@ -205,9 +276,16 @@ const ingestRoute = readFileSync(
   "src/app/api/integrations/ahmv/schedule/ingest/route.ts",
   "utf8",
 );
+const teamGamesRoute = readFileSync(
+  "src/app/api/integrations/ahmv/team-games/route.ts",
+  "utf8",
+);
 assert.match(readRoute, /verifyAhmvScheduleRequest\(request\.headers, "read"\)/);
 assert.match(ingestRoute, /verifyAhmvScheduleRequest\(request\.headers, "ingest"\)/);
 assert.match(readRoute, /Retry-After/);
 assert.match(ingestRoute, /MAX_BODY_BYTES/);
+assert.match(teamGamesRoute, /verifyAhmvScheduleRequest\(request\.headers, "read"\)/);
+assert.match(teamGamesRoute, /x-ahmv-team-id/);
+assert.match(teamGamesRoute, /buildAhmvTeamGames/);
 
 console.log("AHMV schedule feed safeguards passed.");
