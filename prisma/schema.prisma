@@ -387,6 +387,7 @@ model Client {
   managedContentItems        ManagedContentItem[]
   contentContributions       ContentContribution[]
   contentPublications        ContentPublication[]
+  contributionAssets          ContributionAsset[]
   contributorReputations      ContributorReputation[]
   socialOAuthStates         SocialOAuthState[]
   socialAccountSyncStates   SocialAccountSyncState[]
@@ -626,6 +627,7 @@ model BusinessBrand {
   managedContentItems        ManagedContentItem[]
   contentContributions       ContentContribution[]
   contentPublications        ContentPublication[]
+  contributionAssets          ContributionAsset[]
 
   @@unique([id, clientId])
   @@index([clientId])
@@ -2652,6 +2654,7 @@ model ContentContribution {
   events             ContentContributionEvent[]
   publication        ContentPublication?
   pointLedger        ContributionPointLedger[]
+  assets             ContributionAsset[]
 
   @@unique([publisherCode, idempotencyKey], map: "content_contribution_publisher_idempotency_key")
   @@index([clientId, status, priority])
@@ -2661,6 +2664,36 @@ model ContentContribution {
   @@index([contributorProfileId, createdAt])
   @@index([moderatorProfileId, reviewedAt])
   @@map("content_contributions")
+}
+
+model ContributionAsset {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  contributionId  String?  @db.Uuid
+  publisherCode   String
+  storageBucket   String
+  storagePath     String
+  originalName    String
+  mimeType        String
+  sizeBytes       Int
+  status          String   @default("quarantined")
+  expiresAt       DateTime
+  approvedAt      DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?       @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  contribution  ContentContribution? @relation(fields: [contributionId], references: [id], onDelete: SetNull)
+
+  @@unique([storageBucket, storagePath], map: "contribution_asset_storage_key")
+  @@index([clientId, publisherCode, status])
+  @@index([businessBrandId, status])
+  @@index([contributionId, status])
+  @@index([expiresAt, status])
+  @@map("contribution_assets")
 }
 
 model ContentContributionEvent {

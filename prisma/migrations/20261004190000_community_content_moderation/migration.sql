@@ -74,6 +74,28 @@ CREATE TABLE "content_contributions" (
     CHECK ("aiReviewStatus" IN ('pending','passed','flagged','unavailable'))
 );
 
+CREATE TABLE "contribution_assets" (
+  "id" UUID NOT NULL,
+  "clientId" UUID NOT NULL,
+  "businessBrandId" UUID,
+  "contributionId" UUID,
+  "publisherCode" TEXT NOT NULL,
+  "storageBucket" TEXT NOT NULL,
+  "storagePath" TEXT NOT NULL,
+  "originalName" TEXT NOT NULL,
+  "mimeType" TEXT NOT NULL,
+  "sizeBytes" INTEGER NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'quarantined',
+  "expiresAt" TIMESTAMP(3) NOT NULL,
+  "approvedAt" TIMESTAMP(3),
+  "publishedAt" TIMESTAMP(3),
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  CONSTRAINT "contribution_assets_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "contribution_assets_status_check" CHECK ("status" IN ('quarantined','approved','published','rejected','expired')),
+  CONSTRAINT "contribution_assets_size_check" CHECK ("sizeBytes" > 0 AND "sizeBytes" <= 15728640)
+);
+
 CREATE TABLE "content_contribution_events" (
   "id" UUID NOT NULL,
   "contributionId" UUID NOT NULL,
@@ -188,6 +210,12 @@ CREATE INDEX "content_contributions_contributorProfileId_createdAt_idx"
 CREATE INDEX "content_contributions_moderatorProfileId_reviewedAt_idx"
   ON "content_contributions"("moderatorProfileId","reviewedAt");
 
+CREATE UNIQUE INDEX "contribution_asset_storage_key" ON "contribution_assets"("storageBucket","storagePath");
+CREATE INDEX "contribution_assets_clientId_publisherCode_status_idx" ON "contribution_assets"("clientId","publisherCode","status");
+CREATE INDEX "contribution_assets_businessBrandId_status_idx" ON "contribution_assets"("businessBrandId","status");
+CREATE INDEX "contribution_assets_contributionId_status_idx" ON "contribution_assets"("contributionId","status");
+CREATE INDEX "contribution_assets_expiresAt_status_idx" ON "contribution_assets"("expiresAt","status");
+
 CREATE INDEX "content_contribution_events_contributionId_createdAt_idx"
   ON "content_contribution_events"("contributionId","createdAt");
 CREATE INDEX "content_contribution_events_actorProfileId_createdAt_idx"
@@ -261,6 +289,10 @@ ALTER TABLE "content_contributions"
   FOREIGN KEY ("moderatorProfileId") REFERENCES "profiles"("id")
   ON DELETE SET NULL ON UPDATE CASCADE;
 
+ALTER TABLE "contribution_assets" ADD CONSTRAINT "contribution_assets_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "clients"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "contribution_assets" ADD CONSTRAINT "contribution_assets_businessBrandId_fkey" FOREIGN KEY ("businessBrandId") REFERENCES "business_brands"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "contribution_assets" ADD CONSTRAINT "contribution_assets_contributionId_fkey" FOREIGN KEY ("contributionId") REFERENCES "content_contributions"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
 ALTER TABLE "content_contribution_events"
   ADD CONSTRAINT "content_contribution_events_contributionId_fkey"
   FOREIGN KEY ("contributionId") REFERENCES "content_contributions"("id")
@@ -313,6 +345,7 @@ ALTER TABLE "contribution_reward_ledger"
 -- Backend-only tables. Browser roles get no direct Data API policies.
 ALTER TABLE "managed_content_items" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "content_contributions" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "contribution_assets" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "content_contribution_events" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "content_publications" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "contributor_reputations" ENABLE ROW LEVEL SECURITY;
@@ -328,3 +361,5 @@ COMMENT ON TABLE "content_publications" IS
 
 COMMENT ON TABLE "contribution_reward_ledger" IS
   'TAKATAK-issued contributor reward credits. Credits are not applied to Stripe automatically.';
+
+COMMENT ON TABLE "contribution_assets" IS 'Private quarantined contributor uploads. Public retrieval begins only after human approval.';

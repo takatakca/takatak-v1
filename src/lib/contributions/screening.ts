@@ -52,7 +52,8 @@ export function screenContribution(
   if (
     (input.resourceType === "photo" || input.resourceType === "image") &&
     input.action === "replace_media" &&
-    !(input.attachmentUrls?.length)
+    !(input.attachmentUrls?.length) &&
+    !(input.assetIds?.length)
   ) {
     flags.push("replacement_media_required");
   }

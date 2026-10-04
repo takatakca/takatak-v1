@@ -20,6 +20,16 @@ function stringArray(value: unknown, maxItems = 8, maxLen = 1200): string[] {
     .slice(0, maxItems);
 }
 
+function uuidArray(value: unknown, maxItems = 8): string[] {
+  if (!Array.isArray(value)) return [];
+  const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return Array.from(new Set(
+    value.filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter((item) => uuid.test(item)),
+  )).slice(0, maxItems);
+}
+
 function object(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
@@ -67,6 +77,7 @@ export function parseContributionInput(value: unknown): ContributionInput | null
     ...(text(row.reason, 2000) ? { reason: text(row.reason, 2000)! } : {}),
     evidenceUrls: stringArray(row.evidenceUrls),
     attachmentUrls: stringArray(row.attachmentUrls),
+    assetIds: uuidArray(row.assetIds),
     ...(text(row.contributorAuthUserId, 80) ? { contributorAuthUserId: text(row.contributorAuthUserId, 80)! } : {}),
   };
 }

@@ -24,6 +24,7 @@ export type ContributionInput = {
   reason?: string;
   evidenceUrls?: string[];
   attachmentUrls?: string[];
+  assetIds?: string[];
   contributorAuthUserId?: string;
 };
 
