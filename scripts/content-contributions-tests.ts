@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  contributionBadge,
+  contributorBadge,
   contributionPriority,
   contributionReviewDueAt,
   contributionSlaLabel,
