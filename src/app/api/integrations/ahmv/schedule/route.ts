@@ -28,6 +28,7 @@ async function handle(request: Request) {
   }
 
   const url = new URL(request.url);
+  const teamId = queryValue(url, "teamId", 80);
   const team = queryValue(url, "team", 80);
   const category = queryValue(url, "category", 80);
   const date = queryValue(url, "date", 10);
@@ -38,6 +39,7 @@ async function handle(request: Request) {
 
   try {
     const result = await readAhmvScheduleSnapshot({
+      ...(teamId ? { teamId } : {}),
       ...(team ? { team } : {}),
       ...(category ? { category } : {}),
       ...(date ? { date } : {}),
