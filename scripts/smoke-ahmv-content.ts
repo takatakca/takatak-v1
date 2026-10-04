@@ -99,9 +99,10 @@ async function main() {
     `status=${missingAuthorization.status}`,
   );
 
+  const invalidToken = "invalid-smoke-credential".padEnd(40, "x");
   const wrongAuthorization = await get("/api/integrations/ahmv/content/overlays", {
     "X-AHMV-Tenant": "ahmverdun",
-    Authorization: "Bearer definitely-not-the-production-token-000000000000",
+    Authorization: ["Bearer", invalidToken].join(" "),
   });
   assert(
     "wrong authorization is rejected with 401",
