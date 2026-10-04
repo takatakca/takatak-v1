@@ -131,7 +131,7 @@ const EDITABLE_CONTENT_FIELDS: Record<ContentResourceType, readonly string[]> = 
   faq: ["question","answer","sourceUrl","links"],
   sponsor: [
     "displayName","description","logoUrl","imageUrl","website","phone","address",
-    "ctaLabel","ctaUrl","sourceUrl",
+    "ctaLabel","ctaUrl","sourceUrl","tagline",
   ],
   other: [
     "title","description","body","imageUrl","imageAlt","sourceUrl","links","notes",
