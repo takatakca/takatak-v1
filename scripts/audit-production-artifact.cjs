@@ -84,7 +84,7 @@ assert(
   "required deployment/preflight scripts",
   fs.existsSync(path.join(appRoot, "scripts", "production-preflight.ts")),
 );
-assert("BUILD_ID", has("BUILD_ID"));
+assert(\n  "AHMV content production smoke",\n  fs.existsSync(path.join(appRoot, "scripts", "smoke-ahmv-content.ts")),\n);\nassert("BUILD_ID", has("BUILD_ID"));
 assert("build-metadata.json", fs.existsSync(metadataFile));
 
 const forbiddenNames = manifest.filter((item) => {
