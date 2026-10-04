@@ -1,10 +1,11 @@
 import "server-only";
 
+import { Prisma } from "@prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
 import { getHockeyMembershipSnapshot } from "@/lib/billing/hockey/membership-service";
 import { AHMV_PUBLISHER } from "./publishers";
 import {
-  contributionBadge,
+  contributorBadge,
   contributionPoints,
   contributionPriority,
   contributionReviewDueAt,
@@ -19,6 +20,10 @@ import type {
   ContributorTier,
 } from "./types";
 import { sendModeratorEmail } from "./moderator-email";
+
+function asInputJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
 
 async function ahmvScope() {
   const prisma = getPrisma();
@@ -149,7 +154,7 @@ async function awardApprovedContribution(options: {
   const nextPoints = reputation.points + points;
   const nextApproved = reputation.approvedCount + 1;
   const nextPublished = reputation.publishedCount + (options.published ? 1 : 0);
-  const badge = contributionBadge({
+  const badge = contributorBadge({
     points: nextPoints,
     approvedCount: nextApproved,
     publishedCount: nextPublished,
@@ -216,7 +221,7 @@ export async function syncAhmvManagedContent(items: readonly ContentRegistryInpu
         canonicalUrl: item.canonicalUrl,
         sourceKind: item.sourceKind.slice(0, 80),
         sourceUrl: item.sourceUrl,
-        snapshot: item.snapshot,
+        snapshot: asInputJson(item.snapshot),
         editableFields: (item.editableFields ?? []).slice(0, 50),
         version,
       },
@@ -225,7 +230,7 @@ export async function syncAhmvManagedContent(items: readonly ContentRegistryInpu
         canonicalUrl: item.canonicalUrl,
         sourceKind: item.sourceKind.slice(0, 80),
         sourceUrl: item.sourceUrl,
-        snapshot: item.snapshot,
+        snapshot: asInputJson(item.snapshot),
         editableFields: (item.editableFields ?? []).slice(0, 50),
         version,
         lastSyncedAt: new Date(),
@@ -294,8 +299,10 @@ export async function submitAhmvContribution(input: ContributionInput) {
       action: input.action,
       targetUrl: input.targetUrl,
       originalVersion: input.originalVersion ?? managed?.version,
-      originalSnapshot: input.originalSnapshot ?? managed?.snapshot,
-      proposedPatch: input.proposedPatch,
+      ...((input.originalSnapshot ?? managed?.snapshot) != null
+        ? { originalSnapshot: asInputJson(input.originalSnapshot ?? managed?.snapshot) }
+        : {}),
+      proposedPatch: asInputJson(input.proposedPatch),
       reason: input.reason?.slice(0, 2000),
       evidenceUrls: safeHttpsUrls(input.evidenceUrls),
       attachmentUrls: safeHttpsUrls(input.attachmentUrls),
@@ -551,7 +558,7 @@ export async function reviewContribution(options: {
         publisherCode: contribution.publisherCode,
         resourceType: contribution.resourceType,
         resourceKey: contribution.resourceKey,
-        patch: contribution.proposedPatch,
+        patch: asInputJson(contribution.proposedPatch),
         version: nextVersion,
         status: "ready",
         active: true,
@@ -663,7 +670,7 @@ export async function acknowledgeAhmvPublication(options: {
         await tx.managedContentItem.update({
           where: { id: publication.managedContentItemId },
           data: {
-            snapshot: options.snapshot,
+            snapshot: asInputJson(options.snapshot),
             version: publication.version,
             lastSyncedAt: now,
           },
