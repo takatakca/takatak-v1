@@ -387,6 +387,7 @@ model Client {
   managedContentItems        ManagedContentItem[]
   contentContributions       ContentContribution[]
   contentPublications        ContentPublication[]
+  contributorReputations      ContributorReputation[]
   socialOAuthStates         SocialOAuthState[]
   socialAccountSyncStates   SocialAccountSyncState[]
   campaigns                 Campaign[]
@@ -622,6 +623,9 @@ model BusinessBrand {
   socialProviderConnections SocialProviderConnection[]
   socialOAuthStates         SocialOAuthState[]
   socialBrandAssignments    SocialBrandAccountAssignment[]
+  managedContentItems        ManagedContentItem[]
+  contentContributions       ContentContribution[]
+  contentPublications        ContentPublication[]
 
   @@unique([id, clientId])
   @@index([clientId])
