@@ -1,18 +1,24 @@
 export type AhmvScheduleStatus = "active" | "no_match";
-export type AhmvScheduleEventStatus = "scheduled" | "cancelled";
+export type AhmvScheduleEventStatus = "scheduled" | "cancelled" | "final";
 
 export interface AhmvScheduleEvent {
   id: string;
   type: string;
   team?: string;
+  teamId?: string;
   category?: string;
   startsAt: string;
   endsAt?: string;
   status: AhmvScheduleEventStatus;
   opponent?: string;
+  homeTeam?: string;
+  awayTeam?: string;
+  homeScore?: number;
+  awayScore?: number;
   venue?: string;
   venueAddress?: string;
   officialUrl?: string;
+  scoresheetUrl?: string;
   sourceUrl?: string;
 }
 
@@ -27,6 +33,15 @@ function text(value: unknown, max: number): string | undefined {
   if (typeof value !== "string") return undefined;
   const normalized = value.replace(/\s+/g, " ").trim();
   return normalized && normalized.length <= max ? normalized : undefined;
+}
+
+function nonNegativeInteger(value: unknown): number | undefined {
+  return typeof value === "number" &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value <= 99
+    ? value
+    : undefined;
 }
 
 function iso(value: unknown): string | undefined {
@@ -64,7 +79,9 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
     !id ||
     !type ||
     !startsAt ||
-    (status !== "scheduled" && status !== "cancelled")
+    (status !== "scheduled" &&
+      status !== "cancelled" &&
+      status !== "final")
   ) {
     return undefined;
   }
@@ -79,12 +96,23 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
   const optionalText: Array<
     [keyof Pick<
       AhmvScheduleEvent,
-      "team" | "category" | "opponent" | "venue" | "venueAddress"
+      AhmvScheduleEvent,
+      | "team"
+      | "teamId"
+      | "category"
+      | "opponent"
+      | "homeTeam"
+      | "awayTeam"
+      | "venue"
+      | "venueAddress"
     >, unknown, number]
   > = [
     ["team", raw.team, 160],
+    ["teamId", raw.teamId, 80],
     ["category", raw.category, 80],
     ["opponent", raw.opponent, 160],
+    ["homeTeam", raw.homeTeam, 160],
+    ["awayTeam", raw.awayTeam, 160],
     ["venue", raw.venue, 180],
     ["venueAddress", raw.venueAddress, 500],
   ];
@@ -94,6 +122,27 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
     if (normalized) result[key] = normalized;
   }
 
+  const homeScore = nonNegativeInteger(raw.homeScore);
+  const awayScore = nonNegativeInteger(raw.awayScore);
+  if (
+    (raw.homeScore !== undefined && homeScore === undefined) ||
+    (raw.awayScore !== undefined && awayScore === undefined)
+  ) {
+    return undefined;
+  }
+  if (homeScore !== undefined) result.homeScore = homeScore;
+  if (awayScore !== undefined) result.awayScore = awayScore;
+
+  if (
+    status === "final" &&
+    (!result.homeTeam ||
+      !result.awayTeam ||
+      homeScore === undefined ||
+      awayScore === undefined)
+  ) {
+    return undefined;
+  }
+
   const endsAt = iso(raw.endsAt);
   if (endsAt) {
     if (Date.parse(endsAt) < Date.parse(startsAt)) return undefined;
@@ -101,8 +150,10 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
   }
 
   const officialUrl = https(raw.officialUrl);
+  const scoresheetUrl = https(raw.scoresheetUrl);
   const sourceUrl = https(raw.sourceUrl);
   if (officialUrl) result.officialUrl = officialUrl;
+  if (scoresheetUrl) result.scoresheetUrl = scoresheetUrl;
   if (sourceUrl) result.sourceUrl = sourceUrl;
 
   return result;
@@ -192,8 +243,9 @@ export function torontoDate(value: string): string {
 
 export function filterAhmvScheduleEvents(
   events: readonly AhmvScheduleEvent[],
-  input: { team?: string; category?: string; date?: string },
+  input: { teamId?: string; team?: string; category?: string; date?: string },
 ): AhmvScheduleEvent[] {
+  const teamId = input.teamId?.trim() ?? "";
   const team = input.team
     ? normalizeAhmvScheduleLookup(input.team)
     : "";
@@ -203,6 +255,9 @@ export function filterAhmvScheduleEvents(
 
   return events
     .filter((item) => {
+      if (teamId && (item.teamId ?? "") !== teamId) {
+        return false;
+      }
       if (
         team &&
         normalizeAhmvScheduleLookup(item.team ?? "") !== team
