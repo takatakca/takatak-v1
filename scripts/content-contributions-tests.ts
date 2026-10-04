@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   contributorBadge,
+  contributionPatchPolicy,
   contributionPriority,
   contributionReviewDueAt,
   contributionSlaLabel,
+  earnedMembershipWeekMilestones,
   publicationMayBeQueued,
   requiresOfficialSourceVerification,
 } from "../src/lib/contributions/policy";
@@ -66,6 +68,44 @@ assert.equal(
   contributorBadge({ points: 750, approvedCount: 50, publishedCount: 35 }),
   "community_expert",
 );
+assert.equal(earnedMembershipWeekMilestones(249), 0);
+assert.equal(earnedMembershipWeekMilestones(250), 1);
+assert.equal(earnedMembershipWeekMilestones(750), 3);
+assert.equal(earnedMembershipWeekMilestones(1500), 7);
+
+const arenaPatch = contributionPatchPolicy({
+  resourceType: "arena",
+  patch: {
+    address: "4110 boulevard LaSalle",
+    phone: "514-555-0100",
+    photoUrl: "https://cdn.example.test/arena.jpg",
+  },
+});
+assert.equal(arenaPatch.valid, true);
+
+const protectedTeamIdentity = contributionPatchPolicy({
+  resourceType: "team",
+  patch: {
+    publicTeamId: "do-not-change",
+    category: "M99",
+    description: "Useful external description correction",
+  },
+});
+assert.equal(protectedTeamIdentity.valid, false);
+assert.deepEqual(
+  protectedTeamIdentity.protectedFields.sort(),
+  ["category", "publicTeamId"],
+);
+
+const teamExternalContent = contributionPatchPolicy({
+  resourceType: "team",
+  patch: {
+    description: "Updated external description",
+    heroImageUrl: "https://cdn.example.test/team.jpg",
+    socialLinks: ["https://facebook.com/example"],
+  },
+});
+assert.equal(teamExternalContent.valid, true);
 
 const scheduleNoEvidence = screenContribution({
   idempotencyKey: "schedule-1",
@@ -119,6 +159,7 @@ assert.match(serviceSource, /moderatorProfileId/);
 assert.match(migration, /ENABLE ROW LEVEL SECURITY/g);
 assert.match(migration, /content_publications/);
 assert.match(migration, /contributor_reputations/);
+assert.match(migration, /contribution_reward_ledger/);
 assert.match(env, /AHMV_CONTRIBUTION_MODERATOR_EMAIL=OHMVVerdun\.ca@gmail\.com/);
 
 console.log("TAKATAK community content moderation safeguards passed.");
