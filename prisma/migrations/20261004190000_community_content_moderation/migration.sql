@@ -140,6 +140,28 @@ CREATE TABLE "contribution_point_ledger" (
   CONSTRAINT "contribution_point_ledger_pkey" PRIMARY KEY ("id")
 );
 
+CREATE TABLE "contribution_reward_ledger" (
+  "id" UUID NOT NULL,
+  "reputationId" UUID NOT NULL,
+  "code" TEXT NOT NULL,
+  "thresholdPoints" INTEGER NOT NULL,
+  "units" INTEGER NOT NULL,
+  "status" TEXT NOT NULL DEFAULT 'available',
+  "issuedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "redeemedAt" TIMESTAMP(3),
+  "metadata" JSONB,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+
+  CONSTRAINT "contribution_reward_ledger_pkey" PRIMARY KEY ("id"),
+  CONSTRAINT "contribution_reward_ledger_code_check"
+    CHECK ("code" IN ('membership_week_credit')),
+  CONSTRAINT "contribution_reward_ledger_status_check"
+    CHECK ("status" IN ('available','redeemed','expired','revoked')),
+  CONSTRAINT "contribution_reward_ledger_units_check" CHECK ("units" > 0),
+  CONSTRAINT "contribution_reward_ledger_threshold_check" CHECK ("thresholdPoints" >= 0)
+);
+
 CREATE UNIQUE INDEX "managed_content_publisher_resource_key"
   ON "managed_content_items"("publisherCode","resourceType","resourceKey");
 CREATE INDEX "managed_content_items_clientId_publisherCode_idx"
@@ -199,6 +221,15 @@ CREATE INDEX "contribution_point_ledger_reputationId_createdAt_idx"
   ON "contribution_point_ledger"("reputationId","createdAt");
 CREATE INDEX "contribution_point_ledger_contributionId_idx"
   ON "contribution_point_ledger"("contributionId");
+
+CREATE UNIQUE INDEX "contribution_reward_milestone_key"
+  ON "contribution_reward_ledger"("reputationId","code","thresholdPoints");
+CREATE INDEX "contribution_reward_ledger_reputationId_status_idx"
+  ON "contribution_reward_ledger"("reputationId","status");
+CREATE INDEX "contribution_reward_ledger_code_status_idx"
+  ON "contribution_reward_ledger"("code","status");
+CREATE INDEX "contribution_reward_ledger_issuedAt_idx"
+  ON "contribution_reward_ledger"("issuedAt");
 
 ALTER TABLE "managed_content_items"
   ADD CONSTRAINT "managed_content_items_clientId_fkey"
@@ -274,6 +305,11 @@ ALTER TABLE "contribution_point_ledger"
   FOREIGN KEY ("contributionId") REFERENCES "content_contributions"("id")
   ON DELETE SET NULL ON UPDATE CASCADE;
 
+ALTER TABLE "contribution_reward_ledger"
+  ADD CONSTRAINT "contribution_reward_ledger_reputationId_fkey"
+  FOREIGN KEY ("reputationId") REFERENCES "contributor_reputations"("id")
+  ON DELETE CASCADE ON UPDATE CASCADE;
+
 -- Backend-only tables. Browser roles get no direct Data API policies.
 ALTER TABLE "managed_content_items" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "content_contributions" ENABLE ROW LEVEL SECURITY;
@@ -281,6 +317,7 @@ ALTER TABLE "content_contribution_events" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "content_publications" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "contributor_reputations" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "contribution_point_ledger" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "contribution_reward_ledger" ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON TABLE "managed_content_items" IS
   'Public-content registry synchronized by tenant publishers such as AHMV. Stores safe public snapshots only.';
@@ -288,3 +325,6 @@ COMMENT ON TABLE "content_contributions" IS
   'Community suggestions awaiting human moderation. Paid status affects SLA only, never automatic approval.';
 COMMENT ON TABLE "content_publications" IS
   'Approved tenant overlays delivered back to the publisher; official-source data still requires explicit moderator verification.';
+
+COMMENT ON TABLE "contribution_reward_ledger" IS
+  'TAKATAK-issued contributor reward credits. Credits are not applied to Stripe automatically.';
