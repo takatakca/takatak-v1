@@ -10,6 +10,8 @@
  *
  * This script never creates or modifies a contribution/publication.
  */
+
+export {};
 const base = (process.env.SMOKE_BASE_URL ?? "https://takatak.ca").replace(/\/$/, "");
 const token = (process.env.TAKATAK_AHMV_CONTENT_TOKEN ?? "").trim();
 
