@@ -44,6 +44,7 @@ X-AHMV-Tenant: ahmverdun
 
 Optional query parameters:
 
+- `teamId` — stable public AHMV team identifier
 - `team`
 - `category`
 - `date=YYYY-MM-DD`
@@ -72,6 +73,23 @@ Successful response:
 ```
 
 If the stored source is missing, invalid or stale, the endpoint returns 503. It never converts an unavailable feed into a false `no_match`.
+
+## Exact-team game API
+
+AHMV team mini-sites consume the same fresh normalized snapshot through a stricter exact-team projection:
+
+```
+GET /api/integrations/ahmv/team-games?teamId={PUBLIC_TEAM_ID}
+Authorization: Bearer <TAKATAK_AHMV_SERVICE_TOKEN>
+X-AHMV-Tenant: ahmverdun
+X-AHMV-Team-ID: {PUBLIC_TEAM_ID}
+```
+
+The query and `X-AHMV-Team-ID` header must match. This prevents a caller from using one authorized team context to request another team accidentally.
+
+The endpoint never infers home/away orientation or scores from a generic opponent field. A next game is emitted only when the normalized event contains explicit public `homeTeam` and `awayTeam`. A final result additionally requires both official scores. Otherwise the endpoint stays connected but returns no fabricated game card, so ahmverdun.ca falls back to the official hockey source.
+
+Response fields are limited to public schedule/result data: `id`, `startsAt`, team names, public scores, venue/address, status, official URL and scoresheet URL. Standings are omitted until an authoritative standings source is normalized.
 
 ## Ingestion API
 
@@ -105,7 +123,10 @@ Rules:
 - event IDs must be unique.
 - `active` requires at least one event.
 - `no_match` requires zero events.
-- only `scheduled` and `cancelled` are accepted today.
+- `scheduled`, `cancelled` and `final` are accepted.
+- exact team mini-sites should include the stable public `teamId` when the official source provides it.
+- `homeTeam`, `awayTeam`, `homeScore`, `awayScore` and `scoresheetUrl` are optional public game fields.
+- a `final` event is accepted only when both team names and both non-negative official scores are present.
 - no roster, player, child, guardian, email or phone data belongs in this payload.
 
 ## Ordering/idempotency
