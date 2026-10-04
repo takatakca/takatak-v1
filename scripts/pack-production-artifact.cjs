@@ -95,6 +95,7 @@ const include = [
   "scripts/check-module-load.ts",
   "scripts/check-compiled-modules.ts",
   "scripts/smoke-auth-json.ts",
+  "scripts/smoke-ahmv-content.ts",
   "scripts/audit-production-artifact.cjs",
 ];
 

@@ -195,3 +195,22 @@ No rebuild is required if the previous complete release is still on disk.
 ## Safe dependency updates
 
 Pin Prisma trio together: `@prisma/client`, `@prisma/adapter-pg`, `prisma`. Update all three to the same version, regenerate the lockfile, run `npm run qa:auth` and a Linux artifact build. Do not upgrade merely because a newer version exists.
+
+
+## AHMV community-content production smoke
+
+After the community-content migration and `TAKATAK_AHMV_CONTENT_TOKEN` are configured, validate the live bridge with the read-only smoke:
+
+```bash
+SMOKE_BASE_URL=https://takatak.ca npm run smoke:ahmv-content
+```
+
+Run it from an environment that already contains the server-only `TAKATAK_AHMV_CONTENT_TOKEN` (32+ characters). The script never creates or edits content. It verifies:
+
+- `/api/health` and `/api/health/ready`;
+- tenant enforcement (403);
+- missing/invalid bearer enforcement (401);
+- authenticated `GET /api/integrations/ahmv/content/overlays`;
+- JSON, no-store and noindex response safeguards.
+
+Do not enable AHMV contributions until this smoke passes against the deployed TAKATAK production runtime.

@@ -26,6 +26,7 @@
     "artifact:audit": "node scripts/audit-production-artifact.cjs",
     "artifact:smoke": "node scripts/artifact-startup-smoke.cjs",
     "smoke:auth": "tsx scripts/smoke-auth-json.ts",
+    "smoke:ahmv-content": "tsx scripts/smoke-ahmv-content.ts",
     "qa": "npm run db:generate && npm run check:sources && npm run typecheck && npm run lint && npm run test:auth && npm run test:identity && npm run build && npm run check:modules",
     "qa:auth": "npm run test:auth",
     "qa:secrets": "tsx scripts/check-secrets.ts",
