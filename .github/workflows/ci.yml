@@ -70,6 +70,9 @@ jobs:
       - name: AHMV schedule feed safeguards
         run: npm run qa:ahmv-schedule-feed
 
+      - name: AHMV exact-team games safeguards
+        run: npm run qa:ahmv-team-games
+
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
