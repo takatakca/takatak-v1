@@ -96,7 +96,6 @@ function event(value: unknown): AhmvScheduleEvent | undefined {
   const optionalText: Array<
     [keyof Pick<
       AhmvScheduleEvent,
-      AhmvScheduleEvent,
       | "team"
       | "teamId"
       | "category"
