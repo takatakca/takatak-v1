@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPrisma } from "@/lib/db/prisma";
 import {
   AHMV_PUBLIC_TEAM_ID_RE,
-  ahmvTeamIdFromServiceMetadata,
+  metadataHasAhmvTeamId,
   bearerMatches,
   publicAhmvFeedItem,
   resolveAhmvTeamFeedAccess,
@@ -52,18 +52,28 @@ export async function GET(request: NextRequest) {
     return json({ status: "unavailable", items: [] }, 503);
   }
 
-  // ServiceInstance.metadata is the existing binding surface between one
-  // exact AHMV public team ID and one TAKATAK BusinessBrand. PostgreSQL JSON
-  // path filtering avoids scanning unrelated tenants. We still validate the
-  // decoded metadata below and fail closed on duplicates.
+  // One social_media ServiceInstance is unique per client/brand. Its AHMV
+  // metadata can therefore carry multiple exact publicTeamIds. PostgreSQL
+  // JSON filtering avoids scanning unrelated tenants; decoded metadata is
+  // validated again below and duplicates still fail closed.
   const candidates = await prisma.serviceInstance.findMany({
     where: {
       serviceType: "social_media",
       businessBrandId: { not: null },
-      metadata: {
-        path: ["ahmv", "publicTeamId"],
-        equals: teamId,
-      },
+      OR: [
+        {
+          metadata: {
+            path: ["ahmv", "publicTeamId"],
+            equals: teamId,
+          },
+        },
+        {
+          metadata: {
+            path: ["ahmv", "publicTeamIds"],
+            array_contains: [teamId],
+          },
+        },
+      ],
     },
     select: {
       clientId: true,
@@ -91,8 +101,8 @@ export async function GET(request: NextRequest) {
     take: 2,
   });
 
-  const matches = candidates.filter(
-    (service) => ahmvTeamIdFromServiceMetadata(service.metadata) === teamId,
+  const matches = candidates.filter((service) =>
+    metadataHasAhmvTeamId(service.metadata, teamId),
   );
 
   if (matches.length === 0) {
@@ -136,6 +146,10 @@ export async function GET(request: NextRequest) {
       businessBrandId: service.businessBrandId,
       availability: "available",
       permalinkUrl: { not: null },
+      metadata: {
+        path: ["ahmv", "publicTeamIds"],
+        array_contains: [teamId],
+      },
       socialAccount: {
         status: "connected",
         accessStatus: "available",
