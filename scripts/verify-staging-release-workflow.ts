@@ -16,8 +16,15 @@ function forbidText(needle: string, label: string) {
   }
 }
 
-requireText("workflows:\n      - CI", "deploy only after CI workflow");
+requireText(
+  "workflows:\n      - Reconcile TAKATAK staging migrations",
+  "deploy only after staging migration workflow",
+);
 requireText("head_branch == 'main'", "main-only automatic release");
+requireText(
+  "Checkout exact migration-verified release",
+  "migration-verified checkout gate",
+);
 requireText("utuvzrqvivqyziibobvu", "hard-pinned staging Supabase project ref");
 requireText("TAKATAK_STAGING_SUPABASE_ANON_KEY", "staging-specific public Supabase key");
 requireText('if [ "$STAGING_APP_URL" = "https://takatak.ca" ]', "build-time production URL refusal");
