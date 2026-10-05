@@ -50,3 +50,16 @@ After that HTTPS check, Docker was still publishing 8000, 6001, 6002, and 8080 o
 `coolify`, `coolify-realtime`, and `coolify-proxy` were recreated. `coolify-db` and `coolify-redis` were not recreated and are still unpublished (5432 and 6379 are container-only). Host listeners for 8000, 6001, 6002, and 8080 are `127.0.0.1` only. Public checks to those ports, and to 5432 and 6379, do not connect. TCP 22, 80, and 443 still accept connections. A fresh `takatak` login after the recreate still works, and `sudo -n whoami` returns `root`. `https://coolify.takatak.ca` still returns 302 to `/login`.
 
 Backups of the compose files before the edit are on the server under `/data/coolify/proxy/backups/` and `/data/coolify/source/docker-compose.prod.yml.bak-*`. They are not in git.
+
+## Platform check
+
+`takatak-platform-check` is one `nginx:alpine` container on the Docker network `coolify`. It has no host port publish. Traefik routes `platform-check.31.220.96.134.sslip.io` to it and issues a Let's Encrypt certificate (issuer `YR1`, subject that hostname, valid from 2026-10-05 through 2027-01-03).
+
+Checks that passed:
+
+- `https://platform-check.31.220.96.134.sslip.io/` returns 200 and the body `takatak-platform-check`
+- HTTP on that host returns 307 to HTTPS
+- Another container on the `coolify` network can fetch `http://takatak-platform-check/` and gets the same body
+- `https://coolify.takatak.ca` still returns 302 to `/login`
+
+This did not deploy TAKATAK. The hostname is sslip.io, not a customer name.

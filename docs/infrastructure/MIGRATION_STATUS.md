@@ -34,6 +34,7 @@ Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
 - [x] Coolify already installed as 4.3.23. Not installed again. `server_settings.concurrent_builds` is 1. Recorded in `COOLIFY_HOST.md`.
 - [x] `https://coolify.takatak.ca` already serves the Coolify login over Let's Encrypt. No change to `dashboard.takatak.ca`, `api.takatak.ca`, or email DNS.
 - [x] Temporary Coolify ports 8000, 6001, 6002, and 8080 listen on `127.0.0.1` only. 22, 80, and 443 stay open. 5432 and 6379 are not published. `takatak` SSH still works.
+- [x] Platform check: `nginx:alpine` container `takatak-platform-check` on the `coolify` network, reached over HTTPS at `platform-check.31.220.96.134.sslip.io` with a Let's Encrypt certificate. TAKATAK was not deployed for this check.
 - [ ] Private staging Redis
 - [ ] Private production Redis
 - [ ] Staging web service
