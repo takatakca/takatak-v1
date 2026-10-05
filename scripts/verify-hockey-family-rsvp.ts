@@ -5,7 +5,7 @@ import { HOCKEY_FAMILY_RSVP_STATUSES } from "../src/lib/hockey/family/rsvp-servi
 assert.deepEqual([...HOCKEY_FAMILY_RSVP_STATUSES], ["going", "not_going", "unsure"]);
 
 const service = readFileSync("src/lib/hockey/family/rsvp-service.ts", "utf8");
-assert.match(service, /features\.has\("family_sync"\)/);
+assert.match(service, /features\.has\("family_live_coordination"\)/);
 assert.match(service, /selectionType: "assigned"/);
 assert.match(service, /teamId: event\.teamId/);
 assert.match(service, /event\.status === "cancelled"/);
