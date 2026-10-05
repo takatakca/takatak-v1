@@ -15,7 +15,7 @@ Stop if a second login has not been proven before any SSH hardening step.
 
 ## 2. Base OS
 
-Target image: Ubuntu 24.04 LTS.
+Target image: Ubuntu 24.04 LTS. The live host already matches this image and the static hostname is already `takatak-core-01`. See `CONTABO_HOST_FACTS.md`. Do not run `hostnamectl set-hostname` again unless the static hostname has changed.
 
 ```bash
 sudo apt-get update
