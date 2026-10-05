@@ -2,7 +2,7 @@
 
 `[ ]` not started, `[~]` in progress, `[x]` done in the repo, `[!]` blocked on a human login or an external system.
 
-Repository foundation only. Contabo, Coolify, DNS, and production are not done. GitHub push is a separate, temporary block. It does not block the rest of the migration.
+Repository foundation is in git. Coolify is already running on the VPS and was not installed a second time. Customer DNS and production are not done. GitHub push is a separate, temporary block. It does not block the rest of the migration.
 
 ## Repository verification
 
@@ -31,7 +31,7 @@ Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
 - [x] Stripe webhook event ids are stored in Postgres before Redis is asked to carry them
 - [x] Contabo bootstrap runbook written. Host facts are in `CONTABO_HOST_FACTS.md`. SSH hardening, Fail2ban, unattended upgrades, and UFW are applied. UFW allows TCP 22, 80, and 443. `takatak` key login and sudo still work.
 - [~] Contabo VPS `31.220.96.134` is Ubuntu 24.04.5 with static hostname `takatak-core-01` (6 vCPU, 11 GiB RAM, 4 GiB swap). Admin SSH is the `takatak` key. Root SSH is closed. Fail2ban, unattended upgrades, and UFW are active. Docker and Coolify were already present and were not reinstalled.
-- [ ] Coolify installed
+- [x] Coolify already installed as 4.3.23. Not installed again. `server_settings.concurrent_builds` is 1. Recorded in `COOLIFY_HOST.md`.
 - [ ] Private staging Redis
 - [ ] Private production Redis
 - [ ] Staging web service
