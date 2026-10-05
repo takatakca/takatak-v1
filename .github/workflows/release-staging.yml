@@ -367,8 +367,8 @@ jobs:
             cp '$TKT_APP_ROOT/.env' app/.env
             chmod 600 app/.env
             cd app
-            NODE_ENV=production node --env-file=.env node_modules/.bin/tsx scripts/production-preflight.ts
-            NODE_ENV=production node --env-file=.env node_modules/.bin/tsx scripts/check-module-load.ts .
+            NODE_ENV=production node --env-file=.env --import tsx scripts/production-preflight.ts
+            NODE_ENV=production node --env-file=.env --import tsx scripts/check-module-load.ts .
           "
 
       - name: Refuse stale release before staging activation
