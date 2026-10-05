@@ -73,6 +73,9 @@ jobs:
       - name: AHMV exact-team social feed safeguards
         run: npm run qa:ahmv-team-feed
 
+      - name: AHMV exact public team directory safeguards
+        run: npm run qa:ahmv-public-teams
+
       - name: AHMV schedule feed safeguards
         run: npm run qa:ahmv-schedule-feed
 
