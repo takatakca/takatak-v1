@@ -5,7 +5,7 @@ import { Prisma } from "@prisma/client";
 
 import { getPrisma } from "@/lib/db/prisma";
 import {
-  ahmvScheduleMaxAgeMinutes,
+  ahmvScheduleFreshUntil,
   filterAhmvScheduleEvents,
   validateAhmvScheduleSnapshot,
   type AhmvScheduleSnapshotInput,
@@ -158,19 +158,6 @@ export async function readAhmvScheduleSnapshot(
     };
   }
 
-  const ageMs = now.getTime() - stored.sourceUpdatedAt.getTime();
-  if (
-    ageMs < -5 * 60_000 ||
-    ageMs > ahmvScheduleMaxAgeMinutes(env) * 60_000
-  ) {
-    return {
-      available: false as const,
-      reason: "stale" as const,
-      updatedAt: stored.sourceUpdatedAt.toISOString(),
-      sourceUrl: stored.sourceUrl,
-    };
-  }
-
   const normalized = validateAhmvScheduleSnapshot(
     {
       status: stored.status,
@@ -185,6 +172,17 @@ export async function readAhmvScheduleSnapshot(
     return {
       available: false as const,
       reason: "invalid_store" as const,
+    };
+  }
+
+  const freshUntil = ahmvScheduleFreshUntil(normalized, env);
+  if (now.getTime() > freshUntil.getTime()) {
+    return {
+      available: false as const,
+      reason: "stale" as const,
+      updatedAt: stored.sourceUpdatedAt.toISOString(),
+      sourceUrl: stored.sourceUrl,
+      validUntil: freshUntil.toISOString(),
     };
   }
 
