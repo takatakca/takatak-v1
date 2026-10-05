@@ -105,11 +105,16 @@ function canonicalSql(sql) {
     .toLowerCase();
 }
 
-function removeServiceRoleHotfix(sql) {
-  return sql.replace(
-    /\s*OR\s+COALESCE\(auth\.role\(\)\s*=\s*'service_role',\s*false\);/gi,
-    ";",
-  );
+function normalizeHistoricalVehicleAuthority(sql) {
+  return sql
+    .replace(
+      /\s*OR\s+COALESCE\(auth\.role\(\)\s*=\s*'service_role',\s*false\);/gi,
+      ";",
+    )
+    .replace(
+      /COALESCE\(\s*rentauto\.has_role\(\s*'admin'::rentauto\.app_role\s*\)\s*,\s*false\s*\)/gi,
+      "rentauto.has_role('admin'::rentauto.app_role)",
+    );
 }
 
 function runPrisma(args, databaseUrl) {
@@ -290,12 +295,19 @@ try {
 
   if (
     functions.rowCount !== 2 ||
-    functions.rows.some(
-      (row) =>
-        !String(row.definition).includes("auth.role() = 'service_role'"),
-    )
+    functions.rows.some((row) => {
+      const definition = String(row.definition);
+      return (
+        !definition.includes(
+          "COALESCE(rentauto.has_role('admin'::rentauto.app_role), false)",
+        ) ||
+        !definition.includes("auth.role() = 'service_role'")
+      );
+    })
   ) {
-    fail("Rentauto vehicle authority service-role hotfix is not active.");
+    fail(
+      "Rentauto vehicle authority hardening is not fully active in production.",
+    );
   }
 
   for (const migration of RECONCILE_MIGRATIONS) {
@@ -323,7 +335,7 @@ try {
 
     if (!matches && SERVICE_ROLE_HOTFIX_MIGRATIONS.has(migration)) {
       matches =
-        canonicalSql(removeServiceRoleHotfix(repoSql)) ===
+        canonicalSql(normalizeHistoricalVehicleAuthority(repoSql)) ===
         canonicalSql(productionSql);
     }
 
