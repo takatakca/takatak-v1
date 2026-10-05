@@ -109,7 +109,15 @@ The stock `sshd` jail was already enabled (`maxretry` 5, `bantime` 600, `findtim
 
 A fresh `takatak` key login after that reload still works, and `sudo -n whoami` returns `root`.
 
-The firewall, Docker, and Coolify were not changed.
+## Firewall
+
+UFW was inactive. Allow rules for TCP 22, 80, and 443 from anywhere were written for IPv4 and IPv6 before `ufw --force enable`. The default incoming policy is deny. Outgoing stays allow. UFW is enabled and will start on boot.
+
+No allow rule was added for 3000, 3001, 5432, 6379, 3306, 27017, 8000, 6001, 6002, or 8080. sshd and Fail2ban were not changed.
+
+A fresh `takatak` key login after UFW became active still works, and `sudo -n whoami` returns `root`.
+
+Coolify's containers were already running and were not installed or reconfigured in this step. Docker still publishes 80, 443, 8000, 6001, 6002, and 8080 on the host. `coolify-db` and `coolify-redis` are not published on the host. Those Docker publishes were left as they were.
 
 ## Not done
 
