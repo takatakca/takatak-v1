@@ -5,6 +5,10 @@ import {
   ahmvScheduleFreshUntil,
   validateAhmvScheduleSnapshot,
 } from "@/lib/integrations/ahmv/schedule-contract";
+import {
+  resolveAhmvTeamFeedAccess,
+  type AhmvMappedService,
+} from "@/lib/integrations/ahmv-team-feed";
 
 export type AhmvOperationalCheck = {
   capability: "team_directory" | "schedule" | "ads_publisher" | "team_feed";
@@ -55,7 +59,7 @@ export async function collectAhmvOperationalReadiness(
     return { ready: false, checkedAt: now.toISOString(), checks };
   }
 
-  const [teams, snapshot, publisher, services, taggedContentCount] =
+  const [teams, snapshot, publisher, services] =
     await Promise.all([
       prisma.hockeyPublicTeam.findMany({
         where: { sourceApplication: "ahmverdun", active: true },
@@ -80,14 +84,28 @@ export async function collectAhmvOperationalReadiness(
           serviceType: "social_media",
           businessBrandId: { not: null },
         },
-        select: { status: true, metadata: true, updatedAt: true },
-      }),
-      prisma.socialContentItem.count({
-        where: {
-          availability: "available",
-          metadata: {
-            path: ["ahmv", "publicTeamIds"],
-            not: Prisma.JsonNull,
+        select: {
+          clientId: true,
+          businessBrandId: true,
+          status: true,
+          metadata: true,
+          updatedAt: true,
+          businessBrand: {
+            select: { status: true },
+          },
+          client: {
+            select: {
+              subscription: {
+                select: {
+                  status: true,
+                  planCode: true,
+                  cancelAtPeriodEnd: true,
+                  currentPeriodEnd: true,
+                  xAccountAllowance: true,
+                  advancedAnalytics: true,
+                },
+              },
+            },
           },
         },
       }),
@@ -123,12 +141,51 @@ export async function collectAhmvOperationalReadiness(
   const adsReady =
     publisher?.status === "active" && publisher.domain === "ahmverdun.ca";
 
-  const mappedServices = services.filter(
-    (service) =>
-      service.status === "active" &&
-      metadataTeamIds(service.metadata).some((teamId) => teamIds.has(teamId)),
+  const mappedServices = services.filter((service) =>
+    metadataTeamIds(service.metadata).some((teamId) => teamIds.has(teamId)),
   );
-  const teamFeedReady = mappedServices.length > 0 && taggedContentCount > 0;
+  const entitledServices = mappedServices.filter(
+    (service) =>
+      resolveAhmvTeamFeedAccess(service as AhmvMappedService) === "ready",
+  );
+  const entitledBrandIds = entitledServices
+    .map((service) => service.businessBrandId)
+    .filter((value): value is string => Boolean(value));
+
+  const [connectedAccountCount, taggedContentCount] =
+    entitledBrandIds.length > 0
+      ? await Promise.all([
+          prisma.socialAccount.count({
+            where: {
+              businessBrandId: { in: entitledBrandIds },
+              status: "connected",
+              accessStatus: "available",
+              platform: {
+                in: ["facebook", "instagram", "tiktok", "x", "youtube"],
+              },
+            },
+          }),
+          prisma.socialContentItem.count({
+            where: {
+              businessBrandId: { in: entitledBrandIds },
+              availability: "available",
+              metadata: {
+                path: ["ahmv", "publicTeamIds"],
+                not: Prisma.JsonNull,
+              },
+              socialAccount: {
+                status: "connected",
+                accessStatus: "available",
+              },
+            },
+          }),
+        ])
+      : [0, 0];
+
+  const teamFeedReady =
+    entitledServices.length > 0 &&
+    connectedAccountCount > 0 &&
+    taggedContentCount > 0;
 
   const checks: AhmvOperationalCheck[] = [
     {
@@ -170,9 +227,13 @@ export async function collectAhmvOperationalReadiness(
       reason:
         mappedServices.length === 0
           ? "social_service_team_mapping_missing"
-          : taggedContentCount === 0
-            ? "tagged_social_content_missing"
-            : undefined,
+          : entitledServices.length === 0
+            ? "social_service_or_subscription_not_ready"
+            : connectedAccountCount === 0
+              ? "connected_social_account_missing"
+              : taggedContentCount === 0
+                ? "tagged_social_content_missing"
+                : undefined,
       updatedAt: mappedServices
         .map((service) => service.updatedAt)
         .sort((a, b) => b.getTime() - a.getTime())[0]
