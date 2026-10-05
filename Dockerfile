@@ -20,6 +20,7 @@ COPY package.json package-lock.json .npmrc ./
 RUN npm ci --ignore-scripts=false
 
 COPY . .
+RUN test ! -e .env && test ! -e .env.local && test ! -e .env.production
 
 # Public values are inlined into the client bundle at build time.
 # Coolify build arguments must supply them. Do not bake real keys into git.
@@ -68,6 +69,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOST=0.0.0.0
+ENV TAKATAK_PROCESS=web
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates openssl \
@@ -81,6 +83,6 @@ USER node
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=8s --start-period=40s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health/ready').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD ["node", "scripts/container-healthcheck.cjs"]
 
 CMD ["sh", "-c", "exec node node_modules/next/dist/bin/next start -H 0.0.0.0 -p ${PORT:-3000}"]
