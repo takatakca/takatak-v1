@@ -111,7 +111,7 @@ export async function collectAhmvOperationalReadiness(
 
   const mappedServices = services.filter(
     (service) =>
-      (service.status === "active" || service.status === "trial") &&
+      service.status === "active" &&
       metadataTeamIds(service.metadata).some((teamId) => teamIds.has(teamId)),
   );
   const teamFeedReady = mappedServices.length > 0 && taggedContentCount > 0;
