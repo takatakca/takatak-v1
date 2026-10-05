@@ -1,0 +1,496 @@
+name: Build and deploy TAKATAK staging
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-staging-release
+  cancel-in-progress: true
+
+env:
+  RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+  STAGING_SUPABASE_URL: https://utuvzrqvivqyziibobvu.supabase.co
+  STAGING_SUPABASE_REF: utuvzrqvivqyziibobvu
+
+jobs:
+  staging-release:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: staging
+
+    steps:
+      - name: Checkout exact green release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+
+      - name: Refuse stale main release
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          test -n "$CURRENT_MAIN" || {
+            echo "ERROR: Could not resolve current main."
+            exit 1
+          }
+          if [ "$RELEASE_SHA" != "$CURRENT_MAIN" ]; then
+            echo "ERROR: Refusing stale staging release."
+            echo "Release SHA: $RELEASE_SHA"
+            echo "Current main: $CURRENT_MAIN"
+            exit 1
+          fi
+          echo "Release is current main."
+
+      - name: Check staging build configuration
+        id: build-config
+        env:
+          STAGING_APP_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
+          STAGING_ANON_KEY: ${{ secrets.TAKATAK_STAGING_SUPABASE_ANON_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+
+          test -n "${STAGING_APP_URL:-}" || missing+=("TAKATAK_STAGING_APP_URL repository/environment variable")
+          test -n "${STAGING_ANON_KEY:-}" || missing+=("TAKATAK_STAGING_SUPABASE_ANON_KEY secret")
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf '::warning title=TAKATAK staging build blocked::Missing %s\n' "${missing[*]}"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          [[ "$STAGING_APP_URL" =~ ^https://[^/]+$ ]] || {
+            echo "ERROR: TAKATAK_STAGING_APP_URL must be a HTTPS origin without a path."
+            exit 1
+          }
+
+          if [ "$STAGING_APP_URL" = "https://takatak.ca" ]; then
+            echo "ERROR: Staging app URL must never equal production."
+            exit 1
+          fi
+
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+          echo "Staging build configuration is present."
+
+      - name: Report unavailable staging build
+        if: steps.build-config.outputs.ready != 'true'
+        run: |
+          echo "No staging artifact was built because staging public build configuration is incomplete."
+          echo "Production remains untouched."
+
+      - name: Setup Node.js
+        if: steps.build-config.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.x
+          cache: npm
+
+      - name: Clean install
+        if: steps.build-config.outputs.ready == 'true'
+        run: npm ci
+
+      - name: Prisma generate
+        if: steps.build-config.outputs.ready == 'true'
+        run: npm run db:generate
+
+      - name: Build staging artifact
+        if: steps.build-config.outputs.ready == 'true'
+        env:
+          NEXT_PUBLIC_APP_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: https://utuvzrqvivqyziibobvu.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.TAKATAK_STAGING_SUPABASE_ANON_KEY }}
+        run: npm run build
+
+      - name: Validate compiled modules
+        if: steps.build-config.outputs.ready == 'true'
+        run: npm run check:modules
+
+      - name: Pack Linux staging artifact
+        if: steps.build-config.outputs.ready == 'true'
+        env:
+          TAKATAK_BUILD_ID: staging-${{ env.RELEASE_SHA }}
+        run: npm run artifact:pack
+
+      - name: Audit staging artifact
+        if: steps.build-config.outputs.ready == 'true'
+        run: node scripts/audit-production-artifact.cjs "var/artifacts/staging-$RELEASE_SHA"
+
+      - name: Clean staging artifact startup
+        if: steps.build-config.outputs.ready == 'true'
+        run: node scripts/artifact-startup-smoke.cjs "var/artifacts/staging-$RELEASE_SHA/takatak-staging-$RELEASE_SHA.tar.gz"
+
+      - name: Upload staging artifact
+        if: steps.build-config.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: takatak-staging-${{ env.RELEASE_SHA }}
+          path: |
+            var/artifacts/staging-${{ env.RELEASE_SHA }}/takatak-staging-${{ env.RELEASE_SHA }}.tar.gz
+            var/artifacts/staging-${{ env.RELEASE_SHA }}/takatak-staging-${{ env.RELEASE_SHA }}.tar.gz.sha256
+            var/artifacts/staging-${{ env.RELEASE_SHA }}/build-metadata.json
+          if-no-files-found: error
+
+      - name: Check MochaHost staging transport configuration
+        if: steps.build-config.outputs.ready == 'true'
+        id: transport
+        env:
+          TKT_HOST: ${{ secrets.TAKATAK_STAGING_HOST }}
+          TKT_PORT: ${{ secrets.TAKATAK_STAGING_SSH_PORT }}
+          TKT_USER: ${{ secrets.TAKATAK_STAGING_USER }}
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+          TKT_PRIVATE_KEY: ${{ secrets.TAKATAK_STAGING_SSH_PRIVATE_KEY }}
+          TKT_KNOWN_HOSTS: ${{ secrets.TAKATAK_STAGING_KNOWN_HOSTS }}
+          TKT_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in TKT_HOST TKT_PORT TKT_USER TKT_APP_ROOT TKT_PRIVATE_KEY TKT_KNOWN_HOSTS TKT_URL; do
+            test -n "${!name:-}" || missing+=("$name")
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf '::warning title=TAKATAK staging deploy blocked::Missing %s\n' "${missing[*]}"
+            echo "deploy_ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          [[ "$TKT_PORT" =~ ^[0-9]+$ ]] || {
+            echo "ERROR: staging SSH port must be numeric."
+            exit 1
+          }
+          [[ "$TKT_APP_ROOT" = /* ]] || {
+            echo "ERROR: staging app root must be absolute."
+            exit 1
+          }
+          [[ "$TKT_URL" =~ ^https://[^/]+$ ]] || {
+            echo "ERROR: staging URL must be a HTTPS origin."
+            exit 1
+          }
+          if [ "$TKT_URL" = "https://takatak.ca" ]; then
+            echo "ERROR: refusing to use production URL in staging deploy."
+            exit 1
+          fi
+
+          echo "deploy_ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Report unavailable MochaHost staging transport
+        if: steps.build-config.outputs.ready == 'true' && steps.transport.outputs.deploy_ready != 'true'
+        run: |
+          echo "Staging artifact is valid and uploaded to GitHub Actions."
+          echo "MochaHost deployment was not attempted because SSH staging configuration is incomplete."
+          echo "Production remains untouched."
+
+      - name: Configure strict SSH
+        if: steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_HOST: ${{ secrets.TAKATAK_STAGING_HOST }}
+          TKT_PORT: ${{ secrets.TAKATAK_STAGING_SSH_PORT }}
+          TKT_USER: ${{ secrets.TAKATAK_STAGING_USER }}
+          TKT_PRIVATE_KEY: ${{ secrets.TAKATAK_STAGING_SSH_PRIVATE_KEY }}
+          TKT_KNOWN_HOSTS: ${{ secrets.TAKATAK_STAGING_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$TKT_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$TKT_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+          cat > ~/.ssh/config <<EOF
+          Host takatak-staging
+            HostName $TKT_HOST
+            User $TKT_USER
+            Port $TKT_PORT
+            IdentityFile ~/.ssh/id_ed25519
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            ConnectTimeout 30
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+          EOF
+          chmod 600 ~/.ssh/config
+
+          cat > "$RUNNER_TEMP/takatak-ssh" <<'EOF'
+          #!/usr/bin/env bash
+          set -uo pipefail
+          max_attempts="${TAKATAK_SSH_MAX_ATTEMPTS:-6}"
+          attempt=1
+          status=255
+          while [ "$attempt" -le "$max_attempts" ]; do
+            echo "SSH attempt $attempt/$max_attempts..." >&2
+            set +e
+            ssh takatak-staging "$@"
+            status=$?
+            set -e
+            if [ "$status" -eq 0 ]; then exit 0; fi
+            if [ "$status" -ne 255 ]; then exit "$status"; fi
+            if [ "$attempt" -lt "$max_attempts" ]; then
+              sleep_for=$((attempt * 10))
+              [ "$sleep_for" -le 45 ] || sleep_for=45
+              sleep "$sleep_for"
+            fi
+            attempt=$((attempt + 1))
+          done
+          exit "$status"
+          EOF
+          chmod +x "$RUNNER_TEMP/takatak-ssh"
+
+          cat > "$RUNNER_TEMP/takatak-scp" <<'EOF'
+          #!/usr/bin/env bash
+          set -uo pipefail
+          max_attempts=5
+          attempt=1
+          status=1
+          while [ "$attempt" -le "$max_attempts" ]; do
+            echo "SCP attempt $attempt/$max_attempts..." >&2
+            set +e
+            scp "$@"
+            status=$?
+            set -e
+            if [ "$status" -eq 0 ]; then exit 0; fi
+            if [ "$attempt" -lt "$max_attempts" ]; then sleep $((attempt * 10)); fi
+            attempt=$((attempt + 1))
+          done
+          exit "$status"
+          EOF
+          chmod +x "$RUNNER_TEMP/takatak-scp"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Verify staging server isolation
+        if: steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+          TKT_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          takatak-ssh "test -f '$TKT_APP_ROOT/.env'" || {
+            echo "ERROR: staging server-managed .env is missing."
+            exit 1
+          }
+
+          REMOTE_CHECK="$(
+            takatak-ssh "cd '$TKT_APP_ROOT' &&
+              node --env-file=.env -e \"
+                const requiredRef='$STAGING_SUPABASE_REF';
+                const expectedUrl='$TKT_URL';
+                const values={
+                  app:process.env.NEXT_PUBLIC_APP_URL||'',
+                  supabase:process.env.NEXT_PUBLIC_SUPABASE_URL||'',
+                  db:process.env.DATABASE_URL||'',
+                  direct:process.env.DIRECT_URL||''
+                };
+                const ok =
+                  values.app===expectedUrl &&
+                  values.supabase==='https://'+requiredRef+'.supabase.co' &&
+                  values.db.includes(requiredRef) &&
+                  (!values.direct || values.direct.includes(requiredRef));
+                process.stdout.write(ok?'OK':'MISMATCH');
+                process.exit(ok?0:2);
+              \""
+          )"
+
+          if [ "$REMOTE_CHECK" != "OK" ]; then
+            echo "ERROR: staging .env is not isolated to the staging Supabase project/app URL."
+            exit 1
+          fi
+
+          echo "Staging server environment is isolated from production."
+
+      - name: Prepare immutable staging release
+        if: steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          RELEASE_KEY="$RELEASE_SHA-${GITHUB_RUN_ID}"
+          echo "RELEASE_KEY=$RELEASE_KEY" >> "$GITHUB_ENV"
+
+          PREVIOUS="$(takatak-ssh "if [ -L '$TKT_APP_ROOT/current' ]; then readlink '$TKT_APP_ROOT/current'; fi")"
+          PREVIOUS="$(printf '%s' "$PREVIOUS" | tr -d '\r\n')"
+          echo "previous_release=$PREVIOUS" >> "$GITHUB_ENV"
+
+          takatak-ssh "mkdir -p '$TKT_APP_ROOT/releases/$RELEASE_KEY'"
+
+      - name: Upload staging artifact to MochaHost
+        if: steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SRC="var/artifacts/staging-$RELEASE_SHA/takatak-staging-$RELEASE_SHA.tar.gz"
+          SUM="$SRC.sha256"
+          test -s "$SRC"
+          test -s "$SUM"
+
+          takatak-scp "$SRC" "takatak-staging:$TKT_APP_ROOT/releases/$RELEASE_KEY/"
+          takatak-scp "$SUM" "takatak-staging:$TKT_APP_ROOT/releases/$RELEASE_KEY/"
+
+      - name: Verify, extract and preflight staging release
+        if: steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          ARCHIVE="takatak-staging-$RELEASE_SHA.tar.gz"
+          takatak-ssh "set -e
+            cd '$TKT_APP_ROOT/releases/$RELEASE_KEY'
+            sha256sum -c '$ARCHIVE.sha256'
+            rm -rf app build-metadata.json
+            tar -xzf '$ARCHIVE'
+            test -f app/BUILD_ID
+            test \"\$(cat app/BUILD_ID)\" = 'staging-$RELEASE_SHA'
+            test -f '$TKT_APP_ROOT/.env'
+            cp '$TKT_APP_ROOT/.env' app/.env
+            chmod 600 app/.env
+            cd app
+            NODE_ENV=production node --env-file=.env --import tsx scripts/production-preflight.ts
+            NODE_ENV=production node --env-file=.env --import tsx scripts/check-module-load.ts .
+          "
+
+      - name: Refuse stale release before staging activation
+        if: steps.transport.outputs.deploy_ready == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          if [ "$RELEASE_SHA" != "$CURRENT_MAIN" ]; then
+            echo "ERROR: main changed while staging release was being prepared."
+            exit 1
+          fi
+
+      - name: Activate staging release
+        if: steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          takatak-ssh "set -e
+            test -d '$TKT_APP_ROOT/releases/$RELEASE_KEY/app'
+            rm -f '$TKT_APP_ROOT/current.new'
+            ln -s '$TKT_APP_ROOT/releases/$RELEASE_KEY/app' '$TKT_APP_ROOT/current.new'
+            mv -Tf '$TKT_APP_ROOT/current.new' '$TKT_APP_ROOT/current'
+            test \"\$(cat '$TKT_APP_ROOT/current/BUILD_ID')\" = 'staging-$RELEASE_SHA'
+            mkdir -p '$TKT_APP_ROOT/current/tmp'
+            touch '$TKT_APP_ROOT/current/tmp/restart.txt'
+          "
+
+      - name: Verify staging health and auth JSON boundaries
+        if: steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          health=""
+          ready=""
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            set +e
+            health="$(curl --fail --silent --show-error --max-time 15 "$TKT_URL/api/health")"
+            health_status=$?
+            ready="$(curl --fail --silent --show-error --max-time 15 "$TKT_URL/api/health/ready")"
+            ready_status=$?
+            set -e
+            if [ "$health_status" -eq 0 ] && [ "$ready_status" -eq 0 ]; then
+              break
+            fi
+            sleep 5
+          done
+
+          printf '%s' "$health" | grep -Eq '"status"[[:space:]]*:[[:space:]]*"ok"' || {
+            echo "ERROR: staging /api/health is not healthy."
+            exit 1
+          }
+          printf '%s' "$health" | grep -Eq '"app"[[:space:]]*:[[:space:]]*"TAKATAK User Official Dashboard V1"' || {
+            echo "ERROR: staging health endpoint reports unexpected app."
+            exit 1
+          }
+          printf '%s' "$ready" | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true' || {
+            echo "ERROR: staging /api/health/ready is not ready."
+            exit 1
+          }
+
+          login_code="$(curl --silent --output "$RUNNER_TEMP/login.json" --write-out '%{http_code}'             --header 'content-type: application/json' --data '{}' "$TKT_URL/api/auth/login")"
+          verify_code="$(curl --silent --output "$RUNNER_TEMP/verify.json" --write-out '%{http_code}'             --header 'content-type: application/json' --data '{}' "$TKT_URL/api/auth/verify-otp")"
+
+          [[ "$login_code" =~ ^4[0-9][0-9]$ ]] || {
+            echo "ERROR: empty login payload should return a JSON 4xx; got $login_code."
+            exit 1
+          }
+          [[ "$verify_code" =~ ^4[0-9][0-9]$ ]] || {
+            echo "ERROR: empty OTP payload should return a JSON 4xx; got $verify_code."
+            exit 1
+          }
+
+          echo "Staging health/readiness/auth boundary smoke passed."
+
+      - name: Roll back failed staging activation
+        if: failure() && steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+        shell: bash
+        run: |
+          set +e
+          if [ -z "${previous_release:-}" ]; then
+            echo "No previous staging release was captured; no automatic rollback target exists."
+            exit 0
+          fi
+
+          echo "Restoring previous staging release."
+          takatak-ssh "set -e
+            test -d '$previous_release'
+            rm -f '$TKT_APP_ROOT/current.new'
+            ln -s '$previous_release' '$TKT_APP_ROOT/current.new'
+            mv -Tf '$TKT_APP_ROOT/current.new' '$TKT_APP_ROOT/current'
+            mkdir -p '$TKT_APP_ROOT/current/tmp'
+            touch '$TKT_APP_ROOT/current/tmp/restart.txt'
+          "
+          exit 0
+
+      - name: Keep newest five staging releases
+        if: success() && steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_STAGING_APP_ROOT }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          takatak-ssh "set -e
+            mkdir -p '$TKT_APP_ROOT/releases'
+            cd '$TKT_APP_ROOT/releases'
+            ls -1dt */ 2>/dev/null | tail -n +6 | xargs -r rm -rf
+          "
+
+      - name: Staging release summary
+        if: success() && steps.transport.outputs.deploy_ready == 'true'
+        env:
+          TKT_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
+        run: |
+          echo "TAKATAK staging release succeeded."
+          echo "SHA: $RELEASE_SHA"
+          echo "URL: $TKT_URL"
+          echo "Production was not modified."
