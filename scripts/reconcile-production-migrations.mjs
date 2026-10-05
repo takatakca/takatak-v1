@@ -2,6 +2,10 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
+import {
+  canonicalSql,
+  normalizeHistoricalVehicleAuthority,
+} from "./production-migration-normalization.mjs";
 
 const { Client } = pg;
 
@@ -93,23 +97,6 @@ function fail(message) {
 
 function migrationSlug(name) {
   return name.replace(/^\d+_/, "");
-}
-
-function canonicalSql(sql) {
-  return sql
-    .replace(/\r\n/g, "\n")
-    .replace(/--[^\n]*/g, "")
-    .replace(/COMMENT\s+ON\s+(?:SCHEMA|TABLE)\s+[\s\S]*?;/gi, "")
-    .replace(/\s+/g, "")
-    .replace(/"/g, "")
-    .toLowerCase();
-}
-
-function removeServiceRoleHotfix(sql) {
-  return sql.replace(
-    /\s*OR\s+COALESCE\(auth\.role\(\)\s*=\s*'service_role',\s*false\);/gi,
-    ";",
-  );
 }
 
 function runPrisma(args, databaseUrl) {
@@ -290,12 +277,19 @@ try {
 
   if (
     functions.rowCount !== 2 ||
-    functions.rows.some(
-      (row) =>
-        !String(row.definition).includes("auth.role() = 'service_role'"),
-    )
+    functions.rows.some((row) => {
+      const definition = String(row.definition);
+      return (
+        !definition.includes(
+          "COALESCE(rentauto.has_role('admin'::rentauto.app_role), false)",
+        ) ||
+        !definition.includes("auth.role() = 'service_role'")
+      );
+    })
   ) {
-    fail("Rentauto vehicle authority service-role hotfix is not active.");
+    fail(
+      "Rentauto vehicle authority hardening is not fully active in production.",
+    );
   }
 
   for (const migration of RECONCILE_MIGRATIONS) {
@@ -323,7 +317,7 @@ try {
 
     if (!matches && SERVICE_ROLE_HOTFIX_MIGRATIONS.has(migration)) {
       matches =
-        canonicalSql(removeServiceRoleHotfix(repoSql)) ===
+        canonicalSql(normalizeHistoricalVehicleAuthority(repoSql)) ===
         canonicalSql(productionSql);
     }
 
