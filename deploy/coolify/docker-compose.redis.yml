@@ -1,0 +1,27 @@
+# Private Redis for one TAKATAK environment.
+# Do not publish 6379. Do not point staging and production at the same instance.
+# Set REDIS_PASSWORD in the Coolify environment. Do not commit it.
+
+services:
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --maxmemory-policy
+      - noeviction
+      - --requirepass
+      - ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      - --bind
+      - 0.0.0.0
+      - --protected-mode
+      - "yes"
+    volumes:
+      - takatak-redis:/data
+
+volumes:
+  takatak-redis:
