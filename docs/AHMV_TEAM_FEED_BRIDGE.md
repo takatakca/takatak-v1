@@ -13,17 +13,32 @@ This integration exposes a deliberately small public-feed surface from **GROUPE 
 
 A team feed is mapped through an existing Social Media `ServiceInstance` attached to the correct `BusinessBrand`.
 
-Its `metadata` must contain:
+Because `ServiceInstance` is unique per client + brand + service type, one Social Media service carries the exact public teams authorized for that brand:
 
 ```json
 {
   "ahmv": {
-    "publicTeamId": "2025191400017305"
+    "publicTeamIds": [
+      "2025191400017305",
+      "2025191400017103"
+    ]
   }
 }
 ```
 
-The endpoint queries this exact JSON path at the database boundary and reads at most two matches. Zero mappings fail closed as not connected. More than one mapping fails closed as ambiguous; TAKATAK never guesses between tenants or brands.
+Legacy single `publicTeamId` metadata remains readable during migration, but new writes use `publicTeamIds[]`.
+
+Every synchronized `SocialContentItem` must also be explicitly tagged with the exact public teams that may display that post:
+
+```json
+{
+  "ahmv": {
+    "publicTeamIds": ["2025191400017305"]
+  }
+}
+```
+
+No team is inferred from a caption, display name, category or neighboring team. The endpoint queries exact JSON tags at the database boundary. Zero service mappings fail closed as not connected. More than one matching service fails closed as ambiguous; TAKATAK never guesses between tenants or brands.
 
 ## Endpoint
 
@@ -74,13 +89,14 @@ Public content is returned only when all of these are true:
 5. the service is active;
 6. its BusinessBrand is active;
 7. the existing Social subscription lifecycle reports paid access;
-8. at least one supported social account is connected and available.
+8. at least one supported social account is connected and available;
+9. each returned post explicitly contains the requested exact team ID in `metadata.ahmv.publicTeamIds[]`.
 
 Supported public platforms are Facebook, Instagram, TikTok, X and YouTube.
 
 ## Public output
 
-Only synchronized `SocialContentItem` rows marked `available` are considered, newest first, maximum 20.
+Only synchronized `SocialContentItem` rows marked `available` **and explicitly tagged for the requested exact team ID** are considered, newest first, maximum 20.
 
 The response exposes only:
 
@@ -109,6 +125,19 @@ The endpoint never selects or returns provider object IDs, OAuth tokens, refresh
 
 All responses use `Cache-Control: no-store` and `X-Robots-Tag: noindex, nofollow`.
 
+## Editing mappings
+
+Platform admins can edit mappings through:
+
+`PUT /api/admin/ahmv/team-feed`
+
+Two explicit operations are supported:
+
+- `kind: "service"`: set the allowed exact team IDs on one BusinessBrand's Social Media service. New services are created as `planned`, never silently activated.
+- `kind: "content"`: set the exact team IDs on one synchronized social content item.
+
+Both operations validate every ID against active AHMV `hockey_public_teams`. Content cannot be tagged to a team that is not allowed by its service mapping. Sending an empty `teamIds` array clears team visibility.
+
 ## Release verification
 
 Run:
@@ -120,4 +149,4 @@ npm run qa:hockey-readiness
 
 The team feed safeguard is also chained into the AHMV hockey CI suite.
 
-Before enabling production, test one exact mapped team, one unmapped team, one duplicate mapping scenario and one expired/blocked Social subscription.
+Before enabling production, test one exact mapped/tagged team, one mapped team with no tagged posts, one unmapped team, one duplicate mapping scenario and one expired/blocked Social subscription.
