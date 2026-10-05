@@ -199,8 +199,8 @@ FROM "product_plans" plan
 JOIN "product_catalog" product ON product."id" = plan."productId"
 JOIN (
   VALUES
-    ('parent_essential','CAD',1000,'month',1),
-    ('parent_premium','CAD',3000,'month',1)
+    ('parent_essential','CAD',1000,'week',1),
+    ('parent_premium','CAD',3000,'week',1)
 ) AS seed("planCode","currency","unitAmountMinor","billingInterval","intervalCount")
   ON seed."planCode" = plan."code"
 WHERE product."code" = 'ahmv';
