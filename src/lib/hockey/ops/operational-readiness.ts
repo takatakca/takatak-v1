@@ -1,7 +1,10 @@
 import { Prisma } from "@prisma/client";
 
 import { getPrisma } from "@/lib/db/prisma";
-import { ahmvScheduleMaxAgeMinutes } from "@/lib/integrations/ahmv/schedule-contract";
+import {
+  ahmvScheduleFreshUntil,
+  validateAhmvScheduleSnapshot,
+} from "@/lib/integrations/ahmv/schedule-contract";
 
 export type AhmvOperationalCheck = {
   capability: "team_directory" | "schedule" | "ads_publisher" | "team_feed";
@@ -63,7 +66,9 @@ export async function collectAhmvOperationalReadiness(
         select: {
           status: true,
           sourceUpdatedAt: true,
+          sourceUrl: true,
           eventCount: true,
+          events: true,
         },
       }),
       prisma.adPublisher.findUnique({
@@ -95,14 +100,23 @@ export async function collectAhmvOperationalReadiness(
     exactTeams.length === teams.length &&
     teamIds.size === exactTeams.length;
 
-  const maxAgeMs = ahmvScheduleMaxAgeMinutes() * 60_000;
-  const scheduleAgeMs = snapshot
-    ? now.getTime() - snapshot.sourceUpdatedAt.getTime()
-    : Number.POSITIVE_INFINITY;
+  const normalizedSnapshot = snapshot
+    ? validateAhmvScheduleSnapshot(
+        {
+          status: snapshot.status,
+          updatedAt: snapshot.sourceUpdatedAt.toISOString(),
+          sourceUrl: snapshot.sourceUrl,
+          events: snapshot.events,
+        },
+        now,
+      )
+    : null;
+  const scheduleFreshUntil = normalizedSnapshot
+    ? ahmvScheduleFreshUntil(normalizedSnapshot)
+    : null;
   const scheduleReady =
-    Boolean(snapshot) &&
-    scheduleAgeMs >= -5 * 60_000 &&
-    scheduleAgeMs <= maxAgeMs &&
+    Boolean(snapshot && normalizedSnapshot && scheduleFreshUntil) &&
+    now.getTime() <= scheduleFreshUntil!.getTime() &&
     ((snapshot?.status === "active" && (snapshot?.eventCount ?? 0) > 0) ||
       (snapshot?.status === "no_match" && snapshot?.eventCount === 0));
 
