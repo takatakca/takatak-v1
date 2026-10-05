@@ -1,4 +1,4 @@
-export const DASHBOARD_SERVICE_MODULES = ["rentauto"] as const;
+export const DASHBOARD_SERVICE_MODULES = ["rentauto", "ticketing"] as const;
 
 export type DashboardServiceModule =
   (typeof DASHBOARD_SERVICE_MODULES)[number];

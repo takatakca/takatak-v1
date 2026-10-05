@@ -74,6 +74,7 @@
     "qa:hockey-membership": "tsx scripts/verify-hockey-membership.ts",
     "qa:rentauto-sync": "tsx --require ./scripts/register-server-only.cjs scripts/rentauto-sync-tests.ts",
     "qa:rentauto-service-access": "tsx scripts/rentauto-service-entitlement-tests.ts",
+    "qa:alkao-ticketing-service": "tsx scripts/alkao-ticketing-service-tests.ts",
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
     "qa:1lv-master-api": "tsx --require ./scripts/register-server-only.cjs scripts/one-lv-master-api-tests.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",

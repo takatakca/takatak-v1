@@ -91,6 +91,9 @@ jobs:
       - name: Rentauto service entitlement safeguards
         run: npm run qa:rentauto-service-access
 
+      - name: ALKAO Ticketing service safeguards
+        run: npm run qa:alkao-ticketing-service
+
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 

@@ -149,6 +149,7 @@ enum ServiceType {
   support
   custom
   rentauto
+  ticketing
 }
 
 enum Provider {

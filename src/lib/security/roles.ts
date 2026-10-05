@@ -186,6 +186,7 @@ export const MODULE_ACCESS: Record<
 > = {
   "/dashboard": "view_dashboard",
   "/dashboard/rentauto": "view_dashboard",
+  "/dashboard/ticketing": "view_dashboard",
   "/dashboard/clients": "manage_clients",
   "/dashboard/brands": "manage_brands",
   "/dashboard/locations": "manage_brands",
