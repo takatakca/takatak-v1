@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 
 import { verifyAhmvScheduleRequest } from "../src/lib/integrations/ahmv/auth";
 import {
+  ahmvScheduleFreshUntil,
   filterAhmvScheduleEvents,
   normalizeAhmvScheduleLookup,
   torontoDate,
@@ -211,3 +212,90 @@ assert.match(readRoute, /Retry-After/);
 assert.match(ingestRoute, /MAX_BODY_BYTES/);
 
 console.log("AHMV schedule feed safeguards passed.");
+
+
+const weeklySnapshot = validateAhmvScheduleSnapshot(
+  {
+    status: "active",
+    updatedAt: "2026-10-02T12:00:00-04:00",
+    sourceUrl: "https://ahmverdun.com/storage/week-5.pdf",
+    events: [
+      {
+        id: "week5-mon",
+        type: "Pratique",
+        category: "M11",
+        startsAt: "2026-10-05T17:00:00-04:00",
+        endsAt: "2026-10-05T18:00:00-04:00",
+        status: "scheduled",
+        venue: "Aréna Denis Savard",
+      },
+      {
+        id: "week5-sun",
+        type: "Pratique",
+        category: "M19",
+        startsAt: "2026-10-11T17:30:00-04:00",
+        endsAt: "2026-10-11T19:00:00-04:00",
+        status: "scheduled",
+        venue: "Aréna Denis Savard",
+      },
+    ],
+  },
+  new Date("2026-10-10T12:00:00-04:00"),
+);
+assert.ok(weeklySnapshot);
+assert.ok(
+  ahmvScheduleFreshUntil(
+    weeklySnapshot,
+    { AHMV_SCHEDULE_MAX_AGE_MINUTES: "360" },
+  ).getTime() > new Date("2026-10-10T12:00:00-04:00").getTime(),
+  "official AHMV weekly document must remain valid through its covered week",
+);
+
+const thirdPartySnapshot = validateAhmvScheduleSnapshot(
+  {
+    ...weeklySnapshot,
+    sourceUrl: "https://provider.example/week-5.pdf",
+  },
+  new Date("2026-10-10T12:00:00-04:00"),
+);
+assert.ok(thirdPartySnapshot);
+assert.equal(
+  ahmvScheduleFreshUntil(
+    thirdPartySnapshot,
+    { AHMV_SCHEDULE_MAX_AGE_MINUTES: "360" },
+  ).toISOString(),
+  "2026-10-02T22:00:00.000Z",
+  "non-AHMV sources must keep the configured six-hour TTL",
+);
+
+const oversizedWeeklySnapshot = validateAhmvScheduleSnapshot(
+  {
+    status: "active",
+    updatedAt: "2026-10-02T12:00:00-04:00",
+    sourceUrl: "https://www.ahmverdun.com/storage/not-a-week.pdf",
+    events: [
+      {
+        id: "day-1",
+        type: "Pratique",
+        startsAt: "2026-10-03T12:00:00-04:00",
+        status: "scheduled",
+      },
+      {
+        id: "day-10",
+        type: "Pratique",
+        startsAt: "2026-10-13T12:00:00-04:00",
+        status: "scheduled",
+      },
+    ],
+  },
+  new Date("2026-10-05T12:00:00-04:00"),
+);
+assert.ok(oversizedWeeklySnapshot);
+assert.equal(
+  ahmvScheduleFreshUntil(
+    oversizedWeeklySnapshot,
+    { AHMV_SCHEDULE_MAX_AGE_MINUTES: "360" },
+  ).toISOString(),
+  "2026-10-02T22:00:00.000Z",
+  "a document spanning more than a weekly window must not get extended validity",
+);
