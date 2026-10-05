@@ -4,7 +4,8 @@ export type AhmvCapability =
   | "event_sync"
   | "sms_delivery"
   | "google_calendar"
-  | "smart_departure";
+  | "smart_departure"
+  | "team_feed";
 
 export type AhmvReadinessCheck = {
   capability: AhmvCapability;
@@ -269,6 +270,18 @@ export function collectAhmvBackendReadiness(
     ],
   );
 
+  const teamFeed = checkCapability(
+    "team_feed",
+    enabled(env, "AHMV_TEAM_FEED_ENABLED"),
+    [
+      {
+        name: "AHMV_TEAM_FEED_SHARED_TOKEN",
+        present: Boolean(value(env, "AHMV_TEAM_FEED_SHARED_TOKEN")),
+        valid: secretLengthOk(env, "AHMV_TEAM_FEED_SHARED_TOKEN", 24),
+      },
+    ],
+  );
+
   const checks = [
     stripe,
     supporter,
@@ -276,6 +289,7 @@ export function collectAhmvBackendReadiness(
     sms,
     google,
     smartDeparture,
+    teamFeed,
   ];
 
   const ready = checks.every((item) => item.ready);
