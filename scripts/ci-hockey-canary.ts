@@ -17,6 +17,7 @@ import {
   hashHockeyFamilyInviteTokenForTest,
 } from "../src/lib/hockey/family/guardian-invite-service";
 import { deactivateHockeyFamilyGuardian } from "../src/lib/hockey/family/guardian-access-service";
+import { updateHockeyFamilyChild } from "../src/lib/hockey/family/child-lifecycle-service";
 import {
   listHockeyFamilyEventPlans,
   saveHockeyFamilyEventPlan,
@@ -475,6 +476,67 @@ async function main() {
   }
   assert.equal(removedGuardianDenied, true);
 
+  const lifecycleChild = await addHockeyFamilyChild({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    displayName: "Enfant cycle",
+  });
+  await addHockeyFamilyTeamSelection({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    memberId: lifecycleChild.id,
+    teamId: teamExact,
+    selectionType: "assigned",
+  });
+  await saveHockeyFamilyEventPlan({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    teamEventId: exactEvent.id,
+    childMemberId: lifecycleChild.id,
+    driverMemberId: family.guardian.id,
+    status: "confirmed",
+  });
+  await saveHockeyFamilyEventRsvp({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    teamEventId: exactEvent.id,
+    childMemberId: lifecycleChild.id,
+    status: "going",
+  });
+
+  const renamedChild = await updateHockeyFamilyChild({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    childMemberId: lifecycleChild.id,
+    displayName: "Enfant cycle modifié",
+  });
+  assert.equal(renamedChild.child.displayName, "Enfant cycle modifié");
+  assert.equal(renamedChild.child.status, "active");
+
+  const deactivatedChild = await updateHockeyFamilyChild({
+    authUserId: authUserA,
+    familyId: family.familyId,
+    childMemberId: lifecycleChild.id,
+    status: "inactive",
+  });
+  assert.equal(deactivatedChild.child.status, "inactive");
+  assert.equal(deactivatedChild.cancelledFutureDrivingPlans, 1);
+  assert.equal(deactivatedChild.removedFutureRsvps, 1);
+
+  const ownerScheduleAfterChildDeactivation =
+    await getHockeyFamilySchedule({
+      authUserId: authUserA,
+      familyId: family.familyId,
+      from: new Date("2026-10-09T00:00:00.000Z"),
+      to: new Date("2026-10-12T23:59:59.000Z"),
+    });
+  assert.equal(
+    ownerScheduleAfterChildDeactivation.members.some(
+      (member) => member.id === lifecycleChild.id,
+    ),
+    false,
+  );
+
   const jobs = await prisma.hockeyDeliveryJob.findMany({
     where: { identityId: identityA.id },
     select: { kind: true, status: true },
@@ -486,7 +548,7 @@ async function main() {
   assert.ok(jobs.some((job) => job.status === "skipped"));
 
   console.log(
-    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, shared driving responsibility, private family RSVP, guardian access revocation, event revisions and delivery queue passed",
+    "ci-hockey-canary: membership, exact-team family isolation, guardian invite replay protection, shared driving responsibility, private family RSVP, guardian access revocation, child lifecycle cleanup, event revisions and delivery queue passed",
   );
 }
 
