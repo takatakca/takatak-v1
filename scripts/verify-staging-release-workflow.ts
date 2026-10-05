@@ -52,7 +52,7 @@ if (productionUrlMentions !== 2) {
 }
 
 for (const needle of [
-  "workflows:\\n      - CI",
+  "workflows:\n      - CI",
   "TAKATAK_STAGING_DATABASE_URL",
   "utuvzrqvivqyziibobvu",
   "RECONCILE_MODE:",
