@@ -18,7 +18,17 @@ const nextConfig: NextConfig = {
   // Production builds MUST use webpack (`next build --webpack`). Next.js 16
   // Turbopack rewrites these to hashed aliases such as
   // `@prisma/client-<hash>` which do not exist in node_modules.
-  serverExternalPackages: ["@prisma/client", "prisma", "@prisma/adapter-pg", "pg"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "prisma",
+    "@prisma/adapter-pg",
+    "pg",
+    // Redis clients stay external so webpack does not hash them the way
+    // Turbopack hashed Prisma. MochaHost builds that never import the queue
+    // still resolve these packages from node_modules when the chunk loads.
+    "bullmq",
+    "ioredis",
+  ],
   // Dev-only access logger. Production Next builds do not emit this logger;
   // production first-hop protection requires META_OAUTH_REDIRECT_URI → relay.
   logging: {

@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/billing/social/stripe-client";
 import { getStripeWebhookSecret } from "@/lib/billing/social/stripe-env";
 import { applySocialStripeWebhookEvent } from "@/lib/billing/social/stripe-webhook-apply";
+import { deferProviderWebhook } from "@/lib/queue/signal";
 import { jsonResponse } from "@/lib/security/api-response";
 
 export const runtime = "nodejs";
@@ -45,6 +46,25 @@ export async function POST(request: Request) {
     return jsonResponse(
       { ok: false, message: "Invalid Stripe signature." },
       400,
+    );
+  }
+
+  const deferred = await deferProviderWebhook({
+    workspaceId: null,
+    connectionId: null,
+    provider: "stripe",
+    eventId: event.id,
+  });
+  if (deferred) {
+    return jsonResponse(
+      {
+        ok: true,
+        processed: false,
+        duplicate: false,
+        skipped: false,
+        queued: true,
+      },
+      200,
     );
   }
 
