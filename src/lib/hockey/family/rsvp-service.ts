@@ -39,7 +39,7 @@ async function context(authUserId: string, familyId: string) {
   if (!guardian) throw new ServiceError("forbidden", "You cannot manage that hockey family.");
 
   const features = await getIdentityHockeyFeatures(guardian.family.ownerIdentityId);
-  if (!features.has("family_sync")) {
+  if (!features.has("family_live_coordination")) {
     throw new ServiceError("forbidden", "Premium family sync is required.");
   }
   return { prisma, identity };
