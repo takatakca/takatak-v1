@@ -104,7 +104,8 @@
     "qa:ahmv-team-feed": "tsx scripts/verify-ahmv-team-feed-bridge.ts",
     "qa:staging-release": "tsx scripts/verify-staging-release-workflow.ts",
     "ahmv:teams:seed": "tsx scripts/seed-ahmv-public-teams.ts",
-    "qa:ahmv-public-teams": "tsx scripts/verify-ahmv-public-teams.ts"
+    "qa:ahmv-public-teams": "tsx scripts/verify-ahmv-public-teams.ts",
+    "qa:ahmv-operational-readiness": "tsx scripts/verify-ahmv-operational-readiness.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "6.19.3",
