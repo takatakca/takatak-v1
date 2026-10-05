@@ -3096,8 +3096,6 @@ model MasterIdentity {
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
-  hockeyMemberships      HockeyMembership[]
-  hockeyStripeEvents     HockeyStripeWebhookEvent[]
   hockeyParentPreferences HockeyParentTeamPreference[]
   hockeyPremiumGrants       HockeyPremiumGrant[]
   hockeyDeliveryJobs        HockeyDeliveryJob[]
