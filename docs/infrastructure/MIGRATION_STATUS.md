@@ -35,6 +35,10 @@ Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
 - [x] `https://coolify.takatak.ca` already serves the Coolify login over Let's Encrypt. No change to `dashboard.takatak.ca`, `api.takatak.ca`, or email DNS.
 - [x] Temporary Coolify ports 8000, 6001, 6002, and 8080 listen on `127.0.0.1` only. 22, 80, and 443 stay open. 5432 and 6379 are not published. `takatak` SSH still works.
 - [x] Platform check: `nginx:alpine` container `takatak-platform-check` on the `coolify` network, reached over HTTPS at `platform-check.31.220.96.134.sslip.io` with a Let's Encrypt certificate. TAKATAK was not deployed for this check.
+- [x] Coolify project `GROUPE TAKATAK` has separate `staging` and `production` environments. The misspelled `stagging` row was renamed to `staging`. Production workers were not started.
+- [x] `takatak-redis-staging` is a private Coolify Redis on staging only (`redis:7.4-alpine`, AOF, `noeviction`, auth, no public hostname, no host port 6379). Production has no Redis resource.
+- [ ] Staging web from `infra/contabo-coolify`. The branch is not on GitHub, and this shell has no git credential, so that deploy was not started. An older staging app on the `staging` branch is already running and was left as it is.
+- [x] Production workers are stopped. `dashboard.takatak.ca`, `api.takatak.ca`, `takatak.ca`, and email DNS were not changed. MochaHost was not changed.
 - [ ] Private staging Redis
 - [ ] Private production Redis
 - [ ] Staging web service

@@ -63,3 +63,34 @@ Checks that passed:
 - `https://coolify.takatak.ca` still returns 302 to `/login`
 
 This did not deploy TAKATAK. The hostname is sslip.io, not a customer name.
+
+## GROUPE TAKATAK environments
+
+Project `GROUPE TAKATAK` (id 3) was already present. Its production environment stayed in place. The other environment was named `stagging`. That row was renamed to `staging` (id 4). Applications that were attached to it stayed attached. Production workers were not started.
+
+`takatak-server` still has its own production environment and the nginx platform-check application. It is separate from `GROUPE TAKATAK`.
+
+Coolify's localhost server SSH user is `takatak`, using the existing Coolify localhost key (fingerprint `SHA256:P34ay03uEPvOmbjR/YeBOpHKynoea3VGh8le2iqeRpg`). That public key is in the `takatak` authorized keys. Root SSH from the public internet is still refused. `takatak` can traverse `/data/coolify` through an ACL so Coolify can write application and database files without a root login.
+
+## takatak-redis-staging
+
+Private Coolify Redis on the `GROUPE TAKATAK` staging environment only. Production has no Redis resource, so the two environments do not share one.
+
+| Setting | Value |
+| --- | --- |
+| Name | `takatak-redis-staging` |
+| Image | `redis:7.4-alpine` |
+| Container | `zs9l2zadojtedmddk3rlfz2q` |
+| AOF | `appendonly yes`, `appendfsync everysec` |
+| Eviction | `maxmemory 256mb`, `maxmemory-policy noeviction` |
+| Auth | required (`NOAUTH` without the password) |
+| Public | `is_public` false, no public port, no hostname |
+| Host publish | none. Nothing listens on host 6379 or 5432 |
+
+Docker reports the container healthy. The password stays in Coolify's environment storage and was not copied into git. No application environment variable is named `REDIS_URL` yet.
+
+## Production left where it is
+
+The production application `takatak-v1` in `GROUPE TAKATAK` is exited. Its Coolify FQDN is `https://takatak.ca`, and public DNS for `takatak.ca` still points at MochaHost (`209.42.24.127`). `dashboard.takatak.ca` and `api.takatak.ca` have no A record. MX is still `0 mail.takatak.ca`. None of those records were changed. No production worker container is running.
+
+An older `takatak-staging` application on the `staging` git branch is already running at `https://staging.takatak.ca`. `infra/contabo-coolify` is not on GitHub, so that application was not replaced from this branch.

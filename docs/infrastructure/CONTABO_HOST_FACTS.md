@@ -125,4 +125,4 @@ Coolify 4.3.23, Docker 29.8.2, and Compose v5.6.0 were already installed. They w
 
 ## Not done
 
-DNS for `dashboard.takatak.ca` and `api.takatak.ca`, and MX, SPF, DKIM, and DMARC, were not changed. MochaHost was not changed. Production workers were not started.
+`GROUPE TAKATAK` has `staging` and `production`. `takatak-redis-staging` is private on staging. Production workers are stopped. DNS for `dashboard.takatak.ca` and `api.takatak.ca`, and MX, SPF, DKIM, and DMARC, were not changed. MochaHost was not changed.
