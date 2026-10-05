@@ -39,3 +39,14 @@ Applications already present, Coolify status `exited:unhealthy` at the time of t
 No DNS change was required. `coolify.takatak.ca` already has an A record to `31.220.96.134`. `dashboard.takatak.ca`, `api.takatak.ca`, `takatak.ca`, and the MX record (`0 mail.takatak.ca`) were not edited.
 
 `https://coolify.takatak.ca` returns HTTP/2 302 to `https://coolify.takatak.ca/login`. The certificate is Let's Encrypt (issuer `YR1`), subject `CN=coolify.takatak.ca`, valid from 2026-10-03 through 2027-01-01. The proxy is the existing `traefik:v3.6` container. HTTP on that host redirects to HTTPS.
+
+## Temporary ports bound to localhost
+
+After that HTTPS check, Docker was still publishing 8000, 6001, 6002, and 8080 on `0.0.0.0` and `::`, which bypasses UFW. Those four publishes were changed to `127.0.0.1` only:
+
+- `/data/coolify/proxy/docker-compose.yml`: `127.0.0.1:8080:8080`. Ports 80 and 443 stayed on all interfaces.
+- `/data/coolify/source/docker-compose.prod.yml`: Coolify UI `127.0.0.1:8000` and realtime `127.0.0.1:6001` and `127.0.0.1:6002`.
+
+`coolify`, `coolify-realtime`, and `coolify-proxy` were recreated. `coolify-db` and `coolify-redis` were not recreated and are still unpublished (5432 and 6379 are container-only). Host listeners for 8000, 6001, 6002, and 8080 are `127.0.0.1` only. Public checks to those ports, and to 5432 and 6379, do not connect. TCP 22, 80, and 443 still accept connections. A fresh `takatak` login after the recreate still works, and `sudo -n whoami` returns `root`. `https://coolify.takatak.ca` still returns 302 to `/login`.
+
+Backups of the compose files before the edit are on the server under `/data/coolify/proxy/backups/` and `/data/coolify/source/docker-compose.prod.yml.bak-*`. They are not in git.

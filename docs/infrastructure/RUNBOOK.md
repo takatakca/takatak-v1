@@ -55,7 +55,7 @@ Review `prisma/migrations` before any `prisma migrate deploy`. CI already deploy
 
 ## Firewall reminder
 
-Public 22, 80, 443. Temporary Coolify 8000, 6001, 6002. Never 3000, 3001, 5432, 6379, 3306, 27017.
+Public 22, 80, 443. Coolify 8000, 6001, 6002, and 8080 are localhost-only on `takatak-core-01`. Never 3000, 3001, 5432, 6379, 3306, 27017.
 
 ## Escalation
 

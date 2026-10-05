@@ -93,7 +93,7 @@ Never public: 3000, 3001, 5432, 6379, 3306, 27017.
 
 Apply the allow rules before any deny policy. Do not enable a firewall that drops the current SSH session.
 
-On `takatak-core-01`, UFW is active. TCP 22, 80, and 443 are allowed from anywhere. The Coolify temporary ports are not in the UFW allow list. Docker already published some of them before this step; that publish was not changed.
+On `takatak-core-01`, UFW is active. TCP 22, 80, and 443 are allowed from anywhere. The Coolify temporary ports are not in the UFW allow list. Docker had published 8000, 6001, 6002, and 8080 past UFW; those publishes are now `127.0.0.1` only. 22, 80, and 443 stay open. 5432 and 6379 stay unpublished.
 
 ## 8. Docker and Coolify
 

@@ -76,7 +76,7 @@ Do not colocate client sites, QMAPS, or FLEXS on this application.
 
 Public: 22, 80, 443.
 
-Temporary Coolify UI/realtime: 8000, 6001, 6002. Close them when a reverse proxy fronts Coolify.
+Coolify UI and realtime (8000, 6001, 6002) and the proxy dashboard port 8080 are localhost-only once `coolify.takatak.ca` is on HTTPS.
 
 Never public: 3000, 3001, 5432, 6379, 3306, 27017.
 

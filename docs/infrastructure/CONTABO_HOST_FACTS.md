@@ -117,7 +117,7 @@ No allow rule was added for 3000, 3001, 5432, 6379, 3306, 27017, 8000, 6001, 600
 
 A fresh `takatak` key login after UFW became active still works, and `sudo -n whoami` returns `root`.
 
-Coolify's containers were already running and were not installed or reconfigured in this step. Docker still publishes 80, 443, 8000, 6001, 6002, and 8080 on the host. `coolify-db` and `coolify-redis` are not published on the host. Those Docker publishes were left as they were.
+Coolify's containers were already running and were not installed in this step. Docker publishes 80 and 443 on the host. After `coolify.takatak.ca` answered over HTTPS, the temporary publishes for 8000, 6001, 6002, and 8080 were bound to `127.0.0.1` only. `coolify-db` and `coolify-redis` are not published on the host. A fresh `takatak` login after that change still works.
 
 ## Coolify already present
 
@@ -125,4 +125,4 @@ Coolify 4.3.23, Docker 29.8.2, and Compose v5.6.0 were already installed. They w
 
 ## Not done
 
-Public Docker publishes for 8000, 6001, 6002, and 8080 are still open. DNS for `dashboard.takatak.ca` and `api.takatak.ca`, and MX, SPF, DKIM, and DMARC, were not changed. MochaHost was not changed. Production workers were not started.
+DNS for `dashboard.takatak.ca` and `api.takatak.ca`, and MX, SPF, DKIM, and DMARC, were not changed. MochaHost was not changed. Production workers were not started.
