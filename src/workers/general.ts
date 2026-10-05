@@ -1,4 +1,5 @@
 import { SKIPPED_QUEUES } from "@/lib/queue/names";
+import { startWorkerHeartbeat } from "@/workers/heartbeat";
 import { installShutdown } from "@/workers/shutdown";
 
 /**
@@ -15,4 +16,7 @@ console.log(
   }),
 );
 
-installShutdown(async () => undefined);
+const stopHeartbeat = startWorkerHeartbeat();
+installShutdown(async () => {
+  stopHeartbeat();
+});

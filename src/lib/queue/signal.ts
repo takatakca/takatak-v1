@@ -54,8 +54,25 @@ export async function deferProviderWebhook(payload: JobPayload): Promise<boolean
     return false;
   }
 
+  let parsed: JobPayload;
   try {
-    const parsed = parseJobPayload(payload);
+    parsed = parseJobPayload(payload);
+  } catch {
+    return false;
+  }
+
+  const { persistQueuedWebhookReceipt } = await import(
+    "@/lib/queue/webhook-receipt"
+  );
+  const receipt = await persistQueuedWebhookReceipt(parsed);
+  if (receipt === "unavailable") {
+    return false;
+  }
+  if (receipt === "applied") {
+    return true;
+  }
+
+  try {
     const { enqueueIdentifierJob } = await import("@/lib/queue/queues");
     await enqueueIdentifierJob({
       queue: QUEUE_NAMES.webhooks,

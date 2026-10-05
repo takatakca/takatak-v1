@@ -4,6 +4,7 @@ import { getHockeyStripe } from "@/lib/billing/hockey/stripe-client";
 import { getHockeyStripeWebhookSecret } from "@/lib/billing/hockey/stripe-env";
 import { applyHockeyStripeWebhookEvent } from "@/lib/billing/hockey/stripe-webhook-apply";
 import { deferProviderWebhook } from "@/lib/queue/signal";
+import { markWebhookReceiptApplied } from "@/lib/queue/webhook-receipt";
 import { jsonResponse } from "@/lib/security/api-response";
 
 export const runtime = "nodejs";
@@ -63,6 +64,10 @@ export async function POST(request: Request) {
 
   try {
     const result = await applyHockeyStripeWebhookEvent(event);
+    await markWebhookReceiptApplied({
+      provider: "stripe_hockey",
+      eventId: event.id,
+    });
     return jsonResponse(
       {
         ok: true,

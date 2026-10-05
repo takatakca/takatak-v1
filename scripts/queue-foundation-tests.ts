@@ -149,6 +149,16 @@ async function main() {
   assert("webhook queue exists", QUEUE_NAMES.webhooks === "webhooks");
   assert("email queue is skipped", SKIPPED_QUEUES.includes("email"));
 
+  const signalSource = readFileSync("src/lib/queue/signal.ts", "utf8");
+  const deferSource = signalSource.slice(signalSource.indexOf("function deferProviderWebhook"));
+  const receiptAt = deferSource.indexOf("persistQueuedWebhookReceipt");
+  const enqueueAt = deferSource.indexOf("enqueueIdentifierJob");
+  assert("webhook receipt is written before redis enqueue", receiptAt !== -1 && receiptAt < enqueueAt);
+
+  const receiptSource = readFileSync("src/lib/queue/webhook-receipt.ts", "utf8");
+  assert("receipt store keeps event ids only", !receiptSource.includes("rawBody"));
+  assert("receipt store does not keep signatures", !receiptSource.includes("stripe-signature"));
+
   if (failed > 0) {
     console.error(`[queue] ${failed} failed`);
     process.exit(1);

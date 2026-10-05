@@ -7,6 +7,7 @@ import {
   type JobPayload,
 } from "@/lib/queue/payloads";
 import { bullmqConnection } from "@/lib/queue/redis";
+import { startWorkerHeartbeat } from "@/workers/heartbeat";
 import { installShutdown } from "@/workers/shutdown";
 
 async function runPageSync(payload: JobPayload): Promise<void> {
@@ -114,7 +115,9 @@ try {
       queues: [QUEUE_NAMES.socialSync, QUEUE_NAMES.analyticsSync],
     }),
   );
+  const stopHeartbeat = startWorkerHeartbeat();
   installShutdown(async () => {
+    stopHeartbeat();
     await Promise.all(workers.map((worker) => worker.close()));
   });
 } catch (error) {

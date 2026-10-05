@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/billing/social/stripe-client";
 import { getStripeWebhookSecret } from "@/lib/billing/social/stripe-env";
 import { applySocialStripeWebhookEvent } from "@/lib/billing/social/stripe-webhook-apply";
 import { deferProviderWebhook } from "@/lib/queue/signal";
+import { markWebhookReceiptApplied } from "@/lib/queue/webhook-receipt";
 import { jsonResponse } from "@/lib/security/api-response";
 
 export const runtime = "nodejs";
@@ -70,6 +71,10 @@ export async function POST(request: Request) {
 
   try {
     const result = await applySocialStripeWebhookEvent(event);
+    await markWebhookReceiptApplied({
+      provider: "stripe",
+      eventId: event.id,
+    });
     return jsonResponse(
       {
         ok: true,
