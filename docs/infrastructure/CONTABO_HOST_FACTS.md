@@ -82,6 +82,12 @@ Nine overlay mounts under `/var/lib/docker/rootfs/overlayfs/` use the same 96G e
 
 Cloud-init manages this file (`manage_etc_hosts` is true). `127.0.1.1` is `vmi3621936.contaboserver.net vmi3621936`. `127.0.0.1` is `localhost`. The file was not edited, because a hostname change was unnecessary and a hosts edit would not persist without changing the cloud-init template.
 
+## Admin user
+
+`takatak` was created with `--disabled-password` (uid 1002) and added to the `sudo` group. A new ed25519 key, comment `takatak-admin`, fingerprint `SHA256:QxndNBuGg26ZY1GGPT8UcWgeKfafmVUc8f6PRj4+djo`, stays on the operator machine. The public key is in `/home/takatak/.ssh/authorized_keys` (mode `600`, directory mode `700`, owner `takatak`).
+
+A second SSH session as `takatak` succeeded. `sudo -n whoami` returns `root` through `/etc/sudoers.d/takatak` (`NOPASSWD`), because the account has no password. Root key login still succeeds. `PermitRootLogin` remains `yes`.
+
 ## Not done
 
 SSH hardening, Fail2ban, firewall changes, package upgrades, Docker changes, Coolify, DNS, MX, SPF, DKIM, and DMARC were not started.
