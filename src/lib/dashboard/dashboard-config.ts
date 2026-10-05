@@ -6,6 +6,7 @@
 import {
   Bell,
   BotMessageSquare,
+  Brain,
   Briefcase,
   Building2,
   CalendarClock,
@@ -96,6 +97,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Local Listings", href: "/dashboard/local-listings", icon: MapPin },
       { label: "Leads", href: "/dashboard/leads", icon: Filter },
       { label: "AI Studio", href: "/dashboard/ai-studio", icon: Sparkles },
+      { label: "Knowledge Brain", href: "/dashboard/knowledge", icon: Brain },
       { label: "Content Moderation", href: "/dashboard/contributions", icon: ListChecks },
     ],
   },
@@ -180,6 +182,9 @@ export function pageTitleForPath(pathname: string): string {
 }
 
 export function pageSubtitleForPath(pathname: string): string | null {
+  if (pathname === "/dashboard/knowledge" || pathname.startsWith("/dashboard/knowledge/")) {
+    return "Source-faithful memory for TAKATAK AI agents: conversations, files, media, provenance, search, and retrieval controls.";
+  }
   if (pathname === "/dashboard/contributions" || pathname.startsWith("/dashboard/contributions/")) {
     return "Moderate community-proposed content changes, contributor reputation and publisher delivery.";
   }
@@ -348,6 +353,21 @@ export const MODULE_PLACEHOLDERS: Record<string, ModulePlaceholderDef> = {
     engine: "TryHolo / OpenAI",
     status: "disabled",
     functions: ["Content generator (captions, hashtags, hooks, CTAs)", "Campaign builder", "Video idea generator", "Creative brief generator", "Saved outputs feeding the approval workflow"],
+  },
+  knowledge: {
+    title: "Knowledge Brain",
+    purpose: "Full-fidelity, source-linked memory for TAKATAK AI agents. Originals are preserved; summaries, chunks, embeddings, entities, and timelines are additive retrieval layers.",
+    engine: "TAKATAK Knowledge / Supabase Storage + Postgres",
+    status: "foundation",
+    functions: [
+      "Conversation and archive ingestion with source provenance",
+      "Original files, screenshots, images, audio/video, code and attachments",
+      "Exact-text, semantic, source, entity and timeline search",
+      "Immutable raw evidence plus derived summaries/chunks/embeddings",
+      "Agent knowledge scopes, grants and retrieval audit trail",
+      "Gap/backfill registry for referenced but unavailable history",
+    ],
+    note: "Never invent missing history. Preserve every accessible source verbatim where possible and record unavailable material as a backfill gap.",
   },
   reports: {
     title: "Reports",
