@@ -236,8 +236,12 @@ function verifyAhmvPublisherSeed(): void {
   assert.ok(seed.includes('"https://www.ahmverdun.ca"'));
   assert.ok(seed.includes('"https://ahmverdun.com"'));
   assert.ok(seed.includes('"https://www.ahmverdun.com"'));
+  assert.ok(seed.includes('pagePattern: "/equipes*"'));
+  assert.ok(seed.includes('pagePattern: "/nouvelles*"'));
+  assert.ok(seed.includes('pagePattern: "/galerie*"'));
+  assert.equal(seed.includes('pagePattern: "/photos*"'), false);
 
-  pass("AHMV ADS publisher seed uses .ca canonical domain with legacy .com origins");
+  pass("AHMV ADS publisher seed uses .ca canonical domain and canonical routes");
 }
 
 console.log("TAKATAK ADS foundation verification");

@@ -24,19 +24,19 @@ const PLACEMENTS = [
   {
     code: "team-inline-01",
     name: "AHMV Team pages — Inline",
-    pagePattern: "/equipes/*",
+    pagePattern: "/equipes*",
     format: "responsive-display",
   },
   {
     code: "news-inline-01",
     name: "AHMV News — Inline",
-    pagePattern: "/nouvelles/*",
+    pagePattern: "/nouvelles*",
     format: "responsive-display",
   },
   {
     code: "gallery-inline-01",
     name: "AHMV Gallery — Inline",
-    pagePattern: "/photos*",
+    pagePattern: "/galerie*",
     format: "responsive-display",
   },
 ] as const;
