@@ -101,7 +101,15 @@ Applied after a fresh `takatak` login and `sudo -n whoami` returned `root`. `ssh
 
 `sshd -T` now reports those four values. A new root key login is refused with `Permission denied (publickey)`. The `takatak` key login and `sudo -n whoami` still return `root`.
 
-The firewall, Fail2ban, Docker, and Coolify were not changed.
+## Fail2ban and unattended upgrades
+
+`fail2ban` 1.0.2 and `unattended-upgrades` 2.9.1 were already installed. `apt-get install` changed nothing. `dpkg-reconfigure -f noninteractive unattended-upgrades` left `/etc/apt/apt.conf.d/20auto-upgrades` with package-list updates and unattended upgrades enabled. Both services are active.
+
+The stock `sshd` jail was already enabled (`maxretry` 5, `bantime` 600, `findtime` 600). `/etc/fail2ban/jail.d/takatak-admin.conf` adds `ignoreip` for `127.0.0.1/8`, `::1`, and the admin session address `98.83.252.178`. No shorter ban time was set. After reload, the sshd jail has zero banned addresses. UFW, iptables, nftables, and the Contabo panel firewall were not edited. The jail's existing `nftables` ban action was left as Ubuntu shipped it.
+
+A fresh `takatak` key login after that reload still works, and `sudo -n whoami` returns `root`.
+
+The firewall, Docker, and Coolify were not changed.
 
 ## Not done
 

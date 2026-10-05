@@ -81,6 +81,8 @@ sudo dpkg-reconfigure -f noninteractive unattended-upgrades
 
 Enable the stock `sshd` jail. Do not add a jail that bans the operator's current address during setup. `systemctl status fail2ban` should be active.
 
+On `takatak-core-01` this is done. The sshd jail uses the stock 5 failures / 10 minute ban, and the admin address is in `ignoreip`. The firewall was not changed.
+
 ## 7. Firewall
 
 Public: 22, 80, 443.
