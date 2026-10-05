@@ -196,7 +196,12 @@ const store = readFileSync(
 assert.match(store, /TransactionIsolationLevel\.Serializable/);
 assert.match(store, /incoming < previous/);
 assert.match(store, /Same source timestamp arrived with different schedule content/);
-assert.match(store, /ahmvScheduleMaxAgeMinutes/);
+assert.match(store, /ahmvScheduleFreshUntil/);
+assert.match(
+  readFileSync("src/lib/integrations/ahmv/schedule-contract.ts", "utf8"),
+  /ahmvScheduleMaxAgeMinutes/,
+  "configured TTL must remain part of the freshness policy",
+);
 
 const readRoute = readFileSync(
   "src/app/api/integrations/ahmv/schedule/route.ts",
