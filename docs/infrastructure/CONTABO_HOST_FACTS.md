@@ -86,8 +86,23 @@ Cloud-init manages this file (`manage_etc_hosts` is true). `127.0.1.1` is `vmi36
 
 `takatak` was created with `--disabled-password` (uid 1002) and added to the `sudo` group. A new ed25519 key, comment `takatak-admin`, fingerprint `SHA256:QxndNBuGg26ZY1GGPT8UcWgeKfafmVUc8f6PRj4+djo`, stays on the operator machine. The public key is in `/home/takatak/.ssh/authorized_keys` (mode `600`, directory mode `700`, owner `takatak`).
 
-A second SSH session as `takatak` succeeded. `sudo -n whoami` returns `root` through `/etc/sudoers.d/takatak` (`NOPASSWD`), because the account has no password. Root key login still succeeds. `PermitRootLogin` remains `yes`.
+A second SSH session as `takatak` succeeded. `sudo -n whoami` returns `root` through `/etc/sudoers.d/takatak` (`NOPASSWD`), because the account has no password.
+
+## SSH hardening
+
+Applied after a fresh `takatak` login and `sudo -n whoami` returned `root`. `sshd -t` passed before each reload.
+
+`/etc/ssh/sshd_config.d/00-takatak-auth.conf` is read before cloud-init, so its values win:
+
+- `PasswordAuthentication no`
+- `KbdInteractiveAuthentication no`
+- `PubkeyAuthentication yes`
+- `PermitRootLogin no` was added only after a post-reload `takatak` login and sudo check succeeded
+
+`sshd -T` now reports those four values. A new root key login is refused with `Permission denied (publickey)`. The `takatak` key login and `sudo -n whoami` still return `root`.
+
+The firewall, Fail2ban, Docker, and Coolify were not changed.
 
 ## Not done
 
-SSH hardening, Fail2ban, firewall changes, package upgrades, Docker changes, Coolify, DNS, MX, SPF, DKIM, and DMARC were not started.
+Fail2ban, firewall changes, package upgrades, Docker changes, Coolify, DNS, MX, SPF, DKIM, and DMARC were not started.

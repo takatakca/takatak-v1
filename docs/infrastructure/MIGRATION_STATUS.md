@@ -29,8 +29,8 @@ Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
 - [x] CI deploy webhook reads GitHub secrets and does not run after a failed build
 - [x] `qa:workflow` checks that Coolify runs only after install, Prisma generate, typecheck, lint, QA, and the production build
 - [x] Stripe webhook event ids are stored in Postgres before Redis is asked to carry them
-- [x] Contabo bootstrap runbook written. Host facts are in `CONTABO_HOST_FACTS.md`. The `takatak` admin key login works. SSH hardening has not been run.
-- [~] Contabo VPS `31.220.96.134` is reachable as `root` by key. Static hostname is already `takatak-core-01` (Ubuntu 24.04.5, 6 vCPU, 11 GiB RAM, 4 GiB swap). No hostname change was required. Firewall, Fail2ban, Docker, and Coolify were not changed.
+- [x] Contabo bootstrap runbook written. Host facts are in `CONTABO_HOST_FACTS.md`. SSH hardening is applied. `takatak` key login and sudo still work. Root SSH is closed. Fail2ban and the firewall were not changed.
+- [~] Contabo VPS `31.220.96.134` is Ubuntu 24.04.5 with static hostname `takatak-core-01` (6 vCPU, 11 GiB RAM, 4 GiB swap). Admin SSH is the `takatak` key. Root SSH is closed. Firewall, Fail2ban, Docker, and Coolify were not changed.
 - [ ] Coolify installed
 - [ ] Private staging Redis
 - [ ] Private production Redis

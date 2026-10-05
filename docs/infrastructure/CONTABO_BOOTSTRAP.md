@@ -57,7 +57,9 @@ Put the operator public key in `/home/takatak/.ssh/authorized_keys` with mode `6
 
 Open a second terminal and log in as `takatak` with the key. Keep the first session open. Do not continue until that second login works.
 
-On `takatak-core-01` this login is already proven. Root login is still enabled. The account has no password; `/etc/sudoers.d/takatak` allows `NOPASSWD`. Do not start section 5 until a later step explicitly hardens SSH.
+On `takatak-core-01` this login is already proven. The account has no password; `/etc/sudoers.d/takatak` allows `NOPASSWD`.
+
+Section 5 is applied. Password and keyboard-interactive authentication are off, public-key authentication stays on, and `PermitRootLogin` is `no`. Use the `takatak` key for later steps.
 
 ## 5. SSH hardening
 
