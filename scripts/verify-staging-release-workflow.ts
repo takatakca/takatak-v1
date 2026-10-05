@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 
 const path = ".github/workflows/release-staging.yml";
 const source = readFileSync(path, "utf8");
+const migrationWorkflowPath = ".github/workflows/reconcile-staging-migrations.yml";
+const migrationSource = readFileSync(migrationWorkflowPath, "utf8");
 
 function requireText(needle: string, label: string) {
   if (!source.includes(needle)) {
@@ -49,4 +51,35 @@ if (productionUrlMentions !== 2) {
   );
 }
 
-console.log("TAKATAK staging release workflow safeguards: PASS");
+for (const needle of [
+  "workflows:\\n      - CI",
+  "TAKATAK_STAGING_DATABASE_URL",
+  "utuvzrqvivqyziibobvu",
+  "RECONCILE_MODE:",
+  "node scripts/reconcile-staging-migrations.mjs",
+]) {
+  if (!migrationSource.includes(needle)) {
+    throw new Error(`Missing staging migration workflow safeguard: ${needle}`);
+  }
+}
+
+for (const forbidden of [
+  "pcjfahhlozsseqqevimi",
+  "TAKATAK_PRODUCTION_DATABASE_URL",
+]) {
+  if (migrationSource.includes(forbidden)) {
+    throw new Error(`Forbidden production coupling in staging migration workflow: ${forbidden}`);
+  }
+}
+
+if (!migrationSource.includes("github.event.workflow_run.head_branch == 'main'")) {
+  throw new Error("Staging migrations must auto-apply only after green main CI.");
+}
+if (!migrationSource.includes("github.event.workflow_run.conclusion == 'success'")) {
+  throw new Error("Staging migrations must require green upstream CI.");
+}
+if (!migrationSource.includes("github.event_name == 'workflow_run' && 'apply' || inputs.mode")) {
+  throw new Error("Automatic staging migration run must use apply mode.");
+}
+
+console.log("TAKATAK staging migration + release workflow safeguards: PASS");
