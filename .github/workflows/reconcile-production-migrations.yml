@@ -3,7 +3,7 @@ name: Reconcile TAKATAK production migrations
 on:
   push:
     branches:
-      - integration/1lv-mastermind-bridge
+      - main
     paths:
       - "prisma/migrations/**"
       - "scripts/reconcile-production-migrations.mjs"
@@ -16,7 +16,7 @@ on:
         required: true
         type: string
       apply:
-        description: "Apply reconciliation + pending 1LV migration"
+        description: "Apply reconciliation + approved AHMV/ADS migration train"
         required: true
         default: false
         type: boolean
@@ -30,7 +30,7 @@ concurrency:
 
 jobs:
   reconcile:
-    name: Audit or reconcile production migration history
+    name: Audit or deploy approved production migration train
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -73,7 +73,7 @@ jobs:
 
           echo "::warning title=TAKATAK production audit skipped::TAKATAK_PRODUCTION_DATABASE_URL is not configured in GitHub Actions."
 
-      - name: Audit or reconcile production
+      - name: Audit or reconcile approved production train
         if: steps.production-secret.outputs.available == 'true'
         run: node scripts/reconcile-production-migrations.mjs
 
