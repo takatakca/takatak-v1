@@ -34,7 +34,7 @@ AHM de Verdun publicly directs families to its Rétroaction organization schedul
 
 Do not scrape a static HTML shell and call it live data. The ingestion side must use a reviewed official export/API/calendar feed or a reviewed AHMV administrative publisher.
 
-Until such an importer is configured, no fresh snapshot exists and the read API deliberately returns 503.
+Until such an importer is configured, the read API deliberately returns 503 unless a reviewed official AHMV weekly document has been ingested as the bounded fallback described below.
 
 ## Read API
 
@@ -74,6 +74,8 @@ Successful response:
 ```
 
 If the stored source is missing, invalid or stale, the endpoint returns 503. It never converts an unavailable feed into a false `no_match`.
+
+For live/API sources, freshness remains the configured `AHMV_SCHEDULE_MAX_AGE_MINUTES`. A bounded weekly document hosted directly under `https://ahmverdun.com/storage/` (or `www.ahmverdun.com`) may remain valid through the last activity it explicitly publishes, plus a short overnight grace period. The extension is capped to a normal weekly span and at most 14 days after the real publication timestamp. The source `updatedAt` is never rewritten to simulate freshness.
 
 ## Ingestion API
 
@@ -176,6 +178,6 @@ The AHMV public-phone preflight refuses public launch/reminders without this aut
 
 ## Source onboarding remaining
 
-The safest upstream candidate discovered for AHM Verdun is the Rétroaction organization schedule/calendar export already used by AHMV families.
+The long-term upstream candidate is the official per-team schedule/calendar surface already exposed by AHM Verdun/Scoresheets. The bounded weekly AHMV PDF is accepted only as a reviewed fallback while the exact continuous export/API is being certified.
 
 The importer must be implemented only after the exact reviewed Rétroaction export/API/calendar URL is obtained. Until then, use the ingestion endpoint only with a reviewed official publisher. Never stamp a stale weekly PDF with a new `updatedAt` merely to make it look fresh.
