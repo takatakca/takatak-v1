@@ -94,7 +94,7 @@ async function requireGuardianAccess(identityId: string, familyId: string) {
 
 async function requireFamilySyncEntitlement(ownerIdentityId: string) {
   const features = await getIdentityHockeyFeatures(ownerIdentityId);
-  if (!features.has("family_sync")) {
+  if (!features.has("family_live_coordination")) {
     throw new ServiceError(
       "forbidden",
       "This hockey family does not currently include Premium family sync.",
