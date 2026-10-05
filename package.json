@@ -27,7 +27,7 @@
     "artifact:smoke": "node scripts/artifact-startup-smoke.cjs",
     "smoke:auth": "tsx scripts/smoke-auth-json.ts",
     "smoke:ahmv-content": "tsx scripts/smoke-ahmv-content.ts",
-    "qa": "npm run db:generate && npm run check:sources && npm run typecheck && npm run lint && npm run test:auth && npm run test:identity && npm run build && npm run check:modules",
+    "qa": "npm run db:generate && npm run check:sources && npm run typecheck && npm run lint && npm run test:auth && npm run test:identity && npm run build && npm run check:modules && npm run qa:ads",
     "qa:auth": "npm run test:auth",
     "qa:secrets": "tsx scripts/check-secrets.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
@@ -81,7 +81,9 @@
     "qa:ahmv-schedule-feed": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-schedule-feed-tests.ts",
     "qa:ahmv-team-games": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-team-games-tests.ts",
     "qa:ahmv-control-plane": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-managed-association-control-tests.ts",
-    "qa:content-contributions": "tsx --require ./scripts/register-server-only.cjs scripts/content-contributions-tests.ts"
+    "qa:content-contributions": "tsx --require ./scripts/register-server-only.cjs scripts/content-contributions-tests.ts",
+    "qa:ads": "tsx scripts/verify-takatak-ads.ts",
+    "ads:seed:ahmv": "tsx scripts/seed-ahmv-ads-publisher.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "6.19.3",
