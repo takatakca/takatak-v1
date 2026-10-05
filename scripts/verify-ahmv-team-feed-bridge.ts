@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import {
   AHMV_PUBLIC_TEAM_ID_RE,
   ahmvTeamIdFromServiceMetadata,
+  ahmvTeamIdsFromMetadata,
+  metadataHasAhmvTeamId,
   bearerMatches,
   publicAhmvFeedItem,
   resolveAhmvTeamFeedAccess,
@@ -26,7 +28,11 @@ const paidService: AhmvMappedService = {
   clientId: "00000000-0000-4000-8000-000000000001",
   businessBrandId: "00000000-0000-4000-8000-000000000002",
   status: "active",
-  metadata: { ahmv: { publicTeamId: "2025191400017305" } },
+  metadata: {
+    ahmv: {
+      publicTeamIds: ["2025191400017305", "2025191400017103"],
+    },
+  },
   businessBrand: { status: "active" },
   client: {
     subscription: {
@@ -44,11 +50,53 @@ check("exact public AHMV team ids only", () => {
   assert.equal(AHMV_PUBLIC_TEAM_ID_RE.test("2025191400017305"), true);
   assert.equal(AHMV_PUBLIC_TEAM_ID_RE.test("2025191400017305x"), false);
   assert.equal(AHMV_PUBLIC_TEAM_ID_RE.test("../other-team"), false);
+
+  assert.deepEqual(
+    ahmvTeamIdsFromMetadata({
+      ahmv: {
+        publicTeamId: "2025191400017305",
+        publicTeamIds: [
+          "2025191400017103",
+          "bad",
+          "2025191400017305",
+        ],
+      },
+    }),
+    ["2025191400017103", "2025191400017305"],
+  );
+
+  assert.equal(
+    metadataHasAhmvTeamId(
+      {
+        ahmv: {
+          publicTeamIds: ["2025191400017305", "2025191400017103"],
+        },
+      },
+      "2025191400017103",
+    ),
+    true,
+  );
+  assert.equal(
+    metadataHasAhmvTeamId(
+      { ahmv: { publicTeamIds: ["2025191400017305"] } },
+      "2025191400017103",
+    ),
+    false,
+  );
+
   assert.equal(
     ahmvTeamIdFromServiceMetadata({
       ahmv: { publicTeamId: "2025191400017305" },
     }),
     "2025191400017305",
+  );
+  assert.equal(
+    ahmvTeamIdFromServiceMetadata({
+      ahmv: {
+        publicTeamIds: ["2025191400017305", "2025191400017103"],
+      },
+    }),
+    null,
   );
   assert.equal(
     ahmvTeamIdFromServiceMetadata({ ahmv: { publicTeamId: "bad" } }),
@@ -163,10 +211,13 @@ check("route fails closed and scopes mapping at database boundary", () => {
   assert.match(route, /AHMV_TEAM_FEED_SHARED_TOKEN/);
   assert.match(route, /x-ahmv-team-id/);
   assert.match(route, /path: \["ahmv", "publicTeamId"\]/);
+  assert.match(route, /path: \["ahmv", "publicTeamIds"\]/);
   assert.match(route, /equals: teamId/);
+  assert.match(route, /array_contains: \[teamId\]/);
   assert.match(route, /take: 2/);
   assert.match(route, /ambiguous_mapping/);
   assert.match(route, /businessBrandId: service\.businessBrandId/);
+  assert.match(route, /metadata: \{[\s\S]*path: \["ahmv", "publicTeamIds"\][\s\S]*array_contains: \[teamId\]/);
   assert.match(route, /take: 20/);
   assert.doesNotMatch(route, /externalObjectId/);
   assert.doesNotMatch(route, /accessToken|refreshToken|providerToken/);
