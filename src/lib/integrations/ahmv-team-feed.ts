@@ -45,14 +45,40 @@ function metadataRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
-export function ahmvTeamIdFromServiceMetadata(metadata: unknown): string | null {
+export function ahmvTeamIdsFromMetadata(metadata: unknown): string[] {
   const root = metadataRecord(metadata);
   const ahmv = metadataRecord(root?.["ahmv"]);
-  const value = ahmv?.["publicTeamId"];
-  if (typeof value !== "string" || !AHMV_PUBLIC_TEAM_ID_RE.test(value)) {
-    return null;
+  if (!ahmv) return [];
+
+  const candidates: unknown[] = [];
+  if (typeof ahmv["publicTeamId"] === "string") {
+    candidates.push(ahmv["publicTeamId"]);
   }
-  return value;
+  if (Array.isArray(ahmv["publicTeamIds"])) {
+    candidates.push(...ahmv["publicTeamIds"]);
+  }
+
+  return [...new Set(
+    candidates.filter(
+      (value): value is string =>
+        typeof value === "string" && AHMV_PUBLIC_TEAM_ID_RE.test(value),
+    ),
+  )].sort();
+}
+
+export function ahmvTeamIdFromServiceMetadata(metadata: unknown): string | null {
+  const ids = ahmvTeamIdsFromMetadata(metadata);
+  return ids.length === 1 ? ids[0] ?? null : null;
+}
+
+export function metadataHasAhmvTeamId(
+  metadata: unknown,
+  teamId: string,
+): boolean {
+  return (
+    AHMV_PUBLIC_TEAM_ID_RE.test(teamId) &&
+    ahmvTeamIdsFromMetadata(metadata).includes(teamId)
+  );
 }
 
 export function bearerMatches(
