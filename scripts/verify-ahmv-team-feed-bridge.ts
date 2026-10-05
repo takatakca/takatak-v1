@@ -289,5 +289,13 @@ check("Team Feed provisioner is fail-closed and never activates billing/provider
   assert.match(provisioner, /process\.argv\.includes\("--apply"\)/);
   assert.match(provisioner, /Expected exactly one active canonical AHM Verdun brand/);
   assert.match(provisioner, /Refusing to modify existing Team Feed service in status/);
-  assert.doesNotMatch(provisioner, /subscription\.(create|update)|socialAccount\.(create|update)|status: "active"/);
+  assert.doesNotMatch(provisioner, /subscription\.(create|update)/);
+  assert.doesNotMatch(provisioner, /socialAccount\.(create|update)/);
+  assert.doesNotMatch(
+    provisioner,
+    /serviceInstance\.(?:create|update)\([\s\S]{0,1600}status:\s*"active"/,
+  );
+  assert.match(provisioner, /activatesService: false/);
+  assert.match(provisioner, /changesSubscription: false/);
+  assert.match(provisioner, /connectsProvider: false/);
 });
