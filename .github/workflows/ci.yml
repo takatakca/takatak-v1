@@ -103,6 +103,9 @@ jobs:
       - name: Secret scan
         run: npm run qa:secrets
 
+      - name: Production migration reconciler syntax
+        run: node --check scripts/reconcile-production-migrations.mjs
+
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
 
