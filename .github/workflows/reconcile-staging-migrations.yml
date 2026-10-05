@@ -1,0 +1,95 @@
+name: Reconcile TAKATAK staging migrations
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Audit or apply approved staging migrations"
+        required: true
+        default: audit
+        type: choice
+        options:
+          - audit
+          - apply
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-staging-migrations
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main'
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: staging
+    env:
+      RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+      CONFIRM_PROJECT_REF: utuvzrqvivqyziibobvu
+      TAKATAK_STAGING_DATABASE_URL: ${{ secrets.TAKATAK_STAGING_DATABASE_URL }}
+      RECONCILE_MODE: ${{ github.event_name == 'workflow_run' && 'apply' || inputs.mode }}
+
+    steps:
+      - name: Checkout exact green release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+
+      - name: Refuse stale main release
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          test -n "$CURRENT_MAIN" || {
+            echo "ERROR: Could not resolve current main."
+            exit 1
+          }
+          if [ "$RELEASE_SHA" != "$CURRENT_MAIN" ]; then
+            echo "ERROR: Refusing stale staging migration train."
+            echo "Release SHA: $RELEASE_SHA"
+            echo "Current main: $CURRENT_MAIN"
+            exit 1
+          fi
+
+      - name: Validate staging database secret
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${TAKATAK_STAGING_DATABASE_URL:-}" || {
+            echo "ERROR: TAKATAK_STAGING_DATABASE_URL is missing."
+            exit 1
+          }
+          case "$TAKATAK_STAGING_DATABASE_URL" in
+            *utuvzrqvivqyziibobvu*) ;;
+            *)
+              echo "ERROR: staging database URL does not contain the expected staging project ref."
+              exit 1
+              ;;
+          esac
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prisma generate
+        run: npm run db:generate
+
+      - name: Audit or apply approved staging migrations
+        run: node scripts/reconcile-staging-migrations.mjs
