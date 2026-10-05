@@ -103,7 +103,7 @@ In Coolify, set the server build concurrency to 1 so two Next.js builds cannot r
 
 On `takatak-core-01` this was already installed (`coollabsio/coolify:4.3.23`, Docker 29.8.2). A second copy was not installed. `server_settings.concurrent_builds` is 1. See `COOLIFY_HOST.md`.
 
-Coolify UI hostname, later: `coolify.takatak.ca`. Do not create that DNS record until the operator is ready. HTTPS for Coolify and the app hostnames is Coolify's proxy with its certificate issuer. Do not terminate those names on MochaHost.
+Coolify UI hostname: `coolify.takatak.ca`. That A record already points at `31.220.96.134`, and HTTPS with a Let's Encrypt certificate already answers. `dashboard.takatak.ca`, `api.takatak.ca`, and email DNS were not changed. Do not terminate those names on MochaHost.
 
 ## 9. APP_KEY off the box
 

@@ -33,3 +33,9 @@ Containers that were already up and healthy: `coolify`, `coolify-db`, `coolify-r
 | `GROUPE TAKATAK` | `production`, `stagging` (name is misspelled) |
 
 Applications already present, Coolify status `exited:unhealthy` at the time of this record: `test server`, two resources named `takatak-staging`, and `takatak-v1` with FQDN `https://takatak.ca`. Production workers were not started. Customer DNS was not changed. The `https://takatak.ca` row was not deleted and was not pointed at this server from public DNS (`takatak.ca` still resolves to MochaHost).
+
+## HTTPS for coolify.takatak.ca
+
+No DNS change was required. `coolify.takatak.ca` already has an A record to `31.220.96.134`. `dashboard.takatak.ca`, `api.takatak.ca`, `takatak.ca`, and the MX record (`0 mail.takatak.ca`) were not edited.
+
+`https://coolify.takatak.ca` returns HTTP/2 302 to `https://coolify.takatak.ca/login`. The certificate is Let's Encrypt (issuer `YR1`), subject `CN=coolify.takatak.ca`, valid from 2026-10-03 through 2027-01-01. The proxy is the existing `traefik:v3.6` container. HTTP on that host redirects to HTTPS.
