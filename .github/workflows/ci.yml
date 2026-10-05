@@ -103,8 +103,10 @@ jobs:
       - name: Secret scan
         run: npm run qa:secrets
 
-      - name: TAKATAK staging release safeguards
-        run: npm run qa:staging-release
+      - name: TAKATAK staging migration + release safeguards
+        run: |
+          node --check scripts/reconcile-staging-migrations.mjs
+          npm run qa:staging-release
 
       - name: Production migration reconciler safeguards
         run: |
