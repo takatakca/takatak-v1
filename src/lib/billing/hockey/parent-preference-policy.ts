@@ -1,4 +1,7 @@
-import type { HockeyMembershipFeature } from "./types";
+export type HockeyParentPreferenceFeature =
+  | "game_reminders"
+  | "calendar_sync"
+  | "smart_departure";
 
 export const HOCKEY_PARENT_PREFERENCE_FEATURES = {
   smsReminders: "game_reminders",
@@ -6,7 +9,7 @@ export const HOCKEY_PARENT_PREFERENCE_FEATURES = {
   departureAlerts: "smart_departure",
 } as const satisfies Record<
   "smsReminders" | "calendarSync" | "departureAlerts",
-  HockeyMembershipFeature
+  HockeyParentPreferenceFeature
 >;
 
 export type HockeyParentPreferenceInput = {
@@ -99,8 +102,8 @@ export function validateHockeyParentPreferenceInput(value: unknown):
 
 export function enabledPreferenceFeatures(
   input: HockeyParentPreferenceInput,
-): HockeyMembershipFeature[] {
-  const features = new Set<HockeyMembershipFeature>();
+): HockeyParentPreferenceFeature[] {
+  const features = new Set<HockeyParentPreferenceFeature>();
 
   if (input.smsReminders) {
     features.add(HOCKEY_PARENT_PREFERENCE_FEATURES.smsReminders);
