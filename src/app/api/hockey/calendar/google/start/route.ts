@@ -2,11 +2,9 @@ import { NextRequest } from "next/server";
 
 import { getSessionUser } from "@/lib/auth/supabase-server";
 import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
-import { validateHockeyCheckoutInput } from "@/lib/billing/hockey/membership-policy";
-import { startHockeyMembershipCheckout } from "@/lib/billing/hockey/stripe-service";
-import { originFromRequest } from "@/lib/config/app-origin";
+import { startHockeyGoogleCalendarOAuth } from "@/lib/hockey/calendar/google-oauth-service";
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
-import { hasValidWriteOrigin, readJsonBody } from "@/lib/security/write-request";
+import { hasValidWriteOrigin } from "@/lib/security/write-request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,44 +34,21 @@ export async function POST(request: NextRequest) {
   }
   if (sync.outcome === "unavailable" || sync.outcome === "error") {
     return jsonResponse(
-      { ok: false, message: "Membership identity is temporarily unavailable." },
+      { ok: false, message: "TAKATAK identity is temporarily unavailable." },
       503,
     );
   }
 
-  const bodyResult = await readJsonBody(request);
-  if (!bodyResult.ok) {
-    return jsonResponse(
-      { ok: false, message: bodyResult.message },
-      bodyResult.status,
-    );
-  }
-
-  const validation = validateHockeyCheckoutInput(bodyResult.body);
-  if (!validation.success) {
-    return jsonResponse(
-      {
-        ok: false,
-        message: validation.message,
-        fieldErrors: validation.fieldErrors,
-      },
-      400,
-    );
-  }
-
   try {
-    const result = await startHockeyMembershipCheckout({
+    const result = await startHockeyGoogleCalendarOAuth({
       authUserId: user.id,
-      planCode: validation.data.planCode,
-      requestOrigin: originFromRequest(request),
     });
-
     return jsonResponse({ ok: true, url: result.url }, 200);
   } catch (error) {
     return handleApiError(
-      "hockey-membership-checkout",
+      "hockey-google-calendar-start",
       error,
-      "AHMV membership checkout could not be started.",
+      "Google Calendar connection could not be started.",
     );
   }
 }

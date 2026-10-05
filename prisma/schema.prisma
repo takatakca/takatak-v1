@@ -3096,6 +3096,18 @@ model MasterIdentity {
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
+  hockeyParentPreferences HockeyParentTeamPreference[]
+  hockeyPremiumGrants       HockeyPremiumGrant[]
+  hockeyDeliveryJobs        HockeyDeliveryJob[]
+  hockeyCalendarConnections HockeyCalendarConnection[]
+  hockeyCalendarOAuthStates HockeyCalendarOAuthState[]
+  hockeyFamiliesOwned       HockeyFamily[] @relation("HockeyFamilyOwner")
+  hockeyFamilyMemberships   HockeyFamilyMember[] @relation("HockeyFamilyLinkedIdentity")
+  hockeyFamilyInvitesCreated HockeyFamilyInvite[] @relation("HockeyFamilyInviteCreator")
+  hockeyFamilyInvitesAccepted HockeyFamilyInvite[] @relation("HockeyFamilyInviteAccepted")
+  hockeyFamilyPlansCreated    HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanCreator")
+  hockeyFamilyRsvpsUpdated     HockeyFamilyEventRsvp[] @relation("HockeyFamilyRsvpUpdater")
+  hockeyTravelProfiles      HockeyTravelProfile[]
 }
 
 /// Person/family hockey membership owned by the TAKATAK master identity.
@@ -3660,4 +3672,376 @@ model AdEvent {
   @@index([placementId, occurredAt])
   @@index([type, occurredAt])
   @@map("ad_events")
+}
+
+
+model HockeyParentTeamPreference {
+  id                    String   @id @default(uuid()) @db.Uuid
+  identityId            String   @db.Uuid
+  sourceApplication     String   @default("ahmverdun")
+  teamId                String
+  smsReminders          Boolean  @default(false)
+  calendarSync          Boolean  @default(false)
+  departureAlerts       Boolean  @default(false)
+  arrivalBufferMinutes  Int      @default(30)
+  smsConsentAt          DateTime?
+  calendarConsentAt     DateTime?
+  departureConsentAt    DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication, teamId])
+  @@index([identityId, sourceApplication])
+  @@index([sourceApplication, teamId])
+  @@map("hockey_parent_team_preferences")
+}
+
+
+model HockeyPremiumGrant {
+  id                String   @id @default(uuid()) @db.Uuid
+  identityId        String   @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  grantType         String   @default("supporter_thank_you")
+  sourceReference   String
+  status            String   @default("available")
+  planCode          String   @default("hockey_member_weekly_10")
+  grantedWeeks      Int      @default(4)
+  activatedAt       DateTime?
+  expiresAt         DateTime?
+  revokedAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceApplication, sourceReference])
+  @@index([identityId, sourceApplication, status])
+  @@index([identityId, expiresAt])
+  @@map("hockey_premium_grants")
+}
+
+
+model HockeyTeamEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  sourceEventId     String
+  teamId            String
+  eventType         String
+  title             String
+  startsAt          DateTime
+  endsAt            DateTime?
+  timezone          String   @default("America/Toronto")
+  arenaName         String?
+  arenaAddress      String?
+  arenaLatitude     Float?
+  arenaLongitude    Float?
+  status            String   @default("confirmed")
+  sourceUrl         String?
+  sourceUpdatedAt   DateTime
+  payloadHash       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  deliveryJobs     HockeyDeliveryJob[]
+  calendarMappings HockeyCalendarEventMapping[]
+  familyPlans      HockeyFamilyEventPlan[]
+  familyRsvps      HockeyFamilyEventRsvp[]
+
+  @@unique([sourceApplication, sourceEventId])
+  @@index([sourceApplication, teamId, startsAt])
+  @@index([startsAt, status])
+  @@map("hockey_team_events")
+}
+
+
+model HockeyDeliveryJob {
+  id             String   @id @default(uuid()) @db.Uuid
+  identityId     String   @db.Uuid
+  teamEventId    String   @db.Uuid
+  kind           String
+  status         String   @default("queued")
+  scheduledAt    DateTime
+  dedupeKey      String   @unique
+  eventRevision  String
+  attemptCount   Int      @default(0)
+  lockedAt       DateTime?
+  completedAt    DateTime?
+  lastErrorCode  String?
+  lastErrorMessage String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  identity  MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledAt])
+  @@index([identityId, status])
+  @@index([teamEventId, kind])
+  @@map("hockey_delivery_jobs")
+}
+
+
+model HockeyCalendarConnection {
+  id                   String   @id @default(uuid()) @db.Uuid
+  identityId           String   @db.Uuid
+  sourceApplication    String   @default("ahmverdun")
+  provider             String   @default("google")
+  status               String   @default("pending")
+  externalAccountId    String?
+  displayName          String?
+  calendarId           String   @default("primary")
+  scopes               String[] @default([])
+  tokenCiphertext      String?
+  tokenIv              String?
+  tokenAuthTag         String?
+  tokenKeyVersion      Int      @default(1)
+  accessTokenExpiresAt DateTime?
+  connectedAt          DateTime?
+  lastValidatedAt      DateTime?
+  lastErrorCode        String?
+  lastErrorMessage     String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  mappings HockeyCalendarEventMapping[]
+
+  @@unique([identityId, sourceApplication, provider])
+  @@index([status])
+  @@index([identityId, status])
+  @@map("hockey_calendar_connections")
+}
+
+
+model HockeyCalendarOAuthState {
+  id                   String   @id @default(uuid()) @db.Uuid
+  identityId           String   @db.Uuid
+  sourceApplication    String   @default("ahmverdun")
+  provider             String   @default("google")
+  stateHash            String   @unique
+  verifierCiphertext   String
+  verifierIv           String
+  verifierAuthTag      String
+  verifierKeyVersion   Int      @default(1)
+  status               String   @default("pending")
+  returnPath           String
+  expiresAt            DateTime
+  consumedAt           DateTime?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, status])
+  @@index([expiresAt])
+  @@map("hockey_calendar_oauth_states")
+}
+
+
+model HockeyCalendarEventMapping {
+  id              String   @id @default(uuid()) @db.Uuid
+  connectionId    String   @db.Uuid
+  teamEventId     String   @db.Uuid
+  providerEventId String
+  eventRevision   String
+  status          String   @default("active")
+  lastSyncedAt    DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  connection HockeyCalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  teamEvent  HockeyTeamEvent @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, teamEventId])
+  @@index([providerEventId])
+  @@index([teamEventId])
+  @@map("hockey_calendar_event_mappings")
+}
+
+
+model HockeyPublicTeam {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  teamId            String
+  categorySlug      String?
+  level             String?
+  name              String
+  seasonCode        String?
+  active            Boolean  @default(true)
+  sourceUpdatedAt   DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  selections HockeyFamilyTeamSelection[]
+
+  @@unique([sourceApplication, teamId])
+  @@index([sourceApplication, active])
+  @@index([categorySlug, level])
+  @@map("hockey_public_teams")
+}
+
+
+model HockeyFamily {
+  id                String   @id @default(uuid()) @db.Uuid
+  ownerIdentityId   String   @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  displayName       String?
+  status            String   @default("active")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  owner      MasterIdentity            @relation("HockeyFamilyOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
+  members    HockeyFamilyMember[]
+  selections HockeyFamilyTeamSelection[]
+  invites     HockeyFamilyInvite[]
+  eventPlans  HockeyFamilyEventPlan[]
+  eventRsvps   HockeyFamilyEventRsvp[]
+
+  @@unique([ownerIdentityId, sourceApplication])
+  @@index([status])
+  @@map("hockey_families")
+}
+
+
+model HockeyFamilyMember {
+  id               String   @id @default(uuid()) @db.Uuid
+  familyId         String   @db.Uuid
+  linkedIdentityId String?  @db.Uuid
+  memberCode       String   @unique
+  memberType       String
+  displayName      String
+  status           String   @default("active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  family         HockeyFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  linkedIdentity MasterIdentity? @relation("HockeyFamilyLinkedIdentity", fields: [linkedIdentityId], references: [id], onDelete: SetNull)
+  selections     HockeyFamilyTeamSelection[]
+  plansAsChild   HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanChild")
+  plansAsDriver  HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanDriver")
+  eventRsvps     HockeyFamilyEventRsvp[]
+
+  @@unique([familyId, linkedIdentityId])
+  @@index([familyId, memberType, status])
+  @@index([linkedIdentityId, status])
+  @@map("hockey_family_members")
+}
+
+
+model HockeyFamilyTeamSelection {
+  id            String   @id @default(uuid()) @db.Uuid
+  familyId      String   @db.Uuid
+  memberId      String   @db.Uuid
+  publicTeamId  String   @db.Uuid
+  selectionType String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  family     HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  member     HockeyFamilyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  publicTeam HockeyPublicTeam   @relation(fields: [publicTeamId], references: [id], onDelete: Restrict)
+
+  @@unique([memberId, publicTeamId, selectionType])
+  @@index([familyId, selectionType])
+  @@index([publicTeamId])
+  @@map("hockey_family_team_selections")
+}
+
+
+model HockeyFamilyInvite {
+  id                 String   @id @default(uuid()) @db.Uuid
+  familyId           String   @db.Uuid
+  inviterIdentityId  String   @db.Uuid
+  acceptedIdentityId String?  @db.Uuid
+  tokenHash          String   @unique
+  role               String   @default("guardian")
+  status             String   @default("pending")
+  expiresAt          DateTime
+  acceptedAt         DateTime?
+  revokedAt          DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  family           HockeyFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  inviterIdentity  MasterIdentity  @relation("HockeyFamilyInviteCreator", fields: [inviterIdentityId], references: [id], onDelete: Cascade)
+  acceptedIdentity MasterIdentity? @relation("HockeyFamilyInviteAccepted", fields: [acceptedIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([familyId, status, expiresAt])
+  @@index([inviterIdentityId, status])
+  @@index([acceptedIdentityId])
+  @@map("hockey_family_invites")
+}
+
+
+model HockeyFamilyEventPlan {
+  id                  String   @id @default(uuid()) @db.Uuid
+  familyId            String   @db.Uuid
+  teamEventId         String   @db.Uuid
+  childMemberId       String   @db.Uuid
+  driverMemberId      String   @db.Uuid
+  createdByIdentityId String   @db.Uuid
+  status              String   @default("planned")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  family    HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent    @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  child     HockeyFamilyMember @relation("HockeyFamilyPlanChild", fields: [childMemberId], references: [id], onDelete: Cascade)
+  driver    HockeyFamilyMember @relation("HockeyFamilyPlanDriver", fields: [driverMemberId], references: [id], onDelete: Cascade)
+  createdBy MasterIdentity     @relation("HockeyFamilyPlanCreator", fields: [createdByIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, teamEventId, childMemberId])
+  @@index([familyId, status])
+  @@index([teamEventId, status])
+  @@index([driverMemberId, status])
+  @@map("hockey_family_event_plans")
+}
+
+
+model HockeyFamilyEventRsvp {
+  id                  String   @id @default(uuid()) @db.Uuid
+  familyId            String   @db.Uuid
+  teamEventId         String   @db.Uuid
+  childMemberId       String   @db.Uuid
+  updatedByIdentityId String   @db.Uuid
+  status              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  family    HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent    @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  child     HockeyFamilyMember @relation(fields: [childMemberId], references: [id], onDelete: Cascade)
+  updatedBy MasterIdentity     @relation("HockeyFamilyRsvpUpdater", fields: [updatedByIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, teamEventId, childMemberId])
+  @@index([familyId, status])
+  @@index([teamEventId, status])
+  @@map("hockey_family_event_rsvps")
+}
+
+
+model HockeyTravelProfile {
+  id                 String   @id @default(uuid()) @db.Uuid
+  identityId         String   @db.Uuid
+  sourceApplication  String   @default("ahmverdun")
+  status             String   @default("active")
+  originLabel        String?
+  originCiphertext   String
+  originIv           String
+  originAuthTag      String
+  originKeyVersion   Int      @default(1)
+  departureConsentAt DateTime
+  lastUsedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication])
+  @@index([status])
+  @@index([identityId, status])
+  @@map("hockey_travel_profiles")
 }
