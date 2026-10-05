@@ -53,7 +53,7 @@ async function main(): Promise<void> {
     where: { code: PUBLISHER_CODE },
     update: {
       name: "AHM Verdun",
-      domain: "ahmverdun.com",
+      domain: "ahmverdun.ca",
       category: "hockey",
       country: "Canada",
       region: "Quebec",
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
     create: {
       code: PUBLISHER_CODE,
       name: "AHM Verdun",
-      domain: "ahmverdun.com",
+      domain: "ahmverdun.ca",
       category: "hockey",
       country: "Canada",
       region: "Quebec",
