@@ -4,7 +4,7 @@ import { ArrowUpRight, Ticket } from "lucide-react";
 import { AlkaoFrame } from "@/components/ticketing/alkao-frame";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getServerAccessContext } from "@/lib/security/access-context";
-import { hasEnabledServiceModule } from "@/lib/services/service-access";
+import { hasAlkaoTicketing } from "@/lib/ticketing/alkao-access";
 import { getAlkaoOpsOrigin } from "@/lib/ticketing/alkao-config";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function TicketingDashboardPage() {
   const { access } = await getServerAccessContext();
-  const enabled = await hasEnabledServiceModule(access, "ticketing");
+  const enabled = hasAlkaoTicketing(access);
 
   if (!enabled) {
     redirect("/dashboard");

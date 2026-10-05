@@ -1,7 +1,12 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { TenantAccess } from "../src/lib/security/tenant-access";
+import {
+  DASHBOARD_SERVICE_MODULES,
+  isDashboardServiceModule,
+} from "../src/lib/services/service-modules";
+import { hasAlkaoTicketing, parseAlkaoClientIds } from "../src/lib/ticketing/alkao-access";
 import { parseAlkaoOpsOrigin } from "../src/lib/ticketing/alkao-config";
-import { isDashboardServiceModule } from "../src/lib/services/service-modules";
 
 type Row = { name: string; ok: boolean; detail: string };
 const rows: Row[] = [];
@@ -16,24 +21,57 @@ function read(relative: string) {
 }
 
 function main() {
+  const havana = "11111111-1111-4111-8111-111111111111";
+  const other = "22222222-2222-4222-8222-222222222222";
+  const scoped = (activeClientId: string): TenantAccess => ({
+    mode: "client_scoped",
+    profileId: "p",
+    role: "owner",
+    allowedClientIds: [activeClientId],
+    activeClientId,
+    customPermissions: [],
+    deniedPermissions: [],
+  });
+
   check(
-    "Ticketing is a recognized commercial module",
-    isDashboardServiceModule("ticketing"),
-    "ALKAO Ticketing is provisioned per Client through ServiceInstance",
+    "Existing ServiceInstance modules are unchanged",
+    JSON.stringify(DASHBOARD_SERVICE_MODULES) === JSON.stringify(["rentauto"]) &&
+      !isDashboardServiceModule("ticketing"),
+    "ticketing never enters the Rentauto/ServiceInstance query",
   );
 
   const schema = read("prisma/schema.prisma");
-  const migrations = fs
+  const alkaoMigrations = fs
     .readdirSync(path.join(process.cwd(), "prisma/migrations"))
-    .filter((dir) => dir.endsWith("_alkao_ticketing_service_module"));
+    .filter((dir) => /alkao|ticketing/i.test(dir));
   check(
-    "ServiceType has a migrated ticketing value",
-    /enum ServiceType \{[^}]*\bticketing\b[^}]*\}/.test(schema) &&
-      migrations.length === 1 &&
-      /ALTER TYPE "ServiceType" ADD VALUE IF NOT EXISTS 'ticketing'/.test(
-        read(`prisma/migrations/${migrations[0]}/migration.sql`),
-      ),
-    "the Prisma enum and the database enum must both know ticketing",
+    "ALKAO needs no TAKATAK database change",
+    !/\bticketing\b/.test(schema) && alkaoMigrations.length === 0,
+    "no Prisma schema change and no migration: nothing to apply, nothing to roll back",
+  );
+
+  const allowed = parseAlkaoClientIds(` ${havana.toUpperCase()}, not-a-uuid,,`);
+  check(
+    "Menu is off unless the Client is listed in ALKAO_TICKETING_CLIENT_IDS",
+    !hasAlkaoTicketing(scoped(havana), parseAlkaoClientIds(undefined)) &&
+      !hasAlkaoTicketing(scoped(havana), parseAlkaoClientIds("")) &&
+      hasAlkaoTicketing(scoped(havana), allowed) &&
+      !hasAlkaoTicketing(scoped(other), allowed) &&
+      allowed.size === 1,
+    "default off; only listed Clients, ids validated",
+  );
+  check(
+    "Non client-scoped sessions never get the menu",
+    !hasAlkaoTicketing({ mode: "foundation_demo", role: "owner", warning: "" }, allowed) &&
+      !hasAlkaoTicketing({ mode: "denied", reason: "not_authenticated" }, allowed),
+    "foundation demo and denied sessions see nothing",
+  );
+
+  const layout = read("src/app/dashboard/layout.tsx");
+  check(
+    "Dashboard layout only appends the ALKAO module",
+    /\.\.\.\(await getEnabledServiceModules\(access\)\),\s*\.\.\.getAlkaoServiceModules\(access\),/.test(layout),
+    "existing modules are computed exactly as before",
   );
 
   const config = read("src/lib/dashboard/dashboard-config.ts");
@@ -45,10 +83,9 @@ function main() {
 
   const page = read("src/app/dashboard/ticketing/page.tsx");
   check(
-    "Direct ticketing route checks entitlement before rendering ALKAO",
-    page.indexOf('hasEnabledServiceModule(access, "ticketing")') >= 0 &&
-      page.indexOf('hasEnabledServiceModule(access, "ticketing")') <
-        page.indexOf("getAlkaoOpsOrigin()") &&
+    "Direct ticketing route checks access before rendering ALKAO",
+    page.indexOf("hasAlkaoTicketing(access)") >= 0 &&
+      page.indexOf("hasAlkaoTicketing(access)") < page.indexOf("getAlkaoOpsOrigin()") &&
       /if \(!enabled\) \{\s*redirect\("\/dashboard"\);/.test(page),
     "direct URL access must be gated before the frame is rendered",
   );
