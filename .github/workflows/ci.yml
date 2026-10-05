@@ -58,6 +58,9 @@ jobs:
       - name: Queue foundation checks
         run: npm run qa:queue
 
+      - name: Coolify workflow shape
+        run: npm run qa:workflow
+
       - name: Facebook content ingest safeguards
         run: npm run qa:social-step8-content
 

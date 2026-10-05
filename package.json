@@ -65,6 +65,7 @@
     "worker:social": "tsx --require ./scripts/register-server-only.cjs src/workers/social.ts",
     "worker:webhooks": "tsx --require ./scripts/register-server-only.cjs src/workers/webhooks.ts",
     "qa:queue": "tsx --require ./scripts/register-server-only.cjs scripts/queue-foundation-tests.ts",
+    "qa:workflow": "node scripts/check-coolify-workflow.cjs",
     "worker:social-sync:backfill": "tsx scripts/run-facebook-historical-backfill.ts",
     "qa:upmind-webhook": "tsx scripts/upmind-webhook-tests.ts",
     "qa:social-entitlements": "tsx scripts/verify-social-entitlements.ts",
