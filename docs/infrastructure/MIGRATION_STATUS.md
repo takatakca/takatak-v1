@@ -38,6 +38,7 @@ Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
 - [x] Coolify project `GROUPE TAKATAK` has separate `staging` and `production` environments. The misspelled `stagging` row was renamed to `staging`. Production workers were not started.
 - [x] `takatak-redis-staging` is a private Coolify Redis on staging only (`redis:7.4-alpine`, AOF, `noeviction`, auth, no public hostname, no host port 6379). Production has no Redis resource.
 - [x] Staging web from `infra/contabo-coolify` at `6ac24e6` is deployed in `GROUPE TAKATAK` / `staging`. `https://staging.takatak.ca/api/health/ready` returns ok for database, Supabase, and the private staging Redis. Queue flags stay false. No production worker was started.
+- [x] Staging workers `takatak-worker-general`, `takatak-worker-social`, and `takatak-worker-webhooks` exist in `GROUPE TAKATAK` / `staging`. They are stopped, have no public URL, auto-deploy is off, and their Redis host is only `takatak-redis-staging`. Queue flags are false.
 - [x] Production workers are stopped. `dashboard.takatak.ca`, `api.takatak.ca`, `takatak.ca`, and email DNS were not changed. MochaHost was not changed.
 - [ ] Private staging Redis
 - [ ] Private production Redis

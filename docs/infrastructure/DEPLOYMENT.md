@@ -86,7 +86,7 @@ The job `Gate Coolify deploy webhook` runs only after that job succeeds, only on
 2. Create staging Redis with no public port.
 3. Create the staging web service on `staging.takatak.ca` with build args and runtime env.
 4. Confirm `GET /api/health/ready` is 200 and the body has no secrets.
-5. Leave workers stopped. Keep MochaHost cron as the social consumer.
+5. Leave workers stopped. Keep MochaHost cron as the social consumer. On `takatak-core-01`, the three staging worker resources exist, are stopped, and have no public hostname.
 6. Exercise login, one Stripe test webhook (inline), and one social callback against staging URLs.
 7. Only then set `TAKATAK_QUEUE_ENABLED=true` and start the social worker in staging.
 8. Start the webhooks worker and set `TAKATAK_QUEUE_WEBHOOKS=true` only after it is healthy. Otherwise Stripe events would be acknowledged and left in Redis.

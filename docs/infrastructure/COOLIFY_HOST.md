@@ -94,3 +94,15 @@ Docker reports the container healthy. The password stays in Coolify's environmen
 The production application `takatak-v1` in `GROUPE TAKATAK` is exited. Its Coolify FQDN is `https://takatak.ca`, and public DNS for `takatak.ca` still points at MochaHost (`209.42.24.127`). `dashboard.takatak.ca` and `api.takatak.ca` have no A record. MX is still `0 mail.takatak.ca`. None of those records were changed. No production worker container is running.
 
 The staging web application in `GROUPE TAKATAK` / `staging` now tracks `infra/contabo-coolify` at `6ac24e6`. It uses the root Dockerfile. Its runtime `REDIS_URL` points only at `takatak-redis-staging` on the private Docker network. `TAKATAK_QUEUE_ENABLED` and `TAKATAK_QUEUE_WEBHOOKS` are false. `https://staging.takatak.ca/api/health/ready` returns ok for the database, Supabase, and Redis. The production application is still exited on `main`. No worker container is running.
+
+## Staging workers
+
+Three Coolify applications exist in `GROUPE TAKATAK` / `staging`. They were not deployed and have no containers.
+
+| Resource | Start command | `TAKATAK_PROCESS` | Public URL | Auto deploy |
+| --- | --- | --- | --- | --- |
+| `takatak-worker-general` | `npm run worker:general` | `general` | none | off |
+| `takatak-worker-social` | `npm run worker:social` | `social` | none | off |
+| `takatak-worker-webhooks` | `npm run worker:webhooks` | `webhooks` | none | off |
+
+Each one uses `takatak-redis-staging` only (`redis` on that container's private port 6379). `TAKATAK_QUEUE_ENABLED` and `TAKATAK_QUEUE_WEBHOOKS` are false. `TAKATAK_QUEUE_PREFIX` is `takatak-staging`. No host port is published. Production workers were not created or started.
