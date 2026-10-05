@@ -1,9 +1,6 @@
 import "server-only";
 
-import {
-  HOCKEY_MEMBERSHIP_CATALOG,
-  isHockeyMembershipPlanCode,
-} from "@/lib/billing/hockey/plan-catalog";
+import { getAhmvCatalogPlan } from "@/lib/billing/hockey/product-catalog-service";
 import {
   HOCKEY_SOURCE_APPLICATION,
   resolveHockeyMembershipAccess,
@@ -51,19 +48,16 @@ export async function getIdentityHockeyFeatures(
   const membership = identity.hockeyMemberships[0] ?? null;
   if (
     membership &&
-    resolveHockeyMembershipAccess(membership.status) === "paid" &&
-    isHockeyMembershipPlanCode(membership.planCode)
+    resolveHockeyMembershipAccess(membership.status) === "paid"
   ) {
-    return new Set(HOCKEY_MEMBERSHIP_CATALOG[membership.planCode].features);
+    const plan = await getAhmvCatalogPlan(membership.planCode);
+    if (plan) return new Set(plan.entitlements);
   }
 
   const grant = identity.hockeyPremiumGrants[0] ?? null;
-  if (
-    grant &&
-    isActiveSupporterGrant(grant, now) &&
-    isHockeyMembershipPlanCode(grant.planCode)
-  ) {
-    return new Set(HOCKEY_MEMBERSHIP_CATALOG[grant.planCode].features);
+  if (grant && isActiveSupporterGrant(grant, now)) {
+    const plan = await getAhmvCatalogPlan(grant.planCode);
+    if (plan) return new Set(plan.entitlements);
   }
 
   return new Set();
