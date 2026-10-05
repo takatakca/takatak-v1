@@ -23,6 +23,7 @@ Repository foundation only. Contabo, Coolify, DNS, and production are not done.
 - [ ] Production candidate `prod-check.takatak.ca`
 - [ ] DNS cutover
 - [ ] Production workers started
+- [!] Push of `infra/contabo-coolify` and the draft pull request. GitHub is signed in as `takatakca`, and creating the branch ref returned 403 (token cannot write refs). Local commits exist. No production deploy was attempted.
 - [!] Provider consoles (Contabo, Coolify, Cloudflare, GitHub webhook secret, Supabase, Stripe, Meta, Google, Twilio) need a human session before any live step
 
 ## Quality gates
