@@ -111,6 +111,9 @@ jobs:
           node --check scripts/reconcile-staging-migrations.mjs
           npm run qa:staging-release
 
+      - name: AHMV operational readiness safeguards
+        run: npm run qa:ahmv-operational-readiness
+
       - name: Production migration reconciler safeguards
         run: |
           node --check scripts/reconcile-production-migrations.mjs
