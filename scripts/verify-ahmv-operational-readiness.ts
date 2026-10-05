@@ -18,7 +18,8 @@ assert.match(route, /collectAhmvOperationalReadiness/);
 
 assert.match(readiness, /sourceApplication: "ahmverdun"/);
 assert.match(readiness, /\^\\d\{8,24\}\$/);
-assert.match(readiness, /ahmvScheduleMaxAgeMinutes/);
+assert.match(readiness, /ahmvScheduleFreshUntil/);
+assert.match(readiness, /validateAhmvScheduleSnapshot/);
 assert.match(readiness, /tenant: "ahmverdun"/);
 assert.match(readiness, /code: "ahmv"/);
 assert.match(readiness, /publisher\.domain === "ahmverdun\.ca"/);
