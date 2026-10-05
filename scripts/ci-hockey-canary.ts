@@ -122,11 +122,14 @@ async function main() {
 
   const membership = await getHockeyMembershipSnapshot(authUserA);
   assert.equal(membership.access, "paid");
-  assert.equal(membership.accessSource, "stripe");
+  assert.equal(membership.hasAhmvAccess, true);
+  assert.equal(membership.planCode, "parent_essential");
+  assert.equal(membership.legacyPlanCode, "hockey_member_weekly_10");
   assert.ok(membership.features.includes("game_reminders"));
   assert.ok(membership.features.includes("calendar_sync"));
-  assert.ok(membership.features.includes("smart_departure"));
-  assert.ok(membership.features.includes("family_sync"));
+  assert.ok(membership.features.includes("team_community"));
+  assert.ok(membership.features.includes("parent_rideshare"));
+  assert.equal(membership.features.includes("smart_departure"), false);
 
   const family = await ensureDefaultHockeyFamily(authUserA);
   const child = await addHockeyFamilyChild({
