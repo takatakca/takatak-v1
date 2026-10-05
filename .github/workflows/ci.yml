@@ -67,6 +67,9 @@ jobs:
       - name: AHMV hockey membership safeguards
         run: npm run qa:hockey-membership
 
+      - name: AHMV parent/family backend safeguards
+        run: npm run qa:hockey-family-backend
+
       - name: AHMV schedule feed safeguards
         run: npm run qa:ahmv-schedule-feed
 
