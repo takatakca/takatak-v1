@@ -25,7 +25,11 @@ assert.match(readiness, /code: "ahmv"/);
 assert.match(readiness, /publisher\.domain === "ahmverdun\.ca"/);
 assert.match(readiness, /serviceType: "social_media"/);
 assert.match(readiness, /publicTeamIds/);
+assert.match(readiness, /resolveAhmvTeamFeedAccess/);
+assert.match(readiness, /connectedAccountCount > 0/);
 assert.match(readiness, /taggedContentCount > 0/);
+assert.match(readiness, /social_service_or_subscription_not_ready/);
+assert.match(readiness, /connected_social_account_missing/);
 assert.doesNotMatch(readiness, /accessToken|refreshToken|providerToken|TWILIO_AUTH_TOKEN/);
 
 console.log("AHMV operational readiness safeguards: PASS");
