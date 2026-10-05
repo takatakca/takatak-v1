@@ -205,7 +205,7 @@ Input:
 }
 ```
 
-The family owner must currently hold the `family_sync` entitlement, and the accepting person must already be authenticated through TAKATAK Auth. The token is one-time, expires after seven days, is replay-protected and cannot be accepted by the inviter. Acceptance links the authenticated identity to the existing family as an active guardian. No child roster identity is created from the invitation.
+The family owner must currently hold the `family_live_coordination` entitlement, and the accepting person must already be authenticated through TAKATAK Auth. The token is one-time, expires after seven days, is replay-protected and cannot be accepted by the inviter. Acceptance links the authenticated identity to the existing family as an active guardian. No child roster identity is created from the invitation.
 
 ## Child profile lifecycle
 
@@ -293,7 +293,7 @@ This design lets an invited mom/dad/authorized caregiver coordinate driving unde
 
 ## Family event RSVP
 
-Family RSVP is private household coordination under the `family_sync` entitlement. It is not an official roster or attendance record.
+Family RSVP is private household coordination under the `family_live_coordination` entitlement. It is not an official roster or attendance record.
 
 ### GET /api/hockey/family/:familyId/events/:teamEventId/rsvp
 
@@ -315,7 +315,7 @@ Accepted statuses are `going`, `not_going` and `unsure`.
 Rules:
 
 - caller must be an active guardian in the family;
-- family owner must currently hold `family_sync`;
+- family owner must currently hold `family_live_coordination`;
 - child must be assigned to the event's exact verified public team;
 - a cancelled event cannot be marked `going`;
 - only one private RSVP exists per family/event/child.
