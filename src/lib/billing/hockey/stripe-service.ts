@@ -2,22 +2,24 @@ import "server-only";
 
 import type Stripe from "stripe";
 
-import { HOCKEY_MEMBERSHIP_CATALOG, type HockeySelfServePlanCode } from "./plan-catalog";
-import { HOCKEY_SOURCE_APPLICATION, resolveHockeyMembershipAccess } from "./membership-policy";
 import {
-  getHockeyStripePriceId,
-  isHockeyMembershipCheckoutLive,
-} from "./stripe-env";
+  getAhmvSelfServePlan,
+} from "./product-catalog-service";
+import {
+  HOCKEY_SOURCE_APPLICATION,
+  resolveHockeyMembershipAccess,
+} from "./membership-policy";
+import { isHockeyMembershipCheckoutLive } from "./stripe-env";
 import { getHockeyStripe } from "./stripe-client";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 
-const HOCKEY_BILLING_RETURN_PATH = "/dashboard?service=ahmv-membership";
+const HOCKEY_BILLING_RETURN_PATH = "/experiences/ahmv";
 
 function checkoutUrls(origin: string) {
   return {
-    success: `${origin}${HOCKEY_BILLING_RETURN_PATH}&checkout=success`,
-    cancel: `${origin}${HOCKEY_BILLING_RETURN_PATH}&checkout=canceled`,
+    success: `${origin}${HOCKEY_BILLING_RETURN_PATH}?checkout=success`,
+    cancel: `${origin}${HOCKEY_BILLING_RETURN_PATH}?checkout=canceled`,
   };
 }
 
@@ -56,23 +58,42 @@ async function requireMasterIdentity(authUserId: string) {
   return { prisma, identity, membership: identity.hockeyMemberships[0] ?? null };
 }
 
-async function verifyWeeklyMemberPrice(
-  priceId: string,
-): Promise<Stripe.Price> {
-  const stripe = getHockeyStripe();
-  const price = await stripe.prices.retrieve(priceId);
+function stripeInterval(value: string): Stripe.Price.Recurring.Interval | null {
+  return value === "day" ||
+    value === "week" ||
+    value === "month" ||
+    value === "year"
+    ? value
+    : null;
+}
 
+async function verifyCatalogStripePrice(input: {
+  priceId: string;
+  currency: string;
+  unitAmountMinor: number;
+  billingInterval: string;
+  intervalCount: number;
+}): Promise<Stripe.Price> {
+  const expectedInterval = stripeInterval(input.billingInterval);
+  if (!expectedInterval) {
+    throw new ServiceError(
+      "unavailable",
+      "The configured AHMV billing interval is not supported by Stripe.",
+    );
+  }
+
+  const price = await getHockeyStripe().prices.retrieve(input.priceId);
   const valid =
     price.active &&
-    price.currency.toLowerCase() === "cad" &&
-    price.unit_amount === 1000 &&
-    price.recurring?.interval === "week" &&
-    (price.recurring.interval_count ?? 1) === 1;
+    price.currency.toLowerCase() === input.currency.toLowerCase() &&
+    price.unit_amount === input.unitAmountMinor &&
+    price.recurring?.interval === expectedInterval &&
+    (price.recurring.interval_count ?? 1) === input.intervalCount;
 
   if (!valid) {
     throw new ServiceError(
       "unavailable",
-      "The AHMV Member Stripe price is misconfigured. Expected CAD 10.00 billed weekly.",
+      "The configured AHMV Stripe price does not match the TAKATAK Product Catalog.",
     );
   }
 
@@ -121,7 +142,7 @@ async function ensureHockeyCustomer(input: {
 
 export async function startHockeyMembershipCheckout(input: {
   authUserId: string;
-  planCode: HockeySelfServePlanCode;
+  planCode: string;
   requestOrigin: string;
 }): Promise<{ url: string }> {
   if (!isHockeyMembershipCheckoutLive()) {
@@ -130,6 +151,22 @@ export async function startHockeyMembershipCheckout(input: {
       "AHMV membership checkout is not live yet.",
     );
   }
+
+  const plan = await getAhmvSelfServePlan(input.planCode);
+  if (!plan || !plan.price?.providerPriceId || plan.price.provider !== "stripe") {
+    throw new ServiceError(
+      "not_found",
+      "This AHMV plan is not available for self-serve checkout.",
+    );
+  }
+
+  await verifyCatalogStripePrice({
+    priceId: plan.price.providerPriceId,
+    currency: plan.price.currency,
+    unitAmountMinor: plan.price.unitAmountMinor,
+    billingInterval: plan.price.billingInterval,
+    intervalCount: plan.price.intervalCount,
+  });
 
   const { prisma, identity, membership } = await requireMasterIdentity(
     input.authUserId,
@@ -146,13 +183,6 @@ export async function startHockeyMembershipCheckout(input: {
     );
   }
 
-  const priceId = getHockeyStripePriceId(input.planCode);
-  if (!priceId) {
-    throw new ServiceError("unavailable", "The AHMV membership price is not configured.");
-  }
-
-  await verifyWeeklyMemberPrice(priceId);
-
   const fullName = [identity.firstName, identity.lastName]
     .filter(Boolean)
     .join(" ")
@@ -165,8 +195,6 @@ export async function startHockeyMembershipCheckout(input: {
     currentCustomerId: membership?.externalCustomerId ?? null,
   });
 
-  const plan = HOCKEY_MEMBERSHIP_CATALOG[input.planCode];
-
   await prisma.hockeyMembership.upsert({
     where: {
       identityId_sourceApplication: {
@@ -175,8 +203,8 @@ export async function startHockeyMembershipCheckout(input: {
       },
     },
     update: {
-      planCode: plan.planCode,
-      planName: plan.planName,
+      planCode: plan.code,
+      planName: plan.name,
       provider: "stripe",
       externalCustomerId: customerId,
     },
@@ -184,8 +212,8 @@ export async function startHockeyMembershipCheckout(input: {
       identityId: identity.id,
       sourceApplication: HOCKEY_SOURCE_APPLICATION,
       status: "incomplete",
-      planCode: plan.planCode,
-      planName: plan.planName,
+      planCode: plan.code,
+      planName: plan.name,
       provider: "stripe",
       externalCustomerId: customerId,
     },
@@ -197,19 +225,20 @@ export async function startHockeyMembershipCheckout(input: {
     masterIdentityId: identity.id,
     sourceApplication: HOCKEY_SOURCE_APPLICATION,
     billingDomain: "hockey_membership",
-    planCode: plan.planCode,
+    productCode: "ahmv",
+    planCode: plan.code,
   };
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customerId,
     client_reference_id: identity.id,
-    line_items: [{ price: priceId, quantity: 1 }],
+    line_items: [{ price: plan.price.providerPriceId, quantity: 1 }],
     success_url: urls.success,
     cancel_url: urls.cancel,
     metadata,
     subscription_data: { metadata },
-    allow_promotion_codes: false,
+    allow_promotion_codes: true,
   });
 
   if (!session.url) {
@@ -219,12 +248,11 @@ export async function startHockeyMembershipCheckout(input: {
   return { url: session.url };
 }
 
-
 export async function startHockeyMembershipPortal(input: {
   authUserId: string;
   requestOrigin: string;
 }): Promise<{ url: string }> {
-  const { identity, membership } = await requireMasterIdentity(input.authUserId);
+  const { membership } = await requireMasterIdentity(input.authUserId);
 
   if (!membership?.externalCustomerId) {
     throw new ServiceError(
@@ -246,6 +274,5 @@ export async function startHockeyMembershipPortal(input: {
     );
   }
 
-  void identity;
   return { url: session.url };
 }

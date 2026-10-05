@@ -3087,6 +3087,7 @@ model MasterIdentity {
   hockeyMemberships   HockeyMembership[]
   hockeyStripeEvents  HockeyStripeWebhookEvent[]
 
+  experienceLaunchCodes ExperienceLaunchCode[]
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
@@ -3288,4 +3289,143 @@ model SourceMerchant {
   @@index([merchantId])
   @@index([sourceApplication, lastSynchronizedAt])
   @@map("source_merchants")
+}
+
+// ════════════════════════════════════════════════════════════
+// GROUPE TAKATAK — configurable product / entitlement catalog
+// Prices and product entitlements are data, never application constants.
+// ════════════════════════════════════════════════════════════
+
+model ProductCatalog {
+  id          String               @id @default(uuid()) @db.Uuid
+  code        String               @unique
+  name        String
+  status      String               @default("active")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  plans        ProductPlan[]
+  entitlements ProductEntitlement[]
+
+  @@index([status])
+  @@map("product_catalog")
+}
+
+model ProductPlan {
+  id                String                   @id @default(uuid()) @db.Uuid
+  productId         String                   @db.Uuid
+  code              String
+  legacyCode        String?
+  name              String
+  status            String                   @default("active")
+  selfServeEligible Boolean                  @default(false)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  product      ProductCatalog             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  prices       ProductPrice[]
+  entitlements ProductPlanEntitlement[]
+
+  @@unique([productId, code])
+  @@unique([productId, legacyCode])
+  @@index([status])
+  @@map("product_plans")
+}
+
+model ProductPrice {
+  id              String      @id @default(uuid()) @db.Uuid
+  planId          String      @db.Uuid
+  currency        String      @default("CAD")
+  unitAmountMinor Int
+  billingInterval String
+  intervalCount   Int         @default(1)
+  provider        String      @default("stripe")
+  providerPriceId String?     @unique
+  active          Boolean     @default(true)
+  startsAt        DateTime    @default(now())
+  endsAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  plan ProductPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, active])
+  @@index([currency])
+  @@map("product_prices")
+}
+
+model ProductEntitlement {
+  id          String                   @id @default(uuid()) @db.Uuid
+  productId   String                   @db.Uuid
+  code        String
+  name        String
+  description String?
+  active      Boolean                  @default(true)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  product ProductCatalog            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plans   ProductPlanEntitlement[]
+
+  @@unique([productId, code])
+  @@index([active])
+  @@map("product_entitlements")
+}
+
+model ProductPlanEntitlement {
+  planId        String @db.Uuid
+  entitlementId String @db.Uuid
+
+  plan        ProductPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  entitlement ProductEntitlement @relation(fields: [entitlementId], references: [id], onDelete: Cascade)
+
+  @@id([planId, entitlementId])
+  @@map("product_plan_entitlements")
+}
+
+/// One-time, short-lived browser handoff from TAKATAK Auth to an independent
+/// product experience. Only a SHA-256 hash of the launch code is persisted.
+model ExperienceLaunchCode {
+  id              String    @id @default(uuid()) @db.Uuid
+  codeHash        String    @unique
+  identityId      String    @db.Uuid
+  productCode     String
+  entitlementCode String
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, productCode, entitlementCode])
+  @@index([expiresAt])
+  @@map("experience_launch_codes")
+}
+
+
+// Voluntary product-development support. This is intentionally separate from
+// membership subscriptions and does not imply charitable/tax receipt status.
+model SupportContribution {
+  id                       String   @id @default(uuid()) @db.Uuid
+  customerId               String?  @db.Uuid
+  organizationId           String?  @db.Uuid
+  productCode              String   @default("ahmv")
+  amountMinor              Int
+  currency                 String   @default("CAD")
+  frequency                String   @default("one_time")
+  provider                 String   @default("stripe")
+  stripePaymentIntentId    String?  @unique
+  stripeSubscriptionId     String?  @unique
+  status                   String
+  source                   String?
+  campaign                 String?
+  feesMinor                Int      @default(0)
+  netAmountMinor           Int
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([productCode, status, createdAt])
+  @@index([customerId])
+  @@index([organizationId])
+  @@map("support_contributions")
 }

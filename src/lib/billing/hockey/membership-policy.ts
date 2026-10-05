@@ -1,22 +1,6 @@
-import {
-  HOCKEY_MEMBERSHIP_CATALOG,
-  isHockeyMembershipPlanCode,
-  isHockeySelfServePlanCode,
-  type HockeySelfServePlanCode,
-} from "./plan-catalog";
-import type {
-  HockeyMembershipAccess,
-  HockeyMembershipPlanCode,
-} from "./types";
+import type { HockeyMembershipAccess } from "./types";
 
-export const HOCKEY_BILLING_INTERVAL = "week" as const;
 export const HOCKEY_SOURCE_APPLICATION = "ahmverdun" as const;
-
-export function hockeyStripePriceEnvKey(
-  planCode: HockeySelfServePlanCode,
-): string {
-  return `STRIPE_PRICE_${planCode.toUpperCase()}`;
-}
 
 export function resolveHockeyMembershipAccess(
   status: string | null | undefined,
@@ -28,26 +12,8 @@ export function resolveHockeyMembershipAccess(
     : "blocked";
 }
 
-export function hockeyMembershipAllows(
-  input: {
-    status?: string | null;
-    planCode?: string | null;
-  },
-  feature: (typeof HOCKEY_MEMBERSHIP_CATALOG)[HockeyMembershipPlanCode]["features"][number],
-): boolean {
-  if (resolveHockeyMembershipAccess(input.status) !== "paid") {
-    return false;
-  }
-
-  if (!isHockeyMembershipPlanCode(input.planCode)) {
-    return false;
-  }
-
-  return HOCKEY_MEMBERSHIP_CATALOG[input.planCode].features.includes(feature);
-}
-
 export function validateHockeyCheckoutInput(value: unknown):
-  | { success: true; data: { planCode: HockeySelfServePlanCode } }
+  | { success: true; data: { planCode: string } }
   | {
       success: false;
       message: string;
@@ -65,35 +31,25 @@ export function validateHockeyCheckoutInput(value: unknown):
   const planCode =
     typeof candidate.planCode === "string" ? candidate.planCode.trim() : "";
 
-  if (!isHockeySelfServePlanCode(planCode)) {
+  if (!/^[a-z0-9][a-z0-9_-]{1,63}$/.test(planCode)) {
     return {
       success: false,
-      message: "This AHMV membership is not available for self-serve checkout.",
-      fieldErrors: {
-        planCode:
-          planCode === "hockey_vip_weekly_30"
-            ? "AHMV VIP is planned and is not being sold yet."
-            : "Choose the available AHMV Member plan.",
-      },
+      message: "This AHMV membership is not available.",
+      fieldErrors: { planCode: "Choose an available AHMV plan." },
     };
   }
 
-  return {
-    success: true,
-    data: { planCode },
-  };
+  return { success: true, data: { planCode } };
 }
 
 export function resolveHockeyCheckoutLive(input: {
   enabled: boolean;
   secretKey: string;
   webhookSecret: string;
-  priceId: string;
 }): boolean {
   return Boolean(
     input.enabled &&
       input.secretKey.trim() &&
-      input.webhookSecret.trim() &&
-      input.priceId.trim(),
+      input.webhookSecret.trim(),
   );
 }
