@@ -276,3 +276,18 @@ check("route fails closed and scopes mapping at database boundary", () => {
 });
 
 console.log(`AHMV team feed bridge checks passed: ${checks}`);
+
+
+check("Team Feed provisioner is fail-closed and never activates billing/providers", () => {
+  const provisioner = readFileSync(
+    "scripts/provision-ahmv-team-feed.ts",
+    "utf8",
+  );
+  assert.match(provisioner, /EXPECTED_TEAM_COUNT = 24/);
+  assert.match(provisioner, /CURRENT_SEASON = "2026-2027"/);
+  assert.match(provisioner, /status: "planned"/);
+  assert.match(provisioner, /process\.argv\.includes\("--apply"\)/);
+  assert.match(provisioner, /Expected exactly one active canonical AHM Verdun brand/);
+  assert.match(provisioner, /Refusing to modify existing Team Feed service in status/);
+  assert.doesNotMatch(provisioner, /subscription\.(create|update)|socialAccount\.(create|update)|status: "active"/);
+});
