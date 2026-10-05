@@ -2,6 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
+  normalizeAhmvPublicTeamIds,
+  withAhmvPublicTeamIds,
+} from "../src/lib/integrations/ahmv-team-feed-admin";
+import {
   AHMV_PUBLIC_TEAM_ID_RE,
   ahmvTeamIdFromServiceMetadata,
   ahmvTeamIdsFromMetadata,
@@ -103,6 +107,41 @@ check("exact public AHMV team ids only", () => {
     null,
   );
   assert.equal(ahmvTeamIdFromServiceMetadata(null), null);
+});
+
+check("admin team tags are exact, unique and editable", () => {
+  assert.deepEqual(
+    normalizeAhmvPublicTeamIds([
+      "2025191400017305",
+      "2025191400017103",
+      "2025191400017305",
+    ]),
+    ["2025191400017103", "2025191400017305"],
+  );
+  assert.equal(
+    normalizeAhmvPublicTeamIds(["2025191400017305", "LEAFS VERDUN"]),
+    null,
+  );
+
+  assert.deepEqual(
+    withAhmvPublicTeamIds(
+      {
+        preserved: true,
+        ahmv: {
+          publicTeamId: "2025191400017305",
+          note: "keep",
+        },
+      },
+      ["2025191400017103"],
+    ),
+    {
+      preserved: true,
+      ahmv: {
+        note: "keep",
+        publicTeamIds: ["2025191400017103"],
+      },
+    },
+  );
 });
 
 check("bearer token comparison fails closed", () => {
@@ -221,6 +260,19 @@ check("route fails closed and scopes mapping at database boundary", () => {
   assert.match(route, /take: 20/);
   assert.doesNotMatch(route, /externalObjectId/);
   assert.doesNotMatch(route, /accessToken|refreshToken|providerToken/);
+
+  const adminRoute = readFileSync(
+    "src/app/api/admin/ahmv/team-feed/route.ts",
+    "utf8",
+  );
+  assert.match(adminRoute, /requireAdminApiAccess/);
+  assert.match(adminRoute, /sourceApplication: "ahmverdun"/);
+  assert.match(adminRoute, /teamId: \{ in: teamIds \}/);
+  assert.match(adminRoute, /clientId_businessBrandId_serviceType/);
+  assert.match(adminRoute, /serviceType: "social_media"/);
+  assert.match(adminRoute, /status: "planned"/);
+  assert.match(adminRoute, /team_ids_not_mapped_to_service/);
+  assert.doesNotMatch(adminRoute, /captionExcerpt.*teamIds|name.*teamIds/i);
 });
 
 console.log(`AHMV team feed bridge checks passed: ${checks}`);
