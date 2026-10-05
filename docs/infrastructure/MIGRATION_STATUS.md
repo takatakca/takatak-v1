@@ -2,7 +2,19 @@
 
 `[ ]` not started, `[~]` in progress, `[x]` done in the repo, `[!]` blocked on a human login or an external system.
 
-Repository foundation only. Contabo, Coolify, DNS, and production are not done.
+Repository foundation only. Contabo, Coolify, DNS, and production are not done. GitHub push is a separate, temporary block. It does not block the rest of the migration.
+
+## Repository verification
+
+Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
+
+- `git status`: clean working tree on `infra/contabo-coolify`
+- `git branch --show-current`: `infra/contabo-coolify`
+- `git log -5 --oneline --decorate`: `d984810` (HEAD), `5ad9e41`, `c2ce6e6`, `01bd98c`, `f2a1030`
+- `git show --stat d984810`: `docs/infrastructure/MIGRATION_STATUS.md`, 1 file, +1
+- `git diff d984810^ d984810 --check`: clean, exit 0
+
+`d984810` stays in the history. Later commits sit on top of it. No reset, no force-push.
 
 - [x] Phase 1 audit recorded in `CURRENT_STATE.md`
 - [x] Phase 2 quality gates that do not need live secrets (local Node 22.14.0; CI pins 22.23.2)
@@ -15,6 +27,9 @@ Repository foundation only. Contabo, Coolify, DNS, and production are not done.
 - [x] Existing Postgres social jobs and Stripe/Twilio/Meta/Google routes kept
 - [x] Webhook deferral defaults off
 - [x] CI deploy webhook reads GitHub secrets and does not run after a failed build
+- [x] `qa:workflow` checks that Coolify runs only after install, Prisma generate, typecheck, lint, QA, and the production build
+- [x] Stripe webhook event ids are stored in Postgres before Redis is asked to carry them
+- [x] Contabo bootstrap runbook written and not executed
 - [ ] Contabo VPS `takatak-core-01` provisioned
 - [ ] Coolify installed
 - [ ] Private staging Redis
@@ -23,20 +38,22 @@ Repository foundation only. Contabo, Coolify, DNS, and production are not done.
 - [ ] Production candidate `prod-check.takatak.ca`
 - [ ] DNS cutover
 - [ ] Production workers started
-- [!] Push of `infra/contabo-coolify` and the draft pull request. GitHub is signed in as `takatakca`, and creating the branch ref returned 403 (token cannot write refs). Local commits exist. No production deploy was attempted.
-- [!] Provider consoles (Contabo, Coolify, Cloudflare, GitHub webhook secret, Supabase, Stripe, Meta, Google, Twilio) need a human session before any live step
+- [~] GitHub push of `infra/contabo-coolify` is temporarily blocked. The shell has no git credentials (`gh auth status` is not logged in; `GH_TOKEN` and `GITHUB_TOKEN` are unset). A later GitHub API call returned HTTP 429, a secondary rate limit, not a missing repository permission. Local commits remain. No production deploy was attempted. This line is not a migration-wide block.
+- [!] Provider consoles (Contabo, Coolify, Cloudflare, Supabase, Stripe, Meta, Google, Twilio) need a human session before any live step. That does not stop repository work.
 
 ## Quality gates
 
-Local run on `infra/contabo-coolify`, Node v22.14.0 (CI image remains 22.23.2).
+Local run on `infra/contabo-coolify` after the receipt and health-check commits, Node v22.14.0 (CI image remains 22.23.2).
 
-- [x] `npm ci --ignore-scripts=false`
-- [x] `npm run db:generate`
-- [x] `npm run typecheck`
-- [x] `npm run lint` (0 errors; existing warning in `src/components/rentauto/rentauto-host-verifications-card.tsx`)
-- [x] `npm run test:auth`
-- [x] `npm run test:identity`
-- [x] `npm run qa:queue`
-- [x] `npm run qa:secrets` (tracked files)
-- [x] `npm run build` (`next build --webpack`). Existing warning: rentauto events route re-exports `dynamic` / `runtime`.
+- [x] PASS `npm ci --ignore-scripts=false`
+- [x] PASS `npm run db:generate`
+- [x] PASS `npm run typecheck`
+- [x] PASS `npm run lint` (0 errors; existing warning in `src/components/rentauto/rentauto-host-verifications-card.tsx`)
+- [x] PASS `npm run test:auth`
+- [x] PASS `npm run test:identity`
+- [x] PASS `npm run qa:queue`
+- [x] PASS `npm run qa:workflow`
+- [x] PASS `npm run qa:rls:static`
+- [x] PASS `npm run qa:secrets` (tracked files; CI scans the committed tree)
+- [x] PASS `npm run build` (`next build --webpack`). Existing warning: rentauto events route re-exports `dynamic` / `runtime`.
 - [ ] Ephemeral Supabase CI (`supabase start`, RLS, tenant isolation). Not run locally. GitHub Actions runs it. No production migrate.

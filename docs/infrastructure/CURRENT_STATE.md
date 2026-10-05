@@ -1,6 +1,6 @@
 # TAKATAK current state
 
-Audit of `takatakca/takatak-v1` at `main` (`df444b4`) before the Contabo/Coolify foundation. No secret values.
+Audit of `takatakca/takatak-v1`. The numbered sections below were taken at `main` (`df444b4`) before the Contabo/Coolify foundation and are still the description of the product that this branch must not rewrite. The addendum records what `infra/contabo-coolify` added on top of `d984810`. No secret values.
 
 ## 1. Package manager
 
@@ -119,3 +119,21 @@ No inbound Twilio webhook route. Twilio is outbound: phone OTP (`TWILIO_ACCOUNT_
 ## 20. Queue library
 
 None before this branch. The Postgres `Job` table is the social-sync source of truth and stays that way. Redis is an optional wake-up for workers that are not started while MochaHost still consumes the same jobs.
+
+## Addendum: `infra/contabo-coolify`
+
+Refreshed on this branch. npm and Node 22 are unchanged. `pnpm-lock.yaml` is still unused by CI and both Dockerfiles.
+
+- Package manager: npm. `package-lock.json` is the lockfile. `.npmrc` still sets `ignore-scripts=true`. CI and the root image pass `--ignore-scripts=false`.
+- Node: `engines.node` `22.x`, `.nvmrc` `22`, CI and both Dockerfiles pin `22.23.2`.
+- Build: `npm run build` → `next build --webpack`. Standalone output stays off.
+- Start: MochaHost remains `node server.js`. Coolify web uses `next start -H 0.0.0.0 -p $PORT` from the root `Dockerfile`. `TAKATAK_PROCESS=web` is the image default.
+- Root `Dockerfile` is the Coolify runtime. `deploy/linux/Dockerfile` is still the MochaHost artifact builder.
+- Health: `GET /api/health` and `GET /api/health/ready`. Ready adds `redis` as `ok`, `unavailable`, or `not_configured`. The container health script calls `/api/health/ready` for `web` and a heartbeat file for `general`, `social`, and `webhooks`.
+- Prisma: generate with `npm run db:generate`. Do not run `prisma migrate dev` against production. `provider_webhook_receipts` is a new intent table for verified Stripe event ids. Apply idempotency stays on `stripe_webhook_events` and `hockey_stripe_webhook_events`.
+- Cron: `GET`/`POST /api/cron/social-sync-jobs` is unchanged.
+- Queues in use: `social-sync`, `analytics-sync`, `webhooks`. Skipped, because they still have no caller: `email`, `notifications`, `site-sync`, `imports`, `reports`.
+- Workers: `npm run worker:general` (idle), `worker:social`, `worker:webhooks`. `worker:social-sync` remains the MochaHost one-shot Postgres consumer.
+- Webhooks: Stripe and hockey Stripe verify the signature, write `provider_webhook_receipts` when the queue flag is on, then enqueue the event id. If Redis or the database write fails, the route applies inline. Upmind stays inline. Payment state is not stored only in Redis.
+- Stripe, Twilio, Meta, Google, and OAuth callback routes are the same paths listed above.
+- CI: `.github/workflows/ci.yml` runs install, Prisma generate, typecheck, lint, QA including `qa:queue` and `qa:workflow`, then the webpack production build. `coolify-deploy-gate` runs only after that job succeeds, and only on a push to `main`. A missing webhook secret does not deploy and does not fail the job.

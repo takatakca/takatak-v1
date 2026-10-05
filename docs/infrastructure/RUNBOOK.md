@@ -45,6 +45,9 @@ Stop order: webhooks worker, social worker, then set the matching `TAKATAK_QUEUE
 - Attempts: 3, exponential backoff from 2 seconds.
 - HTTP 401 / 403 / 404 from Stripe and permanent unauthorized errors become BullMQ unrecoverable. They are not retried until the attempts counter is exhausted.
 - Upmind stays inline. Its handler does not store the raw body, so a Redis job cannot rebuild the event.
+- Stripe and hockey Stripe write `provider_webhook_receipts` (event id and status only) before Redis accepts the job. Apply still records `stripe_webhook_events` or `hockey_stripe_webhook_events`. A Redis loss does not delete the payment intent. The webhooks worker re-queues a `queued` receipt that is older than 45 seconds.
+
+The Contabo host bootstrap is `CONTABO_BOOTSTRAP.md`. Do not run it until the operator can reach the VPS.
 
 ## Migrations
 
