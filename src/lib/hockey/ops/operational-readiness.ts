@@ -9,9 +9,18 @@ import {
   resolveAhmvTeamFeedAccess,
   type AhmvMappedService,
 } from "@/lib/integrations/ahmv-team-feed";
+import { adsPlanHasFeature, isAdsPlanCode } from "@/lib/ads/plan-catalog";
+import { resolveAdsSubscriptionAccess } from "@/lib/ads/subscription-policy";
+import { matchesAdsTargeting, parseAdsTargetingRules } from "@/lib/ads/targeting";
+import type { AdsFeature, AdsTargetingContext } from "@/lib/ads/types";
 
 export type AhmvOperationalCheck = {
-  capability: "team_directory" | "schedule" | "ads_publisher" | "team_feed";
+  capability:
+    | "team_directory"
+    | "schedule"
+    | "ads_publisher"
+    | "ads_delivery"
+    | "team_feed";
   ready: boolean;
   count: number;
   reason?: string;
@@ -49,6 +58,7 @@ export async function collectAhmvOperationalReadiness(
       "team_directory",
       "schedule",
       "ads_publisher",
+      "ads_delivery",
       "team_feed",
     ].map((capability) => ({
       capability: capability as AhmvOperationalCheck["capability"],
@@ -77,7 +87,21 @@ export async function collectAhmvOperationalReadiness(
       }),
       prisma.adPublisher.findUnique({
         where: { code: "ahmv" },
-        select: { status: true, domain: true, updatedAt: true },
+        select: {
+          id: true,
+          status: true,
+          domain: true,
+          category: true,
+          country: true,
+          region: true,
+          city: true,
+          postalPrefix: true,
+          updatedAt: true,
+          placements: {
+            where: { status: "active" },
+            select: { id: true },
+          },
+        },
       }),
       prisma.serviceInstance.findMany({
         where: {
@@ -139,7 +163,119 @@ export async function collectAhmvOperationalReadiness(
       (snapshot?.status === "no_match" && snapshot?.eventCount === 0));
 
   const adsReady =
-    publisher?.status === "active" && publisher.domain === "ahmverdun.ca";
+    publisher?.status === "active" &&
+    publisher.domain === "ahmverdun.ca" &&
+    publisher.placements.length > 0;
+
+  const ahmvPlacementIds = publisher?.placements.map((placement) => placement.id) ?? [];
+  const adsCandidates = adsReady
+    ? await prisma.adCampaign.findMany({
+        where: {
+          status: "active",
+          AND: [
+            {
+              OR: [{ startsAt: null }, { startsAt: { lte: now } }],
+            },
+            {
+              OR: [{ endsAt: null }, { endsAt: { gt: now } }],
+            },
+            {
+              OR: [
+                {
+                  scope: "single_site",
+                  placements: {
+                    some: { placementId: { in: ahmvPlacementIds } },
+                  },
+                },
+                {
+                  scope: { in: ["local_network", "max_lead_pro"] },
+                },
+              ],
+            },
+          ],
+        },
+        select: {
+          id: true,
+          scope: true,
+          budgetCents: true,
+          spentCents: true,
+          targeting: true,
+          client: {
+            select: {
+              adSubscription: {
+                select: {
+                  status: true,
+                  planCode: true,
+                  currentPeriodEnd: true,
+                  cancelAtPeriodEnd: true,
+                },
+              },
+            },
+          },
+          creatives: {
+            where: { status: "active" },
+            take: 1,
+            select: {
+              id: true,
+              destinationUrl: true,
+            },
+          },
+        },
+        take: 100,
+      })
+    : [];
+
+  const requiredAdsFeature = (
+    scope: "single_site" | "local_network" | "max_lead_pro",
+  ): AdsFeature =>
+    scope === "single_site"
+      ? "single_site_campaigns"
+      : scope === "max_lead_pro"
+        ? "max_lead_pro"
+        : "network_campaigns";
+
+  const ahmvContexts: AdsTargetingContext[] = [
+    { locale: "fr", device: "mobile" },
+    { locale: "fr", device: "desktop" },
+    { locale: "en", device: "mobile" },
+    { locale: "en", device: "desktop" },
+  ].map((context) => ({
+    ...context,
+    country: publisher?.country ?? "Canada",
+    region: publisher?.region ?? "Quebec",
+    city: publisher?.city ?? "Verdun",
+    postalPrefix: publisher?.postalPrefix ?? null,
+    category: publisher?.category ?? "hockey",
+  }));
+
+  const eligibleAdsCampaigns = adsCandidates.filter((campaign) => {
+    if (campaign.budgetCents <= 0 || campaign.spentCents >= campaign.budgetCents) {
+      return false;
+    }
+
+    const subscription = campaign.client.adSubscription;
+    if (
+      !subscription ||
+      resolveAdsSubscriptionAccess({ ...subscription, now }) !== "paid" ||
+      !isAdsPlanCode(subscription.planCode) ||
+      !adsPlanHasFeature(subscription.planCode, requiredAdsFeature(campaign.scope))
+    ) {
+      return false;
+    }
+
+    const creative = campaign.creatives[0];
+    if (!creative) return false;
+    try {
+      const destination = new URL(creative.destinationUrl);
+      if (!["http:", "https:"].includes(destination.protocol)) return false;
+    } catch {
+      return false;
+    }
+
+    const targeting = parseAdsTargetingRules(campaign.targeting);
+    return ahmvContexts.some((context) => matchesAdsTargeting(targeting, context));
+  });
+  const adsDeliveryReady = eligibleAdsCampaigns.length > 0;
 
   const mappedServices = services.filter((service) =>
     metadataTeamIds(service.metadata).some((teamId) => teamIds.has(teamId)),
@@ -214,11 +350,23 @@ export async function collectAhmvOperationalReadiness(
     {
       capability: "ads_publisher",
       ready: adsReady,
-      count: publisher ? 1 : 0,
-      reason: adsReady
-        ? undefined
-        : "ahmv_publisher_missing_or_noncanonical",
+      count: publisher?.placements.length ?? 0,
+      reason: !publisher
+        ? "ahmv_publisher_missing_or_noncanonical"
+        : publisher.status !== "active" || publisher.domain !== "ahmverdun.ca"
+          ? "ahmv_publisher_missing_or_noncanonical"
+          : publisher.placements.length === 0
+            ? "active_ahmv_placements_missing"
+            : undefined,
       updatedAt: publisher?.updatedAt.toISOString(),
+    },
+    {
+      capability: "ads_delivery",
+      ready: adsDeliveryReady,
+      count: eligibleAdsCampaigns.length,
+      reason: adsDeliveryReady
+        ? undefined
+        : "no_eligible_paid_campaign_inventory",
     },
     {
       capability: "team_feed",
