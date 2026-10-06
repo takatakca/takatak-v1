@@ -1,14 +1,17 @@
-# QMAPS Adapter (placeholder — NOT connected)
+# QMAPS → TAKATAK listings and reviews sync
 
-Phase 11 prepared the INTERNAL local listings module only (models, data
-layer, and pages in `src/lib/local-listings` + `src/components/local-listings`).
-This folder still contains no implementation.
+QMAPS (`takatakca/qmaps`) is the source of truth for its businesses and
+reviews. It sends signed events to TAKATAK; TAKATAK updates the linked
+client workspace's local listing and reviews (`/dashboard/local-listings`,
+`/dashboard/local-listings/reviews`). TAKATAK never calls QMAPS.
 
-The real QMAPS API connection comes in a later phase, following the same
-honest rules as the Metricool (Phase 6) and Upmind (Phase 8) adapters:
-- Credentials from env vars only, server-side, presence-checked, never logged.
-- No guessed endpoints; live requests only against confirmed documented URLs.
-- State ladder: not_configured → configured_untested → connected / error /
-  disabled — "connected" only after a real credentialed API call succeeds.
-- No fake listing sync, citation scans, review imports, replies, photo sync,
-  or visibility scores.
+Full contract: `docs/QMAPS_LISTINGS_REVIEWS_SYNC.md`.
+
+- `signature.ts` — HMAC-SHA256 over `${timestamp}.${eventId}.${rawBody}`,
+  dedicated QMAPS credential, 5-minute clock window.
+- `parser.ts` — strict v1 whitelist; rejects credentials and reviewer identity.
+- `apply-event.ts` — idempotent per event id; only businesses linked to a
+  workspace (LocalListing provider `qmaps`, `externalId` = QMAPS business id)
+  are applied; others are logged as `UNLINKED`.
+- Route: `POST /api/integrations/qmaps/events`.
+- Link a business: `npm run qmaps:link -- --client <uuid> --business <uuid> --name "..."`.

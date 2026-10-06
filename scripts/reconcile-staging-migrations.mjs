@@ -24,6 +24,7 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261003194500_takatak_ads_foundation",
   "20261004190000_community_content_moderation",
   "20261005043500_ahmv_smart_departure_entitlement",
+  "20261006120000_qmaps_listing_review_external_ids",
 ];
 
 function fail(message) {
