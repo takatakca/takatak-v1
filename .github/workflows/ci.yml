@@ -97,6 +97,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Facturations billing integration safeguards
+        run: npm run qa:facturations
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
