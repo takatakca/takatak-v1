@@ -360,6 +360,10 @@ These need provider access that only the owner can request:
 2. **Syncing retargeting audiences** to Meta and Google Ads (ad-account OAuth and app review).
 3. **Google service account** for GA4 and Search Console (create it in Google Cloud; each client then grants it access).
 
+## Going back
+
+See [GROWTH_SUITE_ROLLBACK.md](GROWTH_SUITE_ROLLBACK.md): feature switches, per-phase commits to revert, and a verified script that returns the database to `main`'s schema (`scripts/rollback/growth-suite-down.sql`).
+
 ## QA
 
 - `npm run qa:growth-suite` checks catalog integrity, that every route link resolves, that statuses stay presence-only, and the audit URL guard. It needs no database.
