@@ -35,6 +35,9 @@ const SECRET_TABLES = [
   "review_responses",
   "ai_credit_accounts",
   "ai_credit_entries",
+  "analytics_events",
+  "chat_conversations",
+  "chat_messages",
   "_prisma_migrations",
 ];
 

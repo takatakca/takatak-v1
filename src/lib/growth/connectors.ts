@@ -80,6 +80,15 @@ export const CONNECTORS: ConnectorDef[] = [
 
   // Analytics & Tracking
   {
+    key: "takatak_analytics",
+    name: "TAKATAK Analytics",
+    category: "analytics",
+    purpose: "Cookie-free first-party traffic, conversions and retargeting audiences.",
+    env: [],
+    kind: "built_in",
+    managedIn: "/dashboard/growth/analytics",
+  },
+  {
     key: "ga4",
     name: "Google Analytics 4",
     category: "analytics",
@@ -286,9 +295,10 @@ export const CONNECTORS: ConnectorDef[] = [
     key: "web_chat",
     name: "TAKATAK Web Chat Widget",
     category: "messaging",
-    purpose: "Pop-up chat bubble for client websites, answered by staff or AI.",
+    purpose: "Pop-up chat bubble for client websites with a live staff inbox and lead hand-off.",
     env: [],
-    kind: "planned",
+    kind: "built_in",
+    managedIn: "/dashboard/growth/conversations",
   },
 
   // SEO Intelligence

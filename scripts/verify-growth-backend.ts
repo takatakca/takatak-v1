@@ -20,6 +20,32 @@ import {
   updateFeedbackStatus,
 } from "../src/lib/reputation/service";
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
+import { parseAudienceRule, parseCollectPayload } from "../src/lib/analytics/parse";
+import {
+  createAnalyticsSite,
+  createAudience,
+  dailyVisitorHash,
+  getAnalyticsSummary,
+  recordAnalyticsEvent,
+} from "../src/lib/analytics/service";
+import {
+  convertConversationToLead,
+  createChatWidget,
+  getConversationThread,
+  getInboxSnapshot,
+  publicWidget,
+  setConversationStatus,
+  staffReply,
+  visitorMessages,
+  visitorSend,
+} from "../src/lib/chat/service";
+
+const PHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
+function hdrs(origin: string | null, ip = "203.0.113.7", ua = PHONE_UA, extra: Record<string, string> = {}): Headers {
+  const h = new Headers({ "user-agent": ua, "x-forwarded-for": ip, ...extra });
+  if (origin) h.set("origin", origin);
+  return h;
+}
 
 function pass(label: string): void {
   console.log(`PASS  ${label}`);
@@ -157,6 +183,120 @@ async function main(): Promise<void> {
 
     await assert.rejects(prisma.aiCreditAccount.update({ where: { clientId: a.id }, data: { balance: -1 } }), "database rejects negative balance");
     pass("database check constraint forbids negative balances");
+
+    // --------------------------------------------------------------- analytics
+    const site = await createAnalyticsSite(a.id, { name: "Garage site", domain: "https://www.garage-qa.ca/", businessBrandId: null });
+    assert.ok(!("error" in site));
+    const otherSite = await createAnalyticsSite(b.id, { name: "B site", domain: "b-qa.ca", businessBrandId: null });
+    assert.ok(!("error" in otherSite));
+    const pv = (path: string, extra: Record<string, unknown> = {}) =>
+      parseCollectPayload({ k: site.publicKey, u: `https://garage-qa.ca${path}`, ...extra })!;
+
+    assert.equal((await recordAnalyticsEvent(pv("/"), hdrs("https://evil.example"))).ok, false, "foreign origin rejected");
+    assert.equal((await recordAnalyticsEvent(pv("/"), hdrs(null))).ok, false, "missing origin rejected");
+    const spoofHost = parseCollectPayload({ k: site.publicKey, u: "https://evil.example/" })!;
+    assert.equal((await recordAnalyticsEvent(spoofHost, hdrs("https://garage-qa.ca"))).ok, false, "page on another host rejected");
+    assert.equal((await recordAnalyticsEvent(pv("/"), hdrs("https://garage-qa.ca", "1.1.1.1", "Googlebot/2.1 (+http://www.google.com/bot.html)"))).ok, false, "bot ignored");
+    assert.equal((await recordAnalyticsEvent(pv("/"), hdrs("https://garage-qa.ca", "1.1.1.1", PHONE_UA, { "sec-gpc": "1" }))).ok, false, "GPC honoured");
+
+    for (const ip of ["198.51.100.1", "198.51.100.1", "198.51.100.2"]) {
+      assert.ok((await recordAnalyticsEvent(pv("/pricing?utm_campaign=fall"), hdrs("https://www.garage-qa.ca", ip, PHONE_UA, { "cf-ipcountry": "CA" }))).ok);
+    }
+    assert.ok((await recordAnalyticsEvent(pv("/"), hdrs("https://garage-qa.ca", "198.51.100.3"))).ok);
+    const call = parseCollectPayload({ k: site.publicKey, t: "conversion", n: "call_click", u: "https://garage-qa.ca/contact" })!;
+    assert.ok((await recordAnalyticsEvent(call, hdrs("https://garage-qa.ca", "198.51.100.1"))).ok);
+    const storedEvent = await prisma.analyticsEvent.findFirstOrThrow({ where: { siteId: site.id }, select: { visitorHash: true, path: true } });
+    assert.equal(storedEvent.visitorHash.length, 32);
+    assert.ok(!storedEvent.visitorHash.includes("198.51"), "raw IP never stored");
+    assert.notEqual(
+      dailyVisitorHash(site.id, "198.51.100.1", PHONE_UA, new Date("2026-01-01T12:00:00Z")),
+      dailyVisitorHash(site.id, "198.51.100.1", PHONE_UA, new Date("2026-01-02T12:00:00Z")),
+      "visitor id rotates daily",
+    );
+    pass("collection: origin-locked, bots and GPC skipped, IPs never stored, ids rotate daily");
+
+    const summary = await getAnalyticsSummary(a.id, { days: 7 });
+    assert.equal(summary.totals.pageviews, 4);
+    assert.equal(summary.totals.visitors, 3, "3 distinct visitors today");
+    assert.equal(summary.totals.conversions, 1);
+    assert.equal(summary.totals.convertingVisitors, 1);
+    assert.ok(summary.totals.convertingVisitors <= summary.totals.visitors, "conversion rate can never exceed 100%");
+    assert.deepEqual(summary.topPages[0], { label: "/pricing", count: 3 });
+    assert.deepEqual(summary.campaigns[0], { label: "fall", count: 3 });
+    assert.deepEqual(summary.countries[0], { label: "CA", count: 3 });
+    assert.deepEqual(summary.conversions[0], { label: "call_click", count: 1 });
+    assert.equal(summary.daily.length, 7);
+    const bSummary = await getAnalyticsSummary(b.id, { days: 7 });
+    assert.equal(bSummary.totals.pageviews + bSummary.audiences.length, 0, "tenant B sees no A traffic");
+    assert.equal((await getAnalyticsSummary(b.id, { siteId: site.id })).selectedSiteId, null, "B cannot select A's site");
+    pass("analytics summary is accurate and tenant-isolated");
+
+    const rule = parseAudienceRule({ name: "Pricing viewers", pathPrefixes: "/pricing", lookbackDays: "30" });
+    assert.ok(rule.ok);
+    assert.ok("error" in (await createAudience(b.id, site.id, rule.value)), "B cannot build audiences on A's site");
+    assert.ok(!("error" in (await createAudience(a.id, site.id, rule.value))));
+    const pctRule = parseAudienceRule({ name: "Literal percent", pathPrefixes: "/pri%", lookbackDays: "30" });
+    assert.ok(pctRule.ok);
+    assert.ok(!("error" in (await createAudience(a.id, site.id, pctRule.value))));
+    const withAudiences = await getAnalyticsSummary(a.id, { days: 7 });
+    assert.equal(withAudiences.audiences.find((x) => x.name === "Pricing viewers")?.reach, 2);
+    assert.equal(withAudiences.audiences.find((x) => x.name === "Literal percent")?.reach, 0, "LIKE wildcards are escaped");
+    pass("retargeting audiences estimate reach and escape wildcards");
+
+    // ------------------------------------------------------------------- chat
+    const widget = await createChatWidget(a.id, { name: "Garage chat", domain: "garage-qa.ca", greeting: "Bonjour", accentColor: "#112233", whatsappNumber: "+1 514 555 0123", businessBrandId: null });
+    assert.ok(!("error" in widget));
+    assert.equal(await publicWidget(widget.publicKey, "https://evil.example"), null, "widget locked to its domain");
+    const pw = await publicWidget(widget.publicKey, "https://garage-qa.ca");
+    assert.ok(pw && pw.whatsappNumber === "15145550123");
+    const firstChat = await visitorSend(pw, { visitorToken: null, body: "Avez-vous des pneus d'hiver ?", name: "Luc", email: "luc@example.test", phone: null, pageUrl: "https://garage-qa.ca/" });
+    assert.ok(!("error" in firstChat));
+    const conv = await prisma.chatConversation.findFirstOrThrow({ where: { widgetId: pw.id }, select: { id: true, visitorTokenHash: true, unreadForStaff: true } });
+    assert.notEqual(conv.visitorTokenHash, firstChat.visitorToken, "visitor token stored only as a hash");
+    assert.equal(conv.unreadForStaff, 1);
+    const again = await visitorSend(pw, { visitorToken: firstChat.visitorToken, body: "Pour une Civic 2019", name: null, email: null, phone: null, pageUrl: null });
+    assert.ok(!("error" in again));
+    assert.equal(await prisma.chatConversation.count({ where: { widgetId: pw.id } }), 1, "token continues the same conversation");
+    pass("visitors chat on the right domain; token stored hashed and continues the thread");
+
+    assert.equal(await staffReply(b.id, conv.id, "hijack", null), false, "B cannot reply in A's conversation");
+    assert.equal(await getConversationThread(b.id, conv.id), null, "B cannot read A's conversation");
+    assert.equal(await staffReply(a.id, conv.id, "Oui ! Passez nous voir.", null), true);
+    const visible = await visitorMessages(pw, firstChat.visitorToken, null);
+    assert.ok(visible && visible.messages.length === 3 && visible.messages[2].sender === "staff");
+    const newer = await visitorMessages(pw, firstChat.visitorToken, visible.messages[1].createdAt);
+    assert.equal(newer?.messages.length, 1, "polling with after= returns only new messages");
+    assert.equal(await visitorMessages(pw, "x".repeat(43), null), null, "unknown token reads nothing");
+    const thread = await getConversationThread(a.id, conv.id);
+    assert.equal(thread?.messages.length, 3);
+    assert.equal((await prisma.chatConversation.findUniqueOrThrow({ where: { id: conv.id } })).unreadForStaff, 0, "opening marks read");
+    pass("staff replies reach the visitor; threads are tenant-isolated");
+
+    const inbox = await getInboxSnapshot(a.id);
+    assert.equal(inbox.totals.open, 1);
+    assert.equal((await getInboxSnapshot(b.id)).conversations.length, 0);
+    const lead1 = await convertConversationToLead(a.id, conv.id);
+    const lead2 = await convertConversationToLead(a.id, conv.id);
+    assert.ok(lead1 && lead2 && lead1.leadId === lead2.leadId, "lead hand-off happens once");
+    assert.equal(await convertConversationToLead(b.id, conv.id), null);
+    const lead = await prisma.lead.findUniqueOrThrow({ where: { id: lead1.leadId }, select: { clientId: true, name: true, email: true, message: true } });
+    assert.equal(lead.clientId, a.id);
+    assert.equal(lead.name, "Luc");
+    assert.ok(lead.message?.includes("pneus d'hiver"));
+    pass("conversation converts into a real lead exactly once");
+
+    assert.equal(await setConversationStatus(b.id, conv.id, "closed"), false);
+    assert.equal(await setConversationStatus(a.id, conv.id, "closed"), true);
+    const afterClose = await visitorSend(pw, { visitorToken: firstChat.visitorToken, body: "Allo?", name: null, email: null, phone: null, pageUrl: null });
+    assert.deepEqual(afterClose, { error: "closed" });
+    assert.equal(await staffReply(a.id, conv.id, "late", null), false, "no replies on closed threads");
+    pass("closed conversations accept no new messages");
+
+    await assert.rejects(
+      prisma.chatMessage.create({ data: { conversationId: conv.id, clientId: a.id, sender: "visitor", body: "" } }),
+      "database rejects empty chat messages",
+    );
+    pass("database check constraint rejects empty messages");
   } finally {
     await prisma.client.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     await disconnectPrisma();

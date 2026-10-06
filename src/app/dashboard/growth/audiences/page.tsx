@@ -4,12 +4,14 @@ import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireGrowthAccess } from "@/lib/growth/access";
+import { listAudiencesWithReach } from "@/lib/analytics/service";
 import { getConnectorStatusMap } from "@/lib/growth/status";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 export const dynamic = "force-dynamic";
 
 const RETARGETING = [
-  { name: "Website visitors", detail: "Everyone who visited in the last 30/60/90 days.", needs: "Meta Pixel, Google Ads tag or TikTok pixel" },
+  { name: "Website visitors", detail: "Everyone who visited in the last 30/60/90 days.", needs: "TAKATAK Analytics (live) — sync needs Meta/Google/TikTok" },
   { name: "High-intent visitors", detail: "Viewed pricing, booking or contact pages but did not convert.", needs: "Pixel + conversion events" },
   { name: "Social engagers", detail: "People who liked, commented or messaged the brand pages.", needs: "Meta Ads" },
   { name: "Customer list", detail: "Hashed past customers for re-engagement or exclusion.", needs: "Leads module + Meta/Google Ads" },
@@ -27,9 +29,17 @@ const GEO = [
 ];
 
 export default async function AudiencesPage() {
-  const { showSetupDetails } = await requireGrowthAccess("/dashboard/growth/audiences");
+  const { access, showSetupDetails } = await requireGrowthAccess("/dashboard/growth/audiences");
+  let audiences: Awaited<ReturnType<typeof listAudiencesWithReach>> | null = null;
+  if (access.mode === "client_scoped" && hasEffectivePermission(access, "view_reports")) {
+    try {
+      audiences = await listAudiencesWithReach(access.activeClientId);
+    } catch {
+      console.error("[analytics] audiences unavailable");
+    }
+  }
   const map = getConnectorStatusMap();
-  const connectors = ["meta_pixel", "gtm", "google_ads", "meta_ads", "tiktok_ads", "takatak_ads"].flatMap((k) => map.get(k) ?? []);
+  const connectors = ["takatak_analytics", "meta_pixel", "gtm", "google_ads", "meta_ads", "tiktok_ads", "takatak_ads"].flatMap((k) => map.get(k) ?? []);
 
   return (
     <div className="space-y-6">
@@ -37,6 +47,29 @@ export default async function AudiencesPage() {
         title="Retargeting & Geo-targeting"
         description="Bring back people who already showed interest, and spend only in the neighbourhoods that matter to each business."
       />
+
+      {audiences ? (
+        <Card>
+          <CardHeader
+            title="Your audiences"
+            subtitle="Built from TAKATAK Analytics visitors. Sync to Meta/Google turns on when those ad accounts are connected."
+            action={<Link href="/dashboard/growth/analytics" className="text-xs font-medium text-indigo-600 hover:text-indigo-800">Manage →</Link>}
+          />
+          <CardBody className="space-y-2">
+            {audiences.length === 0 ? (
+              <p className="text-sm text-slate-500">No audiences yet. Create one from Analytics once a website is collecting.</p>
+            ) : (
+              audiences.map((a) => (
+                <div key={a.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-xs">
+                  <span className="font-semibold text-slate-800">{a.name}</span>
+                  <span className="text-slate-500">{a.siteName} · {a.lookbackDays} days</span>
+                  <Badge tone="accent">{a.reach.toLocaleString("en-CA")} reach</Badge>
+                </div>
+              ))
+            )}
+          </CardBody>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader

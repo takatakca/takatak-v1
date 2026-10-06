@@ -84,6 +84,8 @@ enum PermissionKey {
   manage_ads
   view_reputation
   manage_reputation
+  view_conversations
+  manage_conversations
 }
 
 enum ClientStatus {
@@ -430,6 +432,12 @@ model Client {
   reviewResponses           ReviewResponse[]
   aiCreditAccount           AiCreditAccount?
   aiCreditEntries           AiCreditEntry[]
+  analyticsSites            AnalyticsSite[]
+  analyticsEvents           AnalyticsEvent[]
+  analyticsAudiences        AnalyticsAudience[]
+  chatWidgets               ChatWidget[]
+  chatConversations         ChatConversation[]
+  chatMessages              ChatMessage[]
   @@index([status])
   @@index([createdAt])
   @@index([assignedProfileId])
@@ -629,6 +637,8 @@ model BusinessBrand {
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
   reviewProfiles            ReviewProfile[]
+  analyticsSites            AnalyticsSite[]
+  chatWidgets               ChatWidget[]
   leads                     Lead[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
@@ -4189,3 +4199,162 @@ model AiCreditEntry {
   @@index([clientId, createdAt])
   @@map("ai_credit_entries")
 }
+
+// ---------------------------------------------------------------------------
+// Growth Suite — first-party analytics, retargeting audiences and web chat.
+// Cookie-free analytics: visitors are a daily-rotating salted hash, no raw IP.
+// Server-side Prisma only; RLS enabled with no PostgREST policies.
+// ---------------------------------------------------------------------------
+
+enum AnalyticsEventType {
+  pageview
+  event
+  conversion
+}
+
+enum ChatConversationStatus {
+  open
+  closed
+}
+
+enum ChatSender {
+  visitor
+  staff
+  ai
+  system
+}
+
+model AnalyticsSite {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  name            String
+  domain          String
+  publicKey       String   @unique
+  allowedOrigins  String[] @default([])
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?      @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  events        AnalyticsEvent[]
+  audiences     AnalyticsAudience[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("analytics_sites")
+}
+
+model AnalyticsEvent {
+  id           String             @id @default(uuid()) @db.Uuid
+  siteId       String             @db.Uuid
+  clientId     String             @db.Uuid
+  type         AnalyticsEventType @default(pageview)
+  name         String?
+  path         String
+  referrerHost String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  country      String?
+  region       String?
+  city         String?
+  device       String?
+  browser      String?
+  visitorHash  String
+  occurredAt   DateTime           @default(now())
+
+  site   AnalyticsSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  client Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, occurredAt])
+  @@index([clientId, occurredAt])
+  @@index([siteId, type, occurredAt])
+  @@map("analytics_events")
+}
+
+model AnalyticsAudience {
+  id           String   @id @default(uuid()) @db.Uuid
+  clientId     String   @db.Uuid
+  siteId       String   @db.Uuid
+  name         String
+  pathPrefixes String[] @default([])
+  eventNames   String[] @default([])
+  lookbackDays Int      @default(30)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  client Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  site   AnalyticsSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([siteId])
+  @@map("analytics_audiences")
+}
+
+model ChatWidget {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  name            String
+  publicKey       String   @unique
+  allowedOrigins  String[] @default([])
+  greeting        String?
+  accentColor     String   @default("#4f46e5")
+  whatsappNumber  String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?     @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  conversations ChatConversation[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("chat_widgets")
+}
+
+model ChatConversation {
+  id                String                 @id @default(uuid()) @db.Uuid
+  clientId          String                 @db.Uuid
+  widgetId          String                 @db.Uuid
+  visitorTokenHash  String                 @unique
+  visitorName       String?
+  visitorEmail      String?
+  visitorPhone      String?
+  pageUrl           String?
+  status            ChatConversationStatus @default(open)
+  unreadForStaff    Int                    @default(0)
+  leadId            String?                @db.Uuid
+  lastMessageAt     DateTime               @default(now())
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  client   Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  widget   ChatWidget    @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([clientId, status, lastMessageAt])
+  @@index([widgetId, lastMessageAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String     @id @default(uuid()) @db.Uuid
+  conversationId String     @db.Uuid
+  clientId       String     @db.Uuid
+  sender         ChatSender
+  body           String
+  staffProfileId String?    @db.Uuid
+  createdAt      DateTime   @default(now())
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  client       Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([clientId, createdAt])
+  @@map("chat_messages")
+}
+

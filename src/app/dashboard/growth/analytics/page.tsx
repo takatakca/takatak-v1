@@ -1,10 +1,14 @@
+import { AnalyticsPanel } from "@/components/analytics/analytics-panel";
 import { AdsSummaryCard } from "@/components/growth/ads-summary-card";
 import { ConnectorGrid } from "@/components/growth/connector-card";
 import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { getActiveWorkspaceAdsSummary } from "@/lib/growth/ads-summary";
+import { getAnalyticsSummary, type AnalyticsSummary } from "@/lib/analytics/service";
+import { publicAppOrigin } from "@/lib/growth/public-origin";
 import { getConnectorStatuses } from "@/lib/growth/status";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +23,21 @@ const UNIFIED_METRICS = [
   { name: "Lead pipeline", detail: "New leads by source and conversion to customers", source: "Leads module" },
 ];
 
-export default async function GrowthAnalyticsPage() {
+export default async function GrowthAnalyticsPage({ searchParams }: { searchParams: Promise<{ site?: string; days?: string }> }) {
   const { access, showSetupDetails } = await requireGrowthAccess("/dashboard/growth/analytics");
+  const params = await searchParams;
+  const scoped = access.mode === "client_scoped" && hasEffectivePermission(access, "view_reports");
+  let summary: AnalyticsSummary | null = null;
+  let unavailable = false;
+  if (scoped) {
+    try {
+      summary = await getAnalyticsSummary(access.activeClientId, { siteId: params.site ?? null, days: Number(params.days) || 30 });
+    } catch {
+      unavailable = true;
+      console.error("[analytics] summary unavailable");
+    }
+  }
+  const origin = await publicAppOrigin();
   const ads = await getActiveWorkspaceAdsSummary(access);
   const connectors = getConnectorStatuses().filter((c) => c.category === "analytics");
 
@@ -28,8 +45,19 @@ export default async function GrowthAnalyticsPage() {
     <div className="space-y-6">
       <GrowthHeader
         title="Analytics"
-        description="One scoreboard for the whole business: website, search, ads, social, reviews and leads, reported in plain language."
+        description="TAKATAK Analytics (cookie-free, first-party) plus ads, search, social, reviews and leads in one scoreboard."
+        badges={[{ label: "TAKATAK Analytics live", tone: "success" }]}
       />
+
+      {summary ? (
+        <AnalyticsPanel data={summary} canManage={access.mode === "client_scoped" && hasEffectivePermission(access, "manage_services")} origin={origin} />
+      ) : (
+        <HonestyNote>
+          {unavailable
+            ? "The analytics database is not reachable right now, so website numbers are hidden rather than guessed."
+            : "Select a client workspace to add its websites, install TAKATAK Analytics and see live traffic."}
+        </HonestyNote>
+      )}
 
       <AdsSummaryCard summary={ads} />
 

@@ -1,6 +1,11 @@
 # TAKATAK Growth Suite
 
-Status: **Phase 1 (catalog, SEO audit, request builder) + Phase 2 (reputation backend, AI credit ledger). The Phase 2 migration is awaiting owner approval for staging and production.** It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
+Status: **Phases 1–3 built:**
+- **Phase 1:** catalog, SEO audit, request builder.
+- **Phase 2:** reputation backend, AI credit ledger.
+- **Phase 3:** analytics, audiences, web chat.
+
+The Phase 2 and Phase 3 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
 
 ## Scope rule
 
@@ -91,16 +96,70 @@ Platform admins grant, sell or adjust credits on `/dashboard/growth/ai-engine`. 
 - **`takatakca/takatak-automate`** (Render backend): runs the AI intake today through an external AI gateway. It is the natural home for the TAKATAK AI Gateway, which should call the credit API above before and after each task.
 - **`knowledgeAI` `docs/08-INTEGRATION-STANDARDS.md`**: the provider checklist (official APIs, signed webhooks, idempotency, encrypted tokens) applies to every connector still marked "Not connected".
 
+## Phase 3: First-party analytics, retargeting audiences, web chat
+
+Migration: `prisma/migrations/20261006150000_growth_analytics_and_conversations`. It adds:
+- **Tables:** `analytics_sites`, `analytics_events`, `analytics_audiences`, `chat_widgets`, `chat_conversations`, `chat_messages`.
+- **Permissions:** `view_conversations` and `manage_conversations`.
+- **Database checks:** message length, lookback range, accent colour format.
+- **Access:** RLS on every table, browser-role grants revoked, and the event and chat tables added to the advisor's sensitive-table list.
+
+Like Phase 2, it is **not** in the approved deploy lists yet.
+
+### TAKATAK Analytics (cookie-free)
+
+Install snippet (shown per site on `/dashboard/growth/analytics`):
+`<script defer src="https://takatak.ca/takatak-analytics.js" data-site="tk_…"></script>`
+
+What it records:
+- **Page views:** includes single-page-app navigation.
+- **Automatic conversions:** `call_click`, `email_click`, `whatsapp_click` and `form_submit`.
+- **Custom events:** `window.takatak.track("name", { conversion: true })`.
+
+Privacy and safety rules:
+- **Visitor ID:** `HMAC(daily-salt, siteId|ip|userAgent)`. It resets every day, and raw IP addresses and user agents are never stored.
+- **Opt-outs:** Global Privacy Control and Do Not Track are honoured, and bots are skipped.
+- **Where data is accepted from:** only the site's own `https://domain` and `https://www.domain` origins, and the page URL must be on that host too.
+- **No query strings stored:** query strings are dropped from paths, and only the UTM source, medium and campaign values are kept.
+- **Country:** filled in only when a CDN geo header is present (Cloudflare, Vercel).
+- Set `ANALYTICS_HASH_SECRET` (32+ chars) so visitor IDs stay consistent across server processes.
+
+Dashboard: page views, daily unique visits, conversions, conversion rate (visits with at least one conversion, so never above 100%), a daily chart, top pages, traffic sources, campaigns, devices and countries, with a site and period filter.
+
+**Retargeting audiences:** rules made of page-path prefixes and/or event names, plus a lookback window. Reach is the number of matching daily-unique visits. The audiences are listed on `/dashboard/growth/audiences`. Syncing them to Meta or Google turns on when those ad accounts are connected.
+
+### TAKATAK Web Chat
+
+Install snippet (shown per widget on `/dashboard/growth/conversations`):
+`<script defer src="https://takatak.ca/takatak-chat.js" data-widget="tc_…"></script>`
+
+The chat bubble:
+- Renders inside a Shadow DOM.
+- Inserts all text with `textContent` only.
+- Switches to French or English from the page language.
+- Uses the client's brand colour and can show a WhatsApp fallback button.
+
+The visitor's random token lives in their browser's localStorage, and only its SHA-256 hash is stored. Visitors' send and poll requests are rate-limited.
+
+Staff inbox:
+- Open and closed tabs, unread counts, and a thread view that refreshes every 5 seconds.
+- Reply, close or reopen a conversation.
+- **Convert to lead** creates one `Lead` in the existing Leads module, exactly once.
+
 ## Next phase
 
-1. Twilio/WhatsApp Cloud delivery for review requests, plus Google Business Profile review import.
-2. First-party analytics events + retargeting audience lists.
-3. Web chat widget + unified conversations inbox.
-4. Stripe checkout for credit packs, calling `grantCredits` with `reason: "purchase"` from the webhook.
+1. Twilio/WhatsApp Cloud delivery for review requests and chat, plus Google Business Profile review import (each gated on its credentials).
+2. Stripe checkout for credit packs: the webhook calls `grantCredits` with `reason: "purchase"`.
+3. An AI agent run queue, so the gateway can pick up approved agent tasks and debit credits per run.
 
 ## QA
 
 - `npm run qa:growth-suite` checks catalog integrity, that every route link resolves, that statuses stay presence-only, and the audit URL guard. It needs no database.
-- `npm run qa:growth-backend` runs against a disposable migrated database. It covers the full review funnel, tenant isolation, single-use tokens, consent-only contact storage, credit idempotency, no overdraft under 8 concurrent debits, single refunds, and the database constraints.
+- `npm run qa:growth-backend` runs against a disposable migrated database. It covers:
+  - the full review funnel, single-use tokens and consent-only contact storage;
+  - credit idempotency, no overdraft under 8 concurrent debits, and single refunds;
+  - analytics origin locking, bot and GPC skipping, no stored IPs, daily-rotating visitor IDs, accurate summaries and audience reach;
+  - chat domain locking, hashed tokens, live staff replies, closed threads and one-time lead conversion;
+  - tenant isolation for all of the above, and the database constraints.
 
 Both run in CI.

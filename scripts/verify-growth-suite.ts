@@ -9,6 +9,16 @@ import { CONNECTORS, CONNECTOR_CATEGORY_ORDER, connectorByKey } from "../src/lib
 import { GROWTH_MODULES } from "../src/lib/growth/modules";
 import { GROWTH_STAGES, SERVICE_PLANS } from "../src/lib/growth/plans";
 import { getAiEngineStatus, getConnectorStatuses } from "../src/lib/growth/status";
+import {
+  classifyDevice,
+  isBotUserAgent,
+  normalizeSiteDomain,
+  originAllowed,
+  originsForDomain,
+  parseAudienceRule,
+  parseCollectPayload,
+} from "../src/lib/analytics/parse";
+import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
 import { normalizeAuditUrl } from "../src/lib/seo/site-audit";
 
 function pass(label: string): void {
@@ -135,7 +145,62 @@ function verifyAuditUrlGuard(): void {
   pass("audit rejects private, local, credentialed and non-web targets");
 }
 
+function verifyAnalyticsParsing(): void {
+  const key = "tk_abcdefghijklmnopqrstuvwx";
+  const pv = parseCollectPayload({ k: key, u: "https://www.garage.ca/services//freins?utm_source=fb&utm_campaign=fall&x=1", r: "https://www.google.com/search?q=x" });
+  assert.ok(pv);
+  assert.equal(pv.type, "pageview");
+  assert.equal(pv.path, "/services/freins", "query string is never stored in the path");
+  assert.equal(pv.utmSource, "fb");
+  assert.equal(pv.utmCampaign, "fall");
+  assert.equal(pv.referrerHost, "google.com");
+  assert.equal(parseCollectPayload({ k: key, u: "https://garage.ca/a", r: "https://garage.ca/b" })?.referrerHost, null, "self-referrals dropped");
+  assert.equal(parseCollectPayload({ k: key, t: "conversion", n: "Call_Click", u: "https://garage.ca/" })?.name, "call_click");
+  for (const bad of [null, [], { k: "short", u: "https://a.ca/" }, { k: key, u: "javascript:alert(1)" }, { k: key, t: "event", n: "bad name!", u: "https://a.ca/" }]) {
+    assert.equal(parseCollectPayload(bad), null);
+  }
+  pass("analytics payloads parse safely (no query strings, no self-referrals, strict names)");
+
+  assert.ok(isBotUserAgent("Mozilla/5.0 (compatible; Googlebot/2.1)"));
+  assert.ok(isBotUserAgent(null));
+  assert.ok(!isBotUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"));
+  assert.equal(classifyDevice("Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Mobile"), "mobile");
+  assert.equal(classifyDevice("Mozilla/5.0 (iPad; CPU OS 17_0)"), "tablet");
+  pass("bots are filtered and devices classified");
+
+  assert.equal(normalizeSiteDomain("https://www.Garage-Verdun.ca/contact"), "garage-verdun.ca");
+  assert.equal(normalizeSiteDomain("localhost"), null);
+  assert.equal(normalizeSiteDomain("192.168.0.1"), null);
+  assert.deepEqual(originsForDomain("garage.ca"), ["https://garage.ca", "https://www.garage.ca"]);
+  assert.ok(originAllowed("https://www.garage.ca", originsForDomain("garage.ca")));
+  assert.ok(!originAllowed("https://evil.ca", originsForDomain("garage.ca")));
+  assert.ok(!originAllowed("http://garage.ca", originsForDomain("garage.ca")), "plain http origin is not allowed");
+  assert.ok(!originAllowed(null, originsForDomain("garage.ca")));
+  pass("sites accept data only from their own https origins");
+
+  const rule = parseAudienceRule({ name: "Pricing viewers", pathPrefixes: "pricing, /booking", eventNames: "Form_Submit", lookbackDays: "60" });
+  assert.ok(rule.ok && rule.value.pathPrefixes.join() === "/pricing,/booking" && rule.value.eventNames.join() === "form_submit");
+  assert.equal(parseAudienceRule({ name: "x", pathPrefixes: "/" }).ok, false);
+  assert.equal(parseAudienceRule({ name: "Empty" }).ok, false);
+  assert.equal(parseAudienceRule({ name: "Too long", pathPrefixes: "/", lookbackDays: "9999" }).ok, false);
+  pass("audience rules are validated");
+}
+
+function verifyReputationValidation(): void {
+  assert.equal(parseReviewProfileInput({ name: "Garage" }).ok, false, "needs a review destination");
+  assert.equal(parseReviewProfileInput({ name: "Garage", facebookReviewUrl: "https://evil.example/fb" }).ok, false);
+  assert.equal(parseReviewProfileInput({ name: "Garage", facebookReviewUrl: "https://www.facebook.com/garage/reviews" }).ok, true);
+  const noConsent = parsePublicRatingInput({ rating: "4", contactEmail: "a@b.ca" });
+  assert.ok(noConsent.ok && noConsent.value.contactEmail === null && !noConsent.value.followUpConsent);
+  const consent = parsePublicRatingInput({ rating: "4", contactPhone: "(514) 555-0123", followUpConsent: "on" });
+  assert.ok(consent.ok && consent.value.contactPhone === "+5145550123" && consent.value.followUpConsent);
+  for (const r of ["0", "6", "4.5", "", "abc"]) assert.equal(parsePublicRatingInput({ rating: r }).ok, false);
+  pass("review inputs validated; contact kept only with consent");
+}
+
 verifyCatalog();
 verifyHonestStatuses();
 verifyAuditUrlGuard();
+verifyAnalyticsParsing();
+verifyReputationValidation();
 console.log("\nGrowth Suite safeguards: all checks passed.");
