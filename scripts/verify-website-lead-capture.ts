@@ -125,6 +125,7 @@ function domainInput(overrides: Partial<WebsiteRequestInput> = {}): WebsiteReque
     domain: { fqdn: "monentreprise.ca", tld: "ca" },
     project: null,
     order: null,
+    hosting: null,
     ...overrides,
   };
 }
@@ -461,6 +462,35 @@ async function main() {
     const page = readFileSync("src/app/dashboard/notifications/page.tsx", "utf8");
     assert.match(page, /requireWorkspacePermission\("view_dashboard"/);
     assert.doesNotMatch(page, /ModulePlaceholder/);
+  });
+
+
+  await check("hosting requests accept only real plans and become hosting leads", async () => {
+    const ok = validateWebsiteRequest({ kind: "hosting_request", planName: "Bronze Hosting", email: "h@example.com" });
+    assert.ok(ok.ok);
+    if (!ok.ok) return;
+    assert.deepEqual(ok.value.hosting, { planName: "Bronze Hosting" });
+    for (const planName of ["Free Hosting", "", 42, "bronze hosting"]) {
+      assert.equal(validateWebsiteRequest({ kind: "hosting_request", planName, email: "h@example.com" }).ok, false, String(planName));
+    }
+    const now = new Date();
+    const fake = fakeDb(now);
+    const recorded = await recordWebsiteRequest(fake.db, {
+      clientId: CLIENT, authUserId: null, sourceHash: "h", now, request: ok.value,
+    });
+    assert.match(String(fake.leads[0].message), /^Hosting request: Bronze Hosting/);
+    assert.equal(fake.notifications[0].title, "New hosting request");
+    assert.match(recorded.summary, /^Hosting request: Bronze Hosting · Ref /);
+  });
+
+  await check("hosting plans fall back to the request form when Upmind cannot load", () => {
+    const plans = readFileSync("src/components/website/hosting/upmind-hosting-plans.tsx", "utf8");
+    assert.match(plans, /customElements\.get\("upm-widget"\)/);
+    assert.match(plans, /if \(widgetsUnavailable\) return <HostingRequestFallback \/>/);
+    const form = readFileSync("src/components/website/hosting/HostingRequestFallback.tsx", "utf8");
+    assert.match(form, /kind: "hosting_request"/);
+    assert.match(form, /name="website"/);
+    assert.match(form, /fallback\.hosting\.contactRequired/);
   });
 
   console.log(`\n${passed} website lead capture checks passed.`);

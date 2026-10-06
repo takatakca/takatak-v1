@@ -58,6 +58,7 @@ function cad(cents: number): string {
 
 function subjectOf(request: WebsiteRequestInput, order: PricedPackageOrder | null | undefined): string {
   if (request.kind === "domain_request") return `Domain request: ${request.domain?.fqdn ?? ""}`;
+  if (request.kind === "hosting_request") return `Hosting request: ${request.hosting?.planName ?? ""}`;
   if (request.kind === "package_order") {
     return `Package order: ${order?.title ?? request.order?.packageId ?? ""} (${order?.tierName ?? request.order?.tierName ?? ""})`;
   }
@@ -68,6 +69,7 @@ function subjectOf(request: WebsiteRequestInput, order: PricedPackageOrder | nul
 export function notificationTitle(kind: WebsiteRequestInput["kind"]): string {
   if (kind === "package_order") return "New website order";
   if (kind === "domain_request") return "New domain request";
+  if (kind === "hosting_request") return "New hosting request";
   return "New project request";
 }
 
@@ -180,6 +182,7 @@ export async function recordWebsiteRequest(
           sourcePage: request.sourcePage,
           domain: request.domain,
           project: request.project,
+          hosting: request.hosting,
           order,
           authenticated: Boolean(input.authUserId),
           authUserId: input.authUserId,

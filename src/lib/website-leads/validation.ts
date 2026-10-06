@@ -1,11 +1,16 @@
 // Public website request validation (domain requests, project requests,
-// marketplace package orders).
+// marketplace package orders, hosting plan requests).
 //
 // Pure module: no database, no network. Every field is whitelisted,
 // trimmed and length-bounded; unknown fields are ignored. A hidden honeypot
 // field ("website") must stay empty.
 
-export type WebsiteRequestKind = "domain_request" | "project_request" | "package_order";
+import { UPMIND_HOSTING_PLANS } from "@/lib/website/upmind-config";
+
+export type WebsiteRequestKind = "domain_request" | "project_request" | "package_order" | "hosting_request";
+
+/** Hosting plans a visitor can request (the plans sold through Upmind). */
+export const HOSTING_PLAN_NAMES: readonly string[] = UPMIND_HOSTING_PLANS.map((plan) => plan.name);
 
 export interface WebsiteRequestInput {
   kind: WebsiteRequestKind;
@@ -30,6 +35,7 @@ export interface WebsiteRequestInput {
     addonLabels: string[];
     promoCode: string | null;
   } | null;
+  hosting: { planName: string } | null;
 }
 
 export type WebsiteRequestValidation =
@@ -75,7 +81,12 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
   if (!isObject(raw)) return { ok: false, fieldErrors: { body: "invalid" } };
 
   const kind = raw.kind;
-  if (kind !== "domain_request" && kind !== "project_request" && kind !== "package_order") {
+  if (
+    kind !== "domain_request" &&
+    kind !== "project_request" &&
+    kind !== "package_order" &&
+    kind !== "hosting_request"
+  ) {
     return { ok: false, fieldErrors: { kind: "invalid" } };
   }
 
@@ -102,6 +113,7 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
   let domain: WebsiteRequestInput["domain"] = null;
   let project: WebsiteRequestInput["project"] = null;
   let order: WebsiteRequestInput["order"] = null;
+  let hosting: WebsiteRequestInput["hosting"] = null;
 
   if (kind === "domain_request") {
     const fqdn = (text(raw.domain, 253, errors, "domain") ?? "").toLowerCase();
@@ -109,6 +121,10 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
     if (!FQDN_RE.test(fqdn) || fqdn.includes("..")) errors.domain = "invalid";
     if (!TLD_RE.test(tld) || !fqdn.endsWith(`.${tld}`)) errors.tld = "invalid";
     domain = { fqdn, tld };
+  } else if (kind === "hosting_request") {
+    const planName = typeof raw.planName === "string" ? raw.planName.trim() : "";
+    if (!HOSTING_PLAN_NAMES.includes(planName)) errors.planName = "invalid";
+    hosting = { planName };
   } else if (kind === "package_order") {
     const packageId = text(raw.packageId, 120, errors, "packageId");
     if (!packageId || !/^[a-z0-9-]{1,120}$/.test(packageId)) errors.packageId = "invalid";
@@ -173,6 +189,7 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
       domain,
       project,
       order,
+      hosting,
     },
   };
 }

@@ -31,6 +31,17 @@ export type WebsiteRequestPayload =
       website?: string;
     }
   | {
+      kind: "hosting_request";
+      planName: string;
+      name?: string;
+      email?: string;
+      phone?: string;
+      message?: string;
+      language?: "en" | "fr";
+      sourcePage?: string;
+      website?: string;
+    }
+  | {
       kind: "package_order";
       packageId: string;
       tierName: string;

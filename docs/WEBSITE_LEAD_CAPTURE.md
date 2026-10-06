@@ -27,6 +27,14 @@ Before this change, public takatak.ca requests never reached TAKATAK:
   - The visitor sees "Order received" with the reference and quoted total. **No payment is taken**: TAKATAK confirms scope and invoices separately.
 - Footer "Manage projects" and the marketplace service entry now point to `/dashboard` instead of the missing `/dashboard/marketplace`.
 
+## Hosting plan requests (TK-062)
+
+- `/checkout` shows the Upmind hosting plan widgets.
+- If the Upmind widget script has not registered within 10 seconds (blocked, offline or slow), the plans are replaced by a **hosting request form** that uses the existing EN/FR `fallback.hosting.*` text.
+- The visitor picks one of the four Upmind plans (Portfolio, Bronze, Silver, Gold) and leaves an email or phone. Guests must give one; signed-in users are identified by their session.
+- The request becomes a lead "Hosting request: <plan>" with a "New hosting request" notification. The server accepts only those four plan names.
+- Nothing is charged; TAKATAK confirms the plan and sets it up.
+
 ## Team alerts (TK-017)
 
 - **In-app, always on.** Every new lead (not a collapsed duplicate) creates a workspace `Notification` in the same transaction: "New website order", "New domain request" or "New project request".
@@ -73,7 +81,7 @@ While disabled:
 
 ## Verification
 
-- `npm run qa:website-leads` (runs in CI): 18 checks covering:
+- `npm run qa:website-leads` (runs in CI): 20 checks covering:
   - config gate
   - validation and sanitization
   - honeypot
@@ -82,6 +90,7 @@ While disabled:
   - route protections
   - the removed dead-end links
   - package orders: catalog pricing, forged totals ignored, unknown package/tier/add-on refused, high priority and value
+  - hosting requests: only real plans accepted; Upmind failure shows the request form
   - notifications: one per new lead with no contact details; email opt-in and validated; mark-read limited to the workspace
 - Manual, against a throwaway local PostgreSQL 16 with the full Prisma schema and `next start` in production mode:
   - a valid domain request was stored as a lead
@@ -93,6 +102,12 @@ While disabled:
   - a checkout order for "logo-design" Standard + "Business card design" + `first10`, sent with a forged `totalCents: 1`, was stored as a high-priority lead valued at $178.20 (catalog $149 + $49 − 10%); an unknown package or add-on returned 400
   - with `WEBSITE_LEADS_NOTIFY_EMAIL` set, an order submitted twice gave one lead, one notification ("New website order · Ref … · $79.00 CAD quoted", no contact details) and one email attempt after the response (logged `not_configured` because no email provider is set locally)
   - signed out: `/dashboard/notifications` redirects to login and the mark-read API returns 401
+  - hosting: "Silver Hosting" with phone only was stored with a "New hosting request" notification; "Platinum Hosting" returned 400
+  - browser (Playwright, Upmind blocked, phone-sized screen):
+    - the form appeared after the timeout
+    - an empty submit showed the contact message
+    - a Gold Hosting request showed "Hosting request received" with a reference and was stored
+    - no page errors
   - real Prisma: marking another workspace's notification by id updated 0 rows; "mark all" updated only this workspace's rows
 
 ## Not done yet
