@@ -1,10 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  useRouter,
-  useSearchParams,
-} from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   type FormEvent,
   useEffect,
@@ -12,6 +9,7 @@ import {
 } from "react";
 import {
   Check,
+  CheckCircle2,
   Save,
   ShieldCheck,
 } from "lucide-react";
@@ -25,6 +23,7 @@ import {
   clearQuotePrefill,
   readQuotePrefill,
 } from "@/lib/website/marketplace-storage";
+import { submitWebsiteRequest } from "@/lib/website/website-requests";
 
 type Visibility =
   | "private"
@@ -34,16 +33,11 @@ type Visibility =
 const draftKey =
   "takatak.project.draft.v1";
 
-const submittedKey =
-  "takatak.project.submitted.v1";
-
 export function PostProjectForm({
   isAuthenticated,
 }: {
   isAuthenticated: boolean;
 }) {
-  const router = useRouter();
-
   const searchParams =
     useSearchParams();
 
@@ -92,12 +86,66 @@ export function PostProjectForm({
   const [draftSaved, setDraftSaved] =
     useState(false);
 
+  const [contactName, setContactName] =
+    useState("");
+
+  const [contactEmail, setContactEmail] =
+    useState("");
+
+  const [contactPhone, setContactPhone] =
+    useState("");
+
+  // Hidden field; real visitors never fill it.
+  const [website, setWebsite] =
+    useState("");
+
+  const [reference, setReference] =
+    useState<string | null>(null);
+
+  const [submitError, setSubmitError] =
+    useState<string | null>(null);
+
   const [
     prefillMessage,
     setPrefillMessage,
   ] = useState<string | null>(null);
 
   useEffect(() => {
+    function restoreDraft() {
+      try {
+        const raw =
+          window.localStorage.getItem(
+            draftKey,
+          );
+        if (!raw) return;
+        const draft = JSON.parse(
+          raw,
+        ) as Record<string, unknown>;
+        const read = (key: string) =>
+          typeof draft[key] === "string"
+            ? (draft[key] as string)
+            : "";
+        if (read("title")) setTitle(read("title"));
+        if (read("businessName")) setBusinessName(read("businessName"));
+        if (
+          MARKETPLACE_CATEGORIES.some(
+            (item) => item.slug === read("category"),
+          )
+        ) {
+          setCategory(read("category"));
+        }
+        if (read("brief")) setBrief(read("brief"));
+        if (read("budget")) setBudget(read("budget"));
+        if (read("timeline")) setTimeline(read("timeline"));
+        if (read("skills")) setSkills(read("skills"));
+        setPrefillMessage(
+          "Your saved draft was restored.",
+        );
+      } catch {
+        /* a corrupt draft is ignored */
+      }
+    }
+
     const timeoutId =
       window.setTimeout(() => {
         const currentParams =
@@ -172,6 +220,7 @@ export function PostProjectForm({
           readQuotePrefill();
 
         if (!prefill) {
+          restoreDraft();
           return;
         }
 
@@ -251,38 +300,145 @@ export function PostProjectForm({
     );
   }
 
-  function submit(
+  async function submit(
     event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
+    setSubmitError(null);
+
+    if (
+      !isAuthenticated &&
+      !contactEmail.trim() &&
+      !contactPhone.trim()
+    ) {
+      setSubmitError(
+        "Add an email or phone number so TAKATAK can contact you.",
+      );
+      return;
+    }
+
     setSubmitting(true);
 
+    // Keep a local copy until TAKATAK confirms reception.
     window.localStorage.setItem(
-      submittedKey,
+      draftKey,
       JSON.stringify(
         projectPayload(),
       ),
     );
 
-    window.localStorage.removeItem(
-      draftKey,
-    );
+    const details = [
+      brief,
+      skills ? `Required skills: ${skills}` : "",
+      `Visibility: ${visibility}`,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
 
-    clearQuotePrefill();
+    const result =
+      await submitWebsiteRequest({
+        kind: "project_request",
+        title,
+        company:
+          businessName || undefined,
+        category,
+        budget: budget || undefined,
+        timeline,
+        message: details,
+        name:
+          contactName || undefined,
+        email:
+          contactEmail || undefined,
+        phone:
+          contactPhone || undefined,
+        sourcePage:
+          window.location.pathname,
+        website,
+      });
 
-    const destination =
-      "/dashboard/marketplace";
+    setSubmitting(false);
 
-    if (isAuthenticated) {
-      router.push(destination);
+    if (result.status === "sent") {
+      window.localStorage.removeItem(
+        draftKey,
+      );
+      clearQuotePrefill();
+      setReference(result.reference);
       return;
     }
 
-    router.push(
-      `/register?next=${encodeURIComponent(
-        destination,
-      )}&projectDraft=1`,
+    if (result.status === "invalid") {
+      setSubmitError(
+        result.fieldErrors.contact
+          ? "Add an email or phone number so TAKATAK can contact you."
+          : "Some information looks invalid. Please review the form and try again.",
+      );
+      return;
+    }
+
+    if (result.status === "rate_limited") {
+      setSubmitError(
+        "Too many requests were sent. Please wait a few minutes and try again.",
+      );
+      return;
+    }
+
+    setSubmitError(
+      "We couldn't send your project right now. Your draft is saved on this device — please try again shortly or email support@takatak.ca.",
+    );
+  }
+
+  if (reference) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8">
+          <div className="flex items-start gap-3">
+            <CheckCircle2
+              size={24}
+              className="mt-0.5 shrink-0 text-emerald-700"
+            />
+
+            <div>
+              <h1 className="text-2xl font-bold text-slate-950">
+                Project received
+              </h1>
+
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                TAKATAK received your
+                project “{title}”. A
+                specialist will review the
+                brief and contact you about
+                scope, pricing and timing.
+                Nothing is charged until you
+                approve a quote.
+              </p>
+
+              <p className="mt-3 text-sm font-medium text-slate-900">
+                Reference: {reference}
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/marketplace"
+                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Back to marketplace
+                </Link>
+
+                {!isAuthenticated ? (
+                  <Link
+                    href="/register"
+                    className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800"
+                  >
+                    Create an account
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -577,6 +733,94 @@ export function PostProjectForm({
             ))}
           </section>
 
+          {!isAuthenticated ? (
+            <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6">
+              <h2 className="font-semibold text-slate-950">
+                5. How can we reach you?
+              </h2>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <input
+                  value={contactName}
+                  onChange={(event) =>
+                    setContactName(
+                      event.target.value,
+                    )
+                  }
+                  maxLength={120}
+                  autoComplete="name"
+                  aria-label="Your name"
+                  placeholder="Your name"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                />
+
+                <input
+                  value={contactEmail}
+                  onChange={(event) =>
+                    setContactEmail(
+                      event.target.value,
+                    )
+                  }
+                  type="email"
+                  maxLength={254}
+                  autoComplete="email"
+                  aria-label="Email"
+                  placeholder="Email"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                />
+
+                <input
+                  value={contactPhone}
+                  onChange={(event) =>
+                    setContactPhone(
+                      event.target.value,
+                    )
+                  }
+                  type="tel"
+                  maxLength={40}
+                  autoComplete="tel"
+                  aria-label="Phone"
+                  placeholder="Phone"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                />
+              </div>
+
+              <p className="text-xs text-slate-500">
+                An email or phone number is
+                required. TAKATAK uses it only
+                to follow up on this project.
+              </p>
+            </section>
+          ) : null}
+
+          <div
+            aria-hidden="true"
+            className="absolute -left-[10000px] h-px w-px overflow-hidden"
+          >
+            <label>
+              Website
+              <input
+                tabIndex={-1}
+                autoComplete="off"
+                value={website}
+                onChange={(event) =>
+                  setWebsite(
+                    event.target.value,
+                  )
+                }
+              />
+            </label>
+          </div>
+
+          {submitError ? (
+            <p
+              role="alert"
+              className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800"
+            >
+              {submitError}
+            </p>
+          ) : null}
+
           <div className="flex flex-wrap items-center gap-3">
             <button
               disabled={submitting}
@@ -584,7 +828,7 @@ export function PostProjectForm({
               className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             >
               {submitting
-                ? "Saving…"
+                ? "Sending…"
                 : "Submit project to TAKATAK"}
             </button>
 
