@@ -84,6 +84,8 @@
     "qa:content-contributions": "tsx --require ./scripts/register-server-only.cjs scripts/content-contributions-tests.ts",
     "qa:ads": "tsx scripts/verify-takatak-ads.ts",
     "qa:billing": "tsx scripts/verify-takatak-billing.ts",
+    "qa:client-invoices": "tsx scripts/verify-client-invoices.ts",
+    "qa:client-invoices-db": "tsx --require ./scripts/register-server-only.cjs scripts/client-invoices-db-tests.ts",
     "ads:seed:ahmv": "tsx scripts/seed-ahmv-ads-publisher.ts",
     "qa:hockey-parent-preferences": "tsx scripts/verify-hockey-parent-preferences.ts",
     "qa:hockey-supporter-credit": "tsx --require ./scripts/register-server-only.cjs scripts/verify-hockey-supporter-credit.ts",
