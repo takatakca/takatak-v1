@@ -4,7 +4,9 @@
 // Phase 6+ (real adapters). Keep pages thin: they render from this file.
 
 import {
+  BarChart3,
   Bell,
+  Bot,
   BotMessageSquare,
   Briefcase,
   Building2,
@@ -30,9 +32,11 @@ import {
   MapPin,
   MapPinned,
   Megaphone,
+  MessageCircle,
   PlugZap,
   Plus,
   Receipt,
+  Rocket,
   Search,
   Server,
   Settings,
@@ -41,6 +45,8 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Tags,
+  Target,
   UserPlus,
   UserRound,
   Users,
@@ -97,6 +103,20 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Leads", href: "/dashboard/leads", icon: Filter },
       { label: "AI Studio", href: "/dashboard/ai-studio", icon: Sparkles },
       { label: "Content Moderation", href: "/dashboard/contributions", icon: ListChecks },
+    ],
+  },
+  {
+    title: "Growth Suite",
+    items: [
+      { label: "Growth Hub", href: "/dashboard/growth", icon: Rocket },
+      { label: "Analytics", href: "/dashboard/growth/analytics", icon: BarChart3 },
+      { label: "Reputation & Reviews", href: "/dashboard/growth/reviews", icon: Star },
+      { label: "Conversations", href: "/dashboard/growth/conversations", icon: MessageCircle },
+      { label: "Ads Manager", href: "/dashboard/growth/ads-manager", icon: Megaphone },
+      { label: "Retargeting & Geo", href: "/dashboard/growth/audiences", icon: Target },
+      { label: "AI Engine & Credits", href: "/dashboard/growth/ai-engine", icon: Bot },
+      { label: "Connectors", href: "/dashboard/growth/connectors", icon: PlugZap },
+      { label: "Plans & Pricing", href: "/dashboard/growth/pricing", icon: Tags },
     ],
   },
   {

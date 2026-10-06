@@ -103,6 +103,9 @@ jobs:
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
 
+      - name: TAKATAK Growth Suite safeguards
+        run: npm run qa:growth-suite
+
       - name: Secret scan
         run: npm run qa:secrets
 
