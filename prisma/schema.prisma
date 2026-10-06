@@ -328,6 +328,8 @@ model Profile {
   moderatedContributions   ContentContribution[]          @relation("ContributionModerator")
   contributionEvents       ContentContributionEvent[]     @relation("ContributionEventActor")
   contributorReputations   ContributorReputation[]
+  createdBillingInvoiceRequests   BillingInvoiceRequest[] @relation("BillingInvoiceRequestCreatedBy")
+  submittedBillingInvoiceRequests BillingInvoiceRequest[] @relation("BillingInvoiceRequestSubmittedBy")
 
   @@map("profiles")
 }
@@ -418,6 +420,7 @@ model Client {
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
   leads                     Lead[]
+  billingInvoiceRequests    BillingInvoiceRequest[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
 
@@ -3093,6 +3096,7 @@ model MasterIdentity {
   hockeyStripeEvents  HockeyStripeWebhookEvent[]
 
   experienceLaunchCodes ExperienceLaunchCode[]
+  billingInvoiceRequests BillingInvoiceRequest[]
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
@@ -4044,4 +4048,64 @@ model HockeyTravelProfile {
   @@index([status])
   @@index([identityId, status])
   @@map("hockey_travel_profiles")
+}
+
+
+// ════════════════════════════════════════════════════════════
+// GROUPE TAKATAK Billing — ecosystem invoice request queue.
+// Every TAKATAK app feeds invoice requests here; a platform OWNER submits
+// them to the independent Facturations service, which creates a DRAFT only.
+// See docs/TAKATAK_BILLING_FACTURATIONS_FOUNDATION.md.
+// ════════════════════════════════════════════════════════════
+
+enum BillingInvoiceRequestStatus {
+  pending
+  submitting
+  submitted
+  failed
+  rejected
+  cancelled
+}
+
+model BillingInvoiceRequest {
+  id                     String                      @id @default(uuid()) @db.Uuid
+  /// Feeding app code (src/lib/billing/invoices/source-apps.ts).
+  sourceApp              String
+  /// Stable reference inside the feeding app. Unique per sourceApp.
+  sourceReference        String
+  clientId               String?                     @db.Uuid
+  masterIdentityId       String?                     @db.Uuid
+  /// Deterministic Facturations Idempotency-Key derived from sourceApp + sourceReference.
+  idempotencyKey         String                      @unique
+  /// Validated Facturations DraftInput. Immutable after insert (DB trigger).
+  draft                  Json
+  draftHash              String
+  currency               String                      @default("CAD")
+  /// Local estimate only; Facturations recalculates the authoritative draft.
+  estimatedTotalCents    BigInt
+  status                 BillingInvoiceRequestStatus @default(pending)
+  facturationsDraftId    String?                     @db.Uuid
+  facturationsTotalCents BigInt?
+  submitAttempts         Int                         @default(0)
+  lastErrorCode          String?
+  lastAttemptAt          DateTime?
+  submittedAt            DateTime?
+  cancelledAt            DateTime?
+  createdByProfileId     String?                     @db.Uuid
+  submittedByProfileId   String?                     @db.Uuid
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+
+  client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  masterIdentity MasterIdentity? @relation(fields: [masterIdentityId], references: [id], onDelete: SetNull)
+  createdBy      Profile?        @relation("BillingInvoiceRequestCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
+  submittedBy    Profile?        @relation("BillingInvoiceRequestSubmittedBy", fields: [submittedByProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceApp, sourceReference])
+  @@index([status, createdAt])
+  @@index([clientId])
+  @@index([masterIdentityId])
+  @@index([createdByProfileId])
+  @@index([submittedByProfileId])
+  @@map("billing_invoice_requests")
 }

@@ -103,6 +103,9 @@ jobs:
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
 
+      - name: GROUPE TAKATAK billing (Facturations) safeguards
+        run: npm run qa:billing
+
       - name: Secret scan
         run: npm run qa:secrets
 
