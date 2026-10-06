@@ -6,6 +6,7 @@ import {
   getFedInvoiceRequest,
   verifyBillingFeedHeaders,
 } from "@/lib/billing/invoices/feed-service";
+import { readBoundedText } from "@/lib/http/read-bounded-text";
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
 
 export const runtime = "nodejs";
@@ -30,13 +31,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     return denied(415, "JSON_REQUIRED");
   }
 
-  const declared = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declared) && declared > BILLING_FEED_MAX_BODY_BYTES) {
-    return denied(413, "PAYLOAD_TOO_LARGE");
-  }
-
-  const rawBody = await request.text();
-  if (Buffer.byteLength(rawBody, "utf8") > BILLING_FEED_MAX_BODY_BYTES) {
+  const rawBody = await readBoundedText(request, BILLING_FEED_MAX_BODY_BYTES);
+  if (rawBody === null) {
     return denied(413, "PAYLOAD_TOO_LARGE");
   }
 

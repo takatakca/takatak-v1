@@ -70,7 +70,9 @@ assert.ok(service.includes("sourceApp_sourceReference: { sourceApp: app, sourceR
 assert.equal(/submitInvoiceRequest|createFacturationsDraft|facturations\/client/.test(service), false, "the feed never talks to Facturations");
 const route = read("src/app/api/integrations/billing/invoice-requests/route.ts");
 assert.ok(route.indexOf("verifyBillingFeedHeaders") < route.indexOf("JSON.parse(rawBody)"), "signature verified before JSON parsing");
-assert.ok(route.includes("BILLING_FEED_MAX_BODY_BYTES"));
+assert.ok(route.includes("readBoundedText(request, BILLING_FEED_MAX_BODY_BYTES)"), "body read with a streaming byte cap");
+assert.equal(route.includes("request.text()"), false);
+assert.ok(service.includes("billingFeedClientLinkingEnvName(app)"), "workspace linking is opt-in per app");
 assert.ok(route.includes('rawBody: ""'), "GET signs an empty body");
 assert.ok(route.includes("`${url.pathname}${url.search}`"), "query string is signed");
 pass("route verifies before parsing, caps the body, signs the query; service is server-only, app-scoped and Facturations-free");

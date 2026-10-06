@@ -99,5 +99,27 @@ async function main() {
   const retargeted = signed("GET", "foodhub", FOODHUB, statusPath);
   assert.equal((await GET(new Request(`${ORIGIN}${PATH}?sourceReference=other`, { headers: retargeted.headers }))).status, 401, "a signed status lookup cannot be pointed at another reference");
   console.log("PASS status lookups are signed (query included) and scoped to the calling app");
+
+  const client = await prisma.client.create({ data: { name: `Feed client ${randomUUID()}` } });
+  const linked = JSON.stringify({ sourceReference: `x/${randomUUID()}`, clientId: client.id, draft });
+  delete process.env.BILLING_FEED_CLIENT_LINKING_FOODHUB;
+  assert.equal((await POST(signed("POST", "foodhub", FOODHUB, PATH, linked))).status, 400, "client linking is off by default");
+  process.env.BILLING_FEED_CLIENT_LINKING_FOODHUB = "1";
+  const linkedOk = await json(await POST(signed("POST", "foodhub", FOODHUB, PATH, linked)));
+  assert.equal(linkedOk.status, 201);
+  assert.equal((await prisma.billingInvoiceRequest.findUnique({ where: { id: linkedOk.body.request.id } }))?.clientId, client.id);
+  assert.equal((await POST(signed("POST", "festi_ice", FESTI, PATH, JSON.stringify({ sourceReference: `x/${randomUUID()}`, clientId: client.id, draft })))).status, 400, "only the app that is trusted for linking");
+  console.log("PASS linking a request to a workspace is opt-in per app");
+
+  const big = JSON.stringify({ sourceReference: `x/${randomUUID()}`, draft: { ...draft, notes: "x".repeat(70_000) } });
+  const chunkedBig = signed("POST", "foodhub", FOODHUB, PATH, big);
+  const streamed = new Request(chunkedBig.url, {
+    method: "POST",
+    headers: chunkedBig.headers,
+    body: new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(big)); c.close(); } }),
+    duplex: "half",
+  } as RequestInit);
+  assert.equal((await POST(streamed)).status, 413, "oversized chunked body refused while streaming");
+  console.log("PASS oversized bodies are refused while streaming, before any signature work");
 }
 main().then(() => process.exit(0), (e) => { console.error(String(e?.stack ?? e).slice(0, 1200)); process.exit(1); });

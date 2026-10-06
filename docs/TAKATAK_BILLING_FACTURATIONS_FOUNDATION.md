@@ -181,7 +181,8 @@ X-Takatak-Billing-Signature:  v1=<hex HMAC-SHA256(secret, "v1.<app>.<timestamp>.
   - The app whose secret verifies the signature becomes the request's `sourceApp`. The body cannot carry `sourceApp` or any unknown field.
   - `manual` is not available on the feed.
   - An app without a configured secret is refused with a 503 (fail closed).
-- Timestamps are accepted within ±300 s. The signature covers the method, the path **including the query**, and the exact raw body. The body is capped at 64 KB.
+- `clientId` (linking the request to a TAKATAK workspace, so the issued invoice becomes payable in that workspace's "Factures") is refused unless the app is explicitly trusted for it with `BILLING_FEED_CLIENT_LINKING_<APP>=1`. The OWNER still reviews every request before it reaches Facturations.
+- Timestamps are accepted within ±300 s. The signature covers the method, the path **including the query**, and the exact raw body. The body is capped at 64 KB, enforced while streaming (chunked bodies included).
 - Replays are harmless: the same `(app, sourceReference)` with the same draft returns the existing request (`200`, `created: false`). A different draft on the same reference returns `409`; a correction needs a new reference.
 - The draft goes through the same validation as every other request (`400` on invalid input). The request lands as `pending`. A TAKATAK OWNER still reviews it and creates the Facturations draft.
 - **Status:** `GET /api/integrations/billing/invoice-requests?sourceReference=<ref>`, signed with an empty body. It returns `{ id, sourceApp, sourceReference, status, submitted }` for the calling app's own request only (`404` otherwise).

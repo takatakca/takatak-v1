@@ -21,6 +21,10 @@ import { isSourceReference } from "./source-apps";
 
 export const BILLING_FEED_MAX_BODY_BYTES = 64_000;
 
+export function billingFeedClientLinkingEnvName(app: BillingFeedApp): string {
+  return `BILLING_FEED_CLIENT_LINKING_${app.toUpperCase()}`;
+}
+
 const FEED_BODY_KEYS = new Set(["sourceReference", "clientId", "draft"]);
 
 export function verifyBillingFeedHeaders(input: {
@@ -75,11 +79,19 @@ export async function feedInvoiceRequest(
     throw new ServiceError("invalid_input", `Unexpected field: ${unknownKey.slice(0, 40)}.`);
   }
 
+  const clientId = record.clientId ?? null;
+
+  // Linking a request to a TAKATAK workspace makes it, once issued, a payable
+  // invoice in that workspace. Only apps explicitly trusted for it may do so.
+  if (clientId !== null && process.env[billingFeedClientLinkingEnvName(app)]?.trim() !== "1") {
+    throw new ServiceError("invalid_input", "clientId is not enabled for this app.");
+  }
+
   const result = await enqueueInvoiceRequest(
     {
       sourceApp: app,
       sourceReference: record.sourceReference as string,
-      clientId: (record.clientId ?? null) as string | null,
+      clientId: clientId as string | null,
       draft: record.draft as never,
     },
     { profileId: null },
