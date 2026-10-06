@@ -280,6 +280,12 @@ Migration: `prisma/migrations/20261007120000_growth_google_data_sources` adds `a
 - **One TAKATAK service account:** set `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (a PEM key; escaped `\n` is fine). The app signs its own RS256 assertion and caches the token.
 - **Per website:** under Analytics → Tracked websites → Google connections, paste the **GA4 property ID** and the **Search Console property** (`sc-domain:example.com` or `https://www.example.com/`).
   - The client first adds the service-account email as a Viewer in GA4 and as a user in Search Console. The email is shown in that form.
+  - **Ownership check (security fix, migration `20261007210000_growth_site_domain_verification`).** Every workspace shares one service account, so an identifier alone proves nothing: without this, a workspace could link another business's `sc-domain:` or GA4 ID and read its data. Now:
+    - each website has its own random verification token;
+    - the owner publishes it as a DNS TXT record on the domain (`takatak-site-verification=<token>`) or a `<meta name="takatak-site-verification">` tag in the homepage `<head>`, then clicks **Verify ownership**. The page must be served from the domain itself or its `www.` alias after redirects, and the fetch uses the site-audit SSRF guard;
+    - linking requires a verified domain. The Search Console property must be `sc-domain:<domain>` or a URL prefix on `<domain>` / `www.<domain>`. The GA4 property must have a web data stream on that domain, checked live with the Analytics Admin API (read-only scope);
+    - a database CHECK refuses Google links on unverified sites. Reads ignore links on unverified sites and Search Console properties off the domain;
+    - the migration clears any link made before this check existed.
 - **Analytics page:** a GA4 card shows sessions, active users, page views and a daily chart for the selected period.
 - **Keywords page:** real Google queries from Search Console (clicks, impressions, CTR, average position) for the last 28 days. Search Console data lags 2–3 days.
 - **Errors are shown honestly:** a 403 tells the client to grant access to the service account. Nothing is ever estimated.

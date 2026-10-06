@@ -73,7 +73,9 @@ import {
   syncGoogleReviews,
   type FetchLike,
 } from "../src/lib/integrations/google-business/service";
-import { linkGoogleSources, listGoogleLinkedSites } from "../src/lib/analytics/service";
+import { listGoogleLinkedSites } from "../src/lib/analytics/service";
+import { linkVerifiedGoogleSources, verifySiteDomain, type OwnershipDeps } from "../src/lib/analytics/ownership";
+import { verificationMetaTag, verificationTxtValue } from "../src/lib/analytics/verification";
 
 const PHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
 function hdrs(origin: string | null, ip = "203.0.113.7", ua = PHONE_UA, extra: Record<string, string> = {}): Headers {
@@ -606,14 +608,64 @@ async function main(): Promise<void> {
       assert.equal((await getGrowthReport(c.id, "2026-12"))?.current.pageviews, 0);
       pass("monthly growth report is exact, month-bounded and compared with the previous month");
 
-      assert.equal(await linkGoogleSources(a.id, cSite.id, { ga4PropertyId: "123456789", searchConsoleProperty: null }), false, "cannot link another tenant's site");
-      assert.equal(await linkGoogleSources(c.id, cSite.id, { ga4PropertyId: "123456789", searchConsoleProperty: "sc-domain:c-qa.ca" }), true);
+      // Ownership: the shared service account must never read a property the
+      // workspace has not proven it owns.
+      const cRow = await prisma.analyticsSite.findUniqueOrThrow({ where: { id: cSite.id }, select: { verificationToken: true } });
+      const aRow = await prisma.analyticsSite.findUniqueOrThrow({ where: { id: site.id }, select: { verificationToken: true } });
+      assert.match(cRow.verificationToken, /^[0-9a-f]{32}$/);
+      assert.notEqual(cRow.verificationToken, aRow.verificationToken, "each site has its own token");
+      const dnsRecords: Record<string, string[][]> = {};
+      const pages: Record<string, { finalUrl: URL; status: number; body: string }> = {};
+      const ga4Streams: Record<string, string[]> = { "123456789": ["www.c-qa.ca"], "987654321": ["b-qa.ca"] };
+      const deps: OwnershipDeps = {
+        resolveTxt: async (host) => {
+          if (!dnsRecords[host]) throw Object.assign(new Error("ENODATA"), { code: "ENODATA" });
+          return dnsRecords[host];
+        },
+        fetchPage: async (url) => pages[url] ?? null,
+        ga4WebStreamHosts: async (id) => (ga4Streams[id] ? { ok: true, data: ga4Streams[id] } : { ok: false, reason: "access_denied" }),
+        now: () => new Date("2026-10-07T12:00:00Z"),
+      };
+
+      const unverified = await linkVerifiedGoogleSources(c.id, cSite.id, { ga4PropertyId: null, searchConsoleProperty: "sc-domain:c-qa.ca" }, deps);
+      assert.equal(unverified.ok, false, "linking needs a verified domain");
+      await assert.rejects(
+        prisma.analyticsSite.update({ where: { id: cSite.id }, data: { searchConsoleProperty: "sc-domain:c-qa.ca" } }),
+        "database rejects Google links on unverified sites",
+      );
+
+      assert.equal((await verifySiteDomain(c.id, cSite.id, deps)).ok, false, "no token published yet");
+      dnsRecords["c-qa.ca"] = [[verificationTxtValue(aRow.verificationToken)]];
+      assert.equal((await verifySiteDomain(c.id, cSite.id, deps)).ok, false, "another site's token does not verify");
+      pages["https://c-qa.ca/"] = { finalUrl: new URL("https://evil-qa.ca/"), status: 200, body: `<html><head>${verificationMetaTag(cRow.verificationToken)}</head></html>` };
+      assert.equal((await verifySiteDomain(c.id, cSite.id, deps)).ok, false, "meta tag served from another host after redirects does not verify");
+      pages["https://www.c-qa.ca/"] = { finalUrl: new URL("https://www.c-qa.ca/"), status: 200, body: `<html><head></head><body>${verificationMetaTag(cRow.verificationToken)}</body></html>` };
+      assert.equal((await verifySiteDomain(c.id, cSite.id, deps)).ok, false, "meta tag in the page body does not verify");
+      assert.equal((await verifySiteDomain(a.id, cSite.id, deps)).ok, false, "cannot verify another tenant's site");
+      pages["https://www.c-qa.ca/"] = { finalUrl: new URL("https://www.c-qa.ca/"), status: 200, body: `<html><head>${verificationMetaTag(cRow.verificationToken)}</head><body></body></html>` };
+      assert.deepEqual(await verifySiteDomain(c.id, cSite.id, deps), { ok: true, method: "meta" });
+      dnsRecords["c-qa.ca"] = [["v=spf1 -all"], [verificationTxtValue(cRow.verificationToken).slice(0, 20), verificationTxtValue(cRow.verificationToken).slice(20)]];
+      assert.deepEqual(await verifySiteDomain(c.id, cSite.id, deps), { ok: true, method: "dns" }, "chunked TXT records verify");
+
+      assert.equal((await linkVerifiedGoogleSources(a.id, cSite.id, { ga4PropertyId: "123456789", searchConsoleProperty: null }, deps)).ok, false, "cannot link another tenant's site");
+      assert.equal((await linkVerifiedGoogleSources(c.id, cSite.id, { ga4PropertyId: null, searchConsoleProperty: "sc-domain:b-qa.ca" }, deps)).ok, false, "Search Console property of another domain is rejected");
+      assert.equal((await linkVerifiedGoogleSources(c.id, cSite.id, { ga4PropertyId: null, searchConsoleProperty: "https://shop.c-qa.ca/" }, deps)).ok, false, "other subdomains are rejected");
+      assert.equal((await linkVerifiedGoogleSources(c.id, cSite.id, { ga4PropertyId: "987654321", searchConsoleProperty: null }, deps)).ok, false, "GA4 property streaming another domain is rejected");
+      assert.equal((await linkVerifiedGoogleSources(c.id, cSite.id, { ga4PropertyId: "555555555", searchConsoleProperty: null }, deps)).ok, false, "GA4 property the service account cannot read is rejected");
+      assert.equal((await linkVerifiedGoogleSources(a.id, site.id, { ga4PropertyId: null, searchConsoleProperty: "sc-domain:c-qa.ca" }, deps)).ok, false, "a verified neighbour does not unlock an unverified site");
+      assert.deepEqual(await linkVerifiedGoogleSources(c.id, cSite.id, { ga4PropertyId: "123456789", searchConsoleProperty: "sc-domain:c-qa.ca" }, deps), { ok: true });
       assert.deepEqual((await listGoogleLinkedSites(c.id)).map((x) => [x.ga4PropertyId, x.searchConsoleProperty]), [["123456789", "sc-domain:c-qa.ca"]]);
+      assert.deepEqual(await listGoogleLinkedSites(a.id), [], "unverified tenant sees no Google links");
       await assert.rejects(
         prisma.analyticsSite.update({ where: { id: cSite.id }, data: { ga4PropertyId: "G-NOTNUMERIC" } }),
         "database rejects malformed GA4 property ids",
       );
-      pass("Google data sources link per website, tenant-scoped and format-checked");
+      // A link that drifted off the domain (e.g. edited in the database) is ignored at read time.
+      await prisma.analyticsSite.update({ where: { id: cSite.id }, data: { searchConsoleProperty: "sc-domain:b-qa.ca" } });
+      assert.equal((await listGoogleLinkedSites(c.id))[0].searchConsoleProperty, null);
+      assert.equal((await getAnalyticsSummary(c.id)).sites.find((x) => x.id === cSite.id)?.searchConsoleProperty, null);
+      assert.deepEqual(await linkVerifiedGoogleSources(c.id, cSite.id, { ga4PropertyId: null, searchConsoleProperty: null }, deps), { ok: true }, "links can be cleared");
+      pass("Google data sources link only to verified websites and only for their own domain");
   
     // ------------------------------------------------ Google Business Profile
     const gbpEnv = {

@@ -238,6 +238,16 @@ async function tryFetchText(url: URL): Promise<FetchedPage | null> {
   }
 }
 
+/** SSRF-guarded GET of one public page (used by website ownership checks). */
+export async function fetchPublicPage(rawUrl: string): Promise<{ finalUrl: URL; status: number; body: string } | null> {
+  try {
+    const page = await safeFetch(normalizeAuditUrl(rawUrl), MAX_HTML_BYTES);
+    return { finalUrl: page.url, status: page.status, body: page.body };
+  } catch {
+    return null;
+  }
+}
+
 // ------------------------------------------------------------------- parsing
 
 function decodeEntities(value: string): string {

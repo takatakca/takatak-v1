@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { parseAudienceRule } from "@/lib/analytics/parse";
-import { createAnalyticsSite, createAudience, deleteAudience, linkGoogleSources, setAnalyticsSiteActive } from "@/lib/analytics/service";
+import { linkVerifiedGoogleSources, verifySiteDomain } from "@/lib/analytics/ownership";
+import { createAnalyticsSite, createAudience, deleteAudience, setAnalyticsSiteActive } from "@/lib/analytics/service";
 import { isValidGa4PropertyId, normalizeSearchConsoleProperty } from "@/lib/integrations/google/parse";
 import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
 import { getServerAccessContext } from "@/lib/security/access-context";
@@ -87,9 +88,32 @@ export async function linkGoogleAction(_prev: AnalyticsFormState, formData: Form
   if (ga4Raw && !isValidGa4PropertyId(ga4Raw)) return { ok: false, error: "The GA4 property ID is the number shown in GA4 Admin → Property details (e.g. 123456789)." };
   const sc = scRaw ? normalizeSearchConsoleProperty(scRaw) : null;
   if (scRaw && !sc) return { ok: false, error: "Use the Search Console property exactly as listed: sc-domain:example.com or https://www.example.com/." };
-  const saved = await linkGoogleSources(access.activeClientId, siteId, { ga4PropertyId: ga4Raw || null, searchConsoleProperty: sc });
-  if (!saved) return { ok: false, error: "Website not found in this workspace." };
+  let saved: Awaited<ReturnType<typeof linkVerifiedGoogleSources>>;
+  try {
+    saved = await linkVerifiedGoogleSources(access.activeClientId, siteId, { ga4PropertyId: ga4Raw || null, searchConsoleProperty: sc });
+  } catch {
+    console.error("[analytics] link google failed");
+    return { ok: false, error: "The Google connections could not be saved. Try again." };
+  }
+  if (!saved.ok) return { ok: false, error: saved.error };
   revalidatePath(BASE);
   revalidatePath("/dashboard/seo/keywords");
   return { ok: true, message: "Google connections saved." };
+}
+
+export async function verifySiteAction(_prev: AnalyticsFormState, formData: FormData): Promise<AnalyticsFormState> {
+  const access = await canManage();
+  if (!access) return { ok: false, error: "You do not have permission to verify websites." };
+  const siteId = String(formData.get("siteId") ?? "");
+  if (!UUID.test(siteId)) return { ok: false, error: "Choose a website." };
+  let result: Awaited<ReturnType<typeof verifySiteDomain>>;
+  try {
+    result = await verifySiteDomain(access.activeClientId, siteId);
+  } catch {
+    console.error("[analytics] verify site failed");
+    return { ok: false, error: "Verification could not run. Try again." };
+  }
+  if (!result.ok) return { ok: false, error: result.error };
+  revalidatePath(BASE);
+  return { ok: true, message: result.method === "dns" ? "Verified with your DNS record." : "Verified with your homepage meta tag." };
 }

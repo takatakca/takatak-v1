@@ -26,7 +26,16 @@ import { maskPhone, toE164 } from "../src/lib/messaging/phone";
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
 import { generateKeyPairSync, createVerify } from "node:crypto";
 import { buildServiceAccountAssertion, normalizePrivateKey } from "../src/lib/integrations/google/jwt";
-import { isValidGa4PropertyId, normalizeSearchConsoleProperty, parseGa4DailyReport, parseSearchConsoleQueries } from "../src/lib/integrations/google/parse";
+import {
+  hostMatchesSiteDomain,
+  isValidGa4PropertyId,
+  normalizeSearchConsoleProperty,
+  parseGa4DailyReport,
+  parseGa4WebStreamHosts,
+  parseSearchConsoleQueries,
+  searchConsolePropertyMatchesDomain,
+} from "../src/lib/integrations/google/parse";
+import { htmlHasVerificationMeta, txtRecordsHaveVerification, verificationMetaTag, verificationTxtValue } from "../src/lib/analytics/verification";
 import { buildHighlights, monthRange, percentChange, previousMonth } from "../src/lib/growth/report";
 import { connectionAad, decryptGrowthValue, encryptGrowthValue, pkceChallenge } from "../src/lib/integrations/google-business/crypto";
 import { parseAccounts, parseLocations, parseReviewsPage } from "../src/lib/integrations/google-business/parse";
@@ -363,6 +372,27 @@ function verifyGoogleAndReport(): void {
   assert.equal(normalizeSearchConsoleProperty("sc-domain:Garage.CA"), "sc-domain:garage.ca");
   assert.equal(normalizeSearchConsoleProperty("https://www.garage.ca"), "https://www.garage.ca/");
   assert.equal(normalizeSearchConsoleProperty("http://garage.ca/"), null);
+  assert.ok(searchConsolePropertyMatchesDomain("sc-domain:Garage.ca", "garage.ca"));
+  assert.ok(searchConsolePropertyMatchesDomain("https://www.garage.ca/fr/", "garage.ca"));
+  assert.ok(!searchConsolePropertyMatchesDomain("sc-domain:victim.ca", "garage.ca"), "another domain");
+  assert.ok(!searchConsolePropertyMatchesDomain("sc-domain:ca", "garage.ca"), "a parent domain");
+  assert.ok(!searchConsolePropertyMatchesDomain("https://garage.ca.victim.ca/", "garage.ca"), "suffix trick");
+  assert.ok(!searchConsolePropertyMatchesDomain("https://shop.garage.ca/", "garage.ca"), "other subdomain");
+  assert.ok(!searchConsolePropertyMatchesDomain("https://garage.ca:8443/", "garage.ca"), "non-default port");
+  assert.ok(hostMatchesSiteDomain("WWW.garage.ca.", "garage.ca") && !hostMatchesSiteDomain("wwwgarage.ca", "garage.ca"));
+  assert.deepEqual(
+    parseGa4WebStreamHosts({ dataStreams: [{ type: "WEB_DATA_STREAM", webStreamData: { defaultUri: "https://www.garage.ca" } }, { type: "ANDROID_APP_DATA_STREAM" }, { webStreamData: { defaultUri: "garage.ca/fr" } }] }),
+    ["www.garage.ca", "garage.ca"],
+  );
+  assert.equal(parseGa4WebStreamHosts(null), null);
+  const vToken = "0123456789abcdef0123456789abcdef";
+  assert.ok(txtRecordsHaveVerification([["v=spf1 -all"], [verificationTxtValue(vToken)]], vToken));
+  assert.ok(!txtRecordsHaveVerification([[verificationTxtValue(vToken)]], "not-a-token"));
+  assert.ok(!txtRecordsHaveVerification([[`${verificationTxtValue(vToken)}x`]], vToken));
+  assert.ok(htmlHasVerificationMeta(`<html><head><title>x</title><META content='${vToken}' NAME="takatak-site-verification"></head><body></body></html>`, vToken));
+  assert.ok(!htmlHasVerificationMeta(`<html><head></head><body>${verificationMetaTag(vToken)}</body></html>`, vToken), "body content does not verify");
+  assert.ok(!htmlHasVerificationMeta(`<html><head><!-- ${verificationMetaTag(vToken)} --></head></html>`, vToken), "comments do not verify");
+  assert.ok(!htmlHasVerificationMeta(`<html><head>${verificationMetaTag("ffffffffffffffffffffffffffffffff")}</head></html>`, vToken), "another token");
   pass("GA4 and Search Console responses parse; property identifiers are validated");
 
   const oct = monthRange("2026-10");

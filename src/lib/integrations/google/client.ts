@@ -3,9 +3,11 @@ import "server-only";
 // Google Analytics Data API (GA4) + Search Console API through one service
 // account. Read-only scopes. Each client grants the service account access to
 // its own GA4 property / Search Console site; nothing is called otherwise.
+// Because the account is shared, callers must only pass identifiers that were
+// bound to a verified website (see linkVerifiedGoogleSources).
 
 import { buildServiceAccountAssertion } from "./jwt";
-import { parseGa4DailyReport, parseSearchConsoleQueries, type Ga4Summary, type SearchQueryRow } from "./parse";
+import { parseGa4DailyReport, parseGa4WebStreamHosts, parseSearchConsoleQueries, type Ga4Summary, type SearchQueryRow } from "./parse";
 
 const SCOPES = ["https://www.googleapis.com/auth/analytics.readonly", "https://www.googleapis.com/auth/webmasters.readonly"];
 const TIMEOUT_MS = 20_000;
@@ -91,6 +93,22 @@ export async function fetchSearchQueries(property: string, days: number, limit =
     if (!response.ok) return { ok: false, reason: reasonFor(response.status) };
     const parsed = parseSearchConsoleQueries(await response.json());
     return parsed ? { ok: true, data: parsed } : { ok: false, reason: "unexpected_response" };
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error && error.message.startsWith("google_token") ? "auth_failed" : "unreachable" };
+  }
+}
+
+/** Hosts of the property's web data streams, used to bind a GA4 property to a verified domain. */
+export async function fetchGa4WebStreamHosts(propertyId: string): Promise<GoogleResult<string[]>> {
+  if (!googleServiceAccountConfigured()) return { ok: false, reason: "not_configured" };
+  try {
+    const response = await fetch(
+      `https://analyticsadmin.googleapis.com/v1beta/properties/${encodeURIComponent(propertyId)}/dataStreams?pageSize=50`,
+      { headers: { Authorization: `Bearer ${await accessToken()}` }, signal: AbortSignal.timeout(TIMEOUT_MS), cache: "no-store" },
+    );
+    if (!response.ok) return { ok: false, reason: reasonFor(response.status) };
+    const hosts = parseGa4WebStreamHosts(await response.json());
+    return hosts ? { ok: true, data: hosts } : { ok: false, reason: "unexpected_response" };
   } catch (error) {
     return { ok: false, reason: error instanceof Error && error.message.startsWith("google_token") ? "auth_failed" : "unreachable" };
   }

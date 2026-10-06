@@ -77,3 +77,48 @@ export function normalizeSearchConsoleProperty(raw: string): string | null {
     return null;
   }
 }
+
+// ------------------------------------------------- ownership binding (pure)
+// The service account is shared by every workspace, so an identifier alone is
+// never proof of ownership. A Google source may only be linked to a website
+// whose domain the workspace has verified, and must belong to that domain.
+
+/** `host` is the site's bare domain or its www. alias (no other subdomains). */
+export function hostMatchesSiteDomain(host: string, domain: string): boolean {
+  const h = host.trim().toLowerCase().replace(/\.$/, "");
+  const d = domain.trim().toLowerCase().replace(/\.$/, "");
+  return Boolean(d) && (h === d || h === `www.${d}`);
+}
+
+/** sc-domain:<domain> exactly, or a URL-prefix property on the domain or www. */
+export function searchConsolePropertyMatchesDomain(property: string, domain: string): boolean {
+  const normalized = normalizeSearchConsoleProperty(property);
+  if (!normalized) return false;
+  if (normalized.startsWith("sc-domain:")) return normalized.slice("sc-domain:".length) === domain.trim().toLowerCase();
+  try {
+    const url = new URL(normalized);
+    return !url.port && hostMatchesSiteDomain(url.hostname, domain);
+  } catch {
+    return false;
+  }
+}
+
+interface Ga4StreamsResponse {
+  dataStreams?: Array<{ type?: string; webStreamData?: { defaultUri?: string } }>;
+}
+
+/** Hosts of a GA4 property's web data streams (Admin API dataStreams.list). */
+export function parseGa4WebStreamHosts(raw: unknown): string[] | null {
+  if (!raw || typeof raw !== "object") return null;
+  const hosts: string[] = [];
+  for (const stream of (raw as Ga4StreamsResponse).dataStreams ?? []) {
+    const uri = stream.webStreamData?.defaultUri;
+    if (typeof uri !== "string" || !uri) continue;
+    try {
+      hosts.push(new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(uri) ? uri : `https://${uri}`).hostname.toLowerCase());
+    } catch {
+      // Ignore malformed stream URIs.
+    }
+  }
+  return hosts;
+}

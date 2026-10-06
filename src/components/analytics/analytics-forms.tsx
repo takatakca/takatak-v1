@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import { createAudienceAction, createSiteAction, linkGoogleAction, type AnalyticsFormState } from "@/app/dashboard/growth/analytics/actions";
+import { createAudienceAction, createSiteAction, linkGoogleAction, verifySiteAction, type AnalyticsFormState } from "@/app/dashboard/growth/analytics/actions";
 
 const initialState: AnalyticsFormState = { ok: null };
 const inputClass =
@@ -123,6 +123,19 @@ export function LinkGoogleForm({
       <div className="md:col-span-3">
         <Feedback state={state} />
       </div>
+    </form>
+  );
+}
+
+export function VerifySiteForm({ siteId, verified }: { siteId: string; verified: boolean }) {
+  const [state, formAction, pending] = useActionState(verifySiteAction, initialState);
+  return (
+    <form action={formAction} className="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="siteId" value={siteId} />
+      <button type="submit" disabled={pending} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-indigo-300 disabled:opacity-60">
+        {pending ? "Checking…" : verified ? "Check again" : "Verify ownership"}
+      </button>
+      <Feedback state={state} />
     </form>
   );
 }

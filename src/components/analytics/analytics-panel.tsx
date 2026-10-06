@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import type { AnalyticsSummary } from "@/lib/analytics/service";
 
-import { CreateAudienceForm, CreateSiteForm, LinkGoogleForm } from "./analytics-forms";
+import { verificationMetaTag, verificationTxtValue } from "@/lib/analytics/verification";
+
+import { CreateAudienceForm, CreateSiteForm, LinkGoogleForm, VerifySiteForm } from "./analytics-forms";
 import { DailyChart, TopList } from "./daily-chart";
 
 export function AnalyticsPanel({
@@ -132,6 +134,19 @@ export function AnalyticsPanel({
                     Google connections{s.ga4PropertyId || s.searchConsoleProperty ? " ✓" : ""}
                   </summary>
                   <div className="mt-3 space-y-2">
+                    <div className="space-y-2 rounded-lg bg-slate-50 p-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-[11px] font-semibold text-slate-700">1. Prove you own {s.domain}</p>
+                        <Badge tone={s.domainVerifiedAt ? "success" : "warning"}>{s.domainVerifiedAt ? "Verified" : "Not verified"}</Badge>
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Add this TXT record to the DNS of {s.domain}, or put the meta tag in the &lt;head&gt; of its homepage, then verify. Google data is only shown for verified websites.
+                      </p>
+                      <CopySnippet code={verificationTxtValue(s.verificationToken)} />
+                      <CopySnippet code={verificationMetaTag(s.verificationToken)} />
+                      <VerifySiteForm siteId={s.id} verified={Boolean(s.domainVerifiedAt)} />
+                    </div>
+                    <p className="text-[11px] font-semibold text-slate-700">2. Connect Google</p>
                     {googleEmail ? (
                       <p className="text-[11px] text-slate-500">
                         In GA4 (Viewer) and Search Console (Restricted user), add <span className="font-mono text-slate-700">{googleEmail}</span>, then paste the identifiers here.
@@ -139,7 +154,11 @@ export function AnalyticsPanel({
                     ) : (
                       <p className="text-[11px] text-amber-700">Google data needs the TAKATAK Google service account to be configured on the server.</p>
                     )}
-                    <LinkGoogleForm siteId={s.id} ga4PropertyId={s.ga4PropertyId} searchConsoleProperty={s.searchConsoleProperty} />
+                    {s.domainVerifiedAt ? (
+                      <LinkGoogleForm siteId={s.id} ga4PropertyId={s.ga4PropertyId} searchConsoleProperty={s.searchConsoleProperty} />
+                    ) : (
+                      <p className="text-[11px] text-slate-500">Available once {s.domain} is verified. The GA4 property must have a web stream on {s.domain}, and the Search Console property must be sc-domain:{s.domain} or https://{s.domain}/.</p>
+                    )}
                   </div>
                 </details>
               ) : null}

@@ -4250,6 +4250,8 @@ model AnalyticsSite {
   active          Boolean  @default(true)
   ga4PropertyId   String?
   searchConsoleProperty String?
+  verificationToken String   @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
+  domainVerifiedAt  DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

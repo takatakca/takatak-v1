@@ -7,6 +7,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 
 import { getPrisma } from "@/lib/db/prisma";
+import { searchConsolePropertyMatchesDomain } from "@/lib/integrations/google/parse";
 
 import {
   classifyBrowser,
@@ -163,6 +164,8 @@ export interface AnalyticsSummary {
     brandName: string | null;
     ga4PropertyId: string | null;
     searchConsoleProperty: string | null;
+    verificationToken: string;
+    domainVerifiedAt: Date | null;
   }>;
   selectedSiteId: string | null;
   days: number;
@@ -241,6 +244,8 @@ export async function getAnalyticsSummary(clientId: string, opts: { siteId?: str
         active: true,
         ga4PropertyId: true,
         searchConsoleProperty: true,
+        verificationToken: true,
+        domainVerifiedAt: true,
         businessBrand: { select: { name: true } },
       },
     }),
@@ -293,8 +298,12 @@ export async function getAnalyticsSummary(clientId: string, opts: { siteId?: str
       publicKey: s.publicKey,
       active: s.active,
       brandName: s.businessBrand?.name ?? null,
-      ga4PropertyId: s.ga4PropertyId,
-      searchConsoleProperty: s.searchConsoleProperty,
+      // Unverified sites never expose Google links for reads.
+      ga4PropertyId: s.domainVerifiedAt ? s.ga4PropertyId : null,
+      searchConsoleProperty:
+        s.domainVerifiedAt && s.searchConsoleProperty && searchConsolePropertyMatchesDomain(s.searchConsoleProperty, s.domain) ? s.searchConsoleProperty : null,
+      verificationToken: s.verificationToken,
+      domainVerifiedAt: s.domainVerifiedAt,
     })),
     selectedSiteId,
     days,
@@ -355,22 +364,15 @@ export async function listAudiencesWithReach(clientId: string): Promise<Analytic
   }));
 }
 
-export async function linkGoogleSources(
-  clientId: string,
-  siteId: string,
-  links: { ga4PropertyId: string | null; searchConsoleProperty: string | null },
-): Promise<boolean> {
-  const result = await requirePrisma().analyticsSite.updateMany({
-    where: { id: siteId, clientId },
-    data: { ga4PropertyId: links.ga4PropertyId, searchConsoleProperty: links.searchConsoleProperty },
-  });
-  return result.count === 1;
-}
-
+/** Google links usable for reads: verified site, and the Search Console property still on its domain. */
 export async function listGoogleLinkedSites(clientId: string) {
-  return requirePrisma().analyticsSite.findMany({
-    where: { clientId, OR: [{ ga4PropertyId: { not: null } }, { searchConsoleProperty: { not: null } }] },
+  const sites = await requirePrisma().analyticsSite.findMany({
+    where: { clientId, domainVerifiedAt: { not: null }, OR: [{ ga4PropertyId: { not: null } }, { searchConsoleProperty: { not: null } }] },
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, domain: true, ga4PropertyId: true, searchConsoleProperty: true },
   });
+  return sites.map((s) => ({
+    ...s,
+    searchConsoleProperty: s.searchConsoleProperty && searchConsolePropertyMatchesDomain(s.searchConsoleProperty, s.domain) ? s.searchConsoleProperty : null,
+  }));
 }
