@@ -106,6 +106,9 @@ jobs:
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
 
+      - name: Client invoice center safeguards
+        run: npm run qa:client-invoices
+
       - name: Secret scan
         run: npm run qa:secrets
 
@@ -304,6 +307,11 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:client-invoicing-db
+
+      - name: Client invoice center against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoices-db
 
       - name: Build (webpack)
         env:
