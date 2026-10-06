@@ -297,6 +297,11 @@ jobs:
             exit "$status"
           fi
 
+      - name: Growth Suite backend (reputation + AI credits) on ephemeral DB
+        env:
+          NODE_ENV: development
+        run: npm run qa:growth-backend
+
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
 

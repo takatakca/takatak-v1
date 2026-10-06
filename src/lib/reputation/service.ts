@@ -1,0 +1,381 @@
+import "server-only";
+
+// Reputation (review funnel) — tenant-scoped data access.
+// Every dashboard read/write takes the caller's activeClientId and scopes by it.
+// Public functions resolve the tenant from the profile slug only.
+
+import { Prisma } from "@prisma/client";
+
+import { getPrisma } from "@/lib/db/prisma";
+
+import { hashRequestToken, isWellFormedRequestToken, newPublicSlug, newRequestToken } from "./tokens";
+import {
+  googleReviewUrl,
+  type FeedbackStatusKey,
+  type PublicRatingInput,
+  type ReviewChannelKey,
+  type ReviewProfileInput,
+} from "./validation";
+
+const REQUEST_TTL_DAYS = 30;
+
+function requirePrisma() {
+  const prisma = getPrisma();
+  if (!prisma) throw new Error("database_unavailable");
+  return prisma;
+}
+
+// ------------------------------------------------------------- dashboard
+
+export interface ReputationSnapshot {
+  profiles: Array<{
+    id: string;
+    name: string;
+    publicSlug: string;
+    googlePlaceId: string | null;
+    facebookReviewUrl: string | null;
+    active: boolean;
+    brandName: string | null;
+    requestCount: number;
+    responseCount: number;
+  }>;
+  responses: Array<{
+    id: string;
+    profileName: string;
+    rating: number;
+    feedback: string | null;
+    contactName: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+    followUpConsent: boolean;
+    publicLinkClicked: boolean;
+    status: FeedbackStatusKey;
+    viaRequest: boolean;
+    createdAt: Date;
+  }>;
+  stats: {
+    requests: number;
+    opened: number;
+    rated: number;
+    responses: number;
+    averageRating: number | null;
+    distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+    publicClicks: number;
+    openFeedback: number;
+  };
+  brands: Array<{ id: string; name: string }>;
+}
+
+export async function getReputationSnapshot(clientId: string): Promise<ReputationSnapshot> {
+  const prisma = requirePrisma();
+  const [profiles, responses, requestGroups, ratingGroups, publicClicks, openFeedback, brands] = await Promise.all([
+    prisma.reviewProfile.findMany({
+      where: { clientId },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        name: true,
+        publicSlug: true,
+        googlePlaceId: true,
+        facebookReviewUrl: true,
+        active: true,
+        businessBrand: { select: { name: true } },
+        _count: { select: { requests: true, responses: true } },
+      },
+    }),
+    prisma.reviewResponse.findMany({
+      where: { clientId },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      select: {
+        id: true,
+        rating: true,
+        feedback: true,
+        contactName: true,
+        contactEmail: true,
+        contactPhone: true,
+        followUpConsent: true,
+        publicLinkClickedAt: true,
+        status: true,
+        requestId: true,
+        createdAt: true,
+        profile: { select: { name: true } },
+      },
+    }),
+    prisma.reviewRequest.groupBy({ by: ["status"], where: { clientId }, _count: { _all: true } }),
+    prisma.reviewResponse.groupBy({ by: ["rating"], where: { clientId }, _count: { _all: true } }),
+    prisma.reviewResponse.count({ where: { clientId, publicLinkClickedAt: { not: null } } }),
+    prisma.reviewResponse.count({ where: { clientId, status: { not: "resolved" }, rating: { lte: 3 } } }),
+    prisma.businessBrand.findMany({ where: { clientId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+  ]);
+
+  const byStatus = Object.fromEntries(requestGroups.map((g) => [g.status, g._count._all])) as Record<string, number>;
+  const distribution: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let ratingSum = 0;
+  let ratingCount = 0;
+  for (const g of ratingGroups) {
+    if (g.rating >= 1 && g.rating <= 5) distribution[g.rating as 1 | 2 | 3 | 4 | 5] = g._count._all;
+    ratingSum += g.rating * g._count._all;
+    ratingCount += g._count._all;
+  }
+  const requests = Object.values(byStatus).reduce((a, b) => a + b, 0);
+
+  return {
+    profiles: profiles.map((p) => ({
+      id: p.id,
+      name: p.name,
+      publicSlug: p.publicSlug,
+      googlePlaceId: p.googlePlaceId,
+      facebookReviewUrl: p.facebookReviewUrl,
+      active: p.active,
+      brandName: p.businessBrand?.name ?? null,
+      requestCount: p._count.requests,
+      responseCount: p._count.responses,
+    })),
+    responses: responses.map((r) => ({
+      id: r.id,
+      profileName: r.profile.name,
+      rating: r.rating,
+      feedback: r.feedback,
+      contactName: r.contactName,
+      contactEmail: r.contactEmail,
+      contactPhone: r.contactPhone,
+      followUpConsent: r.followUpConsent,
+      publicLinkClicked: r.publicLinkClickedAt !== null,
+      status: r.status,
+      viaRequest: r.requestId !== null,
+      createdAt: r.createdAt,
+    })),
+    stats: {
+      requests,
+      opened: (byStatus.opened ?? 0) + (byStatus.rated ?? 0),
+      rated: byStatus.rated ?? 0,
+      responses: ratingCount,
+      averageRating: ratingCount ? Math.round((ratingSum / ratingCount) * 10) / 10 : null,
+      distribution,
+      publicClicks,
+      openFeedback,
+    },
+    brands,
+  };
+}
+
+export async function createReviewProfile(clientId: string, input: ReviewProfileInput): Promise<{ id: string; publicSlug: string }> {
+  const prisma = requirePrisma();
+  if (input.businessBrandId) {
+    const brand = await prisma.businessBrand.findFirst({ where: { id: input.businessBrandId, clientId }, select: { id: true } });
+    if (!brand) throw new Error("brand_not_in_workspace");
+  }
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await prisma.reviewProfile.create({
+        data: {
+          clientId,
+          businessBrandId: input.businessBrandId,
+          name: input.name,
+          publicSlug: newPublicSlug(input.name),
+          googlePlaceId: input.googlePlaceId,
+          facebookReviewUrl: input.facebookReviewUrl,
+          thankYouMessage: input.thankYouMessage,
+        },
+        select: { id: true, publicSlug: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") continue;
+      throw error;
+    }
+  }
+  throw new Error("slug_collision");
+}
+
+export async function setReviewProfileActive(clientId: string, profileId: string, active: boolean): Promise<boolean> {
+  const prisma = requirePrisma();
+  const result = await prisma.reviewProfile.updateMany({ where: { id: profileId, clientId }, data: { active } });
+  return result.count === 1;
+}
+
+export async function createReviewRequest(
+  clientId: string,
+  profileId: string,
+  input: { channel: ReviewChannelKey; recipientName: string | null },
+  actorProfileId: string | null,
+): Promise<{ token: string; publicSlug: string } | null> {
+  const prisma = requirePrisma();
+  const profile = await prisma.reviewProfile.findFirst({
+    where: { id: profileId, clientId, active: true },
+    select: { id: true, publicSlug: true },
+  });
+  if (!profile) return null;
+  const { token, tokenHash } = newRequestToken();
+  await prisma.reviewRequest.create({
+    data: {
+      clientId,
+      profileId: profile.id,
+      channel: input.channel,
+      recipientName: input.recipientName,
+      tokenHash,
+      expiresAt: new Date(Date.now() + REQUEST_TTL_DAYS * 86_400_000),
+      createdByProfileId: actorProfileId,
+    },
+  });
+  return { token, publicSlug: profile.publicSlug };
+}
+
+export async function updateFeedbackStatus(
+  clientId: string,
+  responseId: string,
+  status: FeedbackStatusKey,
+  actorProfileId: string | null,
+): Promise<boolean> {
+  const prisma = requirePrisma();
+  const result = await prisma.reviewResponse.updateMany({
+    where: { id: responseId, clientId },
+    data: {
+      status,
+      resolvedAt: status === "resolved" ? new Date() : null,
+      resolvedByProfileId: status === "resolved" ? actorProfileId : null,
+    },
+  });
+  return result.count === 1;
+}
+
+// ---------------------------------------------------------------- public
+
+export interface PublicReviewPage {
+  profileName: string;
+  publicSlug: string;
+  hasGoogle: boolean;
+  hasFacebook: boolean;
+  thankYouMessage: string | null;
+  /** Present only when the token is valid, unexpired and not yet used. */
+  requestToken: string | null;
+  recipientName: string | null;
+  alreadyRated: boolean;
+}
+
+async function findUsableRequest(profileId: string, token: string | null) {
+  if (!token || !isWellFormedRequestToken(token)) return null;
+  const prisma = requirePrisma();
+  const request = await prisma.reviewRequest.findUnique({
+    where: { tokenHash: hashRequestToken(token) },
+    select: { id: true, profileId: true, clientId: true, status: true, expiresAt: true, recipientName: true },
+  });
+  if (!request || request.profileId !== profileId || request.expiresAt.getTime() < Date.now()) return null;
+  return request;
+}
+
+export async function getPublicReviewPage(slug: string, token: string | null): Promise<PublicReviewPage | null> {
+  const prisma = requirePrisma();
+  const profile = await prisma.reviewProfile.findUnique({
+    where: { publicSlug: slug },
+    select: { id: true, name: true, publicSlug: true, active: true, googlePlaceId: true, facebookReviewUrl: true, thankYouMessage: true },
+  });
+  if (!profile || !profile.active) return null;
+
+  const request = await findUsableRequest(profile.id, token);
+  if (request && request.status === "created") {
+    await prisma.reviewRequest.updateMany({
+      where: { id: request.id, status: "created" },
+      data: { status: "opened", openedAt: new Date() },
+    });
+  }
+
+  return {
+    profileName: profile.name,
+    publicSlug: profile.publicSlug,
+    hasGoogle: Boolean(profile.googlePlaceId),
+    hasFacebook: Boolean(profile.facebookReviewUrl),
+    thankYouMessage: profile.thankYouMessage,
+    requestToken: request && request.status !== "rated" ? token : null,
+    recipientName: request?.recipientName ?? null,
+    alreadyRated: request?.status === "rated",
+  };
+}
+
+export type SubmitRatingResult =
+  | { ok: true; responseId: string; hasGoogle: boolean; hasFacebook: boolean; thankYouMessage: string | null }
+  | { ok: false; error: string };
+
+export async function submitPublicRating(slug: string, token: string | null, input: PublicRatingInput): Promise<SubmitRatingResult> {
+  const prisma = requirePrisma();
+  const profile = await prisma.reviewProfile.findUnique({
+    where: { publicSlug: slug },
+    select: { id: true, clientId: true, active: true, googlePlaceId: true, facebookReviewUrl: true, thankYouMessage: true },
+  });
+  if (!profile || !profile.active) return { ok: false, error: "This review page is no longer available." };
+
+  const request = await findUsableRequest(profile.id, token);
+  if (request && request.status === "rated") return { ok: false, error: "Thanks — this invitation was already used." };
+
+  try {
+    const response = await prisma.$transaction(async (tx) => {
+      if (request) {
+        const claimed = await tx.reviewRequest.updateMany({
+          where: { id: request.id, status: { not: "rated" } },
+          data: { status: "rated", ratedAt: new Date() },
+        });
+        if (claimed.count !== 1) throw new Error("request_already_rated");
+      }
+      return tx.reviewResponse.create({
+        data: {
+          clientId: profile.clientId,
+          profileId: profile.id,
+          requestId: request?.id ?? null,
+          rating: input.rating,
+          feedback: input.feedback,
+          contactName: input.contactName,
+          contactEmail: input.contactEmail,
+          contactPhone: input.contactPhone,
+          followUpConsent: input.followUpConsent,
+        },
+        select: { id: true },
+      });
+    });
+    return {
+      ok: true,
+      responseId: response.id,
+      hasGoogle: Boolean(profile.googlePlaceId),
+      hasFacebook: Boolean(profile.facebookReviewUrl),
+      thankYouMessage: profile.thankYouMessage,
+    };
+  } catch (error) {
+    if (
+      (error instanceof Error && error.message === "request_already_rated") ||
+      (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+    ) {
+      return { ok: false, error: "Thanks — this invitation was already used." };
+    }
+    throw error;
+  }
+}
+
+/**
+ * Records that the customer went on to the public review site and returns the
+ * destination, built server-side from the stored profile (never from input).
+ */
+export async function resolvePublicReviewDestination(
+  slug: string,
+  responseId: string | null,
+  target: "google" | "facebook",
+): Promise<string | null> {
+  const prisma = requirePrisma();
+  const profile = await prisma.reviewProfile.findUnique({
+    where: { publicSlug: slug },
+    select: { id: true, active: true, googlePlaceId: true, facebookReviewUrl: true },
+  });
+  if (!profile || !profile.active) return null;
+  const destination =
+    target === "google"
+      ? profile.googlePlaceId
+        ? googleReviewUrl(profile.googlePlaceId)
+        : null
+      : profile.facebookReviewUrl;
+  if (!destination) return null;
+  if (responseId && /^[0-9a-f-]{36}$/i.test(responseId)) {
+    await prisma.reviewResponse.updateMany({
+      where: { id: responseId, profileId: profile.id, publicLinkClickedAt: null },
+      data: { publicLinkClickedAt: new Date() },
+    });
+  }
+  return destination;
+}

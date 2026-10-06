@@ -57,15 +57,25 @@ export const CONNECTORS: ConnectorDef[] = [
     docsUrl: "https://developers.cloudflare.com/api/",
   },
 
-  // Social (owned by the Social module — referenced here, never re-implemented)
+  // Social — native TAKATAK Social (knowledgeAI projects/SOCIAL-CORE.md).
+  // Metricool is a UX benchmark and optional legacy adapter, never a dependency.
+  {
+    key: "takatak_social",
+    name: "TAKATAK Social",
+    category: "social",
+    purpose: "Native social publishing, calendar, inbox and analytics for every brand.",
+    env: [],
+    kind: "built_in",
+    managedIn: "/dashboard/social",
+  },
   {
     key: "metricool",
-    name: "Metricool",
+    name: "Metricool (legacy adapter)",
     category: "social",
-    purpose: "Social scheduling, publishing and analytics engine.",
+    purpose: "Optional legacy adapter kept for benchmarking. TAKATAK Social does not depend on it.",
     env: ["METRICOOL_API_KEY", "METRICOOL_ACCOUNT_ID"],
     kind: "external",
-    managedIn: "/dashboard/social",
+    managedIn: "/dashboard/integrations",
   },
 
   // Analytics & Tracking
@@ -213,9 +223,9 @@ export const CONNECTORS: ConnectorDef[] = [
     key: "takatak_review_funnel",
     name: "TAKATAK Review Funnel",
     category: "reviews",
-    purpose: "Review requests, private feedback capture and public review routing.",
+    purpose: "Tracked review requests, branded rating page, private feedback inbox and public review routing.",
     env: [],
-    kind: "planned",
+    kind: "built_in",
     managedIn: "/dashboard/growth/reviews",
   },
 

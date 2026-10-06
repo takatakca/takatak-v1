@@ -82,6 +82,8 @@ enum PermissionKey {
   manage_social_accounts
   view_ads
   manage_ads
+  view_reputation
+  manage_reputation
 }
 
 enum ClientStatus {
@@ -423,6 +425,11 @@ model Client {
 
   adSubscription            AdSubscription?
   adCampaigns               AdCampaign[]
+  reviewProfiles            ReviewProfile[]
+  reviewRequests            ReviewRequest[]
+  reviewResponses           ReviewResponse[]
+  aiCreditAccount           AiCreditAccount?
+  aiCreditEntries           AiCreditEntry[]
   @@index([status])
   @@index([createdAt])
   @@index([assignedProfileId])
@@ -621,6 +628,7 @@ model BusinessBrand {
   visibilitySnapshots       LocalVisibilitySnapshot[]
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
+  reviewProfiles            ReviewProfile[]
   leads                     Lead[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
@@ -4044,4 +4052,140 @@ model HockeyTravelProfile {
   @@index([status])
   @@index([identityId, status])
   @@map("hockey_travel_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — Reputation (review funnel) and AI credits.
+// Server-side Prisma only; RLS enabled with no PostgREST policies.
+// ---------------------------------------------------------------------------
+
+enum ReviewChannel {
+  link
+  qr
+  sms
+  whatsapp
+  email
+}
+
+enum ReviewRequestStatus {
+  created
+  opened
+  rated
+}
+
+enum ReviewFeedbackStatus {
+  new
+  acknowledged
+  resolved
+}
+
+enum AiCreditReason {
+  purchase
+  grant
+  debit
+  refund
+  adjustment
+}
+
+model ReviewProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  clientId          String   @db.Uuid
+  businessBrandId   String?  @db.Uuid
+  name              String
+  publicSlug        String   @unique
+  googlePlaceId     String?
+  facebookReviewUrl String?
+  thankYouMessage   String?
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  client        Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?   @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  requests      ReviewRequest[]
+  responses     ReviewResponse[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("review_profiles")
+}
+
+model ReviewRequest {
+  id                 String              @id @default(uuid()) @db.Uuid
+  clientId           String              @db.Uuid
+  profileId          String              @db.Uuid
+  channel            ReviewChannel       @default(link)
+  recipientName      String?
+  tokenHash          String              @unique
+  status             ReviewRequestStatus @default(created)
+  expiresAt          DateTime
+  openedAt           DateTime?
+  ratedAt            DateTime?
+  createdByProfileId String?             @db.Uuid
+  createdAt          DateTime            @default(now())
+
+  client   Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile  ReviewProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  response ReviewResponse?
+
+  @@index([clientId, createdAt])
+  @@index([profileId, createdAt])
+  @@map("review_requests")
+}
+
+model ReviewResponse {
+  id                  String               @id @default(uuid()) @db.Uuid
+  clientId            String               @db.Uuid
+  profileId           String               @db.Uuid
+  requestId           String?              @unique @db.Uuid
+  rating              Int                  @db.SmallInt
+  feedback            String?
+  contactName         String?
+  contactEmail        String?
+  contactPhone        String?
+  followUpConsent     Boolean              @default(false)
+  publicLinkClickedAt DateTime?
+  status              ReviewFeedbackStatus @default(new)
+  resolvedAt          DateTime?
+  resolvedByProfileId String?              @db.Uuid
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  client  Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile ReviewProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  request ReviewRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([profileId, createdAt])
+  @@index([clientId, status])
+  @@map("review_responses")
+}
+
+model AiCreditAccount {
+  clientId  String   @id @db.Uuid
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("ai_credit_accounts")
+}
+
+model AiCreditEntry {
+  id             String         @id @default(uuid()) @db.Uuid
+  clientId       String         @db.Uuid
+  delta          Int
+  balanceAfter   Int
+  reason         AiCreditReason
+  actionKey      String?
+  idempotencyKey String         @unique
+  note           String?
+  actorProfileId String?        @db.Uuid
+  createdAt      DateTime       @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("ai_credit_entries")
 }

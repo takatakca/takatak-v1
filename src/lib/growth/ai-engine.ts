@@ -92,7 +92,7 @@ export const AI_AGENTS: AiAgentDef[] = [
     name: "Social Autopilot",
     mission: "Plans the week, writes one post per day, adapts it to every platform and queues it for approval.",
     triggers: ["Weekly schedule", "New promotion", "Holiday calendar"],
-    connectorKeys: ["metricool"],
+    connectorKeys: ["takatak_social"],
     creditActionKeys: ["multi_platform_post", "image"],
   },
   {
@@ -140,7 +140,7 @@ export const AI_AGENTS: AiAgentDef[] = [
     name: "Report Writer",
     mission: "Turns the month's numbers into a plain-language client report with next steps.",
     triggers: ["Month end"],
-    connectorKeys: ["ga4", "metricool", "takatak_ads"],
+    connectorKeys: ["ga4", "takatak_social", "takatak_ads"],
     creditActionKeys: ["monthly_report_summary"],
   },
 ];

@@ -93,7 +93,9 @@ export type Permission =
   | "view_social"
   | "manage_social_accounts"
   | "view_ads"
-  | "manage_ads";
+  | "manage_ads"
+  | "view_reputation"
+  | "manage_reputation";
 
 export const ALL_PERMISSIONS: Permission[] = [
   "view_dashboard",
@@ -120,6 +122,8 @@ export const ALL_PERMISSIONS: Permission[] = [
   "manage_social_accounts",
   "view_ads",
   "manage_ads",
+  "view_reputation",
+  "manage_reputation",
 ];
 
 export const ROLE_PERMISSIONS: Record<
@@ -151,6 +155,8 @@ export const ROLE_PERMISSIONS: Record<
     "view_reports",
     "view_ads",
     "manage_ads",
+    "view_reputation",
+    "manage_reputation",
   ],
 
   editor: [
@@ -161,6 +167,8 @@ export const ROLE_PERMISSIONS: Record<
     "approve_content",
     "view_reports",
     "view_ads",
+    "view_reputation",
+    "manage_reputation",
   ],
 
   staff: [
@@ -170,6 +178,7 @@ export const ROLE_PERMISSIONS: Record<
     "edit_content",
     "view_reports",
     "view_ads",
+    "view_reputation",
   ],
 
   viewer: [
@@ -177,6 +186,7 @@ export const ROLE_PERMISSIONS: Record<
     "view_social",
     "view_reports",
     "view_ads",
+    "view_reputation",
   ],
 };
 
@@ -193,6 +203,7 @@ export const MODULE_ACCESS: Record<
   "/dashboard/social": "view_social",
   "/dashboard/ads": "view_ads",
   "/dashboard/advertising": "view_ads",
+  "/dashboard/growth/reviews": "view_reputation",
   "/dashboard/contributions": "approve_content",
   "/dashboard/integrations": "manage_integrations",
   "/dashboard/jobs": "manage_jobs",

@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { GrantCreditsForm } from "@/components/growth/grant-credits-form";
 import { GrowthHeader, GrowthKpi, HonestyNote } from "@/components/growth/growth-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -6,13 +8,24 @@ import { requireGrowthAccess } from "@/lib/growth/access";
 import { AI_AGENTS, AI_CREDIT_ACTIONS, AI_CREDIT_PACKS, AI_GATEWAY_ENV, AI_PROVIDERS } from "@/lib/growth/ai-engine";
 import { connectorByKey } from "@/lib/growth/connectors";
 import { getAiEngineStatus } from "@/lib/growth/status";
+import { getCreditSnapshot, listClientBalances, type CreditSnapshot } from "@/lib/ai-credits/ledger";
 
 export const dynamic = "force-dynamic";
 
 const cad = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" });
 
 export default async function AiEnginePage() {
-  const { showSetupDetails } = await requireGrowthAccess("/dashboard/growth/ai-engine");
+  const { access, showSetupDetails } = await requireGrowthAccess("/dashboard/growth/ai-engine");
+  let credits: CreditSnapshot | null = null;
+  let adminClients: Array<{ id: string; name: string; balance: number }> | null = null;
+  let ledgerUnavailable = false;
+  try {
+    if (access.mode === "client_scoped") credits = await getCreditSnapshot(access.activeClientId);
+    if (access.mode === "platform_admin") adminClients = await listClientBalances();
+  } catch {
+    ledgerUnavailable = true;
+    console.error("[ai-credits] snapshot unavailable");
+  }
   const status = getAiEngineStatus();
   const configured = new Set(status.providers.filter((p) => p.configured).map((p) => p.key));
 
@@ -34,6 +47,47 @@ export default async function AiEnginePage() {
         <GrowthKpi label="Autopilot agents" value={String(AI_AGENTS.length)} hint="Approval-gated" />
         <GrowthKpi label="Credit actions" value={String(AI_CREDIT_ACTIONS.length)} hint="Priced per task" />
       </section>
+
+      {credits ? (
+        <Card>
+          <CardHeader title="Your AI credits" subtitle="Live balance. Every AI task the gateway runs is debited here with its own receipt." />
+          <CardBody className="space-y-4">
+            <p className="text-3xl font-bold text-slate-950">
+              {credits.balance.toLocaleString("en-CA")} <span className="text-base font-medium text-slate-500">credits</span>
+            </p>
+            {credits.entries.length ? (
+              <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 text-xs">
+                {credits.entries.map((e) => (
+                  <li key={e.id} className="flex flex-wrap items-center gap-3 px-3 py-2">
+                    <span className={`w-16 font-semibold ${e.delta > 0 ? "text-emerald-700" : "text-slate-900"}`}>
+                      {e.delta > 0 ? "+" : ""}
+                      {e.delta}
+                    </span>
+                    <span className="text-slate-700">{e.actionKey ? AI_CREDIT_ACTIONS.find((a) => a.key === e.actionKey)?.label ?? e.actionKey : e.reason}</span>
+                    {e.note ? <span className="text-slate-400">· {e.note}</span> : null}
+                    <span className="ml-auto text-slate-400">
+                      {e.createdAt.toLocaleString("en-CA")} · bal. {e.balanceAfter}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">No credit activity yet.</p>
+            )}
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {adminClients ? (
+        <Card>
+          <CardHeader title="Grant AI credits" subtitle="Platform admin. Each submission is recorded in the client’s ledger and can never apply twice." />
+          <CardBody>
+            <GrantCreditsForm clients={adminClients} nonce={randomUUID()} />
+          </CardBody>
+        </Card>
+      ) : null}
+
+      {ledgerUnavailable ? <HonestyNote>The credit ledger is not reachable right now. Balances are hidden rather than guessed.</HonestyNote> : null}
 
       <Card>
         <CardHeader
@@ -139,8 +193,8 @@ export default async function AiEnginePage() {
       </div>
 
       <HonestyNote>
-        This page makes no AI calls. Provider status means a key exists on this server, not that the engine was tested. Credit balances and
-        debits will come from the gateway&apos;s ledger once it is connected.
+        This page makes no AI calls. Provider status means a key exists on this server, not that the engine was tested. The gateway debits
+        credits through POST /api/ai/credits/debit (bearer TAKATAK_AI_GATEWAY_TOKEN); the cost always comes from the table above.
       </HonestyNote>
     </div>
   );

@@ -30,7 +30,7 @@ export const GROWTH_STAGES: GrowthStage[] = [
     title: "Social Media",
     href: "/dashboard/social",
     summary: "Every social account in one place, one click publishes everywhere.",
-    connectorKeys: ["metricool"],
+    connectorKeys: ["takatak_social"],
   },
   {
     key: "marketing",

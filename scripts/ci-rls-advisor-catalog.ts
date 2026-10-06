@@ -31,6 +31,10 @@ const SECRET_TABLES = [
   "ai_provider_events",
   "master_merchants",
   "source_merchants",
+  "review_requests",
+  "review_responses",
+  "ai_credit_accounts",
+  "ai_credit_entries",
   "_prisma_migrations",
 ];
 
