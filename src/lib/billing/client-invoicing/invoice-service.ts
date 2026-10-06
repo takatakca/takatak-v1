@@ -16,7 +16,7 @@ import { ServiceError } from "@/lib/services/service-error";
 import { clientConnectState } from "./connect-policy";
 import { isClientInvoicingEnabled } from "./env";
 import { stripePercentage, type ClientInvoiceInput } from "./invoice-input";
-import { clientInvoiceIdempotencyKey } from "./invoice-keys";
+import { clientInvoiceContentHash, clientInvoiceIdempotencyKey } from "./invoice-keys";
 
 const INVOICE_LIST_LIMIT = 24;
 
@@ -50,7 +50,7 @@ async function findOrCreateCustomer(
 
   const created = await stripe.customers.create(
     { name: input.customer.name, email: input.customer.email, metadata: { takatak_client_id: clientId } },
-    { stripeAccount, idempotencyKey: clientInvoiceIdempotencyKey(clientId, input.reference, "customer") },
+    { stripeAccount, idempotencyKey: clientInvoiceIdempotencyKey(clientId, input.reference, `customer:${clientInvoiceContentHash(input.customer)}`) },
   );
 
   return created.id;
@@ -99,7 +99,8 @@ export async function createAndSendClientInvoice(input: {
 }): Promise<{ invoiceId: string; number: string | null; hostedUrl: string | null }> {
   const stripeAccount = await requireActiveAccount(input.clientId);
   const stripe = getStripe();
-  const key = (step: string) => clientInvoiceIdempotencyKey(input.clientId, input.invoice.reference, step);
+  const contentHash = clientInvoiceContentHash(input.invoice);
+  const key = (step: string) => clientInvoiceIdempotencyKey(input.clientId, input.invoice.reference, `${contentHash}:${step}`);
   const customer = await findOrCreateCustomer(stripe, stripeAccount, input.clientId, input.invoice);
   const taxRateIds = await resolveTaxRates(stripe, stripeAccount, input.clientId, input.invoice);
   const metadata = {

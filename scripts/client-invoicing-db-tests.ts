@@ -194,15 +194,26 @@ async function main() {
   assert.deepEqual({ customers: store.customers.length, invoices: store.invoices.size, items: store.items.length, taxes: store.taxRates.length }, before);
   console.log("PASS resubmitting the same form creates nothing new");
 
+  const corrected = validateClientInvoiceInput({ ...parsed.value, lines: [{ description: "Service corrigé", quantity: 3, unitAmountCents: 5000 }] });
+  assert.ok(corrected.ok);
+  if (corrected.ok) {
+    const fixed = await createAndSendClientInvoice({ clientId: client.id, profileId, invoice: corrected.value });
+    assert.notEqual(fixed.invoiceId, sent.invoiceId, "a corrected form under the same reference is a new invoice, not an idempotency error");
+  }
+  const renamed = validateClientInvoiceInput({ ...parsed.value, reference: randomUUID(), customer: { name: "Nom corrigé", email: "renamed@example.test" } });
+  assert.ok(renamed.ok);
+  if (renamed.ok) await createAndSendClientInvoice({ clientId: client.id, profileId, invoice: renamed.value });
+  console.log("PASS corrected forms get fresh keys (no Stripe idempotency_error on changed parameters)");
+
   const second = validateClientInvoiceInput({ ...parsed.value, reference: randomUUID() });
   assert.ok(second.ok);
   if (second.ok) await createAndSendClientInvoice({ clientId: client.id, profileId, invoice: second.value });
-  assert.equal(store.customers.length, before.customers, "existing customer reused by email");
+  assert.equal(store.customers.length, before.customers + 1, "existing customer reused by email (only the renamed one is new)");
   assert.equal(store.taxRates.length, before.taxes, "existing tax rates reused");
-  assert.equal(store.invoices.size, before.invoices + 1);
+  assert.equal(store.invoices.size, before.invoices + 3);
   const listed = await listClientIssuedInvoices(client.id);
   assert.equal(listed.status, "ok");
-  assert.equal(listed.status === "ok" ? listed.invoices.length : 0, 2);
+  assert.equal(listed.status === "ok" ? listed.invoices.length : 0, 4);
   console.log("PASS a new invoice reuses the customer and tax rates; the list shows this account's invoices");
 }
 main().then(() => process.exit(0), (e) => { console.error(String(e?.stack ?? e).slice(0, 1200)); process.exit(1); });

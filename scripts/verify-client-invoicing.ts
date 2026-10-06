@@ -17,7 +17,7 @@ import {
   stripePercentage,
   validateClientInvoiceInput,
 } from "../src/lib/billing/client-invoicing/invoice-input";
-import { clientInvoiceIdempotencyKey } from "../src/lib/billing/client-invoicing/invoice-keys";
+import { clientInvoiceContentHash, clientInvoiceIdempotencyKey } from "../src/lib/billing/client-invoicing/invoice-keys";
 
 import { readBoundedText } from "../src/lib/http/read-bounded-text";
 
@@ -118,7 +118,9 @@ assert.match(k1, /^tkcinv1_[A-Za-z0-9_-]{43}$/);
 assert.equal(clientInvoiceIdempotencyKey("client-1", good.reference.toUpperCase(), "invoice"), k1);
 assert.notEqual(clientInvoiceIdempotencyKey("client-1", good.reference, "line:1"), k1);
 assert.notEqual(clientInvoiceIdempotencyKey("client-2", good.reference, "invoice"), k1);
-pass("every invoice write has a key per workspace + form reference + step");
+assert.equal(clientInvoiceContentHash({ b: 1, a: [2, { d: 3, c: 4 }] }), clientInvoiceContentHash({ a: [2, { c: 4, d: 3 }], b: 1 }));
+assert.notEqual(clientInvoiceContentHash({ a: 1 }), clientInvoiceContentHash({ a: 2 }));
+pass("every invoice write has a key per workspace + form reference + contents + step");
 
 const root = process.cwd();
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
