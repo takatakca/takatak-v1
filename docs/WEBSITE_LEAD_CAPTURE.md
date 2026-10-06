@@ -35,6 +35,51 @@ Before this change, public takatak.ca requests never reached TAKATAK:
 - The request becomes a lead "Hosting request: <plan>" with a "New hosting request" notification. The server accepts only those four plan names.
 - Nothing is charged; TAKATAK confirms the plan and sets it up.
 
+## Reference files on "Post a project" (TK-012)
+
+Before this change, files picked in "Post a project" stayed in the browser and were never sent.
+
+**How it works**
+
+- The visitor picks up to **5 files, 10 MB each, 25 MB per lead**. Accepted types: PDF, PNG, JPEG, WebP, GIF, DOCX, XLSX, PPTX and TXT. The browser rejects other files with a message.
+- After the project is received, the response carries a **30-minute upload token**. The token is HMAC-signed and bound to that lead and the TAKATAK workspace.
+- The browser sends each file to `POST /api/public/website-requests/attachments`.
+- The success screen lists each file as sent or not sent. For any file that failed, it asks the visitor to email it with their reference.
+
+**Server checks** (in order)
+
+1. Feature gate.
+2. Same-origin check.
+3. Multipart only.
+4. Declared size before parsing.
+5. Token signature, workspace and expiry.
+6. **File type decided from the file's own bytes**, which must match the extension (a PNG renamed `.pdf` is refused).
+7. The lead must belong to the workspace.
+8. Per-lead file count and total size.
+
+**Storage**
+
+- Files go to a **private** Supabase Storage bucket under `website-leads/<workspace>/<yyyy>/<mm>/<lead>/<id>.<ext>`.
+- Each file is recorded in the new table `lead_attachments` (migration `20261006150000_website_lead_attachments`; RLS on; a database CHECK enforces the 10 MB limit), with status `quarantined`.
+- If the database write fails, the stored object is removed.
+
+**Staff access**
+
+- Leads now open a **detail page** `/dashboard/leads/<id>` showing:
+  - the full request, status, priority, value, contact links and source page
+  - attachments
+- Downloading goes through `GET /api/leads/attachments/<id>`. It is scoped like the other lead pages, then redirects to a **one-minute signed link** that saves the file under its original (sanitized) name.
+- Nothing is public.
+
+**Activation**
+
+1. Create a **private** bucket in Supabase Storage (default name `website-lead-attachments`).
+2. Set `WEBSITE_LEADS_UPLOAD_SECRET` (32+ random characters) and, optionally, `WEBSITE_LEADS_UPLOAD_BUCKET`.
+
+Without these the feature stays off: no token is issued and the success screen tells the visitor to email the files.
+
+**Not done:** no antivirus scan. Files stay `quarantined` and are only ever downloaded, never displayed in the page; staff should open them with care.
+
 ## Team alerts (TK-017)
 
 - **In-app, always on.** Every new lead (not a collapsed duplicate) creates a workspace `Notification` in the same transaction: "New website order", "New domain request" or "New project request".
@@ -81,7 +126,7 @@ While disabled:
 
 ## Verification
 
-- `npm run qa:website-leads` (runs in CI): 20 checks covering:
+- `npm run qa:website-leads` (runs in CI): 24 checks covering:
   - config gate
   - validation and sanitization
   - honeypot
@@ -91,6 +136,12 @@ While disabled:
   - the removed dead-end links
   - package orders: catalog pricing, forged totals ignored, unknown package/tier/add-on refused, high priority and value
   - hosting requests: only real plans accepted; Upmind failure shows the request form
+  - attachments:
+    - type detected from the file's bytes; renamed or unknown types refused
+    - safe file names
+    - token bound to lead, workspace and time (tampering, a different lead or workspace, and expiry all refused)
+    - storage path and per-lead limits; cleanup after a database failure
+    - routes gated and scoped
   - notifications: one per new lead with no contact details; email opt-in and validated; mark-read limited to the workspace
 - Manual, against a throwaway local PostgreSQL 16 with the full Prisma schema and `next start` in production mode:
   - a valid domain request was stored as a lead
@@ -107,6 +158,20 @@ While disabled:
     - the form appeared after the timeout
     - an empty submit showed the contact message
     - a Gold Hosting request showed "Hosting request received" with a reference and was stored
+    - no page errors
+  - attachments over HTTP (uploads enabled, no storage service in the test environment):
+    - a project request got an upload token; a domain request did not
+    - tampered token 403
+    - missing origin 403
+    - PNG renamed `.pdf` 415, `.exe` 415
+    - JSON instead of multipart 415
+    - 11 MB 413
+    - a valid PDF reached storage and returned 503 `storage_failed`, as expected without storage
+    - signed-out download 403
+  - attachments on real Prisma (stand-in storage): row stored `quarantined` under the lead's path; another workspace could not attach to the lead; the database refused a 20 MB row (CHECK constraint)
+  - browser: "Post a project" with `brief.pdf` + `tool.exe`:
+    - the `.exe` was refused in the form
+    - after sending, the success screen showed the reference, "✗ brief.pdf — not sent" (no storage service) and the email instruction
     - no page errors
   - real Prisma: marking another workspace's notification by id updated 0 rows; "mark all" updated only this workspace's rows
 

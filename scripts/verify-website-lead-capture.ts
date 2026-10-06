@@ -22,6 +22,18 @@ import {
 } from "../src/lib/website-leads/store";
 import { priceMarketplaceOrder } from "../src/lib/website-leads/package-pricing";
 import { leadAlertEmail } from "../src/lib/website-leads/notify";
+import { ACCEPTED_EXTENSIONS } from "../src/lib/website-leads/attachment-rules";
+import {
+  checkAttachment,
+  createUploadToken,
+  MAX_ATTACHMENT_BYTES,
+  recordLeadAttachment,
+  safeFileName,
+  SERVER_ACCEPTED_EXTENSIONS,
+  verifyUploadToken,
+  type AttachmentDb,
+  type AttachmentStorage,
+} from "../src/lib/website-leads/attachments";
 import {
   linkFor,
   markNotificationsRead,
@@ -146,7 +158,7 @@ async function main() {
     );
     assert.deepEqual(
       readWebsiteLeadsConfig({ WEBSITE_LEADS_ENABLED: "true", WEBSITE_LEADS_CLIENT_ID: CLIENT }),
-      { enabled: true, clientId: CLIENT, notifyEmail: null },
+      { enabled: true, clientId: CLIENT, notifyEmail: null, uploads: null },
     );
   });
 
@@ -491,6 +503,146 @@ async function main() {
     assert.match(form, /kind: "hosting_request"/);
     assert.match(form, /name="website"/);
     assert.match(form, /fallback\.hosting\.contactRequired/);
+  });
+
+
+  const PDF = new TextEncoder().encode("%PDF-1.7\n%test\n");
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+
+  await check("attachments: type comes from the file bytes and must match the extension", () => {
+    assert.deepEqual([...SERVER_ACCEPTED_EXTENSIONS].sort(), [...ACCEPTED_EXTENSIONS].sort());
+    const pdf = checkAttachment("Brief.PDF", PDF);
+    assert.ok(pdf.ok && pdf.mime === "application/pdf" && pdf.safeName === "Brief.pdf");
+    assert.deepEqual(checkAttachment("logo.pdf", PNG), { ok: false, reason: "content_mismatch" });
+    assert.deepEqual(checkAttachment("setup.exe", PDF), { ok: false, reason: "unsupported_type" });
+    assert.deepEqual(checkAttachment("page.html", PDF), { ok: false, reason: "unsupported_type" });
+    assert.deepEqual(checkAttachment("vector.svg", PDF), { ok: false, reason: "unsupported_type" });
+    assert.deepEqual(checkAttachment("noext", PDF), { ok: false, reason: "unsupported_type" });
+    assert.deepEqual(checkAttachment("empty.pdf", new Uint8Array()), { ok: false, reason: "empty" });
+    assert.deepEqual(checkAttachment("big.pdf", new Uint8Array(MAX_ATTACHMENT_BYTES + 1)), { ok: false, reason: "too_large" });
+    assert.deepEqual(checkAttachment("notes.txt", new Uint8Array([0x68, 0, 0x69])), { ok: false, reason: "content_mismatch" });
+    assert.ok(checkAttachment("notes.txt", new TextEncoder().encode("hello")).ok);
+    assert.equal(safeFileName("../../etc/passwd.txt", "txt"), "passwd.txt");
+    assert.equal(safeFileName("C:\\Users\\x\\<script>a.pdf", "pdf"), "scripta.pdf");
+    assert.equal(safeFileName("....pdf", "pdf"), "attachment.pdf");
+  });
+
+  await check("attachments: upload tokens are bound to lead, workspace and time", () => {
+    const secret = "s".repeat(40);
+    const lead = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const now = new Date("2026-10-06T12:00:00Z");
+    const token = createUploadToken({ secret, leadId: lead, clientId: CLIENT, now });
+    assert.equal(verifyUploadToken({ secret, clientId: CLIENT, token, now }), lead);
+    assert.equal(verifyUploadToken({ secret, clientId: CLIENT, token, now: new Date(now.getTime() + 29 * 60_000) }), lead);
+    assert.equal(verifyUploadToken({ secret, clientId: CLIENT, token, now: new Date(now.getTime() + 31 * 60_000) }), null);
+    assert.equal(verifyUploadToken({ secret: "t".repeat(40), clientId: CLIENT, token, now }), null);
+    assert.equal(verifyUploadToken({ secret, clientId: "22222222-2222-4222-8222-222222222222", token, now }), null);
+    const [, exp, sig] = token.split(".");
+    const other = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    assert.equal(verifyUploadToken({ secret, clientId: CLIENT, token: `${other}.${exp}.${sig}`, now }), null);
+    assert.equal(verifyUploadToken({ secret, clientId: CLIENT, token: `${lead}.${Number(exp) + 999}.${sig}`, now }), null);
+    for (const bad of [null, 42, "", "a.b.c", `${token}.x`, "x".repeat(300)]) {
+      assert.equal(verifyUploadToken({ secret, clientId: CLIENT, token: bad, now }), null);
+    }
+  });
+
+  await check("attachments: stored privately under the lead, with per-lead limits and cleanup", async () => {
+    const lead = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const rows: Record<string, unknown>[] = [];
+    const objects = new Map<string, string>();
+    let failCreate = false;
+    let failUpload = false;
+    const db = {
+      lead: {
+        async findFirst({ where }: { where: { id: string; clientId: string } }) {
+          return where.id === lead && where.clientId === CLIENT ? { id: lead } : null;
+        },
+      },
+      leadAttachment: {
+        async aggregate() {
+          return {
+            _count: { _all: rows.length },
+            _sum: { sizeBytes: rows.reduce((n, r) => n + Number(r.sizeBytes), 0) || null },
+          };
+        },
+        async create({ data }: { data: Record<string, unknown> }) {
+          if (failCreate) throw new Error("db down");
+          rows.push(data);
+          return data;
+        },
+      },
+    } as unknown as AttachmentDb;
+    const storage: AttachmentStorage = {
+      bucket: "website-lead-attachments",
+      async upload(path, _bytes, type) {
+        if (failUpload) throw new Error("storage down");
+        objects.set(path, type);
+      },
+      async remove(path) {
+        objects.delete(path);
+      },
+    };
+    const now = new Date("2026-10-06T12:00:00Z");
+    const ok = await recordLeadAttachment(db, storage, { clientId: CLIENT, leadId: lead, fileName: "brief.pdf", bytes: PDF, now });
+    assert.ok(ok.ok);
+    const row = rows[0];
+    assert.equal(row.status, "quarantined");
+    assert.equal(row.mimeType, "application/pdf");
+    assert.match(String(row.storagePath), new RegExp(`^website-leads/${CLIENT}/2026/10/${lead}/[0-9a-f-]{36}\\.pdf$`));
+    assert.equal(objects.get(String(row.storagePath)), "application/pdf");
+
+    assert.deepEqual(
+      await recordLeadAttachment(db, storage, { clientId: "22222222-2222-4222-8222-222222222222", leadId: lead, fileName: "a.pdf", bytes: PDF, now }),
+      { ok: false, reason: "lead_not_found" },
+    );
+    assert.deepEqual(
+      await recordLeadAttachment(db, storage, { clientId: CLIENT, leadId: lead, fileName: "a.pdf", bytes: PNG, now }),
+      { ok: false, reason: "content_mismatch" },
+    );
+
+    failUpload = true;
+    assert.deepEqual(
+      await recordLeadAttachment(db, storage, { clientId: CLIENT, leadId: lead, fileName: "b.pdf", bytes: PDF, now }),
+      { ok: false, reason: "storage_failed" },
+    );
+    failUpload = false;
+
+    failCreate = true;
+    await assert.rejects(recordLeadAttachment(db, storage, { clientId: CLIENT, leadId: lead, fileName: "c.pdf", bytes: PDF, now }));
+    assert.equal(objects.size, 1, "orphaned object removed after a database failure");
+    failCreate = false;
+
+    for (const name of ["d.pdf", "e.pdf", "f.pdf", "g.pdf"]) {
+      assert.ok((await recordLeadAttachment(db, storage, { clientId: CLIENT, leadId: lead, fileName: name, bytes: PDF, now })).ok);
+    }
+    assert.deepEqual(
+      await recordLeadAttachment(db, storage, { clientId: CLIENT, leadId: lead, fileName: "h.pdf", bytes: PDF, now }),
+      { ok: false, reason: "too_many_files" },
+    );
+  });
+
+  await check("attachments: routes are gated, origin-checked and workspace-scoped", () => {
+    const off = readWebsiteLeadsConfig({ WEBSITE_LEADS_ENABLED: "true", WEBSITE_LEADS_CLIENT_ID: CLIENT, WEBSITE_LEADS_UPLOAD_SECRET: "short" });
+    assert.ok(off.enabled && off.uploads === null);
+    const on = readWebsiteLeadsConfig({ WEBSITE_LEADS_ENABLED: "true", WEBSITE_LEADS_CLIENT_ID: CLIENT, WEBSITE_LEADS_UPLOAD_SECRET: "x".repeat(32) });
+    assert.ok(on.enabled && on.uploads?.bucket === "website-lead-attachments");
+    const upload = readFileSync("src/app/api/public/website-requests/attachments/route.ts", "utf8");
+    assert.match(upload, /if \(!config\.enabled \|\| !config\.uploads\)/);
+    assert.match(upload, /hasValidWriteOrigin\(request\)/);
+    assert.match(upload, /multipart\/form-data/);
+    assert.match(upload, /verifyUploadToken\(/);
+    assert.ok(upload.indexOf("content-length") < upload.indexOf("request.formData()"), "size checked before parsing");
+    const intake = readFileSync("src/app/api/public/website-requests/route.ts", "utf8");
+    assert.match(intake, /value\.kind === "project_request" && config\.uploads/);
+    const download = readFileSync("src/app/api/leads/attachments/[id]/route.ts", "utf8");
+    assert.match(download, /resolveDataScope\(\)/);
+    assert.match(download, /scope\.clientIds \? \{ clientId: \{ in: scope\.clientIds \} \}/);
+    assert.match(download, /"Cache-Control", "private, no-store"/);
+    const storage = readFileSync("src/lib/website-leads/attachment-storage.ts", "utf8");
+    assert.match(storage, /createSignedUrl\(attachment\.storagePath, 60,/);
+    assert.doesNotMatch(storage, /getPublicUrl/);
+    const detail = readFileSync("src/lib/leads/lead-detail.ts", "utf8");
+    assert.match(detail, /scope\.clientIds \? \{ clientId: \{ in: scope\.clientIds \} \}/);
   });
 
   console.log(`\n${passed} website lead capture checks passed.`);

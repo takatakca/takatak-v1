@@ -23,7 +23,10 @@ import {
   clearQuotePrefill,
   readQuotePrefill,
 } from "@/lib/website/marketplace-storage";
-import { submitWebsiteRequest } from "@/lib/website/website-requests";
+import {
+  submitWebsiteRequest,
+  uploadWebsiteAttachment,
+} from "@/lib/website/website-requests";
 
 type Visibility =
   | "private"
@@ -101,6 +104,15 @@ export function PostProjectForm({
 
   const [reference, setReference] =
     useState<string | null>(null);
+
+  const [files, setFiles] =
+    useState<File[]>([]);
+
+  const [uploadReport, setUploadReport] =
+    useState<{ name: string; sent: boolean }[]>([]);
+
+  const [uploading, setUploading] =
+    useState(false);
 
   const [submitError, setSubmitError] =
     useState<string | null>(null);
@@ -364,7 +376,23 @@ export function PostProjectForm({
         draftKey,
       );
       clearQuotePrefill();
+
+      // Reference files go up one by one, only after the project is received.
+      if (files.length > 0) {
+        setUploading(true);
+        const report: { name: string; sent: boolean }[] = [];
+        for (const file of files) {
+          const upload = result.uploadToken
+            ? await uploadWebsiteAttachment(result.uploadToken, file)
+            : { status: "failed" as const };
+          report.push({ name: file.name, sent: upload.status === "uploaded" });
+        }
+        setUploadReport(report);
+        setUploading(false);
+      }
+
       setReference(result.reference);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -417,6 +445,25 @@ export function PostProjectForm({
               <p className="mt-3 text-sm font-medium text-slate-900">
                 Reference: {reference}
               </p>
+
+              {uploadReport.length > 0 ? (
+                <div className="mt-3 text-sm text-slate-700">
+                  <p className="font-medium text-slate-900">Reference files</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {uploadReport.map((item) => (
+                      <li key={item.name}>
+                        {item.sent ? "✓" : "✗"} {item.name}
+                        {item.sent ? "" : " — not sent"}
+                      </li>
+                    ))}
+                  </ul>
+                  {uploadReport.some((item) => !item.sent) ? (
+                    <p className="mt-2 text-xs text-slate-600">
+                      Email the files marked ✗ to support@takatak.ca with your reference.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
@@ -578,7 +625,11 @@ export function PostProjectForm({
                 Reference files
               </label>
 
-              <FileUploadPanel />
+              <FileUploadPanel
+                files={files}
+                onChange={setFiles}
+                disabled={submitting || uploading}
+              />
             </div>
           </section>
 
@@ -823,13 +874,15 @@ export function PostProjectForm({
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              disabled={submitting}
+              disabled={submitting || uploading}
               type="submit"
               className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             >
-              {submitting
-                ? "Sending…"
-                : "Submit project to TAKATAK"}
+              {uploading
+                ? "Sending files…"
+                : submitting
+                  ? "Sending…"
+                  : "Submit project to TAKATAK"}
             </button>
 
             <button

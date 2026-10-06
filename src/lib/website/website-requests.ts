@@ -57,7 +57,7 @@ export type WebsiteRequestPayload =
     };
 
 export type WebsiteRequestResult =
-  | { status: "sent"; reference: string; totalCents?: number }
+  | { status: "sent"; reference: string; totalCents?: number; uploadToken?: string }
   | { status: "invalid"; fieldErrors: Record<string, string> }
   | { status: "rate_limited" }
   | { status: "unavailable" };
@@ -92,6 +92,7 @@ export async function submitWebsiteRequest(
       status: "sent",
       reference: body.reference,
       ...(typeof body.totalCents === "number" ? { totalCents: body.totalCents } : {}),
+      ...(typeof body.uploadToken === "string" ? { uploadToken: body.uploadToken } : {}),
     };
   }
   if (response.status === 400 && body.fieldErrors && typeof body.fieldErrors === "object") {
@@ -99,4 +100,33 @@ export async function submitWebsiteRequest(
   }
   if (response.status === 429) return { status: "rate_limited" };
   return { status: "unavailable" };
+}
+
+export type AttachmentUploadResult =
+  | { status: "uploaded" }
+  | { status: "rejected"; code: string }
+  | { status: "failed" };
+
+/** Sends one reference file for a request that returned an upload token. */
+export async function uploadWebsiteAttachment(
+  uploadToken: string,
+  file: File,
+): Promise<AttachmentUploadResult> {
+  const form = new FormData();
+  form.set("token", uploadToken);
+  form.set("file", file);
+  try {
+    const response = await fetch("/api/public/website-requests/attachments", {
+      method: "POST",
+      body: form,
+      credentials: "same-origin",
+      signal: AbortSignal.timeout(60_000),
+    });
+    const body = (await response.json().catch(() => ({}))) as { ok?: boolean; code?: string };
+    if (response.ok && body.ok) return { status: "uploaded" };
+    if (response.status >= 400 && response.status < 500) return { status: "rejected", code: body.code ?? "rejected" };
+    return { status: "failed" };
+  } catch {
+    return { status: "failed" };
+  }
 }

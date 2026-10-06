@@ -6,6 +6,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { jsonResponse } from "@/lib/security/api-response";
 import { redactSecrets } from "@/lib/security/redact";
 import { readJsonBody } from "@/lib/security/write-request";
+import { createUploadToken } from "@/lib/website-leads/attachments";
 import { readWebsiteLeadsConfig } from "@/lib/website-leads/config";
 import { sendLeadAlert } from "@/lib/website-leads/notify";
 import { priceMarketplaceOrder } from "@/lib/website-leads/package-pricing";
@@ -114,6 +115,15 @@ export async function POST(request: NextRequest) {
         ok: true,
         reference: recorded.reference,
         ...(pricedOrder ? { totalCents: pricedOrder.totalCents } : {}),
+        ...(value.kind === "project_request" && config.uploads
+          ? {
+              uploadToken: createUploadToken({
+                secret: config.uploads.secret,
+                leadId: recorded.leadId,
+                clientId: config.clientId,
+              }),
+            }
+          : {}),
       },
       200,
     );
