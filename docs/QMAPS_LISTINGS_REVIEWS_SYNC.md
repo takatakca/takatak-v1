@@ -121,6 +121,6 @@ The database migration `20261006120000_qmaps_listing_review_external_ids` adds n
 
 ## Still to build
 
-- **QMAPS side:** outbox table + database triggers on `businesses` / `reviews` + a drain function that signs and sends these events, with retry (same pattern as Rentauto's `takatak-sync-outbox`).
+- ~~QMAPS side~~: built on `takatakca/qmaps` branch `claude/takatak-listings-reviews-sync`. It has the outbox, triggers and the `takatak-sync-outbox` function, is off by default, and was verified end to end against this receiver.
 - **Admin UI** for linking (today: the CLI script above).
 - **Review replies** from TAKATAK back to QMAPS (requires a QMAPS-side API).
