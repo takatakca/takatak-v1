@@ -12,6 +12,12 @@ import {
   readConnectFlags,
   safeOnboardingUrl,
 } from "../src/lib/billing/client-invoicing/connect-policy";
+import {
+  estimateClientInvoice,
+  stripePercentage,
+  validateClientInvoiceInput,
+} from "../src/lib/billing/client-invoicing/invoice-input";
+import { clientInvoiceIdempotencyKey } from "../src/lib/billing/client-invoicing/invoice-keys";
 
 function pass(label: string): void {
   console.log(`PASS  ${label}`);
@@ -58,6 +64,60 @@ assert.equal(clientConnectState({ chargesEnabled: false, detailsSubmitted: true 
 assert.equal(clientConnectState({ chargesEnabled: true, detailsSubmitted: true }), "active");
 pass("account flags are strictly read; only submitted + charges-enabled is active");
 
+const good = {
+  reference: "55555555-5555-4555-8555-555555555555",
+  customer: { name: "  Café Exemple  ", email: "Compta@Example.TEST" },
+  lines: [{ description: "Service", quantity: 2, unitAmountCents: 5000 }, { description: "Frais", quantity: 1, unitAmountCents: 1999 }],
+  taxRates: [{ displayName: "TPS", percentMilli: 5000 }, { displayName: "TVQ", percentMilli: 9975 }],
+  daysUntilDue: 30,
+  memo: "Merci!",
+};
+const ok = validateClientInvoiceInput(good);
+assert.equal(ok.ok, true);
+if (ok.ok) {
+  assert.equal(ok.value.customer.name, "Café Exemple");
+  assert.equal(ok.value.customer.email, "compta@example.test");
+  const estimate = estimateClientInvoice(ok.value);
+  assert.equal(estimate.subtotalCents, 11999);
+  assert.deepEqual(estimate.taxes.map((t) => t.amountCents), [600, 1197]);
+  assert.equal(estimate.totalCents, 13796);
+}
+assert.equal(stripePercentage(9975), 9.975);
+const invalid = (patch: Record<string, unknown>) => validateClientInvoiceInput({ ...good, ...patch }).ok;
+for (const patch of [
+  { reference: "nope" },
+  { customer: { name: "", email: "a@b.test" } },
+  { customer: { name: "X", email: "not-an-email" } },
+  { customer: { name: "Bad\u0000name", email: "a@b.test" } },
+  { lines: [] },
+  { lines: Array.from({ length: 26 }, () => good.lines[0]) },
+  { lines: [{ description: "x", quantity: 0, unitAmountCents: 100 }] },
+  { lines: [{ description: "x", quantity: 1.5, unitAmountCents: 100 }] },
+  { lines: [{ description: "x", quantity: 1, unitAmountCents: -5 }] },
+  { lines: [{ description: "x", quantity: 10_000, unitAmountCents: 99_999 }] },
+  { taxRates: [{ displayName: "TPS", percentMilli: 0 }] },
+  { taxRates: [{ displayName: "TPS", percentMilli: 30_001 }] },
+  { taxRates: [{ displayName: "<b>", percentMilli: 5000 }] },
+  { taxRates: [{ displayName: "TPS", percentMilli: 5000 }, { displayName: "tps", percentMilli: 5000 }] },
+  { taxRates: "TPS" },
+  { daysUntilDue: 0 },
+  { daysUntilDue: 91 },
+  { memo: "x".repeat(501) },
+  { lines: [{ description: "x", quantity: 1, unitAmountCents: 99_999_999 }], taxRates: [{ displayName: "T", percentMilli: 5000 }] },
+]) {
+  assert.equal(invalid(patch), false, JSON.stringify(patch).slice(0, 80));
+}
+assert.equal(validateClientInvoiceInput(null).ok, false);
+assert.equal(invalid({ taxRates: [], memo: null }), true);
+pass("client invoice input: CAD integer cents, bounded lines/taxes/due date, explicit tax rates, no control characters");
+
+const k1 = clientInvoiceIdempotencyKey("client-1", good.reference, "invoice");
+assert.match(k1, /^tkcinv1_[A-Za-z0-9_-]{43}$/);
+assert.equal(clientInvoiceIdempotencyKey("client-1", good.reference.toUpperCase(), "invoice"), k1);
+assert.notEqual(clientInvoiceIdempotencyKey("client-1", good.reference, "line:1"), k1);
+assert.notEqual(clientInvoiceIdempotencyKey("client-2", good.reference, "invoice"), k1);
+pass("every invoice write has a key per workspace + form reference + step");
+
 const root = process.cwd();
 const read = (relative: string) => fs.readFileSync(path.join(root, relative), "utf8");
 const service = read("src/lib/billing/client-invoicing/connect-service.ts");
@@ -85,6 +145,20 @@ const button = read("src/components/billing/client-connect-button.tsx");
 assert.ok(button.includes('url.hostname === "connect.stripe.com"'));
 const roles = read("src/lib/security/roles.ts");
 assert.ok(roles.includes('"/dashboard/client-billing": "manage_settings"'));
+const invoiceService = read("src/lib/billing/client-invoicing/invoice-service.ts");
+assert.ok(invoiceService.startsWith('import "server-only";'));
+assert.ok(invoiceService.includes('clientConnectState(row) !== "active"'), "invoices only on an active connected account");
+assert.equal((invoiceService.match(/\{ stripeAccount, idempotencyKey/g) ?? []).length, 6, "every write is on the connected account with a key");
+assert.ok(invoiceService.includes('pending_invoice_items_behavior: "exclude"'));
+assert.equal(/application_fee|transfer_data|charges\.create|payouts/.test(invoiceService), false, "no platform fee or fund movement");
+const invoiceRoute = read("src/app/api/billing/client-invoicing/invoices/route.ts");
+assert.ok(invoiceRoute.includes('requireWorkspaceApiPermission("manage_settings")'));
+assert.ok(invoiceRoute.includes("readJsonBody(request)"), "origin-checked, size-capped body");
+assert.ok(invoiceRoute.includes("validateClientInvoiceInput(body.body)"));
+assert.ok(invoiceRoute.includes("clientId: gate.access.activeClientId"));
+const form = read("src/components/billing/client-invoice-form.tsx");
+assert.equal(/node:crypto|invoice-keys|server-only/.test(form), false, "client bundle stays free of server modules");
+assert.ok(form.includes("disabled={pending || !confirmed}"), "explicit confirmation before sending");
 const env = read("src/lib/billing/client-invoicing/env.ts");
 assert.ok(env.includes('CLIENT_INVOICING_ENABLED?.trim() === "1"'), "off unless explicitly enabled");
 const migration = read("prisma/migrations/20261006140000_client_stripe_connect_accounts/migration.sql");

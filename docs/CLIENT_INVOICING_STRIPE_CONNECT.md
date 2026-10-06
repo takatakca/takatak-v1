@@ -1,6 +1,6 @@
 # Client invoicing — clients bill their own customers (Stripe Connect)
 
-Status: foundation (account connection). Off by default (`CLIENT_INVOICING_ENABLED`).
+Status: account connection plus invoice creation, sending and listing. Off by default (`CLIENT_INVOICING_ENABLED`).
 
 ## Decision (2026-10-06)
 
@@ -43,7 +43,19 @@ Facturations stays the invoicing authority **for GROUPE TAKATAK itself**.
   - signature verified with `STRIPE_CONNECT_WEBHOOK_SECRET`;
   - only accounts TAKATAK linked are updated, and the event's object must be the event's own account.
 
-TAKATAK never creates charges, transfers or payouts on a client account.
+- **Invoices** (`POST /api/billing/client-invoicing/invoices`):
+  - The route requires `manage_settings` and goes through `readJsonBody`, which checks the origin and caps the size. Input is strictly validated (`invoice-input.ts`):
+    - CAD integer cents;
+    - 1–25 lines;
+    - up to 4 **explicit** tax rates chosen by the client, entered in milli-percent (5000 = 5 %). The TPS/TVQ/TVH buttons only pre-fill these fields; no jurisdiction is assumed;
+    - due in 1–90 days.
+  - The account must be **active**. The customer is matched by email or created, and tax rates are reused when name + rate match.
+  - The invoice is created with `send_invoice`, `pending_invoice_items_behavior: exclude`, itemized lines (`quantity` + `unit_amount_decimal`), then finalized and **sent by Stripe**.
+  - Every write goes to the workspace's stored `stripeAccount`, with an idempotency key per workspace + form reference + step. Re-submitting a form creates nothing new.
+  - The form requires an explicit confirmation. Stripe computes the final total; the page shows an estimate (each tax computed on the subtotal, rounded half-up).
+- **Invoice list** on `/dashboard/client-billing`: the last 24 finalized invoices of the connected account, with Stripe-hosted "Voir" and PDF links.
+
+TAKATAK never creates charges, transfers, payouts or platform fees on a client account.
 
 ## Setup (Stripe test mode first)
 
@@ -54,10 +66,9 @@ TAKATAK never creates charges, transfers or payouts on a client account.
 
 ## Next steps
 
-1. **Invoices.** Create and send invoices on the client's account (`stripeAccount` header): customers, invoice items, explicit tax rates chosen by the client (no jurisdiction assumed), `send_invoice` with a due date. Use Stripe-hosted pay pages and PDFs.
-2. **Invoice list** on `/dashboard/client-billing`, reusing `mapStripeInvoice`, plus Connect `invoice.*` events.
-3. **Feeding.** TAKATAK apps (Rentauto hosts, FoodHub merchants, …) create invoices on their merchant's account through the same service.
-4. **Optional platform fee** (`application_fee_amount`), only after an explicit business decision.
+1. Connect `invoice.*` events (paid, overdue) for notifications, plus void and credit notes from TAKATAK.
+2. **Feeding.** TAKATAK apps (Rentauto hosts, FoodHub merchants, …) create invoices on their merchant's account through the same service.
+3. **Optional platform fee** (`application_fee_amount`), only after an explicit business decision.
 
 ## Tests
 
@@ -68,4 +79,10 @@ TAKATAK never creates charges, transfers or payouts on a client account.
   - resuming onboarding reuses the stored account;
   - return sync and the webhook move the workspace to active;
   - unknown or mismatched webhook events are ignored;
-  - the database refuses to change or delete the link and refuses malformed ids.
+  - the database refuses to change or delete the link and refuses malformed ids;
+  - an inactive workspace cannot invoice and triggers no Stripe write;
+  - every write lands on the workspace's own account with a key;
+  - itemized lines and the client's own tax rates are used;
+  - re-submitting creates nothing;
+  - customers and tax rates are reused;
+  - the list shows that account's invoices.
