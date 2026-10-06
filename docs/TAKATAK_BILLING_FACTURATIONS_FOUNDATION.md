@@ -175,12 +175,12 @@ Database guarantees:
    - `takatak_invoice_request_id`.
 
    The Stripe idempotency key is derived from workspace + invoice + balance, so a double click reuses one session. An already-completed session is refused, and an expired one is replaced.
-4. Stripe sends `checkout.session.completed` to **Facturations** (`POST /webhooks/stripe/payments`). Facturations verifies the signature and records `VERIFIED_PROVIDER_WEBHOOK` evidence. TAKATAK never marks the invoice paid: the client center shows **Payée** only when Facturations reports `proofScope = VERIFIED_PROVIDER_PRESENT`.
+4. Stripe sends `checkout.session.completed` to **Facturations** (`POST /webhooks/stripe/payments`). Facturations verifies the signature and records `VERIFIED_PROVIDER_WEBHOOK` evidence. TAKATAK never marks the invoice paid: the client center shows **Payée** only when Facturations reports `proofScope = VERIFIED_PROVIDER_PRESENT`. Stripe refunds (`refund.*`) are recorded the same way, so a refunded invoice shows **Remboursée**, never **Payée**.
 
 TAKATAK's own Stripe webhooks (Social, AHMV) ignore these sessions because they are `mode=payment` and carry no Social or AHMV metadata.
 
 Setup (Stripe test mode first):
-- add a webhook endpoint `https://<facturations>/webhooks/stripe/payments` with events `checkout.session.completed` and `checkout.session.async_payment_succeeded` on the **same Stripe account** as `STRIPE_SECRET_KEY`;
+- add a webhook endpoint `https://<facturations>/webhooks/stripe/payments` with events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `refund.created` and `refund.updated` on the **same Stripe account** as `STRIPE_SECRET_KEY`;
 - put its `whsec_` secret only in Facturations' `FACTURATIONS_STRIPE_WEBHOOK_SECRET`.
 
 Tests:
