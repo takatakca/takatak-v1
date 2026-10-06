@@ -53,6 +53,9 @@ export interface ReputationSnapshot {
     status: FeedbackStatusKey;
     viaRequest: boolean;
     leadId: string | null;
+    publishConsent: boolean;
+    hiddenFromShowcase: boolean;
+    aiDraft: { status: string; text: string } | null;
     createdAt: Date;
   }>;
   stats: {
@@ -101,6 +104,8 @@ export async function getReputationSnapshot(clientId: string): Promise<Reputatio
         status: true,
         requestId: true,
         leadId: true,
+        publishConsent: true,
+        hiddenFromShowcase: true,
         createdAt: true,
         profile: { select: { name: true } },
       },
@@ -111,6 +116,22 @@ export async function getReputationSnapshot(clientId: string): Promise<Reputatio
     prisma.reviewResponse.count({ where: { clientId, status: { not: "resolved" }, rating: { lte: 3 } } }),
     prisma.businessBrand.findMany({ where: { clientId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
   ]);
+
+  // Review Responder drafts, matched to the review they answer.
+  const draftRuns = await prisma.aiAgentRun.findMany({
+    where: { clientId, agentKey: "review_responder", status: { in: ["awaiting_approval", "approved", "executing", "completed"] } },
+    orderBy: { createdAt: "desc" },
+    take: 200,
+    select: { status: true, input: true, output: true },
+  });
+  const drafts = new Map<string, { status: string; text: string }>();
+  for (const run of draftRuns) {
+    const input = run.input && typeof run.input === "object" && !Array.isArray(run.input) ? (run.input as Record<string, unknown>) : {};
+    const output = run.output && typeof run.output === "object" && !Array.isArray(run.output) ? (run.output as Record<string, unknown>) : {};
+    const responseId = typeof input.reviewResponseId === "string" ? input.reviewResponseId : null;
+    const text = typeof output.reply === "string" ? output.reply : typeof output.preview === "string" ? output.preview : null;
+    if (responseId && text && !drafts.has(responseId)) drafts.set(responseId, { status: run.status, text: text.slice(0, 2000) });
+  }
 
   const byStatus = Object.fromEntries(requestGroups.map((g) => [g.status, g._count._all])) as Record<string, number>;
   const distribution: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -148,6 +169,9 @@ export async function getReputationSnapshot(clientId: string): Promise<Reputatio
       status: r.status,
       viaRequest: r.requestId !== null,
       leadId: r.leadId,
+      publishConsent: r.publishConsent,
+      hiddenFromShowcase: r.hiddenFromShowcase,
+      aiDraft: drafts.get(r.id) ?? null,
       createdAt: r.createdAt,
     })),
     stats: {
@@ -349,6 +373,7 @@ export async function submitPublicRating(slug: string, token: string | null, inp
           contactEmail: input.contactEmail,
           contactPhone: input.contactPhone,
           followUpConsent: input.followUpConsent,
+          publishConsent: input.publishConsent,
         },
         select: { id: true },
       });
@@ -458,4 +483,54 @@ export async function convertReviewResponseToLead(clientId: string, responseId: 
     }
     throw error;
   }
+}
+
+// --------------------------------------------------------------- showcase
+
+export interface ShowcaseData {
+  businessName: string;
+  averageRating: number | null;
+  ratingCount: number;
+  reviews: Array<{ firstName: string | null; rating: number; text: string; date: string }>;
+}
+
+function firstNameOnly(name: string | null): string | null {
+  const first = name?.trim().split(/\s+/)[0];
+  return first ? first.slice(0, 30) : null;
+}
+
+/**
+ * Public review showcase. The average covers EVERY rating (not just the
+ * featured ones); only 4–5★ comments with explicit publish consent, and not
+ * hidden by the owner, are listed — first name only.
+ */
+export async function getReviewShowcase(slug: string, limit = 6): Promise<ShowcaseData | null> {
+  const prisma = requirePrisma();
+  const profile = await prisma.reviewProfile.findUnique({ where: { publicSlug: slug }, select: { id: true, name: true, active: true } });
+  if (!profile || !profile.active) return null;
+  const [aggregate, featured] = await Promise.all([
+    prisma.reviewResponse.aggregate({ where: { profileId: profile.id }, _avg: { rating: true }, _count: { _all: true } }),
+    prisma.reviewResponse.findMany({
+      where: { profileId: profile.id, publishConsent: true, hiddenFromShowcase: false, rating: { gte: 4 }, feedback: { not: null } },
+      orderBy: { createdAt: "desc" },
+      take: Math.min(Math.max(limit, 1), 12),
+      select: { rating: true, feedback: true, contactName: true, createdAt: true },
+    }),
+  ]);
+  return {
+    businessName: profile.name,
+    averageRating: aggregate._avg.rating === null ? null : Math.round(aggregate._avg.rating * 10) / 10,
+    ratingCount: aggregate._count._all,
+    reviews: featured.map((r) => ({
+      firstName: firstNameOnly(r.contactName),
+      rating: r.rating,
+      text: (r.feedback ?? "").slice(0, 600),
+      date: r.createdAt.toISOString().slice(0, 10),
+    })),
+  };
+}
+
+export async function setShowcaseHidden(clientId: string, responseId: string, hidden: boolean): Promise<boolean> {
+  const result = await requirePrisma().reviewResponse.updateMany({ where: { id: responseId, clientId }, data: { hiddenFromShowcase: hidden } });
+  return result.count === 1;
 }

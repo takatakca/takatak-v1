@@ -6,6 +6,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 
 import { originAllowed, originsForDomain, normalizeSiteDomain } from "@/lib/analytics/parse";
+import { triggerChatConcierge } from "@/lib/ai-agents/service";
 import { getPrisma } from "@/lib/db/prisma";
 
 export const MAX_MESSAGE_CHARS = 2000;
@@ -76,7 +77,7 @@ export async function visitorSend(
   const prisma = requirePrisma();
   const providedToken = input.visitorToken && VISITOR_TOKEN_PATTERN.test(input.visitorToken) ? input.visitorToken : null;
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     let conversation = providedToken
       ? await tx.chatConversation.findUnique({
           where: { visitorTokenHash: hashVisitorToken(providedToken) },
@@ -111,8 +112,16 @@ export async function visitorSend(
       where: { id: conversation.id },
       data: { lastMessageAt: message.createdAt, unreadForStaff: { increment: 1 } },
     });
-    return { visitorToken: token!, message: { ...message, createdAt: message.createdAt.toISOString() } };
+    return { visitorToken: token!, conversationId: conversation.id, message: { ...message, createdAt: message.createdAt.toISOString() } };
   });
+  if ("error" in result) return result;
+  try {
+    await triggerChatConcierge(widget.clientId, result.conversationId, input.body);
+  } catch {
+    // The visitor's message is saved; an agent trigger failure must never fail the chat.
+    console.error("[chat] concierge trigger failed");
+  }
+  return { visitorToken: result.visitorToken, message: result.message };
 }
 
 export async function visitorMessages(
@@ -354,4 +363,42 @@ export async function convertConversationToLead(clientId: string, conversationId
     }
     throw error;
   }
+}
+
+// ------------------------------------------------------------- AI gateway
+
+export async function conversationForAgent(clientId: string, conversationId: string) {
+  const conversation = await requirePrisma().chatConversation.findFirst({
+    where: { id: conversationId, clientId },
+    select: {
+      id: true,
+      status: true,
+      visitorName: true,
+      pageUrl: true,
+      widget: { select: { name: true, greeting: true } },
+      messages: { orderBy: { createdAt: "desc" }, take: 30, select: { sender: true, body: true, createdAt: true } },
+    },
+  });
+  if (!conversation) return null;
+  return {
+    conversationId: conversation.id,
+    status: conversation.status,
+    business: conversation.widget.name,
+    greeting: conversation.widget.greeting,
+    visitorName: conversation.visitorName,
+    pageUrl: conversation.pageUrl,
+    messages: conversation.messages.reverse().map((m) => ({ sender: m.sender, body: m.body, at: m.createdAt.toISOString() })),
+  };
+}
+
+/** Inserts an AI message into an open conversation of the same client. */
+export async function postAiReply(clientId: string, conversationId: string, body: string): Promise<boolean> {
+  const prisma = requirePrisma();
+  return prisma.$transaction(async (tx) => {
+    const conversation = await tx.chatConversation.findFirst({ where: { id: conversationId, clientId, status: "open" }, select: { id: true } });
+    if (!conversation) return false;
+    const message = await tx.chatMessage.create({ data: { conversationId, clientId, sender: "ai", body }, select: { createdAt: true } });
+    await tx.chatConversation.update({ where: { id: conversationId }, data: { lastMessageAt: message.createdAt } });
+    return true;
+  });
 }

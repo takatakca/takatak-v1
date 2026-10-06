@@ -14,6 +14,7 @@ import {
   createReviewRequest,
   recordRequestDelivery,
   setReviewProfileActive,
+  setShowcaseHidden,
   updateFeedbackStatus,
 } from "@/lib/reputation/service";
 import { parseFeedbackStatus, parseReviewChannel, parseReviewProfileInput } from "@/lib/reputation/validation";
@@ -116,5 +117,13 @@ export async function convertReviewToLeadAction(formData: FormData): Promise<voi
   const responseId = String(formData.get("responseId") ?? "");
   if (!access || !UUID.test(responseId)) return;
   await convertReviewResponseToLead(access.activeClientId, responseId);
+  revalidatePath(REVIEWS_PATH);
+}
+
+export async function toggleShowcaseAction(formData: FormData): Promise<void> {
+  const access = await scopedAccess("manage_reputation");
+  const responseId = String(formData.get("responseId") ?? "");
+  if (!access || !UUID.test(responseId)) return;
+  await setShowcaseHidden(access.activeClientId, responseId, formData.get("hidden") === "true");
   revalidatePath(REVIEWS_PATH);
 }

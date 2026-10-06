@@ -6,8 +6,9 @@ Status: **Phases 1–3 built:**
 - **Phase 3:** analytics, audiences, web chat.
 - **Phase 4:** SMS/WhatsApp delivery, Stripe credit checkout, AI agent run queue.
 - **Phase 5:** autopilot schedules, automatic triggers, review → lead.
+- **Phase 6:** review showcase widget, Chat Concierge, Review Responder drafts, Core Web Vitals.
 
-The Phase 2–5 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
+The Phase 2–6 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
 
 ## Scope rule
 
@@ -224,6 +225,49 @@ Every new 1–3★ rating on a review page queues a **Review Responder** run, if
 
 When a customer ticked "contact me", **Create lead for follow-up** in the feedback inbox creates one Lead, exactly once. It is high priority for 1–2★ ratings, and it only works when the customer consented.
 
+## Phase 6: Review showcase, AI that acts, Core Web Vitals
+
+Migration: `prisma/migrations/20261007090000_growth_review_showcase` adds `review_responses.publishConsent` and `review_responses.hiddenFromShowcase`, plus an index. It is additive and **not** in the approved deploy lists yet.
+
+### Review showcase (Birdeye-style widget)
+
+On the rating page, customers who give 4–5★ can tick "show my comment and first name on the business's website".
+
+Embed code (copied per review page in the dashboard):
+
+```
+<div data-takatak-reviews="<slug>" data-review-link="1"></div>
+<script defer src="https://takatak.ca/takatak-reviews.js"></script>
+```
+
+Data comes from `GET /api/public/reviews?p=<slug>`, which is public, cached for 5 minutes and read-only.
+- **The average covers every rating**, not only the featured ones.
+- **Only consented 4–5★ comments are listed**, with the first name only and no contact details.
+- **Owners can hide** any entry from the feedback inbox.
+
+### Chat Concierge (AI answers website chat)
+
+When the agent is on, each visitor message queues one run per conversation. The AI Gateway uses two endpoints:
+
+| Call | Purpose |
+|---|---|
+| `GET /api/ai/chat/context?runId=` | Conversation history (last 30 messages), plus `canReply` |
+| `POST /api/ai/chat/reply { runId, body }` | Posts an `ai` message |
+
+Rules for replying:
+- **Approval on (the default):** the reply is shown for approval first. Posting is only allowed in the execute phase, after a human approves.
+- **Approval off:** the concierge replies in real time.
+- **Locked to the run:** authority comes from the run itself (same agent, same client, same conversation), so the gateway can never post anywhere else.
+
+### Review Responder drafts in the inbox
+
+The run output `{ reply }` (or `preview`) shows up under the review it answers in `/dashboard/growth/reviews`, along with its approval status.
+
+### Core Web Vitals
+
+The SEO page runs Google PageSpeed Insights v5 for mobile or desktop: performance score, LCP, CLS, TBT, FCP and Speed Index, graded on Google's thresholds, plus the real-user category from the Chrome UX Report.
+- It requires `PAGESPEED_API_KEY`, because the keyless shared quota is exhausted (verified: HTTP 429).
+
 ## Waiting on outside approvals
 
 These need provider access that only the owner can request:
@@ -241,6 +285,7 @@ These need provider access that only the owner can request:
   - chat domain locking, hashed tokens, live staff replies, closed threads and one-time lead conversion;
   - masked delivery records, card purchases credited exactly once, and the agent queue (no double-claims under 5 parallel workers, the approval gate, crash recovery, cancel);
   - autopilot (once per slot under overlapping cron ticks, in the client's time zone), low-rating triggers, and consent-only review → lead;
+  - the showcase (honest average, consent and first name only, owner hide) and the Chat Concierge approval gate and tenant lock;
   - tenant isolation for all of the above, and the database constraints.
 
 Both run in CI.

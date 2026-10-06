@@ -107,6 +107,17 @@ export function PublicRatingForm({
             />
           </label>
 
+          {rating >= 4 ? (
+            <label className="flex items-start gap-2 text-xs text-slate-600">
+              <input type="checkbox" name="publishConsent" className="mt-0.5" />
+              <span>
+                J’accepte que mon commentaire et mon prénom soient affichés sur le site de l’entreprise.
+                <br />
+                <span className="text-slate-400">I agree my comment and first name may be shown on the business’s website.</span>
+              </span>
+            </label>
+          ) : null}
+
           <label className="flex items-start gap-2 text-xs text-slate-600">
             <input
               type="checkbox"

@@ -2,12 +2,20 @@
 
 import { useState } from "react";
 
-export function CopySnippet({ code, label = "Copy code" }: { code: string; label?: string }) {
+export function CopySnippet({
+  code,
+  label = "Copy code",
+  hint = "Paste before </body> on the website",
+}: {
+  code: string;
+  label?: string;
+  hint?: string;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold text-slate-600">Paste before &lt;/body&gt; on the website</p>
+        <p className="text-[11px] font-semibold text-slate-600">{hint}</p>
         <button
           type="button"
           onClick={async () => {

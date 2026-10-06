@@ -89,6 +89,7 @@ export interface PublicRatingInput {
   contactEmail: string | null;
   contactPhone: string | null;
   followUpConsent: boolean;
+  publishConsent: boolean;
 }
 
 export function parsePublicRatingInput(raw: Record<string, unknown>): Parsed<PublicRatingInput> {
@@ -124,6 +125,8 @@ export function parsePublicRatingInput(raw: Record<string, unknown>): Parsed<Pub
       contactEmail: consent ? contactEmail : null,
       contactPhone: consent && phoneDigits ? `+${phoneDigits}` : null,
       followUpConsent: consent && hasContact,
+      // Public display needs its own explicit opt-in and something to display.
+      publishConsent: (raw.publishConsent === "on" || raw.publishConsent === "true" || raw.publishConsent === true) && Boolean(feedback),
     },
   };
 }

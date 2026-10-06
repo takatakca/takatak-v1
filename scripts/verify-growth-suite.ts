@@ -23,6 +23,7 @@ import { decideCreditGrant } from "../src/lib/billing/ai-credits/policy";
 import { growthSmsConfigured, growthWhatsAppConfigured } from "../src/lib/messaging/delivery";
 import { maskPhone, toE164 } from "../src/lib/messaging/phone";
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
+import { gradeMetric, parsePageSpeed } from "../src/lib/seo/pagespeed-parse";
 import { normalizeAuditUrl } from "../src/lib/seo/site-audit";
 
 function pass(label: string): void {
@@ -279,8 +280,51 @@ function verifyAgentSchedules(): void {
   pass("autopilot schedules are time-zone and DST aware");
 }
 
+function verifyPageSpeedAndShowcase(): void {
+  const fixture = {
+    lighthouseResult: {
+      categories: { performance: { score: 0.87 } },
+      audits: {
+        "largest-contentful-paint": { numericValue: 2400 },
+        "cumulative-layout-shift": { numericValue: 0.18 },
+        "total-blocking-time": { numericValue: 750 },
+        "first-contentful-paint": { numericValue: 1200 },
+        "speed-index": { numericValue: 3100 },
+      },
+    },
+    loadingExperience: { overall_category: "AVERAGE" },
+  };
+  const report = parsePageSpeed(fixture, "mobile", "https://takatak.ca/");
+  assert.ok(report);
+  assert.equal(report.score, 87);
+  assert.deepEqual(
+    report.metrics.map((m) => [m.key, m.display, m.grade]),
+    [
+      ["lcp", "2.4 s", "good"],
+      ["cls", "0.18", "needs_improvement"],
+      ["tbt", "750 ms", "poor"],
+      ["fcp", "1.2 s", "good"],
+      ["si", "3.1 s", "good"],
+    ],
+  );
+  assert.equal(report.fieldCategory, "AVERAGE");
+  assert.equal(parsePageSpeed({ error: { code: 429 } }, "mobile", "x"), null);
+  assert.equal(gradeMetric("lcp", 4000), "needs_improvement");
+  assert.equal(gradeMetric("lcp", 4001), "poor");
+  pass("PageSpeed responses parse and Web Vitals grade on Google's thresholds");
+
+  const withText = parsePublicRatingInput({ rating: "5", feedback: "Super service", publishConsent: "on" });
+  assert.ok(withText.ok && withText.value.publishConsent);
+  const noText = parsePublicRatingInput({ rating: "5", publishConsent: "on" });
+  assert.ok(noText.ok && !noText.value.publishConsent, "nothing to publish without a comment");
+  const noOptIn = parsePublicRatingInput({ rating: "5", feedback: "Super" });
+  assert.ok(noOptIn.ok && !noOptIn.value.publishConsent, "publishing is opt-in");
+  pass("showcase publishing requires an explicit opt-in and a comment");
+}
+
 verifyCatalog();
 verifyHonestStatuses();
+verifyPageSpeedAndShowcase();
 verifyAgentSchedules();
 verifyCreditPurchasePolicy();
 verifyMessagingGates();

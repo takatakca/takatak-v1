@@ -345,3 +345,59 @@ export async function triggerLowRatingResponder(
   );
   return result.ok;
 }
+
+/** Event trigger: a visitor message asks the Chat Concierge for a reply (one pending run per conversation). */
+export async function triggerChatConcierge(clientId: string, conversationId: string, message: string): Promise<boolean> {
+  const prisma = requirePrisma();
+  const setting = await prisma.aiAgentSetting.findUnique({
+    where: { clientId_agentKey: { clientId, agentKey: "chat_concierge" } },
+    select: { enabled: true },
+  });
+  if (!setting?.enabled) return false;
+  const pendingForConversation = await prisma.aiAgentRun.count({
+    where: {
+      clientId,
+      agentKey: "chat_concierge",
+      status: { in: ["queued", "running", "awaiting_approval", "approved", "executing"] },
+      input: { path: ["conversationId"], equals: conversationId },
+    },
+  });
+  if (pendingForConversation > 0) return false;
+  const result = await requestAgentRun(
+    clientId,
+    "chat_concierge",
+    { trigger: "chat_message", context: { conversationId, message: message.slice(0, 2000) } },
+    null,
+    { maxPending: 50 },
+  );
+  return result.ok;
+}
+
+export type AgentRunAuthority =
+  | { ok: true; run: { id: string; clientId: string; input: Record<string, unknown>; output: Record<string, unknown> | null; canAct: boolean } }
+  | { ok: false; code: "not_found" | "not_active" };
+
+/**
+ * Resolves what a gateway call may do for a run: read while the run is being
+ * worked on; act (publish) only in the execute phase, or immediately when the
+ * client turned approval off for that agent.
+ */
+export async function authorizeAgentRun(runId: string, agentKey: string): Promise<AgentRunAuthority> {
+  const prisma = requirePrisma();
+  const run = await prisma.aiAgentRun.findUnique({
+    where: { id: runId },
+    select: { id: true, clientId: true, agentKey: true, status: true, input: true, output: true },
+  });
+  if (!run || run.agentKey !== agentKey) return { ok: false, code: "not_found" };
+  if (run.status !== "running" && run.status !== "executing") return { ok: false, code: "not_active" };
+  let canAct = run.status === "executing";
+  if (run.status === "running") {
+    const setting = await prisma.aiAgentSetting.findUnique({
+      where: { clientId_agentKey: { clientId: run.clientId, agentKey } },
+      select: { requireApproval: true },
+    });
+    canAct = !(agentDef(agentKey)?.alwaysRequiresApproval ?? false) && setting?.requireApproval === false;
+  }
+  const asObject = (v: Prisma.JsonValue | null) => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
+  return { ok: true, run: { id: run.id, clientId: run.clientId, input: asObject(run.input) ?? {}, output: asObject(run.output), canAct } };
+}

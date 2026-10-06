@@ -4160,6 +4160,8 @@ model ReviewResponse {
   contactEmail        String?
   contactPhone        String?
   followUpConsent     Boolean              @default(false)
+  publishConsent      Boolean              @default(false)
+  hiddenFromShowcase  Boolean              @default(false)
   publicLinkClickedAt DateTime?
   status              ReviewFeedbackStatus @default(new)
   resolvedAt          DateTime?
@@ -4175,6 +4177,7 @@ model ReviewResponse {
   @@index([clientId, createdAt])
   @@index([profileId, createdAt])
   @@index([clientId, status])
+  @@index([profileId, publishConsent])
   @@map("review_responses")
 }
 

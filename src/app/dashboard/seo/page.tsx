@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { ConnectorGrid } from "@/components/growth/connector-card";
 import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
+import { PageSpeedForm } from "@/components/growth/pagespeed-form";
 import { SiteAuditForm } from "@/components/growth/site-audit-form";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { getConnectorStatuses } from "@/lib/growth/status";
+import { pageSpeedConfigured } from "@/lib/seo/pagespeed";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,13 @@ export default async function SeoOverviewPage() {
         />
         <CardBody>
           <SiteAuditForm />
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader title="Speed & Core Web Vitals" subtitle="Google PageSpeed Insights: the same speed scores Google uses for ranking." />
+        <CardBody>
+          <PageSpeedForm configured={pageSpeedConfigured()} />
         </CardBody>
       </Card>
 

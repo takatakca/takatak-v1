@@ -1,7 +1,13 @@
 import { GrowthKpi } from "@/components/growth/growth-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { convertReviewToLeadAction, toggleReviewProfileAction, updateFeedbackStatusAction } from "@/app/dashboard/growth/reviews/actions";
+import {
+  convertReviewToLeadAction,
+  toggleReviewProfileAction,
+  toggleShowcaseAction,
+  updateFeedbackStatusAction,
+} from "@/app/dashboard/growth/reviews/actions";
+import { CopySnippet } from "@/components/growth/copy-snippet";
 import type { ReputationSnapshot } from "@/lib/reputation/service";
 
 import { CreateProfileForm } from "./create-profile-form";
@@ -23,11 +29,13 @@ export function ReputationWorkspace({
   canManage,
   smsReady = false,
   whatsappReady = false,
+  origin = "",
 }: {
   data: ReputationSnapshot;
   canManage: boolean;
   smsReady?: boolean;
   whatsappReady?: boolean;
+  origin?: string;
 }) {
   const { stats } = data;
   const openRate = stats.requests ? Math.round((stats.opened / stats.requests) * 100) : null;
@@ -87,13 +95,31 @@ export function ReputationWorkspace({
                     {r.publicLinkClicked ? <Badge tone="success">Went to public review</Badge> : null}
                     {r.viaRequest ? <Badge tone="neutral">Via request</Badge> : <Badge tone="muted">Shared link</Badge>}
                     {r.leadId ? <Badge tone="success">Lead created</Badge> : null}
+                    {r.publishConsent && r.rating >= 4 ? (
+                      <Badge tone={r.hiddenFromShowcase ? "muted" : "accent"}>{r.hiddenFromShowcase ? "Hidden from website" : "On website showcase"}</Badge>
+                    ) : null}
                     <span className="ml-auto text-slate-400">{r.createdAt.toLocaleString("en-CA")}</span>
                   </div>
                   {r.feedback ? <p className="whitespace-pre-wrap text-sm text-slate-700">{r.feedback}</p> : null}
+                  {r.aiDraft ? (
+                    <div className="rounded-lg border border-violet-200 bg-violet-50/60 p-2.5">
+                      <p className="text-[11px] font-semibold text-violet-800">
+                        AI draft reply · {r.aiDraft.status === "awaiting_approval" ? "waiting for approval in AI Engine" : r.aiDraft.status.replace("_", " ")}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap text-xs text-slate-800">{r.aiDraft.text}</p>
+                    </div>
+                  ) : null}
                   {r.followUpConsent ? (
                     <p className="text-xs text-slate-500">
                       Wants a follow-up: {[r.contactName, r.contactEmail, r.contactPhone].filter(Boolean).join(" · ")}
                     </p>
+                  ) : null}
+                  {canManage && r.publishConsent && r.rating >= 4 ? (
+                    <form action={toggleShowcaseAction}>
+                      <input type="hidden" name="responseId" value={r.id} />
+                      <input type="hidden" name="hidden" value={r.hiddenFromShowcase ? "false" : "true"} />
+                      <button className="text-xs text-slate-500 hover:text-slate-800">{r.hiddenFromShowcase ? "Show on website" : "Hide from website"}</button>
+                    </form>
                   ) : null}
                   {canManage && r.followUpConsent && !r.leadId ? (
                     <form action={convertReviewToLeadAction}>
@@ -131,7 +157,8 @@ export function ReputationWorkspace({
         <CardBody className="space-y-4">
           {data.profiles.length === 0 ? <p className="text-sm text-slate-500">No review page yet.</p> : null}
           {data.profiles.map((p) => (
-            <div key={p.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 px-3 py-2">
+            <div key={p.id} className="space-y-2 rounded-xl border border-slate-200 px-3 py-2">
+              <div className="flex flex-wrap items-center gap-3">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-slate-900">
                   {p.name} {p.brandName ? <span className="text-xs font-normal text-slate-400">· {p.brandName}</span> : null}
@@ -151,6 +178,14 @@ export function ReputationWorkspace({
                   <input type="hidden" name="active" value={p.active ? "false" : "true"} />
                   <button className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700">{p.active ? "Pause" : "Resume"}</button>
                 </form>
+              ) : null}
+              </div>
+              {origin ? (
+                <CopySnippet
+                  label="Copy showcase code"
+                  hint="Paste where the reviews should appear on the website"
+                  code={`<div data-takatak-reviews="${p.publicSlug}" data-review-link="1"></div>\n<script defer src="${origin}/takatak-reviews.js"></script>`}
+                />
               ) : null}
             </div>
           ))}

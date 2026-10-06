@@ -50,9 +50,16 @@ import {
   requestAgentRun,
   saveAgentSetting,
   scheduleDueAgentRuns,
+  authorizeAgentRun,
 } from "../src/lib/ai-agents/service";
 import { applyAiCreditsStripeEvent } from "../src/lib/billing/ai-credits/stripe";
-import { convertReviewResponseToLead, recordRequestDelivery } from "../src/lib/reputation/service";
+import {
+  convertReviewResponseToLead,
+  getReviewShowcase,
+  recordRequestDelivery,
+  setShowcaseHidden,
+} from "../src/lib/reputation/service";
+import { postAiReply } from "../src/lib/chat/service";
 
 const PHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
 function hdrs(origin: string | null, ip = "203.0.113.7", ua = PHONE_UA, extra: Record<string, string> = {}): Headers {
@@ -445,6 +452,90 @@ async function main(): Promise<void> {
     );
     assert.ok(reviewLead.message?.includes("Trop cher"));
     pass("consented review follow-ups become exactly one high-priority lead");
+
+    // ---------------------------------------------------------------- showcase
+    const showProfileInput = parseReviewProfileInput({ name: "Showcase Shop", googlePlaceId: "ChIJN1t_tDeuEmsRUsoyG83frY4" });
+    assert.ok(showProfileInput.ok);
+    const showProfile = await createReviewProfile(b.id, showProfileInput.value);
+    const featuredA = await submitPublicRating(showProfile.publicSlug, null, rating({ rating: "5", feedback: "Excellent travail", publishConsent: "on", followUpConsent: "on", contactName: "Marie-Ève Tremblay", contactEmail: "m@example.test" }));
+    const featuredB = await submitPublicRating(showProfile.publicSlug, null, rating({ rating: "4", feedback: "Rapide et honnête", publishConsent: "on" }));
+    await submitPublicRating(showProfile.publicSlug, null, rating({ rating: "5", feedback: "Pas d'accord pour publier" }));
+    await submitPublicRating(showProfile.publicSlug, null, rating({ rating: "2", feedback: "Déçu", publishConsent: "on" }));
+    assert.ok(featuredA.ok && featuredB.ok);
+    const showcase = await getReviewShowcase(showProfile.publicSlug);
+    assert.ok(showcase);
+    assert.equal(showcase.ratingCount, 4, "average covers every rating, including the low one");
+    assert.equal(showcase.averageRating, 4);
+    assert.deepEqual(showcase.reviews.map((r) => r.text).sort(), ["Excellent travail", "Rapide et honnête"]);
+    assert.equal(showcase.reviews.find((r) => r.text === "Excellent travail")?.firstName, "Marie-Ève", "first name only");
+    assert.ok(!JSON.stringify(showcase).includes("m@example.test"), "no contact details leak");
+    assert.equal(await setShowcaseHidden(a.id, featuredA.responseId, true), false, "tenant A cannot hide B's review");
+    assert.equal(await setShowcaseHidden(b.id, featuredA.responseId, true), true);
+    assert.equal((await getReviewShowcase(showProfile.publicSlug))?.reviews.length, 1, "owner can hide a featured review");
+    pass("showcase lists only consented 4–5★ comments (first name), honest average, owner can hide");
+
+    // ------------------------------------------------------------ chat concierge
+    const cWidget = await createChatWidget(b.id, { name: "B chat", domain: "b-qa.ca", greeting: null, accentColor: "#123456", whatsappNumber: null, businessBrandId: null });
+    assert.ok(!("error" in cWidget));
+    const cpw = await publicWidget(cWidget.publicKey, "https://b-qa.ca");
+    assert.ok(cpw);
+    const before = await prisma.aiAgentRun.count({ where: { clientId: b.id, agentKey: "chat_concierge" } });
+    const vc1 = await visitorSend(cpw, { visitorToken: null, body: "Bonjour, vos heures?", name: null, email: null, phone: null, pageUrl: null });
+    assert.ok(!("error" in vc1));
+    assert.equal(await prisma.aiAgentRun.count({ where: { clientId: b.id, agentKey: "chat_concierge" } }), before, "no run while the concierge is off");
+    await saveAgentSetting(b.id, "chat_concierge", { enabled: true, requireApproval: true, instructions: "Heures: 8h-17h" });
+    const vc2 = await visitorSend(cpw, { visitorToken: vc1.visitorToken, body: "Et le samedi?", name: null, email: null, phone: null, pageUrl: null });
+    const vc3 = await visitorSend(cpw, { visitorToken: vc1.visitorToken, body: "Allo?", name: null, email: null, phone: null, pageUrl: null });
+    assert.ok(!("error" in vc2) && !("error" in vc3));
+    const conciergeRuns = await prisma.aiAgentRun.findMany({ where: { clientId: b.id, agentKey: "chat_concierge" } });
+    assert.equal(conciergeRuns.length, 1, "one pending concierge run per conversation");
+    const concierge = conciergeRuns[0];
+    await prisma.aiAgentRun.updateMany({ where: { status: { in: ["queued", "approved"] }, NOT: { id: concierge.id } }, data: { status: "canceled" } });
+    const cClaim = await claimNextAgentRun();
+    assert.equal(cClaim?.runId, concierge.id);
+    const authGenerate = await authorizeAgentRun(concierge.id, "chat_concierge");
+    assert.ok(authGenerate.ok && authGenerate.run.canAct === false, "approval on: cannot post while generating");
+    assert.equal((await authorizeAgentRun(concierge.id, "review_responder")).ok, false, "run authority is agent-specific");
+    await reportAgentRun(concierge.id, { succeeded: true, output: { reply: "Samedi 9h-13h !", preview: "Samedi 9h-13h !" } });
+    assert.equal((await authorizeAgentRun(concierge.id, "chat_concierge")).ok, false, "no authority while awaiting approval");
+    assert.equal(await decideAgentRun(b.id, concierge.id, true, null), true);
+    const cExec = await claimNextAgentRun();
+    assert.equal(cExec?.phase, "execute");
+    const authExec = await authorizeAgentRun(concierge.id, "chat_concierge");
+    assert.ok(authExec.ok && authExec.run.canAct);
+    const convId = String(authExec.run.input.conversationId);
+    assert.equal(await postAiReply(a.id, convId, "spoof"), false, "AI cannot post into another tenant's conversation");
+    assert.equal(await postAiReply(b.id, convId, "Samedi 9h-13h !"), true);
+    const seen = await visitorMessages(cpw, vc1.visitorToken, null);
+    assert.equal(seen?.messages.at(-1)?.sender, "ai");
+    assert.equal(seen?.messages.at(-1)?.body, "Samedi 9h-13h !");
+    await reportAgentRun(concierge.id, { succeeded: true });
+    pass("Chat Concierge: one run per conversation, posts only after approval, tenant-locked");
+
+    await saveAgentSetting(b.id, "chat_concierge", { enabled: true, requireApproval: false, instructions: null });
+    const vc4 = await visitorSend(cpw, { visitorToken: vc1.visitorToken, body: "Merci!", name: null, email: null, phone: null, pageUrl: null });
+    assert.ok(!("error" in vc4));
+    const fastClaim = await claimNextAgentRun();
+    assert.ok(fastClaim && fastClaim.agentKey === "chat_concierge");
+    const fastAuth = await authorizeAgentRun(fastClaim.runId, "chat_concierge");
+    assert.ok(fastAuth.ok && fastAuth.run.canAct, "approval off: the concierge may answer immediately");
+    await reportAgentRun(fastClaim.runId, { succeeded: true });
+    pass("with approval turned off, the concierge answers in real time");
+
+    // ------------------------------------------------- review responder drafts
+    const draftTarget = await submitPublicRating(showProfile.publicSlug, null, rating({ rating: "1", feedback: "Attente trop longue" }));
+    assert.ok(draftTarget.ok);
+    const responderRun = await prisma.aiAgentRun.findFirstOrThrow({
+      where: { clientId: b.id, agentKey: "review_responder", input: { path: ["reviewResponseId"], equals: draftTarget.responseId } },
+    });
+    await prisma.aiAgentRun.updateMany({ where: { status: { in: ["queued", "approved"] }, NOT: { id: responderRun.id } }, data: { status: "canceled" } });
+    const rClaim = await claimNextAgentRun();
+    assert.equal(rClaim?.runId, responderRun.id);
+    await reportAgentRun(responderRun.id, { succeeded: true, output: { reply: "Nous sommes désolés de l'attente…" } });
+    const withDraft = await getReputationSnapshot(b.id);
+    assert.equal(withDraft.responses.find((r) => r.id === draftTarget.responseId)?.aiDraft?.text, "Nous sommes désolés de l'attente…");
+    assert.equal(withDraft.responses.find((r) => r.id === draftTarget.responseId)?.aiDraft?.status, "awaiting_approval");
+    pass("Review Responder drafts appear next to the review in the inbox");
   } finally {
     await prisma.client.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     await disconnectPrisma();
