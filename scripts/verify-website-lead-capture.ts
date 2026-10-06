@@ -21,6 +21,14 @@ import {
   type LeadStoreDb,
 } from "../src/lib/website-leads/store";
 import { priceMarketplaceOrder } from "../src/lib/website-leads/package-pricing";
+import { leadAlertEmail } from "../src/lib/website-leads/notify";
+import {
+  linkFor,
+  markNotificationsRead,
+  parseMarkReadBody,
+  visibleTo,
+  type NotificationsDb,
+} from "../src/lib/notifications/workspace-notifications";
 import { MARKETPLACE_PACKAGES } from "../src/lib/website/marketplace-catalog";
 import {
   hasContact,
@@ -43,6 +51,7 @@ function fakeDb(now: Date) {
   const sources: Row[] = [];
   const leads: Row[] = [];
   const audits: Row[] = [];
+  const notifications: Row[] = [];
   let seq = 0;
   const id = () => `00000000-0000-4000-8000-${String(++seq).padStart(12, "0")}`;
   const within = (row: Row, gte?: Date) => !gte || row.createdAt >= gte;
@@ -86,6 +95,12 @@ function fakeDb(now: Date) {
         return {};
       },
     },
+    notification: {
+      async create({ data }: { data: Record<string, unknown> }) {
+        notifications.push({ ...data, id: id(), createdAt: now });
+        return {};
+      },
+    },
   };
 
   const db = {
@@ -94,7 +109,7 @@ function fakeDb(now: Date) {
     },
   } as unknown as LeadStoreDb;
 
-  return { db, sources, leads, audits };
+  return { db, sources, leads, audits, notifications };
 }
 
 function domainInput(overrides: Partial<WebsiteRequestInput> = {}): WebsiteRequestInput {
@@ -130,7 +145,7 @@ async function main() {
     );
     assert.deepEqual(
       readWebsiteLeadsConfig({ WEBSITE_LEADS_ENABLED: "true", WEBSITE_LEADS_CLIENT_ID: CLIENT }),
-      { enabled: true, clientId: CLIENT },
+      { enabled: true, clientId: CLIENT, notifyEmail: null },
     );
   });
 
@@ -369,6 +384,83 @@ async function main() {
     }
     const route = readFileSync("src/app/api/public/website-requests/route.ts", "utf8");
     assert.match(route, /priceMarketplaceOrder\(value\.order\)/);
+  });
+
+
+  await check("each new lead notifies the workspace once, without contact details", async () => {
+    const now = new Date();
+    const fake = fakeDb(now);
+    const input = domainInput({ email: "secret.buyer@example.com", phone: "+1 514 555 0199", name: "Secret Buyer" });
+    const first = await recordWebsiteRequest(fake.db, {
+      clientId: CLIENT, authUserId: null, sourceHash: "h", now, request: input,
+    });
+    const again = await recordWebsiteRequest(fake.db, {
+      clientId: CLIENT, authUserId: null, sourceHash: "h", now, request: input,
+    });
+    assert.equal(again.duplicate, true);
+    assert.equal(fake.notifications.length, 1);
+    const n = fake.notifications[0];
+    assert.equal(n.clientId, CLIENT);
+    assert.equal(n.title, "New domain request");
+    assert.equal(n.relatedEntityType, "lead");
+    assert.equal(n.relatedEntityId, first.leadId);
+    assert.match(String(n.message), new RegExp(`Ref ${first.reference}`));
+    for (const secret of ["secret.buyer", "555", "Secret Buyer"]) {
+      assert.equal(String(n.message).includes(secret), false, secret);
+      assert.equal(first.summary.includes(secret), false, secret);
+    }
+  });
+
+  await check("team alert email is opt-in, internal and free of contact details", () => {
+    const base = { WEBSITE_LEADS_ENABLED: "true", WEBSITE_LEADS_CLIENT_ID: CLIENT };
+    const off = readWebsiteLeadsConfig(base);
+    assert.ok(off.enabled && off.notifyEmail === null);
+    const bad = readWebsiteLeadsConfig({ ...base, WEBSITE_LEADS_NOTIFY_EMAIL: "a@b.ca, evil@x.com" });
+    assert.ok(bad.enabled && bad.notifyEmail === null);
+    const on = readWebsiteLeadsConfig({ ...base, WEBSITE_LEADS_NOTIFY_EMAIL: " Team@TAKATAK.ca " });
+    assert.ok(on.enabled && on.notifyEmail === "team@takatak.ca");
+    const email = leadAlertEmail({
+      kind: "package_order", reference: "ABCD1234",
+      summary: "Package order: Logo (Basic) · Ref ABCD1234 · $89.00 CAD quoted",
+      dashboardOrigin: "https://takatak.ca",
+    });
+    assert.equal(email.subject, "[takatak.ca] New website order · ABCD1234");
+    assert.match(email.text, /https:\/\/takatak\.ca\/dashboard\/leads\/inbox/);
+    const route = readFileSync("src/app/api/public/website-requests/route.ts", "utf8");
+    assert.match(route, /if \(notifyEmail && !recorded\.duplicate\)/);
+    assert.match(route, /after\(async \(\) =>/);
+  });
+
+  await check("notification center is workspace-scoped and mark-read stays inside it", async () => {
+    assert.deepEqual(visibleTo(CLIENT, null), { OR: [{ clientId: CLIENT }] });
+    assert.deepEqual(visibleTo(CLIENT, "p1"), { OR: [{ clientId: CLIENT }, { clientId: null, profileId: "p1" }] });
+    assert.equal(linkFor("lead"), "/dashboard/leads/inbox");
+    assert.equal(linkFor("javascript:alert(1)"), null);
+    assert.equal(linkFor(null), null);
+    assert.deepEqual(parseMarkReadBody({ all: true }), { all: true });
+    assert.equal(parseMarkReadBody({ all: "yes" }), null);
+    assert.equal(parseMarkReadBody({ ids: [] }), null);
+    assert.equal(parseMarkReadBody({ ids: ["not-a-uuid"] }), null);
+    assert.equal(parseMarkReadBody({ ids: Array(101).fill(CLIENT) }), null);
+    assert.deepEqual(parseMarkReadBody({ ids: [CLIENT, CLIENT] }), { ids: [CLIENT] });
+    let captured: Record<string, unknown> | null = null;
+    const db = {
+      notification: {
+        async updateMany(args: { where: Record<string, unknown> }) {
+          captured = args.where;
+          return { count: 1 };
+        },
+      },
+    } as unknown as NotificationsDb;
+    await markNotificationsRead(db, { clientId: CLIENT, profileId: null, target: { ids: [CLIENT] } });
+    assert.deepEqual(captured, { OR: [{ clientId: CLIENT }], status: "unread", id: { in: [CLIENT] } });
+    const api = readFileSync("src/app/api/notifications/read/route.ts", "utf8");
+    assert.match(api, /requireWorkspaceApiPermission\("view_dashboard"\)/);
+    assert.match(api, /readJsonBody\(request/);
+    assert.match(api, /clientId: gate\.access\.activeClientId/);
+    const page = readFileSync("src/app/dashboard/notifications/page.tsx", "utf8");
+    assert.match(page, /requireWorkspacePermission\("view_dashboard"/);
+    assert.doesNotMatch(page, /ModulePlaceholder/);
   });
 
   console.log(`\n${passed} website lead capture checks passed.`);

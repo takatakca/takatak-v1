@@ -27,6 +27,21 @@ Before this change, public takatak.ca requests never reached TAKATAK:
   - The visitor sees "Order received" with the reference and quoted total. **No payment is taken**: TAKATAK confirms scope and invoices separately.
 - Footer "Manage projects" and the marketplace service entry now point to `/dashboard` instead of the missing `/dashboard/marketplace`.
 
+## Team alerts (TK-017)
+
+- **In-app, always on.** Every new lead (not a collapsed duplicate) creates a workspace `Notification` in the same transaction: "New website order", "New domain request" or "New project request".
+  - The message is the subject, reference and quoted value or budget.
+  - It contains **no name, email or phone**.
+- **`/dashboard/notifications`** is now a real page (it was a placeholder):
+  - Lists the active workspace's notifications, plus personal notifications that belong to no workspace.
+  - Shows an unread count and an "Open" link (a lead opens `/dashboard/leads/inbox`).
+  - Offers "Mark read" and "Mark all as read" (`POST /api/notifications/read`, permission `view_dashboard`, origin-checked). Updates are limited to the active workspace.
+- **Email, opt-in.** When `WEBSITE_LEADS_NOTIFY_EMAIL` is set to an internal TAKATAK address, a short alert is sent:
+  - Subject: `[takatak.ca] New website order · REF`.
+  - Body: summary plus a link to the leads inbox, with no contact details.
+  - Sent after the response (`after()`), so visitors never wait.
+  - Uses the existing SendGrid / SMTP configuration. It is never sent to the visitor.
+
 ## Protections
 
 | Protection | Behaviour |
@@ -45,6 +60,8 @@ Before this change, public takatak.ca requests never reached TAKATAK:
 ```
 WEBSITE_LEADS_ENABLED=true
 WEBSITE_LEADS_CLIENT_ID=<UUID of the TAKATAK agency Client/workspace>
+# optional, internal address for lead alerts
+WEBSITE_LEADS_NOTIFY_EMAIL=<team address>
 ```
 
 While disabled:
@@ -56,7 +73,7 @@ While disabled:
 
 ## Verification
 
-- `npm run qa:website-leads` (runs in CI): 15 checks covering:
+- `npm run qa:website-leads` (runs in CI): 18 checks covering:
   - config gate
   - validation and sanitization
   - honeypot
@@ -65,6 +82,7 @@ While disabled:
   - route protections
   - the removed dead-end links
   - package orders: catalog pricing, forged totals ignored, unknown package/tier/add-on refused, high priority and value
+  - notifications: one per new lead with no contact details; email opt-in and validated; mark-read limited to the workspace
 - Manual, against a throwaway local PostgreSQL 16 with the full Prisma schema and `next start` in production mode:
   - a valid domain request was stored as a lead
   - a double submit returned the same reference
@@ -73,10 +91,13 @@ While disabled:
   - the honeypot returned 200 and stored nothing
   - the 6th request in a burst from one address returned 429, and the workspace flood cap returned 429
   - a checkout order for "logo-design" Standard + "Business card design" + `first10`, sent with a forged `totalCents: 1`, was stored as a high-priority lead valued at $178.20 (catalog $149 + $49 − 10%); an unknown package or add-on returned 400
+  - with `WEBSITE_LEADS_NOTIFY_EMAIL` set, an order submitted twice gave one lead, one notification ("New website order · Ref … · $79.00 CAD quoted", no contact details) and one email attempt after the response (logged `not_configured` because no email provider is set locally)
+  - signed out: `/dashboard/notifications` redirects to login and the mark-read API returns 401
+  - real Prisma: marking another workspace's notification by id updated 0 rows; "mark all" updated only this workspace's rows
 
 ## Not done yet
 
-- No email or SMS notification to the TAKATAK team when a lead arrives (leads are visible in `/dashboard/leads`).
+- No SMS alert. No unread badge on the sidebar bell yet.
 - Prices on the website are still the static values in `src/lib/website/pricing.ts` and the marketplace catalog.
 - Checkout orders are leads, not invoices. Turning an accepted order into a Facturations draft is a later step.
 - `promotions.ts` still calls the stub `api-client.ts`; promo codes are not backed by the server yet.

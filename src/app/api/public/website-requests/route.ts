@@ -1,11 +1,13 @@
-import type { NextRequest } from "next/server";
+import { after, type NextRequest } from "next/server";
 
 import { getSessionUser } from "@/lib/auth/supabase-server";
+import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { getPrisma } from "@/lib/db/prisma";
 import { jsonResponse } from "@/lib/security/api-response";
 import { redactSecrets } from "@/lib/security/redact";
 import { readJsonBody } from "@/lib/security/write-request";
 import { readWebsiteLeadsConfig } from "@/lib/website-leads/config";
+import { sendLeadAlert } from "@/lib/website-leads/notify";
 import { priceMarketplaceOrder } from "@/lib/website-leads/package-pricing";
 import { allowRequest, hashRequestSource } from "@/lib/website-leads/rate-limit";
 import {
@@ -93,6 +95,20 @@ export async function POST(request: NextRequest) {
       sourceHash,
       pricedOrder,
     });
+    const notifyEmail = config.notifyEmail;
+    if (notifyEmail && !recorded.duplicate) {
+      // Sent after the response so the visitor never waits on email delivery.
+      after(async () => {
+        const status = await sendLeadAlert({
+          to: notifyEmail,
+          kind: value.kind,
+          reference: recorded.reference,
+          summary: recorded.summary,
+          dashboardOrigin: getApplicationOrigin(),
+        });
+        if (status !== "sent") console.warn(`[website-requests] team alert ${status}`);
+      });
+    }
     return jsonResponse(
       {
         ok: true,

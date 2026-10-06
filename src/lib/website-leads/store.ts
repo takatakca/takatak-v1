@@ -1,7 +1,8 @@
 // Persists a validated public website request as a Lead in the TAKATAK
 // agency workspace, so it appears in /dashboard/leads. One transaction:
 // ensure the website LeadSource, enforce a workspace-wide flood cap, collapse
-// rapid duplicates, create the Lead and an audit entry.
+// rapid duplicates, create the Lead, an audit entry and a workspace
+// notification (no contact details in the notification).
 
 import type { Prisma } from "@prisma/client";
 
@@ -22,7 +23,7 @@ export class WebsiteLeadRateLimitedError extends Error {
 
 type TransactionClient = Pick<
   Prisma.TransactionClient,
-  "leadSource" | "lead" | "auditLog"
+  "leadSource" | "lead" | "auditLog" | "notification"
 >;
 
 export interface LeadStoreDb {
@@ -43,6 +44,8 @@ export interface RecordedWebsiteRequest {
   leadId: string;
   reference: string;
   duplicate: boolean;
+  /** One-line summary without contact details, e.g. for team alerts. */
+  summary: string;
 }
 
 export function referenceFor(leadId: string): string {
@@ -59,6 +62,24 @@ function subjectOf(request: WebsiteRequestInput, order: PricedPackageOrder | nul
     return `Package order: ${order?.title ?? request.order?.packageId ?? ""} (${order?.tierName ?? request.order?.tierName ?? ""})`;
   }
   return `Project request: ${request.project?.title ?? ""}`;
+}
+
+/** Notification title per request kind. */
+export function notificationTitle(kind: WebsiteRequestInput["kind"]): string {
+  if (kind === "package_order") return "New website order";
+  if (kind === "domain_request") return "New domain request";
+  return "New project request";
+}
+
+function summaryOf(
+  request: WebsiteRequestInput,
+  order: PricedPackageOrder | null | undefined,
+  reference: string,
+): string {
+  const parts = [subjectOf(request, order), `Ref ${reference}`];
+  if (order) parts.push(`${cad(order.totalCents)} quoted`);
+  else if (request.project?.budgetCents) parts.push(`budget ${cad(request.project.budgetCents)}`);
+  return parts.join(" · ").slice(0, 500);
 }
 
 function composeMessage(request: WebsiteRequestInput, order: PricedPackageOrder | null | undefined): string {
@@ -129,10 +150,12 @@ export async function recordWebsiteRequest(
         select: { id: true },
       });
       if (duplicate) {
+        const reference = referenceFor(duplicate.id);
         return {
           leadId: duplicate.id,
-          reference: referenceFor(duplicate.id),
+          reference,
           duplicate: true,
+          summary: summaryOf(request, order, reference),
         };
       }
     }
@@ -176,6 +199,19 @@ export async function recordWebsiteRequest(
       },
     });
 
-    return { leadId: lead.id, reference: referenceFor(lead.id), duplicate: false };
+    const reference = referenceFor(lead.id);
+    const summary = summaryOf(request, order, reference);
+    await tx.notification.create({
+      data: {
+        clientId,
+        type: "system",
+        title: notificationTitle(request.kind),
+        message: summary,
+        relatedEntityType: "lead",
+        relatedEntityId: lead.id,
+      },
+    });
+
+    return { leadId: lead.id, reference, duplicate: false, summary };
   });
 }
