@@ -307,6 +307,11 @@ jobs:
           FACTURATIONS_REF: eb1e02a10efdf9767dca0eeb04b5010209d18f07
         run: bash scripts/ci-billing-facturations-contract.sh
 
+      - name: GROUPE TAKATAK billing ecosystem feed against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:billing-feed-db
+
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
