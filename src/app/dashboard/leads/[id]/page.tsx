@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Paperclip } from "lucide-react";
 
+import { LeadActionsForm } from "@/components/leads/lead-actions-form";
 import { EmptyState } from "@/components/saas/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getLeadDetail } from "@/lib/leads/lead-detail";
 import { LEAD_PRIORITY_LABELS, LEAD_STATUS_LABELS, leadToneForStatus } from "@/lib/leads/status";
+import { getServerAccessContext } from "@/lib/security/access-context";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +52,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     );
   }
 
+  const { access } = await getServerAccessContext();
+  const canEdit = access.mode === "client_scoped" && hasEffectivePermission(access, "edit_content");
+
   const contact = [
     lead.email ? { label: "Email", value: lead.email, href: `mailto:${lead.email}` } : null,
     lead.phone ? { label: "Phone", value: lead.phone, href: `tel:${lead.phone.replace(/[^+\d]/g, "")}` } : null,
@@ -73,20 +79,56 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <Badge tone={leadToneForStatus(lead.status)}>{LEAD_STATUS_LABELS[lead.status] ?? lead.status}</Badge>
           <Badge tone={leadToneForStatus(lead.priority)}>{LEAD_PRIORITY_LABELS[lead.priority] ?? lead.priority}</Badge>
           {lead.valueCents !== null ? <Badge tone="neutral">{money(lead.valueCents, lead.currency)}</Badge> : null}
+          {lead.followUpOn ? <Badge tone="neutral">Follow up {lead.followUpOn}</Badge> : null}
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader title="Request" />
-          <CardBody>
-            {lead.message ? (
-              <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{lead.message}</p>
-            ) : (
-              <p className="text-sm text-slate-500">No message.</p>
-            )}
-          </CardBody>
-        </Card>
+        <div className="space-y-4 lg:col-span-2">
+          <Card>
+            <CardHeader title="Request" />
+            <CardBody>
+              {lead.message ? (
+                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{lead.message}</p>
+              ) : (
+                <p className="text-sm text-slate-500">No message.</p>
+              )}
+            </CardBody>
+          </Card>
+
+          {canEdit ? (
+            <Card>
+              <CardHeader title="Update" subtitle="Changes are recorded in the history below." />
+              <CardBody>
+                <LeadActionsForm
+                  leadId={lead.id}
+                  status={lead.status}
+                  priority={lead.priority}
+                  followUpOn={lead.followUpOn}
+                />
+              </CardBody>
+            </Card>
+          ) : null}
+
+          <Card>
+            <CardHeader title="History" />
+            <CardBody>
+              {lead.activities.length ? (
+                <ol className="space-y-3">
+                  {lead.activities.map((item) => (
+                    <li key={item.id} className="border-l-2 border-slate-200 pl-3">
+                      <p className="text-sm font-medium text-slate-800">{item.title}</p>
+                      {item.note ? <p className="whitespace-pre-wrap break-words text-sm text-slate-600">{item.note}</p> : null}
+                      <p className="text-xs text-slate-400">{when(item.createdAt)}</p>
+                    </li>
+                  ))}
+                </ol>
+              ) : (
+                <p className="text-sm text-slate-500">No activity yet.</p>
+              )}
+            </CardBody>
+          </Card>
+        </div>
 
         <div className="space-y-4">
           <Card>

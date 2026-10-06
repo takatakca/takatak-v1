@@ -14,12 +14,14 @@ export interface LeadDetail {
   message: string | null;
   status: string;
   priority: string;
+  followUpOn: string | null;
   valueCents: number | null;
   currency: string | null;
   sourceName: string | null;
   createdAt: Date;
   website: { kind: string | null; sourcePage: string | null; language: string | null } | null;
   attachments: { id: string; originalName: string; mimeType: string; sizeBytes: number; createdAt: Date }[];
+  activities: { id: string; type: string; status: string; title: string; note: string | null; dueAt: Date | null; createdAt: Date }[];
 }
 
 function websiteMeta(metadata: unknown): LeadDetail["website"] {
@@ -46,6 +48,11 @@ export async function getLeadDetail(id: string): Promise<LeadDetail | "unavailab
         orderBy: { createdAt: "asc" },
         select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true },
       },
+      activities: {
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: { id: true, type: true, status: true, title: true, note: true, dueAt: true, createdAt: true },
+      },
     },
   });
   if (!lead) return null;
@@ -59,11 +66,13 @@ export async function getLeadDetail(id: string): Promise<LeadDetail | "unavailab
     message: lead.message,
     status: lead.status,
     priority: lead.priority,
+    followUpOn: lead.followUpAt ? lead.followUpAt.toISOString().slice(0, 10) : null,
     valueCents: lead.valueCents,
     currency: lead.currency,
     sourceName: lead.leadSource?.name ?? null,
     createdAt: lead.createdAt,
     website: websiteMeta(lead.metadata),
     attachments: lead.attachments,
+    activities: lead.activities,
   };
 }

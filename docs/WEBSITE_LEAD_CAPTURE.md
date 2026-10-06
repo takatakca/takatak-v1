@@ -80,6 +80,21 @@ Without these the feature stays off: no token is issued and the success screen t
 
 **Not done:** no antivirus scan. Files stay `quarantined` and are only ever downloaded, never displayed in the page; staff should open them with care.
 
+## Working a lead (TK-066)
+
+The lead page `/dashboard/leads/<id>` has an **Update** panel. It is shown to members of the active workspace with the `edit_content` permission (owner, admin, manager, editor, staff); viewers and the global admin view see the lead read-only.
+
+- **Status**, **priority** and **follow-up date** can be changed, and **notes** added.
+- Saving uses `POST /api/leads/<id>` (origin-checked, active workspace only).
+- Each change is written in one transaction as:
+  - lead history (`LeadActivity`: status change, follow-up planned or cleared, note), with the acting profile
+  - one `lead_updated` audit entry
+- Unchanged values write nothing.
+- The **History** list shows the latest 50 entries.
+- Checks: `npm run qa:lead-actions` (5 checks, in CI). Verified on real PostgreSQL:
+  - an update from another workspace was refused
+  - status, priority, follow-up and note produced four history rows and one audit row
+
 ## Team alerts (TK-017)
 
 - **In-app, always on.** Every new lead (not a collapsed duplicate) creates a workspace `Notification` in the same transaction: "New website order", "New domain request" or "New project request".
