@@ -13,6 +13,8 @@ import {
   safeOnboardingUrl,
 } from "../src/lib/billing/client-invoicing/connect-policy";
 
+import { readBoundedText } from "../src/lib/http/read-bounded-text";
+
 function pass(label: string): void {
   console.log(`PASS  ${label}`);
 }
@@ -66,7 +68,7 @@ assert.ok(service.includes("idempotencyKey: connectAccountIdempotencyKey(input.c
 assert.ok(service.includes('error.code !== "P2002"'), "a simultaneous link keeps the stored account");
 assert.ok(service.includes("account.id !== row.stripeAccountId"));
 assert.ok(service.includes("account.id !== event.account"), "webhook object must be the event's own account");
-assert.ok(service.includes("where: { stripeAccountId: account.id }"), "webhook only touches linked accounts");
+assert.ok(service.includes("stripeAccountId: account.id,"), "webhook only touches linked accounts");
 assert.equal(/charges\.create|paymentIntents|transfers\.create|payouts\.create/.test(service), false, "TAKATAK never moves client funds");
 const route = read("src/app/api/billing/client-invoicing/connect/route.ts");
 assert.ok(route.includes('requireWorkspaceApiPermission("manage_settings")'));
@@ -77,6 +79,9 @@ const webhook = read("src/app/api/billing/client-invoicing/webhook/route.ts");
 assert.ok(webhook.includes("getClientConnectWebhookSecret()"));
 assert.ok(webhook.includes("webhooks.constructEvent(rawBody, signature, secret)"));
 assert.ok(webhook.includes('event.type !== "account.updated"'));
+assert.ok(webhook.includes("readBoundedText(request, MAX_BODY_BYTES)"), "unauthenticated body is read with a streaming cap");
+assert.equal(webhook.includes("request.text()"), false);
+assert.ok(service.includes("lastStripeEventAt: { lte: eventAt }"), "late, older Connect events never overwrite newer state");
 const page = read("src/app/dashboard/client-billing/page.tsx");
 assert.ok(page.includes('requireWorkspacePermission("manage_settings", "/dashboard/client-billing")'));
 assert.equal(/\bparams\b/.test(page), false);
@@ -101,4 +106,17 @@ for (const needle of [
 }
 pass("routes are workspace-gated and origin-checked; webhook is signed; table is locked down and the link immutable");
 
-console.log("\nCLIENT INVOICING (STRIPE CONNECT) SAFEGUARDS: ALL PASSED");
+async function boundedBodyChecks() {
+  const chunked = (parts: string[]) => new Request("https://takatak.test/x", {
+    method: "POST",
+    body: new ReadableStream({ start(controller) { for (const part of parts) controller.enqueue(new TextEncoder().encode(part)); controller.close(); } }),
+    duplex: "half",
+  } as RequestInit);
+  assert.equal(await readBoundedText(chunked(["{\"a\":", "1}"]), 100), '{"a":1}');
+  assert.equal(await readBoundedText(chunked(["x".repeat(60), "x".repeat(60)]), 100), null, "chunked body over the cap without Content-Length");
+  assert.equal(await readBoundedText(new Request("https://takatak.test/x", { method: "POST", body: "é".repeat(60) }), 100), null, "cap is in bytes, not characters");
+  assert.equal(await readBoundedText(new Request("https://takatak.test/x", { method: "POST", body: "ok" }), 100), "ok");
+  pass("request bodies are read with a streaming byte cap (no unbounded buffering)");
+}
+
+boundedBodyChecks().then(() => console.log("\nCLIENT INVOICING (STRIPE CONNECT) SAFEGUARDS: ALL PASSED"), (error) => { console.error(error); process.exit(1); });

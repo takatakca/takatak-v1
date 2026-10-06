@@ -3,6 +3,7 @@ import type Stripe from "stripe";
 import { getStripe } from "@/lib/billing/social/stripe-client";
 import { applyConnectAccountUpdated } from "@/lib/billing/client-invoicing/connect-service";
 import { getClientConnectWebhookSecret } from "@/lib/billing/client-invoicing/env";
+import { readBoundedText } from "@/lib/http/read-bounded-text";
 import { jsonResponse } from "@/lib/security/api-response";
 
 export const runtime = "nodejs";
@@ -22,11 +23,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const declaredLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
-    return jsonResponse({ ok: false, message: "Payload too large." }, 413);
-  }
-
   const signature = request.headers.get("stripe-signature");
   if (!signature) {
     return jsonResponse(
@@ -35,8 +31,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const rawBody = await request.text();
-  if (rawBody.length > MAX_BODY_BYTES) {
+  const rawBody = await readBoundedText(request, MAX_BODY_BYTES);
+  if (rawBody === null) {
     return jsonResponse({ ok: false, message: "Payload too large." }, 413);
   }
 

@@ -15,6 +15,7 @@ CREATE TABLE "client_stripe_connect_accounts" (
     "country" TEXT,
     "defaultCurrency" TEXT,
     "lastSyncedAt" TIMESTAMP(3),
+    "lastStripeEventAt" TIMESTAMP(3),
     "connectedByProfileId" UUID,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

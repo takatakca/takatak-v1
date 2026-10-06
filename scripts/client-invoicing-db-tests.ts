@@ -90,17 +90,27 @@ async function main() {
   const accountId = rows[0].stripeAccountId;
   Object.assign(accounts.get(accountId).account, { details_submitted: true });
   assert.equal((await syncClientConnectAccount(client.id)).state, "restricted");
-  assert.equal(await applyConnectAccountUpdated({ account: accountId, data: { object: { id: accountId, charges_enabled: true, payouts_enabled: true, details_submitted: true, country: "CA", default_currency: "cad" } } }), "updated");
+  const nowS = Math.floor(Date.now() / 1000);
+  assert.equal(await applyConnectAccountUpdated({ account: accountId, created: nowS + 5, data: { object: { id: accountId, charges_enabled: true, payouts_enabled: true, details_submitted: true, country: "CA", default_currency: "cad" } } }), "updated");
   const active = await getClientConnectStatus(client.id);
   assert.equal(active.state, "active");
   assert.equal(active.flags?.payoutsEnabled, true);
   await expectServiceError(startClientConnectOnboarding({ clientId: client.id, profileId }), "conflict");
   console.log("PASS return sync and account.updated webhook move the workspace to active");
 
-  assert.equal(await applyConnectAccountUpdated({ account: "acct_UNKNOWN1234", data: { object: { id: "acct_UNKNOWN1234", charges_enabled: true, details_submitted: true } } }), "ignored");
-  assert.equal(await applyConnectAccountUpdated({ account: "acct_OTHER12345", data: { object: { id: accountId, charges_enabled: false, details_submitted: false } } }), "ignored");
+  assert.equal(await applyConnectAccountUpdated({ account: "acct_UNKNOWN1234", created: nowS + 6, data: { object: { id: "acct_UNKNOWN1234", charges_enabled: true, details_submitted: true } } }), "ignored");
+  assert.equal(await applyConnectAccountUpdated({ account: "acct_OTHER12345", created: nowS + 6, data: { object: { id: accountId, charges_enabled: false, details_submitted: false } } }), "ignored");
+  assert.equal(await applyConnectAccountUpdated({ account: accountId, data: { object: { id: accountId, charges_enabled: false, details_submitted: true } } }), "ignored", "event without created is ignored");
   assert.equal((await getClientConnectStatus(client.id)).state, "active", "mismatched event cannot downgrade");
   console.log("PASS webhook ignores unknown accounts and objects that are not the event's own account");
+
+  assert.equal(await applyConnectAccountUpdated({ account: accountId, created: nowS + 20, data: { object: { id: accountId, charges_enabled: false, payouts_enabled: false, details_submitted: true } } }), "updated");
+  assert.equal((await getClientConnectStatus(client.id)).state, "restricted");
+  assert.equal(await applyConnectAccountUpdated({ account: accountId, created: nowS + 10, data: { object: { id: accountId, charges_enabled: true, payouts_enabled: true, details_submitted: true } } }), "ignored");
+  assert.equal((await getClientConnectStatus(client.id)).state, "restricted", "a late, older event cannot re-activate a restricted account");
+  assert.equal(await applyConnectAccountUpdated({ account: accountId, created: nowS + 30, data: { object: { id: accountId, charges_enabled: true, payouts_enabled: true, details_submitted: true, country: "CA", default_currency: "cad" } } }), "updated");
+  assert.equal((await getClientConnectStatus(client.id)).state, "active");
+  console.log("PASS Connect events apply in Stripe order: a late older event never overwrites newer state");
 
   await assert.rejects(prisma.$executeRawUnsafe(`UPDATE client_stripe_connect_accounts SET "stripeAccountId"='acct_HIJACK123456' WHERE "clientId"='${client.id}'`), /immutable/);
   await assert.rejects(prisma.$executeRawUnsafe(`UPDATE client_stripe_connect_accounts SET "clientId"='${other.id}' WHERE "clientId"='${client.id}'`), /immutable/);
