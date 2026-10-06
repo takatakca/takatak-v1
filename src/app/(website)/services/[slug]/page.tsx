@@ -26,8 +26,9 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${service.title.en} — TAKATAK`,
+    title: service.title.en,
     description: service.tagline.en,
+    alternates: { canonical: `/services/${service.slug}` },
   };
 }
 

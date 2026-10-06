@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Privacy Manager",
   description:
     "Review the data TAKATAK collects across domains, hosting, marketplace, QMAPS, FLEXS, AI tools and notifications, and exercise your privacy rights.",
+  alternates: { canonical: "/privacy-manager" },
 };
 
 const services = [
