@@ -85,6 +85,15 @@ export interface FacturationsCreatedDraft {
   totals: FacturationsPreviewTotals;
 }
 
+export interface FacturationsDraftDetail {
+  id: string;
+  status: "DRAFT";
+  customerEmail: string;
+  invoiceDate: string;
+  dueDate: string;
+  totals: FacturationsPreviewTotals;
+}
+
 export interface FacturationsDraftWorkflow {
   draftId: string;
   status: "DRAFT";
@@ -302,6 +311,39 @@ export function parseCreatedDraft(
   }
 
   return { id: data.id, status: "DRAFT", totals };
+}
+
+export function parseDraftDetail(
+  data: Record<string, unknown>,
+): FacturationsDraftDetail | null {
+  if (!isUuid(data.id) || data.status !== "DRAFT" || !isRecord(data.preview)) {
+    return null;
+  }
+
+  const preview = data.preview;
+  const totals = parsePreviewTotals(preview);
+  const customer = isRecord(preview.customer) ? preview.customer : null;
+
+  if (
+    !totals ||
+    !customer ||
+    typeof customer.email !== "string" ||
+    typeof preview.invoiceDate !== "string" ||
+    !DATE_PATTERN.test(preview.invoiceDate) ||
+    typeof preview.dueDate !== "string" ||
+    !DATE_PATTERN.test(preview.dueDate)
+  ) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    status: "DRAFT",
+    customerEmail: customer.email.slice(0, 254),
+    invoiceDate: preview.invoiceDate,
+    dueDate: preview.dueDate,
+    totals,
+  };
 }
 
 export function parseDraftWorkflow(

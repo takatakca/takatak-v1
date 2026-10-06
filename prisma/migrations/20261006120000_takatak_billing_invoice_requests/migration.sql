@@ -5,7 +5,7 @@
 -- Server-side Prisma access only; the Supabase Data API gets no grants.
 
 -- CreateEnum
-CREATE TYPE "BillingInvoiceRequestStatus" AS ENUM ('pending', 'submitting', 'submitted', 'failed', 'rejected', 'cancelled');
+CREATE TYPE "BillingInvoiceRequestStatus" AS ENUM ('pending', 'submitting', 'submitted', 'failed', 'rejected', 'needs_reconciliation', 'cancelled');
 
 -- CreateTable
 CREATE TABLE "billing_invoice_requests" (
@@ -37,6 +37,9 @@ CREATE TABLE "billing_invoice_requests" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "billing_invoice_requests_idempotencyKey_key" ON "billing_invoice_requests"("idempotencyKey");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "billing_invoice_requests_facturationsDraftId_key" ON "billing_invoice_requests"("facturationsDraftId");
 
 -- CreateIndex
 CREATE INDEX "billing_invoice_requests_status_createdAt_idx" ON "billing_invoice_requests"("status", "createdAt");

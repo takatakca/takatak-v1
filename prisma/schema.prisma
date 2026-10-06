@@ -4064,6 +4064,7 @@ enum BillingInvoiceRequestStatus {
   submitted
   failed
   rejected
+  needs_reconciliation
   cancelled
 }
 
@@ -4075,7 +4076,8 @@ model BillingInvoiceRequest {
   sourceReference        String
   clientId               String?                     @db.Uuid
   masterIdentityId       String?                     @db.Uuid
-  /// Deterministic Facturations Idempotency-Key derived from sourceApp + sourceReference.
+  /// Facturations Idempotency-Key derived from this row id: stable for every retry
+  /// of this request, and never shared with another TAKATAK install.
   idempotencyKey         String                      @unique
   /// Validated Facturations DraftInput. Immutable after insert (DB trigger).
   draft                  Json
@@ -4084,7 +4086,7 @@ model BillingInvoiceRequest {
   /// Local estimate only; Facturations recalculates the authoritative draft.
   estimatedTotalCents    BigInt
   status                 BillingInvoiceRequestStatus @default(pending)
-  facturationsDraftId    String?                     @db.Uuid
+  facturationsDraftId    String?                     @unique @db.Uuid
   facturationsTotalCents BigInt?
   submitAttempts         Int                         @default(0)
   lastErrorCode          String?

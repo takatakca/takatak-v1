@@ -80,12 +80,19 @@ export async function POST(
       return jsonResponse({ ok: true, request: result.request }, 200);
     }
 
+    const message =
+      result.request.status === "failed"
+        ? "Facturations did not confirm the draft. Sending again is safe and cannot create a duplicate."
+        : result.request.status === "pending"
+          ? "The Facturations connection is not ready (configuration or access). The request stays queued."
+          : result.request.status === "needs_reconciliation"
+            ? "Facturations already has a draft for this request. Link it to finish."
+            : "Facturations rejected the draft. Review the request.";
+
     return jsonResponse(
       {
         ok: false,
-        message: result.retryable
-          ? "Facturations did not confirm the draft. It is safe to retry."
-          : "Facturations rejected the draft. Review the request.",
+        message,
         code: result.code,
         retryable: result.retryable,
         request: result.request,

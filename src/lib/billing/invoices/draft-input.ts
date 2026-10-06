@@ -23,6 +23,8 @@ export const INVOICE_LIMITS = {
   taxCode: 20,
   taxLabel: 80,
   maxRateMilliPercent: 100_000,
+  /** Facturations refuses request bodies above 32 768 bytes; keep a margin. */
+  maxSerializedBytes: 32_000,
 } as const;
 
 export interface InvoiceCustomerInput {
@@ -310,16 +312,23 @@ export function validateInvoiceDraftInput(
     };
   }
 
-  return {
-    success: true,
-    data: {
-      currency: INVOICE_CURRENCY,
-      customer,
-      invoiceDate,
-      dueDate,
-      notes,
-      lines,
-      taxes,
-    },
+  const data: InvoiceDraftInput = {
+    currency: INVOICE_CURRENCY,
+    customer,
+    invoiceDate,
+    dueDate,
+    notes,
+    lines,
+    taxes,
   };
+
+  if (new TextEncoder().encode(JSON.stringify(data)).length > INVOICE_LIMITS.maxSerializedBytes) {
+    return {
+      success: false,
+      message: "The invoice is too large for Facturations. Shorten descriptions or split it.",
+      fieldErrors: { draft: `The serialized invoice must stay under ${INVOICE_LIMITS.maxSerializedBytes} bytes.` },
+    };
+  }
+
+  return { success: true, data };
 }

@@ -13,7 +13,7 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { getPrisma } from "@/lib/db/prisma";
-import { enqueueInvoiceRequest, submitInvoiceRequest, cancelInvoiceRequest, listInvoiceRequests, countInvoiceRequestsByStatus } from "@/lib/billing/invoices/invoice-request-service";
+import { enqueueInvoiceRequest, submitInvoiceRequest, cancelInvoiceRequest, reconcileInvoiceRequest, listInvoiceRequests, countInvoiceRequestsByStatus } from "@/lib/billing/invoices/invoice-request-service";
 import { createFacturationsDraft, getFacturationsCapabilities, getFacturationsDashboard, listFacturationsDrafts, getFacturationsDraftWorkflow } from "@/lib/integrations/facturations/client";
 import { resolveFacturationsActor } from "@/lib/integrations/facturations/actor";
 import { validateInvoiceDraftInput } from "@/lib/billing/invoices/draft-input";
@@ -86,6 +86,16 @@ async function main() {
   await assert.rejects(cancelInvoiceRequest(first.request.id, profile.id), /cannot be cancelled while submitted/);
   ok("submitted request is final (no resend, no cancel)");
 
+  const race = await enqueueInvoiceRequest({ sourceApp: "manual", sourceReference: `manual:${randomUUID()}`, clientId: null, draft: draft("Race Example", 3333) as any }, { profileId: profile.id });
+  const raced = await Promise.allSettled([1, 2, 3].map(() => submitInvoiceRequest(race.request.id, { profileId: profile.id, actor: owner })));
+  const winners = raced.filter((r) => r.status === "fulfilled" && (r.value as any).outcome === "submitted");
+  const losers = raced.filter((r) => r.status === "rejected" && /already being sent|cannot be sent while submitted/.test(String((r as PromiseRejectedResult).reason)));
+  assert.equal(winners.length, 1, JSON.stringify(raced.map((r) => r.status)));
+  assert.equal(losers.length, 2);
+  const raceRow = await prisma.billingInvoiceRequest.findUniqueOrThrow({ where: { id: race.request.id } });
+  assert.equal(raceRow.submitAttempts, 1);
+  ok("3 simultaneous sends → exactly one reaches Facturations; the others are refused");
+
   const wf = await getFacturationsDraftWorkflow(owner, sent.request.facturationsDraftId!);
   assert.ok(wf.ok); assert.equal(wf.data.internalApproval, "NOT_APPROVED"); assert.equal(wf.data.nextStep, "STANDALONE_OWNER_REVIEW");
   ok("Facturations workflow: DRAFT, NOT_APPROVED, next step is standalone owner review");
@@ -107,10 +117,30 @@ async function main() {
   process.env.FACTURATIONS_ORIGIN = "http://127.0.0.1:1";
   const down = await submitInvoiceRequest(third.request.id, { profileId: profile.id, actor: owner });
   assert.equal(down.outcome, "failed"); assert.equal(down.request.status, "failed"); assert.equal(down.request.lastErrorCode, "NETWORK_ERROR");
+  await assert.rejects(cancelInvoiceRequest(third.request.id, profile.id), /draft may exist/);
   process.env.FACTURATIONS_ORIGIN = goodOrigin;
   const back = await submitInvoiceRequest(third.request.id, { profileId: profile.id, actor: owner });
   assert.equal(back.outcome, "submitted"); assert.equal(back.request.submitAttempts, 2);
-  ok("Facturations down → failed (retryable); retry succeeds on attempt 2");
+  ok("Facturations down → failed (retryable, NOT cancellable); retry succeeds on attempt 2");
+
+  // 409: the request's key is already bound to a different draft in Facturations.
+  const conflictReq = await enqueueInvoiceRequest({ sourceApp: "manual", sourceReference: `manual:${randomUUID()}`, clientId: null, draft: draft("Conflict Example", 7000) as any }, { profileId: profile.id });
+  const conflictRow = await prisma.billingInvoiceRequest.findUniqueOrThrow({ where: { id: conflictReq.request.id } });
+  const squatter = await createFacturationsDraft(owner, (validateInvoiceDraftInput(draft("Someone Else", 1)) as any).data, conflictRow.idempotencyKey);
+  assert.ok(squatter.ok);
+  const conflicted = await submitInvoiceRequest(conflictReq.request.id, { profileId: profile.id, actor: owner });
+  assert.equal(conflicted.outcome, "failed"); assert.equal(conflicted.request.status, "needs_reconciliation"); assert.equal((conflicted as any).code, "IDEMPOTENCY_CONFLICT");
+  await assert.rejects(cancelInvoiceRequest(conflictReq.request.id, profile.id), /cannot be cancelled/);
+  await assert.rejects(submitInvoiceRequest(conflictReq.request.id, { profileId: profile.id, actor: owner }), /cannot be sent while needs_reconciliation/);
+  await assert.rejects(reconcileInvoiceRequest(conflictReq.request.id, squatter.data.id, { profileId: profile.id, actor: owner }), /does not match/);
+  await assert.rejects(reconcileInvoiceRequest(conflictReq.request.id, sent.request.facturationsDraftId!, { profileId: profile.id, actor: owner }), /does not match|already linked/);
+  await assert.rejects(reconcileInvoiceRequest(conflictReq.request.id, randomUUID(), { profileId: profile.id, actor: owner }), /could not be loaded/);
+  await assert.rejects(reconcileInvoiceRequest(conflictReq.request.id, squatter.data.id, { profileId: admin.id, actor: staff }), /platform owner/);
+  const matching = await createFacturationsDraft(owner, (validateInvoiceDraftInput(draft("Conflict Example", 7000)) as any).data, `tkb1_manual_match_${randomUUID().replace(/-/g, "")}`);
+  assert.ok(matching.ok);
+  const linked = await reconcileInvoiceRequest(conflictReq.request.id, matching.data.id, { profileId: profile.id, actor: owner });
+  assert.equal(linked.status, "submitted"); assert.equal(linked.facturationsDraftId, matching.data.id);
+  ok("409 → needs_reconciliation (not cancellable/resendable); only a verified matching draft can be linked, by the OWNER");
 
   // Wrong shared secret → rejected, final.
   const ref4 = `manual:${randomUUID()}`;

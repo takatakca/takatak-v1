@@ -1,12 +1,16 @@
 // GROUPE TAKATAK Billing — invoice request lifecycle policy.
 // Pure module. Mirrors the BillingInvoiceRequestStatus enum.
 //
-//   pending ──submit──▶ submitting ──ok──▶ submitted   (Facturations DRAFT exists)
-//      ▲                    │
-//      │                    ├─retryable failure──▶ failed ──submit──▶ submitting
-//      │                    └─final failure──────▶ rejected
-//   cancel: pending | failed | rejected ──▶ cancelled
+//   pending ──submit──▶ submitting ──ok────────────────▶ submitted (Facturations DRAFT exists)
+//      ▲                    ├─ unknown outcome ───────▶ failed ──submit──▶ submitting
+//      │                    ├─ config / auth gap ────▶ pending
+//      │                    ├─ invalid data (4xx) ───▶ rejected            (no draft was created)
+//      │                    └─ 409 key already used ─▶ needs_reconciliation ──link draft──▶ submitted
+//   cancel: only while NO draft can exist — pending with 0 attempts, or rejected.
 //
+// Once any attempt may have reached Facturations, the request can only end
+// as "submitted" (same Idempotency-Key retry, or owner-verified link), so a
+// draft can never be orphaned and then duplicated by a re-queued request.
 // "submitted" means a Facturations DRAFT exists. It is NOT issued, sent or paid.
 
 import type { FacturationsFailureKind } from "@/lib/integrations/facturations/contract";
@@ -22,6 +26,7 @@ export const INVOICE_REQUEST_STATUSES = [
   "submitted",
   "failed",
   "rejected",
+  "needs_reconciliation",
   "cancelled",
 ] as const;
 
@@ -36,6 +41,7 @@ export const INVOICE_REQUEST_STATUS_LABELS: Record<InvoiceRequestStatus, string>
   submitted: "Draft created in Facturations",
   failed: "Failed — safe to retry",
   rejected: "Rejected by Facturations — needs correction",
+  needs_reconciliation: "Draft may already exist — link it",
   cancelled: "Cancelled",
 };
 
@@ -54,14 +60,25 @@ export function canSubmitInvoiceRequest(
   );
 }
 
-export function canCancelInvoiceRequest(status: InvoiceRequestStatus): boolean {
-  return status === "pending" || status === "failed" || status === "rejected";
+/**
+ * Cancelling is allowed only while no Facturations draft can exist:
+ * never attempted, or rejected by Facturations validation before creation.
+ */
+export function canCancelInvoiceRequest(
+  status: InvoiceRequestStatus,
+  submitAttempts: number,
+): boolean {
+  return (status === "pending" && submitAttempts === 0) || status === "rejected";
+}
+
+export function canReconcileInvoiceRequest(status: InvoiceRequestStatus): boolean {
+  return status === "needs_reconciliation";
 }
 
 export function statusAfterSubmissionFailure(input: {
   kind: FacturationsFailureKind;
   retryable: boolean;
-}): Extract<InvoiceRequestStatus, "pending" | "failed" | "rejected"> {
+}): Extract<InvoiceRequestStatus, "pending" | "failed" | "rejected" | "needs_reconciliation"> {
   // Configuration, identity or activation problems say nothing about the
   // invoice itself: keep the request pending until the setup is fixed.
   if (
@@ -75,9 +92,14 @@ export function statusAfterSubmissionFailure(input: {
     return "pending";
   }
 
-  // Only Facturations' own verdict on the invoice data is final.
-  if (input.kind === "invalid_request" || input.kind === "idempotency_conflict") {
+  // Facturations validates the body before touching storage: no draft exists.
+  if (input.kind === "invalid_request") {
     return "rejected";
+  }
+
+  // The Idempotency-Key is already bound to a stored draft in Facturations.
+  if (input.kind === "idempotency_conflict") {
+    return "needs_reconciliation";
   }
 
   return "failed";

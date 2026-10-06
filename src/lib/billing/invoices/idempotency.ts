@@ -1,26 +1,33 @@
 // GROUPE TAKATAK Billing — deterministic idempotency and payload hashing.
 // Pure module (node:crypto only).
 //
-// One (sourceApp, sourceReference) pair maps to exactly one Facturations
-// Idempotency-Key, forever. Retries after a timeout reuse the same key, so
+// Each queued request gets exactly one Facturations Idempotency-Key, derived
+// from its own row id. Every retry of that request reuses the key, so
 // Facturations returns the same draft instead of creating a duplicate.
+// Duplicate *requests* are prevented separately by the unique
+// (sourceApp, sourceReference) pair. Using the row id (not the reference)
+// means two TAKATAK installs (production, staging, a restored copy) can
+// never collide on the same key in one Facturations business.
 
 import { createHash } from "node:crypto";
 
 import type { InvoiceDraftInput } from "./draft-input";
-import type { BillingSourceApp } from "./source-apps";
 
 const IDEMPOTENCY_DOMAIN = "takatak-billing-facturations-idempotency-v1";
 const PAYLOAD_DOMAIN = "takatak-billing-invoice-request-v1";
 
 export const FACTURATIONS_IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9_-]{16,80}$/;
 
-export function deriveFacturationsIdempotencyKey(
-  sourceApp: BillingSourceApp,
-  sourceReference: string,
-): string {
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function deriveFacturationsIdempotencyKey(requestId: string): string {
+  if (!UUID_PATTERN.test(requestId)) {
+    throw new TypeError("Invoice request id must be a UUID.");
+  }
+
   const digest = createHash("sha256")
-    .update(`${IDEMPOTENCY_DOMAIN}\0${sourceApp}\0${sourceReference}`, "utf8")
+    .update(`${IDEMPOTENCY_DOMAIN}\0${requestId.toLowerCase()}`, "utf8")
     .digest("base64url");
 
   // "tkb1_" + 43 base64url chars = 48 chars, inside Facturations' 16–80 contract.

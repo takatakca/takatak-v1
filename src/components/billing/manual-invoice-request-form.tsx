@@ -32,10 +32,14 @@ const TAX_PRESETS: TaxState[] = [
   { code: "QST", label: "TVQ / QST", ratePercent: "9.975" },
 ];
 
+/** Local calendar date (not UTC), so evening entries keep today's date. */
 function today(offsetDays = 0): string {
-  const date = new Date(Date.now() + offsetDays * 86_400_000);
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
 
-  return date.toISOString().slice(0, 10);
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function newReference(): string {

@@ -26,6 +26,7 @@ import {
 import {
   SUBMISSION_CLAIM_STALE_MS,
   canCancelInvoiceRequest,
+  canReconcileInvoiceRequest,
   canSubmitInvoiceRequest,
   statusAfterSubmissionFailure,
   validateInvoiceRequestCreate,
@@ -135,6 +136,20 @@ function verifyDraftValidation(): void {
     { taxes: ["A", "B", "C", "D"].map((code) => ({ code, label: code, rateMilliPercent: 1000 })) },
     "taxes",
   );
+  const oversized = validateInvoiceDraftInput(
+    draftWith({
+      notes: "n".repeat(1000),
+      lines: Array.from({ length: 50 }, () => ({
+        description: "語".repeat(250),
+        quantity: 1,
+        unitPriceCents: 100,
+        discountCents: 0,
+        taxable: true,
+      })),
+    }),
+  );
+  assert.equal(oversized.success, false);
+  assert.ok(!oversized.success && "draft" in oversized.fieldErrors);
   assert.equal(validateInvoiceDraftInput({ ...baseDraft, totalCents: 1 }).success, false);
   assert.equal(validateInvoiceDraftInput(null).success, false);
   pass("draft validation rejects every Facturations-invalid shape (currency, dates, limits, keys, taxes)");
@@ -273,13 +288,15 @@ function verifyIdentity(): void {
 }
 
 function verifyIdempotency(): void {
-  const key = deriveFacturationsIdempotencyKey("rentauto", "booking:abc");
+  const rowId = "3f1c2b4a-5d6e-4f70-8a9b-0c1d2e3f4a5b";
+  const key = deriveFacturationsIdempotencyKey(rowId);
   assert.match(key, FACTURATIONS_IDEMPOTENCY_KEY_PATTERN);
   assert.equal(key.length, 48);
-  assert.equal(key, deriveFacturationsIdempotencyKey("rentauto", "booking:abc"));
-  assert.notEqual(key, deriveFacturationsIdempotencyKey("ahmv", "booking:abc"));
-  assert.notEqual(key, deriveFacturationsIdempotencyKey("rentauto", "booking:abd"));
-  pass("Idempotency-Key is deterministic per (sourceApp, sourceReference) and fits ^[A-Za-z0-9_-]{16,80}$");
+  assert.equal(key, deriveFacturationsIdempotencyKey(rowId));
+  assert.equal(key, deriveFacturationsIdempotencyKey(rowId.toUpperCase()));
+  assert.notEqual(key, deriveFacturationsIdempotencyKey("3f1c2b4a-5d6e-4f70-8a9b-0c1d2e3f4a5c"));
+  assert.throws(() => deriveFacturationsIdempotencyKey("booking:123"), TypeError);
+  pass("Idempotency-Key is stable per request row, unique per install, and fits ^[A-Za-z0-9_-]{16,80}$");
 
   const draft = validDraft();
   assert.equal(hashInvoiceDraft(draft), hashInvoiceDraft(structuredClone(draft)));
@@ -302,10 +319,17 @@ function verifyRequestPolicy(): void {
   assert.equal(canSubmitInvoiceRequest("submitted", stale, now), false);
   assert.equal(canSubmitInvoiceRequest("rejected", stale, now), false);
   assert.equal(canSubmitInvoiceRequest("cancelled", stale, now), false);
-  assert.equal(canCancelInvoiceRequest("submitted"), false);
-  assert.equal(canCancelInvoiceRequest("submitting"), false);
-  assert.equal(canCancelInvoiceRequest("rejected"), true);
-  pass("submitted requests are final; only pending/failed (or abandoned claims) can be sent");
+  assert.equal(canSubmitInvoiceRequest("needs_reconciliation", stale, now), false);
+  assert.equal(canCancelInvoiceRequest("pending", 0), true);
+  assert.equal(canCancelInvoiceRequest("pending", 1), false);
+  assert.equal(canCancelInvoiceRequest("failed", 1), false);
+  assert.equal(canCancelInvoiceRequest("needs_reconciliation", 1), false);
+  assert.equal(canCancelInvoiceRequest("submitted", 1), false);
+  assert.equal(canCancelInvoiceRequest("submitting", 1), false);
+  assert.equal(canCancelInvoiceRequest("rejected", 1), true);
+  assert.equal(canReconcileInvoiceRequest("needs_reconciliation"), true);
+  assert.equal(canReconcileInvoiceRequest("failed"), false);
+  pass("cancel only while no draft can exist; submitted is final; 409 requests are linked, never cancelled");
 
   assert.equal(statusAfterSubmissionFailure({ kind: "network_error", retryable: true }), "failed");
   assert.equal(statusAfterSubmissionFailure({ kind: "unavailable", retryable: true }), "failed");
@@ -315,7 +339,7 @@ function verifyRequestPolicy(): void {
   assert.equal(statusAfterSubmissionFailure({ kind: "auth_rejected", retryable: false }), "pending");
   assert.equal(statusAfterSubmissionFailure({ kind: "owner_required", retryable: false }), "pending");
   assert.equal(statusAfterSubmissionFailure({ kind: "not_found", retryable: false }), "pending");
-  assert.equal(statusAfterSubmissionFailure({ kind: "idempotency_conflict", retryable: false }), "rejected");
+  assert.equal(statusAfterSubmissionFailure({ kind: "idempotency_conflict", retryable: false }), "needs_reconciliation");
   assert.equal(statusAfterSubmissionFailure({ kind: "invalid_response", retryable: true }), "failed");
   assert.equal(statusAfterSubmissionFailure({ kind: "token_replay", retryable: true }), "failed");
   pass("timeouts stay retryable, only invoice-data verdicts are final, config/auth gaps leave the request pending");
@@ -502,6 +526,7 @@ function verifyStaticGuards(): void {
     "src/app/api/admin/billing/invoice-requests/route.ts",
     "src/app/api/admin/billing/invoice-requests/[requestId]/submit/route.ts",
     "src/app/api/admin/billing/invoice-requests/[requestId]/cancel/route.ts",
+    "src/app/api/admin/billing/invoice-requests/[requestId]/reconcile/route.ts",
   ];
 
   for (const route of routes) {
@@ -520,11 +545,19 @@ function verifyStaticGuards(): void {
   }
   pass("every billing admin route requires platform admin, checks write origin, never accepts business ids");
 
-  const submit = read("src/app/api/admin/billing/invoice-requests/[requestId]/submit/route.ts");
-  assert.ok(submit.includes('actor.role !== "OWNER"'), "submit route requires OWNER");
+  for (const route of ["submit", "reconcile"]) {
+    const source = read(`src/app/api/admin/billing/invoice-requests/[requestId]/${route}/route.ts`);
+    assert.ok(source.includes('actor.role !== "OWNER"'), `${route} route requires OWNER`);
+  }
   const service = read("src/lib/billing/invoices/invoice-request-service.ts");
-  assert.ok(service.includes('context.actor.role !== "OWNER"'), "submit service requires OWNER");
-  pass("only the Facturations OWNER can create drafts (route + service)");
+  assert.equal(
+    (service.match(/context\.actor\.role !== "OWNER"/g) ?? []).length,
+    2,
+    "submit and reconcile services require OWNER",
+  );
+  assert.ok(service.includes('submitAttempts: claimed.submitAttempts'), "outcome writes are compare-and-set");
+  assert.ok(service.includes('{ status: "pending", submitAttempts: 0 }, { status: "rejected" }'), "cancel matches only draft-free states");
+  pass("only the Facturations OWNER creates or links drafts; outcome writes are compare-and-set; cancel is draft-safe");
 
   for (const file of [
     "src/lib/integrations/facturations/client.ts",
@@ -540,6 +573,8 @@ function verifyStaticGuards(): void {
   assert.ok(client.includes('redirect: "error"'), "client refuses redirects");
   assert.ok(client.includes('cache: "no-store"'), "client disables caching");
   assert.ok(client.includes("AbortSignal.timeout("), "client has a timeout");
+  assert.equal((client.match(/method: "POST"/g) ?? []).length, 1, "client has exactly one POST (draft creation)");
+  assert.ok(client.includes("readBoundedJson(response);\n  } catch {"), "body read failures are caught");
   for (const forbidden of ["/approve", "authorize-issuance", "/deliver", "/publish", "/payments"]) {
     assert.equal(client.includes(forbidden), false, `client never calls ${forbidden}`);
   }
@@ -579,6 +614,8 @@ function verifyStaticGuards(): void {
   assert.ok(migration.includes("billing_invoice_requests fed draft fields are immutable"));
   assert.ok(migration.includes("billing_invoice_requests rows cannot be deleted"));
   assert.ok(migration.includes("CHECK (\"currency\" = 'CAD')"));
+  assert.ok(migration.includes('CREATE UNIQUE INDEX "billing_invoice_requests_facturationsDraftId_key"'));
+  assert.ok(migration.includes("'needs_reconciliation'"));
   assert.equal(/CREATE POLICY/i.test(migration), false);
   const advisor = read("scripts/ci-rls-advisor-catalog.ts");
   assert.ok(advisor.includes('"billing_invoice_requests"'), "RLS advisor treats the queue as sensitive");

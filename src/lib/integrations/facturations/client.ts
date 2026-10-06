@@ -12,6 +12,7 @@ import {
   parseCapabilities,
   parseCreatedDraft,
   parseDashboard,
+  parseDraftDetail,
   parseDraftPage,
   parseDraftWorkflow,
   readFacturationsEnvelope,
@@ -20,6 +21,7 @@ import {
   type FacturationsCapabilities,
   type FacturationsCreatedDraft,
   type FacturationsDashboard,
+  type FacturationsDraftDetail,
   type FacturationsDraftPage,
   type FacturationsDraftWorkflow,
   type FacturationsResult,
@@ -63,15 +65,41 @@ function failure<T>(
   };
 }
 
-async function readBoundedJson(response: Response): Promise<unknown> {
-  const text = await response.text();
+class ResponseTooLargeError extends Error {}
 
-  if (Buffer.byteLength(text, "utf8") > MAX_RESPONSE_BYTES) {
+/**
+ * Reads at most MAX_RESPONSE_BYTES while streaming. Throws on a stalled,
+ * reset or oversized body (the request timeout also covers this read).
+ */
+async function readBoundedJson(response: Response): Promise<unknown> {
+  const reader = response.body?.getReader();
+
+  if (!reader) {
     return null;
   }
 
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    total += value.byteLength;
+
+    if (total > MAX_RESPONSE_BYTES) {
+      await reader.cancel().catch(() => {});
+      throw new ResponseTooLargeError();
+    }
+
+    chunks.push(value);
+  }
+
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown;
   } catch {
     return null;
   }
@@ -146,7 +174,15 @@ async function facturationsRequest<T>(
     return failure("network_error", { retryable: true });
   }
 
-  const body = await readBoundedJson(response);
+  let body: unknown;
+
+  try {
+    body = await readBoundedJson(response);
+  } catch {
+    // Stalled, reset or oversized body: the outcome is unknown, and an
+    // identical idempotent retry is safe.
+    return failure("network_error", { status: response.status, retryable: true });
+  }
 
   if (!response.ok) {
     const code = readFacturationsErrorCode(body);
@@ -230,6 +266,26 @@ export function getFacturationsDraftWorkflow(
       path: `/integration/v1/drafts/${draftId}/workflow`,
     },
     parseDraftWorkflow,
+  );
+}
+
+/** OWNER only. Recalculated draft detail, used to verify a reconciliation. */
+export function getFacturationsDraft(
+  actor: FacturationsActor,
+  draftId: string,
+): Promise<FacturationsResult<FacturationsDraftDetail>> {
+  if (actor.role !== "OWNER") {
+    return Promise.resolve(failure("owner_required"));
+  }
+
+  if (!isFacturationsDraftId(draftId)) {
+    return Promise.resolve(failure("invalid_request"));
+  }
+
+  return facturationsRequest(
+    actor,
+    { method: "GET", path: `/integration/v1/drafts/${draftId}` },
+    parseDraftDetail,
   );
 }
 

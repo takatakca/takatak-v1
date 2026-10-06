@@ -7,11 +7,14 @@ import "server-only";
 // creates a DRAFT in the independent Facturations service. Nothing here
 // issues, emails, publishes or charges an invoice.
 
+import { randomUUID } from "node:crypto";
+
 import { Prisma, type BillingInvoiceRequest } from "@prisma/client";
 
 import { getPrisma } from "@/lib/db/prisma";
 import {
   createFacturationsDraft,
+  getFacturationsDraft,
   type FacturationsActor,
 } from "@/lib/integrations/facturations/client";
 import { ServiceError } from "@/lib/services/service-error";
@@ -25,7 +28,7 @@ import { estimateInvoice, InvoiceAmountTooLargeError } from "./preview";
 import {
   INVOICE_REQUEST_STATUSES,
   SUBMISSION_CLAIM_STALE_MS,
-  canCancelInvoiceRequest,
+  canReconcileInvoiceRequest,
   statusAfterSubmissionFailure,
   validateInvoiceRequestCreate,
   type InvoiceRequestCreateInput,
@@ -174,18 +177,20 @@ export async function enqueueInvoiceRequest(
     throw error;
   }
 
+  // The id is generated here so the Facturations Idempotency-Key can be
+  // derived from it: unique per request row and per TAKATAK install.
+  const id = randomUUID();
+
   try {
     const row = await prisma.$transaction(async (transaction) => {
       const created = await transaction.billingInvoiceRequest.create({
         data: {
+          id,
           sourceApp: request.sourceApp,
           sourceReference: request.sourceReference,
           clientId: request.clientId,
           masterIdentityId,
-          idempotencyKey: deriveFacturationsIdempotencyKey(
-            request.sourceApp,
-            request.sourceReference,
-          ),
+          idempotencyKey: deriveFacturationsIdempotencyKey(id),
           draft: request.draft as unknown as Prisma.InputJsonValue,
           draftHash,
           currency: "CAD",
@@ -229,7 +234,12 @@ export async function enqueueInvoiceRequest(
       },
     });
 
-    if (existing && existing.draftHash === draftHash) {
+    if (
+      existing &&
+      existing.draftHash === draftHash &&
+      existing.clientId === request.clientId &&
+      existing.masterIdentityId === masterIdentityId
+    ) {
       return { request: toInvoiceRequestView(existing), created: false };
     }
 
@@ -324,10 +334,67 @@ async function claimForSubmission(
   return row;
 }
 
+type FinalWrite =
+  | { written: true; row: BillingInvoiceRequest }
+  | { written: false; row: BillingInvoiceRequest };
+
+/**
+ * Writes the outcome of one submission attempt only if that attempt still
+ * owns the claim (same status + attempt counter). A superseded attempt never
+ * overwrites a newer attempt's result.
+ */
+async function writeAttemptOutcome(
+  claimed: BillingInvoiceRequest,
+  data: Prisma.BillingInvoiceRequestUpdateManyMutationInput,
+  audit: { profileId: string; action: string; metadata: Prisma.InputJsonObject },
+): Promise<FinalWrite> {
+  const prisma = requirePrisma();
+
+  return prisma.$transaction(async (transaction) => {
+    const result = await transaction.billingInvoiceRequest.updateMany({
+      where: {
+        id: claimed.id,
+        status: "submitting",
+        submitAttempts: claimed.submitAttempts,
+      },
+      data,
+    });
+    const row = await transaction.billingInvoiceRequest.findUniqueOrThrow({
+      where: { id: claimed.id },
+    });
+
+    if (result.count === 0) {
+      return { written: false, row };
+    }
+
+    await transaction.auditLog.create({
+      data: {
+        profileId: audit.profileId,
+        clientId: row.clientId,
+        action: audit.action,
+        entityType: AUDIT_ENTITY,
+        entityId: row.id,
+        metadata: { sourceApp: row.sourceApp, ...audit.metadata },
+      },
+    });
+
+    return { written: true, row };
+  });
+}
+
+function failedOutcome(
+  row: BillingInvoiceRequest,
+  code: string,
+  retryable: boolean,
+): SubmitInvoiceRequestOutcome {
+  return { outcome: "failed", request: toInvoiceRequestView(row), code, retryable };
+}
+
 /**
  * Sends one queued request to Facturations as a DRAFT. Requires the
  * Facturations OWNER identity. Retrying after a timeout is safe: the
- * Idempotency-Key is deterministic, so Facturations returns the same draft.
+ * request's Idempotency-Key never changes, so Facturations returns the same
+ * draft instead of creating a second one.
  */
 export async function submitInvoiceRequest(
   id: string,
@@ -340,22 +407,21 @@ export async function submitInvoiceRequest(
     );
   }
 
-  const prisma = requirePrisma();
   const row = await claimForSubmission(id, context.profileId);
   const draft = validateInvoiceDraftInput(row.draft);
 
   if (!draft.success || hashInvoiceDraft(draft.data) !== row.draftHash) {
-    const rejected = await prisma.billingInvoiceRequest.update({
-      where: { id },
-      data: { status: "rejected", lastErrorCode: "STORED_DRAFT_INVALID" },
-    });
+    const written = await writeAttemptOutcome(
+      row,
+      { status: "rejected", lastErrorCode: "STORED_DRAFT_INVALID" },
+      {
+        profileId: context.profileId,
+        action: "billing.invoice_request.submit_failed",
+        metadata: { code: "STORED_DRAFT_INVALID", status: "rejected" },
+      },
+    );
 
-    return {
-      outcome: "failed",
-      request: toInvoiceRequestView(rejected),
-      code: "STORED_DRAFT_INVALID",
-      retryable: false,
-    };
+    return failedOutcome(written.row, "STORED_DRAFT_INVALID", false);
   }
 
   const result = await createFacturationsDraft(
@@ -365,80 +431,92 @@ export async function submitInvoiceRequest(
   );
 
   if (result.ok) {
-    const submitted = await prisma.$transaction(async (transaction) => {
-      const updated = await transaction.billingInvoiceRequest.update({
-        where: { id },
-        data: {
+    let written: FinalWrite;
+
+    try {
+      written = await writeAttemptOutcome(
+        row,
+        {
           status: "submitted",
           facturationsDraftId: result.data.id,
           facturationsTotalCents: BigInt(result.data.totals.totalCents),
           submittedAt: new Date(),
           lastErrorCode: null,
         },
-      });
-
-      await transaction.auditLog.create({
-        data: {
+        {
           profileId: context.profileId,
-          clientId: updated.clientId,
           action: "billing.invoice_request.submitted",
-          entityType: AUDIT_ENTITY,
-          entityId: id,
           metadata: {
-            sourceApp: updated.sourceApp,
             facturationsDraftId: result.data.id,
-            totalsMatch:
-              updated.estimatedTotalCents === BigInt(result.data.totals.totalCents),
+            totalsMatch: row.estimatedTotalCents === BigInt(result.data.totals.totalCents),
           },
         },
-      });
+      );
+    } catch (error) {
+      if (!isKnownRequestError(error, "P2002")) {
+        throw error;
+      }
 
-      return updated;
-    });
+      // This Facturations draft id is already linked to another request:
+      // never link it twice. An owner must reconcile.
+      const conflict = await writeAttemptOutcome(
+        row,
+        { status: "needs_reconciliation", lastErrorCode: "DRAFT_ALREADY_LINKED" },
+        {
+          profileId: context.profileId,
+          action: "billing.invoice_request.submit_failed",
+          metadata: { code: "DRAFT_ALREADY_LINKED", status: "needs_reconciliation" },
+        },
+      );
 
-    return { outcome: "submitted", request: toInvoiceRequestView(submitted) };
+      return failedOutcome(conflict.row, "DRAFT_ALREADY_LINKED", false);
+    }
+
+    if (
+      written.written ||
+      (written.row.status === "submitted" &&
+        written.row.facturationsDraftId === result.data.id)
+    ) {
+      return { outcome: "submitted", request: toInvoiceRequestView(written.row) };
+    }
+
+    throw new ServiceError(
+      "conflict",
+      "This attempt was superseded by a newer one. Refresh to see the current status.",
+    );
   }
 
   const code = result.code ?? result.kind.toUpperCase();
   const status = statusAfterSubmissionFailure(result);
-  const failed = await prisma.$transaction(async (transaction) => {
-    const updated = await transaction.billingInvoiceRequest.update({
-      where: { id },
-      data: { status, lastErrorCode: code },
-    });
+  const written = await writeAttemptOutcome(
+    row,
+    { status, lastErrorCode: code },
+    {
+      profileId: context.profileId,
+      action: "billing.invoice_request.submit_failed",
+      metadata: { code, status },
+    },
+  );
 
-    await transaction.auditLog.create({
-      data: {
-        profileId: context.profileId,
-        clientId: updated.clientId,
-        action: "billing.invoice_request.submit_failed",
-        entityType: AUDIT_ENTITY,
-        entityId: id,
-        metadata: { sourceApp: updated.sourceApp, code, status },
-      },
-    });
-
-    return updated;
-  });
-
-  return {
-    outcome: "failed",
-    request: toInvoiceRequestView(failed),
-    code,
-    retryable: result.retryable,
-  };
+  return failedOutcome(written.row, code, result.retryable && status === "failed");
 }
 
+/**
+ * Cancels a request only while no Facturations draft can exist for it:
+ * never attempted, or rejected by Facturations validation before creation.
+ */
 export async function cancelInvoiceRequest(
   id: string,
   profileId: string,
 ): Promise<InvoiceRequestView> {
   const prisma = requirePrisma();
-  const cancellable = INVOICE_REQUEST_STATUSES.filter(canCancelInvoiceRequest);
 
   return prisma.$transaction(async (transaction) => {
     const result = await transaction.billingInvoiceRequest.updateMany({
-      where: { id, status: { in: cancellable } },
+      where: {
+        id,
+        OR: [{ status: "pending", submitAttempts: 0 }, { status: "rejected" }],
+      },
       data: { status: "cancelled", cancelledAt: new Date() },
     });
     const row = await transaction.billingInvoiceRequest.findUnique({ where: { id } });
@@ -450,7 +528,9 @@ export async function cancelInvoiceRequest(
     if (result.count === 0) {
       throw new ServiceError(
         "conflict",
-        `This invoice request cannot be cancelled while ${row.status}.`,
+        row.status === "pending" || row.status === "failed"
+          ? "This request was already sent at least once, so a Facturations draft may exist. Send it again (safe) instead of cancelling."
+          : `This invoice request cannot be cancelled while ${row.status}.`,
       );
     }
 
@@ -467,4 +547,107 @@ export async function cancelInvoiceRequest(
 
     return toInvoiceRequestView(row);
   });
+}
+
+function storedCustomerEmail(draft: Prisma.JsonValue): string {
+  const record =
+    draft && typeof draft === "object" && !Array.isArray(draft)
+      ? (draft as Record<string, unknown>)
+      : {};
+  const customer =
+    record.customer && typeof record.customer === "object"
+      ? (record.customer as Record<string, unknown>)
+      : {};
+
+  return typeof customer.email === "string" ? customer.email.trim().toLowerCase() : "";
+}
+
+/**
+ * OWNER links an existing Facturations draft to a request whose key was
+ * already used (409). The draft is fetched from Facturations and must match
+ * the stored request exactly (customer email, dates, recalculated total).
+ */
+export async function reconcileInvoiceRequest(
+  id: string,
+  facturationsDraftId: string,
+  context: { profileId: string; actor: FacturationsActor },
+): Promise<InvoiceRequestView> {
+  if (context.actor.role !== "OWNER") {
+    throw new ServiceError("forbidden", "Only the TAKATAK platform owner can link Facturations drafts.");
+  }
+
+  const prisma = requirePrisma();
+  const row = await prisma.billingInvoiceRequest.findUnique({ where: { id } });
+
+  if (!row) {
+    throw new ServiceError("not_found", "Invoice request not found.");
+  }
+
+  if (!canReconcileInvoiceRequest(row.status)) {
+    throw new ServiceError("conflict", `This invoice request cannot be linked while ${row.status}.`);
+  }
+
+  const remote = await getFacturationsDraft(context.actor, facturationsDraftId);
+
+  if (!remote.ok) {
+    throw new ServiceError(
+      remote.kind === "not_found" || remote.kind === "invalid_request" ? "not_found" : "unavailable",
+      "The Facturations draft could not be loaded.",
+    );
+  }
+
+  const summary = readDraftSummary(row.draft);
+  const matches =
+    BigInt(remote.data.totals.totalCents) === row.estimatedTotalCents &&
+    remote.data.customerEmail.trim().toLowerCase() === storedCustomerEmail(row.draft) &&
+    remote.data.invoiceDate === summary.invoiceDate &&
+    remote.data.dueDate === summary.dueDate;
+
+  if (!matches) {
+    throw new ServiceError(
+      "conflict",
+      "That Facturations draft does not match this request (customer, dates or total).",
+    );
+  }
+
+  try {
+    return await prisma.$transaction(async (transaction) => {
+      const result = await transaction.billingInvoiceRequest.updateMany({
+        where: { id, status: row.status },
+        data: {
+          status: "submitted",
+          facturationsDraftId: remote.data.id,
+          facturationsTotalCents: BigInt(remote.data.totals.totalCents),
+          submittedAt: new Date(),
+          submittedByProfileId: context.profileId,
+          lastErrorCode: null,
+        },
+      });
+
+      if (result.count === 0) {
+        throw new ServiceError("conflict", "The request changed meanwhile. Refresh and try again.");
+      }
+
+      await transaction.auditLog.create({
+        data: {
+          profileId: context.profileId,
+          clientId: row.clientId,
+          action: "billing.invoice_request.reconciled",
+          entityType: AUDIT_ENTITY,
+          entityId: id,
+          metadata: { sourceApp: row.sourceApp, facturationsDraftId: remote.data.id },
+        },
+      });
+
+      return toInvoiceRequestView(
+        await transaction.billingInvoiceRequest.findUniqueOrThrow({ where: { id } }),
+      );
+    });
+  } catch (error) {
+    if (isKnownRequestError(error, "P2002")) {
+      throw new ServiceError("conflict", "That Facturations draft is already linked to another request.");
+    }
+
+    throw error;
+  }
 }

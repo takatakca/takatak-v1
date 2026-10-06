@@ -71,29 +71,32 @@ Rules for feeding apps:
 - **One business event = one `sourceReference`.** Calling twice with the same draft is a no-op. The existing request is returned.
 - **Corrections use a new reference** (e.g. `booking:123:v2`). The same reference with a different draft returns `409 conflict`. Stored drafts are immutable at the database level.
 - **Money is integer cents, CAD only.** Tax rates are explicit milli-percent values (`9975` = 9.975 %). No jurisdictional rate is ever assumed: the feeding app or the owner decides the taxes.
-- The input is re-validated against the exact Facturations `DraftInput` contract before it is stored. Anything Facturations would reject is refused at enqueue time.
+- The input is re-validated against the exact Facturations `DraftInput` contract before it is stored, including the 32 KB request-size limit. Anything Facturations would reject is refused at enqueue time.
 - **To add a new app**, add its code to `BILLING_SOURCE_APPS`. The database only enforces the format.
 
 ## Lifecycle
 
 ```
-pending ──Create draft──▶ submitting ──ok──────────────▶ submitted   (Facturations DRAFT exists — final)
-   ▲                          ├─ timeout / 5xx / 429 ──▶ failed     (safe to retry)
-   │                          ├─ config / auth gap ────▶ pending    (fix setup, then send)
-   │                          └─ invalid data / 409 ───▶ rejected   (correct with a new reference)
-cancel: pending | failed | rejected ──▶ cancelled (final)
+pending ──Create draft──▶ submitting ──ok───────────────▶ submitted   (Facturations DRAFT exists — final)
+   ▲                          ├─ timeout / 5xx / 429 ───▶ failed      (send again: safe, never duplicates)
+   │                          ├─ config / auth gap ─────▶ pending     (fix setup, then send)
+   │                          ├─ invalid data (4xx) ────▶ rejected    (no draft was created)
+   │                          └─ 409 key already used ──▶ needs_reconciliation ──OWNER links verified draft──▶ submitted
+cancel: only while no draft can exist — pending with 0 attempts, or rejected
 ```
 
 - `submitted` means a **Facturations draft exists**. It is not issued, sent, paid, revenue or receivable.
-- The Idempotency-Key is derived deterministically from `(sourceApp, sourceReference)`. A retry after a lost response returns the **same** Facturations draft (verified end-to-end).
-- Submission uses a compare-and-set claim, so concurrent clicks cannot double-send. A claim left in `submitting` for more than 2 minutes (crash) can be taken over.
+- **Idempotency-Key.** Each request's key is derived from its own row id. It is stable for every retry of that request and never shared with another TAKATAK install (production, staging, a restored copy). A retry after a lost response returns the **same** Facturations draft (verified end-to-end).
+- **No orphaned drafts.** Once any attempt may have reached Facturations (`failed`, or `pending` after an attempt), the request can no longer be cancelled. It can only end as `submitted`, either through a safe resend or a verified link. A draft can therefore never be orphaned and then duplicated by a re-queued request.
+- **Reconciliation (409).** The owner pastes the Facturations draft id. TAKATAK fetches that draft and links it only if the customer email, dates and recalculated total match the stored request exactly. A Facturations draft id can be linked to at most one request (unique index).
+- **Concurrency.** Submission uses a compare-and-set claim, so concurrent clicks cannot double-send (verified with 3 simultaneous sends). Every outcome write only applies if that attempt still owns the claim. A claim left in `submitting` for more than 2 minutes (crash) can be taken over.
 
 ## Identity and roles
 
 | TAKATAK platform role | Facturations role | Can |
 | --- | --- | --- |
-| `owner` | `OWNER` | View status, queue requests, create Facturations drafts |
-| `admin` | `STAFF` | View status and draft summaries, queue/cancel requests (cannot create drafts) |
+| `owner` | `OWNER` | View status, queue requests, create Facturations drafts, link drafts after a 409 |
+| `admin` | `STAFF` | View status and draft summaries, queue requests, cancel draft-free requests (cannot create or link drafts) |
 | `user` | none | Nothing (admin area is platform-admin only) |
 
 - The token `sub` is `takatak:mi:<MasterIdentity.id>`, or `takatak:profile:<Profile.id>` when no master identity exists. It is never an email or phone number.
@@ -123,7 +126,8 @@ Draft creation also requires `FACTURATIONS_INTEGRATION_WRITES_ENABLED=1` **on th
 
 `BillingInvoiceRequest` → table `billing_invoice_requests` (migration `20261006120000_takatak_billing_invoice_requests`):
 
-- `sourceApp` and `sourceReference` (unique pair), deterministic `idempotencyKey` (unique), `draft` (validated DraftInput JSON), `draftHash` (domain-separated SHA-256).
+- `sourceApp` and `sourceReference` (unique pair), `idempotencyKey` derived from the row id (unique), `draft` (validated DraftInput JSON), `draftHash` (domain-separated SHA-256).
+- `facturationsDraftId` is unique, so one Facturations draft is never linked to two requests.
 - `estimatedTotalCents` (local estimate, BigInt) and `facturationsTotalCents` (Facturations' recalculated total). A mismatch is highlighted in the admin page.
 - `status`, `facturationsDraftId`, `submitAttempts`, `lastErrorCode`, timestamps, and actor profile ids.
 - Optional links: `clientId` and `masterIdentityId`. Both use `ON DELETE SET NULL`, so deleting a tenant never breaks billing history.
@@ -143,6 +147,7 @@ Database guarantees:
   - wrong `version` or `businessId` → refused
   - a created draft must be `DRAFT` with `waveSynced=false` and `emailed=false`
   - dashboard values are labelled **DRAFTS ONLY**
+- Response bodies are streamed with a hard size cap. A stalled or reset body is treated as an unknown outcome, which means a safe retry.
 - The client only calls the read endpoints and `POST /integration/v1/drafts`. It never calls approval, issuance, delivery, publication or payment endpoints. A QA script asserts this.
 - Audit log entries (`billing.invoice_request.*`) for create, submit, failure and cancel. They contain no customer PII.
 - Raw Facturations errors are never shown. Only allow-listed error codes are surfaced.
@@ -155,7 +160,7 @@ Database guarantees:
 | Calculation parity | Estimate matches Facturations `previewDraft` on fixed vectors plus 2,000 randomized drafts |
 | Token compatibility | TAKATAK-minted tokens verified by Facturations' own `verifyIntegrationBearer` (wrong business rejected) |
 | Migration | All migrations, including this one, apply on a fresh database (`prisma migrate deploy`) |
-| End-to-end (opt-in, local only) | `scripts/billing-facturations-local-e2e.ts` against a real local Facturations server. Covers: OWNER/STAFF identities, idempotent enqueue, draft creation with matching totals, lost-response retry returning the same draft, outage → retry, wrong secret → pending, wrong business refused, DB guards, audit trail |
+| End-to-end (CI + local) | `scripts/billing-facturations-local-e2e.ts` against the real Facturations service. CI runs it at a pinned SHA through `scripts/ci-billing-facturations-contract.sh`. Covers: OWNER/STAFF identities, idempotent enqueue, draft creation with matching totals, 3 simultaneous sends → one draft, lost-response retry returning the same draft, outage → retry (not cancellable), 409 → reconciliation with verified link only, wrong secret → pending, wrong business refused, DB guards, audit trail |
 
 ## Deliberately not in this foundation
 

@@ -8,6 +8,7 @@ import {
   getFacturationsOverview,
   type FacturationsOverview,
 } from "@/lib/billing/invoices/facturations-overview";
+import { getFacturationsEnvStatus } from "@/lib/integrations/facturations/env";
 import {
   countInvoiceRequestsByStatus,
   listInvoiceRequests,
@@ -18,6 +19,7 @@ import {
   INVOICE_REQUEST_STATUSES,
   INVOICE_REQUEST_STATUS_LABELS,
   canCancelInvoiceRequest,
+  canReconcileInvoiceRequest,
   canSubmitInvoiceRequest,
   type InvoiceRequestStatus,
 } from "@/lib/billing/invoices/request-policy";
@@ -59,6 +61,7 @@ function statusTone(status: InvoiceRequestStatus) {
     case "submitting":
       return "warning" as const;
     case "rejected":
+    case "needs_reconciliation":
       return "danger" as const;
     case "cancelled":
       return "muted" as const;
@@ -87,10 +90,30 @@ async function loadQueue(): Promise<
   }
 }
 
+async function loadOverview(access: {
+  profileId: string | null;
+  role: "owner" | "admin" | null;
+}): Promise<FacturationsOverview> {
+  try {
+    return await getFacturationsOverview(access);
+  } catch {
+    // A Facturations or database failure must never take down the queue view.
+    const unavailable = { available: false as const, reason: "unavailable" as const };
+
+    return {
+      env: getFacturationsEnvStatus(),
+      actorRole: null,
+      capabilities: unavailable,
+      dashboard: unavailable,
+      drafts: unavailable,
+    };
+  }
+}
+
 export default async function AdminBillingPage() {
   const access = await requireAdminAccess();
   const [overview, queue] = await Promise.all([
-    getFacturationsOverview({ profileId: access.profileId, role: access.role }),
+    loadOverview({ profileId: access.profileId, role: access.role }),
     loadQueue(),
   ]);
   const isOwner = overview.actorRole === "OWNER";
@@ -231,7 +254,8 @@ export default async function AdminBillingPage() {
                           new Date(request.updatedAt),
                           now,
                         )}
-                        canCancel={canCancelInvoiceRequest(request.status)}
+                        canCancel={canCancelInvoiceRequest(request.status, request.submitAttempts)}
+                        canReconcile={canReconcileInvoiceRequest(request.status)}
                       />
                     </td>
                   </tr>
