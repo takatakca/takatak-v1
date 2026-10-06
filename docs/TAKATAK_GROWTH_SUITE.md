@@ -8,8 +8,9 @@ Status: **Phases 1–3 built:**
 - **Phase 5:** autopilot schedules, automatic triggers, review → lead.
 - **Phase 6:** review showcase widget, Chat Concierge, Review Responder drafts, Core Web Vitals.
 - **Phase 7:** GA4 and Search Console data, monthly growth report.
+- **Phase 8:** Google Business Profile connect, review import, reply publishing.
 
-The Phase 2–7 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
+The Phase 2–8 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
 
 ## Scope rule
 
@@ -291,10 +292,40 @@ Migration: `prisma/migrations/20261007120000_growth_google_data_sources` adds `a
 
 Each number is compared with the previous month, and the page lists French highlights, top pages, traffic sources and contact actions. Months are calendar months (UTC), and visits are unique daily visitors who viewed a page.
 
+## Phase 8: Google Business Profile (import Google reviews, publish replies)
+
+Migration: `prisma/migrations/20261007150000_growth_google_business_profile` adds `google_business_connections`, `google_business_oauth_states`, `google_business_locations` and `external_reviews`. All four have RLS, browser grants revoked and value checks, and are on the advisor's sensitive list. The migration is **not** in the approved deploy lists yet.
+
+### Setup
+
+To turn it on, set:
+- `GOOGLE_BUSINESS_PROFILE_ENABLED=true`
+- `GOOGLE_BUSINESS_PROFILE_CLIENT_ID` and `GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET` (a Google OAuth web client)
+- `GROWTH_TOKEN_ENCRYPTION_KEY_V1` (32 random bytes)
+
+In the OAuth client, register the redirect URI `https://<app>/api/integrations/google-business/callback`, or set `GOOGLE_BUSINESS_PROFILE_REDIRECT_URI`.
+
+The Business Profile APIs require Google's access approval for the project.
+
+### Flow
+
+1. **Connect:** a workspace manager clicks **Connect Google Business Profile**.
+   - OAuth 2.0 + PKCE (S256), scope `business.manage`, offline access.
+   - The state is random, stored only as a hash, single-use, expires in 10 minutes, and is bound to the same user and workspace.
+   - The PKCE verifier and refresh token are encrypted with AES-256-GCM, bound to the client and connection.
+2. **Discovery:** accounts (Account Management v1) → locations (Business Information v1), stored as `accounts/{a}/locations/{l}`.
+3. **Import:** `GET v4/{location}/reviews`, paginated (up to 5 × 50 per location per sync). Re-syncs are idempotent and only update changed reviews.
+   - Triggered by **Sync now** or hourly via `/api/cron/growth-reviews-sync` (Bearer `CRON_SECRET`).
+   - A new unanswered 1–3★ Google review queues the **Review Responder** (`source: "google"`).
+4. **Reply:**
+   - **Staff:** the AI draft is pre-filled in the reply box; edit it and click **Publish reply on Google** (`PUT v4/.../reviews/{id}/reply`).
+   - **Gateway:** `POST /api/ai/reviews/reply { runId, comment }` publishes only in the execute phase (after approval), or immediately when approval is off. It works only for that run's Google review and client.
+5. **Disconnect:** revokes the token at Google and destroys the local ciphertext.
+
 ## Waiting on outside approvals
 
 These need provider access that only the owner can request:
-1. **Google Business Profile** review import and posting AI replies (Google API access approval).
+1. **Google Business Profile API access** (Google approval for the Cloud project); the integration is fully built and tested against a simulated Google.
 2. **Syncing retargeting audiences** to Meta and Google Ads (ad-account OAuth and app review).
 3. **Google service account** for GA4 and Search Console (create it in Google Cloud; each client then grants it access).
 
@@ -310,6 +341,7 @@ These need provider access that only the owner can request:
   - autopilot (once per slot under overlapping cron ticks, in the client's time zone), low-rating triggers, and consent-only review → lead;
   - the showcase (honest average, consent and first name only, owner hide) and the Chat Concierge approval gate and tenant lock;
   - exact monthly report numbers with month boundaries, and tenant-scoped Google links;
+  - the complete Google Business Profile flow against a simulated Google: PKCE verification, state attacks (wrong user, wrong workspace, replay, expiry), encrypted tokens, paginated idempotent import, approval-gated publishing, revoke;
   - tenant isolation for all of the above, and the database constraints.
 
 Both run in CI.

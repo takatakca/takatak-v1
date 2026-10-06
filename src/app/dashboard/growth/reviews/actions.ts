@@ -1,8 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 import { publicAppOrigin } from "@/lib/growth/public-origin";
+import {
+  disconnectGoogleBusiness,
+  replyToGoogleReview,
+  startGoogleBusinessConnect,
+  syncGoogleReviews,
+} from "@/lib/integrations/google-business/service";
+import { getPrisma } from "@/lib/db/prisma";
 import { growthSmsConfigured, growthWhatsAppConfigured, sendGrowthSms, sendWhatsAppReviewTemplate } from "@/lib/messaging/delivery";
 import { maskPhone, toE164 } from "@/lib/messaging/phone";
 import { getServerAccessContext } from "@/lib/security/access-context";
@@ -126,4 +134,66 @@ export async function toggleShowcaseAction(formData: FormData): Promise<void> {
   if (!access || !UUID.test(responseId)) return;
   await setShowcaseHidden(access.activeClientId, responseId, formData.get("hidden") === "true");
   revalidatePath(REVIEWS_PATH);
+}
+
+// ------------------------------------------------------ Google Business Profile
+
+export async function connectGoogleBusinessAction(): Promise<void> {
+  const access = await scopedAccess("manage_reputation");
+  if (!access) redirect(`${REVIEWS_PATH}?google=forbidden`);
+  let url: string;
+  try {
+    url = await startGoogleBusinessConnect({ clientId: access.activeClientId, profileId: access.profileId, origin: await publicAppOrigin() });
+  } catch {
+    redirect(`${REVIEWS_PATH}?google=not_configured`);
+  }
+  redirect(url);
+}
+
+export async function syncGoogleReviewsAction(): Promise<void> {
+  const access = await scopedAccess("manage_reputation");
+  if (!access) return;
+  let status = "synced";
+  try {
+    const result = await syncGoogleReviews(access.activeClientId);
+    if (!result.ok) status = result.reason ?? "sync_failed";
+  } catch {
+    status = "sync_failed";
+  }
+  revalidatePath(REVIEWS_PATH);
+  redirect(`${REVIEWS_PATH}?google=${encodeURIComponent(status)}`);
+}
+
+export async function disconnectGoogleBusinessAction(): Promise<void> {
+  const access = await scopedAccess("manage_reputation");
+  if (!access) return;
+  await disconnectGoogleBusiness(access.activeClientId);
+  revalidatePath(REVIEWS_PATH);
+}
+
+export async function toggleGoogleLocationSyncAction(formData: FormData): Promise<void> {
+  const access = await scopedAccess("manage_reputation");
+  const id = String(formData.get("locationId") ?? "");
+  const prisma = getPrisma();
+  if (!access || !UUID.test(id) || !prisma) return;
+  await prisma.googleBusinessLocation.updateMany({ where: { id, clientId: access.activeClientId }, data: { syncEnabled: formData.get("enabled") === "true" } });
+  revalidatePath(REVIEWS_PATH);
+}
+
+export type GoogleReplyState = { ok: null } | { ok: true } | { ok: false; error: string };
+
+export async function replyGoogleReviewAction(_prev: GoogleReplyState, formData: FormData): Promise<GoogleReplyState> {
+  const access = await scopedAccess("manage_reputation");
+  if (!access) return { ok: false, error: "You do not have permission to reply to reviews." };
+  const id = String(formData.get("reviewId") ?? "");
+  const comment = String(formData.get("comment") ?? "");
+  if (!UUID.test(id) || !comment.trim()) return { ok: false, error: "Write a reply first." };
+  try {
+    const result = await replyToGoogleReview(access.activeClientId, id, comment);
+    if (!result.ok) return { ok: false, error: `Google refused the reply (${result.reason}).` };
+  } catch {
+    return { ok: false, error: "The reply could not be posted. Try again." };
+  }
+  revalidatePath(REVIEWS_PATH);
+  return { ok: true };
 }

@@ -197,8 +197,9 @@ export const CONNECTORS: ConnectorDef[] = [
     env: [
       "GOOGLE_BUSINESS_PROFILE_CLIENT_ID",
       "GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET",
-      "GOOGLE_BUSINESS_PROFILE_REFRESH_TOKEN",
+      "GROWTH_TOKEN_ENCRYPTION_KEY_V1",
     ],
+    managedIn: "/dashboard/growth/reviews",
     kind: "external",
     docsUrl: "https://developers.google.com/my-business",
   },

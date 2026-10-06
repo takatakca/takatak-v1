@@ -27,6 +27,8 @@ import { generateKeyPairSync, createVerify } from "node:crypto";
 import { buildServiceAccountAssertion, normalizePrivateKey } from "../src/lib/integrations/google/jwt";
 import { isValidGa4PropertyId, normalizeSearchConsoleProperty, parseGa4DailyReport, parseSearchConsoleQueries } from "../src/lib/integrations/google/parse";
 import { buildHighlights, monthRange, percentChange, previousMonth } from "../src/lib/growth/report";
+import { connectionAad, decryptGrowthValue, encryptGrowthValue, pkceChallenge } from "../src/lib/integrations/google-business/crypto";
+import { parseAccounts, parseLocations, parseReviewsPage } from "../src/lib/integrations/google-business/parse";
 import { gradeMetric, parsePageSpeed } from "../src/lib/seo/pagespeed-parse";
 import { normalizeAuditUrl } from "../src/lib/seo/site-audit";
 
@@ -376,8 +378,47 @@ function verifyGoogleAndReport(): void {
   pass("monthly report ranges, deltas and highlights are correct");
 }
 
+function verifyGoogleBusinessPure(): void {
+  // RFC 7636 Appendix B test vector.
+  assert.equal(pkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"), "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
+  const saved = process.env.GROWTH_TOKEN_ENCRYPTION_KEY_V1;
+  try {
+    process.env.GROWTH_TOKEN_ENCRYPTION_KEY_V1 = Buffer.alloc(32, 7).toString("base64");
+    const aad = connectionAad("client-1", "conn-1");
+    const enc = encryptGrowthValue("1//refresh-token-secret", aad);
+    assert.ok(!enc.ciphertext.includes("refresh"), "ciphertext hides the token");
+    assert.equal(decryptGrowthValue(enc, aad), "1//refresh-token-secret");
+    assert.throws(() => decryptGrowthValue(enc, connectionAad("client-2", "conn-1")), "a token copied to another client cannot be decrypted");
+    assert.throws(() => decryptGrowthValue({ ...enc, ciphertext: Buffer.from("tampered").toString("base64") }, aad), "tampering is detected");
+    process.env.GROWTH_TOKEN_ENCRYPTION_KEY_V1 = "short";
+    assert.throws(() => encryptGrowthValue("x", aad), "a weak key is refused");
+  } finally {
+    if (saved === undefined) delete process.env.GROWTH_TOKEN_ENCRYPTION_KEY_V1;
+    else process.env.GROWTH_TOKEN_ENCRYPTION_KEY_V1 = saved;
+  }
+  pass("Google tokens are AES-256-GCM encrypted, bound to client+connection; PKCE matches RFC 7636");
+
+  assert.deepEqual(parseAccounts({ accounts: [{ name: "accounts/123", accountName: "Garage" }, { name: "evil" }] }), [{ name: "accounts/123", accountName: "Garage" }]);
+  assert.deepEqual(
+    parseLocations({ locations: [{ name: "locations/987", title: "Garage Verdun", storefrontAddress: { addressLines: ["123 rue Wellington"], locality: "Verdun", postalCode: "H4G 1V5" } }, { name: "bad" }] }, "accounts/123"),
+    [{ resourceName: "accounts/123/locations/987", title: "Garage Verdun", address: "123 rue Wellington, Verdun, H4G 1V5" }],
+  );
+  const page = parseReviewsPage({
+    reviews: [
+      { reviewId: "r1", reviewer: { displayName: "Marc" }, starRating: "TWO", comment: "Trop long", createTime: "2026-10-01T10:00:00Z", updateTime: "2026-10-01T10:00:00Z" },
+      { reviewId: "r2", starRating: "FIVE", createTime: "2026-10-02T10:00:00Z", reviewReply: { comment: "Merci!", updateTime: "2026-10-03T10:00:00Z" } },
+      { reviewId: "r3", starRating: "STAR_RATING_UNSPECIFIED", createTime: "2026-10-02T10:00:00Z" },
+    ],
+    nextPageToken: "next",
+  });
+  assert.deepEqual(page.reviews.map((r) => [r.externalId, r.rating, r.reviewerName, r.replyComment]), [["r1", 2, "Marc", null], ["r2", 5, null, "Merci!"]]);
+  assert.equal(page.nextPageToken, "next");
+  pass("Google Business Profile accounts, locations and reviews parse (unrated reviews skipped)");
+}
+
 verifyCatalog();
 verifyHonestStatuses();
+verifyGoogleBusinessPure();
 verifyGoogleAndReport();
 verifyPageSpeedAndShowcase();
 verifyAgentSchedules();

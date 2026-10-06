@@ -39,6 +39,9 @@ const SECRET_TABLES = [
   "chat_conversations",
   "chat_messages",
   "ai_agent_runs",
+  "google_business_connections",
+  "google_business_oauth_states",
+  "external_reviews",
   "_prisma_migrations",
 ];
 

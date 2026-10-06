@@ -2,12 +2,14 @@ import Link from "next/link";
 import { ConnectorGrid } from "@/components/growth/connector-card";
 import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
 import { ReviewRequestBuilder } from "@/components/growth/review-request-builder";
+import { GoogleBusinessPanel } from "@/components/reputation/google-business-panel";
 import { ReputationWorkspace } from "@/components/reputation/reputation-workspace";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { getConnectorStatuses } from "@/lib/growth/status";
 import { publicAppOrigin } from "@/lib/growth/public-origin";
 import { growthSmsConfigured, growthWhatsAppConfigured } from "@/lib/messaging/delivery";
+import { getGoogleBusinessSnapshot, type GoogleBusinessSnapshot } from "@/lib/integrations/google-business/service";
 import { getReputationSnapshot, type ReputationSnapshot } from "@/lib/reputation/service";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
@@ -29,15 +31,17 @@ const FEATURES = [
   { name: "Reputation report", detail: "Average rating, velocity and response rate per location." },
 ];
 
-export default async function ReputationPage() {
+export default async function ReputationPage({ searchParams }: { searchParams: Promise<{ google?: string }> }) {
+  const googleNotice = (await searchParams).google ?? null;
   const { access, showSetupDetails } = await requireGrowthAccess("/dashboard/growth/reviews");
   const scoped = access.mode === "client_scoped" && hasEffectivePermission(access, "view_reputation");
   const canManage = scoped && hasEffectivePermission(access, "manage_reputation");
   let snapshot: ReputationSnapshot | null = null;
+  let google: GoogleBusinessSnapshot | null = null;
   let unavailable = false;
   if (scoped) {
     try {
-      snapshot = await getReputationSnapshot(access.activeClientId);
+      [snapshot, google] = await Promise.all([getReputationSnapshot(access.activeClientId), getGoogleBusinessSnapshot(access.activeClientId)]);
     } catch {
       unavailable = true;
       console.error("[reputation] snapshot unavailable");
@@ -57,6 +61,8 @@ export default async function ReputationPage() {
           </Link>
         }
       />
+
+      {google ? <GoogleBusinessPanel data={google} canManage={canManage} notice={googleNotice && /^[a-z_0-9]{1,40}$/.test(googleNotice) ? googleNotice : null} /> : null}
 
       {snapshot ? (
         <ReputationWorkspace

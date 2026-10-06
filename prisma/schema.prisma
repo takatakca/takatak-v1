@@ -440,6 +440,10 @@ model Client {
   chatMessages              ChatMessage[]
   aiAgentSettings           AiAgentSetting[]
   aiAgentRuns               AiAgentRun[]
+  googleBusinessConnection  GoogleBusinessConnection?
+  googleBusinessOAuthStates GoogleBusinessOAuthState[]
+  googleBusinessLocations   GoogleBusinessLocation[]
+  externalReviews           ExternalReview[]
   @@index([status])
   @@index([createdAt])
   @@index([assignedProfileId])
@@ -4432,5 +4436,95 @@ model AiAgentRun {
   @@index([clientId, createdAt])
   @@index([status, createdAt])
   @@map("ai_agent_runs")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — Google Business Profile (per-client OAuth). Refresh tokens and
+// PKCE verifiers are AES-256-GCM encrypted with client-bound AAD; OAuth states
+// are stored only as hashes and are single-use. Server-side Prisma only.
+// ---------------------------------------------------------------------------
+
+model GoogleBusinessConnection {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @unique @db.Uuid
+  status               String    @default("active")
+  tokenCiphertext      String
+  tokenIv              String
+  tokenAuthTag         String
+  tokenKeyVersion      Int       @default(1)
+  connectedByProfileId String?   @db.Uuid
+  lastSyncAt           DateTime?
+  lastError            String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client    Client                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  locations GoogleBusinessLocation[]
+
+  @@map("google_business_connections")
+}
+
+model GoogleBusinessOAuthState {
+  id                 String    @id @default(uuid()) @db.Uuid
+  clientId           String    @db.Uuid
+  profileId          String    @db.Uuid
+  stateHash          String    @unique
+  verifierCiphertext String
+  verifierIv         String
+  verifierAuthTag    String
+  verifierKeyVersion Int       @default(1)
+  expiresAt          DateTime
+  usedAt             DateTime?
+  createdAt          DateTime  @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("google_business_oauth_states")
+}
+
+model GoogleBusinessLocation {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  connectionId    String   @db.Uuid
+  resourceName    String
+  title           String
+  address         String?
+  reviewProfileId String?  @db.Uuid
+  syncEnabled     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client     Client                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  connection GoogleBusinessConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  reviews    ExternalReview[]
+
+  @@unique([clientId, resourceName])
+  @@index([connectionId])
+  @@map("google_business_locations")
+}
+
+model ExternalReview {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  locationId       String    @db.Uuid
+  source           String    @default("google")
+  externalId       String
+  reviewerName     String?
+  rating           Int       @db.SmallInt
+  comment          String?
+  externalCreateAt DateTime
+  externalUpdateAt DateTime
+  replyComment     String?
+  replyUpdatedAt   DateTime?
+  importedAt       DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  client   Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  location GoogleBusinessLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, externalId])
+  @@index([clientId, externalCreateAt])
+  @@map("external_reviews")
 }
 

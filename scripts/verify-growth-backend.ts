@@ -61,6 +61,16 @@ import {
 } from "../src/lib/reputation/service";
 import { postAiReply } from "../src/lib/chat/service";
 import { getGrowthReport } from "../src/lib/growth/report";
+import { pkceChallenge } from "../src/lib/integrations/google-business/crypto";
+import {
+  completeGoogleBusinessConnect,
+  disconnectGoogleBusiness,
+  getGoogleBusinessSnapshot,
+  replyToGoogleReview,
+  startGoogleBusinessConnect,
+  syncGoogleReviews,
+  type FetchLike,
+} from "../src/lib/integrations/google-business/service";
 import { linkGoogleSources, listGoogleLinkedSites } from "../src/lib/analytics/service";
 
 const PHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
@@ -602,7 +612,119 @@ async function main(): Promise<void> {
         "database rejects malformed GA4 property ids",
       );
       pass("Google data sources link per website, tenant-scoped and format-checked");
+  
+    // ------------------------------------------------ Google Business Profile
+    const gbpEnv = {
+      GOOGLE_BUSINESS_PROFILE_ENABLED: "true",
+      GOOGLE_BUSINESS_PROFILE_CLIENT_ID: "qa-client-id.apps.googleusercontent.com",
+      GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET: "qa-client-secret",
+      GROWTH_TOKEN_ENCRYPTION_KEY_V1: Buffer.alloc(32, 9).toString("base64"),
+    };
+    const savedEnv = { ...process.env };
+    Object.assign(process.env, gbpEnv);
+    try {
+      let expectedChallenge = "";
+      const calls: Array<{ method: string; url: string; body: string }> = [];
+      const reviewsPages: Record<string, unknown> = {
+        "": {
+          reviews: [
+            { reviewId: "g1", reviewer: { displayName: "Marc" }, starRating: "TWO", comment: "Attente trop longue", createTime: "2026-10-01T10:00:00Z", updateTime: "2026-10-01T10:00:00Z" },
+            { reviewId: "g2", reviewer: { displayName: "Julie" }, starRating: "FIVE", comment: "Parfait", createTime: "2026-10-02T10:00:00Z", updateTime: "2026-10-02T10:00:00Z", reviewReply: { comment: "Merci Julie!", updateTime: "2026-10-02T12:00:00Z" } },
+          ],
+          nextPageToken: "p2",
+        },
+        p2: { reviews: [{ reviewId: "g3", starRating: "FOUR", createTime: "2026-10-03T10:00:00Z", updateTime: "2026-10-03T10:00:00Z" }] },
+      };
+      const fakeGoogle: FetchLike = async (input, init) => {
+        const url = new URL(input);
+        const body = typeof init?.body === "string" ? init.body : "";
+        calls.push({ method: init?.method ?? "GET", url: input, body });
+        const ok = (data: unknown) => new Response(JSON.stringify(data), { status: 200, headers: { "content-type": "application/json" } });
+        if (url.host === "oauth2.googleapis.com" && url.pathname === "/token") {
+          const form = new URLSearchParams(body);
+          if (form.get("grant_type") === "authorization_code") {
+            if (form.get("code") !== "good-code" || pkceChallenge(form.get("code_verifier") ?? "") !== expectedChallenge) return new Response("{}", { status: 400 });
+            return ok({ access_token: "at-1", refresh_token: "1//rt-secret-value", scope: "https://www.googleapis.com/auth/business.manage" });
+          }
+          return form.get("refresh_token") === "1//rt-secret-value" ? ok({ access_token: "at-2" }) : new Response("{}", { status: 400 });
+        }
+        if (url.host === "oauth2.googleapis.com" && url.pathname === "/revoke") return ok({});
+        if (url.host === "mybusinessaccountmanagement.googleapis.com") return ok({ accounts: [{ name: "accounts/111", accountName: "Garage" }] });
+        if (url.host === "mybusinessbusinessinformation.googleapis.com") return ok({ locations: [{ name: "locations/222", title: "Garage Verdun" }] });
+        if (url.host === "mybusiness.googleapis.com" && (init?.method ?? "GET") === "GET") return ok(reviewsPages[url.searchParams.get("pageToken") ?? ""] ?? {});
+        if (url.host === "mybusiness.googleapis.com" && init?.method === "PUT") return ok({ comment: JSON.parse(body).comment });
+        return new Response("{}", { status: 404 });
+      };
+
+      const staffProfileId = randomUUID();
+      const consentUrl = new URL(await startGoogleBusinessConnect({ clientId: b.id, profileId: staffProfileId, origin: "https://takatak.ca" }));
+      assert.equal(consentUrl.host, "accounts.google.com");
+      assert.equal(consentUrl.searchParams.get("scope"), "https://www.googleapis.com/auth/business.manage");
+      assert.equal(consentUrl.searchParams.get("access_type"), "offline");
+      assert.equal(consentUrl.searchParams.get("redirect_uri"), "https://takatak.ca/api/integrations/google-business/callback");
+      expectedChallenge = consentUrl.searchParams.get("code_challenge") ?? "";
+      const state = consentUrl.searchParams.get("state") ?? "";
+      assert.equal(await prisma.googleBusinessOAuthState.count({ where: { stateHash: state } }), 0, "raw state never stored");
+
+      const base = { state, code: "good-code", origin: "https://takatak.ca" };
+      assert.deepEqual(await completeGoogleBusinessConnect({ ...base, clientId: a.id, profileId: staffProfileId }, fakeGoogle), { ok: false, reason: "invalid_state" }, "other workspace rejected");
+      assert.deepEqual(await completeGoogleBusinessConnect({ ...base, clientId: b.id, profileId: randomUUID() }, fakeGoogle), { ok: false, reason: "invalid_state" }, "other user rejected");
+      const connected = await completeGoogleBusinessConnect({ ...base, clientId: b.id, profileId: staffProfileId }, fakeGoogle);
+      assert.deepEqual(connected, { ok: true, locations: 1 });
+      assert.deepEqual(await completeGoogleBusinessConnect({ ...base, clientId: b.id, profileId: staffProfileId }, fakeGoogle), { ok: false, reason: "expired_state" }, "state is single-use");
+      const connRow = await prisma.googleBusinessConnection.findUniqueOrThrow({ where: { clientId: b.id } });
+      assert.ok(!JSON.stringify(connRow).includes("rt-secret"), "refresh token stored encrypted only");
+      const expiredStart = new URL(await startGoogleBusinessConnect({ clientId: b.id, profileId: staffProfileId, origin: "https://takatak.ca" }));
+      await prisma.googleBusinessOAuthState.updateMany({ where: { clientId: b.id, usedAt: null }, data: { expiresAt: new Date(Date.now() - 1000) } });
+      assert.deepEqual(
+        await completeGoogleBusinessConnect({ state: expiredStart.searchParams.get("state")!, code: "good-code", clientId: b.id, profileId: staffProfileId, origin: "https://takatak.ca" }, fakeGoogle),
+        { ok: false, reason: "expired_state" },
+      );
+      pass("Google connect: PKCE + hashed single-use state bound to user and workspace; token encrypted");
+
+      await prisma.aiAgentRun.updateMany({ where: { status: { in: ["queued", "approved", "running", "executing"] } }, data: { status: "canceled" } });
+      const sync1 = await syncGoogleReviews(b.id, fakeGoogle);
+      assert.deepEqual(sync1, { ok: true, locations: 1, imported: 3, updated: 0, triggered: 1 });
+      const sync2 = await syncGoogleReviews(b.id, fakeGoogle);
+      assert.deepEqual(sync2, { ok: true, locations: 1, imported: 0, updated: 0, triggered: 0 }, "re-sync is idempotent");
+      assert.ok(calls.some((c) => c.url.includes("/v4/accounts/111/locations/222/reviews") && c.url.includes("pageToken=p2")), "pagination followed");
+      const gSnap = await getGoogleBusinessSnapshot(b.id);
+      assert.deepEqual(gSnap.stats, { total: 3, averageRating: 3.7, unanswered: 2 });
+      assert.equal((await getGoogleBusinessSnapshot(a.id)).stats.total, 0, "tenant A sees no Google reviews of B");
+      pass("Google reviews import across pages, idempotently; only the unanswered 1–3★ review triggers the responder");
+
+      const lowReview = await prisma.externalReview.findFirstOrThrow({ where: { clientId: b.id, externalId: "g1" } });
+      const gRun = await prisma.aiAgentRun.findFirstOrThrow({ where: { clientId: b.id, agentKey: "review_responder", input: { path: ["reviewResponseId"], equals: lowReview.id } } });
+      assert.equal((gRun.input as Record<string, unknown>).source, "google");
+      const claimG = await claimNextAgentRun();
+      assert.equal(claimG?.runId, gRun.id);
+      await reportAgentRun(gRun.id, { succeeded: true, output: { reply: "Désolé pour l'attente, Marc." } });
+      assert.equal((await getGoogleBusinessSnapshot(b.id)).reviews.find((r) => r.id === lowReview.id)?.aiDraft?.text, "Désolé pour l'attente, Marc.");
+      assert.equal((await authorizeAgentRun(gRun.id, "review_responder")).ok, false, "cannot publish before approval");
+      await decideAgentRun(b.id, gRun.id, true, null);
+      const execG = await claimNextAgentRun();
+      assert.equal(execG?.phase, "execute");
+      const gAuth = await authorizeAgentRun(gRun.id, "review_responder");
+      assert.ok(gAuth.ok && gAuth.run.canAct);
+      assert.deepEqual(await replyToGoogleReview(a.id, lowReview.id, "spoof", fakeGoogle), { ok: false, reason: "not_found" }, "tenant A cannot reply on B's Google review");
+      assert.deepEqual(await replyToGoogleReview(b.id, lowReview.id, "Désolé pour l'attente, Marc.", fakeGoogle), { ok: true });
+      const put = calls.find((c) => c.method === "PUT");
+      assert.ok(put && put.url === "https://mybusiness.googleapis.com/v4/accounts/111/locations/222/reviews/g1/reply" && JSON.parse(put.body).comment === "Désolé pour l'attente, Marc.");
+      assert.equal((await prisma.externalReview.findUniqueOrThrow({ where: { id: lowReview.id } })).replyComment, "Désolé pour l'attente, Marc.");
+      await reportAgentRun(gRun.id, { succeeded: true });
+      pass("AI reply is drafted, approved, then published to the right Google review; tenant-locked");
+
+      assert.equal(await disconnectGoogleBusiness(b.id, fakeGoogle), true);
+      assert.ok(calls.some((c) => c.url.startsWith("https://oauth2.googleapis.com/revoke")), "token revoked at Google");
+      const revoked = await prisma.googleBusinessConnection.findUniqueOrThrow({ where: { clientId: b.id } });
+      assert.equal(revoked.status, "revoked");
+      assert.equal(revoked.tokenCiphertext, "revoked", "local token destroyed");
+      assert.deepEqual(await syncGoogleReviews(b.id, fakeGoogle), { ok: false, reason: "not_connected", locations: 0, imported: 0, updated: 0, triggered: 0 });
+      pass("disconnect revokes at Google and destroys the stored token");
     } finally {
+      process.env = savedEnv;
+    }
+  } finally {
       await prisma.client.delete({ where: { id: c.id } });
     }
   } finally {

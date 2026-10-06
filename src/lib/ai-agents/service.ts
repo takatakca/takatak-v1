@@ -325,7 +325,7 @@ export async function scheduleDueAgentRuns(now = new Date()): Promise<{ checked:
 /** Event trigger: a new 1–3★ rating asks the Review Responder for a draft reply. */
 export async function triggerLowRatingResponder(
   clientId: string,
-  review: { responseId: string; rating: number; feedback: string | null; businessName: string },
+  review: { responseId: string; rating: number; feedback: string | null; businessName: string; source?: "takatak" | "google" },
 ): Promise<boolean> {
   if (review.rating > 3) return false;
   const result = await requestAgentRun(
@@ -338,6 +338,7 @@ export async function triggerLowRatingResponder(
         rating: review.rating,
         feedback: (review.feedback ?? "").slice(0, 2000),
         businessName: review.businessName.slice(0, 80),
+        ...(review.source === "google" ? { source: "google" } : {}),
       },
     },
     null,
