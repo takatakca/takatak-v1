@@ -1,9 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
+import { cancelAgentRun, decideAgentRun, requestAgentRun, saveAgentSetting } from "@/lib/ai-agents/service";
 import { grantCredits } from "@/lib/ai-credits/ledger";
+import { aiCreditsCheckoutEnabled, startCreditCheckout } from "@/lib/billing/ai-credits/stripe";
+import { publicAppOrigin } from "@/lib/growth/public-origin";
 import { getServerAccessContext } from "@/lib/security/access-context";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 export type GrantState = { ok: null } | { ok: true; message: string } | { ok: false; error: string };
 
@@ -46,4 +51,87 @@ export async function grantCreditsAction(_prev: GrantState, formData: FormData):
     console.error("[ai-credits] grant failed");
     return { ok: false, error: "The ledger is unavailable. Try again." };
   }
+}
+
+/** Workspace billing managers buy a credit pack through Stripe Checkout. */
+export async function buyCreditsAction(formData: FormData): Promise<void> {
+  const { access } = await getServerAccessContext();
+  if (access.mode !== "client_scoped" || !hasEffectivePermission(access, "manage_settings") || !aiCreditsCheckoutEnabled()) {
+    redirect("/dashboard/growth/ai-engine?credits=unavailable");
+  }
+  let url: string;
+  try {
+    url = await startCreditCheckout({
+      clientId: access.activeClientId,
+      packKey: String(formData.get("packKey") ?? ""),
+      origin: await publicAppOrigin(),
+    });
+  } catch {
+    console.error("[ai-credits] checkout failed");
+    redirect("/dashboard/growth/ai-engine?credits=error");
+  }
+  redirect(url);
+}
+
+const AGENT_PATH = "/dashboard/growth/ai-engine";
+
+async function scoped(permission: "manage_settings" | "create_content" | "approve_content") {
+  const { access } = await getServerAccessContext();
+  if (access.mode !== "client_scoped" || !hasEffectivePermission(access, permission)) return null;
+  return access;
+}
+
+export async function saveAgentSettingAction(formData: FormData): Promise<void> {
+  const access = await scoped("manage_settings");
+  if (!access) return;
+  await saveAgentSetting(access.activeClientId, String(formData.get("agentKey") ?? ""), {
+    enabled: formData.get("enabled") === "on",
+    requireApproval: formData.get("requireApproval") === "on",
+    instructions: String(formData.get("instructions") ?? ""),
+  });
+  revalidatePath(AGENT_PATH);
+}
+
+export type RunRequestState = { ok: null } | { ok: true; message: string } | { ok: false; error: string };
+
+export async function requestAgentRunAction(_prev: RunRequestState, formData: FormData): Promise<RunRequestState> {
+  const access = await scoped("create_content");
+  if (!access) return { ok: false, error: "You do not have permission to start agents." };
+  try {
+    const result = await requestAgentRun(
+      access.activeClientId,
+      String(formData.get("agentKey") ?? ""),
+      { trigger: "manual", brief: String(formData.get("brief") ?? "") },
+      access.profileId,
+    );
+    if (!result.ok) {
+      const messages = {
+        unknown_agent: "Unknown agent.",
+        agent_disabled: "Turn this agent on first.",
+        already_pending: "This agent already has a run in progress.",
+      } as const;
+      return { ok: false, error: messages[result.error] };
+    }
+  } catch {
+    console.error("[ai-agents] request failed");
+    return { ok: false, error: "The run could not be queued. Try again." };
+  }
+  revalidatePath(AGENT_PATH);
+  return { ok: true, message: "Queued. The AI Gateway picks it up on its next pass." };
+}
+
+export async function decideAgentRunAction(formData: FormData): Promise<void> {
+  const access = await scoped("approve_content");
+  const runId = String(formData.get("runId") ?? "");
+  if (!access || !UUID.test(runId)) return;
+  await decideAgentRun(access.activeClientId, runId, formData.get("decision") === "approve", access.profileId);
+  revalidatePath(AGENT_PATH);
+}
+
+export async function cancelAgentRunAction(formData: FormData): Promise<void> {
+  const access = await scoped("create_content");
+  const runId = String(formData.get("runId") ?? "");
+  if (!access || !UUID.test(runId)) return;
+  await cancelAgentRun(access.activeClientId, runId);
+  revalidatePath(AGENT_PATH);
 }

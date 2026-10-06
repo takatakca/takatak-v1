@@ -6,6 +6,7 @@ import { ReputationWorkspace } from "@/components/reputation/reputation-workspac
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { getConnectorStatuses } from "@/lib/growth/status";
+import { growthSmsConfigured, growthWhatsAppConfigured } from "@/lib/messaging/delivery";
 import { getReputationSnapshot, type ReputationSnapshot } from "@/lib/reputation/service";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
@@ -57,7 +58,7 @@ export default async function ReputationPage() {
       />
 
       {snapshot ? (
-        <ReputationWorkspace data={snapshot} canManage={canManage} />
+        <ReputationWorkspace data={snapshot} canManage={canManage} smsReady={growthSmsConfigured()} whatsappReady={growthWhatsAppConfigured()} />
       ) : (
         <HonestyNote>
           {unavailable

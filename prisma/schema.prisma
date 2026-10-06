@@ -438,6 +438,8 @@ model Client {
   chatWidgets               ChatWidget[]
   chatConversations         ChatConversation[]
   chatMessages              ChatMessage[]
+  aiAgentSettings           AiAgentSetting[]
+  aiAgentRuns               AiAgentRun[]
   @@index([status])
   @@index([createdAt])
   @@index([assignedProfileId])
@@ -4131,6 +4133,10 @@ model ReviewRequest {
   expiresAt          DateTime
   openedAt           DateTime?
   ratedAt            DateTime?
+  sentAt             DateTime?
+  deliveryStatus     String?
+  providerMessageId  String?
+  recipientMasked    String?
   createdByProfileId String?             @db.Uuid
   createdAt          DateTime            @default(now())
 
@@ -4356,5 +4362,64 @@ model ChatMessage {
   @@index([conversationId, createdAt])
   @@index([clientId, createdAt])
   @@map("chat_messages")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — AI agent workforce. The TAKATAK AI Gateway claims runs over a
+// bearer-authenticated API; anything that publishes or spends waits for a
+// human approval in the dashboard. Server-side Prisma only; RLS enabled.
+// ---------------------------------------------------------------------------
+
+enum AiAgentRunStatus {
+  queued
+  running
+  awaiting_approval
+  approved
+  executing
+  completed
+  rejected
+  failed
+  canceled
+}
+
+model AiAgentSetting {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  agentKey        String
+  enabled         Boolean  @default(false)
+  requireApproval Boolean  @default(true)
+  instructions    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, agentKey])
+  @@map("ai_agent_settings")
+}
+
+model AiAgentRun {
+  id                   String           @id @default(uuid()) @db.Uuid
+  clientId             String           @db.Uuid
+  agentKey             String
+  status               AiAgentRunStatus @default(queued)
+  trigger              String           @default("manual")
+  input                Json?
+  output               Json?
+  creditsDebited       Int              @default(0)
+  error                String?
+  requestedByProfileId String?          @db.Uuid
+  decidedByProfileId   String?          @db.Uuid
+  claimedAt            DateTime?
+  decidedAt            DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@index([status, createdAt])
+  @@map("ai_agent_runs")
 }
 

@@ -7,6 +7,7 @@ import type { LedgerResult } from "./ledger";
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function json(body: unknown, status = 200): NextResponse {
+  if (status === 204) return new NextResponse(null, { status, headers: { "Cache-Control": "no-store" } });
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 

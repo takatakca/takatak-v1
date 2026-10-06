@@ -3,12 +3,15 @@
 import { revalidatePath } from "next/cache";
 
 import { publicAppOrigin } from "@/lib/growth/public-origin";
+import { growthSmsConfigured, growthWhatsAppConfigured, sendGrowthSms, sendWhatsAppReviewTemplate } from "@/lib/messaging/delivery";
+import { maskPhone, toE164 } from "@/lib/messaging/phone";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import type { Permission } from "@/lib/security/roles";
 import {
   createReviewProfile,
   createReviewRequest,
+  recordRequestDelivery,
   setReviewProfileActive,
   updateFeedbackStatus,
 } from "@/lib/reputation/service";
@@ -41,7 +44,10 @@ export async function createReviewProfileAction(_prev: ProfileFormState, formDat
   return { ok: true, message: "Review page created." };
 }
 
-export type RequestLinkState = { ok: null } | { ok: true; url: string; recipientName: string | null } | { ok: false; error: string };
+export type RequestLinkState =
+  | { ok: null }
+  | { ok: true; url: string; recipientName: string | null; delivery: null | { sent: true; to: string } | { sent: false; reason: string } }
+  | { ok: false; error: string };
 
 export async function createReviewRequestAction(_prev: RequestLinkState, formData: FormData): Promise<RequestLinkState> {
   const access = await scopedAccess("manage_reputation");
@@ -50,17 +56,35 @@ export async function createReviewRequestAction(_prev: RequestLinkState, formDat
   if (!UUID.test(profileId)) return { ok: false, error: "Choose a review page." };
   const recipientRaw = String(formData.get("recipientName") ?? "").trim().replace(/\s+/g, " ");
   const recipientName = recipientRaw ? recipientRaw.slice(0, 40) : null;
+  const channel = parseReviewChannel(formData.get("channel"));
+  const sendNow = formData.get("sendNow") === "on" && (channel === "sms" || channel === "whatsapp");
+  const phone = sendNow ? toE164(String(formData.get("phone") ?? "")) : null;
+  if (sendNow && !phone) return { ok: false, error: "Enter the customer's mobile number (10 digits, or with country code)." };
+  if (sendNow && channel === "sms" && !growthSmsConfigured()) return { ok: false, error: "Automatic SMS is not configured yet." };
+  if (sendNow && channel === "whatsapp" && !growthWhatsAppConfigured()) return { ok: false, error: "Automatic WhatsApp is not configured yet." };
   try {
-    const created = await createReviewRequest(
-      access.activeClientId,
-      profileId,
-      { channel: parseReviewChannel(formData.get("channel")), recipientName },
-      access.profileId,
-    );
+    const created = await createReviewRequest(access.activeClientId, profileId, { channel, recipientName }, access.profileId);
     if (!created) return { ok: false, error: "That review page is paused or not in this workspace." };
     const url = `${await publicAppOrigin()}/r/${created.publicSlug}?t=${created.token}`;
+    let delivery: Extract<RequestLinkState, { ok: true }>["delivery"] = null;
+    if (sendNow && phone) {
+      const greeting = recipientName ? `Bonjour ${recipientName}` : "Bonjour";
+      const result =
+        channel === "sms"
+          ? await sendGrowthSms(
+              phone,
+              `${greeting}, merci d'avoir choisi ${created.profileName}! Votre avis compte (30 s) : ${url}\nRépondez STOP pour ne plus recevoir de messages.`,
+            )
+          : await sendWhatsAppReviewTemplate(phone, { name: recipientName ?? "", business: created.profileName, link: url });
+      await recordRequestDelivery(access.activeClientId, created.requestId, {
+        status: result.ok ? "sent" : "failed",
+        providerMessageId: result.ok ? result.providerMessageId : null,
+        recipientMasked: maskPhone(phone),
+      });
+      delivery = result.ok ? { sent: true, to: maskPhone(phone) } : { sent: false, reason: result.reason };
+    }
     revalidatePath(REVIEWS_PATH);
-    return { ok: true, url, recipientName };
+    return { ok: true, url, recipientName, delivery };
   } catch {
     console.error("[reputation] create request failed");
     return { ok: false, error: "The request link could not be created. Try again." };

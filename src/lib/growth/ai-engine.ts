@@ -83,6 +83,8 @@ export interface AiAgentDef {
   triggers: string[];
   connectorKeys: string[];
   creditActionKeys: string[];
+  /** Agents that can spend money can never skip human approval. */
+  alwaysRequiresApproval?: boolean;
 }
 
 /** Autopilot agents the gateway can run on a client's behalf, with approval gates. */
@@ -134,6 +136,7 @@ export const AI_AGENTS: AiAgentDef[] = [
     triggers: ["Daily schedule", "CPL above target"],
     connectorKeys: ["google_ads", "meta_ads", "takatak_ads"],
     creditActionKeys: ["ad_copy_set"],
+    alwaysRequiresApproval: true,
   },
   {
     key: "report_writer",

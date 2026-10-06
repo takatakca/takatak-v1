@@ -4,8 +4,9 @@ Status: **Phases 1–3 built:**
 - **Phase 1:** catalog, SEO audit, request builder.
 - **Phase 2:** reputation backend, AI credit ledger.
 - **Phase 3:** analytics, audiences, web chat.
+- **Phase 4:** SMS/WhatsApp delivery, Stripe credit checkout, AI agent run queue.
 
-The Phase 2 and Phase 3 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
+The Phase 2–4 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
 
 ## Scope rule
 
@@ -146,11 +147,63 @@ Staff inbox:
 - Reply, close or reopen a conversation.
 - **Convert to lead** creates one `Lead` in the existing Leads module, exactly once.
 
+## Phase 4: Automatic delivery, card checkout for credits, AI agent workforce
+
+Migration: `prisma/migrations/20261006180000_growth_agents_and_delivery`. It adds:
+- **New columns on `review_requests`:** `sentAt`, `deliveryStatus`, `providerMessageId` and `recipientMasked`.
+- **New tables:** `ai_agent_settings` and `ai_agent_runs`.
+- **Database checks and access:** RLS on both tables, browser grants revoked, and `ai_agent_runs` added to the advisor's sensitive-table list.
+
+It is **not** in the approved deploy lists yet.
+
+### Automatic review requests (SMS / WhatsApp)
+
+On `/dashboard/growth/reviews`, a "Send it for me" option appears only when the channel is fully configured. The customer's number is used once to send and only a masked version (`•••0123`) is stored.
+
+| Channel | Turns on when |
+|---|---|
+| SMS (Twilio) | `GROWTH_SMS_ENABLED=true`, plus `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN`, plus either `TWILIO_MESSAGING_SERVICE_SID` or `TWILIO_SMS_FROM` |
+| WhatsApp Cloud | `GROWTH_WHATSAPP_ENABLED=true`, plus `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_REVIEW_TEMPLATE` (an approved template with {{1}} name, {{2}} business, {{3}} link) and `WHATSAPP_GRAPH_VERSION` (e.g. `v21.0`, set explicitly and never guessed). `WHATSAPP_TEMPLATE_LANGUAGE` is optional and defaults to `fr_CA`. |
+
+SMS messages identify the business and include "Répondez STOP" (CASL). Confirm with counsel that review requests fit implied consent for each client's customer base.
+
+### Buying AI credits by card (Stripe Checkout)
+
+To turn it on, set `AI_CREDITS_CHECKOUT_ENABLED=true` and `STRIPE_SECRET_KEY`. Do this only after confirming the pack prices in `src/lib/growth/ai-engine.ts`.
+
+- Clients who have `manage_settings` see **Buy** buttons on `/dashboard/growth/ai-engine`.
+- Webhook: `POST /api/billing/ai-credits/webhook`, signed with `STRIPE_AI_CREDITS_WEBHOOK_SECRET`. In Stripe, subscribe it to `checkout.session.completed` and `checkout.session.async_payment_succeeded`.
+- Credits are granted only when the mode, payment status, currency (CAD), amount, pack, credit count and client all match the server catalog (`decideCreditGrant`).
+- The grant uses `stripe:<sessionId>` as its idempotency key, so Stripe retries never double-credit.
+
+### AI agent workforce (approval-gated)
+
+Clients turn on agents, set standing instructions, press **Run now**, and approve or reject results on `/dashboard/growth/ai-engine`. The Ads Optimizer always requires approval.
+
+Gateway API, called by your AI backend with bearer `TAKATAK_AI_GATEWAY_TOKEN`:
+
+| Call | Result |
+|---|---|
+| `POST /api/ai/agents/claim` | 200 `{ run: { runId, clientId, agentKey, phase, input, output, instructions, requireApproval } }`, or 204 when there's nothing to do |
+| `POST /api/ai/agents/runs/<runId>/report` | Body `{ succeeded, output?: { summary, preview, ... }, creditsDebited?, error? }` |
+
+Run lifecycle:
+1. `queued` → `running`, when the gateway claims it (phase `generate`).
+2. → `awaiting_approval`, or `completed` if the client turned approval off.
+3. → `approved`, when a human approves.
+4. → `executing` (phase `execute`).
+5. → `completed`.
+
+Other rules:
+- **Locking:** claims use `FOR UPDATE SKIP LOCKED`, so parallel workers never double-claim.
+- **Crash recovery:** a run claimed for more than 30 minutes is re-queued.
+- **Credits:** charge through `/api/ai/credits/debit` with the run ID as part of the idempotency key, then report the total in `creditsDebited`.
+
 ## Next phase
 
-1. Twilio/WhatsApp Cloud delivery for review requests and chat, plus Google Business Profile review import (each gated on its credentials).
-2. Stripe checkout for credit packs: the webhook calls `grantCredits` with `reason: "purchase"`.
-3. An AI agent run queue, so the gateway can pick up approved agent tasks and debit credits per run.
+1. Google Business Profile review import and AI reply posting (needs Google API access approval).
+2. Syncing retargeting audiences to Meta and Google Ads (needs ad-account OAuth).
+3. Scheduled triggers for agents (weekly autopilot) through the existing cron routes.
 
 ## QA
 
@@ -160,6 +213,7 @@ Staff inbox:
   - credit idempotency, no overdraft under 8 concurrent debits, and single refunds;
   - analytics origin locking, bot and GPC skipping, no stored IPs, daily-rotating visitor IDs, accurate summaries and audience reach;
   - chat domain locking, hashed tokens, live staff replies, closed threads and one-time lead conversion;
+  - masked delivery records, card purchases credited exactly once, and the agent queue (no double-claims under 5 parallel workers, the approval gate, crash recovery, cancel);
   - tenant isolation for all of the above, and the database constraints.
 
 Both run in CI.

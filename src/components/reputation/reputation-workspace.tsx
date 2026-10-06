@@ -18,7 +18,17 @@ function Stars({ rating }: { rating: number }) {
 
 const STATUS_TONE = { new: "warning", acknowledged: "accent", resolved: "success" } as const;
 
-export function ReputationWorkspace({ data, canManage }: { data: ReputationSnapshot; canManage: boolean }) {
+export function ReputationWorkspace({
+  data,
+  canManage,
+  smsReady = false,
+  whatsappReady = false,
+}: {
+  data: ReputationSnapshot;
+  canManage: boolean;
+  smsReady?: boolean;
+  whatsappReady?: boolean;
+}) {
   const { stats } = data;
   const openRate = stats.requests ? Math.round((stats.opened / stats.requests) * 100) : null;
   const activeProfiles = data.profiles.filter((p) => p.active);
@@ -56,7 +66,7 @@ export function ReputationWorkspace({ data, canManage }: { data: ReputationSnaps
         <Card>
           <CardHeader title="Send a review request" subtitle="Creates a one-time tracked link, then send it from your own phone or email." />
           <CardBody>
-            <RequestLinkForm profiles={activeProfiles.map((p) => ({ id: p.id, name: p.name }))} />
+            <RequestLinkForm profiles={activeProfiles.map((p) => ({ id: p.id, name: p.name }))} smsReady={smsReady} whatsappReady={whatsappReady} />
           </CardBody>
         </Card>
       ) : null}

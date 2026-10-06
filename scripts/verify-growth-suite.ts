@@ -18,6 +18,9 @@ import {
   parseAudienceRule,
   parseCollectPayload,
 } from "../src/lib/analytics/parse";
+import { decideCreditGrant } from "../src/lib/billing/ai-credits/policy";
+import { growthSmsConfigured, growthWhatsAppConfigured } from "../src/lib/messaging/delivery";
+import { maskPhone, toE164 } from "../src/lib/messaging/phone";
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
 import { normalizeAuditUrl } from "../src/lib/seo/site-audit";
 
@@ -198,8 +201,61 @@ function verifyReputationValidation(): void {
   pass("review inputs validated; contact kept only with consent");
 }
 
+function verifyCreditPurchasePolicy(): void {
+  const clientId = "11111111-2222-4333-8444-555555555555";
+  const good = {
+    id: "cs_test_1",
+    mode: "payment",
+    payment_status: "paid",
+    currency: "cad",
+    amount_total: 5900,
+    client_reference_id: clientId,
+    metadata: { billingDomain: "ai_credits", clientId, packKey: "growth", credits: "500" },
+  };
+  assert.deepEqual(decideCreditGrant(good), { grant: true, clientId, credits: 500, packKey: "growth", idempotencyKey: "stripe:cs_test_1" });
+  const cases: Array<[string, Record<string, unknown>]> = [
+    ["not_paid", { payment_status: "unpaid" }],
+    ["amount_mismatch", { amount_total: 100 }],
+    ["currency_mismatch", { currency: "usd" }],
+    ["client_mismatch", { client_reference_id: "99999999-2222-4333-8444-555555555555" }],
+    ["not_one_time_payment", { mode: "subscription" }],
+  ];
+  for (const [reason, patch] of cases) assert.deepEqual(decideCreditGrant({ ...good, ...patch }), { grant: false, reason });
+  assert.deepEqual(decideCreditGrant({ ...good, metadata: { ...good.metadata, credits: "5000" } }), { grant: false, reason: "credits_mismatch" });
+  assert.deepEqual(decideCreditGrant({ ...good, metadata: { ...good.metadata, packKey: "free" } }), { grant: false, reason: "unknown_pack" });
+  assert.deepEqual(decideCreditGrant({ ...good, metadata: { ...good.metadata, billingDomain: "hockey" } }), { grant: false, reason: "not_ai_credits" });
+  pass("card purchases grant credits only when amount, currency, pack and client all match");
+}
+
+function verifyMessagingGates(): void {
+  assert.equal(toE164("(514) 555-0123"), "+15145550123");
+  assert.equal(toE164("+33 6 12 34 56 78"), "+33612345678");
+  assert.equal(toE164("555-0123"), null);
+  assert.equal(maskPhone("+15145550123"), "•••0123");
+  const saved = { ...process.env };
+  try {
+    process.env.TWILIO_ACCOUNT_SID = "ACxxxxxxxx";
+    process.env.TWILIO_AUTH_TOKEN = "token";
+    process.env.TWILIO_MESSAGING_SERVICE_SID = "MGxxxx";
+    delete process.env.GROWTH_SMS_ENABLED;
+    assert.equal(growthSmsConfigured(), false, "SMS stays off without the explicit flag");
+    process.env.GROWTH_SMS_ENABLED = "true";
+    assert.equal(growthSmsConfigured(), true);
+    Object.assign(process.env, { GROWTH_WHATSAPP_ENABLED: "true", WHATSAPP_PHONE_NUMBER_ID: "1", WHATSAPP_ACCESS_TOKEN: "t", WHATSAPP_REVIEW_TEMPLATE: "review" });
+    delete process.env.WHATSAPP_GRAPH_VERSION;
+    assert.equal(growthWhatsAppConfigured(), false, "WhatsApp needs an explicit Graph API version");
+    process.env.WHATSAPP_GRAPH_VERSION = "latest";
+    assert.equal(growthWhatsAppConfigured(), false, "version is never guessed");
+  } finally {
+    process.env = saved;
+  }
+  pass("messaging channels stay off until flagged and fully configured; phones normalize and mask");
+}
+
 verifyCatalog();
 verifyHonestStatuses();
+verifyCreditPurchasePolicy();
+verifyMessagingGates();
 verifyAuditUrlGuard();
 verifyAnalyticsParsing();
 verifyReputationValidation();

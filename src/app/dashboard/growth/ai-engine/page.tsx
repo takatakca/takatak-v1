@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
+import { AgentsPanel } from "@/components/ai-agents/agents-panel";
 import { GrantCreditsForm } from "@/components/growth/grant-credits-form";
 import { GrowthHeader, GrowthKpi, HonestyNote } from "@/components/growth/growth-header";
 import { Badge } from "@/components/ui/badge";
@@ -8,19 +9,40 @@ import { requireGrowthAccess } from "@/lib/growth/access";
 import { AI_AGENTS, AI_CREDIT_ACTIONS, AI_CREDIT_PACKS, AI_GATEWAY_ENV, AI_PROVIDERS } from "@/lib/growth/ai-engine";
 import { connectorByKey } from "@/lib/growth/connectors";
 import { getAiEngineStatus } from "@/lib/growth/status";
+import { listAgentRuns, listAgentSettings, type AgentSettingView, type RunView } from "@/lib/ai-agents/service";
 import { getCreditSnapshot, listClientBalances, type CreditSnapshot } from "@/lib/ai-credits/ledger";
+import { aiCreditsCheckoutEnabled } from "@/lib/billing/ai-credits/stripe";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
+import { buyCreditsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 const cad = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" });
 
-export default async function AiEnginePage() {
+const CHECKOUT_NOTICES: Record<string, { tone: "ok" | "warn"; text: string }> = {
+  success: { tone: "ok", text: "Payment received. Credits appear here as soon as Stripe confirms it (usually a few seconds)." },
+  canceled: { tone: "warn", text: "Checkout was canceled. No charge was made." },
+  error: { tone: "warn", text: "Checkout could not start. Please try again." },
+  unavailable: { tone: "warn", text: "Buying credits is not available for this account yet." },
+};
+
+export default async function AiEnginePage({ searchParams }: { searchParams: Promise<{ credits?: string }> }) {
   const { access, showSetupDetails } = await requireGrowthAccess("/dashboard/growth/ai-engine");
+  const notice = CHECKOUT_NOTICES[(await searchParams).credits ?? ""] ?? null;
+  const canBuy = aiCreditsCheckoutEnabled() && access.mode === "client_scoped" && hasEffectivePermission(access, "manage_settings");
   let credits: CreditSnapshot | null = null;
   let adminClients: Array<{ id: string; name: string; balance: number }> | null = null;
   let ledgerUnavailable = false;
+  let agentSettings: AgentSettingView[] | null = null;
+  let agentRuns: RunView[] = [];
   try {
-    if (access.mode === "client_scoped") credits = await getCreditSnapshot(access.activeClientId);
+    if (access.mode === "client_scoped") {
+      [credits, agentSettings, agentRuns] = await Promise.all([
+        getCreditSnapshot(access.activeClientId),
+        listAgentSettings(access.activeClientId),
+        listAgentRuns(access.activeClientId),
+      ]);
+    }
     if (access.mode === "platform_admin") adminClients = await listClientBalances();
   } catch {
     ledgerUnavailable = true;
@@ -47,6 +69,15 @@ export default async function AiEnginePage() {
         <GrowthKpi label="Autopilot agents" value={String(AI_AGENTS.length)} hint="Approval-gated" />
         <GrowthKpi label="Credit actions" value={String(AI_CREDIT_ACTIONS.length)} hint="Priced per task" />
       </section>
+
+      {notice ? (
+        <div
+          role="status"
+          className={`rounded-xl border px-4 py-3 text-sm ${notice.tone === "ok" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-amber-200 bg-amber-50 text-amber-900"}`}
+        >
+          {notice.text}
+        </div>
+      ) : null}
 
       {credits ? (
         <Card>
@@ -134,7 +165,17 @@ export default async function AiEnginePage() {
         </CardBody>
       </Card>
 
-      <Card>
+      {agentSettings ? (
+        <AgentsPanel
+          settings={agentSettings}
+          runs={agentRuns}
+          canConfigure={access.mode === "client_scoped" && hasEffectivePermission(access, "manage_settings")}
+          canRun={access.mode === "client_scoped" && hasEffectivePermission(access, "create_content")}
+          canApprove={access.mode === "client_scoped" && hasEffectivePermission(access, "approve_content")}
+          gatewayConfigured={status.gateway.configured}
+        />
+      ) : (
+        <Card>
         <CardHeader title="Autopilot agents" subtitle="Agents work for the client around the clock. Publishing and spending always need approval." />
         <CardBody className="grid gap-3 lg:grid-cols-2">
           {AI_AGENTS.map((agent) => (
@@ -152,6 +193,7 @@ export default async function AiEnginePage() {
           ))}
         </CardBody>
       </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -178,7 +220,7 @@ export default async function AiEnginePage() {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Credit packs" subtitle="Draft pricing in CAD. Checkout is not enabled yet." />
+          <CardHeader title="Credit packs" subtitle={canBuy ? "Secure checkout by Stripe. Credits are added automatically after payment." : "Pricing in CAD. Card checkout turns on once prices are confirmed."} />
           <CardBody className="grid grid-cols-2 gap-3">
             {AI_CREDIT_PACKS.map((pack) => (
               <div key={pack.key} className="rounded-xl border border-slate-200 p-3">
@@ -186,6 +228,12 @@ export default async function AiEnginePage() {
                 <p className="mt-1 text-lg font-bold text-slate-950">{pack.credits.toLocaleString("en-CA")} credits</p>
                 <p className="text-sm text-slate-700">{cad.format(pack.priceCad)}</p>
                 <p className="text-[11px] text-slate-400">{cad.format(pack.priceCad / pack.credits)} / credit</p>
+                {canBuy ? (
+                  <form action={buyCreditsAction} className="mt-2">
+                    <input type="hidden" name="packKey" value={pack.key} />
+                    <button className="w-full rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">Buy</button>
+                  </form>
+                ) : null}
               </div>
             ))}
           </CardBody>

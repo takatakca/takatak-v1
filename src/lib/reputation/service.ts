@@ -199,15 +199,15 @@ export async function createReviewRequest(
   profileId: string,
   input: { channel: ReviewChannelKey; recipientName: string | null },
   actorProfileId: string | null,
-): Promise<{ token: string; publicSlug: string } | null> {
+): Promise<{ token: string; publicSlug: string; requestId: string; profileName: string } | null> {
   const prisma = requirePrisma();
   const profile = await prisma.reviewProfile.findFirst({
     where: { id: profileId, clientId, active: true },
-    select: { id: true, publicSlug: true },
+    select: { id: true, publicSlug: true, name: true },
   });
   if (!profile) return null;
   const { token, tokenHash } = newRequestToken();
-  await prisma.reviewRequest.create({
+  const request = await prisma.reviewRequest.create({
     data: {
       clientId,
       profileId: profile.id,
@@ -217,8 +217,26 @@ export async function createReviewRequest(
       expiresAt: new Date(Date.now() + REQUEST_TTL_DAYS * 86_400_000),
       createdByProfileId: actorProfileId,
     },
+    select: { id: true },
   });
-  return { token, publicSlug: profile.publicSlug };
+  return { token, publicSlug: profile.publicSlug, requestId: request.id, profileName: profile.name };
+}
+
+/** Records the outcome of an automatic send. Only a masked recipient is kept. */
+export async function recordRequestDelivery(
+  clientId: string,
+  requestId: string,
+  delivery: { status: "sent" | "failed"; providerMessageId: string | null; recipientMasked: string },
+): Promise<void> {
+  await requirePrisma().reviewRequest.updateMany({
+    where: { id: requestId, clientId },
+    data: {
+      sentAt: delivery.status === "sent" ? new Date() : null,
+      deliveryStatus: delivery.status,
+      providerMessageId: delivery.providerMessageId,
+      recipientMasked: delivery.recipientMasked,
+    },
+  });
 }
 
 export async function updateFeedbackStatus(

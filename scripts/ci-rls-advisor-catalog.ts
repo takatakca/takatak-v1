@@ -38,6 +38,7 @@ const SECRET_TABLES = [
   "analytics_events",
   "chat_conversations",
   "chat_messages",
+  "ai_agent_runs",
   "_prisma_migrations",
 ];
 

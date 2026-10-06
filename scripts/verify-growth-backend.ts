@@ -40,6 +40,19 @@ import {
   visitorSend,
 } from "../src/lib/chat/service";
 
+import {
+  cancelAgentRun,
+  claimNextAgentRun,
+  decideAgentRun,
+  listAgentRuns,
+  listAgentSettings,
+  reportAgentRun,
+  requestAgentRun,
+  saveAgentSetting,
+} from "../src/lib/ai-agents/service";
+import { applyAiCreditsStripeEvent } from "../src/lib/billing/ai-credits/stripe";
+import { recordRequestDelivery } from "../src/lib/reputation/service";
+
 const PHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
 function hdrs(origin: string | null, ip = "203.0.113.7", ua = PHONE_UA, extra: Record<string, string> = {}): Headers {
   const h = new Headers({ "user-agent": ua, "x-forwarded-for": ip, ...extra });
@@ -297,6 +310,96 @@ async function main(): Promise<void> {
       "database rejects empty chat messages",
     );
     pass("database check constraint rejects empty messages");
+
+    // ------------------------------------------------------- delivery tracking
+    const reqForDelivery = await createReviewRequest(a.id, (await createReviewProfile(a.id, profileInput.value)).id, { channel: "sms", recipientName: "Ana" }, null);
+    assert.ok(reqForDelivery && reqForDelivery.requestId);
+    await recordRequestDelivery(b.id, reqForDelivery.requestId, { status: "sent", providerMessageId: "SMx", recipientMasked: "•••9999" });
+    await recordRequestDelivery(a.id, reqForDelivery.requestId, { status: "sent", providerMessageId: "SM123", recipientMasked: "•••0123" });
+    const delivered = await prisma.reviewRequest.findUniqueOrThrow({ where: { id: reqForDelivery.requestId } });
+    assert.equal(delivered.deliveryStatus, "sent");
+    assert.equal(delivered.recipientMasked, "•••0123", "tenant B could not overwrite; only masked digits stored");
+    assert.ok(delivered.sentAt);
+    pass("automatic sends record a masked recipient and provider id, tenant-scoped");
+
+    // ----------------------------------------------------- card credit purchase
+    const purchaseEvent = (amount: number) =>
+      ({
+        type: "checkout.session.completed",
+        data: {
+          object: {
+            id: `cs_qa_${amount}`,
+            mode: "payment",
+            payment_status: "paid",
+            currency: "cad",
+            amount_total: amount,
+            client_reference_id: b.id,
+            metadata: { billingDomain: "ai_credits", clientId: b.id, packKey: "starter", credits: "100" },
+          },
+        },
+      }) as unknown as Parameters<typeof applyAiCreditsStripeEvent>[0];
+    assert.equal((await applyAiCreditsStripeEvent(purchaseEvent(1))).applied, false, "tampered amount grants nothing");
+    const bought = await applyAiCreditsStripeEvent(purchaseEvent(1500));
+    const replayed = await applyAiCreditsStripeEvent(purchaseEvent(1500));
+    assert.ok(bought.applied && replayed.applied);
+    assert.equal((await getCreditSnapshot(b.id)).balance, 100, "Stripe retrying the webhook never double-credits");
+    pass("card purchases credit the right workspace exactly once");
+
+    // ------------------------------------------------------------- AI agents
+    // The gateway queue is global, so these checks need a database with no other runnable runs.
+    const foreignRunnable = await prisma.aiAgentRun.count({ where: { status: { in: ["queued", "approved", "running", "executing"] } } });
+    assert.equal(foreignRunnable, 0, "agent queue checks need a disposable database with an empty queue (refusing to touch existing runs)");
+    assert.deepEqual(await requestAgentRun(a.id, "nope", {}, null), { ok: false, error: "unknown_agent" });
+    assert.deepEqual(await requestAgentRun(a.id, "social_autopilot", {}, null), { ok: false, error: "agent_disabled" });
+    await saveAgentSetting(a.id, "social_autopilot", { enabled: true, requireApproval: true, instructions: "Ton chaleureux" });
+    await saveAgentSetting(a.id, "ads_optimizer", { enabled: true, requireApproval: false, instructions: null });
+    const settings = await listAgentSettings(a.id);
+    assert.equal(settings.find((x) => x.key === "ads_optimizer")?.requireApproval, true, "spending agents always need approval");
+    assert.equal((await listAgentSettings(b.id)).every((x) => !x.enabled), true, "settings are per workspace");
+    const runReq = await requestAgentRun(a.id, "social_autopilot", { brief: "Pneus d'hiver" }, null);
+    assert.ok(runReq.ok);
+    assert.deepEqual(await requestAgentRun(a.id, "social_autopilot", {}, null), { ok: false, error: "already_pending" });
+    pass("agents run only when enabled, one pending run at a time, approval locked for spending agents");
+
+    const claims = await Promise.all(Array.from({ length: 5 }, () => claimNextAgentRun()));
+    const won = claims.filter(Boolean);
+    assert.equal(won.length, 1, "five concurrent workers, exactly one claim");
+    const claimed = won[0]!;
+    assert.equal(claimed.phase, "generate");
+    assert.equal(claimed.instructions, "Ton chaleureux");
+    assert.deepEqual(claimed.input, { brief: "Pneus d'hiver" });
+    pass("concurrent gateway workers never double-claim a run");
+
+    assert.deepEqual(await reportAgentRun(claimed.runId, { succeeded: true, output: { x: "y".repeat(70_000) } }), { ok: false, code: "invalid_request" });
+    const generated = await reportAgentRun(claimed.runId, { succeeded: true, output: { summary: "7 posts", preview: "Lundi: …" }, creditsDebited: 21 });
+    assert.deepEqual(generated, { ok: true, status: "awaiting_approval" });
+    assert.deepEqual(await reportAgentRun(claimed.runId, { succeeded: true }), { ok: false, code: "not_claimed" }, "cannot report twice");
+    assert.equal(await claimNextAgentRun(), null, "nothing runnable while awaiting approval");
+    assert.equal(await decideAgentRun(b.id, claimed.runId, true, null), false, "tenant B cannot approve A's run");
+    assert.equal(await decideAgentRun(a.id, claimed.runId, true, null), true);
+    const exec = await claimNextAgentRun();
+    assert.ok(exec && exec.runId === claimed.runId && exec.phase === "execute" && (exec.output as { summary?: string })?.summary === "7 posts");
+    assert.deepEqual(await reportAgentRun(exec.runId, { succeeded: true, creditsDebited: 0 }), { ok: true, status: "completed" });
+    const runs = await listAgentRuns(a.id);
+    assert.equal(runs[0].status, "completed");
+    assert.equal(runs[0].creditsDebited, 21);
+    assert.equal((await listAgentRuns(b.id)).length, 0);
+    pass("generate → approve → execute → completed, approval required and tenant-scoped");
+
+    const r2 = await requestAgentRun(a.id, "social_autopilot", {}, null);
+    assert.ok(r2.ok);
+    const c2 = await claimNextAgentRun();
+    assert.ok(c2);
+    assert.equal(await claimNextAgentRun(new Date(Date.now() + 10 * 60_000)), null, "a live claim is not stolen");
+    const reclaimed = await claimNextAgentRun(new Date(Date.now() + 31 * 60_000));
+    assert.equal(reclaimed?.runId, c2.runId, "a run abandoned for 30 min is re-queued and re-claimed");
+    assert.deepEqual(await reportAgentRun(c2.runId, { succeeded: false, error: "model timeout" }), { ok: true, status: "failed" });
+    const r3 = await requestAgentRun(a.id, "social_autopilot", {}, null);
+    assert.ok(r3.ok);
+    assert.equal(await cancelAgentRun(b.id, r3.runId), false);
+    assert.equal(await cancelAgentRun(a.id, r3.runId), true);
+    assert.equal(await claimNextAgentRun(), null, "canceled runs are never claimed");
+    pass("stale runs recover, failures are recorded, cancel works and is tenant-scoped");
   } finally {
     await prisma.client.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     await disconnectPrisma();
