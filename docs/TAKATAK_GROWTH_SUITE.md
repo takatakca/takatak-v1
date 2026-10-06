@@ -5,8 +5,9 @@ Status: **Phases 1–3 built:**
 - **Phase 2:** reputation backend, AI credit ledger.
 - **Phase 3:** analytics, audiences, web chat.
 - **Phase 4:** SMS/WhatsApp delivery, Stripe credit checkout, AI agent run queue.
+- **Phase 5:** autopilot schedules, automatic triggers, review → lead.
 
-The Phase 2–4 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
+The Phase 2–5 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
 
 ## Scope rule
 
@@ -199,11 +200,36 @@ Other rules:
 - **Crash recovery:** a run claimed for more than 30 minutes is re-queued.
 - **Credits:** charge through `/api/ai/credits/debit` with the run ID as part of the idempotency key, then report the total in `creditsDebited`.
 
-## Next phase
+## Phase 5: Autopilot schedules, automatic triggers, review → lead
 
-1. Google Business Profile review import and AI reply posting (needs Google API access approval).
-2. Syncing retargeting audiences to Meta and Google Ads (needs ad-account OAuth).
-3. Scheduled triggers for agents (weekly autopilot) through the existing cron routes.
+Migration: `prisma/migrations/20261006210000_growth_agent_schedules`. It is additive only:
+- **`ai_agent_settings`:** new `schedule`, `scheduleWeekday`, `scheduleHour` and `lastScheduledFor` columns, an index, and range checks.
+- **`review_responses`:** new `leadId` column.
+
+It is **not** in the approved deploy lists yet.
+
+### Autopilot
+
+Each agent can run on a schedule: manual only, every day, or every week on a chosen day, at a chosen hour in **the client's own time zone** (`clients.timezone`). Daylight-saving changes are handled.
+
+Schedule `/api/cron/growth-agents` every 15 minutes with `Authorization: Bearer $CRON_SECRET`, the same convention as the existing cron routes.
+- A time slot is claimed before its run is queued, so overlapping cron ticks enqueue it once.
+- Saving a schedule never fires a slot that already passed.
+
+### Automatic triggers
+
+Every new 1–3★ rating on a review page queues a **Review Responder** run, if that agent is enabled. The run carries `{ reviewResponseId, rating, feedback, businessName }` and allows up to 5 pending at once. A trigger failure never blocks the customer's rating from saving.
+
+### Review follow-up → lead
+
+When a customer ticked "contact me", **Create lead for follow-up** in the feedback inbox creates one Lead, exactly once. It is high priority for 1–2★ ratings, and it only works when the customer consented.
+
+## Waiting on outside approvals
+
+These need provider access that only the owner can request:
+1. **Google Business Profile** review import and posting AI replies (Google API access approval).
+2. **Syncing retargeting audiences** to Meta and Google Ads (ad-account OAuth and app review).
+3. **GA4 and Search Console** reporting (service-account access on each client property).
 
 ## QA
 
@@ -214,6 +240,7 @@ Other rules:
   - analytics origin locking, bot and GPC skipping, no stored IPs, daily-rotating visitor IDs, accurate summaries and audience reach;
   - chat domain locking, hashed tokens, live staff replies, closed threads and one-time lead conversion;
   - masked delivery records, card purchases credited exactly once, and the agent queue (no double-claims under 5 parallel workers, the approval gate, crash recovery, cancel);
+  - autopilot (once per slot under overlapping cron ticks, in the client's time zone), low-rating triggers, and consent-only review → lead;
   - tenant isolation for all of the above, and the database constraints.
 
 Both run in CI.

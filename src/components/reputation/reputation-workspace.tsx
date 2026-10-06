@@ -1,7 +1,7 @@
 import { GrowthKpi } from "@/components/growth/growth-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { toggleReviewProfileAction, updateFeedbackStatusAction } from "@/app/dashboard/growth/reviews/actions";
+import { convertReviewToLeadAction, toggleReviewProfileAction, updateFeedbackStatusAction } from "@/app/dashboard/growth/reviews/actions";
 import type { ReputationSnapshot } from "@/lib/reputation/service";
 
 import { CreateProfileForm } from "./create-profile-form";
@@ -86,6 +86,7 @@ export function ReputationWorkspace({
                     <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
                     {r.publicLinkClicked ? <Badge tone="success">Went to public review</Badge> : null}
                     {r.viaRequest ? <Badge tone="neutral">Via request</Badge> : <Badge tone="muted">Shared link</Badge>}
+                    {r.leadId ? <Badge tone="success">Lead created</Badge> : null}
                     <span className="ml-auto text-slate-400">{r.createdAt.toLocaleString("en-CA")}</span>
                   </div>
                   {r.feedback ? <p className="whitespace-pre-wrap text-sm text-slate-700">{r.feedback}</p> : null}
@@ -93,6 +94,14 @@ export function ReputationWorkspace({
                     <p className="text-xs text-slate-500">
                       Wants a follow-up: {[r.contactName, r.contactEmail, r.contactPhone].filter(Boolean).join(" · ")}
                     </p>
+                  ) : null}
+                  {canManage && r.followUpConsent && !r.leadId ? (
+                    <form action={convertReviewToLeadAction}>
+                      <input type="hidden" name="responseId" value={r.id} />
+                      <button className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 hover:border-emerald-400">
+                        Create lead for follow-up
+                      </button>
+                    </form>
                   ) : null}
                   {canManage && r.status !== "resolved" ? (
                     <div className="flex gap-2">

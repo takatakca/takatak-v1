@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { parseScheduleInput } from "@/lib/ai-agents/schedule";
 import { cancelAgentRun, decideAgentRun, requestAgentRun, saveAgentSetting } from "@/lib/ai-agents/service";
 import { grantCredits } from "@/lib/ai-credits/ledger";
 import { aiCreditsCheckoutEnabled, startCreditCheckout } from "@/lib/billing/ai-credits/stripe";
@@ -88,6 +89,11 @@ export async function saveAgentSettingAction(formData: FormData): Promise<void> 
     enabled: formData.get("enabled") === "on",
     requireApproval: formData.get("requireApproval") === "on",
     instructions: String(formData.get("instructions") ?? ""),
+    schedule: parseScheduleInput({
+      schedule: formData.get("schedule"),
+      weekday: formData.get("scheduleWeekday"),
+      hour: formData.get("scheduleHour"),
+    }),
   });
   revalidatePath(AGENT_PATH);
 }

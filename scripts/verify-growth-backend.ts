@@ -49,9 +49,10 @@ import {
   reportAgentRun,
   requestAgentRun,
   saveAgentSetting,
+  scheduleDueAgentRuns,
 } from "../src/lib/ai-agents/service";
 import { applyAiCreditsStripeEvent } from "../src/lib/billing/ai-credits/stripe";
-import { recordRequestDelivery } from "../src/lib/reputation/service";
+import { convertReviewResponseToLead, recordRequestDelivery } from "../src/lib/reputation/service";
 
 const PHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
 function hdrs(origin: string | null, ip = "203.0.113.7", ua = PHONE_UA, extra: Record<string, string> = {}): Headers {
@@ -400,6 +401,50 @@ async function main(): Promise<void> {
     assert.equal(await cancelAgentRun(a.id, r3.runId), true);
     assert.equal(await claimNextAgentRun(), null, "canceled runs are never claimed");
     pass("stale runs recover, failures are recorded, cancel works and is tenant-scoped");
+
+    // ------------------------------------------------------ autopilot + triggers
+    await prisma.client.update({ where: { id: b.id }, data: { timezone: "America/Toronto" } });
+    const saveAt = new Date("2026-10-05T15:20:00Z"); // Monday 11:20 EDT
+    await saveAgentSetting(b.id, "social_autopilot", { enabled: true, requireApproval: true, instructions: null, schedule: { schedule: "weekly", weekday: 1, hour: 8 } }, saveAt);
+    assert.deepEqual(await scheduleDueAgentRuns(saveAt), { checked: 1, queued: 0, skipped: 0 }, "saving never fires a slot that already passed");
+    const nextMonday = new Date("2026-10-12T12:05:00Z"); // Monday 08:05 EDT
+    const sweeps = await Promise.all([scheduleDueAgentRuns(nextMonday), scheduleDueAgentRuns(nextMonday), scheduleDueAgentRuns(nextMonday)]);
+    assert.equal(sweeps.reduce((n, r) => n + r.queued, 0), 1, "three overlapping cron ticks enqueue the slot once");
+    assert.equal((await scheduleDueAgentRuns(new Date("2026-10-12T13:05:00Z"))).queued, 0, "same slot never re-fires");
+    const scheduledRun = await prisma.aiAgentRun.findFirstOrThrow({ where: { clientId: b.id, agentKey: "social_autopilot" } });
+    assert.equal(scheduledRun.trigger, "schedule");
+    assert.deepEqual(scheduledRun.input, { scheduledFor: "2026-10-12T12:00:00.000Z" });
+    pass("weekly autopilot fires once per slot in the client's time zone, safe under overlapping cron ticks");
+
+    const bProfileInput = parseReviewProfileInput({ name: "B Shop", googlePlaceId: "ChIJN1t_tDeuEmsRUsoyG83frY4" });
+    assert.ok(bProfileInput.ok);
+    const bProfile = await createReviewProfile(b.id, bProfileInput.value);
+    const happy = await submitPublicRating(bProfile.publicSlug, null, rating({ rating: "5" }));
+    assert.ok(happy.ok);
+    assert.equal(await prisma.aiAgentRun.count({ where: { clientId: b.id, agentKey: "review_responder" } }), 0, "no trigger when the responder is off");
+    await saveAgentSetting(b.id, "review_responder", { enabled: true, requireApproval: true, instructions: null });
+    const low1 = await submitPublicRating(bProfile.publicSlug, null, rating({ rating: "2", feedback: "Trop cher", followUpConsent: "on", contactEmail: "c@example.test", contactName: "Chloé" }));
+    const low2 = await submitPublicRating(bProfile.publicSlug, null, rating({ rating: "1", feedback: "Fermé à l'heure annoncée" }));
+    const good = await submitPublicRating(bProfile.publicSlug, null, rating({ rating: "4" }));
+    assert.ok(low1.ok && low2.ok && good.ok);
+    const responderRuns = await prisma.aiAgentRun.findMany({ where: { clientId: b.id, agentKey: "review_responder" }, orderBy: { createdAt: "asc" } });
+    assert.equal(responderRuns.length, 2, "each low rating queues a draft reply; 4–5★ do not");
+    assert.deepEqual(responderRuns[0].input, { reviewResponseId: low1.responseId, rating: 2, feedback: "Trop cher", businessName: "B Shop" });
+    assert.equal(responderRuns[0].trigger, "low_rating");
+    pass("1–3★ ratings automatically queue the Review Responder");
+
+    assert.equal(await convertReviewResponseToLead(b.id, low2.responseId), null, "no lead without the customer's consent");
+    assert.equal(await convertReviewResponseToLead(a.id, low1.responseId), null, "tenant A cannot convert B's feedback");
+    const reviewLead1 = await convertReviewResponseToLead(b.id, low1.responseId);
+    const reviewLead2 = await convertReviewResponseToLead(b.id, low1.responseId);
+    assert.ok(reviewLead1 && reviewLead2 && reviewLead1.leadId === reviewLead2.leadId);
+    const reviewLead = await prisma.lead.findUniqueOrThrow({ where: { id: reviewLead1.leadId }, select: { clientId: true, name: true, email: true, priority: true, message: true } });
+    assert.deepEqual(
+      { clientId: reviewLead.clientId, name: reviewLead.name, email: reviewLead.email, priority: reviewLead.priority },
+      { clientId: b.id, name: "Chloé", email: "c@example.test", priority: "high" },
+    );
+    assert.ok(reviewLead.message?.includes("Trop cher"));
+    pass("consented review follow-ups become exactly one high-priority lead");
   } finally {
     await prisma.client.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     await disconnectPrisma();

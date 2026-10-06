@@ -4164,6 +4164,7 @@ model ReviewResponse {
   status              ReviewFeedbackStatus @default(new)
   resolvedAt          DateTime?
   resolvedByProfileId String?              @db.Uuid
+  leadId              String?              @db.Uuid
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
@@ -4387,14 +4388,19 @@ model AiAgentSetting {
   clientId        String   @db.Uuid
   agentKey        String
   enabled         Boolean  @default(false)
-  requireApproval Boolean  @default(true)
-  instructions    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  requireApproval  Boolean   @default(true)
+  instructions     String?
+  schedule         String    @default("off")
+  scheduleWeekday  Int?      @db.SmallInt
+  scheduleHour     Int       @default(9) @db.SmallInt
+  lastScheduledFor DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@unique([clientId, agentKey])
+  @@index([enabled, schedule])
   @@map("ai_agent_settings")
 }
 

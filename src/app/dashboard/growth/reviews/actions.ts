@@ -9,6 +9,7 @@ import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import type { Permission } from "@/lib/security/roles";
 import {
+  convertReviewResponseToLead,
   createReviewProfile,
   createReviewRequest,
   recordRequestDelivery,
@@ -107,5 +108,13 @@ export async function toggleReviewProfileAction(formData: FormData): Promise<voi
   const profileId = String(formData.get("profileId") ?? "");
   if (!UUID.test(profileId)) return;
   await setReviewProfileActive(access.activeClientId, profileId, formData.get("active") === "true");
+  revalidatePath(REVIEWS_PATH);
+}
+
+export async function convertReviewToLeadAction(formData: FormData): Promise<void> {
+  const access = await scopedAccess("manage_reputation");
+  const responseId = String(formData.get("responseId") ?? "");
+  if (!access || !UUID.test(responseId)) return;
+  await convertReviewResponseToLead(access.activeClientId, responseId);
   revalidatePath(REVIEWS_PATH);
 }

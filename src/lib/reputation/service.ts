@@ -6,6 +6,7 @@ import "server-only";
 
 import { Prisma } from "@prisma/client";
 
+import { triggerLowRatingResponder } from "@/lib/ai-agents/service";
 import { getPrisma } from "@/lib/db/prisma";
 
 import { hashRequestToken, isWellFormedRequestToken, newPublicSlug, newRequestToken } from "./tokens";
@@ -51,6 +52,7 @@ export interface ReputationSnapshot {
     publicLinkClicked: boolean;
     status: FeedbackStatusKey;
     viaRequest: boolean;
+    leadId: string | null;
     createdAt: Date;
   }>;
   stats: {
@@ -98,6 +100,7 @@ export async function getReputationSnapshot(clientId: string): Promise<Reputatio
         publicLinkClickedAt: true,
         status: true,
         requestId: true,
+        leadId: true,
         createdAt: true,
         profile: { select: { name: true } },
       },
@@ -144,6 +147,7 @@ export async function getReputationSnapshot(clientId: string): Promise<Reputatio
       publicLinkClicked: r.publicLinkClickedAt !== null,
       status: r.status,
       viaRequest: r.requestId !== null,
+      leadId: r.leadId,
       createdAt: r.createdAt,
     })),
     stats: {
@@ -318,7 +322,7 @@ export async function submitPublicRating(slug: string, token: string | null, inp
   const prisma = requirePrisma();
   const profile = await prisma.reviewProfile.findUnique({
     where: { publicSlug: slug },
-    select: { id: true, clientId: true, active: true, googlePlaceId: true, facebookReviewUrl: true, thankYouMessage: true },
+    select: { id: true, clientId: true, name: true, active: true, googlePlaceId: true, facebookReviewUrl: true, thankYouMessage: true },
   });
   if (!profile || !profile.active) return { ok: false, error: "This review page is no longer available." };
 
@@ -349,6 +353,17 @@ export async function submitPublicRating(slug: string, token: string | null, inp
         select: { id: true },
       });
     });
+    try {
+      await triggerLowRatingResponder(profile.clientId, {
+        responseId: response.id,
+        rating: input.rating,
+        feedback: input.feedback,
+        businessName: profile.name,
+      });
+    } catch {
+      // The rating is already saved; an agent trigger failure must never fail the customer.
+      console.error("[reputation] low-rating agent trigger failed");
+    }
     return {
       ok: true,
       responseId: response.id,
@@ -396,4 +411,51 @@ export async function resolvePublicReviewDestination(
     });
   }
   return destination;
+}
+
+/** Turns a customer's follow-up request into a Lead in the Leads module, once. */
+export async function convertReviewResponseToLead(clientId: string, responseId: string): Promise<{ leadId: string } | null> {
+  const prisma = requirePrisma();
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const response = await tx.reviewResponse.findFirst({
+        where: { id: responseId, clientId },
+        select: {
+          id: true,
+          leadId: true,
+          rating: true,
+          feedback: true,
+          contactName: true,
+          contactEmail: true,
+          contactPhone: true,
+          followUpConsent: true,
+          profile: { select: { name: true, businessBrandId: true } },
+        },
+      });
+      if (!response || !response.followUpConsent) return null;
+      if (response.leadId) return { leadId: response.leadId };
+      const lead = await tx.lead.create({
+        data: {
+          clientId,
+          businessBrandId: response.profile.businessBrandId,
+          name: response.contactName,
+          email: response.contactEmail,
+          phone: response.contactPhone,
+          message: `${response.rating}★ review follow-up: ${response.feedback ?? "(no comment)"}`.slice(0, 4000),
+          priority: response.rating <= 2 ? "high" : "normal",
+          metadata: { source: "takatak_review_funnel", reviewResponseId: response.id, profile: response.profile.name },
+        },
+        select: { id: true },
+      });
+      const claimed = await tx.reviewResponse.updateMany({ where: { id: response.id, leadId: null }, data: { leadId: lead.id } });
+      if (claimed.count !== 1) throw new Error("lead_already_linked");
+      return { leadId: lead.id };
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "lead_already_linked") {
+      const existing = await prisma.reviewResponse.findFirst({ where: { id: responseId, clientId }, select: { leadId: true } });
+      return existing?.leadId ? { leadId: existing.leadId } : null;
+    }
+    throw error;
+  }
 }

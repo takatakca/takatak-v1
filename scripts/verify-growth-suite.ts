@@ -18,6 +18,7 @@ import {
   parseAudienceRule,
   parseCollectPayload,
 } from "../src/lib/analytics/parse";
+import { latestDueSlot, parseScheduleInput } from "../src/lib/ai-agents/schedule";
 import { decideCreditGrant } from "../src/lib/billing/ai-credits/policy";
 import { growthSmsConfigured, growthWhatsAppConfigured } from "../src/lib/messaging/delivery";
 import { maskPhone, toE164 } from "../src/lib/messaging/phone";
@@ -252,8 +253,35 @@ function verifyMessagingGates(): void {
   pass("messaging channels stay off until flagged and fully configured; phones normalize and mask");
 }
 
+function verifyAgentSchedules(): void {
+  const tz = "America/Toronto";
+  // Monday 2026-10-05 15:20 UTC = 11:20 EDT.
+  const now = new Date("2026-10-05T15:20:00Z");
+  assert.equal(latestDueSlot(now, { schedule: "daily", weekday: null, hour: 9 }, tz)?.toISOString(), "2026-10-05T13:00:00.000Z", "09:00 EDT today");
+  assert.equal(latestDueSlot(now, { schedule: "daily", weekday: null, hour: 14 }, tz)?.toISOString(), "2026-10-04T18:00:00.000Z", "14:00 not reached → yesterday");
+  assert.equal(latestDueSlot(now, { schedule: "weekly", weekday: 1, hour: 8 }, tz)?.toISOString(), "2026-10-05T12:00:00.000Z", "Monday 08:00 EDT");
+  assert.equal(latestDueSlot(now, { schedule: "weekly", weekday: 5, hour: 8 }, tz)?.toISOString(), "2026-10-02T12:00:00.000Z", "last Friday");
+  // After the November DST switch, 09:00 local is 14:00 UTC (EST).
+  assert.equal(
+    latestDueSlot(new Date("2026-11-03T15:00:00Z"), { schedule: "daily", weekday: null, hour: 9 }, tz)?.toISOString(),
+    "2026-11-03T14:00:00.000Z",
+    "DST-aware",
+  );
+  assert.equal(
+    latestDueSlot(now, { schedule: "daily", weekday: null, hour: 9 }, "Europe/Paris")?.toISOString(),
+    "2026-10-05T07:00:00.000Z",
+    "client time zone respected",
+  );
+  assert.equal(latestDueSlot(now, { schedule: "off", weekday: null, hour: 9 }, tz), null);
+  assert.equal(latestDueSlot(now, { schedule: "weekly", weekday: null, hour: 9 }, tz), null);
+  assert.deepEqual(parseScheduleInput({ schedule: "weekly", weekday: "9", hour: "99" }), { schedule: "weekly", weekday: 1, hour: 9 });
+  assert.deepEqual(parseScheduleInput({ schedule: "hourly" }), { schedule: "off", weekday: null, hour: 9 });
+  pass("autopilot schedules are time-zone and DST aware");
+}
+
 verifyCatalog();
 verifyHonestStatuses();
+verifyAgentSchedules();
 verifyCreditPurchasePolicy();
 verifyMessagingGates();
 verifyAuditUrlGuard();

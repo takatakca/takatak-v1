@@ -13,6 +13,8 @@ import { Prisma, type AiAgentRunStatus } from "@prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
 import { AI_AGENTS } from "@/lib/growth/ai-engine";
 
+import { latestDueSlot, type AgentSchedule, type ScheduleKind } from "./schedule";
+
 const STALE_CLAIM_MS = 30 * 60_000;
 const MAX_OUTPUT_BYTES = 64_000;
 
@@ -34,6 +36,9 @@ export interface AgentSettingView {
   requireApproval: boolean;
   approvalLocked: boolean;
   instructions: string | null;
+  schedule: ScheduleKind;
+  scheduleWeekday: number | null;
+  scheduleHour: number;
 }
 
 export async function listAgentSettings(clientId: string): Promise<AgentSettingView[]> {
@@ -49,6 +54,9 @@ export async function listAgentSettings(clientId: string): Promise<AgentSettingV
       requireApproval: agent.alwaysRequiresApproval ? true : row?.requireApproval ?? true,
       approvalLocked: Boolean(agent.alwaysRequiresApproval),
       instructions: row?.instructions ?? null,
+      schedule: (row?.schedule as ScheduleKind | undefined) ?? "off",
+      scheduleWeekday: row?.scheduleWeekday ?? null,
+      scheduleHour: row?.scheduleHour ?? 9,
     };
   });
 }
@@ -56,16 +64,31 @@ export async function listAgentSettings(clientId: string): Promise<AgentSettingV
 export async function saveAgentSetting(
   clientId: string,
   agentKey: string,
-  input: { enabled: boolean; requireApproval: boolean; instructions: string | null },
+  input: { enabled: boolean; requireApproval: boolean; instructions: string | null; schedule?: AgentSchedule },
+  now = new Date(),
 ): Promise<boolean> {
   const agent = agentDef(agentKey);
   if (!agent) return false;
+  const prisma = requirePrisma();
   const requireApproval = agent.alwaysRequiresApproval ? true : input.requireApproval;
   const instructions = input.instructions?.trim().slice(0, 2000) || null;
-  await requirePrisma().aiAgentSetting.upsert({
+  const schedule = input.schedule ?? { schedule: "off" as const, weekday: null, hour: 9 };
+  const client = await prisma.client.findUnique({ where: { id: clientId }, select: { timezone: true } });
+  // Start from the next slot: saving a schedule never fires a slot that already passed.
+  const lastScheduledFor = latestDueSlot(now, schedule, client?.timezone ?? "America/Toronto");
+  const data = {
+    enabled: input.enabled,
+    requireApproval,
+    instructions,
+    schedule: schedule.schedule,
+    scheduleWeekday: schedule.weekday,
+    scheduleHour: schedule.hour,
+    lastScheduledFor,
+  };
+  await prisma.aiAgentSetting.upsert({
     where: { clientId_agentKey: { clientId, agentKey } },
-    create: { clientId, agentKey, enabled: input.enabled, requireApproval, instructions },
-    update: { enabled: input.enabled, requireApproval, instructions },
+    create: { clientId, agentKey, ...data },
+    update: data,
   });
   return true;
 }
@@ -75,8 +98,9 @@ export type RequestRunResult = { ok: true; runId: string } | { ok: false; error:
 export async function requestAgentRun(
   clientId: string,
   agentKey: string,
-  input: { trigger?: string; brief?: string | null },
+  input: { trigger?: string; brief?: string | null; context?: Record<string, string | number> },
   profileId: string | null,
+  options: { maxPending?: number } = {},
 ): Promise<RequestRunResult> {
   if (!agentDef(agentKey)) return { ok: false, error: "unknown_agent" };
   const prisma = requirePrisma();
@@ -85,14 +109,15 @@ export async function requestAgentRun(
   const pending = await prisma.aiAgentRun.count({
     where: { clientId, agentKey, status: { in: ["queued", "running", "awaiting_approval", "approved", "executing"] } },
   });
-  if (pending > 0) return { ok: false, error: "already_pending" };
+  if (pending >= (options.maxPending ?? 1)) return { ok: false, error: "already_pending" };
   const brief = input.brief?.trim().slice(0, 2000) || null;
+  const payload = { ...(brief ? { brief } : {}), ...(input.context ?? {}) };
   const run = await prisma.aiAgentRun.create({
     data: {
       clientId,
       agentKey,
       trigger: (input.trigger ?? "manual").slice(0, 40),
-      input: brief ? { brief } : Prisma.JsonNull,
+      input: Object.keys(payload).length ? payload : Prisma.JsonNull,
       requestedByProfileId: profileId,
     },
     select: { id: true },
@@ -254,4 +279,69 @@ export async function reportAgentRun(
   });
   if (updated.count !== 1) return { ok: false, code: "not_claimed" };
   return { ok: true, status: next };
+}
+
+// ---------------------------------------------------------------- triggers
+
+/** Cron sweep: enqueue one run per due schedule slot, at most once per slot. */
+export async function scheduleDueAgentRuns(now = new Date()): Promise<{ checked: number; queued: number; skipped: number }> {
+  const prisma = requirePrisma();
+  const settings = await prisma.aiAgentSetting.findMany({
+    where: { enabled: true, schedule: { in: ["daily", "weekly"] } },
+    select: {
+      id: true,
+      clientId: true,
+      agentKey: true,
+      schedule: true,
+      scheduleWeekday: true,
+      scheduleHour: true,
+      lastScheduledFor: true,
+      client: { select: { timezone: true } },
+    },
+    take: 5_000,
+  });
+  let queued = 0;
+  let skipped = 0;
+  for (const setting of settings) {
+    const slot = latestDueSlot(
+      now,
+      { schedule: setting.schedule as ScheduleKind, weekday: setting.scheduleWeekday, hour: setting.scheduleHour },
+      setting.client.timezone,
+    );
+    if (!slot || (setting.lastScheduledFor && setting.lastScheduledFor >= slot)) continue;
+    // Claim the slot first so overlapping cron ticks cannot enqueue it twice.
+    const claimed = await prisma.aiAgentSetting.updateMany({
+      where: { id: setting.id, OR: [{ lastScheduledFor: null }, { lastScheduledFor: { lt: slot } }] },
+      data: { lastScheduledFor: slot },
+    });
+    if (claimed.count !== 1) continue;
+    const result = await requestAgentRun(setting.clientId, setting.agentKey, { trigger: "schedule", context: { scheduledFor: slot.toISOString() } }, null);
+    if (result.ok) queued += 1;
+    else skipped += 1;
+  }
+  return { checked: settings.length, queued, skipped };
+}
+
+/** Event trigger: a new 1–3★ rating asks the Review Responder for a draft reply. */
+export async function triggerLowRatingResponder(
+  clientId: string,
+  review: { responseId: string; rating: number; feedback: string | null; businessName: string },
+): Promise<boolean> {
+  if (review.rating > 3) return false;
+  const result = await requestAgentRun(
+    clientId,
+    "review_responder",
+    {
+      trigger: "low_rating",
+      context: {
+        reviewResponseId: review.responseId,
+        rating: review.rating,
+        feedback: (review.feedback ?? "").slice(0, 2000),
+        businessName: review.businessName.slice(0, 80),
+      },
+    },
+    null,
+    { maxPending: 5 },
+  );
+  return result.ok;
 }

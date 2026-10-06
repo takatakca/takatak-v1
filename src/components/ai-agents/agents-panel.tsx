@@ -5,6 +5,14 @@ import type { AgentSettingView, RunView } from "@/lib/ai-agents/service";
 
 import { RunRequestForm } from "./run-request-form";
 
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+function scheduleLabel(s: AgentSettingView): string | null {
+  if (s.schedule === "off") return null;
+  const hour = `${String(s.scheduleHour).padStart(2, "0")}:00`;
+  return s.schedule === "daily" ? `Every day at ${hour}` : `Every ${DAYS[s.scheduleWeekday ?? 1]} at ${hour}`;
+}
+
 const STATUS_LABEL: Record<RunView["status"], { label: string; tone: "neutral" | "accent" | "warning" | "success" | "danger" | "muted" }> = {
   queued: { label: "Queued", tone: "neutral" },
   running: { label: "Working…", tone: "accent" },
@@ -76,7 +84,10 @@ export function AgentsPanel({
             <div key={s.key} className="space-y-3 rounded-xl border border-slate-200 p-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-slate-900">{s.name}</p>
-                <Badge tone={s.enabled ? "success" : "muted"}>{s.enabled ? "On" : "Off"}</Badge>
+                <div className="flex items-center gap-1.5">
+                  {s.enabled && scheduleLabel(s) ? <Badge tone="accent">{scheduleLabel(s)}</Badge> : null}
+                  <Badge tone={s.enabled ? "success" : "muted"}>{s.enabled ? "On" : "Off"}</Badge>
+                </div>
               </div>
               <p className="text-xs leading-5 text-slate-600">{s.mission}</p>
               {canConfigure ? (
@@ -90,6 +101,28 @@ export function AgentsPanel({
                       <input type="checkbox" name="requireApproval" defaultChecked={s.requireApproval} disabled={s.approvalLocked} />
                       Ask me before publishing{s.approvalLocked ? " (always)" : ""}
                     </label>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
+                    <span>Autopilot:</span>
+                    <select name="schedule" defaultValue={s.schedule} className="rounded-lg border border-slate-300 px-2 py-1 text-xs">
+                      <option value="off">Manual only</option>
+                      <option value="daily">Every day</option>
+                      <option value="weekly">Every week</option>
+                    </select>
+                    <select name="scheduleWeekday" defaultValue={String(s.scheduleWeekday ?? 1)} className="rounded-lg border border-slate-300 px-2 py-1 text-xs" aria-label="Day (weekly)">
+                      {DAYS.map((d, i) => (
+                        <option key={d} value={i}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                    <select name="scheduleHour" defaultValue={String(s.scheduleHour)} className="rounded-lg border border-slate-300 px-2 py-1 text-xs" aria-label="Hour">
+                      {Array.from({ length: 24 }, (_, h) => (
+                        <option key={h} value={h}>
+                          {String(h).padStart(2, "0")}:00
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <textarea
                     name="instructions"
