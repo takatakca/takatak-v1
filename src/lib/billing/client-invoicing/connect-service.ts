@@ -100,9 +100,10 @@ export async function syncClientConnectAccount(clientId: string): Promise<Client
     throw new ServiceError("unavailable", "Stripe a répondu pour un autre compte.");
   }
 
+  const now = new Date();
   const updated = await prisma.clientStripeConnectAccount.update({
     where: { clientId },
-    data: { ...readConnectFlags(account), lastSyncedAt: new Date() },
+    data: { ...readConnectFlags(account), lastSyncedAt: now, lastStripeEventAt: now },
   });
 
   return toStatus(updated);
@@ -186,6 +187,7 @@ export async function startClientConnectOnboarding(input: {
  */
 export async function applyConnectAccountUpdated(event: {
   account?: string | null;
+  created?: number;
   data: { object: unknown };
 }): Promise<"updated" | "ignored"> {
   const account = event.data.object as { id?: unknown } | null;
@@ -199,10 +201,24 @@ export async function applyConnectAccountUpdated(event: {
     return "ignored";
   }
 
+  if (!Number.isSafeInteger(event.created) || (event.created as number) < 1) {
+    return "ignored";
+  }
+
+  // Stripe does not guarantee delivery order: a late, older event must never
+  // overwrite newer state (e.g. bring a restricted account back to "active").
+  const eventAt = new Date((event.created as number) * 1000);
   const prisma = requirePrisma();
   const result = await prisma.clientStripeConnectAccount.updateMany({
-    where: { stripeAccountId: account.id },
-    data: { ...readConnectFlags(account as Parameters<typeof readConnectFlags>[0]), lastSyncedAt: new Date() },
+    where: {
+      stripeAccountId: account.id,
+      OR: [{ lastStripeEventAt: null }, { lastStripeEventAt: { lte: eventAt } }],
+    },
+    data: {
+      ...readConnectFlags(account as Parameters<typeof readConnectFlags>[0]),
+      lastSyncedAt: new Date(),
+      lastStripeEventAt: eventAt,
+    },
   });
 
   return result.count > 0 ? "updated" : "ignored";

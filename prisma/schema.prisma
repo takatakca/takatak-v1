@@ -4060,6 +4060,9 @@ model ClientStripeConnectAccount {
   country              String?
   defaultCurrency      String?
   lastSyncedAt         DateTime?
+  /// Newest Stripe state applied (event.created or retrieve time). Older
+  /// Connect events arriving late are ignored.
+  lastStripeEventAt    DateTime?
   connectedByProfileId String?   @db.Uuid
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
