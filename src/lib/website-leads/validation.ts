@@ -1,10 +1,11 @@
-// Public website request validation (domain requests, project requests).
+// Public website request validation (domain requests, project requests,
+// marketplace package orders).
 //
 // Pure module: no database, no network. Every field is whitelisted,
 // trimmed and length-bounded; unknown fields are ignored. A hidden honeypot
 // field ("website") must stay empty.
 
-export type WebsiteRequestKind = "domain_request" | "project_request";
+export type WebsiteRequestKind = "domain_request" | "project_request" | "package_order";
 
 export interface WebsiteRequestInput {
   kind: WebsiteRequestKind;
@@ -21,6 +22,13 @@ export interface WebsiteRequestInput {
     category: string | null;
     budgetCents: number | null;
     timeline: string | null;
+  } | null;
+  /** Identifiers only; prices are resolved server-side from the catalog. */
+  order: {
+    packageId: string;
+    tierName: string;
+    addonLabels: string[];
+    promoCode: string | null;
   } | null;
 }
 
@@ -67,7 +75,7 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
   if (!isObject(raw)) return { ok: false, fieldErrors: { body: "invalid" } };
 
   const kind = raw.kind;
-  if (kind !== "domain_request" && kind !== "project_request") {
+  if (kind !== "domain_request" && kind !== "project_request" && kind !== "package_order") {
     return { ok: false, fieldErrors: { kind: "invalid" } };
   }
 
@@ -93,6 +101,7 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
 
   let domain: WebsiteRequestInput["domain"] = null;
   let project: WebsiteRequestInput["project"] = null;
+  let order: WebsiteRequestInput["order"] = null;
 
   if (kind === "domain_request") {
     const fqdn = (text(raw.domain, 253, errors, "domain") ?? "").toLowerCase();
@@ -100,6 +109,32 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
     if (!FQDN_RE.test(fqdn) || fqdn.includes("..")) errors.domain = "invalid";
     if (!TLD_RE.test(tld) || !fqdn.endsWith(`.${tld}`)) errors.tld = "invalid";
     domain = { fqdn, tld };
+  } else if (kind === "package_order") {
+    const packageId = text(raw.packageId, 120, errors, "packageId");
+    if (!packageId || !/^[a-z0-9-]{1,120}$/.test(packageId)) errors.packageId = "invalid";
+    const tierName = raw.tierName;
+    if (tierName !== "Basic" && tierName !== "Standard" && tierName !== "Premium") errors.tierName = "invalid";
+    const addonLabels: string[] = [];
+    if (raw.addons !== undefined) {
+      if (!Array.isArray(raw.addons) || raw.addons.length > 10) errors.addons = "invalid";
+      else {
+        for (const label of raw.addons) {
+          if (typeof label !== "string" || !label.trim() || label.length > 120) {
+            errors.addons = "invalid";
+            break;
+          }
+          addonLabels.push(label.trim());
+        }
+      }
+    }
+    const promoRaw = text(raw.promoCode, 40, errors, "promoCode");
+    const promoCode = promoRaw && /^[A-Za-z0-9]{2,40}$/.test(promoRaw) ? promoRaw.toUpperCase() : null;
+    order = {
+      packageId: packageId ?? "",
+      tierName: typeof tierName === "string" ? tierName : "",
+      addonLabels,
+      promoCode,
+    };
   } else {
     const title = text(raw.title, 160, errors, "title");
     if (!title) errors.title = errors.title ?? "required";
@@ -137,6 +172,7 @@ export function validateWebsiteRequest(raw: unknown): WebsiteRequestValidation {
       sourcePage,
       domain,
       project,
+      order,
     },
   };
 }

@@ -9,6 +9,7 @@ Before this change, public takatak.ca requests never reached TAKATAK:
   - Saved only in the visitor's browser.
   - Then sent signed-in users to `/dashboard/marketplace`, which does not exist.
   - Guests were sent to `/register`, and their draft was never restored.
+- **Marketplace checkout** (`/checkout`): "Continue in dashboard" went to `/dashboard/marketplace` (no such page) and the order was never recorded. The footer and the services list linked to the same missing page.
 
 ## What happens now
 
@@ -18,6 +19,13 @@ Before this change, public takatak.ca requests never reached TAKATAK:
 - Guests posting a project now enter a name, email and phone. At least an email or a phone number is required.
 - Signed-in users are identified from their session.
 - Project drafts are kept until TAKATAK confirms reception, and are restored when the visitor returns.
+- **Checkout** sends the order with "Send order to TAKATAK" (`kind: "package_order"`):
+  - The browser sends identifiers only: package id, tier name, add-on labels and promo code.
+  - The server prices the order from the catalog (`src/lib/website-leads/package-pricing.ts`). Any total sent by the browser is ignored.
+  - Unknown packages, tiers or add-ons are refused (400). Only `FIRST10` is honoured, mirroring the checkout UI.
+  - The order becomes a **high-priority** lead whose value is the quoted total. The message lists tier, delivery, add-ons, promo and "Total quoted (catalog price, not charged)".
+  - The visitor sees "Order received" with the reference and quoted total. **No payment is taken**: TAKATAK confirms scope and invoices separately.
+- Footer "Manage projects" and the marketplace service entry now point to `/dashboard` instead of the missing `/dashboard/marketplace`.
 
 ## Protections
 
@@ -48,14 +56,15 @@ While disabled:
 
 ## Verification
 
-- `npm run qa:website-leads` (runs in CI): 12 checks covering:
+- `npm run qa:website-leads` (runs in CI): 15 checks covering:
   - config gate
   - validation and sanitization
   - honeypot
   - the per-address limiter
   - store behaviour: source creation, audit entry, duplicate collapse, flood cap, budget value
   - route protections
-  - the removed dead-end link
+  - the removed dead-end links
+  - package orders: catalog pricing, forged totals ignored, unknown package/tier/add-on refused, high priority and value
 - Manual, against a throwaway local PostgreSQL 16 with the full Prisma schema and `next start` in production mode:
   - a valid domain request was stored as a lead
   - a double submit returned the same reference
@@ -63,9 +72,11 @@ While disabled:
   - a foreign origin returned 403, a missing contact 400, invalid fields 400, non-JSON 415 and an oversized body 413
   - the honeypot returned 200 and stored nothing
   - the 6th request in a burst from one address returned 429, and the workspace flood cap returned 429
+  - a checkout order for "logo-design" Standard + "Business card design" + `first10`, sent with a forged `totalCents: 1`, was stored as a high-priority lead valued at $178.20 (catalog $149 + $49 − 10%); an unknown package or add-on returned 400
 
 ## Not done yet
 
 - No email or SMS notification to the TAKATAK team when a lead arrives (leads are visible in `/dashboard/leads`).
-- Prices on the website are still the static values in `src/lib/website/pricing.ts`.
+- Prices on the website are still the static values in `src/lib/website/pricing.ts` and the marketplace catalog.
+- Checkout orders are leads, not invoices. Turning an accepted order into a Facturations draft is a later step.
 - `promotions.ts` still calls the stub `api-client.ts`; promo codes are not backed by the server yet.

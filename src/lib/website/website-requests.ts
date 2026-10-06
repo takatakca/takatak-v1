@@ -29,10 +29,24 @@ export type WebsiteRequestPayload =
       language?: "en" | "fr";
       sourcePage?: string;
       website?: string;
+    }
+  | {
+      kind: "package_order";
+      packageId: string;
+      tierName: string;
+      addons?: string[];
+      promoCode?: string;
+      name?: string;
+      email?: string;
+      phone?: string;
+      message?: string;
+      language?: "en" | "fr";
+      sourcePage?: string;
+      website?: string;
     };
 
 export type WebsiteRequestResult =
-  | { status: "sent"; reference: string }
+  | { status: "sent"; reference: string; totalCents?: number }
   | { status: "invalid"; fieldErrors: Record<string, string> }
   | { status: "rate_limited" }
   | { status: "unavailable" };
@@ -63,7 +77,11 @@ export async function submitWebsiteRequest(
   }
 
   if (response.ok && body.ok === true && typeof body.reference === "string") {
-    return { status: "sent", reference: body.reference };
+    return {
+      status: "sent",
+      reference: body.reference,
+      ...(typeof body.totalCents === "number" ? { totalCents: body.totalCents } : {}),
+    };
   }
   if (response.status === 400 && body.fieldErrors && typeof body.fieldErrors === "object") {
     return { status: "invalid", fieldErrors: body.fieldErrors as Record<string, string> };

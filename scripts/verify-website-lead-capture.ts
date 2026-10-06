@@ -20,6 +20,8 @@ import {
   WebsiteLeadRateLimitedError,
   type LeadStoreDb,
 } from "../src/lib/website-leads/store";
+import { priceMarketplaceOrder } from "../src/lib/website-leads/package-pricing";
+import { MARKETPLACE_PACKAGES } from "../src/lib/website/marketplace-catalog";
 import {
   hasContact,
   validateWebsiteRequest,
@@ -107,6 +109,7 @@ function domainInput(overrides: Partial<WebsiteRequestInput> = {}): WebsiteReque
     sourcePage: "/domain",
     domain: { fqdn: "monentreprise.ca", tld: "ca" },
     project: null,
+    order: null,
     ...overrides,
   };
 }
@@ -300,6 +303,72 @@ async function main() {
     const domain = readFileSync("src/lib/website/domain-requests.ts", "utf8");
     assert.match(domain, /submitWebsiteRequest/);
     assert.match(domain, /saveLocalRequest\(input\)/);
+  });
+
+
+  await check("package orders accept identifiers only and are priced from the catalog", () => {
+    const pkg = MARKETPLACE_PACKAGES.find((p) => p.addons.length > 0)!;
+    const tier = pkg.tiers[pkg.tiers.length - 1];
+    const addon = pkg.addons[0];
+    const parsed = validateWebsiteRequest({
+      kind: "package_order", packageId: pkg.id, tierName: tier.name,
+      addons: [addon.label], promoCode: "first10",
+      totalCents: 1, finalTotalCents: 1, tierPriceCents: 1,
+    });
+    assert.ok(parsed.ok);
+    if (!parsed.ok || !parsed.value.order) return;
+    assert.equal("totalCents" in parsed.value.order, false);
+    const priced = priceMarketplaceOrder(parsed.value.order)!;
+    const subtotal = tier.priceCents + addon.priceCents;
+    assert.equal(priced.subtotalCents, subtotal);
+    assert.equal(priced.discountCents, Math.round(subtotal * 0.1));
+    assert.equal(priced.totalCents, subtotal - Math.round(subtotal * 0.1));
+    assert.equal(priceMarketplaceOrder({ ...parsed.value.order, promoCode: "FREE100" })!.discountCents, 0);
+    assert.equal(priceMarketplaceOrder({ ...parsed.value.order, packageId: "does-not-exist" }), null);
+    assert.equal(priceMarketplaceOrder({ ...parsed.value.order, tierName: "Platinum" }), null);
+    assert.equal(priceMarketplaceOrder({ ...parsed.value.order, addonLabels: ["Free extra"] }), null);
+    for (const bad of [
+      { kind: "package_order", packageId: "../etc", tierName: "Basic" },
+      { kind: "package_order", packageId: pkg.id, tierName: "Gold" },
+      { kind: "package_order", packageId: pkg.id, tierName: "Basic", addons: "x" },
+      { kind: "package_order", packageId: pkg.id, tierName: "Basic", addons: Array(11).fill("a") },
+    ]) {
+      assert.equal(validateWebsiteRequest(bad).ok, false, JSON.stringify(bad));
+    }
+  });
+
+  await check("package orders are stored as high-priority leads with catalog value", async () => {
+    const now = new Date();
+    const fake = fakeDb(now);
+    const pkg = MARKETPLACE_PACKAGES[0];
+    const order = { packageId: pkg.id, tierName: pkg.tiers[0].name, addonLabels: [], promoCode: null };
+    const pricedOrder = priceMarketplaceOrder(order)!;
+    await recordWebsiteRequest(fake.db, {
+      clientId: CLIENT, authUserId: "22222222-2222-4222-8222-222222222222", sourceHash: "h", now, pricedOrder,
+      request: { ...domainInput(), kind: "package_order", domain: null, order },
+    });
+    const lead = fake.leads[0];
+    assert.equal(lead.priority, "high");
+    assert.equal(lead.valueCents, pricedOrder.totalCents);
+    assert.match(String(lead.message), new RegExp(`^Package order: .*\\(${pkg.tiers[0].name}\\)`));
+    assert.match(String(lead.message), /not charged/);
+    await assert.rejects(recordWebsiteRequest(fake.db, {
+      clientId: CLIENT, authUserId: null, sourceHash: "h", now,
+      request: { ...domainInput(), kind: "package_order", domain: null, order },
+    }));
+  });
+
+  await check("no website link points to the missing /dashboard/marketplace page", () => {
+    for (const file of [
+      "src/components/website/checkout/checkout-client.tsx",
+      "src/components/website/layout/SiteFooter.tsx",
+      "src/lib/website/public-services.ts",
+      "src/components/website/marketplace/post-project-form.tsx",
+    ]) {
+      assert.doesNotMatch(readFileSync(file, "utf8"), /\/dashboard\/marketplace/, file);
+    }
+    const route = readFileSync("src/app/api/public/website-requests/route.ts", "utf8");
+    assert.match(route, /priceMarketplaceOrder\(value\.order\)/);
   });
 
   console.log(`\n${passed} website lead capture checks passed.`);

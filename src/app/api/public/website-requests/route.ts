@@ -6,6 +6,7 @@ import { jsonResponse } from "@/lib/security/api-response";
 import { redactSecrets } from "@/lib/security/redact";
 import { readJsonBody } from "@/lib/security/write-request";
 import { readWebsiteLeadsConfig } from "@/lib/website-leads/config";
+import { priceMarketplaceOrder } from "@/lib/website-leads/package-pricing";
 import { allowRequest, hashRequestSource } from "@/lib/website-leads/rate-limit";
 import {
   recordWebsiteRequest,
@@ -70,6 +71,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Package orders are priced from the TAKATAK catalog, never from the browser.
+  const pricedOrder = value.order ? priceMarketplaceOrder(value.order) : null;
+  if (value.kind === "package_order" && !pricedOrder) {
+    return jsonResponse(
+      { ok: false, code: "invalid_fields", fieldErrors: { package: "invalid" } },
+      400,
+    );
+  }
+
   const prisma = getPrisma();
   if (!prisma) {
     return jsonResponse({ ok: false, code: "unavailable" }, 503);
@@ -81,8 +91,16 @@ export async function POST(request: NextRequest) {
       request: value,
       authUserId: identity?.id ?? null,
       sourceHash,
+      pricedOrder,
     });
-    return jsonResponse({ ok: true, reference: recorded.reference }, 200);
+    return jsonResponse(
+      {
+        ok: true,
+        reference: recorded.reference,
+        ...(pricedOrder ? { totalCents: pricedOrder.totalCents } : {}),
+      },
+      200,
+    );
   } catch (error) {
     if (error instanceof WebsiteLeadRateLimitedError) {
       return jsonResponse({ ok: false, code: "rate_limited" }, 429);

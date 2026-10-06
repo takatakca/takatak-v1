@@ -5,6 +5,7 @@
 
 import type { Prisma } from "@prisma/client";
 
+import type { PricedPackageOrder } from "./package-pricing";
 import type { WebsiteRequestInput } from "./validation";
 
 export const WEBSITE_LEAD_SOURCE_NAME = "takatak.ca website";
@@ -33,6 +34,8 @@ export interface RecordWebsiteRequestInput {
   request: WebsiteRequestInput;
   authUserId: string | null;
   sourceHash: string;
+  /** Required for package orders: catalog-priced by the server. */
+  pricedOrder?: PricedPackageOrder | null;
   now?: Date;
 }
 
@@ -46,14 +49,26 @@ export function referenceFor(leadId: string): string {
   return leadId.replace(/-/g, "").slice(0, 8).toUpperCase();
 }
 
-function subjectOf(request: WebsiteRequestInput): string {
-  return request.kind === "domain_request"
-    ? `Domain request: ${request.domain?.fqdn ?? ""}`
-    : `Project request: ${request.project?.title ?? ""}`;
+function cad(cents: number): string {
+  return `$${(cents / 100).toFixed(2)} CAD`;
 }
 
-function composeMessage(request: WebsiteRequestInput): string {
-  const lines = [subjectOf(request)];
+function subjectOf(request: WebsiteRequestInput, order: PricedPackageOrder | null | undefined): string {
+  if (request.kind === "domain_request") return `Domain request: ${request.domain?.fqdn ?? ""}`;
+  if (request.kind === "package_order") {
+    return `Package order: ${order?.title ?? request.order?.packageId ?? ""} (${order?.tierName ?? request.order?.tierName ?? ""})`;
+  }
+  return `Project request: ${request.project?.title ?? ""}`;
+}
+
+function composeMessage(request: WebsiteRequestInput, order: PricedPackageOrder | null | undefined): string {
+  const lines = [subjectOf(request, order)];
+  if (order) {
+    lines.push(`Tier: ${order.tierName} · ${order.deliveryDays}-day delivery · ${cad(order.tierPriceCents)}`);
+    for (const addon of order.addons) lines.push(`Add-on: ${addon.label} · ${cad(addon.priceCents)}`);
+    if (order.discountCents > 0) lines.push(`Promo ${order.promoCode}: -${cad(order.discountCents)}`);
+    lines.push(`Total quoted (catalog price, not charged): ${cad(order.totalCents)}`);
+  }
   if (request.project?.category) lines.push(`Category: ${request.project.category}`);
   if (request.project?.timeline) lines.push(`Timeline: ${request.project.timeline}`);
   if (request.message) lines.push("", request.message);
@@ -66,7 +81,9 @@ export async function recordWebsiteRequest(
 ): Promise<RecordedWebsiteRequest> {
   const now = input.now ?? new Date();
   const { request, clientId } = input;
-  const subject = subjectOf(request);
+  const order = request.kind === "package_order" ? input.pricedOrder ?? null : null;
+  if (request.kind === "package_order" && !order) throw new Error("package_order_not_priced");
+  const subject = subjectOf(request, order);
 
   return db.$transaction(async (tx) => {
     let source = await tx.leadSource.findFirst({
@@ -128,10 +145,10 @@ export async function recordWebsiteRequest(
         email: request.email,
         phone: request.phone,
         company: request.company,
-        message: composeMessage(request),
+        message: composeMessage(request, order),
         status: "new_internal",
-        priority: "normal",
-        valueCents: request.project?.budgetCents ?? null,
+        priority: order ? "high" : "normal",
+        valueCents: order ? order.totalCents : request.project?.budgetCents ?? null,
         currency: "CAD",
         metadata: {
           origin: "takatak_website",
@@ -140,6 +157,7 @@ export async function recordWebsiteRequest(
           sourcePage: request.sourcePage,
           domain: request.domain,
           project: request.project,
+          order,
           authenticated: Boolean(input.authUserId),
           authUserId: input.authUserId,
           sourceHash: input.sourceHash,
