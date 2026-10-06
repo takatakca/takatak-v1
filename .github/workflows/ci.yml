@@ -97,6 +97,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Client invoicing (Stripe Connect) safeguards
+        run: npm run qa:client-invoicing
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
@@ -296,6 +299,11 @@ jobs:
 
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
+
+      - name: Client invoicing (Stripe Connect) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoicing-db
 
       - name: Build (webpack)
         env:
