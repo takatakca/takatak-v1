@@ -162,9 +162,34 @@ Database guarantees:
 | Migration | All migrations, including this one, apply on a fresh database (`prisma migrate deploy`) |
 | End-to-end (CI + local) | `scripts/billing-facturations-local-e2e.ts` against the real Facturations service. CI runs it at a pinned SHA through `scripts/ci-billing-facturations-contract.sh`. Covers: OWNER/STAFF identities, idempotent enqueue, draft creation with matching totals, 3 simultaneous sends → one draft, lost-response retry returning the same draft, outage → retry (not cancellable), 409 → reconciliation with verified link only, wrong secret → pending, wrong business refused, DB guards, audit trail |
 
+## Client invoice center: paying a Facturations invoice ("Payer")
+
+`/dashboard/invoices` (permission `manage_settings`) lists the workspace's Stripe subscription invoices and the Facturations invoices issued from its own billing requests. An owed Facturations invoice gets a **Payer** button:
+
+1. `POST /api/billing/client-invoices/[requestId]/checkout`. The route checks the workspace permission and the write origin, and ignores the request body.
+2. `startFacturationsInvoiceCheckout()` loads the request **of the active workspace only** (`submitted`, with a draft id), asks Facturations (`/integration/v1/drafts/:id/issuance`, OWNER reader) for the issued invoice, and charges its **balance**. The browser never supplies an amount or an invoice id.
+3. It creates a one-time CAD Stripe Checkout session with this metadata on the session and the PaymentIntent:
+   - `facturations_business_id` (= `FACTURATIONS_BUSINESS_ID`);
+   - `facturations_issued_invoice_id`;
+   - `takatak_client_id`;
+   - `takatak_invoice_request_id`.
+
+   The Stripe idempotency key is derived from workspace + invoice + balance, so a double click reuses one session. An already-completed session is refused, and an expired one is replaced.
+4. Stripe sends `checkout.session.completed` to **Facturations** (`POST /webhooks/stripe/payments`). Facturations verifies the signature and records `VERIFIED_PROVIDER_WEBHOOK` evidence. TAKATAK never marks the invoice paid: the client center shows **Payée** only when Facturations reports `proofScope = VERIFIED_PROVIDER_PRESENT`.
+
+TAKATAK's own Stripe webhooks (Social, AHMV) ignore these sessions because they are `mode=payment` and carry no Social or AHMV metadata.
+
+Setup (Stripe test mode first):
+- add a webhook endpoint `https://<facturations>/webhooks/stripe/payments` with events `checkout.session.completed` and `checkout.session.async_payment_succeeded` on the **same Stripe account** as `STRIPE_SECRET_KEY`;
+- put its `whsec_` secret only in Facturations' `FACTURATIONS_STRIPE_WEBHOOK_SECRET`.
+
+Tests:
+- `npm run qa:client-invoices`: pure logic and static checks;
+- `npm run qa:client-invoices-db`: real database, fake Stripe and fake Facturations. Covers metadata, idempotency, cross-workspace refusal, partial balance, paid/not-issued refusal, complete and expired sessions.
+
 ## Deliberately not in this foundation
 
-- No issuance, approval, delivery, publication or payment actions from TAKATAK. Facturations keeps these capabilities `false` in v1.
+- No issuance, approval, delivery or publication actions from TAKATAK. Facturations keeps these capabilities `false` in v1. The only payment action is the client's Stripe Checkout above; the payment proof itself is recorded by Facturations, never by TAKATAK.
 - No automatic worker. A human OWNER clicks "Create draft". A worker can later call `submitInvoiceRequest()` once the flow is proven on staging.
 - No feeding app is wired yet. Rentauto, AHMV, Ads and others call `enqueueInvoiceRequest()` in follow-up changes.
 - No external (cross-repo) feed endpoint yet. Apps in other repos (FoodHub, FESTI-ICE, …) will need a signed machine-to-machine route modelled on the existing master-API pattern.

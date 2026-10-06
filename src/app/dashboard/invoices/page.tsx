@@ -1,3 +1,4 @@
+import { FacturationsPayButton } from "@/components/billing/facturations-pay-button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getClientInvoices } from "@/lib/billing/client-invoices/client-invoice-service";
@@ -39,7 +40,24 @@ function day(value: string | null): string {
     : "—";
 }
 
-export default async function InvoicesPage() {
+const PAYMENT_NOTICES: Record<string, { tone: string; text: string }> = {
+  success: {
+    tone: "border-emerald-200 bg-emerald-50 text-emerald-800",
+    text: "Merci! Stripe a reçu votre paiement. La facture sera marquée payée dès sa confirmation, en général en moins d’une minute.",
+  },
+  cancelled: {
+    tone: "border-slate-200 bg-slate-50 text-slate-700",
+    text: "Paiement annulé. Aucun montant n’a été prélevé.",
+  },
+};
+
+export default async function InvoicesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ payment?: string | string[] }>;
+}) {
+  const { payment } = await searchParams;
+  const notice = typeof payment === "string" && Object.hasOwn(PAYMENT_NOTICES, payment) ? PAYMENT_NOTICES[payment] : undefined;
   const access = await requireWorkspacePermission("manage_settings", "/dashboard/invoices");
   const result = await getClientInvoices(access.activeClientId);
   const invoices = result.status === "ok" ? result.invoices : [];
@@ -57,6 +75,12 @@ export default async function InvoicesPage() {
           téléchargez le PDF.
         </p>
       </div>
+
+      {notice ? (
+        <p role="status" className={`rounded-lg border px-4 py-3 text-sm ${notice.tone}`}>
+          {notice.text}
+        </p>
+      ) : null}
 
       {result.status === "ok" ? (
         <section className="grid gap-3 sm:grid-cols-3" aria-label="Résumé">
@@ -143,6 +167,9 @@ export default async function InvoicesPage() {
                     </td>
                     <td className="whitespace-nowrap px-5 py-3 text-right">
                       <div className="flex justify-end gap-3 text-sm">
+                        {invoice.checkoutRequestId ? (
+                          <FacturationsPayButton requestId={invoice.checkoutRequestId} />
+                        ) : null}
                         {invoice.payUrl ? (
                           <a
                             href={invoice.payUrl}
@@ -174,8 +201,8 @@ export default async function InvoicesPage() {
       </Card>
 
       <p className="text-xs text-slate-500">
-        Abonnements : paiements sécurisés par Stripe. Factures de services : émises par GROUPE TAKATAK; le paiement en
-        ligne et le PDF arrivent bientôt sur cette page.
+        Paiements sécurisés par Stripe. Une facture de services passe à « Payée » seulement après la confirmation du
+        paiement par Stripe.
       </p>
     </div>
   );

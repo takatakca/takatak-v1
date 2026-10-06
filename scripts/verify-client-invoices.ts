@@ -6,6 +6,11 @@ import path from "node:path";
 
 import { parseDraftIssuance } from "../src/lib/integrations/facturations/contract";
 import {
+  buildFacturationsCheckoutParams,
+  facturationsCheckoutIdempotencyKey,
+  safeCheckoutUrl,
+} from "../src/lib/billing/client-invoices/facturations-checkout-policy";
+import {
   mapFacturationsInvoice,
   mapStripeInvoice,
   safeProviderUrl,
@@ -112,6 +117,64 @@ assert.equal(refunded.status, "refunded");
 assert.equal(refunded.amountDueMinor, 0);
 pass("Facturations invoices: only VERIFIED provider evidence counts as paid; synthetic/none stays owed; overdue after due date");
 
+assert.equal(factPaid.checkoutRequestId, null);
+assert.equal(refunded.checkoutRequestId, null);
+assert.equal(synthetic.checkoutRequestId, requestId);
+assert.equal(noEvidenceLate.checkoutRequestId, requestId);
+assert.equal(partialVerified.checkoutRequestId, requestId);
+assert.equal(mapStripeInvoice(base, now)?.checkoutRequestId, null);
+pass("Payer appears only on owed Facturations invoices, never on paid/refunded or Stripe rows");
+
+const issuedInvoiceId = "44444444-4444-4444-8444-444444444444";
+const checkoutInput = {
+  businessId: "groupe-takatak-business",
+  issuedInvoiceId,
+  invoiceNumber: "TK-2026-0001",
+  amountCents: 15522,
+  clientId: "client-1",
+  requestId,
+  customerId: "cus_TEST123456",
+  origin: "https://app.takatak.ca/some/path?x=1",
+};
+const params = buildFacturationsCheckoutParams(checkoutInput);
+assert.equal(params.mode, "payment");
+assert.equal(params.customer, "cus_TEST123456");
+assert.equal(params.line_items.length, 1);
+assert.equal(params.line_items[0].price_data.currency, "cad");
+assert.equal(params.line_items[0].price_data.unit_amount, 15522);
+assert.equal(params.line_items[0].price_data.product_data.name, "Facture TK-2026-0001");
+assert.deepEqual(params.metadata, {
+  facturations_business_id: "groupe-takatak-business",
+  facturations_issued_invoice_id: issuedInvoiceId,
+  takatak_client_id: "client-1",
+  takatak_invoice_request_id: requestId,
+});
+assert.deepEqual(params.payment_intent_data.metadata, params.metadata);
+assert.equal(params.success_url, "https://app.takatak.ca/dashboard/invoices?payment=success");
+assert.equal(params.cancel_url, "https://app.takatak.ca/dashboard/invoices?payment=cancelled");
+assert.equal("customer" in buildFacturationsCheckoutParams({ ...checkoutInput, customerId: "not-a-customer" }), false);
+assert.equal(buildFacturationsCheckoutParams({ ...checkoutInput, invoiceNumber: "<script>" }).line_items[0].price_data.product_data.name, "Facture script");
+for (const bad of [
+  { amountCents: 49 }, { amountCents: 100_000_000 }, { amountCents: 10.5 },
+  { issuedInvoiceId: "nope" }, { requestId: "nope" }, { businessId: "" },
+]) {
+  assert.throws(() => buildFacturationsCheckoutParams({ ...checkoutInput, ...bad }), TypeError);
+}
+pass("Checkout session: CAD one-time payment of the Facturations balance, exact metadata for the Facturations webhook");
+
+const keyInput = { clientId: "client-1", issuedInvoiceId, amountCents: 15522 };
+const key = facturationsCheckoutIdempotencyKey(keyInput);
+assert.match(key, /^tkpay1_[A-Za-z0-9_-]{43}$/);
+assert.equal(facturationsCheckoutIdempotencyKey({ ...keyInput, issuedInvoiceId: issuedInvoiceId.toUpperCase() }), key);
+assert.notEqual(facturationsCheckoutIdempotencyKey({ ...keyInput, amountCents: 6000 }), key);
+assert.notEqual(facturationsCheckoutIdempotencyKey({ ...keyInput, clientId: "client-2" }), key);
+assert.notEqual(facturationsCheckoutIdempotencyKey({ ...keyInput, attempt: "2026-10-06T12" }), key);
+assert.equal(safeCheckoutUrl("https://checkout.stripe.com/c/pay/cs_test_123"), "https://checkout.stripe.com/c/pay/cs_test_123");
+for (const url of ["http://checkout.stripe.com/c/pay", "https://checkout.stripe.com.evil.example/", "https://evil.example/", "javascript:alert(1)", null]) {
+  assert.equal(safeCheckoutUrl(url), null);
+}
+pass("double clicks reuse one Stripe session; only Stripe-hosted HTTPS checkout URLs are followed");
+
 assert.deepEqual(
   parseDraftIssuance({ draftId: requestId, issued: false, invoice: null, nativeActions: {} }),
   { draftId: requestId, issued: false, invoice: null },
@@ -129,7 +192,9 @@ const read = (relative: string) => fs.readFileSync(path.join(root, relative), "u
 const page = read("src/app/dashboard/invoices/page.tsx");
 assert.ok(page.includes('requireWorkspacePermission("manage_settings", "/dashboard/invoices")'));
 assert.ok(page.includes("getClientInvoices(access.activeClientId)"));
-assert.equal(/searchParams|params\b/.test(page), false, "page never takes a customer or client from the URL");
+assert.equal(/\bparams\b/.test(page), false, "page never takes a customer or client from the URL");
+assert.equal((page.match(/searchParams/g) ?? []).length, 3, "searchParams only selects the payment notice");
+assert.ok(page.includes("Object.hasOwn(PAYMENT_NOTICES, payment)"));
 assert.ok(page.includes('rel="noopener noreferrer"'));
 const service = read("src/lib/billing/client-invoices/client-invoice-service.ts");
 assert.ok(service.startsWith('import "server-only";'));
@@ -139,6 +204,22 @@ assert.equal(/invoices\.(create|update|pay|finalize|void|del)/.test(service), fa
 assert.ok(service.includes("where: { clientId, status: \"submitted\", facturationsDraftId: { not: null } }"), "Facturations invoices come from this workspace's own requests");
 assert.ok(service.includes("result.data.draftId !== request.facturationsDraftId"), "Facturations must answer for the exact recorded draft");
 assert.equal(/createFacturationsDraft|reconcileInvoiceRequest|submitInvoiceRequest/.test(service), false, "client page never writes to Facturations");
+const checkout = read("src/lib/billing/client-invoices/facturations-checkout.ts");
+assert.ok(checkout.startsWith('import "server-only";'));
+assert.ok(checkout.includes('where: { id: input.requestId, clientId: input.clientId, status: "submitted", facturationsDraftId: { not: null } }'), "only this workspace's own issued requests can be paid");
+assert.ok(checkout.includes("issuance.data.draftId !== request.facturationsDraftId"));
+assert.ok(checkout.includes("amountCents: view.amountDueMinor"), "amount comes from Facturations, not the browser");
+assert.ok(checkout.includes("idempotencyKey: facturationsCheckoutIdempotencyKey"));
+assert.equal(/markPaid|status: "paid"|billingInvoiceRequest\.update/.test(checkout), false, "TAKATAK never marks a Facturations invoice paid");
+const checkoutRoute = read("src/app/api/billing/client-invoices/[requestId]/checkout/route.ts");
+assert.ok(checkoutRoute.includes('requireWorkspaceApiPermission("manage_settings")'));
+assert.ok(checkoutRoute.includes("hasValidWriteOrigin(request)"));
+assert.ok(checkoutRoute.includes("clientId: gate.access.activeClientId"));
+assert.equal(/request\.(json|text|formData)\(/.test(checkoutRoute), false, "route ignores the request body");
+const payButton = read("src/components/billing/facturations-pay-button.tsx");
+assert.ok(payButton.includes('url.hostname === "checkout.stripe.com"'));
+pass("Payer route is workspace-gated, origin-checked, body-free and server-priced");
+
 const roles = read("src/lib/security/roles.ts");
 assert.ok(roles.includes('"/dashboard/invoices": "manage_settings"'));
 pass("page is workspace-scoped and permission-gated; service is server-only and read-only");

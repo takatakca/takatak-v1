@@ -144,6 +144,7 @@ async function getFacturationsInvoices(
   }
 
   const invoices: ClientInvoiceView[] = [];
+  const checkoutAvailable = Boolean(getStripeSecretKey());
   let failed = false;
 
   for (let start = 0; start < requests.length; start += FACTURATIONS_CONCURRENCY) {
@@ -168,17 +169,17 @@ async function getFacturationsInvoices(
         return;
       }
 
-      invoices.push(
-        mapFacturationsInvoice(
-          {
-            requestId: request.id,
-            invoice: result.data.invoice,
-            dueDate: draftField(request.draft, "dueDate"),
-            description: firstLineDescription(request.draft),
-          },
-          now,
-        ),
+      const view = mapFacturationsInvoice(
+        {
+          requestId: request.id,
+          invoice: result.data.invoice,
+          dueDate: draftField(request.draft, "dueDate"),
+          description: firstLineDescription(request.draft),
+        },
+        now,
       );
+
+      invoices.push(checkoutAvailable ? view : { ...view, checkoutRequestId: null });
     });
   }
 

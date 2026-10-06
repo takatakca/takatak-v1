@@ -26,6 +26,11 @@ export interface ClientInvoiceView {
   /** Provider page where the client can view and pay. */
   payUrl: string | null;
   pdfUrl: string | null;
+  /**
+   * Facturations invoices only: this workspace's billing request id, set when
+   * the invoice can be paid online through a TAKATAK Stripe Checkout session.
+   */
+  checkoutRequestId: string | null;
 }
 
 /** Minimal structural shape of a Stripe invoice (subset of Stripe.Invoice). */
@@ -122,6 +127,7 @@ export function mapStripeInvoice(
       ? safeProviderUrl(invoice.hosted_invoice_url)
       : null,
     pdfUrl: safeProviderUrl(invoice.invoice_pdf),
+    checkoutRequestId: null,
   };
 }
 
@@ -173,6 +179,10 @@ export function mapFacturationsInvoice(
     status,
     payUrl: null,
     pdfUrl: null,
+    checkoutRequestId:
+      (status === "open" || status === "overdue") && balance > 0 && Number.isSafeInteger(balance)
+        ? input.requestId
+        : null,
   };
 }
 
