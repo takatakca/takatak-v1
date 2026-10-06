@@ -12,8 +12,8 @@ export default async function SavedOutputsPage() {
     <div className="space-y-5">
       <AiHeader
         title="Saved Outputs"
-        subtitle="Saved AI Studio content with honest provenance. Everything below is a foundation template written by TAKATAK — nothing is AI-generated yet."
-        badges={[{ label: "Foundation" }, { label: "Templates — not AI", status: "foundation_template" }]}
+        subtitle="Saved AI Studio content with honest provenance: each item is labeled as a TAKATAK template, manual text, or an AI-generated draft. Drafts are reviewed by a person before any use."
+        badges={[{ label: "Origin labeled" }, { label: "Never auto-published" }]}
       />
       <AiSourceBanner source={data.source} label={data.sourceLabel} />
       {data.outputs.length ? (

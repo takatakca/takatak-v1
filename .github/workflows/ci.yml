@@ -97,6 +97,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: AI Studio generation safeguards
+        run: npm run qa:ai-studio-generation
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 

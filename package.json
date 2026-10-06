@@ -76,6 +76,7 @@
     "qa:rentauto-service-access": "tsx scripts/rentauto-service-entitlement-tests.ts",
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
     "qa:1lv-master-api": "tsx --require ./scripts/register-server-only.cjs scripts/one-lv-master-api-tests.ts",
+    "qa:ai-studio-generation": "tsx --require ./scripts/register-server-only.cjs scripts/verify-ai-studio-generation.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",
     "qa:1lv-legacy-upgrade": "tsx scripts/ci-check-one-lv-legacy-upgrade.ts",
     "qa:ahmv-schedule-feed": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-schedule-feed-tests.ts",

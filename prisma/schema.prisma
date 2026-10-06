@@ -1974,6 +1974,7 @@ enum AiProvider {
   openai
   tryholo
   internal
+  anthropic
 }
 
 enum AiContentKind {
