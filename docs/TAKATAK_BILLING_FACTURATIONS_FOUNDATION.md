@@ -174,13 +174,18 @@ Database guarantees:
    - `takatak_client_id`;
    - `takatak_invoice_request_id`.
 
-   The Stripe idempotency key is derived from workspace + invoice + balance, so a double click reuses one session. An already-completed session is refused, and an expired one is replaced.
+   Every session is recorded (`billing_invoice_checkout_sessions`, append-only) and its live state is re-read from Stripe on the next click:
+   - an open session for the same balance is **reused**, so a double click or a second tab never opens a second payable session;
+   - a session that is complete but still **processing** (async payment methods), or complete and paid for the same balance, **blocks** a new payment, with no reliance on Stripe's 24 h idempotency window;
+   - an outdated open session (the balance changed, e.g. after a partial refund) is **expired** before a new one is created; an expired one is replaced.
+
+   The idempotency key also covers the exact parameters and the previous session, so it never collides after a change.
 4. Stripe sends `checkout.session.completed` to **Facturations** (`POST /webhooks/stripe/payments`). Facturations verifies the signature and records `VERIFIED_PROVIDER_WEBHOOK` evidence. TAKATAK never marks the invoice paid: the client center shows **Payée** only when Facturations reports `proofScope = VERIFIED_PROVIDER_PRESENT`. Stripe refunds (`refund.*`) are recorded the same way, so a refunded invoice shows **Remboursée**, never **Payée**.
 
 TAKATAK's own Stripe webhooks (Social, AHMV) ignore these sessions because they are `mode=payment` and carry no Social or AHMV metadata.
 
 Setup (Stripe test mode first):
-- add a webhook endpoint `https://<facturations>/webhooks/stripe/payments` with events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `refund.created` and `refund.updated` on the **same Stripe account** as `STRIPE_SECRET_KEY`;
+- add a webhook endpoint `https://<facturations>/webhooks/stripe/payments` with events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `refund.created`, `refund.updated`, `refund.failed`, `charge.dispute.funds_withdrawn` and `charge.dispute.funds_reinstated` on the **same Stripe account** as `STRIPE_SECRET_KEY`;
 - put its `whsec_` secret only in Facturations' `FACTURATIONS_STRIPE_WEBHOOK_SECRET`.
 
 Tests:
@@ -198,7 +203,7 @@ Tests:
 ## Before merging to `main`
 
 1. Review this branch and run CI.
-2. The migration `20261006120000_takatak_billing_invoice_requests` is **not** in `APPROVED_DEPLOY_MIGRATIONS` (`scripts/reconcile-staging-migrations.mjs` and `scripts/reconcile-production-migrations.mjs`). Adding it there is an explicit owner decision: staging and production apply only listed migrations.
+2. The migrations `20261006120000_takatak_billing_invoice_requests` and `20261006150000_billing_invoice_checkout_sessions` (Payer) are **not** in `APPROVED_DEPLOY_MIGRATIONS` (`scripts/reconcile-staging-migrations.mjs` and `scripts/reconcile-production-migrations.mjs`). Adding it there is an explicit owner decision: staging and production apply only listed migrations.
 3. Keep `FACTURATIONS_INTEGRATION_ENABLED=0` until Facturations staging passes its activation gate.
 
 ## Next implementation sequence

@@ -129,3 +129,49 @@ export function safeCheckoutUrl(value: string | null | undefined): string | null
     return null;
   }
 }
+
+export type PreviousCheckoutDecision = "reuse" | "refuse_paid" | "refuse_processing" | "replace";
+
+/**
+ * What to do with the last Checkout session opened for this invoice:
+ * - open for the same amount → reuse it (never two payable sessions);
+ * - complete but the payment is still processing → refuse;
+ * - complete and paid for the same amount → refuse (Facturations confirms soon);
+ * - anything else (expired, other amount after a partial refund) → replace,
+ *   expiring it first when it is still open.
+ */
+export function decidePreviousCheckoutSession(input: {
+  status: string | null;
+  paymentStatus: string | null;
+  sessionAmountCents: number | null;
+  currentAmountCents: number;
+}): PreviousCheckoutDecision {
+  const sameAmount = input.sessionAmountCents === input.currentAmountCents;
+
+  if (input.status === "open") {
+    return sameAmount ? "reuse" : "replace";
+  }
+
+  if (input.status === "complete") {
+    if (input.paymentStatus !== "paid" && input.paymentStatus !== "no_payment_required") {
+      return "refuse_processing";
+    }
+
+    return sameAmount ? "refuse_paid" : "replace";
+  }
+
+  return "replace";
+}
+
+/** Stable hash of the exact Checkout parameters (part of the idempotency key). */
+export function hashCheckoutParams(params: FacturationsCheckoutParams): string {
+  const canonical = (value: unknown): unknown =>
+    Array.isArray(value)
+      ? value.map(canonical)
+      : value && typeof value === "object"
+        ? Object.fromEntries(Object.keys(value as Record<string, unknown>).sort().map((key) => [key, canonical((value as Record<string, unknown>)[key])]))
+        : value;
+
+  return createHash("sha256").update(JSON.stringify(canonical(params))).digest("base64url").slice(0, 22);
+}
+

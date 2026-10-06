@@ -26,6 +26,7 @@ const SECRET_TABLES = [
   "job_logs",
   "stripe_webhook_events",
   "billing_invoice_requests",
+  "billing_invoice_checkout_sessions",
   "integration_accounts",
   "integration_events",
   "audit_logs",

@@ -19,7 +19,9 @@ import { ServiceError } from "@/lib/services/service-error";
 
 import {
   buildFacturationsCheckoutParams,
+  decidePreviousCheckoutSession,
   facturationsCheckoutIdempotencyKey,
+  hashCheckoutParams,
   isPayableFacturationsAmount,
   safeCheckoutUrl,
 } from "./facturations-checkout-policy";
@@ -62,46 +64,83 @@ export async function startFacturationsInvoiceCheckout(input: {
     throw new ServiceError("conflict", "Cette facture n’a pas de solde à payer en ligne.");
   }
 
+  const amountCents = view.amountDueMinor;
+  const stripe = getStripe();
+  const previous = await prisma.billingInvoiceCheckoutSession.findFirst({
+    where: { requestId: request.id, clientId: input.clientId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (previous) {
+    const session = await stripe.checkout.sessions.retrieve(previous.stripeSessionId);
+    const decision = decidePreviousCheckoutSession({
+      status: session.status,
+      paymentStatus: session.payment_status,
+      sessionAmountCents: session.amount_total,
+      currentAmountCents: amountCents,
+    });
+
+    if (decision === "reuse") {
+      const url = safeCheckoutUrl(session.url);
+      if (url) {
+        return { url };
+      }
+    }
+
+    if (decision === "refuse_processing") {
+      throw new ServiceError("conflict", "Un paiement est déjà en cours de traitement pour cette facture.");
+    }
+
+    if (decision === "refuse_paid") {
+      throw new ServiceError(
+        "conflict",
+        "Ce paiement a déjà été reçu. La facture sera marquée payée dès la confirmation de Stripe.",
+      );
+    }
+
+    if (session.status === "open") {
+      // Outdated amount: close it so it can never be paid alongside the new one.
+      await stripe.checkout.sessions.expire(previous.stripeSessionId);
+    }
+  }
+
   const [customerId] = await getClientStripeCustomerIds(input.clientId);
   const params = buildFacturationsCheckoutParams({
     businessId: config.businessId,
     issuedInvoiceId: invoice.id,
     invoiceNumber: invoice.officialInvoiceNumber,
-    amountCents: view.amountDueMinor,
+    amountCents,
     clientId: input.clientId,
     requestId: request.id,
     customerId: customerId ?? null,
     origin: getApplicationOrigin(input.requestOrigin),
   });
-  const stripe = getStripe();
-  const keyInput = { clientId: input.clientId, issuedInvoiceId: invoice.id, amountCents: view.amountDueMinor };
-  let session = await stripe.checkout.sessions.create(params, {
-    idempotencyKey: facturationsCheckoutIdempotencyKey(keyInput),
+  // Same click twice → same key → same session. The key also covers the exact
+  // parameters and the previous session, so it never collides after a change.
+  const session = await stripe.checkout.sessions.create(params, {
+    idempotencyKey: facturationsCheckoutIdempotencyKey({
+      clientId: input.clientId,
+      issuedInvoiceId: invoice.id,
+      amountCents,
+      attempt: `${previous?.stripeSessionId ?? "first"}|${hashCheckoutParams(params)}`,
+    }),
   });
-
-  if (session.status === "complete") {
-    throw new ServiceError(
-      "conflict",
-      "Ce paiement a déjà été reçu. La facture sera marquée payée dès la confirmation de Stripe.",
-    );
-  }
-
-  if (session.status === "expired") {
-    // The day-long session behind this key ended unpaid: open a fresh one,
-    // still deduplicated for this hour.
-    session = await stripe.checkout.sessions.create(params, {
-      idempotencyKey: facturationsCheckoutIdempotencyKey({
-        ...keyInput,
-        attempt: new Date().toISOString().slice(0, 13),
-      }),
-    });
-  }
-
   const url = session.status === "open" ? safeCheckoutUrl(session.url) : null;
 
-  if (!url) {
+  if (!url || typeof session.id !== "string") {
     throw new ServiceError("unavailable", "Stripe n’a pas ouvert la page de paiement. Réessayez dans quelques minutes.");
   }
+
+  await prisma.billingInvoiceCheckoutSession.createMany({
+    data: [{
+      requestId: request.id,
+      clientId: input.clientId,
+      issuedInvoiceId: invoice.id,
+      stripeSessionId: session.id,
+      amountCents: BigInt(amountCents),
+    }],
+    skipDuplicates: true,
+  });
 
   return { url };
 }

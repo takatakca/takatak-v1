@@ -4099,6 +4099,7 @@ model BillingInvoiceRequest {
   updatedAt              DateTime                    @updatedAt
 
   client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  checkoutSessions BillingInvoiceCheckoutSession[]
   masterIdentity MasterIdentity? @relation(fields: [masterIdentityId], references: [id], onDelete: SetNull)
   createdBy      Profile?        @relation("BillingInvoiceRequestCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
   submittedBy    Profile?        @relation("BillingInvoiceRequestSubmittedBy", fields: [submittedByProfileId], references: [id], onDelete: SetNull)
@@ -4111,3 +4112,22 @@ model BillingInvoiceRequest {
   @@index([submittedByProfileId])
   @@map("billing_invoice_requests")
 }
+
+/// GROUPE TAKATAK Billing — Stripe Checkout sessions a client opened to pay a
+/// Facturations invoice. One open session per invoice and amount is reused;
+/// a completed one blocks a second payment; an outdated one is expired first.
+model BillingInvoiceCheckoutSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  requestId       String   @db.Uuid
+  clientId        String   @db.Uuid
+  issuedInvoiceId String   @db.Uuid
+  stripeSessionId String   @unique
+  amountCents     BigInt
+  createdAt       DateTime @default(now())
+
+  request BillingInvoiceRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, createdAt])
+  @@map("billing_invoice_checkout_sessions")
+}
+

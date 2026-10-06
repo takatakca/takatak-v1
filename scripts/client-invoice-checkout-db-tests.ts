@@ -10,16 +10,27 @@ import { startFacturationsInvoiceCheckout } from "@/lib/billing/client-invoices/
 import { ServiceError } from "@/lib/services/service-error";
 
 const BUSINESS = "checkout-test-business";
+// Stateful fake Stripe Checkout: sessions keep their status; same key → same session.
 const sessions: Array<{ params: any; key: string }> = [];
-let nextStatus: "open" | "complete" | "expired" = "open";
+const byId = new Map<string, any>();
+const byKey = new Map<string, any>();
+const expired: string[] = [];
+const RUN = randomUUID().replace(/-/g, "").slice(0, 10);
+const sid = (n: number) => `cs_test_${n}x${RUN}`;
 (globalThis as any).socialStripe = {
   invoices: { list: async () => ({ data: [] }) },
-  checkout: { sessions: { create: async (params: any, options: { idempotencyKey: string }) => {
-    sessions.push({ params, key: options.idempotencyKey });
-    const status = nextStatus;
-    nextStatus = "open";
-    return { id: `cs_test_${sessions.length}`, status, url: `https://checkout.stripe.com/c/pay/cs_test_${sessions.length}` };
-  } } },
+  checkout: { sessions: {
+    create: async (params: any, options: { idempotencyKey: string }) => {
+      sessions.push({ params, key: options.idempotencyKey });
+      if (byKey.has(options.idempotencyKey)) return byKey.get(options.idempotencyKey);
+      const id = sid(byId.size + 1);
+      const session = { id, status: "open", payment_status: "unpaid", amount_total: params.line_items[0].price_data.unit_amount, url: `https://checkout.stripe.com/c/pay/${id}` };
+      byId.set(id, session); byKey.set(options.idempotencyKey, session);
+      return session;
+    },
+    retrieve: async (id: string) => ({ ...byId.get(id) }),
+    expire: async (id: string) => { expired.push(id); Object.assign(byId.get(id), { status: "expired" }); return byId.get(id); },
+  } },
 };
 
 type Issued = { id: string; totalCents: string; balanceCents: string; financialState: string; proofScope: string };
@@ -87,7 +98,7 @@ async function main() {
   console.log("PASS invoice center offers Payer on an owed Facturations invoice");
 
   const first = await startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id });
-  assert.equal(first.url, "https://checkout.stripe.com/c/pay/cs_test_1");
+  assert.equal(first.url, `https://checkout.stripe.com/c/pay/${sid(1)}`);
   const created = sessions[0];
   assert.equal(created.params.mode, "payment");
   assert.equal(created.params.customer, customer);
@@ -96,33 +107,48 @@ async function main() {
   assert.equal(created.params.metadata.facturations_issued_invoice_id, issuedId);
   assert.equal(created.params.metadata.takatak_client_id, client.id);
   assert.equal(created.params.success_url, "https://app.takatak.test/dashboard/invoices?payment=success");
-  await startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id });
-  assert.equal(sessions[1].key, created.key, "double click reuses the same idempotency key");
-  console.log("PASS Checkout session carries the Facturations balance and exact metadata; repeats are idempotent");
+  const [concurrentA, concurrentB] = await Promise.all([
+    startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id }),
+    startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id }),
+  ]);
+  assert.equal(concurrentA.url, first.url); assert.equal(concurrentB.url, first.url);
+  assert.equal(sessions.length, 1, `an open session for the same amount is reused, never duplicated (${sessions.length})`);
+  console.log("PASS Checkout session carries the Facturations balance and exact metadata; repeat clicks reuse the open session");
 
   await expectServiceError(startFacturationsInvoiceCheckout({ clientId: other.id, requestId: owed.row.id }), "not_found");
   console.log("PASS another workspace cannot pay (or even see) this invoice");
 
-  const partial = await submittedRequest(client.id, { totalCents: "15522", balanceCents: "6000", financialState: "PARTIALLY_PAID", proofScope: "VERIFIED_PROVIDER_PRESENT" });
-  await startFacturationsInvoiceCheckout({ clientId: client.id, requestId: partial.row.id });
+  Object.assign(byId.get(sid(1)), { status: "complete", payment_status: "unpaid" });
+  await expectServiceError(startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id }), "conflict");
+  Object.assign(byId.get(sid(1)), { status: "complete", payment_status: "paid" });
+  await expectServiceError(startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id }), "conflict");
+  assert.equal(sessions.length, 1);
+  console.log("PASS a processing or completed payment blocks a second one (no 24 h idempotency window involved)");
+
+  Object.assign(byId.get(sid(1)), { status: "expired", payment_status: "unpaid" });
+  const renewed = await startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id });
+  assert.equal(sessions.length, 2);
+  assert.notEqual(sessions[1].key, created.key, "new session after expiry gets a new key");
+  assert.equal(renewed.url, `https://checkout.stripe.com/c/pay/${sid(2)}`);
+  console.log("PASS an expired session is replaced by a fresh one");
+
+  issuances.get(owed.draftId)!.balanceCents = "6000";
+  Object.assign(issuances.get(owed.draftId)!, { financialState: "PARTIALLY_PAID", proofScope: "VERIFIED_PROVIDER_PRESENT" });
+  await startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id });
+  assert.deepEqual(expired, [sid(2)], "the open session for the old amount is expired before a new one");
   assert.equal(sessions.at(-1)!.params.line_items[0].price_data.unit_amount, 6000);
-  console.log("PASS partially paid (verified) invoice charges only the remaining balance");
+  console.log("PASS a changed balance expires the outdated open session and charges only the remaining balance");
+
+  const rows = await prisma.billingInvoiceCheckoutSession.findMany({ where: { requestId: owed.row.id }, orderBy: { createdAt: "asc" } });
+  assert.deepEqual(rows.map((r) => [r.stripeSessionId, Number(r.amountCents)]), [[sid(1), 15522], [sid(2), 15522], [sid(3), 6000]]);
+  await assert.rejects(prisma.$executeRawUnsafe(`DELETE FROM billing_invoice_checkout_sessions WHERE "requestId"='${owed.row.id}'`), /append-only/);
+  console.log("PASS every session is recorded once, append-only");
 
   const paid = await submittedRequest(client.id, { totalCents: "15522", balanceCents: "0", financialState: "PAID", proofScope: "VERIFIED_PROVIDER_PRESENT" });
   await expectServiceError(startFacturationsInvoiceCheckout({ clientId: client.id, requestId: paid.row.id }), "conflict");
   const notIssued = await submittedRequest(client.id, null);
   await expectServiceError(startFacturationsInvoiceCheckout({ clientId: client.id, requestId: notIssued.row.id }), "not_found");
-  console.log("PASS paid or not-yet-issued invoices cannot be paid again");
-
-  nextStatus = "complete";
-  await expectServiceError(startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id }), "conflict");
-  nextStatus = "expired";
-  const before = sessions.length;
-  const renewed = await startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id });
-  assert.equal(sessions.length, before + 2);
-  assert.notEqual(sessions.at(-1)!.key, created.key, "expired session → fresh key");
-  assert.match(renewed.url, /^https:\/\/checkout\.stripe\.com\//);
-  console.log("PASS already-paid session blocks a second payment; expired session opens a fresh one");
+  console.log("PASS paid or not-yet-issued invoices cannot be paid");
 
   delete process.env.STRIPE_SECRET_KEY;
   await expectServiceError(startFacturationsInvoiceCheckout({ clientId: client.id, requestId: owed.row.id }), "unavailable");

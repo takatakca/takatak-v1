@@ -7,7 +7,9 @@ import path from "node:path";
 import { parseDraftIssuance } from "../src/lib/integrations/facturations/contract";
 import {
   buildFacturationsCheckoutParams,
+  decidePreviousCheckoutSession,
   facturationsCheckoutIdempotencyKey,
+  hashCheckoutParams,
   safeCheckoutUrl,
 } from "../src/lib/billing/client-invoices/facturations-checkout-policy";
 import {
@@ -173,7 +175,19 @@ assert.equal(safeCheckoutUrl("https://checkout.stripe.com/c/pay/cs_test_123"), "
 for (const url of ["http://checkout.stripe.com/c/pay", "https://checkout.stripe.com.evil.example/", "https://evil.example/", "javascript:alert(1)", null]) {
   assert.equal(safeCheckoutUrl(url), null);
 }
-pass("double clicks reuse one Stripe session; only Stripe-hosted HTTPS checkout URLs are followed");
+const decide = (status: string | null, paymentStatus: string | null, sessionAmountCents: number | null) =>
+  decidePreviousCheckoutSession({ status, paymentStatus, sessionAmountCents, currentAmountCents: 15522 });
+assert.equal(decide("open", "unpaid", 15522), "reuse");
+assert.equal(decide("open", "unpaid", 6000), "replace");
+assert.equal(decide("complete", "unpaid", 15522), "refuse_processing");
+assert.equal(decide("complete", "unpaid", 6000), "refuse_processing");
+assert.equal(decide("complete", "paid", 15522), "refuse_paid");
+assert.equal(decide("complete", "paid", 6000), "replace");
+assert.equal(decide("expired", "unpaid", 15522), "replace");
+assert.equal(decide(null, null, null), "replace");
+assert.equal(hashCheckoutParams(params), hashCheckoutParams(buildFacturationsCheckoutParams(checkoutInput)));
+assert.notEqual(hashCheckoutParams(params), hashCheckoutParams(buildFacturationsCheckoutParams({ ...checkoutInput, customerId: null })));
+pass("double clicks reuse one Stripe session; a paid or processing session blocks a second payment; only Stripe-hosted URLs are followed");
 
 assert.deepEqual(
   parseDraftIssuance({ draftId: requestId, issued: false, invoice: null, nativeActions: {} }),
@@ -208,8 +222,10 @@ const checkout = read("src/lib/billing/client-invoices/facturations-checkout.ts"
 assert.ok(checkout.startsWith('import "server-only";'));
 assert.ok(checkout.includes('where: { id: input.requestId, clientId: input.clientId, status: "submitted", facturationsDraftId: { not: null } }'), "only this workspace's own issued requests can be paid");
 assert.ok(checkout.includes("issuance.data.draftId !== request.facturationsDraftId"));
-assert.ok(checkout.includes("amountCents: view.amountDueMinor"), "amount comes from Facturations, not the browser");
+assert.ok(checkout.includes("const amountCents = view.amountDueMinor;"), "amount comes from Facturations, not the browser");
 assert.ok(checkout.includes("idempotencyKey: facturationsCheckoutIdempotencyKey"));
+assert.ok(checkout.includes("stripe.checkout.sessions.expire(previous.stripeSessionId)"), "outdated open sessions are expired");
+assert.ok(checkout.includes("billingInvoiceCheckoutSession.createMany"), "every session is recorded");
 assert.equal(/markPaid|status: "paid"|billingInvoiceRequest\.update/.test(checkout), false, "TAKATAK never marks a Facturations invoice paid");
 const checkoutRoute = read("src/app/api/billing/client-invoices/[requestId]/checkout/route.ts");
 assert.ok(checkoutRoute.includes('requireWorkspaceApiPermission("manage_settings")'));
