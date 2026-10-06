@@ -300,6 +300,13 @@ jobs:
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
 
+      - name: GROUPE TAKATAK billing ↔ real Facturations contract (pinned SHA)
+        env:
+          # Exact takatakca/Facturations commit whose integration v1 contract
+          # this branch is verified against. Bump deliberately, with review.
+          FACTURATIONS_REF: eb1e02a10efdf9767dca0eeb04b5010209d18f07
+        run: bash scripts/ci-billing-facturations-contract.sh
+
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
