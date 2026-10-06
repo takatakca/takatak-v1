@@ -37,3 +37,13 @@ export function facturationsSubject(input: {
     ? `takatak:mi:${input.masterIdentityId}`
     : `takatak:profile:${input.profileId}`;
 }
+
+/**
+ * Server-side system identity used ONLY for read-only lookups made on behalf
+ * of a client workspace (its own issued invoices). Never derived from, or
+ * exposed to, a browser.
+ */
+export const FACTURATIONS_CLIENT_INVOICE_READER = Object.freeze({
+  subject: "takatak:system:client-invoice-center",
+  role: "OWNER" as const,
+});

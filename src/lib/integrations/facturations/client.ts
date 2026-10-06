@@ -13,6 +13,7 @@ import {
   parseCreatedDraft,
   parseDashboard,
   parseDraftDetail,
+  parseDraftIssuance,
   parseDraftPage,
   parseDraftWorkflow,
   readFacturationsEnvelope,
@@ -22,6 +23,7 @@ import {
   type FacturationsCreatedDraft,
   type FacturationsDashboard,
   type FacturationsDraftDetail,
+  type FacturationsDraftIssuance,
   type FacturationsDraftPage,
   type FacturationsDraftWorkflow,
   type FacturationsResult,
@@ -248,6 +250,26 @@ export function listFacturationsDrafts(
       query: pageQuery(page, pageSize),
     },
     parseDraftPage,
+  );
+}
+
+/** OWNER only. Read-only issuance + payment status of the invoice issued from a draft. */
+export function getFacturationsDraftIssuance(
+  actor: FacturationsActor,
+  draftId: string,
+): Promise<FacturationsResult<FacturationsDraftIssuance>> {
+  if (actor.role !== "OWNER") {
+    return Promise.resolve(failure("owner_required"));
+  }
+
+  if (!isFacturationsDraftId(draftId)) {
+    return Promise.resolve(failure("invalid_request"));
+  }
+
+  return facturationsRequest(
+    actor,
+    { method: "GET", path: `/integration/v1/drafts/${draftId}/issuance` },
+    parseDraftIssuance,
   );
 }
 

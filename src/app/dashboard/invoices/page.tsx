@@ -16,7 +16,13 @@ const STATUS_LABELS: Record<ClientInvoiceStatus, string> = {
   overdue: "En retard",
   void: "Annulée",
   uncollectible: "Irrécouvrable",
+  refunded: "Remboursée",
 };
+
+const SOURCE_LABELS = {
+  stripe: "Abonnement",
+  facturations: "Facture de services",
+} as const;
 
 const STATUS_TONES: Record<ClientInvoiceStatus, "success" | "warning" | "danger" | "muted"> = {
   paid: "success",
@@ -24,6 +30,7 @@ const STATUS_TONES: Record<ClientInvoiceStatus, "success" | "warning" | "danger"
   overdue: "danger",
   void: "muted",
   uncollectible: "muted",
+  refunded: "muted",
 };
 
 function day(value: string | null): string {
@@ -116,6 +123,7 @@ export default async function InvoicesPage() {
                   <tr key={invoice.id} className="align-top">
                     <td className="px-5 py-3">
                       <div className="font-medium text-slate-900">{invoice.number ?? "Facture"}</div>
+                      <div className="text-xs text-slate-400">{SOURCE_LABELS[invoice.source]}</div>
                       {invoice.description ? (
                         <div className="max-w-xs truncate text-xs text-slate-500">{invoice.description}</div>
                       ) : null}
@@ -166,7 +174,8 @@ export default async function InvoicesPage() {
       </Card>
 
       <p className="text-xs text-slate-500">
-        Paiements sécurisés par Stripe. Les factures de services sur mesure apparaîtront aussi sur cette page.
+        Abonnements : paiements sécurisés par Stripe. Factures de services : émises par GROUPE TAKATAK; le paiement en
+        ligne et le PDF arrivent bientôt sur cette page.
       </p>
     </div>
   );

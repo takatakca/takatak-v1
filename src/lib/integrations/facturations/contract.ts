@@ -94,6 +94,36 @@ export interface FacturationsDraftDetail {
   totals: FacturationsPreviewTotals;
 }
 
+export const FACTURATIONS_FINANCIAL_STATES = [
+  "NO_EVIDENCE",
+  "UNPAID",
+  "PARTIALLY_PAID",
+  "PAID",
+  "OVERPAID",
+  "FULLY_REFUNDED",
+  "REFUND_EXCEEDS_PAYMENTS",
+] as const;
+
+export type FacturationsFinancialState = (typeof FACTURATIONS_FINANCIAL_STATES)[number];
+export type FacturationsProofScope = "NONE" | "SYNTHETIC_ONLY" | "VERIFIED_PROVIDER_PRESENT";
+
+export interface FacturationsIssuedInvoice {
+  id: string;
+  officialInvoiceNumber: string;
+  issuedAt: string;
+  currency: "CAD";
+  totalCents: string;
+  balanceCents: string;
+  financialState: FacturationsFinancialState;
+  proofScope: FacturationsProofScope;
+}
+
+export interface FacturationsDraftIssuance {
+  draftId: string;
+  issued: boolean;
+  invoice: FacturationsIssuedInvoice | null;
+}
+
 export interface FacturationsDraftWorkflow {
   draftId: string;
   status: "DRAFT";
@@ -343,6 +373,52 @@ export function parseDraftDetail(
     invoiceDate: preview.invoiceDate,
     dueDate: preview.dueDate,
     totals,
+  };
+}
+
+export function parseDraftIssuance(
+  data: Record<string, unknown>,
+): FacturationsDraftIssuance | null {
+  if (!isUuid(data.draftId) || typeof data.issued !== "boolean") {
+    return null;
+  }
+
+  if (!data.issued) {
+    return data.invoice === null ? { draftId: data.draftId, issued: false, invoice: null } : null;
+  }
+
+  const invoice = data.invoice;
+
+  if (
+    !isRecord(invoice) ||
+    !isUuid(invoice.id) ||
+    typeof invoice.officialInvoiceNumber !== "string" ||
+    invoice.officialInvoiceNumber.length < 1 ||
+    invoice.officialInvoiceNumber.length > 160 ||
+    typeof invoice.issuedAt !== "string" ||
+    !Number.isFinite(Date.parse(invoice.issuedAt)) ||
+    invoice.currency !== "CAD" ||
+    !isUnsignedIntegerString(invoice.totalCents) ||
+    !isUnsignedIntegerString(invoice.balanceCents) ||
+    !(FACTURATIONS_FINANCIAL_STATES as readonly unknown[]).includes(invoice.financialState) ||
+    !["NONE", "SYNTHETIC_ONLY", "VERIFIED_PROVIDER_PRESENT"].includes(invoice.proofScope as string)
+  ) {
+    return null;
+  }
+
+  return {
+    draftId: data.draftId,
+    issued: true,
+    invoice: {
+      id: invoice.id,
+      officialInvoiceNumber: invoice.officialInvoiceNumber,
+      issuedAt: new Date(invoice.issuedAt).toISOString(),
+      currency: "CAD",
+      totalCents: invoice.totalCents,
+      balanceCents: invoice.balanceCents,
+      financialState: invoice.financialState as FacturationsFinancialState,
+      proofScope: invoice.proofScope as FacturationsProofScope,
+    },
   };
 }
 
