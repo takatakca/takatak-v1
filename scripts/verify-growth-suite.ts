@@ -23,6 +23,10 @@ import { decideCreditGrant } from "../src/lib/billing/ai-credits/policy";
 import { growthSmsConfigured, growthWhatsAppConfigured } from "../src/lib/messaging/delivery";
 import { maskPhone, toE164 } from "../src/lib/messaging/phone";
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
+import { generateKeyPairSync, createVerify } from "node:crypto";
+import { buildServiceAccountAssertion, normalizePrivateKey } from "../src/lib/integrations/google/jwt";
+import { isValidGa4PropertyId, normalizeSearchConsoleProperty, parseGa4DailyReport, parseSearchConsoleQueries } from "../src/lib/integrations/google/parse";
+import { buildHighlights, monthRange, percentChange, previousMonth } from "../src/lib/growth/report";
 import { gradeMetric, parsePageSpeed } from "../src/lib/seo/pagespeed-parse";
 import { normalizeAuditUrl } from "../src/lib/seo/site-audit";
 
@@ -322,8 +326,59 @@ function verifyPageSpeedAndShowcase(): void {
   pass("showcase publishing requires an explicit opt-in and a comment");
 }
 
+function verifyGoogleAndReport(): void {
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
+  const jwt = buildServiceAccountAssertion({ clientEmail: "sa@proj.iam.gserviceaccount.com", privateKeyPem: pem.replace(/\n/g, "\\n"), scopes: ["a", "b"], nowSeconds: 1_700_000_000 });
+  const [h, c, sig] = jwt.split(".");
+  const verifier = createVerify("RSA-SHA256");
+  verifier.update(`${h}.${c}`);
+  assert.ok(verifier.verify(publicKey, Buffer.from(sig, "base64url")), "assertion is RS256-signed with the service-account key");
+  assert.deepEqual(JSON.parse(Buffer.from(c, "base64url").toString()), {
+    iss: "sa@proj.iam.gserviceaccount.com",
+    scope: "a b",
+    aud: "https://oauth2.googleapis.com/token",
+    iat: 1_700_000_000,
+    exp: 1_700_003_600,
+  });
+  assert.equal(normalizePrivateKey("a\\nb"), "a\nb");
+  pass("Google service-account assertion is correctly signed (escaped PEM accepted)");
+
+  const ga4 = parseGa4DailyReport({
+    rows: [
+      { dimensionValues: [{ value: "20261002" }], metricValues: [{ value: "12" }, { value: "10" }, { value: "40" }] },
+      { dimensionValues: [{ value: "20261001" }], metricValues: [{ value: "8" }, { value: "7" }, { value: "21" }] },
+      { dimensionValues: [{ value: "(other)" }], metricValues: [{ value: "999" }] },
+    ],
+  });
+  assert.deepEqual(ga4?.totals, { sessions: 20, users: 17, pageViews: 61 });
+  assert.equal(ga4?.daily[0].date, "2026-10-01", "sorted by date");
+  assert.deepEqual(parseGa4DailyReport({}), { totals: { sessions: 0, users: 0, pageViews: 0 }, daily: [] });
+  const sc = parseSearchConsoleQueries({ rows: [{ keys: ["garage verdun"], clicks: 31, impressions: 400, ctr: 0.0775, position: 3.456 }] });
+  assert.deepEqual(sc, [{ query: "garage verdun", clicks: 31, impressions: 400, ctr: 0.0775, position: 3.5 }]);
+  assert.ok(isValidGa4PropertyId("123456789") && !isValidGa4PropertyId("G-ABC123"));
+  assert.equal(normalizeSearchConsoleProperty("sc-domain:Garage.CA"), "sc-domain:garage.ca");
+  assert.equal(normalizeSearchConsoleProperty("https://www.garage.ca"), "https://www.garage.ca/");
+  assert.equal(normalizeSearchConsoleProperty("http://garage.ca/"), null);
+  pass("GA4 and Search Console responses parse; property identifiers are validated");
+
+  const oct = monthRange("2026-10");
+  assert.equal(oct.start.toISOString(), "2026-10-01T00:00:00.000Z");
+  assert.equal(oct.end.toISOString(), "2026-11-01T00:00:00.000Z");
+  assert.equal(previousMonth(monthRange("2026-01")).key, "2025-12", "year rollover");
+  assert.equal(monthRange("garbage", new Date("2026-03-15T00:00:00Z")).key, "2026-03");
+  assert.equal(percentChange(150, 100), 50);
+  assert.equal(percentChange(5, 0), null);
+  assert.equal(percentChange(0, 0), 0);
+  const zero = { pageviews: 0, visits: 0, conversions: 0, ratings: 0, averageRating: null, publicReviewClicks: 0, requestsSent: 0, conversations: 0, leads: 0, aiRunsCompleted: 0, creditsUsed: 0, adImpressions: 0, adClicks: 0 };
+  assert.deepEqual(buildHighlights(zero, zero), ["Aucune activité enregistrée ce mois-ci."]);
+  assert.ok(buildHighlights({ ...zero, visits: 150 }, { ...zero, visits: 100 })[0].includes("en hausse de 50 %"));
+  pass("monthly report ranges, deltas and highlights are correct");
+}
+
 verifyCatalog();
 verifyHonestStatuses();
+verifyGoogleAndReport();
 verifyPageSpeedAndShowcase();
 verifyAgentSchedules();
 verifyCreditPurchasePolicy();

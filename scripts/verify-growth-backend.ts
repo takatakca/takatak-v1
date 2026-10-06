@@ -60,6 +60,8 @@ import {
   setShowcaseHidden,
 } from "../src/lib/reputation/service";
 import { postAiReply } from "../src/lib/chat/service";
+import { getGrowthReport } from "../src/lib/growth/report";
+import { linkGoogleSources, listGoogleLinkedSites } from "../src/lib/analytics/service";
 
 const PHONE_UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1";
 function hdrs(origin: string | null, ip = "203.0.113.7", ua = PHONE_UA, extra: Record<string, string> = {}): Headers {
@@ -536,6 +538,73 @@ async function main(): Promise<void> {
     assert.equal(withDraft.responses.find((r) => r.id === draftTarget.responseId)?.aiDraft?.text, "Nous sommes désolés de l'attente…");
     assert.equal(withDraft.responses.find((r) => r.id === draftTarget.responseId)?.aiDraft?.status, "awaiting_approval");
     pass("Review Responder drafts appear next to the review in the inbox");
+
+    // ----------------------------------------------------------- monthly report
+    const c = await prisma.client.create({ data: { name: `${tag}-c` }, select: { id: true } });
+    try {
+      const cSite = await createAnalyticsSite(c.id, { name: "C site", domain: "c-qa.ca", businessBrandId: null });
+      assert.ok(!("error" in cSite));
+      const ev = (when: string, type: "pageview" | "conversion", visitor: string, path = "/", name: string | null = null, referrerHost: string | null = null) => ({
+        siteId: cSite.id, clientId: c.id, type, name, path, referrerHost, visitorHash: visitor, occurredAt: new Date(when),
+      });
+      await prisma.analyticsEvent.createMany({
+        data: [
+          ev("2026-09-10T15:00:00Z", "pageview", "v1"),
+          ev("2026-09-11T15:00:00Z", "pageview", "v2"),
+          ev("2026-10-02T15:00:00Z", "pageview", "v1", "/prix", null, "google.com"),
+          ev("2026-10-02T16:00:00Z", "pageview", "v1", "/prix", null, "google.com"),
+          ev("2026-10-03T15:00:00Z", "pageview", "v1", "/"),
+          ev("2026-10-03T15:30:00Z", "pageview", "v3", "/prix", null, "facebook.com"),
+          ev("2026-10-03T15:31:00Z", "conversion", "v3", "/contact", "call_click"),
+          ev("2026-11-01T00:00:00Z", "pageview", "v9"),
+        ],
+      });
+      const cProfileInput = parseReviewProfileInput({ name: "C Shop", googlePlaceId: "ChIJN1t_tDeuEmsRUsoyG83frY4" });
+      assert.ok(cProfileInput.ok);
+      const cProfile = await createReviewProfile(c.id, cProfileInput.value);
+      await prisma.reviewResponse.createMany({
+        data: [
+          { clientId: c.id, profileId: cProfile.id, rating: 5, createdAt: new Date("2026-10-05T12:00:00Z"), publicLinkClickedAt: new Date("2026-10-05T12:01:00Z") },
+          { clientId: c.id, profileId: cProfile.id, rating: 4, createdAt: new Date("2026-10-06T12:00:00Z") },
+          { clientId: c.id, profileId: cProfile.id, rating: 1, createdAt: new Date("2026-09-06T12:00:00Z") },
+        ],
+      });
+      await prisma.lead.create({ data: { clientId: c.id, name: "Oct lead", createdAt: new Date("2026-10-07T12:00:00Z") } });
+      const report = await getGrowthReport(c.id, "2026-10");
+      assert.ok(report);
+      assert.deepEqual(
+        {
+          pageviews: report.current.pageviews,
+          visits: report.current.visits,
+          conversions: report.current.conversions,
+          ratings: report.current.ratings,
+          avg: report.current.averageRating,
+          clicks: report.current.publicReviewClicks,
+          leads: report.current.leads,
+        },
+        { pageviews: 4, visits: 3, conversions: 1, ratings: 2, avg: 4.5, clicks: 1, leads: 1 },
+        "October numbers: month boundaries respected (Sept and Nov excluded); visits = unique visitor-days",
+      );
+      assert.equal(report.previous.pageviews, 2);
+      assert.equal(report.previous.ratings, 1);
+      assert.deepEqual(report.topPages[0], { label: "/prix", count: 3 });
+      assert.deepEqual(report.topSources[0], { label: "google.com", count: 2 });
+      assert.deepEqual(report.conversionsByType, [{ label: "call_click", count: 1 }]);
+      assert.ok(report.highlights.some((h) => h.includes("en hausse de 50 %")), "visits 2 → 3 is +50%");
+      assert.equal((await getGrowthReport(c.id, "2026-12"))?.current.pageviews, 0);
+      pass("monthly growth report is exact, month-bounded and compared with the previous month");
+
+      assert.equal(await linkGoogleSources(a.id, cSite.id, { ga4PropertyId: "123456789", searchConsoleProperty: null }), false, "cannot link another tenant's site");
+      assert.equal(await linkGoogleSources(c.id, cSite.id, { ga4PropertyId: "123456789", searchConsoleProperty: "sc-domain:c-qa.ca" }), true);
+      assert.deepEqual((await listGoogleLinkedSites(c.id)).map((x) => [x.ga4PropertyId, x.searchConsoleProperty]), [["123456789", "sc-domain:c-qa.ca"]]);
+      await assert.rejects(
+        prisma.analyticsSite.update({ where: { id: cSite.id }, data: { ga4PropertyId: "G-NOTNUMERIC" } }),
+        "database rejects malformed GA4 property ids",
+      );
+      pass("Google data sources link per website, tenant-scoped and format-checked");
+    } finally {
+      await prisma.client.delete({ where: { id: c.id } });
+    }
   } finally {
     await prisma.client.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     await disconnectPrisma();

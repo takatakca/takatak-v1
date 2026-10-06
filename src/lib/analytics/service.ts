@@ -154,7 +154,16 @@ export async function setAnalyticsSiteActive(clientId: string, siteId: string, a
 }
 
 export interface AnalyticsSummary {
-  sites: Array<{ id: string; name: string; domain: string; publicKey: string; active: boolean; brandName: string | null }>;
+  sites: Array<{
+    id: string;
+    name: string;
+    domain: string;
+    publicKey: string;
+    active: boolean;
+    brandName: string | null;
+    ga4PropertyId: string | null;
+    searchConsoleProperty: string | null;
+  }>;
   selectedSiteId: string | null;
   days: number;
   totals: { pageviews: number; visitors: number; events: number; conversions: number; convertingVisitors: number };
@@ -224,7 +233,16 @@ export async function getAnalyticsSummary(clientId: string, opts: { siteId?: str
     prisma.analyticsSite.findMany({
       where: { clientId },
       orderBy: { createdAt: "asc" },
-      select: { id: true, name: true, domain: true, publicKey: true, active: true, businessBrand: { select: { name: true } } },
+      select: {
+        id: true,
+        name: true,
+        domain: true,
+        publicKey: true,
+        active: true,
+        ga4PropertyId: true,
+        searchConsoleProperty: true,
+        businessBrand: { select: { name: true } },
+      },
     }),
     prisma.analyticsAudience.findMany({
       where: { clientId },
@@ -268,7 +286,16 @@ export async function getAnalyticsSummary(clientId: string, opts: { siteId?: str
   const reach = await Promise.all(audiences.map((a) => estimateAudienceReach(clientId, a)));
 
   return {
-    sites: sites.map((s) => ({ id: s.id, name: s.name, domain: s.domain, publicKey: s.publicKey, active: s.active, brandName: s.businessBrand?.name ?? null })),
+    sites: sites.map((s) => ({
+      id: s.id,
+      name: s.name,
+      domain: s.domain,
+      publicKey: s.publicKey,
+      active: s.active,
+      brandName: s.businessBrand?.name ?? null,
+      ga4PropertyId: s.ga4PropertyId,
+      searchConsoleProperty: s.searchConsoleProperty,
+    })),
     selectedSiteId,
     days,
     totals: {
@@ -326,4 +353,24 @@ export async function listAudiencesWithReach(clientId: string): Promise<Analytic
     lookbackDays: a.lookbackDays,
     reach: reach[i],
   }));
+}
+
+export async function linkGoogleSources(
+  clientId: string,
+  siteId: string,
+  links: { ga4PropertyId: string | null; searchConsoleProperty: string | null },
+): Promise<boolean> {
+  const result = await requirePrisma().analyticsSite.updateMany({
+    where: { id: siteId, clientId },
+    data: { ga4PropertyId: links.ga4PropertyId, searchConsoleProperty: links.searchConsoleProperty },
+  });
+  return result.count === 1;
+}
+
+export async function listGoogleLinkedSites(clientId: string) {
+  return requirePrisma().analyticsSite.findMany({
+    where: { clientId, OR: [{ ga4PropertyId: { not: null } }, { searchConsoleProperty: { not: null } }] },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, domain: true, ga4PropertyId: true, searchConsoleProperty: true },
+  });
 }

@@ -4243,6 +4243,8 @@ model AnalyticsSite {
   publicKey       String   @unique
   allowedOrigins  String[] @default([])
   active          Boolean  @default(true)
+  ga4PropertyId   String?
+  searchConsoleProperty String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

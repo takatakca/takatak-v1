@@ -1,4 +1,6 @@
 import { AnalyticsPanel } from "@/components/analytics/analytics-panel";
+import { Ga4Card } from "@/components/analytics/ga4-card";
+import { fetchGa4Daily, googleServiceAccountConfigured, googleServiceAccountEmail } from "@/lib/integrations/google/client";
 import { AdsSummaryCard } from "@/components/growth/ads-summary-card";
 import { ConnectorGrid } from "@/components/growth/connector-card";
 import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
@@ -38,6 +40,10 @@ export default async function GrowthAnalyticsPage({ searchParams }: { searchPara
     }
   }
   const origin = await publicAppOrigin();
+  const ga4Site = summary
+    ? (summary.sites.find((x) => x.id === summary!.selectedSiteId && x.ga4PropertyId) ?? summary.sites.find((x) => x.ga4PropertyId) ?? null)
+    : null;
+  const ga4 = ga4Site && googleServiceAccountConfigured() ? await fetchGa4Daily(ga4Site.ga4PropertyId!, summary!.days) : null;
   const ads = await getActiveWorkspaceAdsSummary(access);
   const connectors = getConnectorStatuses().filter((c) => c.category === "analytics");
 
@@ -50,7 +56,15 @@ export default async function GrowthAnalyticsPage({ searchParams }: { searchPara
       />
 
       {summary ? (
-        <AnalyticsPanel data={summary} canManage={access.mode === "client_scoped" && hasEffectivePermission(access, "manage_services")} origin={origin} />
+        <>
+          <AnalyticsPanel
+            data={summary}
+            canManage={access.mode === "client_scoped" && hasEffectivePermission(access, "manage_services")}
+            origin={origin}
+            googleEmail={googleServiceAccountEmail()}
+          />
+          {ga4 && ga4Site ? <Ga4Card siteName={ga4Site.name} days={summary.days} result={ga4} /> : null}
+        </>
       ) : (
         <HonestyNote>
           {unavailable

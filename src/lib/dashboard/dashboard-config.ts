@@ -110,6 +110,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Growth Hub", href: "/dashboard/growth", icon: Rocket },
       { label: "Analytics", href: "/dashboard/growth/analytics", icon: BarChart3 },
+      { label: "Monthly Report", href: "/dashboard/growth/report", icon: FileBarChart2 },
       { label: "Reputation & Reviews", href: "/dashboard/growth/reviews", icon: Star },
       { label: "Conversations", href: "/dashboard/growth/conversations", icon: MessageCircle },
       { label: "Ads Manager", href: "/dashboard/growth/ads-manager", icon: Megaphone },

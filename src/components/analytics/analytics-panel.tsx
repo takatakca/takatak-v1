@@ -7,10 +7,20 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import type { AnalyticsSummary } from "@/lib/analytics/service";
 
-import { CreateAudienceForm, CreateSiteForm } from "./analytics-forms";
+import { CreateAudienceForm, CreateSiteForm, LinkGoogleForm } from "./analytics-forms";
 import { DailyChart, TopList } from "./daily-chart";
 
-export function AnalyticsPanel({ data, canManage, origin }: { data: AnalyticsSummary; canManage: boolean; origin: string }) {
+export function AnalyticsPanel({
+  data,
+  canManage,
+  origin,
+  googleEmail = null,
+}: {
+  data: AnalyticsSummary;
+  canManage: boolean;
+  origin: string;
+  googleEmail?: string | null;
+}) {
   const qs = (patch: Record<string, string | number | null>) => {
     const params = new URLSearchParams();
     const site = "site" in patch ? patch.site : data.selectedSiteId;
@@ -116,6 +126,23 @@ export function AnalyticsPanel({ data, canManage, origin }: { data: AnalyticsSum
                 ) : null}
               </div>
               <CopySnippet code={`<script defer src="${origin}/takatak-analytics.js" data-site="${s.publicKey}"></script>`} />
+              {canManage ? (
+                <details className="rounded-xl border border-slate-200 bg-white p-3">
+                  <summary className="cursor-pointer text-xs font-semibold text-slate-700">
+                    Google connections{s.ga4PropertyId || s.searchConsoleProperty ? " ✓" : ""}
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    {googleEmail ? (
+                      <p className="text-[11px] text-slate-500">
+                        In GA4 (Viewer) and Search Console (Restricted user), add <span className="font-mono text-slate-700">{googleEmail}</span>, then paste the identifiers here.
+                      </p>
+                    ) : (
+                      <p className="text-[11px] text-amber-700">Google data needs the TAKATAK Google service account to be configured on the server.</p>
+                    )}
+                    <LinkGoogleForm siteId={s.id} ga4PropertyId={s.ga4PropertyId} searchConsoleProperty={s.searchConsoleProperty} />
+                  </div>
+                </details>
+              ) : null}
             </div>
           ))}
           {canManage ? (

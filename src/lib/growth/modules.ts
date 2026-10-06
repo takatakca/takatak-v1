@@ -7,6 +7,7 @@ export interface GrowthModuleLink {
 }
 
 export const GROWTH_MODULES: GrowthModuleLink[] = [
+  { href: "/dashboard/growth/report", title: "Monthly Report", summary: "A printable client report of everything TAKATAK delivered this month." },
   { href: "/dashboard/growth/analytics", title: "Analytics", summary: "Traffic, conversions and ad results in one view." },
   { href: "/dashboard/growth/reviews", title: "Reputation & Reviews", summary: "Review requests, private feedback funnel, monitoring and AI replies." },
   { href: "/dashboard/growth/conversations", title: "Conversations", summary: "Website chat, WhatsApp, Messenger and SMS in one inbox." },

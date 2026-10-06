@@ -7,8 +7,9 @@ Status: **Phases 1–3 built:**
 - **Phase 4:** SMS/WhatsApp delivery, Stripe credit checkout, AI agent run queue.
 - **Phase 5:** autopilot schedules, automatic triggers, review → lead.
 - **Phase 6:** review showcase widget, Chat Concierge, Review Responder drafts, Core Web Vitals.
+- **Phase 7:** GA4 and Search Console data, monthly growth report.
 
-The Phase 2–6 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
+The Phase 2–7 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
 
 ## Scope rule
 
@@ -268,12 +269,34 @@ The run output `{ reply }` (or `preview`) shows up under the review it answers i
 The SEO page runs Google PageSpeed Insights v5 for mobile or desktop: performance score, LCP, CLS, TBT, FCP and Speed Index, graded on Google's thresholds, plus the real-user category from the Chrome UX Report.
 - It requires `PAGESPEED_API_KEY`, because the keyless shared quota is exhausted (verified: HTTP 429).
 
+## Phase 7: Google Analytics 4, Search Console, monthly growth report
+
+Migration: `prisma/migrations/20261007120000_growth_google_data_sources` adds `analytics_sites.ga4PropertyId` and `analytics_sites.searchConsoleProperty`, each with a format check. It is **not** in the approved deploy lists yet.
+
+### Google data (official APIs, read-only)
+
+- **One TAKATAK service account:** set `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (a PEM key; escaped `\n` is fine). The app signs its own RS256 assertion and caches the token.
+- **Per website:** under Analytics → Tracked websites → Google connections, paste the **GA4 property ID** and the **Search Console property** (`sc-domain:example.com` or `https://www.example.com/`).
+  - The client first adds the service-account email as a Viewer in GA4 and as a user in Search Console. The email is shown in that form.
+- **Analytics page:** a GA4 card shows sessions, active users, page views and a daily chart for the selected period.
+- **Keywords page:** real Google queries from Search Console (clicks, impressions, CTR, average position) for the last 28 days. Search Console data lags 2–3 days.
+- **Errors are shown honestly:** a 403 tells the client to grant access to the service account. Nothing is ever estimated.
+
+### Monthly growth report
+
+`/dashboard/growth/report?month=YYYY-MM` (with a print/PDF version at `/growth-report`) covers:
+- visits and page views, contact actions, leads;
+- new ratings and average rating, public review clicks;
+- chat conversations, AI tasks completed, TAKATAK ADS impressions and clicks.
+
+Each number is compared with the previous month, and the page lists French highlights, top pages, traffic sources and contact actions. Months are calendar months (UTC), and visits are unique daily visitors who viewed a page.
+
 ## Waiting on outside approvals
 
 These need provider access that only the owner can request:
 1. **Google Business Profile** review import and posting AI replies (Google API access approval).
 2. **Syncing retargeting audiences** to Meta and Google Ads (ad-account OAuth and app review).
-3. **GA4 and Search Console** reporting (service-account access on each client property).
+3. **Google service account** for GA4 and Search Console (create it in Google Cloud; each client then grants it access).
 
 ## QA
 
@@ -286,6 +309,7 @@ These need provider access that only the owner can request:
   - masked delivery records, card purchases credited exactly once, and the agent queue (no double-claims under 5 parallel workers, the approval gate, crash recovery, cancel);
   - autopilot (once per slot under overlapping cron ticks, in the client's time zone), low-rating triggers, and consent-only review → lead;
   - the showcase (honest average, consent and first name only, owner hide) and the Chat Concierge approval gate and tenant lock;
+  - exact monthly report numbers with month boundaries, and tenant-scoped Google links;
   - tenant isolation for all of the above, and the database constraints.
 
 Both run in CI.

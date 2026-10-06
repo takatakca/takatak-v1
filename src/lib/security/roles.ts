@@ -216,6 +216,7 @@ export const MODULE_ACCESS: Record<
   "/dashboard/advertising": "view_ads",
   "/dashboard/growth/reviews": "view_reputation",
   "/dashboard/growth/conversations": "view_conversations",
+  "/dashboard/growth/report": "view_reports",
   "/dashboard/contributions": "approve_content",
   "/dashboard/integrations": "manage_integrations",
   "/dashboard/jobs": "manage_jobs",

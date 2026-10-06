@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 
-import { createAudienceAction, createSiteAction, type AnalyticsFormState } from "@/app/dashboard/growth/analytics/actions";
+import { createAudienceAction, createSiteAction, linkGoogleAction, type AnalyticsFormState } from "@/app/dashboard/growth/analytics/actions";
 
 const initialState: AnalyticsFormState = { ok: null };
 const inputClass =
@@ -88,6 +88,39 @@ export function CreateAudienceForm({ sites }: { sites: Array<{ id: string; name:
         <button type="submit" disabled={pending} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
           {pending ? "Saving…" : "Save audience"}
         </button>
+        <Feedback state={state} />
+      </div>
+    </form>
+  );
+}
+
+export function LinkGoogleForm({
+  siteId,
+  ga4PropertyId,
+  searchConsoleProperty,
+}: {
+  siteId: string;
+  ga4PropertyId: string | null;
+  searchConsoleProperty: string | null;
+}) {
+  const [state, formAction, pending] = useActionState(linkGoogleAction, initialState);
+  return (
+    <form action={formAction} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+      <input type="hidden" name="siteId" value={siteId} />
+      <label className="space-y-1 text-[11px] font-medium text-slate-600">
+        GA4 property ID
+        <input name="ga4PropertyId" defaultValue={ga4PropertyId ?? ""} placeholder="123456789" inputMode="numeric" maxLength={30} className={inputClass} />
+      </label>
+      <label className="space-y-1 text-[11px] font-medium text-slate-600">
+        Search Console property
+        <input name="searchConsoleProperty" defaultValue={searchConsoleProperty ?? ""} placeholder="sc-domain:example.com" maxLength={300} className={inputClass} />
+      </label>
+      <div className="flex items-end">
+        <button type="submit" disabled={pending} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-indigo-300 disabled:opacity-60">
+          {pending ? "Saving…" : "Save Google links"}
+        </button>
+      </div>
+      <div className="md:col-span-3">
         <Feedback state={state} />
       </div>
     </form>
