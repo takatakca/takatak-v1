@@ -10,6 +10,7 @@ import "server-only";
 
 import { Prisma, type AiAgentRunStatus } from "@prisma/client";
 
+import { clientHasGrowthFeature } from "@/lib/billing/growth/entitlements";
 import { getPrisma } from "@/lib/db/prisma";
 import { AI_AGENTS } from "@/lib/growth/ai-engine";
 
@@ -93,7 +94,9 @@ export async function saveAgentSetting(
   return true;
 }
 
-export type RequestRunResult = { ok: true; runId: string } | { ok: false; error: "unknown_agent" | "agent_disabled" | "already_pending" };
+export type RequestRunResult =
+  | { ok: true; runId: string }
+  | { ok: false; error: "unknown_agent" | "agent_disabled" | "already_pending" | "plan_required" };
 
 export async function requestAgentRun(
   clientId: string,
@@ -106,6 +109,8 @@ export async function requestAgentRun(
   const prisma = requirePrisma();
   const setting = await prisma.aiAgentSetting.findUnique({ where: { clientId_agentKey: { clientId, agentKey } }, select: { enabled: true } });
   if (!setting?.enabled) return { ok: false, error: "agent_disabled" };
+  // Every path (manual, schedule, event trigger) respects the AI Autopilot plan when enforcement is on.
+  if (!(await clientHasGrowthFeature(clientId, "ai_autopilot"))) return { ok: false, error: "plan_required" };
   const pending = await prisma.aiAgentRun.count({
     where: { clientId, agentKey, status: { in: ["queued", "running", "awaiting_approval", "approved", "executing"] } },
   });

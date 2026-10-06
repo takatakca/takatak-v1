@@ -20,6 +20,7 @@ import {
 } from "../src/lib/analytics/parse";
 import { latestDueSlot, parseScheduleInput } from "../src/lib/ai-agents/schedule";
 import { decideCreditGrant } from "../src/lib/billing/ai-credits/policy";
+import { billablePlan, creditsForInvoice, decidePlanCheckout, normalizeStripeStatus, planUnlocks } from "../src/lib/billing/growth/policy";
 import { growthSmsConfigured, growthWhatsAppConfigured } from "../src/lib/messaging/delivery";
 import { maskPhone, toE164 } from "../src/lib/messaging/phone";
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
@@ -416,8 +417,38 @@ function verifyGoogleBusinessPure(): void {
   pass("Google Business Profile accounts, locations and reviews parse (unrated reviews skipped)");
 }
 
+function verifyGrowthBillingPolicy(): void {
+  const clientId = "11111111-2222-4333-8444-555555555555";
+  const good = {
+    id: "cs_1",
+    mode: "subscription",
+    status: "complete",
+    client_reference_id: clientId,
+    customer: "cus_1",
+    subscription: "sub_1",
+    metadata: { billingDomain: "growth_plan", clientId, planKey: "reputation" },
+  };
+  assert.deepEqual(decidePlanCheckout(good), { record: true, clientId, planKey: "reputation", customerId: "cus_1", subscriptionId: "sub_1" });
+  assert.deepEqual(decidePlanCheckout({ ...good, mode: "payment" }), { record: false, reason: "not_subscription" });
+  assert.deepEqual(decidePlanCheckout({ ...good, status: "open" }), { record: false, reason: "not_complete" });
+  assert.deepEqual(decidePlanCheckout({ ...good, client_reference_id: "x" }), { record: false, reason: "client_mismatch" });
+  assert.deepEqual(decidePlanCheckout({ ...good, metadata: { ...good.metadata, planKey: "free_everything" } }), { record: false, reason: "unknown_plan" });
+  assert.deepEqual(decidePlanCheckout({ ...good, metadata: { ...good.metadata, billingDomain: "ai_credits" } }), { record: false, reason: "not_growth_plan" });
+  assert.equal(normalizeStripeStatus("incomplete_expired"), "canceled");
+  assert.equal(normalizeStripeStatus("weird"), "incomplete");
+  assert.ok(planUnlocks(["takatak_one"], "ads_manager"), "bundle unlocks everything");
+  assert.ok(planUnlocks(["reputation"], "reputation") && !planUnlocks(["reputation"], "conversations"));
+  assert.equal(creditsForInvoice("ai_autopilot", "subscription_cycle"), 500);
+  assert.equal(creditsForInvoice("takatak_one", "subscription_create"), 1000);
+  assert.equal(creditsForInvoice("ai_autopilot", "manual"), 0, "only subscription invoices include credits");
+  assert.equal(creditsForInvoice("reputation", "subscription_cycle"), 0);
+  assert.equal(billablePlan("takatak_one")?.monthlyCad, 299);
+  pass("plan checkout, status mapping, bundle unlocks and included credits follow the catalog");
+}
+
 verifyCatalog();
 verifyHonestStatuses();
+verifyGrowthBillingPolicy();
 verifyGoogleBusinessPure();
 verifyGoogleAndReport();
 verifyPageSpeedAndShowcase();

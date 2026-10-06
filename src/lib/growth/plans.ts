@@ -58,6 +58,8 @@ export interface ServicePlanDef {
   /** Replaces comparable standalone software (positioning only). */
   replaces?: string;
   includes: string[];
+  /** AI credits granted on every paid monthly invoice. */
+  includedCredits?: number;
 }
 
 /** DRAFT price list — owner to confirm before publishing on /pricing. */
@@ -121,11 +123,14 @@ export const SERVICE_PLANS: ServicePlanDef[] = [
     stage: "ai",
     monthlyCad: 99,
     includes: ["All AI agents", "500 credits / month included", "Approval gates on every publish and spend"],
+    includedCredits: 500,
   },
 ];
 
 export const ALL_IN_BUNDLE = {
+  key: "takatak_one",
   name: "TAKATAK One",
   monthlyCad: 299,
+  includedCredits: 1000,
   summary: "Every plan above in one subscription, managed by TAKATAK with AI agents running the daily work.",
 };

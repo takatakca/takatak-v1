@@ -444,6 +444,7 @@ model Client {
   googleBusinessOAuthStates GoogleBusinessOAuthState[]
   googleBusinessLocations   GoogleBusinessLocation[]
   externalReviews           ExternalReview[]
+  growthSubscriptions       GrowthSubscription[]
   @@index([status])
   @@index([createdAt])
   @@index([assignedProfileId])
@@ -4526,5 +4527,38 @@ model ExternalReview {
   @@unique([locationId, externalId])
   @@index([clientId, externalCreateAt])
   @@map("external_reviews")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — modular plan subscriptions (Stripe). One row per client+plan.
+// Separate from the Social ClientSubscription. Webhook events are recorded by
+// id for idempotency; payloads are not stored.
+// ---------------------------------------------------------------------------
+
+model GrowthSubscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @db.Uuid
+  planKey              String
+  status               String    @default("incomplete")
+  stripeCustomerId     String?
+  stripeSubscriptionId String?   @unique
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, planKey])
+  @@index([stripeCustomerId])
+  @@map("growth_subscriptions")
+}
+
+model GrowthBillingEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@map("growth_billing_events")
 }
 

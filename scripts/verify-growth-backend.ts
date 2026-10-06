@@ -61,6 +61,8 @@ import {
 } from "../src/lib/reputation/service";
 import { postAiReply } from "../src/lib/chat/service";
 import { getGrowthReport } from "../src/lib/growth/report";
+import { applyGrowthStripeEvent } from "../src/lib/billing/growth/stripe";
+import { activeGrowthPlans, clientHasGrowthFeature } from "../src/lib/billing/growth/entitlements";
 import { pkceChallenge } from "../src/lib/integrations/google-business/crypto";
 import {
   completeGoogleBusinessConnect,
@@ -721,7 +723,59 @@ async function main(): Promise<void> {
       assert.equal(revoked.tokenCiphertext, "revoked", "local token destroyed");
       assert.deepEqual(await syncGoogleReviews(b.id, fakeGoogle), { ok: false, reason: "not_connected", locations: 0, imported: 0, updated: 0, triggered: 0 });
       pass("disconnect revokes at Google and destroys the stored token");
+  
+    // --------------------------------------------------------- growth billing
+    type AnyEvent = Parameters<typeof applyGrowthStripeEvent>[0];
+    const ev = (id: string, type: string, object: unknown) => ({ id, type, data: { object } }) as unknown as AnyEvent;
+    const meta = { billingDomain: "growth_plan", clientId: a.id, planKey: "ai_autopilot" };
+    assert.deepEqual(
+      await applyGrowthStripeEvent(ev("evt_c1", "checkout.session.completed", { id: "cs_g1", mode: "subscription", status: "complete", client_reference_id: a.id, customer: "cus_a", subscription: "sub_a", metadata: meta })),
+      { handled: true },
+    );
+    assert.deepEqual(await applyGrowthStripeEvent(ev("evt_c1", "checkout.session.completed", {})), { handled: false, duplicate: true }, "same event id processed once");
+    assert.deepEqual(await activeGrowthPlans(a.id), ["ai_autopilot"]);
+    assert.deepEqual(await activeGrowthPlans(b.id), [], "plans never leak across workspaces");
+
+    const before = (await getCreditSnapshot(a.id)).balance;
+    const invoice = { id: "in_1", billing_reason: "subscription_create", parent: { subscription_details: { subscription: "sub_a" } } };
+    assert.deepEqual(await applyGrowthStripeEvent(ev("evt_i1", "invoice.paid", invoice)), { handled: true, creditsGranted: 500 });
+    assert.deepEqual(await applyGrowthStripeEvent(ev("evt_i1_retry_new_id", "invoice.paid", invoice)), { handled: true, creditsGranted: 0 }, "same invoice never credits twice");
+    assert.equal((await getCreditSnapshot(a.id)).balance, before + 500);
+    assert.deepEqual(
+      await applyGrowthStripeEvent(ev("evt_i2", "invoice.paid", { id: "in_2", billing_reason: "manual", parent: { subscription_details: { subscription: "sub_a" } } })),
+      { handled: true, creditsGranted: 0 },
+    );
+    pass("plan checkout activates once; monthly included credits land exactly once per paid invoice");
+
+    const periodEndSec = Math.floor(new Date("2026-11-07T00:00:00Z").getTime() / 1000);
+    await applyGrowthStripeEvent(ev("evt_u1", "customer.subscription.updated", { id: "sub_a", status: "past_due", cancel_at_period_end: true, customer: "cus_a", metadata: meta, items: { data: [{ current_period_end: periodEndSec }] } }));
+    const pastDue = await prisma.growthSubscription.findUniqueOrThrow({ where: { stripeSubscriptionId: "sub_a" } });
+    assert.equal(pastDue.status, "past_due");
+    assert.equal(pastDue.cancelAtPeriodEnd, true);
+    assert.equal(pastDue.currentPeriodEnd?.toISOString(), "2026-11-07T00:00:00.000Z", "period end read from subscription items");
+    assert.deepEqual(await activeGrowthPlans(a.id), ["ai_autopilot"], "past_due keeps access during dunning");
+    await applyGrowthStripeEvent(ev("evt_d1", "customer.subscription.deleted", { id: "sub_a", status: "canceled", metadata: meta, items: { data: [] } }));
+    assert.deepEqual(await activeGrowthPlans(a.id), [], "canceled plans stop unlocking features");
+    pass("subscription status follows Stripe (past_due keeps access, canceled removes it)");
+
+    const savedEnforced = process.env.GROWTH_ENTITLEMENTS_ENFORCED;
+    try {
+      delete process.env.GROWTH_ENTITLEMENTS_ENFORCED;
+      assert.equal(await clientHasGrowthFeature(a.id, "ai_autopilot"), true, "pilot: everything unlocked");
+      process.env.GROWTH_ENTITLEMENTS_ENFORCED = "true";
+      assert.equal(await clientHasGrowthFeature(a.id, "ai_autopilot"), false);
+      await saveAgentSetting(a.id, "seo_watchdog", { enabled: true, requireApproval: true, instructions: null });
+      assert.deepEqual(await requestAgentRun(a.id, "seo_watchdog", {}, null), { ok: false, error: "plan_required" }, "agents need the plan when enforced");
+      await applyGrowthStripeEvent(ev("evt_c2", "checkout.session.completed", { id: "cs_g2", mode: "subscription", status: "complete", client_reference_id: a.id, customer: "cus_a", subscription: "sub_bundle", metadata: { ...meta, planKey: "takatak_one" } }));
+      assert.equal(await clientHasGrowthFeature(a.id, "ai_autopilot"), true, "bundle unlocks the agents");
+      assert.equal(await clientHasGrowthFeature(b.id, "ai_autopilot"), false, "and only for its own workspace");
+      assert.ok((await requestAgentRun(a.id, "seo_watchdog", {}, null)).ok);
     } finally {
+      if (savedEnforced === undefined) delete process.env.GROWTH_ENTITLEMENTS_ENFORCED;
+      else process.env.GROWTH_ENTITLEMENTS_ENFORCED = savedEnforced;
+    }
+    pass("with enforcement on, plans unlock exactly their features, per workspace");
+  } finally {
       process.env = savedEnv;
     }
   } finally {

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
 import { publicAppOrigin } from "@/lib/growth/public-origin";
 import {
   disconnectGoogleBusiness,
@@ -62,6 +63,7 @@ export type RequestLinkState =
 export async function createReviewRequestAction(_prev: RequestLinkState, formData: FormData): Promise<RequestLinkState> {
   const access = await scopedAccess("manage_reputation");
   if (!access) return { ok: false, error: "You do not have permission to send review requests." };
+  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation"))) return { ok: false, error: FEATURE_UPSELL.reputation };
   const profileId = String(formData.get("profileId") ?? "");
   if (!UUID.test(profileId)) return { ok: false, error: "Choose a review page." };
   const recipientRaw = String(formData.get("recipientName") ?? "").trim().replace(/\s+/g, " ");
@@ -141,6 +143,7 @@ export async function toggleShowcaseAction(formData: FormData): Promise<void> {
 export async function connectGoogleBusinessAction(): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   if (!access) redirect(`${REVIEWS_PATH}?google=forbidden`);
+  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation"))) redirect(`${REVIEWS_PATH}?google=plan_required`);
   let url: string;
   try {
     url = await startGoogleBusinessConnect({ clientId: access.activeClientId, profileId: access.profileId, origin: await publicAppOrigin() });

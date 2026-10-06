@@ -9,8 +9,9 @@ Status: **Phases 1–3 built:**
 - **Phase 6:** review showcase widget, Chat Concierge, Review Responder drafts, Core Web Vitals.
 - **Phase 7:** GA4 and Search Console data, monthly growth report.
 - **Phase 8:** Google Business Profile connect, review import, reply publishing.
+- **Phase 9:** plan subscriptions (Stripe) and entitlements.
 
-The Phase 2–8 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
+The Phase 2–9 migrations are awaiting owner approval for staging and production. It adds the marketing layer on top of the existing modules: Domain → Hosting → Social → Marketing → AI.
 
 ## Scope rule
 
@@ -322,6 +323,30 @@ The Business Profile APIs require Google's access approval for the project.
    - **Gateway:** `POST /api/ai/reviews/reply { runId, comment }` publishes only in the execute phase (after approval), or immediately when approval is off. It works only for that run's Google review and client.
 5. **Disconnect:** revokes the token at Google and destroys the local ciphertext.
 
+## Phase 9: Plan subscriptions and entitlements
+
+Migration: `prisma/migrations/20261007180000_growth_plan_subscriptions` adds:
+- **`growth_subscriptions`:** one row per client and plan, separate from the Social `client_subscriptions`.
+- **`growth_billing_events`:** Stripe event IDs, for idempotency.
+
+Both have RLS and revoked grants. The migration is **not** in the approved deploy lists yet.
+
+- **Subscribe:** `GROWTH_BILLING_ENABLED=true` plus `STRIPE_SECRET_KEY` turns on **Subscribe** buttons on Plans & Pricing (for clients with `manage_settings`). Checkout is a Stripe subscription, billed monthly in CAD with prices from the catalog; TAKATAK One is the bundle. **Manage billing** opens the Stripe customer portal.
+- **Webhook:** `POST /api/billing/growth/webhook`, signed with `STRIPE_GROWTH_WEBHOOK_SECRET`. Subscribe it to `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` and `invoice.paid`.
+  - Each event ID is processed once; a failed apply forgets the ID so Stripe's retry can succeed.
+  - Status follows Stripe: `past_due` keeps access during payment retries, `canceled` removes it.
+  - **Included AI credits:** AI Autopilot adds 500 and TAKATAK One adds 1,000 on every paid subscription invoice, exactly once per invoice.
+- **Entitlements:** set `GROWTH_ENTITLEMENTS_ENFORCED=true` to require plans. It stays off during the pilot, so everything is unlocked.
+
+| Plan | Unlocks |
+|---|---|
+| Reputation Pro | Tracked/automatic review requests, Google Business Profile |
+| Conversations | Website chat widgets |
+| AI Autopilot | Agent runs, by every path: manual, schedule, chat and review triggers |
+| Local SEO | Core Web Vitals tests, Google data links |
+| Ads Manager | Retargeting audiences |
+| TAKATAK One | Everything |
+
 ## Waiting on outside approvals
 
 These need provider access that only the owner can request:
@@ -342,6 +367,7 @@ These need provider access that only the owner can request:
   - the showcase (honest average, consent and first name only, owner hide) and the Chat Concierge approval gate and tenant lock;
   - exact monthly report numbers with month boundaries, and tenant-scoped Google links;
   - the complete Google Business Profile flow against a simulated Google: PKCE verification, state attacks (wrong user, wrong workspace, replay, expiry), encrypted tokens, paginated idempotent import, approval-gated publishing, revoke;
+  - the subscription lifecycle (activation, duplicate events, past_due/canceled), included credits exactly once per invoice, and enforced entitlements per workspace;
   - tenant isolation for all of the above, and the database constraints.
 
 Both run in CI.

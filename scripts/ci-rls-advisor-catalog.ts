@@ -42,6 +42,7 @@ const SECRET_TABLES = [
   "google_business_connections",
   "google_business_oauth_states",
   "external_reviews",
+  "growth_subscriptions",
   "_prisma_migrations",
 ];
 

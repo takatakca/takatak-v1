@@ -7,6 +7,7 @@ import { parseScheduleInput } from "@/lib/ai-agents/schedule";
 import { cancelAgentRun, decideAgentRun, requestAgentRun, saveAgentSetting } from "@/lib/ai-agents/service";
 import { grantCredits } from "@/lib/ai-credits/ledger";
 import { aiCreditsCheckoutEnabled, startCreditCheckout } from "@/lib/billing/ai-credits/stripe";
+import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
 import { publicAppOrigin } from "@/lib/growth/public-origin";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
@@ -85,6 +86,8 @@ async function scoped(permission: "manage_settings" | "create_content" | "approv
 export async function saveAgentSettingAction(formData: FormData): Promise<void> {
   const access = await scoped("manage_settings");
   if (!access) return;
+  const enabling = formData.get("enabled") === "on";
+  if (enabling && !(await clientHasGrowthFeature(access.activeClientId, "ai_autopilot"))) return;
   await saveAgentSetting(access.activeClientId, String(formData.get("agentKey") ?? ""), {
     enabled: formData.get("enabled") === "on",
     requireApproval: formData.get("requireApproval") === "on",
@@ -103,6 +106,7 @@ export type RunRequestState = { ok: null } | { ok: true; message: string } | { o
 export async function requestAgentRunAction(_prev: RunRequestState, formData: FormData): Promise<RunRequestState> {
   const access = await scoped("create_content");
   if (!access) return { ok: false, error: "You do not have permission to start agents." };
+  if (!(await clientHasGrowthFeature(access.activeClientId, "ai_autopilot"))) return { ok: false, error: FEATURE_UPSELL.ai_autopilot };
   try {
     const result = await requestAgentRun(
       access.activeClientId,
@@ -115,6 +119,7 @@ export async function requestAgentRunAction(_prev: RunRequestState, formData: Fo
         unknown_agent: "Unknown agent.",
         agent_disabled: "Turn this agent on first.",
         already_pending: "This agent already has a run in progress.",
+        plan_required: FEATURE_UPSELL.ai_autopilot,
       } as const;
       return { ok: false, error: messages[result.error] };
     }

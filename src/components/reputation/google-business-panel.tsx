@@ -21,6 +21,7 @@ const NOTICE: Record<string, string> = {
   scope_not_granted: "Google did not grant review management access.",
   no_refresh_token: "Google did not return offline access. Please reconnect.",
   access_revoked: "Google access was revoked. Please reconnect.",
+  plan_required: "Google review management needs the Reputation Pro plan (Plans & Pricing).",
 };
 
 function Stars({ rating }: { rating: number }) {

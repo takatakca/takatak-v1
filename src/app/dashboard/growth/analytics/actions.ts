@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { parseAudienceRule } from "@/lib/analytics/parse";
 import { createAnalyticsSite, createAudience, deleteAudience, linkGoogleSources, setAnalyticsSiteActive } from "@/lib/analytics/service";
 import { isValidGa4PropertyId, normalizeSearchConsoleProperty } from "@/lib/integrations/google/parse";
+import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
@@ -49,6 +50,7 @@ export async function toggleSiteAction(formData: FormData): Promise<void> {
 export async function createAudienceAction(_prev: AnalyticsFormState, formData: FormData): Promise<AnalyticsFormState> {
   const access = await canManage();
   if (!access) return { ok: false, error: "You do not have permission to create audiences." };
+  if (!(await clientHasGrowthFeature(access.activeClientId, "ads_manager"))) return { ok: false, error: FEATURE_UPSELL.ads_manager };
   const siteId = String(formData.get("siteId") ?? "");
   if (!UUID.test(siteId)) return { ok: false, error: "Choose a website." };
   const parsed = parseAudienceRule(Object.fromEntries(formData.entries()));
@@ -77,6 +79,7 @@ export async function deleteAudienceAction(formData: FormData): Promise<void> {
 export async function linkGoogleAction(_prev: AnalyticsFormState, formData: FormData): Promise<AnalyticsFormState> {
   const access = await canManage();
   if (!access) return { ok: false, error: "You do not have permission to connect Google data." };
+  if (!(await clientHasGrowthFeature(access.activeClientId, "local_seo"))) return { ok: false, error: FEATURE_UPSELL.local_seo };
   const siteId = String(formData.get("siteId") ?? "");
   if (!UUID.test(siteId)) return { ok: false, error: "Choose a website." };
   const ga4Raw = String(formData.get("ga4PropertyId") ?? "").trim().replace(/^properties\//, "");

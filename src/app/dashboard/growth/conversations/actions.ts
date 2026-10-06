@@ -10,6 +10,7 @@ import {
   setConversationStatus,
   staffReply,
 } from "@/lib/chat/service";
+import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
@@ -27,6 +28,7 @@ export type WidgetFormState = { ok: null } | { ok: true; message: string } | { o
 export async function createChatWidgetAction(_prev: WidgetFormState, formData: FormData): Promise<WidgetFormState> {
   const access = await canManage();
   if (!access) return { ok: false, error: "You do not have permission to manage chat for this workspace." };
+  if (!(await clientHasGrowthFeature(access.activeClientId, "conversations"))) return { ok: false, error: FEATURE_UPSELL.conversations };
   try {
     const result = await createChatWidget(access.activeClientId, {
       name: formData.get("name"),
