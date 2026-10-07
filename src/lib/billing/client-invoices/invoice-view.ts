@@ -1,11 +1,14 @@
 // GROUPE TAKATAK Billing — client invoice center view model.
-// Pure module. Maps provider invoices (Stripe today, Facturations next) to
-// one read-only row shape for the client dashboard. Drafts are never shown
-// to clients, and only provider-hosted HTTPS links are ever rendered.
+// Pure module. Maps provider invoices (Stripe subscriptions, Facturations
+// issued invoices) to one read-only row shape for the client dashboard.
+// Drafts are never shown to clients, only provider-hosted HTTPS links are
+// rendered, and only verified provider payment evidence counts as paid.
 
-export type ClientInvoiceSource = "stripe";
+import type { FacturationsIssuedInvoice } from "@/lib/integrations/facturations/contract";
 
-export type ClientInvoiceStatus = "paid" | "open" | "overdue" | "void" | "uncollectible";
+export type ClientInvoiceSource = "stripe" | "facturations";
+
+export type ClientInvoiceStatus = "paid" | "open" | "overdue" | "void" | "uncollectible" | "refunded";
 
 export interface ClientInvoiceView {
   id: string;
@@ -23,6 +26,11 @@ export interface ClientInvoiceView {
   /** Provider page where the client can view and pay. */
   payUrl: string | null;
   pdfUrl: string | null;
+  /**
+   * Facturations invoices only: this workspace's billing request id, set when
+   * the invoice can be paid online through a TAKATAK Stripe Checkout session.
+   */
+  checkoutRequestId: string | null;
 }
 
 /** Minimal structural shape of a Stripe invoice (subset of Stripe.Invoice). */
@@ -119,6 +127,62 @@ export function mapStripeInvoice(
       ? safeProviderUrl(invoice.hosted_invoice_url)
       : null,
     pdfUrl: safeProviderUrl(invoice.invoice_pdf),
+    checkoutRequestId: null,
+  };
+}
+
+/**
+ * Maps a Facturations-issued invoice (linked to this workspace through its
+ * own billing request) to a client row. Synthetic or missing payment
+ * evidence never makes an invoice look paid to a client.
+ */
+export function mapFacturationsInvoice(
+  input: {
+    requestId: string;
+    invoice: FacturationsIssuedInvoice;
+    dueDate: string | null;
+    description: string | null;
+  },
+  now: Date = new Date(),
+): ClientInvoiceView {
+  const total = Number(input.invoice.totalCents);
+  const verified = input.invoice.proofScope === "VERIFIED_PROVIDER_PRESENT";
+  const balance = verified ? Number(input.invoice.balanceCents) : total;
+  const state = verified ? input.invoice.financialState : "NO_EVIDENCE";
+  const dueAt =
+    input.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)
+      ? new Date(`${input.dueDate}T23:59:59.000-05:00`).toISOString()
+      : null;
+
+  let status: ClientInvoiceStatus;
+
+  if (state === "PAID" || state === "OVERPAID") {
+    status = "paid";
+  } else if (state === "FULLY_REFUNDED") {
+    status = "refunded";
+  } else {
+    status = dueAt && Date.parse(dueAt) < now.getTime() && balance > 0 ? "overdue" : "open";
+  }
+
+  return {
+    id: `fact_${input.requestId}`,
+    source: "facturations",
+    number: input.invoice.officialInvoiceNumber.slice(0, 64),
+    description: input.description ? input.description.slice(0, 200) : null,
+    issuedAt: input.invoice.issuedAt,
+    dueAt,
+    paidAt: null,
+    currency: "CAD",
+    totalMinor: Number.isSafeInteger(total) ? total : 0,
+    amountDueMinor: status === "open" || status === "overdue" ? Math.max(0, balance) : 0,
+    amountPaidMinor: verified ? Math.max(0, total - balance) : 0,
+    status,
+    payUrl: null,
+    pdfUrl: null,
+    checkoutRequestId:
+      (status === "open" || status === "overdue") && balance > 0 && Number.isSafeInteger(balance)
+        ? input.requestId
+        : null,
   };
 }
 
