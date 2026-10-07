@@ -9,19 +9,9 @@ import { normalizePhone } from "@/lib/auth/otp/phone";
 import { normalizeEmail, validateEmail } from "@/lib/auth/registration-validation";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { formatAuthErrorMessage, parseAuthResponse } from "@/lib/auth/parse-auth-response";
+import { phoneAuthMessage } from "@/lib/auth/phone-auth-message";
 
 type Mode = "phone" | "email";
-
-function phoneAuthMessage(message: string) {
-  const value = message.toLowerCase();
-  if (value.includes("rate") || value.includes("too many")) {
-    return "Too many verification requests. Please wait and try again.";
-  }
-  if (value.includes("provider") || value.includes("disabled")) {
-    return "TAKATAK SMS verification is temporarily unavailable.";
-  }
-  return "Unable to send the TAKATAK SMS code. Please try again.";
-}
 
 export function MasterPhoneLoginForm() {
   const router = useRouter();
@@ -60,7 +50,7 @@ export function MasterPhoneLoginForm() {
     inFlight.current = false;
 
     if (otpError) {
-      setError(phoneAuthMessage(otpError.message));
+      setError(phoneAuthMessage(otpError.message, (otpError as { code?: string }).code));
       return;
     }
 
