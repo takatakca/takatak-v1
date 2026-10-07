@@ -6,6 +6,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs",
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",

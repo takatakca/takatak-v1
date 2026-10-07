@@ -87,6 +87,7 @@ const include = [
   "prisma/generate.cjs",
   "prisma/.generated-schema.sha256",
   "server.js",
+  "scripts/server-release.cjs",
   "package.json",
   "package-lock.json",
   "next.config.ts",
