@@ -6,6 +6,10 @@ Modular SaaS platform and control tower for client digital services. AI is one p
 **Phase status:** Phase 15A complete — Tenant Isolation and Real Membership Enforcement (server-side scoping in every data layer, profile sync, audited owner bootstrap, 15-case access matrix + 16-check two-tenant isolation test all passing). Phases 0–15A ✅. **Production remains gated on staging verification:** live Supabase E2E (sign-in → profile-sync → owner bootstrap → memberships → two-user isolation) — see docs/TAKATAK_V1_PRODUCTION_READINESS.md. Next: staging deployment + live E2E, or Phase 15B — Membership Administration & Persistent CRUD.
 **Architecture:** [`docs/TAKATAK_DASHBOARD_V1_ARCHITECTURE.md`](docs/TAKATAK_DASHBOARD_V1_ARCHITECTURE.md) (layer rules) · [`docs/TAKATAK_DASHBOARD_V1_FULL_SCREEN_ARCHITECTURE.md`](docs/TAKATAK_DASHBOARD_V1_FULL_SCREEN_ARCHITECTURE.md) (master screen map + build order)
 
+## Contributing and agent workflow
+
+Agents and collaborators must follow [AGENTS.md](AGENTS.md): start a new task branch from the latest `origin/main`, commit and push only that branch, and leave review and merging to the repository owner. The owner alone controls direct pushes to `main`. Preserve any existing uncommitted work.
+
 ## Purpose
 
 Unified dashboard for clients, businesses/brands, services, campaigns, reports, and jobs, with operational engines behind adapters: Metricool (social), Upmind (web/domain/hosting), QMAPS (local listings), FLEXS (leads), TryHolo (optional creative AI, feature-flagged), Stripe (billing, later).
