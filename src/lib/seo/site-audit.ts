@@ -6,14 +6,17 @@ import "server-only";
 // on-page fundamentals. Safety rules:
 // - http/https only, no embedded credentials, default ports only;
 // - every hop (including redirects) must resolve to public IP space;
+// - the connection goes to the exact address that was checked (pinned), so a
+//   second DNS answer cannot redirect it to a private address (rebinding);
 // - hard timeout, redirect cap and response-size cap;
 // - nothing is stored and no third-party API is called.
-// Residual risk: DNS can change between our lookup and fetch's own lookup
-// (rebinding). Acceptable for an authenticated dashboard tool; revisit if this
-// is ever exposed publicly.
 
 import { lookup } from "node:dns/promises";
-import { isIP } from "node:net";
+import http from "node:http";
+import https from "node:https";
+import { isIP, type LookupFunction } from "node:net";
+import type { Readable } from "node:stream";
+import zlib from "node:zlib";
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_REDIRECTS = 4;
@@ -140,13 +143,20 @@ export function normalizeAuditUrl(raw: string): URL {
   return url;
 }
 
-async function assertPublicHost(url: URL): Promise<void> {
+export interface PinnedAddress {
+  address: string;
+  family: 4 | 6;
+}
+
+/** Resolves the host once and returns a public address to connect to (never a private one). */
+async function resolvePublicAddress(url: URL): Promise<PinnedAddress> {
   const host = url.hostname.replace(/^\[|\]$/g, "");
-  if (isIP(host)) {
+  const literal = isIP(host);
+  if (literal) {
     if (isPrivateAddress(host)) throw new AuditError("Private network addresses cannot be audited.");
-    return;
+    return { address: host, family: literal === 6 ? 6 : 4 };
   }
-  let addresses: Array<{ address: string }>;
+  let addresses: Array<{ address: string; family: number }>;
   try {
     addresses = await lookup(host, { all: true, verbatim: true });
   } catch {
@@ -155,6 +165,62 @@ async function assertPublicHost(url: URL): Promise<void> {
   if (addresses.length === 0 || addresses.some((a) => isPrivateAddress(a.address))) {
     throw new AuditError("That domain resolves to a private network address and cannot be audited.");
   }
+  return { address: addresses[0].address, family: addresses[0].family === 6 ? 6 : 4 };
+}
+
+/** A lookup that always answers with the pinned address (no second DNS query). */
+export function pinnedLookup(pinned: PinnedAddress): LookupFunction {
+  return ((_hostname: string, options: { all?: boolean } | number | undefined, callback: (...args: unknown[]) => void) => {
+    const all = typeof options === "object" && options !== null && options.all;
+    if (all) callback(null, [{ address: pinned.address, family: pinned.family }]);
+    else callback(null, pinned.address, pinned.family);
+  }) as unknown as LookupFunction;
+}
+
+interface PinnedResponse {
+  status: number;
+  headers: http.IncomingHttpHeaders;
+  body: Readable;
+}
+
+/** GET `url` over a socket connected to `pinned`; TLS still verifies the certificate for url's host. */
+export function requestPinned(url: URL, pinned: PinnedAddress, headers: Record<string, string>, timeoutMs: number): Promise<PinnedResponse> {
+  return new Promise((resolve, reject) => {
+    const client = url.protocol === "https:" ? https : http;
+    const host = url.hostname.replace(/^\[|\]$/g, "");
+    const request = client.request(
+      {
+        protocol: url.protocol,
+        hostname: host,
+        port: url.port || (url.protocol === "https:" ? 443 : 80),
+        path: `${url.pathname}${url.search}`,
+        method: "GET",
+        headers: { ...headers, host: url.host, "accept-encoding": "gzip, deflate, br" },
+        lookup: pinnedLookup(pinned),
+        ...(url.protocol === "https:" && !isIP(host) ? { servername: host } : {}),
+        agent: false,
+      },
+      (response) => {
+        clearTimeout(timer);
+        const encoding = String(response.headers["content-encoding"] ?? "").toLowerCase();
+        const body: Readable =
+          encoding === "gzip" || encoding === "x-gzip"
+            ? response.pipe(zlib.createGunzip())
+            : encoding === "deflate"
+              ? response.pipe(zlib.createInflate())
+              : encoding === "br"
+                ? response.pipe(zlib.createBrotliDecompress())
+                : response;
+        resolve({ status: response.statusCode ?? 0, headers: response.headers, body });
+      },
+    );
+    const timer = setTimeout(() => request.destroy(Object.assign(new Error("timeout"), { name: "TimeoutError" })), timeoutMs);
+    request.on("error", (error) => {
+      clearTimeout(timer);
+      reject(error);
+    });
+    request.end();
+  });
 }
 
 // ------------------------------------------------------------------ fetching
@@ -170,61 +236,73 @@ interface FetchedPage {
   xRobotsTag: string | null;
 }
 
-async function readCapped(response: Response, maxBytes: number): Promise<{ text: string; bytes: number; truncated: boolean }> {
-  if (!response.body) return { text: "", bytes: 0, truncated: false };
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
+async function readCapped(body: Readable, maxBytes: number, timeoutMs: number): Promise<{ text: string; bytes: number; truncated: boolean }> {
+  const chunks: Buffer[] = [];
   let bytes = 0;
   let truncated = false;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    bytes += value.byteLength;
-    if (bytes > maxBytes) {
-      chunks.push(value.subarray(0, value.byteLength - (bytes - maxBytes)));
-      truncated = true;
-      await reader.cancel();
-      break;
+  const deadline = setTimeout(() => body.destroy(Object.assign(new Error("timeout"), { name: "TimeoutError" })), timeoutMs);
+  try {
+    for await (const chunk of body) {
+      const value = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
+      bytes += value.byteLength;
+      if (bytes > maxBytes) {
+        chunks.push(value.subarray(0, value.byteLength - (bytes - maxBytes)));
+        truncated = true;
+        body.destroy();
+        break;
+      }
+      chunks.push(value);
     }
-    chunks.push(value);
+  } finally {
+    clearTimeout(deadline);
   }
   return { text: Buffer.concat(chunks).toString("utf8"), bytes: Math.min(bytes, maxBytes), truncated };
+}
+
+function headerValue(headers: http.IncomingHttpHeaders, name: string): string | null {
+  const value = headers[name];
+  return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 }
 
 async function safeFetch(start: URL, maxBytes: number): Promise<FetchedPage> {
   let current = start;
   const started = Date.now();
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    await assertPublicHost(current);
-    let response: Response;
+    const pinned = await resolvePublicAddress(current);
+    let response: PinnedResponse;
     try {
-      response = await fetch(current, {
-        redirect: "manual",
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        headers: { "user-agent": USER_AGENT, accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5" },
-        cache: "no-store",
-      });
+      response = await requestPinned(
+        current,
+        pinned,
+        { "user-agent": USER_AGENT, accept: "text/html,application/xhtml+xml,text/plain;q=0.9,*/*;q=0.5" },
+        FETCH_TIMEOUT_MS,
+      );
     } catch (error) {
       const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
       throw new AuditError(timedOut ? `${current.host} did not respond within 10 seconds.` : `Could not connect to ${current.host}.`);
     }
-    const location = response.headers.get("location");
+    const location = headerValue(response.headers, "location");
     if (response.status >= 300 && response.status < 400 && location) {
-      await response.body?.cancel();
+      response.body.destroy();
       const next = normalizeAuditUrl(new URL(location, current).toString());
       current = next;
       continue;
     }
-    const { text, bytes, truncated } = await readCapped(response, maxBytes);
+    let read: { text: string; bytes: number; truncated: boolean };
+    try {
+      read = await readCapped(response.body, maxBytes, FETCH_TIMEOUT_MS);
+    } catch {
+      throw new AuditError(`${current.host} stopped responding while sending the page.`);
+    }
     return {
       url: current,
       status: response.status,
-      contentType: response.headers.get("content-type") ?? "",
-      body: text,
-      bytes,
-      truncated,
+      contentType: headerValue(response.headers, "content-type") ?? "",
+      body: read.text,
+      bytes: read.bytes,
+      truncated: read.truncated,
       ms: Date.now() - started,
-      xRobotsTag: response.headers.get("x-robots-tag"),
+      xRobotsTag: headerValue(response.headers, "x-robots-tag"),
     };
   }
   throw new AuditError("Too many redirects.");

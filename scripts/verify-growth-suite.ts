@@ -41,7 +41,8 @@ import { buildHighlights, monthRange, percentChange, previousMonth } from "../sr
 import { connectionAad, decryptGrowthValue, encryptGrowthValue, pkceChallenge } from "../src/lib/integrations/google-business/crypto";
 import { parseAccounts, parseLocations, parseReviewsPage } from "../src/lib/integrations/google-business/parse";
 import { gradeMetric, parsePageSpeed } from "../src/lib/seo/pagespeed-parse";
-import { normalizeAuditUrl } from "../src/lib/seo/site-audit";
+import { normalizeAuditUrl, requestPinned } from "../src/lib/seo/site-audit";
+import http from "node:http";
 
 function pass(label: string): void {
   console.log(`PASS  ${label}`);
@@ -507,4 +508,28 @@ verifyMessagingGates();
 verifyAuditUrlGuard();
 verifyAnalyticsParsing();
 verifyReputationValidation();
-console.log("\nGrowth Suite safeguards: all checks passed.");
+
+/** The audit connects to the address it checked: no second DNS lookup (rebinding). Loopback only. */
+async function verifyPinnedConnection(): Promise<void> {
+  const server = http.createServer((req, res) => res.end(`host=${req.headers.host}`));
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()));
+  try {
+    const { port } = server.address() as { port: number };
+    // ".invalid" can never resolve, so reaching the server proves the pinned address was used.
+    const res = await requestPinned(new URL(`http://rebind-check.invalid:${port}/`), { address: "127.0.0.1", family: 4 }, {}, 5_000);
+    const chunks: Buffer[] = [];
+    for await (const chunk of res.body) chunks.push(chunk as Buffer);
+    assert.equal(res.status, 200);
+    assert.equal(Buffer.concat(chunks).toString(), `host=rebind-check.invalid:${port}`, "Host header keeps the real name");
+  } finally {
+    server.close();
+  }
+  pass("site audit connects only to the address it verified (no DNS rebinding window)");
+}
+
+verifyPinnedConnection()
+  .then(() => console.log("\nGrowth Suite safeguards: all checks passed."))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

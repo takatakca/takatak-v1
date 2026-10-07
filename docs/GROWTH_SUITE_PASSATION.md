@@ -1,0 +1,130 @@
+# Growth Suite : passation (ce qui est fait, ce qui reste)
+
+Branche : `claude/festive-newton-5i9rv7`. `main` n'est pas touché. Rien n'est déployé et aucune migration n'est appliquée en staging ni en production.
+
+## 1. Ce qui est terminé et vérifié
+
+- **Phases 1 à 9 :**
+  - hub de connecteurs, audit SEO, réputation (style Birdeye) ;
+  - crédits IA, analytics sans cookies, audiences de reciblage, chat web ;
+  - envoi SMS/WhatsApp, file d'agents IA avec approbation, autopilote ;
+  - vitrine d'avis, Concierge de chat, Core Web Vitals ;
+  - GA4 / Search Console, rapport mensuel, Google Business Profile ;
+  - abonnements aux forfaits et droits d'accès.
+- **Sécurité :**
+  - les données Google ne sont liées qu'à un site dont le client a prouvé être propriétaire (DNS TXT ou balise meta) ;
+  - l'audit SEO se connecte uniquement à l'adresse IP vérifiée (pas de DNS rebinding).
+- **Revue de code complète :** 10 problèmes trouvés. 9 étaient de vrais bugs et sont corrigés avec tests. Le 10ᵉ (sortie `null` d'un agent) ne plantait pas en pratique ; le changement est gardé par prudence.
+- **Retour en arrière :** voir [GROWTH_SUITE_ROLLBACK.md](GROWTH_SUITE_ROLLBACK.md).
+  - un commit par phase ;
+  - script SQL de retour testé : le schéma redevient identique à `main`.
+- **CI GitHub complet sur la branche :** vert. Il couvre le typecheck, le lint, les RLS en direct sur Supabase, l'isolation entre clients, les tests Growth sur base de données, le build et l'artefact.
+
+## 2. Ce que TOI (propriétaire) dois faire
+
+1. **Approuver la mise en ligne.** Demande-moi d'ouvrir la Pull Request, ou ouvre-la toi-même depuis la branche. Ton dev la révise.
+2. **Valider les prix (brouillons, en CAD) :**
+   - forfaits mensuels : `src/lib/growth/plans.ts` ;
+   - packs de crédits IA (15 $ / 59 $ / 149 $ / 399 $) : `src/lib/growth/ai-engine.ts`.
+3. **Créer ou obtenir les comptes externes** (à donner au dev, jamais par courriel en clair) :
+   - **Google Cloud :**
+     - un compte de service (GA4 + Search Console) ;
+     - une clé API PageSpeed ;
+     - un client OAuth pour Google Business Profile.
+     - ⚠️ **L'API Google Business Profile demande une approbation de Google** (formulaire d'accès). Fais la demande tôt : ça peut prendre des jours.
+   - **Stripe :** accès au compte pour créer les deux webhooks (voir §3).
+   - **Twilio (SMS) :** numéro ou Messaging Service, avec l'enregistrement canadien requis pour les SMS commerciaux.
+   - **WhatsApp Cloud API (Meta) :**
+     - numéro d'entreprise ;
+     - **modèle de message approuvé par Meta**, avec 3 variables : `{{1}}` = nom, `{{2}}` = entreprise, `{{3}}` = lien.
+   - **Ta passerelle IA (tes 13 IA) :**
+     - son URL ;
+     - un jeton secret d'au moins 32 caractères ;
+     - elle doit suivre le contrat décrit dans `docs/TAKATAK_GROWTH_SUITE.md` (section *AI Gateway contract*).
+4. **Décider de la Phase 10** (indépendance des clients, droits sur les leads, transfert) en lisant [proposals/CLIENT_INDEPENDENCE_PROPOSAL.md](proposals/CLIENT_INDEPENDENCE_PROPOSAL.md). Elle contient 4 questions contractuelles auxquelles toi seul peux répondre.
+5. **Rendre `takatakca/knowledgeAI` privé** (ou créer un dépôt privé compagnon) avant d'y mettre des contrats ou des données de clients.
+
+## 3. Ce que TON DEV doit faire
+
+### a) Révision et fusion
+
+- Réviser la PR, phase par phase (un commit par phase).
+- Le CI se lance automatiquement sur la PR.
+
+### b) Migrations (staging d'abord, une à la fois)
+
+Les 9 migrations Growth ne sont **pas** dans `APPROVED_DEPLOY_MIGRATIONS`. Les reconcilers ne les appliqueront pas tant qu'elles n'y sont pas ajoutées :
+
+```
+20261006120000_growth_reputation_and_ai_credits
+20261006150000_growth_analytics_and_conversations
+20261006180000_growth_agents_and_delivery
+20261006210000_growth_agent_schedules
+20261007090000_growth_review_showcase
+20261007120000_growth_google_data_sources
+20261007150000_growth_google_business_profile
+20261007180000_growth_plan_subscriptions
+20261007210000_growth_site_domain_verification
+```
+
+1. Faire une sauvegarde de la base.
+2. Les ajouter dans `scripts/reconcile-staging-migrations.mjs`, puis déployer en staging.
+3. Lancer `npm run qa:growth-backend` contre une base jetable.
+4. Si tout va bien en staging, faire la même chose dans `scripts/reconcile-production-migrations.mjs`.
+
+En cas de problème, suivre [GROWTH_SUITE_ROLLBACK.md](GROWTH_SUITE_ROLLBACK.md).
+
+### c) Variables d'environnement (par environnement)
+
+| Variable | Rôle |
+|---|---|
+| `TAKATAK_AI_GATEWAY_URL`, `TAKATAK_AI_GATEWAY_TOKEN` | passerelle IA (jeton d'au moins 32 caractères) |
+| `CRON_SECRET` | protège les routes cron |
+| `ANALYTICS_HASH_SECRET` | au moins 32 caractères aléatoires (identifiants visiteurs) |
+| `GROWTH_TOKEN_ENCRYPTION_KEY_V1` | 32 octets en base64, ou 64 caractères hexadécimaux (chiffre le jeton Google Business) |
+| `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | GA4 + Search Console. Activer *Analytics Data API*, *Analytics Admin API* et *Search Console API* |
+| `PAGESPEED_API_KEY` | Core Web Vitals |
+| `GOOGLE_BUSINESS_PROFILE_CLIENT_ID`, `GOOGLE_BUSINESS_PROFILE_CLIENT_SECRET`, `GOOGLE_BUSINESS_PROFILE_REDIRECT_URI`, `GOOGLE_BUSINESS_PROFILE_ENABLED=true` | URI de redirection : `https://<domaine>/api/integrations/google-business/callback` |
+| `STRIPE_AI_CREDITS_WEBHOOK_SECRET`, `AI_CREDITS_CHECKOUT_ENABLED=true` | achat de crédits |
+| `STRIPE_GROWTH_WEBHOOK_SECRET`, `GROWTH_BILLING_ENABLED=true` | forfaits mensuels |
+| `GROWTH_ENTITLEMENTS_ENFORCED` | laisser vide pendant le pilote, `true` quand les forfaits sont vendus |
+| `TWILIO_MESSAGING_SERVICE_SID` ou `TWILIO_SMS_FROM`, `GROWTH_SMS_ENABLED=true` | SMS (réutilise `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN`) |
+| `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_REVIEW_TEMPLATE`, `WHATSAPP_TEMPLATE_LANGUAGE`, `WHATSAPP_GRAPH_VERSION` (format `v21.0`, jamais devinée), `GROWTH_WHATSAPP_ENABLED=true` | WhatsApp |
+| `TRUSTED_PROXY_HOPS` (ou `CLIENT_IP_HEADER`) | voir l'étape e) |
+
+Une fonction dont les variables sont absentes affiche « non configuré » : rien ne plante.
+
+### d) Webhooks Stripe et crons
+
+- **Webhook** `https://<domaine>/api/billing/ai-credits/webhook` : événement `checkout.session.completed`.
+- **Webhook** `https://<domaine>/api/billing/growth/webhook` : événements `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` et `invoice.paid`.
+- **Cron toutes les 15 minutes :** `/api/cron/growth-agents`
+- **Cron toutes les heures :** `/api/cron/growth-reviews-sync`
+- Les deux crons utilisent l'en-tête `Authorization: Bearer $CRON_SECRET`. Sur MochaHost, ce sont des crons cPanel qui appellent ces URLs avec `curl`.
+
+### e) Vérification IP (anti-spam) à faire sur chaque serveur
+
+Je n'ai pas pu voir d'ici quel `X-Forwarded-For` l'application reçoit sur MochaHost/Passenger.
+
+- Avec **un seul** proxy devant l'app (Cloudflare seul, Vercel ou Coolify) : `TRUSTED_PROXY_HOPS=1`, c'est la valeur par défaut.
+- Avec **deux** proxys (ex. Cloudflare devant Coolify/Traefik) : `TRUSTED_PROXY_HOPS=2`.
+- Ou bien `CLIENT_IP_HEADER=cf-connecting-ip` si Cloudflare est toujours devant.
+
+### f) Tests en staging (avec un vrai compte)
+
+1. Ajouter un site web et le vérifier (TXT ou balise meta), puis lier GA4 et Search Console.
+2. Créer une page d'avis et envoyer une demande par lien, SMS et WhatsApp.
+3. Installer les scripts `takatak-analytics.js`, `takatak-chat.js` et `takatak-reviews.js` sur un site de test. Envoyer un message, puis répondre depuis la boîte de réception.
+4. Connecter Google Business Profile, lancer « Sync now », puis publier une réponse.
+5. En mode test Stripe : acheter un pack de crédits, puis souscrire un forfait. Vérifier les crédits inclus.
+6. Lancer un agent IA avec ta passerelle et le faire passer par approbation → exécution.
+
+## 4. Ce qui n'est PAS fait (volontairement)
+
+- **Phase 10 (indépendance des clients) :** en attente de ta décision et de la révision du dev.
+- **Fournisseurs payants non branchés** (le tableau de bord les affiche honnêtement « non configuré ») :
+  - Semrush, Ahrefs, DataForSEO, BrightLocal ;
+  - Google Ads, Meta Ads, TikTok Ads, Microsoft Ads ;
+  - Yelp, Trustpilot.
+  - Chacun demande un compte et une clé API. Il sera branché quand tu les auras.
+- **Module Social :** non touché, comme demandé.

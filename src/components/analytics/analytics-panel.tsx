@@ -142,8 +142,8 @@ export function AnalyticsPanel({
                       <p className="text-[11px] text-slate-500">
                         Add this TXT record to the DNS of {s.domain}, or put the meta tag in the &lt;head&gt; of its homepage, then verify. Google data is only shown for verified websites.
                       </p>
-                      <CopySnippet code={verificationTxtValue(s.verificationToken)} />
-                      <CopySnippet code={verificationMetaTag(s.verificationToken)} />
+                      <CopySnippet code={verificationTxtValue(s.verificationToken)} hint={`Option A — DNS TXT record on ${s.domain}`} />
+                      <CopySnippet code={verificationMetaTag(s.verificationToken)} hint={`Option B — inside <head> of https://${s.domain}/`} />
                       <VerifySiteForm siteId={s.id} verified={Boolean(s.domainVerifiedAt)} />
                     </div>
                     <p className="text-[11px] font-semibold text-slate-700">2. Connect Google</p>
