@@ -309,6 +309,16 @@ export async function claimAndEnqueueFacebookPageSync(options: {
         provider: "meta",
         msTotal: Date.now() - started,
       });
+      const { signalQueueJob } = await import("@/lib/queue/signal");
+      await signalQueueJob({
+        queue: "social-sync",
+        payload: {
+          workspaceId: options.clientId,
+          connectionId: options.connectionId,
+          provider: "meta",
+          eventId: result.jobId,
+        },
+      });
     }
 
     return result;

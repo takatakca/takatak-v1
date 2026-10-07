@@ -3252,6 +3252,21 @@ model HockeyStripeWebhookEvent {
   @@map("hockey_stripe_webhook_events")
 }
 
+/// Intent row for a verified Stripe webhook. The raw body is not stored.
+/// stripe_webhook_events and hockey_stripe_webhook_events stay the apply records.
+model ProviderWebhookReceipt {
+  id        String   @id @default(uuid()) @db.Uuid
+  provider  String
+  eventId   String
+  status    String   @default("queued")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, eventId])
+  @@index([status, updatedAt])
+  @@map("provider_webhook_receipts")
+}
+
 model SourceProfile {
   id                 String   @id @default(uuid()) @db.Uuid
   identityId         String   @db.Uuid

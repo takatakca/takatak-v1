@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/auth/env";
 import { isSupabaseAdminConfigured } from "@/lib/auth/supabase-admin";
 import { getPrisma } from "@/lib/db/prisma";
+import { readRedisReadiness } from "@/lib/queue/redis";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -29,12 +30,16 @@ async function pingDatabase(): Promise<CheckState> {
 
 export async function GET() {
   const database = await pingDatabase();
+  const redis = await readRedisReadiness();
   const supabase: CheckState = isSupabaseConfigured()
     ? isSupabaseAdminConfigured()
       ? "ok"
       : "unavailable"
     : "not_configured";
-  const ok = database !== "unavailable" && supabase !== "unavailable";
+  const requireDatabase = process.env.TAKATAK_READY_REQUIRE_DATABASE === "true";
+  const databaseReady = requireDatabase ? database === "ok" : database !== "unavailable";
+  const ok =
+    databaseReady && supabase !== "unavailable" && redis !== "unavailable";
 
   const response = NextResponse.json(
     {
@@ -43,6 +48,7 @@ export async function GET() {
         process: "ok",
         database,
         supabase,
+        redis,
       },
     },
     { status: ok ? 200 : 503 },

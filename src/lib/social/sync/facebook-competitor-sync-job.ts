@@ -114,6 +114,17 @@ export async function enqueueFacebookCompetitorRefresh(options: {
     provider: "meta",
   });
 
+  const { signalQueueJob } = await import("@/lib/queue/signal");
+  await signalQueueJob({
+    queue: "analytics-sync",
+    payload: {
+      workspaceId: options.clientId,
+      connectionId: track.id,
+      provider: "meta",
+      eventId: job.id,
+    },
+  });
+
   return { enqueued: true, jobId: job.id };
 }
 

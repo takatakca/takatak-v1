@@ -9,3 +9,5 @@ coverage
 .tmp-takatak-automate
 deploy/takatak-staging-release.tar.gz
 *.pem
+npm-debug.log*
+*.log
