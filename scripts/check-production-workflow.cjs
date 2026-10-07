@@ -6,6 +6,7 @@ const path = require("node:path");
 const { spawnSync } = require("node:child_process");
 
 const workflow = fs.readFileSync(".github/workflows/release-production.yml", "utf8");
+const validationWorkflow = fs.readFileSync(".github/workflows/validate-production-artifact.yml", "utf8");
 const lines = workflow.split(/\r?\n/);
 const bash = process.platform === "win32" ? "C:\\Program Files\\Git\\bin\\bash.exe" : "bash";
 const scripts = [fs.readFileSync("deploy/linux/promote-production.sh", "utf8")];
@@ -23,6 +24,9 @@ for (let index = 0; index < lines.length; index += 1) {
 }
 if (!workflow.includes("default: validate") || !workflow.includes("if: github.ref == 'refs/heads/main'") || !workflow.includes("environment: production") || !workflow.includes("cancel-in-progress: false")) throw new Error("Manual production safety contract is missing");
 if (/^\s{2}(push|workflow_run|schedule):/m.test(workflow)) throw new Error("Production promotion must never run automatically");
+if (!validationWorkflow.includes("workflow_run:") || !validationWorkflow.includes("head_branch == 'main'") || !validationWorkflow.includes("conclusion == 'success'")) throw new Error("Automatic artifact validation must require green main CI");
+if (/environment:\s*production|TAKATAK_PRODUCTION_|promote-production\.sh|workflow_dispatch:/m.test(validationWorkflow)) throw new Error("Automatic artifact validation must remain read-only and provider-free");
+if (!validationWorkflow.includes("validateCiEvidence") || !validationWorkflow.includes("validateArtifactFiles") || !validationWorkflow.includes("validate-production-archive.py")) throw new Error("Automatic artifact validation is missing provenance/archive checks");
 if (/StrictHostKeyChecking\s+no|set -x|prisma migrate|npm install|npm ci/.test(workflow)) throw new Error("Production promotion contains a forbidden shortcut");
 const temporary = fs.mkdtempSync(path.join(os.tmpdir(), "takatak-workflow-"));
 try {
