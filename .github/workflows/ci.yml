@@ -97,11 +97,17 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Client invoicing (Stripe Connect) safeguards
+        run: npm run qa:client-invoicing
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
+
+      - name: GROUPE TAKATAK billing (Facturations) safeguards
+        run: npm run qa:billing
 
       - name: Client invoice center safeguards
         run: npm run qa:client-invoices
@@ -303,10 +309,26 @@ jobs:
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
 
+      - name: GROUPE TAKATAK billing ↔ real Facturations contract (pinned SHA)
+        env:
+          # Exact takatakca/Facturations commit whose integration v1 contract
+          # this branch is verified against. Bump deliberately, with review.
+          FACTURATIONS_REF: eb1e02a10efdf9767dca0eeb04b5010209d18f07
+        run: bash scripts/ci-billing-facturations-contract.sh
+      - name: Client invoicing (Stripe Connect) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoicing-db
+
       - name: Client invoice center against the ephemeral database
         env:
           NODE_ENV: development
         run: npm run qa:client-invoices-db
+
+      - name: GROUPE TAKATAK billing ecosystem feed against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:billing-feed-db
 
       - name: Build (webpack)
         env:
