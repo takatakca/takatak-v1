@@ -27,7 +27,7 @@ export function MasterPhoneLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inFlight = useRef(false);
-  const [mode, setMode] = useState<Mode>("phone");
+  const [mode, setMode] = useState<Mode>("email");
   const [phoneInput, setPhoneInput] = useState("");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
