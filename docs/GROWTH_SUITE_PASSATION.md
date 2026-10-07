@@ -2,6 +2,26 @@
 
 Branche : `claude/festive-newton-5i9rv7`. `main` n'est pas touché. Rien n'est déployé et aucune migration n'est appliquée en staging ni en production.
 
+## 0. URGENT : connexion sur staging.takatak.ca (diagnostic du 7 octobre)
+
+**`takatak.ca` (production) fonctionne** : le code par courriel a été envoyé avec succès pendant le test. Les erreurs des captures viennent de **`staging.takatak.ca`**. Aucun code de cette branche n'y est déployé.
+
+**1. « Email OTP is not configured »** : le fichier `.env` du serveur staging (`$TAKATAK_STAGING_APP_ROOT/.env`) n'a pas de `EMAIL_USER` / `EMAIL_PASSWORD`.
+- Les ajouter, avec les mêmes valeurs que la production. `EMAIL_PASSWORD` est un mot de passe d'application Gmail de 16 caractères.
+- Redémarrer l'application staging.
+
+**2. « Unable to send the TAKATAK SMS code »** : Supabase staging (projet `utuvzrqvivqyziibobvu`) répond `otp_disabled — Signups not allowed for otp`.
+- **Cause :** le numéro n'a pas d'identité dans la base de **staging**, qui est séparée de la production. La connexion ne crée jamais de compte.
+- **Correctif :** créer l'identité sur staging (« Create your identity »), ou ajouter le téléphone à l'utilisateur dans Supabase → Authentication → Users.
+- **À vérifier aussi :** les réglages du projet indiquent le fournisseur **Phone désactivé** (`phone: false`). Dans Supabase → Authentication → Sign In / Providers → **Phone**, l'activer avec Twilio : Account SID, Auth Token, Message Service SID ou Verify SID.
+- **Avant de mettre le nouvel écran en production :** vérifier le même réglage sur le projet de production `pcjfahhlozsseqqevimi`.
+- **Côté code :** le commit `e618334` affiche maintenant la vraie raison au lieu de « Unable to send… ». Il s'applique seul sur `main` (`git cherry-pick e618334`).
+
+**3. Le CI de `main` échoue depuis le commit « connected socials » (5d3d33a)** : `package-lock.json` n'a pas été mis à jour pour `@atproto/oauth-client-node`.
+- `npm ci` s'arrête, donc la mise en production staging ne part plus (« skipped »).
+- **Correctif :** commit `5f3a0db`, qui ne touche que le lockfile. Il s'applique seul sur `main` (`git cherry-pick 5f3a0db`).
+- Le module Social n'est pas modifié.
+
 ## 1. Ce qui est terminé et vérifié
 
 - **Phases 1 à 9 :**
