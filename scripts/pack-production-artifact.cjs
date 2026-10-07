@@ -141,6 +141,7 @@ if (hashedScan.status !== 0) {
 
 const tarball = path.join(outRoot, `takatak-${buildId}.tar.gz`);
 run("tar", [
+  "--dereference",
   "-czf",
   tarball,
   "-C",
