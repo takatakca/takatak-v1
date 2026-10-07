@@ -119,6 +119,9 @@ jobs:
           node --check scripts/reconcile-production-migrations.mjs
           node scripts/verify-production-migration-normalization.mjs
 
+      - name: Manual production promotion safeguards
+        run: npm run qa:production-release
+
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
 
