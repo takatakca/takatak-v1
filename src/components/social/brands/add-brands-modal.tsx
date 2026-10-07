@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Gem, Loader2, Megaphone, Plus, Users, X } from "lucide-react";
+import { BarChart3, Check, ChevronDown, Gem, Link2, Loader2, Megaphone, Plus, Rss, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -20,9 +20,12 @@ import { brandInitials } from "@/lib/brands/brand-display-image";
 import type { BrandSettingsBrandCard } from "@/lib/brands/brand-settings-data";
 
 const PLATFORM_ROW = [
+  "blog",
+  "web",
   "twitch",
   "meta_ads",
   "google_ads",
+  "looker_studio",
   "google_business",
   "instagram",
   "youtube",
@@ -70,9 +73,12 @@ function NetworkIcon({
 }) {
   const color = connected
     ? {
+        blog: "#7aa3aa",
+        web: "#8790f6",
         twitch: "#9146FF",
         meta_ads: "#0866FF",
         google_ads: "#4285F4",
+        looker_studio: "#6C63FF",
         google_business: "#4285F4",
         instagram: "#E1306C",
         youtube: "#FF0000",
@@ -87,6 +93,10 @@ function NetworkIcon({
   const iconClass = "h-[13px] w-[13px] shrink-0";
 
   switch (platform) {
+    case "blog":
+      return <Rss className={iconClass} color={color} />;
+    case "web":
+      return <Link2 className={iconClass} color={color} />;
     case "twitch":
       return <FaTwitch className={iconClass} color={color} />;
     case "meta_ads":
@@ -100,6 +110,8 @@ function NetworkIcon({
     case "google_ads":
     case "google_business":
       return <FaGoogle className={iconClass} color={color} />;
+    case "looker_studio":
+      return <BarChart3 className={iconClass} color={color} />;
     case "instagram":
       return <FaInstagram className={iconClass} color={color} />;
     case "youtube":

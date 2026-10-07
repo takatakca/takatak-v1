@@ -45,6 +45,12 @@
     "qa:social-tiktok": "tsx --require ./scripts/register-server-only.cjs scripts/tiktok-connection-tests.ts",
     "qa:social-youtube": "tsx --require ./scripts/register-server-only.cjs scripts/youtube-connection-tests.ts",
     "qa:social-x": "tsx --require ./scripts/register-server-only.cjs scripts/x-connection-tests.ts",
+    "qa:social-twitch": "tsx --require ./scripts/register-server-only.cjs scripts/twitch-connection-tests.ts",
+    "qa:social-meta-ads": "tsx --require ./scripts/register-server-only.cjs scripts/meta-ads-connection-tests.ts",
+    "qa:social-google-ads": "tsx --require ./scripts/register-server-only.cjs scripts/google-ads-connection-tests.ts",
+    "qa:social-looker-studio": "tsx --require ./scripts/register-server-only.cjs scripts/looker-studio-connection-tests.ts",
+    "qa:social-web": "tsx --require ./scripts/register-server-only.cjs scripts/web-site-connection-tests.ts",
+    "qa:social-blog": "tsx --require ./scripts/register-server-only.cjs scripts/blog-connection-tests.ts",
     "qa:social-step4-correction": "tsx scripts/step-4-correction-verification.ts",
     "qa:oauth-access-logs": "tsx scripts/verify-oauth-access-log-protection.ts",
     "qa:social-step5-pages": "tsx scripts/step-5-facebook-page-tests.ts",
@@ -111,6 +117,7 @@
     "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts"
   },
   "dependencies": {
+    "@atproto/oauth-client-node": "^0.5.7",
     "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "6.19.3",
     "@supabase/ssr": "^0.12.0",

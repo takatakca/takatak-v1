@@ -21,6 +21,11 @@ const PLATFORM_KEYS: SocialPlatformKey[] = [
   "google_business",
   "youtube",
   "twitch",
+  "web",
+  "blog",
+  "meta_ads",
+  "google_ads",
+  "looker_studio",
 ];
 
 function isPlatformKey(value: string): value is SocialPlatformKey {

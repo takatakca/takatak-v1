@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 
 import { pickSelectedTikTokAccountStrict } from "../src/lib/social/connections/social-canonical-identity";
 import { mapTikTokIdentityFromRecord } from "../src/lib/social/providers/tiktok-token";
+import { buildTikTokSeries } from "../src/lib/social/providers/tiktok-analytics-series";
 import { TIKTOK_OAUTH_START_SCOPES } from "../src/lib/social/providers/tiktok-oauth";
 
 type Status = "PASS" | "FAIL";
@@ -45,10 +46,61 @@ check("OAuth start requests Login Kit identity scopes", () => {
     "user.info.profile",
   );
   assert(
+    TIKTOK_OAUTH_START_SCOPES.includes("user.info.stats"),
+    "user.info.stats",
+  );
+  assert(
+    TIKTOK_OAUTH_START_SCOPES.includes("video.list"),
+    "video.list",
+  );
+  assert(
     !(TIKTOK_OAUTH_START_SCOPES as readonly string[]).includes("video.publish"),
     "no publish scope",
   );
-  return "user.info.basic + user.info.profile; publishing not requested";
+  return "identity, stats, and video.list; publishing not requested";
+});
+
+check("TikTok series uses confirmed videos and measured followers only", () => {
+  const series = buildTikTokSeries({
+    start: "2026-09-03",
+    end: "2026-09-05",
+    zeroFillFrom: "2026-09-03",
+    posts: [
+      {
+        publishedOn: "2026-09-04",
+        views: 10,
+        likes: 2,
+        comments: 1,
+        shares: 0,
+      },
+    ],
+    followerSnapshots: [
+      { date: "2026-09-04", followers: 5 },
+      { date: "2026-09-05", followers: 8 },
+    ],
+  });
+
+  assert(series.points[0]?.posts === 0, "empty day is a confirmed zero");
+  assert(series.points[0]?.followerBalance === null, "no invented follower history");
+  assert(series.points[1]?.posts === 1, "video lands on its publish day");
+  assert(series.points[1]?.views === 10, "views");
+  assert(series.points[1]?.interactions === 3, "interactions");
+  assert(series.points[1]?.followerGrowth === null, "growth needs the previous day");
+  assert(series.points[2]?.followerBalance === 8, "measured balance");
+  assert(series.points[2]?.followerGrowth === 3, "consecutive snapshot delta");
+  assert(series.totals.posts === 1, "period posts");
+  assert(series.totals.views === 10, "period views");
+
+  const unknown = buildTikTokSeries({
+    start: "2026-09-03",
+    end: "2026-09-03",
+    zeroFillFrom: null,
+    posts: [],
+    followerSnapshots: [],
+  });
+  assert(unknown.totals.posts === null, "missing video list is not zero");
+  assert(unknown.points[0]?.views === null, "missing views stay blank");
+  return "publish-day totals and follower deltas stay limited to measured days";
 });
 
 check("Mapper reads TikTok open_id identity", () => {

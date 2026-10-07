@@ -1,6 +1,7 @@
 import "server-only";
 
 import { assertClientCanConnectSocial } from "@/lib/billing/client-subscription-access";
+import { synchronizeSocialAvatar } from "@/lib/social/avatars/social-avatar-service";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import { completeSocialOAuthState } from "@/lib/social/connections/social-connection-service";
@@ -45,12 +46,18 @@ export type DirectAccountTokenResult = {
   profileImageUrl: string | null;
 };
 
-type DirectAccountPlatform = "instagram" | "threads" | "tiktok" | "x";
+type DirectAccountPlatform =
+  | "instagram"
+  | "threads"
+  | "tiktok"
+  | "x"
+  | "twitch";
 
 function providerLabel(platform: DirectAccountPlatform): string {
   if (platform === "instagram") return "Instagram";
   if (platform === "threads") return "Threads";
   if (platform === "x") return "X";
+  if (platform === "twitch") return "Twitch";
   return "TikTok";
 }
 
@@ -58,6 +65,7 @@ function accountTypeForPlatform(platform: DirectAccountPlatform): string {
   if (platform === "instagram") return "instagram_professional";
   if (platform === "threads") return "threads_profile";
   if (platform === "x") return "x_user";
+  if (platform === "twitch") return "twitch_channel";
   return "tiktok_user";
 }
 
@@ -155,7 +163,7 @@ async function persistConnectedDirectAccount(options: {
   displayName: string | null;
   handle: string | null;
   profileImageUrl: string | null;
-}): Promise<void> {
+}): Promise<string> {
   const prisma = getPrisma();
   if (!prisma) {
     throw new ServiceError(
@@ -164,7 +172,7 @@ async function persistConnectedDirectAccount(options: {
     );
   }
 
-  await runSocialDbTransaction(
+  return runSocialDbTransaction(
     `${options.platform}-account-connect`,
     async (transaction) => {
       await assertProfileCanManageSocialAccounts(transaction, {
@@ -287,6 +295,25 @@ async function persistConnectedDirectAccount(options: {
             select: { id: true },
           });
 
+      if (
+        options.platform === "instagram" ||
+        options.platform === "threads"
+      ) {
+        await transaction.socialAccount.updateMany({
+          where: {
+            clientId: options.clientId,
+            platform: options.platform,
+            status: "connected",
+            NOT: { id: account.id },
+          },
+          data: {
+            status: "not_connected",
+            accessStatus: "available",
+            businessBrandId: null,
+          },
+        });
+      }
+
       await transaction.socialAccount.updateMany({
         where: {
           clientId: options.clientId,
@@ -314,6 +341,8 @@ async function persistConnectedDirectAccount(options: {
           lastErrorAt: null,
         },
       });
+
+      return account.id;
     },
   );
 }
@@ -321,7 +350,7 @@ async function persistConnectedDirectAccount(options: {
 export async function processDirectAccountOAuthCallback(options: {
   provider: Extract<
     SocialConnectionProviderValue,
-    "instagram" | "threads" | "tiktok" | "x"
+    "instagram" | "threads" | "tiktok" | "x" | "twitch"
   >;
   rawQuery: Record<string, string | undefined>;
   profileId: string | null;
@@ -506,7 +535,7 @@ export async function processDirectAccountOAuthCallback(options: {
       refreshTokenExpiresAt: tokenResult.refreshExpiresAt ?? null,
     });
 
-    await persistConnectedDirectAccount({
+    const socialAccountId = await persistConnectedDirectAccount({
       clientId: oauthState.clientId,
       profileId: options.profileId,
       connectionId: oauthState.connectionId,
@@ -517,6 +546,16 @@ export async function processDirectAccountOAuthCallback(options: {
       handle: tokenResult.handle,
       profileImageUrl: tokenResult.profileImageUrl,
     });
+
+    if (
+      options.provider === "instagram" ||
+      options.provider === "threads"
+    ) {
+      await synchronizeSocialAvatar({
+        clientId: oauthState.clientId,
+        accountId: socialAccountId,
+      });
+    }
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
