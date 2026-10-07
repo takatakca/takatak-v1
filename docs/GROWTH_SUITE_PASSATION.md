@@ -22,6 +22,32 @@ Branche : `claude/festive-newton-5i9rv7`. `main` n'est pas touché. Rien n'est d
 - **Correctif :** commit `5f3a0db`, qui ne touche que le lockfile. Il s'applique seul sur `main` (`git cherry-pick 5f3a0db`).
 - Le module Social n'est pas modifié.
 
+## Accès à me donner (pour que je fasse les réglages moi-même)
+
+**Ne colle jamais un jeton ou un mot de passe dans la conversation.** Ajoute-les comme variables d'environnement dans l'environnement cloud de la session : menu de l'environnement dans la barre de titre → **Edit** → *Network secrets* (ou variables d'environnement). Une **nouvelle session** les prend en compte.
+
+| Variable | Où l'obtenir | Ce que je ferai avec |
+|---|---|---|
+| `SUPABASE_ACCESS_TOKEN` | Supabase → Account → Access Tokens | `npm run ops:supabase-phone-auth -- --project utuvzrqvivqyziibobvu --apply` (staging), puis la même chose pour la production `pcjfahhlozsseqqevimi` |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_MESSAGING_SERVICE_SID` | Twilio Console | `npm run ops:twilio-check` (lecture seule), puis réglage du SMS dans Supabase |
+| `STRIPE_SECRET_KEY` (ou une clé restreinte avec « Webhook Endpoints: write ») | Stripe → Developers → API keys | `npm run ops:stripe-growth-webhooks -- --origin https://takatak.ca --apply --secrets-file <fichier>` |
+
+Tous ces scripts sont en **lecture seule par défaut**. Ils ne changent rien sans `--apply` et n'affichent jamais un secret.
+
+**À tout moment, sans aucun accès :**
+
+```
+npm run ops:readiness -- --origin https://staging.takatak.ca
+```
+
+Ça vérifie la santé du site, la connexion par courriel (sans envoyer de courriel), la connexion SMS et la Growth Suite. Résultat du 7 octobre :
+- **staging** : 2 problèmes bloquants (courriel non configuré, fournisseur Phone désactivé) ;
+- **production** : rien de bloquant.
+
+**Ce que seul ton dev peut faire (accès au serveur) :** ajouter `EMAIL_USER` / `EMAIL_PASSWORD` dans le `.env` du serveur staging, puis redémarrer.
+
+**À noter pour ton dev :** le commit « connected socials » ajoute aussi environ 14 migrations sociales qui ne sont pas dans `APPROVED_DEPLOY_MIGRATIONS` de staging. Même avec le lockfile corrigé, la mise en production staging s'arrêtera là tant qu'il ne les aura pas approuvées. C'est son code ; je n'y touche pas.
+
 ## 1. Ce qui est terminé et vérifié
 
 - **Phases 1 à 9 :**
