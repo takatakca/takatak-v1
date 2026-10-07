@@ -112,7 +112,8 @@
     "ahmv:teams:seed": "tsx scripts/seed-ahmv-public-teams.ts",
     "qa:ahmv-public-teams": "tsx scripts/verify-ahmv-public-teams.ts",
     "qa:ahmv-operational-readiness": "tsx scripts/verify-ahmv-operational-readiness.ts",
-    "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts"
+    "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts",
+    "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs"
   },
   "dependencies": {
     "@atproto/oauth-client-node": "^0.5.7",
