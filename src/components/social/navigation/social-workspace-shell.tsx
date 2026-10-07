@@ -54,7 +54,7 @@ import {
 import { SOCIAL_BRAND_SELECTOR_REFRESH_EVENT } from '@/components/social/navigation/social-brand-selector-events';
 import { FaLinkedin } from 'react-icons/fa';
 import { brandInitials as resolveBrandInitials } from '@/lib/brands/brand-display-image';
-import { pickConnectedPlatformAccount } from '@/lib/social/connections/social-selected-page-identity';
+import { orderSidebarAccounts } from '@/lib/social/connections/social-sidebar-accounts';
 import { SocialBillingBanner } from '@/components/social/billing/social-billing-banner';
 import type { SocialBillingBannerModel } from '@/lib/billing/social/billing-banner-policy';
 import { SocialOnboardingModal } from '@/components/social/onboarding/social-onboarding-modal';
@@ -235,6 +235,13 @@ function normalizePlatform(platform: string): SocialPlatformKey | null {
     'google_business',
     'youtube',
     'twitch',
+    'tiktok_business',
+    'meta_ads',
+    'google_ads',
+    'tiktok_ads',
+    'looker_studio',
+    'web',
+    'blog',
   ];
 
   return supported.includes(platform as SocialPlatformKey)
@@ -255,6 +262,11 @@ function platformLabel(platform: string): string {
     pinterest: 'Pinterest',
     bluesky: 'Bluesky',
     twitch: 'Twitch',
+    web: 'Web',
+    blog: 'Blog',
+    meta_ads: 'Meta Ads',
+    google_ads: 'Google Ads',
+    looker_studio: 'Looker Studio',
   };
 
   return labels[platform] ?? platform.replaceAll('_', ' ');
@@ -1546,12 +1558,9 @@ function SocialSidebarContent({
     pathname === '/dashboard/social/brands' ||
     pathname.startsWith('/dashboard/social/brands/');
 
-  const starterPlatformSet = new Set(
+  const sidebarAccounts = orderSidebarAccounts(
+    data.accounts,
     STARTER_PLATFORMS.map((item) => item.accountPlatform),
-  );
-
-  const extraAccounts = data.accounts.filter(
-    (account) => !starterPlatformSet.has(account.platform),
   );
 
   return (
@@ -1573,81 +1582,30 @@ function SocialSidebarContent({
         </Link>
 
         <div className="mt-2 space-y-1">
-          {STARTER_PLATFORMS.map((item) => {
-            const account = pickConnectedPlatformAccount(
-              data.accounts,
-              item.accountPlatform,
+          {sidebarAccounts.map((account) => {
+            const starter = STARTER_PLATFORMS.find(
+              (item) => item.accountPlatform === account.platform,
             );
-
-            const active =
-              pathname === item.href || pathname.startsWith(`${item.href}/`);
-
-            const href = withSocialPreview(item.href, searchParams);
-
-            return (
-              <Link
-                key={item.accountPlatform}
-                href={href}
-                onClick={onNavigate}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
-                  active
-                    ? 'bg-[#2a1728] text-white'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-              >
-                <SidebarPlatformIcon platform={item.platform} active={active} />
-
-                {!collapsed ? (
-                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                ) : null}
-
-                {!collapsed ? (
-                  account ? (
-                    <AccountAvatar account={account} />
-                  ) : item.premium ? (
-                    <span
-                      title="Available with an upgraded plan"
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#dfff32] text-[#2a1728]"
-                    >
-                      <Gem className="h-4 w-4" />
-                    </span>
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 ${
-                        active
-                          ? 'border-white/70 text-white'
-                          : 'border-slate-300 text-slate-400'
-                      }`}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </span>
-                  )
-                ) : null}
-              </Link>
-            );
-          })}
-
-          {extraAccounts.map((account) => {
-            const platform = normalizePlatform(account.platform);
+            const platform =
+              starter?.platform ?? normalizePlatform(account.platform);
 
             if (!platform) {
               return null;
             }
 
-            const platformHref = platformPageHref(account.platform);
-
+            const label = starter?.label ?? platformLabel(account.platform);
+            const platformHref = starter?.href ?? platformPageHref(account.platform);
             const active =
               pathname === platformHref ||
               pathname.startsWith(`${platformHref}/`);
+            const href = withSocialPreview(platformHref, searchParams);
 
             return (
               <Link
-                key={`${platform}:${account.displayName ?? account.handle ?? 'account'}`}
-                href={withSocialPreview(platformHref, searchParams)}
+                key={account.platform}
+                href={href}
                 onClick={onNavigate}
-                title={collapsed ? platformLabel(account.platform) : undefined}
+                title={collapsed ? label : undefined}
                 className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
                   active
                     ? 'bg-[#2a1728] text-white'
@@ -1657,9 +1615,7 @@ function SocialSidebarContent({
                 <SidebarPlatformIcon platform={platform} active={active} />
 
                 {!collapsed ? (
-                  <span className="min-w-0 flex-1 truncate">
-                    {platformLabel(account.platform)}
-                  </span>
+                  <span className="min-w-0 flex-1 truncate">{label}</span>
                 ) : null}
 
                 {!collapsed ? <AccountAvatar account={account} /> : null}
@@ -1868,40 +1824,26 @@ export function SocialWorkspaceShell({
       return;
     }
 
+    const network =
+      platformLabel(decodeURIComponent(pathname.split('/')[3] ?? '')) ||
+      'This network';
+
     if (outcome === 'accepted') {
       setOauthNotice({
         tone: 'success',
-        message:
-          'Facebook authorization succeeded. Your connection was updated.',
+        message: `${network} authorization succeeded. Your connection was updated.`,
       });
     } else if (outcome === 'failed') {
       setOauthNotice({
         tone: 'error',
-        message: 'Facebook authorization failed. You can try connecting again.',
+        message: `${network} authorization failed. You can try connecting again.`,
       });
     } else if (outcome === 'cancelled') {
       setOauthNotice({
         tone: 'error',
-        message: 'Facebook authorization was cancelled.',
+        message: `${network} authorization was cancelled.`,
       });
     }
-
-    // Strip the param only when Next's history flag is present so the
-    // patched replaceState does not dispatch ACTION_RESTORE.
-    const state = window.history.state as {
-      __NA?: boolean;
-      _N?: boolean;
-    } | null;
-    if (!state?.__NA && !state?._N) {
-      return;
-    }
-    params.delete('social_oauth');
-    const query = params.toString();
-    window.history.replaceState(
-      state,
-      '',
-      query ? `${pathname}?${query}` : pathname,
-    );
   }, [pathname]);
 
   const hideSidebar = isSocialSettingsPage(pathname);
@@ -1997,7 +1939,7 @@ export function SocialWorkspaceShell({
             ? isPlanningPage
               ? 'h-screen overflow-hidden bg-[#eaeeef]'
               : 'min-h-screen bg-white'
-            : `min-h-screen ${collapsed ? 'lg:pl-[74px]' : 'lg:pl-[238px]'}`
+            : `min-h-screen bg-white ${collapsed ? 'lg:pl-[74px]' : 'lg:pl-[238px]'}`
         }`}
       >
         {hideSidebar ? (
@@ -2039,7 +1981,7 @@ export function SocialWorkspaceShell({
             {children}
           </div>
         ) : (
-          <div className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-[1600px] px-4 pt-6 sm:px-6 lg:px-8">
             {oauthNotice ? (
               <div
                 className={`mb-4 flex items-start justify-between gap-3 rounded-[12px] border px-4 py-3 text-sm ${

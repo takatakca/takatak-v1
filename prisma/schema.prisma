@@ -911,6 +911,11 @@ enum SocialPlatform {
   pinterest
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialAccountStatus {
@@ -936,12 +941,18 @@ enum SocialConnectionProvider {
   instagram
   threads
   google
+  google_business
   linkedin
   tiktok
   pinterest
   x
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialConnectionStatus {
@@ -1057,6 +1068,12 @@ model SocialAccount {
   displayName            String?
   profileUrl             String?
   profileImageUrl        String?
+  avatarStorageKey       String?
+  avatarContentType      String?
+  avatarByteSize         Int?
+  avatarSourceUrl        String?
+  avatarSyncedAt         DateTime?
+  avatarSyncError        String?
   category               String?
   accountType            String?
   status                 SocialAccountStatus       @default(not_connected)
@@ -1083,6 +1100,7 @@ model SocialAccount {
 
   @@unique([integrationAccountId, platform, externalAccountId])
   @@unique([providerConnectionId, platform, externalAccountId])
+  @@index([avatarStorageKey])
   /// Partial unique: one connected Facebook Page per Client
   /// (see migration sa_one_connected_facebook_page_per_client_key).
   /// Partial unique: one connected Facebook Page per provider connection
@@ -1103,6 +1121,30 @@ model SocialAccount {
   /// (see migration sa_one_connected_x_account_per_client_key).
   /// Partial unique: one connected X account per connection
   /// (see migration sa_one_connected_x_per_connection_key).
+  /// Partial unique: one connected Twitch channel per Client
+  /// (see migration sa_one_connected_twitch_account_per_client_key).
+  /// Partial unique: one connected Twitch channel per connection
+  /// (see migration sa_one_connected_twitch_per_connection_key).
+  /// Partial unique: one connected website host per Client
+  /// (see migration sa_one_connected_web_site_per_client_key).
+  /// Partial unique: one connected website per web connection
+  /// (see migration sa_one_connected_web_per_connection_key).
+  /// Partial unique: one connected blog host per Client
+  /// (see migration sa_one_connected_blog_per_client_key).
+  /// Partial unique: one connected blog per blog connection
+  /// (see migration sa_one_connected_blog_per_connection_key).
+  /// Partial unique: one connected Meta ad account per Client
+  /// (see migration sa_one_connected_meta_ads_account_per_client_key).
+  /// Partial unique: one connected Meta ad account per connection
+  /// (see migration sa_one_connected_meta_ads_per_connection_key).
+  /// Partial unique: one connected Google Ads account per Client
+  /// (see migration sa_one_connected_google_ads_account_per_client_key).
+  /// Partial unique: one connected Google Ads account per connection
+  /// (see migration sa_one_connected_google_ads_per_connection_key).
+  /// Partial unique: one connected Looker Studio report per Client
+  /// (see migration sa_one_connected_looker_studio_report_per_client_key).
+  /// Partial unique: one connected Looker Studio report per connection
+  /// (see migration sa_one_connected_looker_studio_per_connection_key).
   @@index([clientId])
   @@index([businessBrandId])
   @@index([integrationAccountId])
@@ -1213,11 +1255,12 @@ model SocialProviderConnection {
   businessBrand BusinessBrand @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Cascade)
   createdBy     Profile?      @relation("SocialConnectionCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
 
-  credential     SocialCredential?
-  oauthStates    SocialOAuthState[]
-  socialAccounts SocialAccount[]
-  adAccounts     SocialAdAccount[]
-  syncStates     SocialAccountSyncState[]
+  credential          SocialCredential?
+  oauthStates         SocialOAuthState[]
+  blueskyOAuthRecords BlueskyOAuthStore[]
+  socialAccounts      SocialAccount[]
+  adAccounts          SocialAdAccount[]
+  syncStates          SocialAccountSyncState[]
 
   /// Same Meta user MAY authorize multiple Brands in one Client.
   /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
@@ -1346,6 +1389,37 @@ model SocialOAuthState {
   @@index([businessBrandId, clientId])
   @@index([connectionId, clientId, businessBrandId, provider])
   @@map("social_oauth_states")
+}
+
+/// Encrypted AT Protocol OAuth state and session storage.
+///
+/// The SDK payload contains DPoP private key material and OAuth credentials.
+/// Payloads are encrypted with AES-256-GCM before database persistence.
+/// Browser-facing Supabase roles receive no access to this table.
+model BlueskyOAuthStore {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  connectionId     String    @db.Uuid
+  /// state | session
+  kind             String
+  /// OAuth state for state records; DID for session records.
+  storeKey         String
+  encryptedPayload String
+  iv               String
+  authTag          String
+  keyVersion       Int       @default(1)
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  connection SocialProviderConnection @relation(fields: [connectionId, clientId], references: [id, clientId], onDelete: Cascade)
+
+  @@unique([connectionId, kind, storeKey], map: "bluesky_oauth_store_scope_key")
+  @@index([clientId])
+  @@index([connectionId, kind])
+  @@index([kind, storeKey])
+  @@index([expiresAt])
+  @@map("bluesky_oauth_store")
 }
 
 /// Social media campaign owned by a client/brand.
@@ -1486,6 +1560,8 @@ model SocialCompetitorTrack {
   category           String?
   /// active | removed
   status             String    @default("active")
+  /// facebook | twitch. Facebook sync only reads facebook rows.
+  platform           String    @default("facebook")
   /// available | stale | unavailable | permission_denied | rate_limited | failed | pending
   availability       String    @default("pending")
   /// ready | feature_required | permission_denied | unavailable | unknown
@@ -1512,6 +1588,7 @@ model SocialCompetitorTrack {
   @@index([nextRefreshAt])
   @@index([dispatchJobId])
   @@index([businessBrandId])
+  @@index([platform])
   @@map("social_competitor_tracks")
 }
 

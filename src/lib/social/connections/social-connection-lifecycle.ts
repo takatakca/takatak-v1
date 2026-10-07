@@ -52,22 +52,14 @@ export async function cancelPendingSocialConnection(options: {
   const cancelled = await runSocialDbTransaction(
     "social-oauth-cancel-pending",
     async (transaction) => {
-    await assertProfileCanManageSocialAccounts(
-      transaction,
-      {
-        clientId: options.clientId,
-        profileId: options.profileId,
-      },
-    );
-
     const connection =
-      await transaction.socialProviderConnection.findFirst({
+      await transaction.socialProviderConnection.findUnique({
         where: {
           id: options.connectionId,
-          clientId: options.clientId,
         },
         select: {
           id: true,
+          clientId: true,
           provider: true,
           status: true,
           businessBrandId: true,
@@ -77,9 +69,25 @@ export async function cancelPendingSocialConnection(options: {
     if (!connection) {
       throw new ServiceError(
         "not_found",
-        "The selected social connection could not be found in this workspace.",
+        "The selected social connection could not be found.",
       );
     }
+
+    /*
+     * Resolve the workspace from the connection, then authorize the
+     * authenticated profile for that workspace. This safely handles a
+     * stale active-workspace cookie without trusting a browser clientId.
+     */
+    const resolvedClientId =
+      connection.clientId;
+
+    await assertProfileCanManageSocialAccounts(
+      transaction,
+      {
+        clientId: resolvedClientId,
+        profileId: options.profileId,
+      },
+    );
 
     if (options.provider) {
       const scope = connectionMatchesProviderScope({
@@ -111,7 +119,7 @@ export async function cancelPendingSocialConnection(options: {
     // Cancel unfinished OAuth attempts only (no secret material returned).
     await transaction.socialOAuthState.updateMany({
       where: {
-        clientId: options.clientId,
+        clientId: resolvedClientId,
         connectionId: connection.id,
         status: {
           in: ["pending", "processing"],
@@ -125,11 +133,19 @@ export async function cancelPendingSocialConnection(options: {
       },
     });
 
+    // Remove ATProto state/session material belonging to this abandoned attempt.
+    await transaction.blueskyOAuthStore.deleteMany({
+      where: {
+        clientId: resolvedClientId,
+        connectionId: connection.id,
+      },
+    });
+
     // Pending shells should not hold usable credentials; remove any stray row
     // without touching SocialAccount history (there should be none selected).
     await transaction.socialCredential.deleteMany({
       where: {
-        clientId: options.clientId,
+        clientId: resolvedClientId,
         connectionId: connection.id,
       },
     });
@@ -161,7 +177,7 @@ export async function cancelPendingSocialConnection(options: {
     await transaction.auditLog.create({
       data: {
         profileId: options.profileId,
-        clientId: options.clientId,
+        clientId: resolvedClientId,
         action: "social.connection.pending_cancelled",
         entityType: "social_provider_connection",
         entityId: connection.id,
