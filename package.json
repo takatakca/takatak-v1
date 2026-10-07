@@ -95,6 +95,8 @@
     "ops:supabase-phone-auth": "node scripts/ops/supabase-phone-auth.mjs",
     "ops:stripe-growth-webhooks": "node scripts/ops/stripe-growth-webhooks.mjs",
     "ops:twilio-check": "node scripts/ops/twilio-check.mjs",
+    "qa:client-invoices": "tsx scripts/verify-client-invoices.ts",
+    "qa:client-invoices-db": "tsx --require ./scripts/register-server-only.cjs scripts/client-invoices-db-tests.ts",
     "ads:seed:ahmv": "tsx scripts/seed-ahmv-ads-publisher.ts",
     "qa:hockey-parent-preferences": "tsx scripts/verify-hockey-parent-preferences.ts",
     "qa:hockey-supporter-credit": "tsx --require ./scripts/register-server-only.cjs scripts/verify-hockey-supporter-credit.ts",
@@ -118,7 +120,8 @@
     "ahmv:teams:seed": "tsx scripts/seed-ahmv-public-teams.ts",
     "qa:ahmv-public-teams": "tsx scripts/verify-ahmv-public-teams.ts",
     "qa:ahmv-operational-readiness": "tsx scripts/verify-ahmv-operational-readiness.ts",
-    "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts"
+    "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts",
+    "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs"
   },
   "dependencies": {
     "@atproto/oauth-client-node": "^0.5.7",

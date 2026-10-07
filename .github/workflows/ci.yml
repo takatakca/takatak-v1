@@ -105,6 +105,8 @@ jobs:
 
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
+      - name: Client invoice center safeguards
+        run: npm run qa:client-invoices
 
       - name: Secret scan
         run: npm run qa:secrets
@@ -121,6 +123,9 @@ jobs:
         run: |
           node --check scripts/reconcile-production-migrations.mjs
           node scripts/verify-production-migration-normalization.mjs
+
+      - name: Manual production promotion safeguards
+        run: npm run qa:production-release
 
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
@@ -304,6 +309,11 @@ jobs:
 
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
+
+      - name: Client invoice center against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoices-db
 
       - name: Build (webpack)
         env:
