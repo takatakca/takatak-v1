@@ -20,6 +20,8 @@ This runbook covers every change on branch `claude/festive-newton-5i9rv7`. It fo
 | `a9d14f8` | Phase 8: Google Business Profile | `20261007150000_growth_google_business_profile` |
 | `3a0a24a` | Phase 9: plan subscriptions and entitlements | `20261007180000_growth_plan_subscriptions` |
 | `7f84125` | Security fix: Google links require verified website ownership | `20261007210000_growth_site_domain_verification` |
+| `5758789` | This rollback runbook and down script | none |
+| `9aa5702` | Fixes for 10 code-review findings (billing order, chat polling, client IP, agents, DST) | none |
 
 ## Level 1: switch features off (no deploy, no data change)
 
