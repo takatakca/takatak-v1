@@ -345,6 +345,9 @@ jobs:
         env:
           TAKATAK_BUILD_ID: ci-${{ github.sha }}
 
+      - name: Validate archive paths before upload
+        run: python3 scripts/validate-production-archive.py var/artifacts/ci-${{ github.sha }}/takatak-ci-${{ github.sha }}.tar.gz
+
       - name: Artifact content audit
         run: node scripts/audit-production-artifact.cjs var/artifacts/ci-${{ github.sha }}
 
