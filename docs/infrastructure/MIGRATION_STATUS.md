@@ -44,7 +44,7 @@ Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
 - [x] Private production Redis `takatak-redis-production` (`redis:7.4-alpine`, AOF, `noeviction`, auth, `is_public` false, no host port)
 - [x] Staging web service
 - [x] Production web on the existing GROUPE TAKATAK production app, commit `e55af85`, healthy at `https://prod-check.31.220.96.134.sslip.io/api/health/ready`
-- [!] DNS cutover. `dashboard.takatak.ca` and `api.takatak.ca` still have no A record. The zone is served by `ns1.mysecurecloudhost.com` through `ns4.mysecurecloudhost.com`. This session has no DNS login.
+- [x] DNS for `dashboard.takatak.ca` and `api.takatak.ca` is A `31.220.96.134`. Both HTTPS names have Let's Encrypt certificates. `/api/health/ready` returns 200. `https://dashboard.takatak.ca/login` shows the email OTP default. `takatak.ca` stays `209.42.24.127`. MX stays `0 mail.takatak.ca`. SPF and DKIM were not edited.
 - [ ] Production workers started
 - [~] GitHub push of `infra/contabo-coolify` is temporarily blocked. The shell has no git credentials (`gh auth status` is not logged in; `GH_TOKEN` and `GITHUB_TOKEN` are unset). A later GitHub API call returned HTTP 429, a secondary rate limit, not a missing repository permission. Local commits remain. No production deploy was attempted. This line is not a migration-wide block.
 - [!] Provider consoles (Contabo, Coolify, Cloudflare, Supabase, Stripe, Meta, Google, Twilio) need a human session before any live step. That does not stop repository work.

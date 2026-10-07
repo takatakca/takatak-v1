@@ -1,6 +1,6 @@
 # Production cutover
 
-The production web container is up. Customer DNS is not. MochaHost still serves `takatak.ca`.
+`dashboard.takatak.ca` and `api.takatak.ca` point at the VPS and serve the production web app over Let's Encrypt. MochaHost still serves `takatak.ca`. Workers are stopped. The 16 pending migrations were not applied.
 
 Recorded DNS before any change, and unchanged after the web deploy:
 
@@ -28,18 +28,30 @@ Nameservers are `ns1.mysecurecloudhost.com`, `ns2.mysecurecloudhost.com`, `ns3.m
 - Traefik routes `dashboard.takatak.ca` and `api.takatak.ca` to the production web container. Those routes have gzip only. There is no cache middleware on `/api`, `/auth`, `/oauth`, `/webhooks`, or `/billing`.
 - Pending Prisma migrations were not applied.
 
-## Still required
+## Live on 2026-10-07
 
-Create these records only. Do not change the apex A record, MX, SPF, DKIM, or DMARC.
+| Check | Result |
+| --- | --- |
+| `dashboard.takatak.ca` A | `31.220.96.134` |
+| `api.takatak.ca` A | `31.220.96.134` |
+| `takatak.ca` A | `209.42.24.127` |
+| MX | `0 mail.takatak.ca` |
+| SPF | present, not edited |
+| DKIM `default._domainkey.takatak.ca` | present, not edited |
+| DMARC | still absent |
+| `https://dashboard.takatak.ca` certificate | Let's Encrypt, valid through 2027-01-05 |
+| `https://api.takatak.ca` certificate | Let's Encrypt, valid through 2027-01-05 |
+| `GET /api/health/ready` on both names | 200, database, Supabase, Redis, and process ok |
+| `https://dashboard.takatak.ca/login` | email OTP default, SMS still offered |
+| `https://dashboard.takatak.ca/dashboard` | 307 to `/login?next=%2Fdashboard` |
+| Cache | `private, no-store, no-cache, must-revalidate` on health |
+| Apex | still Apache on `209.42.24.127` |
+| Workers | staging workers exited, no production worker started |
+| Migrations | 16 still pending, not applied |
 
-| Name | Type | Value |
-| --- | --- | --- |
-| `dashboard.takatak.ca` | A | `31.220.96.134` |
-| `api.takatak.ca` | A | `31.220.96.134` |
+Earlier certificate attempts failed with NXDOMAIN, before these A records existed. After the records resolved, the Coolify proxy was restarted and Let's Encrypt issued both certificates. Cloudflare is not in front, so there is no Flexible or Full mode to set.
 
-After those records resolve, the origin can issue Let's Encrypt certificates for them. Use Cloudflare Full (strict) only after those origin certificates are valid. Do not use Flexible.
-
-Do not start workers until MochaHost cron, social sync, and queue processors are confirmed stopped.
+Do not start workers until MochaHost cron, social sync, and queue processors are confirmed stopped. Do not point `takatak.ca` at the VPS in this step.
 
 ## Before
 

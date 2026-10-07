@@ -107,7 +107,7 @@ It is a different container from `takatak-redis-staging`. The password stays in 
 
 ## Production web
 
-The existing production application `takatak-v1` in `GROUPE TAKATAK` tracks `infra/contabo-coolify` at `e55af85` and uses the root Dockerfile. Its Coolify hostnames are `prod-check.31.220.96.134.sslip.io`, `dashboard.takatak.ca`, and `api.takatak.ca`. `https://prod-check.31.220.96.134.sslip.io/api/health/ready` returns 200 with database, Supabase, Redis, and process ok. The Let's Encrypt certificate on that preflight name is valid. Traefik is configured for the dashboard and API names, but those names have no public A record yet, so no customer certificate exists for them.
+The existing production application `takatak-v1` in `GROUPE TAKATAK` tracks `infra/contabo-coolify` and uses the root Dockerfile. Its Coolify hostnames are `prod-check.31.220.96.134.sslip.io`, `dashboard.takatak.ca`, and `api.takatak.ca`. `dashboard.takatak.ca` and `api.takatak.ca` resolve to `31.220.96.134`. Both have Let's Encrypt certificates. `https://dashboard.takatak.ca/api/health/ready` and `https://api.takatak.ca/api/health/ready` return 200 with database, Supabase, Redis, and process ok. `https://dashboard.takatak.ca/login` shows the email OTP default. `/dashboard` redirects to that login. Health responses send `cache-control: private, no-store, no-cache, must-revalidate`. Cloudflare is not in front of these names.
 
 `takatak.ca` still points at MochaHost (`209.42.24.127`). MX is still `0 mail.takatak.ca`. SPF and DKIM were not edited. No production worker was started. Staging workers stay stopped. `TAKATAK_QUEUE_ENABLED` and `TAKATAK_QUEUE_WEBHOOKS` are false. The queue prefix is `takatak-production`.
 
