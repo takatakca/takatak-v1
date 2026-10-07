@@ -11,7 +11,6 @@ import {
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import {
   clearSelectedThreadsAccount,
-  connectLinkedThreadsAccount,
 } from "@/lib/social/connections/social-threads-account-service";
 import { toAccountPictureSrc } from "@/lib/social/media/remote-image";
 import { isUuid } from "@/lib/validation/common";
@@ -41,48 +40,36 @@ export async function POST(
     return jsonResponse(
       {
         ok: false,
-        message:
-          "The selected social connection identifier is invalid.",
+        message: "The selected social connection identifier is invalid.",
       },
       400,
     );
   }
 
   try {
-    const selection = await connectLinkedThreadsAccount({
-      clientId: gate.access.activeClientId,
-      profileId: gate.access.profileId,
-      connectionId,
-    });
+    const { buildThreadsAuthorizationUrl } = await import(
+      "@/lib/social/providers/threads-oauth"
+    );
 
-    revalidatePath("/dashboard/social");
-    revalidatePath("/dashboard/social/accounts");
-    revalidatePath("/dashboard/social/threads");
-    revalidatePath("/dashboard/social/instagram");
-    revalidatePath("/dashboard/social/facebook");
+    const authorizationUrl = await buildThreadsAuthorizationUrl({
+      state: connectionId,
+    });
 
     return jsonResponse(
       {
         ok: true,
-        message: selection.idempotent
-          ? "This Threads account is already connected."
-          : "Threads connected successfully.",
-        selection: {
-          connectionId: selection.connectionId,
-          socialAccountId: selection.socialAccountId,
-          displayName: selection.displayName,
-          handle: selection.handle,
-          profileImageUrl: toAccountPictureSrc(selection.socialAccountId),
-          idempotent: selection.idempotent,
+        message: "Continue to Threads to authorize this brand.",
+        authorization: {
+          authorizationUrl,
         },
       },
       200,
     );
   } catch (error) {
     return handleApiError(
-      "threads-account-select",
+      "threads-account-start",
       error,
-      "The Threads account could not be connected.",
+      "Threads authorization could not be started.",
     );
   }
 }

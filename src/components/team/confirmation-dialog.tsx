@@ -28,7 +28,7 @@ export function ConfirmationDialog({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex animate-[takatak-confirm-backdrop_180ms_ease-out] items-center justify-center bg-slate-950/55 p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (
           event.target === event.currentTarget &&
@@ -43,7 +43,7 @@ export function ConfirmationDialog({
         aria-modal="true"
         aria-labelledby="confirmation-dialog-title"
         aria-describedby="confirmation-dialog-description"
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+        className="w-full max-w-md animate-[takatak-confirm-panel_220ms_cubic-bezier(0.16,1,0.3,1)] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_30px_80px_-24px_rgba(15,23,42,0.55)]"
       >
         <header className="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
           <div className="flex items-start gap-3">
@@ -112,6 +112,35 @@ export function ConfirmationDialog({
           </button>
         </footer>
       </section>
+
+      <style jsx global>{`
+        @keyframes takatak-confirm-backdrop {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes takatak-confirm-panel {
+          from {
+            opacity: 0;
+            transform: translateY(18px) scale(0.96);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          [role="alertdialog"],
+          [role="presentation"] {
+            animation-duration: 1ms !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }

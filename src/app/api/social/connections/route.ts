@@ -61,7 +61,9 @@ export async function GET(
           accounts: connection.accounts.map((account) => ({
             ...account,
             profileImageUrl:
-              account.platform === "facebook"
+              account.platform === "facebook" ||
+              account.platform === "instagram" ||
+              account.platform === "threads"
                 ? toAccountPictureSrc(account.id)
                 : toClientSocialImageUrl(account.profileImageUrl),
           })),

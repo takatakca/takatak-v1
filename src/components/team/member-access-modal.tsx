@@ -32,6 +32,11 @@ const PLATFORM_KEYS: SocialPlatformKey[] = [
   "youtube",
   "google_business",
   "twitch",
+  "web",
+  "blog",
+  "meta_ads",
+  "google_ads",
+  "looker_studio",
 ];
 
 function platformKey(platform: string): SocialPlatformKey | null {
