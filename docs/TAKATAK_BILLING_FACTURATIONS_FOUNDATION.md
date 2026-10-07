@@ -191,13 +191,66 @@ Setup (Stripe test mode first):
 Tests:
 - `npm run qa:client-invoices`: pure logic and static checks;
 - `npm run qa:client-invoices-db`: real database, fake Stripe and fake Facturations. Covers metadata, idempotency, cross-workspace refusal, partial balance, paid/not-issued refusal, complete and expired sessions.
+## Apps in other repositories: signed feed
+
+Ecosystem apps hosted elsewhere (FoodHub, FESTI-ICE, ALKAO, …) feed the same queue server-to-server. They never talk to Facturations directly.
+
+`POST /api/integrations/billing/invoice-requests` with a JSON body `{ "sourceReference": "...", "clientId": null | "<TAKATAK client uuid>", "draft": { …DraftInput… } }`.
+
+**Headers:**
+
+```
+X-Takatak-Billing-App:        foodhub
+X-Takatak-Billing-Timestamp:  <unix seconds>
+X-Takatak-Billing-Signature:  v1=<hex HMAC-SHA256(secret, "v1.<app>.<timestamp>.<METHOD>.<path+query>.<raw body>")>
+```
+
+**Rules:**
+- Each app has its **own** secret, `BILLING_FEED_SECRET_<APP>` (at least 32 characters, server-only on both sides).
+  - The app whose secret verifies the signature becomes the request's `sourceApp`. The body cannot carry `sourceApp` or any unknown field.
+  - `manual` is not available on the feed.
+  - An app without a configured secret is refused with a 503 (fail closed).
+- `clientId` (linking the request to a TAKATAK workspace, so the issued invoice becomes payable in that workspace's "Factures") is refused unless the app is explicitly trusted for it with `BILLING_FEED_CLIENT_LINKING_<APP>=1`. The OWNER still reviews every request before it reaches Facturations.
+- Timestamps are accepted within ±300 s. The signature covers the method, the path **including the query**, and the exact raw body. The body is capped at 64 KB, enforced while streaming (chunked bodies included).
+- Replays are harmless: the same `(app, sourceReference)` with the same draft returns the existing request (`200`, `created: false`). A different draft on the same reference returns `409`; a correction needs a new reference.
+- The draft goes through the same validation as every other request (`400` on invalid input). The request lands as `pending`. A TAKATAK OWNER still reviews it and creates the Facturations draft.
+- **Status:** `GET /api/integrations/billing/invoice-requests?sourceReference=<ref>`, signed with an empty body. It returns `{ id, sourceApp, sourceReference, status, submitted }` for the calling app's own request only (`404` otherwise).
+
+**Reference client (Node 18+, no dependencies):**
+
+```js
+import { createHmac } from "node:crypto";
+
+export async function feedTakatakInvoice({ baseUrl, app, secret, sourceReference, clientId = null, draft }) {
+  const path = "/api/integrations/billing/invoice-requests";
+  const body = JSON.stringify({ sourceReference, clientId, draft });
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const signature = createHmac("sha256", secret).update(`v1.${app}.${timestamp}.POST.${path}.${body}`).digest("hex");
+  const response = await fetch(new URL(path, baseUrl), {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-takatak-billing-app": app,
+      "x-takatak-billing-timestamp": timestamp,
+      "x-takatak-billing-signature": `v1=${signature}`,
+    },
+    body,
+  });
+  if (response.status === 201 || response.status === 200) return response.json();
+  // 409: same reference, different draft. 400: fix the draft. 401: clock or secret. 5xx: retry later (safe).
+  throw new Error(`TAKATAK billing feed ${response.status}`);
+}
+```
+
+**Tests:**
+- `npm run qa:billing` now also runs `scripts/verify-billing-feed.ts` (signature and static guards).
+- `npm run qa:billing-feed-db` (CI ephemeral database) calls the real route handlers. It covers: queue under the verified app, idempotent replay, `409` on a changed draft, per-app references, body spoofing refused, wrong secret / unconfigured app / stale / tampered requests refused, invalid draft refused, and signed, app-scoped status lookups.
 
 ## Deliberately not in this foundation
 
 - No issuance, approval, delivery or publication actions from TAKATAK. Facturations keeps these capabilities `false` in v1. The only payment action is the client's Stripe Checkout above; the payment proof itself is recorded by Facturations, never by TAKATAK.
 - No automatic worker. A human OWNER clicks "Create draft". A worker can later call `submitInvoiceRequest()` once the flow is proven on staging.
 - No feeding app is wired yet. Rentauto, AHMV, Ads and others call `enqueueInvoiceRequest()` in follow-up changes.
-- No external (cross-repo) feed endpoint yet. Apps in other repos (FoodHub, FESTI-ICE, …) will need a signed machine-to-machine route modelled on the existing master-API pattern.
 - No real Facturations environment has been called. Activation waits for isolated Facturations staging (HTTPS, dedicated PostgreSQL, least-privilege role, backup/restore proof).
 
 ## Before merging to `main`
@@ -210,7 +263,7 @@ Tests:
 
 1. Facturations staging online. Configure the matching issuer/audience/secret/business id, then smoke-test the admin page against staging.
 2. Wire the first feeding app, for example Rentauto completed bookings or AHMV memberships, into `enqueueInvoiceRequest()`.
-3. Signed machine endpoint for apps outside this repo.
+3. Give each external app its `BILLING_FEED_SECRET_<APP>` and call the feed from that app's own repository.
 4. Read-only views of Facturations approvals and workflow per request (endpoints already exist).
 5. Optional submission worker with backoff once staging proves the flow.
 

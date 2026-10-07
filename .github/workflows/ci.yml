@@ -325,6 +325,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:client-invoices-db
 
+      - name: GROUPE TAKATAK billing ecosystem feed against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:billing-feed-db
+
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
