@@ -68,9 +68,15 @@ function toStatus(row: {
 
 export async function getClientConnectStatus(clientId: string): Promise<ClientConnectStatus> {
   const prisma = getPrisma();
-  const row = prisma
-    ? await prisma.clientStripeConnectAccount.findUnique({ where: { clientId } })
-    : null;
+  let row: Awaited<ReturnType<NonNullable<typeof prisma>["clientStripeConnectAccount"]["findUnique"]>> = null;
+
+  try {
+    row = prisma ? await prisma.clientStripeConnectAccount.findUnique({ where: { clientId } }) : null;
+  } catch {
+    // Storage not ready (e.g. migration not yet applied on this environment):
+    // the page shows "coming soon" instead of failing.
+    return { enabled: false, state: "not_connected", flags: null, lastSyncedAt: null };
+  }
 
   return toStatus(row);
 }
