@@ -32,6 +32,7 @@ const SECRET_TABLES = [
   "audit_logs",
   "ai_provider_events",
   "master_merchants",
+  "client_stripe_connect_accounts",
   "source_merchants",
   "_prisma_migrations",
 ];

@@ -375,6 +375,7 @@ model Client {
   assignedProfile           Profile?                          @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
   subscription              ClientSubscription?
+  stripeConnectAccount      ClientStripeConnectAccount?
   customRoles               WorkspaceCustomRole[]
   rolePermissionOverrides   WorkspaceRolePermissionOverride[]
   userInvitations           UserInvitation[]
@@ -4208,3 +4209,27 @@ model BillingInvoiceCheckoutSession {
   @@map("billing_invoice_checkout_sessions")
 }
 
+/// Client invoicing — the client's OWN Stripe account (Stripe Connect,
+/// Stripe-hosted dashboard). Invoices a client sends to its customers live on
+/// this account; funds never pass through GROUPE TAKATAK.
+model ClientStripeConnectAccount {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @unique @db.Uuid
+  stripeAccountId      String    @unique
+  chargesEnabled       Boolean   @default(false)
+  payoutsEnabled       Boolean   @default(false)
+  detailsSubmitted     Boolean   @default(false)
+  country              String?
+  defaultCurrency      String?
+  lastSyncedAt         DateTime?
+  /// Newest Stripe state applied (event.created or retrieve time). Older
+  /// Connect events arriving late are ignored.
+  lastStripeEventAt    DateTime?
+  connectedByProfileId String?   @db.Uuid
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  @@map("client_stripe_connect_accounts")
+}

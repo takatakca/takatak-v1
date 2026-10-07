@@ -97,6 +97,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Client invoicing (Stripe Connect) safeguards
+        run: npm run qa:client-invoicing
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
@@ -312,6 +315,10 @@ jobs:
           # this branch is verified against. Bump deliberately, with review.
           FACTURATIONS_REF: eb1e02a10efdf9767dca0eeb04b5010209d18f07
         run: bash scripts/ci-billing-facturations-contract.sh
+      - name: Client invoicing (Stripe Connect) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoicing-db
 
       - name: Client invoice center against the ephemeral database
         env:
