@@ -12,6 +12,31 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* Public website colour tokens (bg-primary, text-muted-foreground, …). The
+   values come from variables set on .website-surface in (website)/website.css;
+   the fallbacks match them for pages outside the website surface. */
+@theme inline {
+  --color-card: var(--card, oklch(1 0 0));
+  --color-card-foreground: var(--card-foreground, oklch(0.18 0.01 260));
+  --color-popover: var(--popover, oklch(1 0 0));
+  --color-popover-foreground: var(--popover-foreground, oklch(0.18 0.01 260));
+  --color-primary: var(--primary, oklch(0.52 0.16 152));
+  --color-primary-foreground: var(--primary-foreground, oklch(1 0 0));
+  --color-secondary: var(--secondary, oklch(0.97 0.003 250));
+  --color-secondary-foreground: var(--secondary-foreground, oklch(0.22 0.01 260));
+  --color-muted: var(--muted, oklch(0.965 0.003 250));
+  --color-muted-foreground: var(--muted-foreground, oklch(0.48 0.01 260));
+  --color-accent: var(--accent, oklch(0.55 0.17 152));
+  --color-accent-foreground: var(--accent-foreground, oklch(1 0 0));
+  --color-destructive: var(--destructive, oklch(0.6 0.22 25));
+  --color-destructive-foreground: var(--destructive-foreground, oklch(1 0 0));
+  --color-border: var(--border, oklch(0.91 0.004 250));
+  --color-input: var(--input, oklch(0.94 0.004 250));
+  --color-ring: var(--ring, oklch(0.52 0.16 152));
+  --color-success: var(--success, oklch(0.55 0.16 152));
+  --color-warning: var(--warning, oklch(0.75 0.15 75));
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;

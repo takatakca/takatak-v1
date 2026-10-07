@@ -97,6 +97,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Website theme colours registered
+        run: npm run qa:website-theme
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
