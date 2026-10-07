@@ -8,19 +8,36 @@ function safeEqual(expected: string, received: string): boolean {
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
+/**
+ * Child applications allowed to call the master API. Each one has its own
+ * dedicated credential — a key is never shared between applications, and the
+ * key that authenticated a request decides which application it speaks for.
+ */
+export const MASTER_API_APPLICATIONS = {
+  "1lv": "TAKATAK_1LV_API_KEY",
+  isexy: "TAKATAK_ISEXY_API_KEY",
+} as const;
+
+export type MasterApiApplication = keyof typeof MASTER_API_APPLICATIONS;
+
 export function verifyMasterApiRequest(
   headers: Headers,
+  allowedApplications: readonly MasterApiApplication[] = ["1lv"],
 ):
-  | { valid: true }
+  | { valid: true; application: MasterApiApplication }
   | { valid: false; status: 401 | 503; error: string } {
-  // This API surface is scoped to the 1LV integration. Never reuse one
-  // child-application credential as a global master key.
-  const expected = process.env.TAKATAK_1LV_API_KEY?.trim() ?? "";
-  if (expected.length < 32) {
+  const configured = allowedApplications
+    .map((application) => ({
+      application,
+      key: process.env[MASTER_API_APPLICATIONS[application]]?.trim() ?? "",
+    }))
+    .filter((entry) => entry.key.length >= 32);
+
+  if (configured.length === 0) {
     return {
       valid: false,
       status: 503,
-      error: "TAKATAK 1LV integration API is not configured.",
+      error: "TAKATAK master API is not configured for this application.",
     };
   }
 
@@ -34,7 +51,16 @@ export function verifyMasterApiRequest(
   }
 
   const received = authorization.slice("Bearer ".length).trim();
-  if (!received || !safeEqual(expected, received)) {
+  // Compare against every configured key so timing does not reveal which
+  // application a guessed key belongs to.
+  let matched: MasterApiApplication | null = null;
+  for (const entry of configured) {
+    if (received && safeEqual(entry.key, received) && !matched) {
+      matched = entry.application;
+    }
+  }
+
+  if (!matched) {
     return {
       valid: false,
       status: 401,
@@ -42,5 +68,5 @@ export function verifyMasterApiRequest(
     };
   }
 
-  return { valid: true };
+  return { valid: true, application: matched };
 }

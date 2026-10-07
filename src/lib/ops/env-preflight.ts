@@ -123,6 +123,17 @@ export function collectEnvPreflight(): PreflightResult {
         : undefined,
   }));
 
+  checks.push(check("TAKATAK_ISEXY_API_KEY", "optional", {
+    formatOk:
+      !present("TAKATAK_ISEXY_API_KEY") ||
+      (process.env.TAKATAK_ISEXY_API_KEY?.trim().length ?? 0) >= 32,
+    message:
+      present("TAKATAK_ISEXY_API_KEY") &&
+      (process.env.TAKATAK_ISEXY_API_KEY?.trim().length ?? 0) < 32
+        ? "TAKATAK_ISEXY_API_KEY must be at least 32 characters"
+        : undefined,
+  }));
+
   const stripeEnabled =
     present("STRIPE_SECRET_KEY") || present("STRIPE_WEBHOOK_SECRET");
   if (stripeEnabled) {

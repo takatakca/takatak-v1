@@ -7,6 +7,7 @@ import {
 
 import { normalizePhone } from "@/lib/auth/otp/phone";
 import { getPrisma } from "@/lib/db/prisma";
+import type { MasterApiApplication } from "./auth";
 import {
   MasterApiConflictError,
   MasterApiInputError,
@@ -57,9 +58,13 @@ function parseName(fullName: string | null | undefined) {
   };
 }
 
-function sourceApplication(payload: MasterPersonPayload): string {
+function sourceApplication(
+  payload: MasterPersonPayload,
+  authenticatedApplication: MasterApiApplication,
+): string {
   const source = payload.source_application?.trim().toLowerCase() ?? "";
-  if (source !== "1lv") {
+  // A child application may only write source profiles for itself.
+  if (source !== authenticatedApplication) {
     throw new MasterApiInputError("Unsupported source application.");
   }
   return source;
@@ -127,6 +132,7 @@ async function resolveExplicitIdentity(
 
 export async function resolveMasterPerson(
   payload: MasterPersonPayload,
+  authenticatedApplication: MasterApiApplication = "1lv",
 ): Promise<ResolvedMasterIdentity> {
   assertMasterPayloadSafe(payload);
   const prisma = getPrisma();
@@ -136,7 +142,7 @@ export async function resolveMasterPerson(
     );
   }
 
-  const source = sourceApplication(payload);
+  const source = sourceApplication(payload, authenticatedApplication);
   const externalId = externalUserId(payload);
   const email = normalizeEmail(payload.email);
   const phone = payload.phone ? normalizePhone(payload.phone) : null;

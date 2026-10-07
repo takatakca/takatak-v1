@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { verifyMasterApiRequest } from "./auth";
+import {
+  verifyMasterApiRequest,
+  type MasterApiApplication,
+} from "./auth";
 import {
   MasterApiConflictError,
   MasterApiInputError,
@@ -10,13 +13,34 @@ import {
 export const MASTER_API_MAX_BODY_BYTES = 100_000;
 
 export function authorizeMasterRequest(request: Request) {
-  const verification = verifyMasterApiRequest(request.headers);
-  if (verification.valid) return null;
+  return authorizeMasterApplication(request).response;
+}
 
-  return NextResponse.json(
-    { ok: false, error: verification.error },
-    { status: verification.status },
+/**
+ * Like authorizeMasterRequest, but admits the listed child applications and
+ * reports which one the presented key belongs to.
+ */
+export function authorizeMasterApplication(
+  request: Request,
+  allowedApplications: readonly MasterApiApplication[] = ["1lv"],
+):
+  | { response: null; application: MasterApiApplication }
+  | { response: NextResponse; application: null } {
+  const verification = verifyMasterApiRequest(
+    request.headers,
+    allowedApplications,
   );
+  if (verification.valid) {
+    return { response: null, application: verification.application };
+  }
+
+  return {
+    response: NextResponse.json(
+      { ok: false, error: verification.error },
+      { status: verification.status },
+    ),
+    application: null,
+  };
 }
 
 export async function readMasterJson(request: Request): Promise<{

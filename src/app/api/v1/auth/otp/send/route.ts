@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { normalizePhone } from "@/lib/auth/otp/phone";
 import { MasterApiInputError } from "@/lib/integrations/master-api/errors";
 import {
-  authorizeMasterRequest,
+  authorizeMasterApplication,
   masterApiError,
   readMasterJson,
 } from "@/lib/integrations/master-api/http";
@@ -13,8 +13,12 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const unauthorized = authorizeMasterRequest(request);
+  const { response: unauthorized, application } = authorizeMasterApplication(
+    request,
+    ["1lv", "isexy"],
+  );
   if (unauthorized) return unauthorized;
+  void application;
 
   try {
     const { body } = await readMasterJson(request);
