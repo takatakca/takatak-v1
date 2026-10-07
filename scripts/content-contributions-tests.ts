@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import ts from "typescript";
 import {
   contributorBadge,
   contributionPatchPolicy,
@@ -181,4 +183,87 @@ assert.match(migration, /contributor_reputations/);
 assert.match(migration, /contribution_reward_ledger/);
 assert.match(env, /AHMV_CONTRIBUTION_MODERATOR_EMAIL=OHMVVerdun\.ca@gmail\.com/);
 
-console.log("TAKATAK community content moderation safeguards passed.");
+async function verifyModerationQueue() {
+  type QueueRow = {
+    id: string;
+    clientId: string;
+    publisherCode: string;
+    status: string;
+    priority: string;
+    reviewDueAt: Date;
+    createdAt: Date;
+  };
+  type QueueOptions = { clientId: string; publisherCode?: string; status?: string; limit?: number };
+  type QueueQuery = {
+    where: Partial<QueueRow>;
+    orderBy: Array<Partial<Record<keyof QueueRow, "asc" | "desc">>>;
+    take: number;
+  };
+  const fixture = (id: string, priority: string, due: string, created: string, scope: Partial<QueueRow> = {}): QueueRow => ({
+    id, priority, reviewDueAt: new Date(due), createdAt: new Date(created),
+    clientId: "fixture-client", publisherCode: "AHMV", status: "pending_review", ...scope,
+  });
+  let rows: QueueRow[] = [
+    fixture("standard-overdue", "standard", "2026-01-01", "2025-12-01"),
+    fixture("member-later-due", "member_priority", "2026-10-09", "2026-09-01"),
+    fixture("member-newer", "member_priority", "2026-10-08", "2026-10-04"),
+    fixture("member-older", "member_priority", "2026-10-08", "2026-10-01"),
+    fixture("other-client", "member_priority", "2026-01-01", "2025-12-01", { clientId: "other-client" }),
+    fixture("other-publisher", "member_priority", "2026-01-01", "2025-12-01", { publisherCode: "OTHER" }),
+    fixture("changes-requested", "member_priority", "2026-01-01", "2025-12-01", { status: "changes_requested" }),
+    fixture("already-approved", "member_priority", "2026-01-01", "2025-12-01", { status: "approved" }),
+  ];
+  let available = true;
+  const prismaFixture = {
+    contentContribution: {
+      async findMany(query: QueueQuery) {
+        // Model the database contract: filtering and ordering happen before SQL LIMIT.
+        return rows.filter((row) => Object.entries(query.where).every(([key, value]) => row[key as keyof QueueRow] === value))
+          .sort((left, right) => {
+            for (const order of query.orderBy) {
+              const [key, direction] = Object.entries(order)[0]!;
+              const a = left[key as keyof QueueRow];
+              const b = right[key as keyof QueueRow];
+              const comparison = a instanceof Date && b instanceof Date
+                ? a.getTime() - b.getTime()
+                : String(a).localeCompare(String(b));
+              if (comparison) return direction === "asc" ? comparison : -comparison;
+            }
+            return 0;
+          }).slice(0, query.take);
+      },
+    },
+  };
+
+  // Exercise the production function in isolation without importing DB, billing or providers.
+  const source = ts.createSourceFile("service.ts", serviceSource, ts.ScriptTarget.Latest, true);
+  const declaration = source.statements.find((statement) => ts.isFunctionDeclaration(statement) && statement.name?.text === "listModerationQueue");
+  assert.ok(declaration, "Production listModerationQueue must be present");
+  const isolated: { listModerationQueue?: (options: QueueOptions) => Promise<QueueRow[]> } = {};
+  runInNewContext(ts.transpileModule(declaration.getText(source), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText, { exports: isolated, getPrisma: () => available ? prismaFixture : null });
+  assert.ok(isolated.listModerationQueue);
+  const listQueue = isolated.listModerationQueue;
+  const scope = { clientId: "fixture-client", publisherCode: "AHMV" };
+
+  assert.deepEqual((await listQueue({ ...scope, limit: 1 })).map((row) => row.id), ["member-older"], "Member priority must be selected before take, even when standard work is older and overdue");
+  assert.deepEqual((await listQueue({ ...scope, limit: 2 })).map((row) => row.id), ["member-older", "member-newer"], "Due date then age must break member-priority ties");
+  assert.deepEqual((await listQueue(scope)).map((row) => row.id), ["member-older", "member-newer", "member-later-due", "standard-overdue"], "Other clients, publishers and non-pending statuses must stay outside this queue");
+  assert.deepEqual((await listQueue({ ...scope, status: "changes_requested" })).map((row) => row.id), ["changes-requested"], "Explicit status selection must remain supported");
+  assert.equal((await listQueue({ clientId: scope.clientId, limit: 1 }))[0]?.id, "other-publisher", "Omitting publisher must preserve the caller's client-wide queue");
+  assert.deepEqual((await listQueue({ ...scope, limit: 0 })).map((row) => row.id), ["member-older"]);
+
+  rows = Array.from({ length: 215 }, (_, index) => fixture(`bounded-${index}`, "standard", "2026-10-08", "2026-10-01"));
+  assert.equal((await listQueue(scope)).length, 100, "Default page size must remain bounded");
+  assert.equal((await listQueue({ ...scope, limit: 999 })).length, 200, "Requested page size must retain its maximum bound");
+  available = false;
+  assert.equal((await listQueue(scope)).length, 0, "Unavailable DB must retain the existing empty queue fallback");
+}
+
+void verifyModerationQueue().then(() => {
+  console.log("TAKATAK community content moderation safeguards passed.");
+}).catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});
