@@ -417,12 +417,23 @@ async function main(): Promise<void> {
     assert.equal(await claimNextAgentRun(new Date(Date.now() + 10 * 60_000)), null, "a live claim is not stolen");
     const reclaimed = await claimNextAgentRun(new Date(Date.now() + 31 * 60_000));
     assert.equal(reclaimed?.runId, c2.runId, "a run abandoned for 30 min is re-queued and re-claimed");
-    assert.deepEqual(await reportAgentRun(c2.runId, { succeeded: false, error: "model timeout" }), { ok: true, status: "failed" });
+    assert.deepEqual(await reportAgentRun(c2.runId, { succeeded: false, output: null, error: "model timeout" }), { ok: true, status: "failed" }, "a null output is stored, not rejected");
     const r3 = await requestAgentRun(a.id, "social_autopilot", {}, null);
     assert.ok(r3.ok);
     assert.equal(await cancelAgentRun(b.id, r3.runId), false);
     assert.equal(await cancelAgentRun(a.id, r3.runId), true);
     assert.equal(await claimNextAgentRun(), null, "canceled runs are never claimed");
+    const r4 = await requestAgentRun(a.id, "social_autopilot", {}, null);
+    assert.ok(r4.ok);
+    const g4 = await claimNextAgentRun();
+    assert.equal(g4?.phase, "generate");
+    assert.deepEqual(await reportAgentRun(g4!.runId, { succeeded: true, output: { summary: "draft" } }), { ok: true, status: "awaiting_approval" });
+    assert.equal(await decideAgentRun(a.id, g4!.runId, true, null), true);
+    assert.equal((await claimNextAgentRun())?.phase, "execute");
+    assert.equal(await claimNextAgentRun(new Date(Date.now() + 31 * 60_000)), null, "an interrupted execute phase is never re-run automatically");
+    const interrupted = await prisma.aiAgentRun.findUniqueOrThrow({ where: { id: g4!.runId }, select: { status: true, error: true } });
+    assert.equal(interrupted.status, "failed");
+    assert.match(interrupted.error ?? "", /^execution_interrupted/);
     pass("stale runs recover, failures are recorded, cancel works and is tenant-scoped");
 
     // ------------------------------------------------------ autopilot + triggers
@@ -778,7 +789,8 @@ async function main(): Promise<void> {
   
     // --------------------------------------------------------- growth billing
     type AnyEvent = Parameters<typeof applyGrowthStripeEvent>[0];
-    const ev = (id: string, type: string, object: unknown) => ({ id, type, data: { object } }) as unknown as AnyEvent;
+    // Event ids are global (not per client), so prefix them to keep re-runs independent.
+    const ev = (id: string, type: string, object: unknown) => ({ id: `${tag}-${id}`, type, data: { object } }) as unknown as AnyEvent;
     const meta = { billingDomain: "growth_plan", clientId: a.id, planKey: "ai_autopilot" };
     assert.deepEqual(
       await applyGrowthStripeEvent(ev("evt_c1", "checkout.session.completed", { id: "cs_g1", mode: "subscription", status: "complete", client_reference_id: a.id, customer: "cus_a", subscription: "sub_a", metadata: meta })),
@@ -809,6 +821,32 @@ async function main(): Promise<void> {
     await applyGrowthStripeEvent(ev("evt_d1", "customer.subscription.deleted", { id: "sub_a", status: "canceled", metadata: meta, items: { data: [] } }));
     assert.deepEqual(await activeGrowthPlans(a.id), [], "canceled plans stop unlocking features");
     pass("subscription status follows Stripe (past_due keeps access, canceled removes it)");
+
+    // Resubscribe, then a late event for the old subscription must not replace the new one.
+    await applyGrowthStripeEvent(ev("evt_c3", "checkout.session.completed", { id: "cs_g3", mode: "subscription", status: "complete", client_reference_id: a.id, customer: "cus_a", subscription: "sub_a2", metadata: meta }));
+    assert.deepEqual(
+      await applyGrowthStripeEvent(ev("evt_u_late", "customer.subscription.updated", { id: "sub_a_old", status: "canceled", customer: "cus_a", metadata: meta, items: { data: [] } })),
+      { handled: false, reason: "superseded_subscription" },
+    );
+    assert.equal((await prisma.growthSubscription.findFirstOrThrow({ where: { clientId: a.id, planKey: "ai_autopilot" } })).stripeSubscriptionId, "sub_a2");
+    assert.deepEqual(await activeGrowthPlans(a.id), ["ai_autopilot"], "the live subscription keeps its access");
+
+    // invoice.paid can arrive before the subscription is recorded.
+    const early = (await getCreditSnapshot(a.id)).balance;
+    const earlyInvoice = { id: "in_early", billing_reason: "subscription_create", parent: { subscription_details: { subscription: "sub_not_yet_seen", metadata: meta } } };
+    assert.deepEqual(await applyGrowthStripeEvent(ev("evt_i_early", "invoice.paid", earlyInvoice)), { handled: true, creditsGranted: 500 });
+    assert.equal((await getCreditSnapshot(a.id)).balance, early + 500, "included credits granted from the invoice's subscription snapshot");
+    assert.deepEqual(
+      await applyGrowthStripeEvent(ev("evt_i_other", "invoice.paid", { id: "in_other", billing_reason: "subscription_cycle", parent: { subscription_details: { subscription: "sub_social", metadata: {} } } })),
+      { handled: false, reason: "not_growth_plan" },
+      "other billing domains are ignored",
+    );
+    const orphan = ev("evt_i_orphan", "invoice.paid", { id: "in_orphan", billing_reason: "subscription_create", parent: { subscription_details: { subscription: "sub_x", metadata: { ...meta, clientId: randomUUID() } } } });
+    await assert.rejects(applyGrowthStripeEvent(orphan), /growth_invoice_unattributed/, "an unattributable Growth invoice fails so Stripe retries");
+    await assert.rejects(applyGrowthStripeEvent(orphan), /growth_invoice_unattributed/, "and the retry is processed again, not dropped as a duplicate");
+    await applyGrowthStripeEvent(ev("evt_d2", "customer.subscription.deleted", { id: "sub_a2", status: "canceled", metadata: meta, items: { data: [] } }));
+    assert.deepEqual(await activeGrowthPlans(a.id), []);
+    pass("out-of-order Stripe events: early invoices still credit once; stale subscriptions never replace the live one");
 
     const savedEnforced = process.env.GROWTH_ENTITLEMENTS_ENFORCED;
     try {

@@ -2,6 +2,8 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 
+import { clientIpFromHeaders } from "./client-ip";
+
 // Per-process fixed-window limiter for anonymous public endpoints. Keys are
 // hashed and live only in memory. With several processes it is a soft limit,
 // which is acceptable as a spam brake (not as a security boundary).
@@ -31,7 +33,6 @@ export function createFixedWindowLimiter(options: { windowMs: number; max: numbe
 }
 
 export function hashedClientKey(headers: Headers, scope: string): string {
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const ip = forwarded || headers.get("x-real-ip")?.trim() || "unknown";
+  const ip = clientIpFromHeaders(headers) ?? "unknown";
   return createHash("sha256").update(`${scope}:${ip}`).digest("hex").slice(0, 32);
 }

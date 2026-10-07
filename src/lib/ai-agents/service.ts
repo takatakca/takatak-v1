@@ -203,12 +203,20 @@ export interface ClaimedRun {
   requireApproval: boolean;
 }
 
-/** Re-queues runs whose worker vanished, then atomically claims the oldest runnable one. */
+/**
+ * Recovers runs whose worker vanished, then atomically claims the oldest
+ * runnable one. A stale generate phase is safe to redo, so it is re-queued.
+ * A stale execute phase may already have acted (posted a chat or Google
+ * reply), so it is never re-run automatically: it fails for a person to check.
+ */
 export async function claimNextAgentRun(now = new Date()): Promise<ClaimedRun | null> {
   const prisma = requirePrisma();
   const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
   await prisma.aiAgentRun.updateMany({ where: { status: "running", claimedAt: { lt: staleBefore } }, data: { status: "queued", claimedAt: null } });
-  await prisma.aiAgentRun.updateMany({ where: { status: "executing", claimedAt: { lt: staleBefore } }, data: { status: "approved", claimedAt: null } });
+  await prisma.aiAgentRun.updateMany({
+    where: { status: "executing", claimedAt: { lt: staleBefore } },
+    data: { status: "failed", claimedAt: null, completedAt: now, error: "execution_interrupted: the worker stopped mid-action; check whether it was published before retrying" },
+  });
 
   const rows = await prisma.$queryRaw<Array<{ id: string; clientId: string; agentKey: string; status: AiAgentRunStatus; input: Prisma.JsonValue; output: Prisma.JsonValue }>>`
     UPDATE "ai_agent_runs" AS r
@@ -249,11 +257,12 @@ export async function reportAgentRun(
 ): Promise<ReportResult> {
   const credits = report.creditsDebited ?? 0;
   if (!Number.isInteger(credits) || credits < 0 || credits > 100_000) return { ok: false, code: "invalid_request" };
-  let output: Prisma.InputJsonValue | undefined;
+  let output: Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined;
   if (report.output !== undefined) {
     const serialized = JSON.stringify(report.output);
     if (!serialized || serialized.length > MAX_OUTPUT_BYTES) return { ok: false, code: "invalid_request" };
-    output = JSON.parse(serialized) as Prisma.InputJsonValue;
+    const parsed = JSON.parse(serialized) as Prisma.InputJsonValue | null;
+    output = parsed === null ? Prisma.JsonNull : parsed;
   }
   const prisma = requirePrisma();
   const run = await prisma.aiAgentRun.findUnique({ where: { id: runId }, select: { status: true, clientId: true, agentKey: true } });

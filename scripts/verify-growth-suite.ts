@@ -19,6 +19,7 @@ import {
   parseCollectPayload,
 } from "../src/lib/analytics/parse";
 import { latestDueSlot, parseScheduleInput } from "../src/lib/ai-agents/schedule";
+import { clientIpFromHeaders } from "../src/lib/security/client-ip";
 import { decideCreditGrant } from "../src/lib/billing/ai-credits/policy";
 import { billablePlan, creditsForInvoice, decidePlanCheckout, normalizeStripeStatus, planUnlocks } from "../src/lib/billing/growth/policy";
 import { growthSmsConfigured, growthWhatsAppConfigured } from "../src/lib/messaging/delivery";
@@ -270,6 +271,18 @@ function verifyMessagingGates(): void {
   pass("messaging channels stay off until flagged and fully configured; phones normalize and mask");
 }
 
+function verifyClientIp(): void {
+  const h = (xff: string, extra: Record<string, string> = {}) => new Headers({ "x-forwarded-for": xff, ...extra });
+  assert.equal(clientIpFromHeaders(h("203.0.113.9"), {}), "203.0.113.9");
+  assert.equal(clientIpFromHeaders(h("6.6.6.6, 203.0.113.9"), {}), "203.0.113.9", "a forged leftmost entry is ignored");
+  assert.equal(clientIpFromHeaders(h("6.6.6.6, 203.0.113.9, 172.70.1.1"), { TRUSTED_PROXY_HOPS: "2" }), "203.0.113.9", "two trusted proxies");
+  assert.equal(clientIpFromHeaders(h("6.6.6.6", { "cf-connecting-ip": "198.51.100.4" }), { CLIENT_IP_HEADER: "cf-connecting-ip" }), "198.51.100.4");
+  assert.equal(clientIpFromHeaders(new Headers({ "x-real-ip": "192.0.2.7" }), {}), "192.0.2.7", "X-Real-IP when there is no X-Forwarded-For");
+  assert.equal(clientIpFromHeaders(h("203.0.113.9", { "x-real-ip": "6.6.6.6" }), {}), "203.0.113.9", "X-Forwarded-For wins over X-Real-IP");
+  assert.equal(clientIpFromHeaders(new Headers(), {}), null);
+  pass("client IP comes from the trusted proxy's entry, not the forgeable leftmost one");
+}
+
 function verifyAgentSchedules(): void {
   const tz = "America/Toronto";
   // Monday 2026-10-05 15:20 UTC = 11:20 EDT.
@@ -289,6 +302,11 @@ function verifyAgentSchedules(): void {
     "2026-10-05T07:00:00.000Z",
     "client time zone respected",
   );
+  // DST fall-back (2026-11-01): 01:00 local happens at 05:00Z (EDT) and 06:00Z (EST); one slot.
+  const fallBack = { schedule: "daily", weekday: null, hour: 1 } as const;
+  assert.equal(latestDueSlot(new Date("2026-11-01T05:30:00Z"), fallBack, tz)?.toISOString(), "2026-11-01T05:00:00.000Z");
+  assert.equal(latestDueSlot(new Date("2026-11-01T06:30:00Z"), fallBack, tz)?.toISOString(), "2026-11-01T05:00:00.000Z", "the repeated hour is the same slot");
+  assert.equal(latestDueSlot(new Date("2026-11-02T06:30:00Z"), fallBack, tz)?.toISOString(), "2026-11-02T06:00:00.000Z", "next day is a new slot");
   assert.equal(latestDueSlot(now, { schedule: "off", weekday: null, hour: 9 }, tz), null);
   assert.equal(latestDueSlot(now, { schedule: "weekly", weekday: null, hour: 9 }, tz), null);
   assert.deepEqual(parseScheduleInput({ schedule: "weekly", weekday: "9", hour: "99" }), { schedule: "weekly", weekday: 1, hour: 9 });
@@ -483,6 +501,7 @@ verifyGoogleBusinessPure();
 verifyGoogleAndReport();
 verifyPageSpeedAndShowcase();
 verifyAgentSchedules();
+verifyClientIp();
 verifyCreditPurchasePolicy();
 verifyMessagingGates();
 verifyAuditUrlGuard();

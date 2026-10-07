@@ -91,7 +91,10 @@
     panel.appendChild(head); panel.appendChild(list); panel.appendChild(form);
     root.appendChild(panel); root.appendChild(bubble);
 
-    function addMessage(m) {
+    // Only polled messages advance the cursor: the visitor's own message comes
+    // back from POST and may be newer than staff/AI replies not yet polled.
+    function addMessage(m, fromPoll) {
+      if (fromPoll && (!lastAt || m.createdAt > lastAt)) lastAt = m.createdAt;
       if (seen[m.id]) return;
       seen[m.id] = true;
       var mine = m.sender === "visitor";
@@ -99,7 +102,6 @@
       list.appendChild(b);
       list.scrollTop = list.scrollHeight;
       if (!mine && !open) { badge.style.display = "block"; badge.textContent = "•"; }
-      lastAt = m.createdAt;
     }
 
     list.appendChild(el("div", "align-self:flex-start;max-width:80%;padding:8px 11px;border-radius:12px;font-size:14px;background:#fff;border:1px solid #e2e8f0;color:#0f172a;", config.greeting || T.hello));
@@ -108,7 +110,7 @@
       if (!token) return;
       get({ k: key, v: token, after: lastAt }).then(function (res) {
         if (!res || !res.ok) { if (res && res.error === "unknown_conversation") { token = null; save(""); } return; }
-        (res.messages || []).forEach(addMessage);
+        (res.messages || []).forEach(function (m) { addMessage(m, true); });
         if (res.status === "closed") { status.textContent = T.closed; input.disabled = true; send.disabled = true; }
       }).catch(function () {});
     }
@@ -136,7 +138,7 @@
           if (!res || !res.ok) { status.textContent = res && res.error === "closed" ? T.closed : T.error; return; }
           if (!token) { token = res.visitorToken; save(token); if (nameInput.parentNode) { form.removeChild(nameInput); form.removeChild(contactInput); } }
           input.value = "";
-          addMessage(res.message);
+          addMessage(res.message, false);
         })
         .catch(function () { send.disabled = false; status.textContent = T.error; });
     });

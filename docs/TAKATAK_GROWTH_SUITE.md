@@ -353,6 +353,23 @@ Both have RLS and revoked grants. The migration is **not** in the approved deplo
 | Ads Manager | Retargeting audiences |
 | TAKATAK One | Everything |
 
+## Review fixes (2026-10-07)
+
+A full code review of the branch found ten issues. Each was checked against the code, fixed, and covered by a test that fails on the old code (the widget fix was checked in a real browser).
+
+- **Stripe billing:**
+  - `invoice.paid` can arrive before the subscription is recorded. Included credits are now granted from the invoice's subscription snapshot. A Growth invoice that can't be attributed fails, so Stripe retries it.
+  - A late event for an old subscription can no longer overwrite the plan's live subscription.
+- **Web chat widget:** sending a message no longer skips a staff or AI reply that arrived just before.
+- **Google reviews cron:** connections rotate by last attempt, so failing connections can't starve healthy ones.
+- **WhatsApp:** a request with no name uses "à vous" / "there", because WhatsApp rejects empty template values.
+- **Rate limits and visitor ids:** the client IP is taken from the trusted proxy's `X-Forwarded-For` entry, not the forgeable leftmost one. Set `TRUSTED_PROXY_HOPS` (default 1; 2 for Cloudflare in front of Traefik), or `CLIENT_IP_HEADER` (e.g. `cf-connecting-ip`). If no `X-Forwarded-For` is present, `X-Real-IP` is used, as before. **Before go-live, confirm on each host (MochaHost/Passenger, Vercel, Coolify)** which `X-Forwarded-For` the app actually receives; this could not be checked from the build environment.
+- **AI agents:**
+  - A run interrupted mid-action is marked failed (`execution_interrupted`) instead of being executed again, so a reply is never posted twice.
+  - A `null` report output is stored as JSON null.
+- **Reviews widget:** the count is a whole number from 1 to 12.
+- **Schedules:** on the DST fall-back day, the repeated local hour fires once.
+
 ## Waiting on outside approvals
 
 These need provider access that only the owner can request:

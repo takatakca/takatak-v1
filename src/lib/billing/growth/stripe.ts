@@ -133,6 +133,16 @@ export async function applyGrowthStripeEvent(event: Pick<Stripe.Event, "id" | "t
         if (!plan || !/^[0-9a-f-]{36}$/i.test(clientId)) return { handled: false, reason: "unknown_subscription" };
         const client = await prisma.client.findUnique({ where: { id: clientId }, select: { id: true } });
         if (!client) return { handled: false, reason: "unknown_client" };
+        // Never let an event for an older/other subscription replace the plan's
+        // current one: only a live subscription may take over a canceled slot.
+        const current = await prisma.growthSubscription.findUnique({
+          where: { clientId_planKey: { clientId, planKey: plan.key } },
+          select: { stripeSubscriptionId: true, status: true },
+        });
+        const live = status === "active" || status === "trialing" || status === "past_due";
+        if (current?.stripeSubscriptionId && current.stripeSubscriptionId !== sub.id && !(current.status === "canceled" && live)) {
+          return { handled: false, reason: "superseded_subscription" };
+        }
         await prisma.growthSubscription.upsert({
           where: { clientId_planKey: { clientId, planKey: plan.key } },
           create: { clientId, planKey: plan.key, stripeSubscriptionId: sub.id, ...data },
@@ -146,8 +156,20 @@ export async function applyGrowthStripeEvent(event: Pick<Stripe.Event, "id" | "t
     const invoice = event.data.object as Stripe.Invoice;
     const subscriptionId = idOf(invoice.parent?.subscription_details?.subscription);
     if (!subscriptionId) return { handled: false, reason: "not_subscription_invoice" };
-    const row = await prisma.growthSubscription.findUnique({ where: { stripeSubscriptionId: subscriptionId }, select: { clientId: true, planKey: true } });
-    if (!row) return { handled: false, reason: "unknown_subscription" };
+    let row = await prisma.growthSubscription.findUnique({ where: { stripeSubscriptionId: subscriptionId }, select: { clientId: true, planKey: true } });
+    if (!row) {
+      // Stripe does not order events: invoice.paid can arrive before the
+      // subscription is recorded. The invoice carries a snapshot of the
+      // subscription metadata we set at checkout, so use it when valid.
+      const meta = invoice.parent?.subscription_details?.metadata ?? {};
+      if (meta.billingDomain !== GROWTH_BILLING_DOMAIN) return { handled: false, reason: "not_growth_plan" };
+      const plan = billablePlan(meta.planKey ?? "");
+      const clientId = meta.clientId ?? "";
+      const client = plan && /^[0-9a-f-]{36}$/i.test(clientId) ? await prisma.client.findUnique({ where: { id: clientId }, select: { id: true } }) : null;
+      // A Growth invoice we cannot attribute yet: fail so Stripe retries later.
+      if (!plan || !client) throw new Error("growth_invoice_unattributed");
+      row = { clientId: client.id, planKey: plan.key };
+    }
     const credits = creditsForInvoice(row.planKey, invoice.billing_reason);
     if (credits <= 0) return { handled: true, creditsGranted: 0 };
     const grant = await grantCredits({

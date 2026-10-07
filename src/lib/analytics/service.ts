@@ -7,6 +7,7 @@ import { createHmac, randomBytes } from "node:crypto";
 import { Prisma } from "@prisma/client";
 
 import { getPrisma } from "@/lib/db/prisma";
+import { clientIpFromHeaders } from "@/lib/security/client-ip";
 import { searchConsolePropertyMatchesDomain } from "@/lib/integrations/google/parse";
 
 import {
@@ -43,10 +44,6 @@ export function dailyVisitorHash(siteId: string, ip: string, userAgent: string, 
   const day = now.toISOString().slice(0, 10);
   const daySalt = createHmac("sha256", hashSecret()).update(`day:${day}`).digest();
   return createHmac("sha256", daySalt).update(`${siteId}|${ip}|${userAgent}`).digest("hex").slice(0, 32);
-}
-
-export function clientIpFromHeaders(headers: Headers): string {
-  return headers.get("x-forwarded-for")?.split(",")[0]?.trim() || headers.get("x-real-ip")?.trim() || "0.0.0.0";
 }
 
 // -------------------------------------------------------------- collection
@@ -104,7 +101,7 @@ export async function recordAnalyticsEvent(payload: CollectPayload, headers: Hea
       city: geo.city,
       device: classifyDevice(ua),
       browser: classifyBrowser(ua),
-      visitorHash: dailyVisitorHash(site.id, clientIpFromHeaders(headers), ua),
+      visitorHash: dailyVisitorHash(site.id, clientIpFromHeaders(headers) ?? "0.0.0.0", ua),
     },
   });
   return { ok: true, allowOrigin };

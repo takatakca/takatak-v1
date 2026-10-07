@@ -65,6 +65,10 @@ export async function sendWhatsAppReviewTemplate(
   params: { name: string; business: string; link: string },
 ): Promise<DeliveryResult> {
   if (!growthWhatsAppConfigured()) return { ok: false, reason: "whatsapp_not_configured" };
+  const language = env("WHATSAPP_TEMPLATE_LANGUAGE") || "fr_CA";
+  // WhatsApp rejects empty template parameters. Without a name, {{1}} reads
+  // naturally after the greeting: "Bonjour à vous" / "Hi there".
+  const name = params.name.trim() || (language.toLowerCase().startsWith("fr") ? "à vous" : "there");
   const url = `https://graph.facebook.com/${env("WHATSAPP_GRAPH_VERSION")}/${encodeURIComponent(env("WHATSAPP_PHONE_NUMBER_ID"))}/messages`;
   try {
     const response = await post(url, {
@@ -76,12 +80,12 @@ export async function sendWhatsAppReviewTemplate(
         type: "template",
         template: {
           name: env("WHATSAPP_REVIEW_TEMPLATE"),
-          language: { code: env("WHATSAPP_TEMPLATE_LANGUAGE") || "fr_CA" },
+          language: { code: language },
           components: [
             {
               type: "body",
               parameters: [
-                { type: "text", text: params.name.slice(0, 60) },
+                { type: "text", text: name.slice(0, 60) },
                 { type: "text", text: params.business.slice(0, 60) },
                 { type: "text", text: params.link },
               ],

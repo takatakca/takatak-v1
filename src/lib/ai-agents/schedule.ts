@@ -48,6 +48,11 @@ export function latestDueSlot(now: Date, schedule: AgentSchedule, timeZone: stri
     const local = localParts(instant, tz);
     if (local.hour !== schedule.hour) continue;
     if (schedule.schedule === "weekly" && local.weekday !== schedule.weekday) continue;
+    // On the DST fall-back day the local hour happens twice; both instants are
+    // the same slot, identified by the first occurrence, so it fires once.
+    const previous = new Date(instant.getTime() - 3_600_000);
+    const before = localParts(previous, tz);
+    if (before.hour === local.hour && before.weekday === local.weekday) return previous;
     return instant;
   }
   return null;

@@ -13,14 +13,15 @@ export const runtime = "nodejs";
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const slug = request.nextUrl.searchParams.get("p") ?? "";
-  const limit = Number(request.nextUrl.searchParams.get("n") ?? "6");
+  const requested = Number.parseInt(request.nextUrl.searchParams.get("n") ?? "6", 10);
+  const limit = Number.isInteger(requested) ? Math.min(Math.max(requested, 1), 12) : 6;
   const headers = {
     "Access-Control-Allow-Origin": "*",
     "Cache-Control": "public, max-age=300, s-maxage=300",
   };
   if (!PUBLIC_SLUG_PATTERN.test(slug)) return NextResponse.json({ ok: false }, { status: 404, headers });
   try {
-    const showcase = await getReviewShowcase(slug, Number.isFinite(limit) ? limit : 6);
+    const showcase = await getReviewShowcase(slug, limit);
     if (!showcase) return NextResponse.json({ ok: false }, { status: 404, headers });
     return NextResponse.json({ ok: true, ...showcase }, { headers });
   } catch {
