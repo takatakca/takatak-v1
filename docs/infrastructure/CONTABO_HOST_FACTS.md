@@ -125,4 +125,4 @@ Coolify 4.3.23, Docker 29.8.2, and Compose v5.6.0 were already installed. They w
 
 ## Not done
 
-`GROUPE TAKATAK` has `staging` and `production`. `takatak-redis-staging` is private on staging. Production workers are stopped. DNS for `dashboard.takatak.ca` and `api.takatak.ca`, and MX, SPF, DKIM, and DMARC, were not changed. MochaHost was not changed.
+`GROUPE TAKATAK` has `staging` and `production`. `takatak-redis-staging` and `takatak-redis-production` are separate private Redis services. The production web app is healthy on `https://prod-check.31.220.96.134.sslip.io`. Workers stay stopped. DNS for `dashboard.takatak.ca`, `api.takatak.ca`, and `takatak.ca`, and MX, SPF, DKIM, and DMARC, were not changed. MochaHost was not deleted.

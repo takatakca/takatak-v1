@@ -36,15 +36,15 @@ Recorded on `infra/contabo-coolify` before the follow-up commits on this branch.
 - [x] Temporary Coolify ports 8000, 6001, 6002, and 8080 listen on `127.0.0.1` only. 22, 80, and 443 stay open. 5432 and 6379 are not published. `takatak` SSH still works.
 - [x] Platform check: `nginx:alpine` container `takatak-platform-check` on the `coolify` network, reached over HTTPS at `platform-check.31.220.96.134.sslip.io` with a Let's Encrypt certificate. TAKATAK was not deployed for this check.
 - [x] Coolify project `GROUPE TAKATAK` has separate `staging` and `production` environments. The misspelled `stagging` row was renamed to `staging`. Production workers were not started.
-- [x] `takatak-redis-staging` is a private Coolify Redis on staging only (`redis:7.4-alpine`, AOF, `noeviction`, auth, no public hostname, no host port 6379). Production has no Redis resource.
+- [x] `takatak-redis-staging` is a private Coolify Redis on staging only (`redis:7.4-alpine`, AOF, `noeviction`, auth, no public hostname, no host port 6379).
 - [x] Staging web from `infra/contabo-coolify` at `6ac24e6` is deployed in `GROUPE TAKATAK` / `staging`. `https://staging.takatak.ca/api/health/ready` returns ok for database, Supabase, and the private staging Redis. Queue flags stay false. No production worker was started.
 - [x] Staging workers `takatak-worker-general`, `takatak-worker-social`, and `takatak-worker-webhooks` exist in `GROUPE TAKATAK` / `staging`. They are stopped, have no public URL, auto-deploy is off, and their Redis host is only `takatak-redis-staging`. Queue flags are false.
-- [x] Production workers are stopped. `dashboard.takatak.ca`, `api.takatak.ca`, `takatak.ca`, and email DNS were not changed. MochaHost was not changed.
-- [ ] Private staging Redis
-- [ ] Private production Redis
-- [ ] Staging web service
-- [ ] Production candidate `prod-check.takatak.ca`
-- [ ] DNS cutover
+- [x] Production workers were not started. Staging workers stay stopped. MochaHost was not deleted.
+- [x] Private staging Redis
+- [x] Private production Redis `takatak-redis-production` (`redis:7.4-alpine`, AOF, `noeviction`, auth, `is_public` false, no host port)
+- [x] Staging web service
+- [x] Production web on the existing GROUPE TAKATAK production app, commit `e55af85`, healthy at `https://prod-check.31.220.96.134.sslip.io/api/health/ready`
+- [!] DNS cutover. `dashboard.takatak.ca` and `api.takatak.ca` still have no A record. The zone is served by `ns1.mysecurecloudhost.com` through `ns4.mysecurecloudhost.com`. This session has no DNS login.
 - [ ] Production workers started
 - [~] GitHub push of `infra/contabo-coolify` is temporarily blocked. The shell has no git credentials (`gh auth status` is not logged in; `GH_TOKEN` and `GITHUB_TOKEN` are unset). A later GitHub API call returned HTTP 429, a secondary rate limit, not a missing repository permission. Local commits remain. No production deploy was attempted. This line is not a migration-wide block.
 - [!] Provider consoles (Contabo, Coolify, Cloudflare, Supabase, Stripe, Meta, Google, Twilio) need a human session before any live step. That does not stop repository work.

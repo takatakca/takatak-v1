@@ -1,6 +1,45 @@
 # Production cutover
 
-Not started. Do this only after staging on `staging.takatak.ca` has passed and MochaHost is still serving `takatak.ca`.
+The production web container is up. Customer DNS is not. MochaHost still serves `takatak.ca`.
+
+Recorded DNS before any change, and unchanged after the web deploy:
+
+| Name | Record |
+| --- | --- |
+| `takatak.ca` | A `209.42.24.127` |
+| `dashboard.takatak.ca` | no A record |
+| `api.takatak.ca` | no A record |
+| `takatak.ca` | MX `0 mail.takatak.ca` |
+| `mail.takatak.ca` | A `209.42.24.127` |
+| `takatak.ca` | SPF TXT present |
+| `default._domainkey.takatak.ca` | DKIM TXT present |
+| `_dmarc.takatak.ca` | no TXT record |
+
+Nameservers are `ns1.mysecurecloudhost.com`, `ns2.mysecurecloudhost.com`, `ns3.mysecurecloudhost.com`, and `ns4.mysecurecloudhost.com`. This session cannot edit that zone.
+
+## Done on the server
+
+- Existing production web app only. Coolify was not installed again.
+- Branch `infra/contabo-coolify`, commit `e55af85`.
+- `https://prod-check.31.220.96.134.sslip.io/api/health/ready` returns 200. Checks: database, Supabase, Redis, and process are ok. No secret fields in the body.
+- The same URL `/login` returns the email OTP default.
+- `takatak-redis-production` is private, AOF, `noeviction`, authenticated, and not published on 6379.
+- Queue flags are false. Staging and production workers are stopped.
+- Traefik routes `dashboard.takatak.ca` and `api.takatak.ca` to the production web container. Those routes have gzip only. There is no cache middleware on `/api`, `/auth`, `/oauth`, `/webhooks`, or `/billing`.
+- Pending Prisma migrations were not applied.
+
+## Still required
+
+Create these records only. Do not change the apex A record, MX, SPF, DKIM, or DMARC.
+
+| Name | Type | Value |
+| --- | --- | --- |
+| `dashboard.takatak.ca` | A | `31.220.96.134` |
+| `api.takatak.ca` | A | `31.220.96.134` |
+
+After those records resolve, the origin can issue Let's Encrypt certificates for them. Use Cloudflare Full (strict) only after those origin certificates are valid. Do not use Flexible.
+
+Do not start workers until MochaHost cron, social sync, and queue processors are confirmed stopped.
 
 ## Before
 

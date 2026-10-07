@@ -87,13 +87,33 @@ Private Coolify Redis on the `GROUPE TAKATAK` staging environment only. Producti
 | Public | `is_public` false, no public port, no hostname |
 | Host publish | none. Nothing listens on host 6379 or 5432 |
 
-Docker reports the container healthy. The password stays in Coolify's environment storage and was not copied into git. No application environment variable is named `REDIS_URL` yet.
+Docker reports the container healthy. The password stays in Coolify's environment storage and was not copied into git. Staging `REDIS_URL` points only at this container.
 
-## Production left where it is
+## Production Redis
 
-The production application `takatak-v1` in `GROUPE TAKATAK` is exited. Its Coolify FQDN is `https://takatak.ca`, and public DNS for `takatak.ca` still points at MochaHost (`209.42.24.127`). `dashboard.takatak.ca` and `api.takatak.ca` have no A record. MX is still `0 mail.takatak.ca`. None of those records were changed. No production worker container is running.
+| | |
+| --- | --- |
+| Name | `takatak-redis-production` |
+| Image | `redis:7.4-alpine` |
+| Container | `sdwjy3rrurxsced1pbcdildj` |
+| Environment | GROUPE TAKATAK production |
+| AOF | `appendonly yes`, `appendfsync everysec` |
+| Eviction | `maxmemory 256mb`, `maxmemory-policy noeviction` |
+| Auth | required (`NOAUTH` without the password) |
+| Public | `is_public` false, no public port |
+| Host publish | none. Nothing listens on host 6379 or 5432 |
 
-The staging web application in `GROUPE TAKATAK` / `staging` now tracks `infra/contabo-coolify` at `6ac24e6`. It uses the root Dockerfile. Its runtime `REDIS_URL` points only at `takatak-redis-staging` on the private Docker network. `TAKATAK_QUEUE_ENABLED` and `TAKATAK_QUEUE_WEBHOOKS` are false. `https://staging.takatak.ca/api/health/ready` returns ok for the database, Supabase, and Redis. The production application is still exited on `main`. No worker container is running.
+It is a different container from `takatak-redis-staging`. The password stays in Coolify.
+
+## Production web
+
+The existing production application `takatak-v1` in `GROUPE TAKATAK` tracks `infra/contabo-coolify` at `e55af85` and uses the root Dockerfile. Its Coolify hostnames are `prod-check.31.220.96.134.sslip.io`, `dashboard.takatak.ca`, and `api.takatak.ca`. `https://prod-check.31.220.96.134.sslip.io/api/health/ready` returns 200 with database, Supabase, Redis, and process ok. The Let's Encrypt certificate on that preflight name is valid. Traefik is configured for the dashboard and API names, but those names have no public A record yet, so no customer certificate exists for them.
+
+`takatak.ca` still points at MochaHost (`209.42.24.127`). MX is still `0 mail.takatak.ca`. SPF and DKIM were not edited. No production worker was started. Staging workers stay stopped. `TAKATAK_QUEUE_ENABLED` and `TAKATAK_QUEUE_WEBHOOKS` are false. The queue prefix is `takatak-production`.
+
+`prisma migrate status` in the production web container reports 16 unapplied migrations, including `20261003064000_hockey_membership_rls_lockdown` and `20261003081500_hockey_family_team_isolation`. They were not applied. The production runtime database is the database already stored for staging, and MochaHost is still serving `takatak.ca`.
+
+The staging web application in `GROUPE TAKATAK` / `staging` tracks `infra/contabo-coolify`. Its runtime `REDIS_URL` points only at `takatak-redis-staging`. Queue flags stay false.
 
 ## Staging workers
 
