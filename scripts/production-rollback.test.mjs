@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-test("a failed public acceptance after activation restores the captured release and restarts", async () => {
+async function simulateFailedPromotion(signal = false) {
   const temporary = await mkdtemp(path.join(os.tmpdir(), "takatak-rollback-"));
   const binaries = path.join(temporary, "fixture-bin");
   await mkdir(binaries);
@@ -17,7 +17,7 @@ test("a failed public acceptance after activation restores the captured release 
     gh: "#!/usr/bin/env bash\nprintf '%s' \"$RELEASE_SHA\"\n",
     sleep: "#!/usr/bin/env bash\nexit 0\n",
     curl: "#!/usr/bin/env bash\nprintf '%s' '{\"ok\":true,\"checks\":{\"database\":\"ok\",\"supabase\":\"ok\"}}'\n",
-    node: "#!/usr/bin/env bash\nif [[ \"${1:-}\" == scripts/production-release-smoke.mjs ]]; then echo rejected >> \"$TRACE_FILE\";exit 1;fi\nexit 0\n",
+    node: "#!/usr/bin/env bash\nif [[ \"${1:-}\" == scripts/production-release-smoke.mjs ]]; then echo rejected >> \"$TRACE_FILE\"; if [[ \"$TERM_TEST\" == 1 ]]; then kill -TERM \"$PPID\"; fi;exit 1;fi\nexit 0\n",
   };
   try {
     for (const [command, contents] of Object.entries(commands)) {
@@ -30,10 +30,10 @@ test("a failed public acceptance after activation restores the captured release 
     const command = `export PATH="${fixturePath}:$PATH"; case "$(command -v ssh)" in */fixture-bin/ssh) ;; *) echo "SSH mock not selected" >&2; exit 12 ;; esac; exec bash deploy/linux/promote-production.sh`;
     const result = spawnSync(bash, ["--noprofile", "--norc", "-c", command], {
       encoding: "utf8", timeout: 15_000,
-      env: { ...process.env, FIXTURE_BIN: binaries, RUNNER_TEMP: temporary.replaceAll("\\", "/"), TRACE_FILE: path.join(temporary, "trace").replaceAll("\\", "/"), RELEASE_SHA: "a".repeat(40), GITHUB_RUN_ID: "42", PRODUCTION_ORIGIN: "https://takatak.ca", PROMOTION_MODE: "promote", TKT_APP_ROOT: "/home/operator/apps/takatak", TKT_RESTART_COMMAND: "synthetic-approved-restart", GH_REPO: "takatakca/takatak-v1" },
+      env: { ...process.env, TERM_TEST: signal ? "1" : "0", FIXTURE_BIN: binaries, RUNNER_TEMP: temporary.replaceAll("\\", "/"), TRACE_FILE: path.join(temporary, "trace").replaceAll("\\", "/"), RELEASE_SHA: "a".repeat(40), GITHUB_RUN_ID: "42", PRODUCTION_ORIGIN: "https://takatak.ca", PROMOTION_MODE: "promote", TKT_APP_ROOT: "/home/operator/apps/takatak", TKT_RESTART_COMMAND: "synthetic-approved-restart", GH_REPO: "takatakca/takatak-v1" },
     });
     assert.equal(result.error, undefined);
-    assert.equal(result.status, 1, result.stderr);
+    assert.equal(result.status, signal ? 143 : 1, result.stderr);
     const trace = (await readFile(path.join(temporary, "trace"), "utf8")).trim().split("\n");
     assert.equal(trace.filter((entry) => entry === "activate").length, 1);
     assert.equal(trace.filter((entry) => entry === "rollback").length, 1);
@@ -45,4 +45,7 @@ test("a failed public acceptance after activation restores the captured release 
     assert.ok(resolved.startsWith(`${path.resolve(os.tmpdir())}${path.sep}takatak-rollback-`));
     await rm(resolved, { recursive: true, force: true });
   }
-});
+}
+
+test("a failed public acceptance after activation restores the captured release and restarts", () => simulateFailedPromotion());
+test("SIGTERM after activation runs one bounded rollback and keeps the interrupted exit status", () => simulateFailedPromotion(true));

@@ -17,8 +17,15 @@ release_dir="$TKT_APP_ROOT/releases/$release_key"
 archive="takatak-ci-$RELEASE_SHA.tar.gz"
 active=0
 previous=""
+rolling_back=0
 
-remote() { ssh -F "$ssh_config" takatak-production "$@"; }
+remote() {
+  if [[ "$rolling_back" == 1 ]]; then
+    timeout --kill-after=3s 10s ssh -F "$ssh_config" takatak-production "$@"
+  else
+    timeout --kill-after=5s 120s ssh -F "$ssh_config" takatak-production "$@"
+  fi
+}
 restart() {
   local restart_quoted
   printf -v restart_quoted '%q' "$TKT_RESTART_COMMAND"
@@ -32,8 +39,10 @@ REMOTE
 
 rollback() {
   local result=$?
-  trap - ERR
-  if [[ "$active" == 1 && -n "$previous" ]]; then
+  # One EXIT handler covers errors and handled signals, without re-entering rollback.
+  trap - EXIT INT TERM HUP
+  rolling_back=1
+  if [[ "$result" != 0 && "$active" == 1 && -n "$previous" ]]; then
     echo "Promotion failed after activation; restoring captured previous release." >&2
     if remote "bash -s -- '$TKT_APP_ROOT' '$previous'" <<'REMOTE'
 set -euo pipefail
@@ -60,7 +69,10 @@ REMOTE
   fi
   exit "$result"
 }
-trap rollback ERR
+trap rollback EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
 
 # Read-only server preflight. A direct legacy app directory is not silently converted.
 previous="$(remote "bash -s -- '$TKT_APP_ROOT'" <<'REMOTE'

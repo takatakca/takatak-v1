@@ -37,7 +37,7 @@ An old artifact without the release-marker helper cannot be promoted by this wor
 
 ## Rollback and remaining activation
 
-Any failure after activation attempts to restore the captured previous release and rerun the same approved restart. Public readiness must pass; rollback failures leave the job failed and require operator attention. Previous releases are retained, and the workflow never prunes them or changes the database.
+Errors and handled INT/TERM/HUP signals after activation attempt to restore the captured previous release and rerun the same approved restart. Rollback SSH calls are bounded; public readiness must pass. A runner hard kill or lost transport can still interrupt this best-effort recovery and requires operator attention. Previous releases are retained, and the workflow never prunes them or changes the database.
 
 Initial rollback to a legacy release that lacks the new header proves readiness after restart but cannot attest its historical SHA through HTTP. This limitation is reported; it is not a new-release acceptance shortcut.
 
@@ -45,4 +45,4 @@ After backend release acceptance, separately configure/accept AHMV moderation, F
 
 ## Validation
 
-`npm run qa:production-release` exercises stale/failed/PR/cross-repository evidence, expired artifacts, checksum/metadata substitution, unsafe transport paths, startup marker behavior, GET-only stale-runtime/HTML/provider boundaries, safe archive links, Bash syntax, and a fully mocked failed promotion/rollback. No test connects to production.
+`npm run qa:production-release` exercises stale/failed/PR/cross-repository evidence, expired artifacts, checksum/metadata substitution, unsafe transport paths, startup marker behavior, GET-only stale-runtime/HTML/provider boundaries, safe/chained archive links, Bash syntax, and fully mocked failed/interrupted promotion rollbacks. No test connects to production.

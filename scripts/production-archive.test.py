@@ -27,6 +27,22 @@ class ArchivePolicyTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 policy.validate_members([member])
 
+    def test_chained_links_cannot_hide_escape_behind_dotdot(self):
+        with self.assertRaises(ValueError):
+            policy.validate_members([
+                self.member("app/x", "."),
+                self.member("app/y", "x/.."),
+                self.member("app/z", "y/../escaped"),
+            ])
+
+    def test_entries_below_a_link_and_path_overwrites_are_rejected(self):
+        for members in [
+            [self.member("app/link", "."), self.member("app/link/child")],
+            [self.member("app/file"), self.member("app/file", ".")],
+        ]:
+            with self.assertRaises(ValueError):
+                policy.validate_members(members)
+
 
 if __name__ == "__main__":
     unittest.main()
