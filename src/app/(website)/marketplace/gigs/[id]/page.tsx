@@ -30,14 +30,14 @@ export async function generateMetadata({
 
   if (!pkg) {
     return {
-      title:
-        "Package not found — TAKATAK",
+      title: "Package not found",
     };
   }
 
   return {
-    title: `${pkg.title} — TAKATAK Marketplace`,
+    title: `${pkg.title} — Marketplace`,
     description: pkg.description,
+    alternates: { canonical: `/marketplace/gigs/${pkg.id}` },
   };
 }
 

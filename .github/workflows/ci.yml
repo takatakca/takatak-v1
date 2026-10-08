@@ -109,6 +109,9 @@ jobs:
       - name: Website theme colours registered
         run: npm run qa:website-theme
 
+      - name: Website SEO and HTTPS redirect
+        run: npm run qa:website-seo
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 

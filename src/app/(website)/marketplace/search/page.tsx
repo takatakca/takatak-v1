@@ -10,8 +10,8 @@ import {
 } from "@/lib/website/marketplace-catalog";
 
 export const metadata: Metadata = {
-  title:
-    "Search marketplace — TAKATAK",
+  title: "Search marketplace",
+  alternates: { canonical: "/marketplace/search" },
 };
 
 function readValue(
