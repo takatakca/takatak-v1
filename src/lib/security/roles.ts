@@ -202,8 +202,10 @@ export const MODULE_ACCESS: Record<
   "/dashboard/social/users": "view_team",
   "/dashboard/social/settings": "view_social",
   "/dashboard/billing": "view_social",
+  "/dashboard/invoices": "manage_settings",
   "/dashboard/admin": "view_admin",
   "/dashboard/settings": "manage_settings",
+  "/dashboard/client-billing": "manage_settings",
 };
 
 const VALID_ROLES: RoleKey[] = [

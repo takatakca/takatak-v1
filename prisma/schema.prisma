@@ -328,6 +328,8 @@ model Profile {
   moderatedContributions   ContentContribution[]          @relation("ContributionModerator")
   contributionEvents       ContentContributionEvent[]     @relation("ContributionEventActor")
   contributorReputations   ContributorReputation[]
+  createdBillingInvoiceRequests   BillingInvoiceRequest[] @relation("BillingInvoiceRequestCreatedBy")
+  submittedBillingInvoiceRequests BillingInvoiceRequest[] @relation("BillingInvoiceRequestSubmittedBy")
 
   @@map("profiles")
 }
@@ -373,6 +375,7 @@ model Client {
   assignedProfile           Profile?                          @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
   subscription              ClientSubscription?
+  stripeConnectAccount      ClientStripeConnectAccount?
   customRoles               WorkspaceCustomRole[]
   rolePermissionOverrides   WorkspaceRolePermissionOverride[]
   userInvitations           UserInvitation[]
@@ -418,6 +421,8 @@ model Client {
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
   leads                     Lead[]
+  leadAttachments           LeadAttachment[]
+  billingInvoiceRequests    BillingInvoiceRequest[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
 
@@ -911,6 +916,11 @@ enum SocialPlatform {
   pinterest
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialAccountStatus {
@@ -936,12 +946,18 @@ enum SocialConnectionProvider {
   instagram
   threads
   google
+  google_business
   linkedin
   tiktok
   pinterest
   x
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialConnectionStatus {
@@ -1057,6 +1073,12 @@ model SocialAccount {
   displayName            String?
   profileUrl             String?
   profileImageUrl        String?
+  avatarStorageKey       String?
+  avatarContentType      String?
+  avatarByteSize         Int?
+  avatarSourceUrl        String?
+  avatarSyncedAt         DateTime?
+  avatarSyncError        String?
   category               String?
   accountType            String?
   status                 SocialAccountStatus       @default(not_connected)
@@ -1083,6 +1105,7 @@ model SocialAccount {
 
   @@unique([integrationAccountId, platform, externalAccountId])
   @@unique([providerConnectionId, platform, externalAccountId])
+  @@index([avatarStorageKey])
   /// Partial unique: one connected Facebook Page per Client
   /// (see migration sa_one_connected_facebook_page_per_client_key).
   /// Partial unique: one connected Facebook Page per provider connection
@@ -1103,6 +1126,30 @@ model SocialAccount {
   /// (see migration sa_one_connected_x_account_per_client_key).
   /// Partial unique: one connected X account per connection
   /// (see migration sa_one_connected_x_per_connection_key).
+  /// Partial unique: one connected Twitch channel per Client
+  /// (see migration sa_one_connected_twitch_account_per_client_key).
+  /// Partial unique: one connected Twitch channel per connection
+  /// (see migration sa_one_connected_twitch_per_connection_key).
+  /// Partial unique: one connected website host per Client
+  /// (see migration sa_one_connected_web_site_per_client_key).
+  /// Partial unique: one connected website per web connection
+  /// (see migration sa_one_connected_web_per_connection_key).
+  /// Partial unique: one connected blog host per Client
+  /// (see migration sa_one_connected_blog_per_client_key).
+  /// Partial unique: one connected blog per blog connection
+  /// (see migration sa_one_connected_blog_per_connection_key).
+  /// Partial unique: one connected Meta ad account per Client
+  /// (see migration sa_one_connected_meta_ads_account_per_client_key).
+  /// Partial unique: one connected Meta ad account per connection
+  /// (see migration sa_one_connected_meta_ads_per_connection_key).
+  /// Partial unique: one connected Google Ads account per Client
+  /// (see migration sa_one_connected_google_ads_account_per_client_key).
+  /// Partial unique: one connected Google Ads account per connection
+  /// (see migration sa_one_connected_google_ads_per_connection_key).
+  /// Partial unique: one connected Looker Studio report per Client
+  /// (see migration sa_one_connected_looker_studio_report_per_client_key).
+  /// Partial unique: one connected Looker Studio report per connection
+  /// (see migration sa_one_connected_looker_studio_per_connection_key).
   @@index([clientId])
   @@index([businessBrandId])
   @@index([integrationAccountId])
@@ -1213,11 +1260,12 @@ model SocialProviderConnection {
   businessBrand BusinessBrand @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Cascade)
   createdBy     Profile?      @relation("SocialConnectionCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
 
-  credential     SocialCredential?
-  oauthStates    SocialOAuthState[]
-  socialAccounts SocialAccount[]
-  adAccounts     SocialAdAccount[]
-  syncStates     SocialAccountSyncState[]
+  credential          SocialCredential?
+  oauthStates         SocialOAuthState[]
+  blueskyOAuthRecords BlueskyOAuthStore[]
+  socialAccounts      SocialAccount[]
+  adAccounts          SocialAdAccount[]
+  syncStates          SocialAccountSyncState[]
 
   /// Same Meta user MAY authorize multiple Brands in one Client.
   /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
@@ -1346,6 +1394,37 @@ model SocialOAuthState {
   @@index([businessBrandId, clientId])
   @@index([connectionId, clientId, businessBrandId, provider])
   @@map("social_oauth_states")
+}
+
+/// Encrypted AT Protocol OAuth state and session storage.
+///
+/// The SDK payload contains DPoP private key material and OAuth credentials.
+/// Payloads are encrypted with AES-256-GCM before database persistence.
+/// Browser-facing Supabase roles receive no access to this table.
+model BlueskyOAuthStore {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  connectionId     String    @db.Uuid
+  /// state | session
+  kind             String
+  /// OAuth state for state records; DID for session records.
+  storeKey         String
+  encryptedPayload String
+  iv               String
+  authTag          String
+  keyVersion       Int       @default(1)
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  connection SocialProviderConnection @relation(fields: [connectionId, clientId], references: [id, clientId], onDelete: Cascade)
+
+  @@unique([connectionId, kind, storeKey], map: "bluesky_oauth_store_scope_key")
+  @@index([clientId])
+  @@index([connectionId, kind])
+  @@index([kind, storeKey])
+  @@index([expiresAt])
+  @@map("bluesky_oauth_store")
 }
 
 /// Social media campaign owned by a client/brand.
@@ -1486,6 +1565,8 @@ model SocialCompetitorTrack {
   category           String?
   /// active | removed
   status             String    @default("active")
+  /// facebook | twitch. Facebook sync only reads facebook rows.
+  platform           String    @default("facebook")
   /// available | stale | unavailable | permission_denied | rate_limited | failed | pending
   availability       String    @default("pending")
   /// ready | feature_required | permission_denied | unavailable | unknown
@@ -1512,6 +1593,7 @@ model SocialCompetitorTrack {
   @@index([nextRefreshAt])
   @@index([dispatchJobId])
   @@index([businessBrandId])
+  @@index([platform])
   @@map("social_competitor_tracks")
 }
 
@@ -2997,6 +3079,7 @@ model Lead {
   leadCampaign    LeadCampaign?  @relation(fields: [leadCampaignId], references: [id])
   assignedProfile Profile?       @relation("AssignedLeads", fields: [assignedProfileId], references: [id])
   activities      LeadActivity[]
+  attachments     LeadAttachment[]
 
   @@index([clientId])
   @@index([businessBrandId])
@@ -3093,6 +3176,7 @@ model MasterIdentity {
   hockeyStripeEvents  HockeyStripeWebhookEvent[]
 
   experienceLaunchCodes ExperienceLaunchCode[]
+  billingInvoiceRequests BillingInvoiceRequest[]
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
@@ -4044,4 +4128,132 @@ model HockeyTravelProfile {
   @@index([status])
   @@index([identityId, status])
   @@map("hockey_travel_profiles")
+}
+
+/// Files a website visitor attached to their request. Stored in a private
+/// bucket; staff download through short-lived signed links only.
+model LeadAttachment {
+  id            String   @id @db.Uuid
+  clientId      String   @db.Uuid
+  leadId        String   @db.Uuid
+  storageBucket String
+  storagePath   String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  status        String   @default("quarantined")
+  createdAt     DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([storageBucket, storagePath], map: "lead_attachment_storage_key")
+  @@index([leadId])
+  @@index([clientId, createdAt])
+  @@map("lead_attachments")
+}
+
+// ════════════════════════════════════════════════════════════
+// GROUPE TAKATAK Billing — ecosystem invoice request queue.
+// Every TAKATAK app feeds invoice requests here; a platform OWNER submits
+// them to the independent Facturations service, which creates a DRAFT only.
+// See docs/TAKATAK_BILLING_FACTURATIONS_FOUNDATION.md.
+// ════════════════════════════════════════════════════════════
+
+enum BillingInvoiceRequestStatus {
+  pending
+  submitting
+  submitted
+  failed
+  rejected
+  needs_reconciliation
+  cancelled
+}
+
+model BillingInvoiceRequest {
+  id                     String                      @id @default(uuid()) @db.Uuid
+  /// Feeding app code (src/lib/billing/invoices/source-apps.ts).
+  sourceApp              String
+  /// Stable reference inside the feeding app. Unique per sourceApp.
+  sourceReference        String
+  clientId               String?                     @db.Uuid
+  masterIdentityId       String?                     @db.Uuid
+  /// Facturations Idempotency-Key derived from this row id: stable for every retry
+  /// of this request, and never shared with another TAKATAK install.
+  idempotencyKey         String                      @unique
+  /// Validated Facturations DraftInput. Immutable after insert (DB trigger).
+  draft                  Json
+  draftHash              String
+  currency               String                      @default("CAD")
+  /// Local estimate only; Facturations recalculates the authoritative draft.
+  estimatedTotalCents    BigInt
+  status                 BillingInvoiceRequestStatus @default(pending)
+  facturationsDraftId    String?                     @unique @db.Uuid
+  facturationsTotalCents BigInt?
+  submitAttempts         Int                         @default(0)
+  lastErrorCode          String?
+  lastAttemptAt          DateTime?
+  submittedAt            DateTime?
+  cancelledAt            DateTime?
+  createdByProfileId     String?                     @db.Uuid
+  submittedByProfileId   String?                     @db.Uuid
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+
+  client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  checkoutSessions BillingInvoiceCheckoutSession[]
+  masterIdentity MasterIdentity? @relation(fields: [masterIdentityId], references: [id], onDelete: SetNull)
+  createdBy      Profile?        @relation("BillingInvoiceRequestCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
+  submittedBy    Profile?        @relation("BillingInvoiceRequestSubmittedBy", fields: [submittedByProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceApp, sourceReference])
+  @@index([status, createdAt])
+  @@index([clientId])
+  @@index([masterIdentityId])
+  @@index([createdByProfileId])
+  @@index([submittedByProfileId])
+  @@map("billing_invoice_requests")
+}
+
+/// GROUPE TAKATAK Billing — Stripe Checkout sessions a client opened to pay a
+/// Facturations invoice. One open session per invoice and amount is reused;
+/// a completed one blocks a second payment; an outdated one is expired first.
+model BillingInvoiceCheckoutSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  requestId       String   @db.Uuid
+  clientId        String   @db.Uuid
+  issuedInvoiceId String   @db.Uuid
+  stripeSessionId String   @unique
+  amountCents     BigInt
+  createdAt       DateTime @default(now())
+
+  request BillingInvoiceRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, createdAt])
+  @@map("billing_invoice_checkout_sessions")
+}
+
+/// Client invoicing — the client's OWN Stripe account (Stripe Connect,
+/// Stripe-hosted dashboard). Invoices a client sends to its customers live on
+/// this account; funds never pass through GROUPE TAKATAK.
+model ClientStripeConnectAccount {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @unique @db.Uuid
+  stripeAccountId      String    @unique
+  chargesEnabled       Boolean   @default(false)
+  payoutsEnabled       Boolean   @default(false)
+  detailsSubmitted     Boolean   @default(false)
+  country              String?
+  defaultCurrency      String?
+  lastSyncedAt         DateTime?
+  /// Newest Stripe state applied (event.created or retrieve time). Older
+  /// Connect events arriving late are ignored.
+  lastStripeEventAt    DateTime?
+  connectedByProfileId String?   @db.Uuid
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  @@map("client_stripe_connect_accounts")
 }

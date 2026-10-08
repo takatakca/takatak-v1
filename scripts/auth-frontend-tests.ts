@@ -5,6 +5,7 @@ import {
   isRetryableAuthFailure,
   parseAuthResponse,
 } from "../src/lib/auth/parse-auth-response";
+import { phoneAuthMessage } from "../src/lib/auth/phone-auth-message";
 
 let failed = 0;
 
@@ -18,6 +19,14 @@ function assert(name: string, ok: boolean, detail = "") {
 }
 
 async function main() {
+  console.log("[auth-frontend] phone OTP error messages");
+  assert("unknown number → create identity", phoneAuthMessage("Signups not allowed for otp", "otp_disabled").includes("Create your identity"));
+  assert("unknown number (message only)", phoneAuthMessage("Signups not allowed for otp").includes("Create your identity"));
+  assert("phone provider off", phoneAuthMessage("Unsupported phone provider", "phone_provider_disabled").includes("not enabled"));
+  assert("Twilio failure", phoneAuthMessage("Error sending confirmation OTP to provider: Invalid From Number", "sms_send_failed").includes("SMS provider"));
+  assert("rate limit", phoneAuthMessage("For security purposes, you can only request this after 42 seconds.", "over_sms_send_rate_limit").includes("Too many"));
+  assert("unknown error stays generic", phoneAuthMessage("boom") === "Unable to send the TAKATAK SMS code. Please try again.");
+
   console.log("[auth-frontend] OTP response parsing");
 
   const loginRoute = readFileSync(

@@ -16,15 +16,16 @@ function trimEnv(name: string): string | null {
 }
 
 function getThreadsAppSecret(): string {
-  const secret =
-    trimEnv("THREADS_APP_SECRET") || trimEnv("META_APP_SECRET");
+  const secret = trimEnv("THREADS_APP_SECRET");
+
   if (!secret) {
     throw new ServiceError(
       "unavailable",
-      "Threads authorization is not configured.",
+      "Threads authorization is not configured. The Threads app secret is missing.",
       { status: 503 },
     );
   }
+
   return secret;
 }
 

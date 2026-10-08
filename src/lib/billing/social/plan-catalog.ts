@@ -14,6 +14,8 @@ const ESSENTIAL_NETWORKS: readonly SocialBillingNetwork[] = [
   'pinterest',
   'bluesky',
   'twitch',
+  'web',
+  'blog',
 ];
 
 const PAID_NETWORKS: readonly SocialBillingNetwork[] = [

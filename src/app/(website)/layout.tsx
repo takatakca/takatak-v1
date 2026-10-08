@@ -43,6 +43,11 @@ export const metadata: Metadata = {
   authors: [{ name: "TAKATAK" }],
   creator: "TAKATAK",
   publisher: "TAKATAK",
+
+  other: {
+    "takatak-site-verification": "Uiqdl66eHgBENWGITqm8nInBumnb1n2b"
+  },
+
   metadataBase: new URL(getApplicationOrigin()),
   openGraph: {
     type: "website",

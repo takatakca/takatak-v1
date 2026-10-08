@@ -82,4 +82,22 @@ if (!migrationSource.includes("github.event_name == 'workflow_run' && 'apply' ||
   throw new Error("Automatic staging migration run must use apply mode.");
 }
 
+if (!migrationSource.includes("node scripts/reconcile-staging-migrations.mjs")) {
+  throw new Error("Staging migration workflow must execute the guarded reconciler.");
+}
+
+const reconcilerSource = readFileSync("scripts/reconcile-staging-migrations.mjs", "utf8");
+for (const needle of [
+  "approvedRepoMigrations",
+  "Unrelated repo migrations intentionally outside this AHMV staging gate",
+  "Refusing global prisma migrate deploy because unrelated repo migrations are outside this staging gate",
+]) {
+  if (!reconcilerSource.includes(needle)) {
+    throw new Error(`Missing AHMV-scoped staging reconciliation safeguard: ${needle}`);
+  }
+}
+if (reconcilerSource.includes('runPrisma(["deploy"]')) {
+  throw new Error("AHMV staging reconciliation must not run global prisma migrate deploy.");
+}
+
 console.log("TAKATAK staging migration + release workflow safeguards: PASS");

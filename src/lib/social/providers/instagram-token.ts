@@ -18,15 +18,16 @@ function trimEnv(name: string): string | null {
 }
 
 function getInstagramAppSecret(): string {
-  const secret =
-    trimEnv("INSTAGRAM_APP_SECRET") || trimEnv("META_APP_SECRET");
+  const secret = trimEnv("INSTAGRAM_APP_SECRET");
+
   if (!secret) {
     throw new ServiceError(
       "unavailable",
-      "Instagram authorization is not configured.",
+      "Direct Instagram authorization is not configured. The Instagram app secret is missing.",
       { status: 503 },
     );
   }
+
   return secret;
 }
 
