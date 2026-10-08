@@ -32,6 +32,31 @@ function websiteMeta(metadata: unknown): LeadDetail["website"] {
   return { kind: str(m.kind), sourcePage: str(m.sourcePage), language: str(m.language) };
 }
 
+/** Prisma "table does not exist": the lead_attachments migration is not applied yet. */
+function isMissingTable(error: unknown): boolean {
+  return Boolean(error && typeof error === "object" && (error as { code?: unknown }).code === "P2021");
+}
+
+/**
+ * Attachments are optional: until migration 20261008090000 runs on a database,
+ * the lead page still works and simply shows no files.
+ */
+async function loadAttachments(
+  prisma: NonNullable<ReturnType<typeof getPrisma>>,
+  leadId: string,
+): Promise<LeadDetail["attachments"]> {
+  try {
+    return await prisma.leadAttachment.findMany({
+      where: { leadId, status: { not: "deleted" } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true },
+    });
+  } catch (error) {
+    if (isMissingTable(error)) return [];
+    throw error;
+  }
+}
+
 export async function getLeadDetail(id: string): Promise<LeadDetail | "unavailable" | null> {
   if (!isLeadId(id)) return null;
   const scope = await resolveDataScope();
@@ -43,11 +68,6 @@ export async function getLeadDetail(id: string): Promise<LeadDetail | "unavailab
     where: { id, ...(scope.clientIds ? { clientId: { in: scope.clientIds } } : {}) },
     include: {
       leadSource: { select: { name: true } },
-      attachments: {
-        where: { status: { not: "deleted" } },
-        orderBy: { createdAt: "asc" },
-        select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true },
-      },
       activities: {
         orderBy: { createdAt: "desc" },
         take: 50,
@@ -56,6 +76,8 @@ export async function getLeadDetail(id: string): Promise<LeadDetail | "unavailab
     },
   });
   if (!lead) return null;
+
+  const attachments = await loadAttachments(prisma, lead.id);
 
   return {
     id: lead.id,
@@ -72,7 +94,7 @@ export async function getLeadDetail(id: string): Promise<LeadDetail | "unavailab
     sourceName: lead.leadSource?.name ?? null,
     createdAt: lead.createdAt,
     website: websiteMeta(lead.metadata),
-    attachments: lead.attachments,
+    attachments,
     activities: lead.activities,
   };
 }
