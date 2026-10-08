@@ -429,7 +429,6 @@ model Client {
   customerSourceEvidence    CustomerSourceEvidence[]
   customerInteractions      CustomerInteraction[]
   customerImportBatches     CustomerImportBatch[]
-  customerImportAuthorizations CustomerImportAuthorization[]
 
   adSubscription            AdSubscription?
   adCampaigns               AdCampaign[]
@@ -4418,19 +4417,3 @@ model CustomerImportBatch {
 }
 
 
-model CustomerImportAuthorization {
-  id          String    @id @default(uuid()) @db.Uuid
-  clientId    String    @db.Uuid
-  tokenHash   String    @unique
-  label       String
-  status      String    @default("active")
-  expiresAt   DateTime
-  usedAt      DateTime?
-  createdAt   DateTime  @default(now())
-
-  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
-
-  @@index([clientId, status])
-  @@index([expiresAt])
-  @@map("customer_import_authorizations")
-}
