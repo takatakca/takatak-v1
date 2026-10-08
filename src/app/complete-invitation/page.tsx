@@ -186,7 +186,7 @@ export default async function CompleteInvitationPage() {
           </div>
 
           <InvitationCompletionForm
-            email={profile.email}
+            email={profile.email ?? ""}
             initialFirstName={
               profile.firstName ?? ""
             }

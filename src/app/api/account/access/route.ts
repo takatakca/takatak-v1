@@ -89,7 +89,20 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const emailChanged = email !== profile.email;
+    if (email === null && profile.email) {
+      return jsonResponse(
+        {
+          ok: false,
+          message: "Enter an email address, or leave your current email unchanged.",
+          fieldErrors: {
+            email: "Enter an email address, or leave your current email unchanged.",
+          },
+        },
+        400,
+      );
+    }
+
+    const emailChanged = email !== null && email !== profile.email;
     if (!emailChanged && !newPassword) {
       return jsonResponse(
         { ok: false, message: "There are no access changes to save." },
@@ -97,7 +110,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (emailChanged) {
+    if (email && emailChanged) {
       const taken = await prisma.profile.findFirst({
         where: {
           email,
@@ -124,7 +137,7 @@ export async function PATCH(request: NextRequest) {
       const { error: authError } = await admin.auth.admin.updateUserById(
         profile.authUserId,
         {
-          ...(emailChanged ? { email, email_confirm: true } : {}),
+          ...(emailChanged && email ? { email, email_confirm: true } : {}),
           ...(newPassword ? { password: newPassword } : {}),
         },
       );
@@ -148,7 +161,7 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    if (emailChanged) {
+    if (email && emailChanged) {
       try {
         await prisma.$transaction(async (transaction) => {
           await transaction.profile.update({
@@ -197,7 +210,7 @@ export async function PATCH(request: NextRequest) {
           entityType: "Profile",
           entityId: profile.id,
           metadata: {
-            note: `${profile.displayName ?? profile.email} updated their password.`,
+            note: `${profile.displayName ?? profile.email ?? "A phone identity"} updated their password.`,
           },
         },
       });

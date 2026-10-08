@@ -58,6 +58,24 @@ async function main() {
       resendRoute.includes("phone_auth_migrated"),
   );
 
+  const loginForm = readFileSync(
+    resolve(process.cwd(), "src/components/auth/master-phone-login-form.tsx"),
+    "utf8",
+  );
+  const registrationForm = readFileSync(
+    resolve(process.cwd(), "src/components/auth/master-phone-registration-form.tsx"),
+    "utf8",
+  );
+  assert(
+    "login opens on the mobile number",
+    loginForm.includes('useState<Mode>("phone")'),
+  );
+  assert(
+    "registration accepts a phone without an email",
+    registrationForm.includes("const emailError = email ? validateEmail(email) : undefined") &&
+      registrationForm.includes("Recovery email"),
+  );
+
   const json = await parseAuthResponse(
     new Response(JSON.stringify({ ok: false, message: "Invalid OTP recheck!", code: "invalid_otp" }), {
       status: 400,

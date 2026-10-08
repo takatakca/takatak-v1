@@ -41,7 +41,7 @@ export interface AdminUserSummary {
   id: string;
   authUserId: string;
   displayName: string | null;
-  email: string;
+  email: string | null;
   platformRole: string;
   profileStatus: string;
   memberships: AdminUserMembershipSummary[];

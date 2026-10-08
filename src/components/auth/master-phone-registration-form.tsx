@@ -74,7 +74,7 @@ export function MasterPhoneRegistrationForm() {
     const errors: Record<string, string> = {};
     const firstNameError = validateFirstName(firstName);
     const lastNameError = validateLastName(lastName);
-    const emailError = validateEmail(email);
+    const emailError = email ? validateEmail(email) : undefined;
     const phoneError = validatePhone(values.phone);
     if (firstNameError) errors.firstName = firstNameError;
     if (lastNameError) errors.lastName = lastNameError;
@@ -109,7 +109,7 @@ export function MasterPhoneRegistrationForm() {
           last_name: lastName,
           full_name: `${firstName} ${lastName}`.trim(),
           display_name: `${firstName} ${lastName}`.trim(),
-          email,
+          ...(email ? { email } : {}),
           phone,
           source_application: "TAKATAK",
           takatak_terms_accepted_at: capturedAt,
@@ -162,12 +162,12 @@ export function MasterPhoneRegistrationForm() {
       </div>
 
       <div>
-        <label htmlFor="email" className="mb-1.5 block text-xs font-semibold text-foreground">Email</label>
+        <label htmlFor="email" className="mb-1.5 block text-xs font-semibold text-foreground">Recovery email <span className="font-normal text-muted-foreground">(optional)</span></label>
         <div className="relative">
           <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
           <input id="email" type="email" autoComplete="email" inputMode="email" value={values.email} disabled={loading} onChange={(event) => update("email", event.target.value)} className={inputClass} placeholder="you@company.com" />
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">Saved in your TAKATAK master profile. Your mobile number is verified first.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Optional. Your mobile number is the TAKATAK identity. Add an email later if you want account recovery.</p>
         {fieldErrors.email ? <p className="mt-1 text-xs text-rose-600">{fieldErrors.email}</p> : null}
       </div>
 
