@@ -1,6 +1,7 @@
 import { Link } from "@/lib/website/nav";
 import { brand } from "@/lib/website/brand";
 import { TakatakLogo } from "@/components/brand/takatak-logo";
+import { hasOwnedBrands } from "@/lib/website/owned-brands";
 
 const cols = [
   {
@@ -46,6 +47,8 @@ const cols = [
     title: "Company",
     links: [
       { to: "/", label: "About TAKATAK" },
+      // Shown once src/lib/website/owned-brands.ts lists a confirmed brand.
+      ...(hasOwnedBrands ? [{ to: "/ecosystem", label: "Our brands" }] : []),
       { to: "/deals", label: "Today's Deals" },
       { to: "/login", label: "Sign in" },
       { to: "/register", label: "Get started" },
