@@ -130,6 +130,9 @@ jobs:
       - name: TAKATAK staging migration + release safeguards
         run: |
           node --check scripts/reconcile-staging-migrations.mjs
+          node --check scripts/staging-migration-history.mjs
+          node --check scripts/staging-release-approval.mjs
+          node --test scripts/staging-migration-history.test.mjs scripts/staging-release-approval.test.mjs
           npm run qa:staging-release
 
       - name: AHMV operational readiness safeguards
@@ -341,6 +344,11 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:billing-feed-db
+
+      - name: Won website order lead → billing queue against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:lead-order-billing-db
 
       - name: Build (webpack)
         env:

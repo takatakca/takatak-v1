@@ -246,6 +246,29 @@ export async function feedTakatakInvoice({ baseUrl, app, secret, sourceReference
 - `npm run qa:billing` now also runs `scripts/verify-billing-feed.ts` (signature and static guards).
 - `npm run qa:billing-feed-db` (CI ephemeral database) calls the real route handlers. It covers: queue under the verified app, idempotent replay, `409` on a changed draft, per-app references, body spoofing refused, wrong secret / unconfigured app / stale / tampered requests refused, invalid draft refused, and signed, app-scoped status lookups.
 
+## Website orders: won lead → invoice request (TK-027)
+
+A takatak.ca checkout order is stored as a Lead whose `metadata.order` the server priced from the catalog. When the lead is marked **Won**, a platform owner or admin sees an **Invoice** card on `/dashboard/leads/<id>`.
+
+1. The person billing chooses the taxes explicitly. Nothing is pre-checked and no jurisdiction is assumed. They also set the payment term (0–90 days).
+2. `POST /api/admin/billing/lead-orders/<leadId>`:
+   - access: `requirePlatformAdminApiAccess`, `readJsonBody`;
+   - body: `{ taxes, dueInDays }` only. Prices never come from the browser.
+3. The draft is built from the stored order (`lead-order-draft.ts`):
+   - one line for the tier, plus one line per add-on;
+   - a promo discount is spread over the lines to the exact cent, so the subtotal equals the quoted total;
+   - invoice and due dates are Montréal dates.
+
+   The stored order must add up (tier + add-ons = subtotal, subtotal − discount = total), otherwise it is not billable.
+4. The draft goes into the **central billing queue** through `enqueueInvoiceRequest`:
+   - `sourceApp: "takatak_core"`, `sourceReference: "website-order:<leadId>"`;
+   - `clientId: null`: a website guest has no workspace, and the customer is the lead's contact.
+
+   A repeat click returns the same request. A different draft for the same order is refused.
+5. One lead-history entry and the queue's audit entry are written. The card then shows the request status. The owner sends the Facturations draft from Admin › Billing as usual. Nothing is issued, emailed or charged here.
+
+Tests: `qa:billing` (`verify-lead-order-billing.ts`) and `qa:lead-order-billing-db` (CI ephemeral database).
+
 ## Deliberately not in this foundation
 
 - No issuance, approval, delivery or publication actions from TAKATAK. Facturations keeps these capabilities `false` in v1. The only payment action is the client's Stripe Checkout above; the payment proof itself is recorded by Facturations, never by TAKATAK.
