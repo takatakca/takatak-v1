@@ -53,7 +53,16 @@ Facturations stays the invoicing authority **for GROUPE TAKATAK itself**.
   - The invoice is created with `send_invoice`, `pending_invoice_items_behavior: exclude`, itemized lines (`quantity` + `unit_amount_decimal`), then finalized and **sent by Stripe**.
   - Every write goes to the workspace's stored `stripeAccount`, with an idempotency key per workspace + form reference + step. Re-submitting a form creates nothing new.
   - The form requires an explicit confirmation. Stripe computes the final total; the page shows an estimate (each tax computed on the subtotal, rounded half-up).
-- **Invoice list** on `/dashboard/client-billing`: the last 24 finalized invoices of the connected account, with Stripe-hosted "Voir" and PDF links.
+- **Dashboard** `/dashboard/client-billing`, reachable from the sidebar as "Bill my customers":
+  - Summary of the last 100 finalized invoices: to collect, overdue, and paid in the last 30 days. Totals are in CAD only, and invoices in other currencies are counted separately, never added.
+  - Filters: Toutes / À encaisser / En retard / Payées.
+  - Each row has Stripe-hosted "Voir" and PDF links, plus the amount still due.
+- **Actions on an open invoice** (`POST /api/billing/client-invoicing/invoices/{in_…}`, body `{ "action": … }`, `manage_settings`, origin-checked):
+  - `remind` re-sends the Stripe email. It works only for `send_invoice` invoices, at most once per invoice per day: the idempotency key includes the UTC day.
+  - `mark_paid` records an offline payment (`paid_out_of_band`), such as a cheque, transfer or cash. **Nothing is charged.**
+  - `void` cancels the invoice for good.
+  - The invoice is re-read from the workspace's own `stripeAccount` first. An id from another account, a paid or a void invoice is refused, and Stripe receives no write.
+  - Every action is written to `audit_logs` (`client_invoicing.invoice_*`, entity `stripe_invoice`) with the acting profile.
 
 TAKATAK never creates charges, transfers, payouts or platform fees on a client account.
 
@@ -66,7 +75,7 @@ TAKATAK never creates charges, transfers, payouts or platform fees on a client a
 
 ## Next steps
 
-1. Connect `invoice.*` events (paid, overdue) for notifications, plus void and credit notes from TAKATAK.
+1. Connect `invoice.*` events (paid, overdue) for notifications, plus credit notes from TAKATAK. Void, reminders and offline payments are done.
 2. **Feeding.** TAKATAK apps (Rentauto hosts, FoodHub merchants, …) create invoices on their merchant's account through the same service.
 3. **Optional platform fee** (`application_fee_amount`), only after an explicit business decision.
 

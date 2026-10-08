@@ -15,10 +15,11 @@ import { ServiceError } from "@/lib/services/service-error";
 
 import { clientConnectState } from "./connect-policy";
 import { isClientInvoicingEnabled } from "./env";
+import { canActOnClientInvoice, clientInvoiceActionKey, type ClientInvoiceAction } from "./invoice-actions";
 import { stripePercentage, type ClientInvoiceInput } from "./invoice-input";
 import { clientInvoiceContentHash, clientInvoiceIdempotencyKey } from "./invoice-keys";
 
-const INVOICE_LIST_LIMIT = 24;
+const INVOICE_LIST_LIMIT = 100;
 
 async function requireActiveAccount(clientId: string): Promise<string> {
   if (!isClientInvoicingEnabled()) {
@@ -157,12 +158,15 @@ export async function createAndSendClientInvoice(input: {
   };
 }
 
+/** A sent invoice plus whether Stripe emails it (reminders only apply then). */
+export type ClientIssuedInvoice = ClientInvoiceView & { remindable: boolean };
+
 export type ClientIssuedInvoicesResult =
-  | { status: "ok"; invoices: ClientInvoiceView[] }
+  | { status: "ok"; invoices: ClientIssuedInvoice[] }
   | { status: "not_active" }
   | { status: "unavailable" };
 
-/** Finalized invoices on this workspace's own connected account. */
+/** Finalized invoices on this workspace's own connected account, newest first. */
 export async function listClientIssuedInvoices(clientId: string): Promise<ClientIssuedInvoicesResult> {
   let stripeAccount: string;
 
@@ -175,12 +179,113 @@ export async function listClientIssuedInvoices(clientId: string): Promise<Client
   try {
     const now = new Date();
     const page = await getStripe().invoices.list({ limit: INVOICE_LIST_LIMIT }, { stripeAccount });
-    const invoices = page.data
-      .map((invoice) => mapStripeInvoice(invoice, now))
-      .filter((view): view is ClientInvoiceView => view !== null);
+    const invoices = page.data.flatMap((invoice) => {
+      const view = mapStripeInvoice(invoice, now);
+
+      return view ? [{ ...view, remindable: invoice.collection_method === "send_invoice" }] : [];
+    });
 
     return { status: "ok", invoices };
   } catch {
     return { status: "unavailable" };
   }
+}
+
+function stripeErrorType(error: unknown): string | null {
+  const type = error && typeof error === "object" ? (error as { type?: unknown }).type : null;
+
+  return typeof type === "string" ? type : null;
+}
+
+const AUDIT_ACTION: Record<ClientInvoiceAction, string> = {
+  remind: "client_invoicing.invoice_reminded",
+  void: "client_invoicing.invoice_voided",
+  mark_paid: "client_invoicing.invoice_marked_paid",
+};
+
+/**
+ * Sends a reminder, voids, or records an offline payment for one open invoice
+ * of this workspace's own connected account. The invoice is read back from
+ * that account first, so an id from another account is simply not found.
+ */
+export async function applyClientInvoiceAction(input: {
+  clientId: string;
+  profileId: string;
+  invoiceId: string;
+  action: ClientInvoiceAction;
+  now?: Date;
+}): Promise<ClientInvoiceView> {
+  const stripeAccount = await requireActiveAccount(input.clientId);
+  const stripe = getStripe();
+  const now = input.now ?? new Date();
+  let invoice: Stripe.Invoice;
+
+  try {
+    invoice = await stripe.invoices.retrieve(input.invoiceId, {}, { stripeAccount });
+  } catch (error) {
+    if (stripeErrorType(error) === "StripeInvalidRequestError") {
+      throw new ServiceError("not_found", "Facture introuvable.");
+    }
+
+    throw new ServiceError("unavailable", "Stripe est momentanément indisponible. Réessayez dans quelques minutes.");
+  }
+
+  const view = mapStripeInvoice(invoice as never, now);
+
+  if (!view || view.id !== input.invoiceId) {
+    throw new ServiceError("not_found", "Facture introuvable.");
+  }
+
+  if (!canActOnClientInvoice(view.status)) {
+    throw new ServiceError("conflict", "Cette facture n’est plus ouverte.");
+  }
+
+  if (input.action === "remind" && invoice.collection_method !== "send_invoice") {
+    throw new ServiceError("conflict", "Stripe prélève cette facture automatiquement : aucun rappel à envoyer.");
+  }
+
+  const options = { stripeAccount, idempotencyKey: clientInvoiceActionKey(input.clientId, input.invoiceId, input.action, now) };
+  let updated: Stripe.Invoice;
+
+  try {
+    updated = input.action === "remind"
+      ? await stripe.invoices.sendInvoice(input.invoiceId, {}, options)
+      : input.action === "void"
+        ? await stripe.invoices.voidInvoice(input.invoiceId, {}, options)
+        : await stripe.invoices.pay(input.invoiceId, { paid_out_of_band: true }, options);
+  } catch (error) {
+    const type = stripeErrorType(error);
+
+    if (type === "StripeInvalidRequestError" || type === "StripeIdempotencyError") {
+      throw new ServiceError("conflict", "Stripe a refusé cette action. La facture a peut-être changé : rechargez la page.");
+    }
+
+    throw new ServiceError("unavailable", "Stripe est momentanément indisponible. Réessayez dans quelques minutes.");
+  }
+
+  const result = mapStripeInvoice(updated as never, now) ?? view;
+
+  try {
+    // The Stripe action already happened; a failed audit write must not make
+    // the client retry it, so it is logged instead of surfaced.
+    await getPrisma()?.auditLog.create({
+      data: {
+        profileId: input.profileId,
+        clientId: input.clientId,
+        action: AUDIT_ACTION[input.action],
+        entityType: "stripe_invoice",
+        entityId: input.invoiceId,
+        metadata: {
+          number: result.number,
+          status: result.status,
+          currency: result.currency,
+          amountDueMinor: view.amountDueMinor,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("[client-invoicing] audit log write failed", { action: input.action, error: error instanceof Error ? error.message : "unknown" });
+  }
+
+  return result;
 }

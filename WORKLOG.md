@@ -7,15 +7,14 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
 
-- [ ] **Staging migrations: approve and apply.** First merge #147 (staging apply gate). Then take a backup of the staging Supabase project. Then run "Reconcile TAKATAK staging migrations" with mode `apply` and the approval phrase from `docs/staging-migration-reconciliation.md`. *Blocks:* the staging deploy, including billing. *(2026-10-08; the staging secret is set, and audit run 37762369395 matched the three billing migrations)*
+- [ ] **Staging migrations: approve and apply.** #147 (the staging apply gate) is merged. Take a backup of the staging Supabase project. Then run "Reconcile TAKATAK staging migrations" with mode `apply` and the approval phrase from `docs/staging-migration-reconciliation.md`. *Blocks:* the staging deploy, including billing. *(2026-10-08; the staging secret is set, and audit run 37762369395 matched the three billing migrations)*
 - [ ] **Production secrets.** In GitHub → Settings → Environments → `production`, add the 7 `TAKATAK_PRODUCTION_*` secrets, then run "Promote verified TAKATAK production artifact". *Blocks:* deploying `main` to takatak.ca. *(2026-10-08, session 01KBGh1v)*
 - [ ] **Deploy agent secrets.** Add `COOLIFY_API_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `PROD_DATABASE_URL`, `PROD_DIRECT_URL`, `EMAIL_USER`, `EMAIL_PASSWORD` and an AI provider API key to the Claude cloud environment secrets. *Blocks:* the Coolify test copy and AI features. *(2026-10-08, session 01W1ntbf)*
-- [ ] **Merge #129** (client billing dashboard). CI is green. *Blocks:* clients managing their invoices. *(2026-10-08, session 01HWFgGo)*
 - [ ] **Approve Facturations #158, #159, #160 as `takatakmtl`.** The agent merges them once approved. *Blocks:* Facturations staging and the issuance status shown to clients. *(2026-10-07, session 01HWFgGo)*
 - [ ] **Owner decisions** listed under "Overlaps to settle" below.
 
 ## ▶ Next up (priority order: first item an agent can do; skip anything waiting on a person)
-1. **TK-027:** an accepted order lead becomes a Facturations draft through the billing queue (`enqueueInvoiceRequest`). Website requests→Leads is on `main`. *(billing, session 01HWFgGo)*
+1. **Homepage redesign** (shorter homepage, ecosystem grid, new `/ecosystem` "Our brands" page). Session 01HWFgGo is building it on `claude/homepage-redesign`. Don't edit `src/app/(website)/page.tsx` or `src/components/website/home/*` until it merges. (TK-027 is done: #146.)
 2. **After Facturations #160 merges:** pin `FACTURATIONS_REF` in `ci.yml` to the new Facturations `main` and add issue → pay to the contract test.
 3. **After the staging apply is approved and run:** check that the three billing migrations are recorded and that staging deploys. Then turn on billing on staging (go-live guide, steps 7–10).
 4. Then the `Open work` lines below and knowledgeAI `docs/11-DEV-BACKLOG.md`.
@@ -28,15 +27,17 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Billing:** `main` already has a Facturations integration (#124: billing request queue → Facturations drafts). `claude/facturations-billing-integration` (#138) is likely a duplicate: compare, then close #138. #129 (Stripe client invoicing) is a separate system.
 
 ## Open work
+- 2026-10-08 | claude (session 01HWFgGo) | claude/lead-order-billing → #146 | done (merged 750dad3) | TK-027: won takatak.ca order lead → billing queue → Facturations draft (Invoice card on the lead page, explicit taxes) | owner merges; then mark an order Won and create its invoice request
+- 2026-10-08 | claude (session 01KBGh1v) | main | waiting on owner | Triage of all 23 open PRs. Merge: #144 #129 #146 #147 #101 #95 #75. Close: #7 #17 #18 #23 (already on main), #145 (dup of #148). Owner yes/no: #148, #135-137 vs #117 (split #117), #128, #104, #27, #28, #143/#140 | owner replies "approve triage" (Launch Board step 6); then merge in that order and close
+- 2026-10-08 | cursor | fix/staging-migration-audit → #147 | done (merged 82df62e by session 01HWFgGo) | Manual and automatic staging releases now require the same migration-approval evidence. An audit skips the release and cannot select apply. `website_lead_attachments` is still the missing migration. No backup has been taken and no SQL was applied. | Merge #147 only to install the gate. Apply stays a separate approval after a staging backup.
 - 2026-10-08 | claude (session 01KBGh1v) | claude/brand-blue → #142 | done (merged 4103db4) | Public site from green to GROUPE TAKATAK brand blue (tokens, 58 classes, share image) | swap the old gold TK logo after the owner uploads files to knowledgeAI/brand/
 - 2026-10-08 | claude (session 01KBGh1v) | main | ready to deploy | main now has #130–#134 and #139 merged (colours, cleanup, website requests→Leads, https/SEO, work log) | owner: add the 7 TAKATAK_PRODUCTION_* secrets in GitHub › Settings › Environments › production, then run "Promote verified TAKATAK production artifact" (validate, then promote)
 - 2026-10-08 | owner + TAKATAK-V1 session (01W1ntbf) | Coolify deploy | blocked: secrets | Deploy: takatak.ca via GitHub Actions "Promote verified TAKATAK production artifact" (needs 7 TAKATAK_PRODUCTION_* secrets in GitHub › Environments › production); test copy at knowledge.takatak.ca via Coolify | owner adds COOLIFY_API_TOKEN, SUPABASE_ACCESS_TOKEN, PROD_DATABASE_URL, PROD_DIRECT_URL, EMAIL_USER, EMAIL_PASSWORD to the cloud environment secrets + an AI provider API key, then starts a new session
 - 2026-10-08 | claude (session 01KBGh1v) | claude/seo-site-audit → #135 | hold (overlaps #117) | SEO audit dashboard | owner picks this or #117
 - 2026-10-08 | claude (session 01KBGh1v) | claude/qmaps-listings-reviews-sync → #136 | hold (overlaps #117) | QMAPS listings/reviews → V1 | owner decides reviews owner
 - 2026-10-08 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | hold (overlaps #117) | AI Studio draft generation (OpenAI/Claude) | owner decides AI owner
-- 2026-10-08 | claude (session 01KBGh1v) | claude/facturations-billing-integration → #138 | likely duplicate | Read-only Facturations invoice drafts | main already has a Facturations integration (#124, billing request queue); compare, then close #138
-- 2026-10-08 | claude (session 01HWFgGo) | claude/needs-human-board → PR | PR open | "Needs a human" post-its + "Next up" queue at the top of this log | owner merges
-- 2026-10-08 | claude (session 01HWFgGo) | claude/client-billing-dashboard → #129 | PR open, CI green | Client billing dashboard: summary, filters, remind / void / mark paid, sidebar entry | owner merges
+- 2026-10-08 | claude (session 01HWFgGo) | claude/needs-human-board → #144 | merging | "Needs a human" post-its + "Next up" queue at the top of this log | agents keep both lists true
+- 2026-10-08 | claude (session 01HWFgGo) | claude/client-billing-dashboard → #129 | done (merged 3e81fdf) | Client billing dashboard: summary, filters, remind / void / mark paid, sidebar entry | —
 - 2026-10-08 | other agent | feature/havana-customer-intelligence → #128 | draft | Tenant-isolated customer intelligence (CRM) | finish or close
 - 2026-10-07 | other agent | claude/festive-newton-5i9rv7 → #117 | PR open, 15k lines | Growth Suite (reputation, analytics, chat, AI agents, Google, plans) | settle overlaps above, then review
 - 2026-10-05 | other agent | infra/contabo-coolify → #104 | draft | Contabo/Coolify hosting foundation | owner: is hosting moving off MochaHost?
