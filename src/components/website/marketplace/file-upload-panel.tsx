@@ -45,7 +45,7 @@ export function FileUploadPanel({
   return (
     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
       <label className={`flex flex-col items-center justify-center py-4 text-center ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
-        <Upload size={22} className="text-emerald-700" />
+        <Upload size={22} className="text-primary" />
         <span className="mt-2 text-sm font-medium text-slate-700">Select reference files</span>
         <span className="mt-1 text-xs text-slate-500">
           Up to {MAX_ATTACHMENTS_PER_LEAD} files, {MAX_MB} MB each: PDF, images, Word, Excel, PowerPoint or text.

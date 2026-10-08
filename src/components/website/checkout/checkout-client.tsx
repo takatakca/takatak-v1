@@ -70,9 +70,9 @@ function MarketplaceOrder({
   if (reference) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-16">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-8">
+        <div className="rounded-2xl border border-primary/25 bg-primary/5 p-8">
           <div className="flex items-start gap-3">
-            <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-emerald-700" />
+            <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-primary" />
             <div>
               <h1 className="text-2xl font-bold text-slate-950">Order received</h1>
               <p className="mt-2 text-sm leading-6 text-slate-700">
@@ -85,7 +85,7 @@ function MarketplaceOrder({
                 {confirmedTotal !== null ? ` · Quoted total ${dollars(confirmedTotal)} CAD` : null}
               </p>
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/marketplace" className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">
+                <Link href="/marketplace" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">
                   Back to marketplace
                 </Link>
                 <Link href="/dashboard" className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800">
@@ -112,7 +112,7 @@ function MarketplaceOrder({
         <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between bg-[#090a1a] px-6 py-4 text-white">
             <span className="inline-flex items-center gap-2 font-semibold">
-              <ShieldCheck size={17} className="text-emerald-400" />
+              <ShieldCheck size={17} className="text-sky-400" />
               TAKATAK order summary
             </span>
             <span className="text-xs text-slate-400">CAD</span>
@@ -137,7 +137,7 @@ function MarketplaceOrder({
               {selection.addons.map((item) => (
                 <div key={item.label} className="flex justify-between">
                   <span className="inline-flex items-center gap-2 text-slate-600">
-                    <Check size={13} className="text-emerald-700" />
+                    <Check size={13} className="text-primary" />
                     {item.label}
                   </span>
                   <span className="font-medium text-slate-950">
@@ -146,7 +146,7 @@ function MarketplaceOrder({
                 </div>
               ))}
               {selection.discountCents > 0 ? (
-                <div className="flex justify-between text-emerald-700">
+                <div className="flex justify-between text-primary">
                   <span>FIRST10 discount</span>
                   <span>-{dollars(selection.discountCents)}</span>
                 </div>
@@ -167,7 +167,7 @@ function MarketplaceOrder({
               type="button"
               onClick={sendOrder}
               disabled={sending}
-              className="mt-6 inline-flex w-full justify-center rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              className="mt-6 inline-flex w-full justify-center rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
               {sending ? "Sending…" : "Send order to TAKATAK"}
             </button>

@@ -217,7 +217,7 @@ export function GigDetailClient({
                 key={`${kind}-${index}`}
                 className={`overflow-hidden rounded-lg border ${
                   index === 0
-                    ? "border-emerald-600 ring-1 ring-emerald-200"
+                    ? "border-primary ring-1 ring-primary/25"
                     : "border-slate-200"
                 }`}
               >
@@ -244,7 +244,7 @@ export function GigDetailClient({
                   >
                     <Check
                       size={14}
-                      className="mt-1 shrink-0 text-emerald-700"
+                      className="mt-1 shrink-0 text-primary"
                     />
 
                     {item}
@@ -258,7 +258,7 @@ export function GigDetailClient({
             <div className="flex items-start gap-3">
               <ShieldCheck
                 size={20}
-                className="mt-0.5 shrink-0 text-emerald-400"
+                className="mt-0.5 shrink-0 text-sky-400"
               />
 
               <div>
@@ -298,7 +298,7 @@ export function GigDetailClient({
                     }
                     className={`px-4 py-3 text-sm font-semibold ${
                       index === tierIndex
-                        ? "border-b-2 border-emerald-600 bg-emerald-50 text-emerald-700"
+                        ? "border-b-2 border-primary bg-primary/5 text-primary"
                         : "text-slate-500 hover:text-slate-950"
                     }`}
                   >
@@ -338,7 +338,7 @@ export function GigDetailClient({
                     >
                       <Check
                         size={14}
-                        className="mt-1 shrink-0 text-emerald-700"
+                        className="mt-1 shrink-0 text-primary"
                       />
 
                       {item}
@@ -378,7 +378,7 @@ export function GigDetailClient({
                         }
                         className={`flex w-full items-center justify-between gap-3 rounded-lg border px-4 py-3 text-left text-sm ${
                           selected
-                            ? "border-emerald-600 bg-emerald-50"
+                            ? "border-primary bg-primary/5"
                             : "border-slate-200 hover:bg-slate-50"
                         }`}
                       >
@@ -386,7 +386,7 @@ export function GigDetailClient({
                           <span
                             className={`flex h-4 w-4 items-center justify-center rounded border ${
                               selected
-                                ? "border-emerald-600 bg-emerald-600 text-white"
+                                ? "border-primary bg-primary text-white"
                                 : "border-slate-300"
                             }`}
                           >
@@ -483,7 +483,7 @@ export function GigDetailClient({
               <span className="inline-flex items-center gap-1.5">
                 <ShieldCheck
                   size={13}
-                  className="text-emerald-400"
+                  className="text-sky-400"
                 />
 
                 TAKATAK order
@@ -504,7 +504,7 @@ export function GigDetailClient({
               </p>
 
               {pkg.intakeRequired ? (
-                <div className="mt-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800">
+                <div className="mt-3 rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-[11px] text-primary">
                   Intake required — TAKATAK will
                   collect a project brief before
                   kickoff.
@@ -541,7 +541,7 @@ export function GigDetailClient({
                       );
                     }}
                     placeholder="FIRST10"
-                    className="min-w-0 flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                    className="min-w-0 flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
                   />
 
                   <button
@@ -554,7 +554,7 @@ export function GigDetailClient({
                 </div>
 
                 {promoApplied ? (
-                  <p className="mt-2 text-xs text-emerald-700">
+                  <p className="mt-2 text-xs text-primary">
                     10% discount applied: -
                     {dollars(discount)}
                   </p>
@@ -564,7 +564,7 @@ export function GigDetailClient({
               <button
                 type="button"
                 onClick={continueCheckout}
-                className="mt-4 w-full rounded-md bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500"
+                className="mt-4 w-full rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
               >
                 Continue ({dollars(total)})
               </button>
@@ -580,7 +580,7 @@ export function GigDetailClient({
               <p className="mt-3 inline-flex items-start gap-1.5 text-xs leading-5 text-slate-500">
                 <ShieldCheck
                   size={12}
-                  className="mt-0.5 text-emerald-700"
+                  className="mt-0.5 text-primary"
                 />
 
                 Your selection is saved before
@@ -594,7 +594,7 @@ export function GigDetailClient({
             <p className="flex items-start gap-2">
               <Check
                 size={12}
-                className="mt-0.5 text-emerald-700"
+                className="mt-0.5 text-primary"
               />
 
               TAKATAK organizes the project
@@ -604,7 +604,7 @@ export function GigDetailClient({
             <p className="flex items-start gap-2">
               <Check
                 size={12}
-                className="mt-0.5 text-emerald-700"
+                className="mt-0.5 text-primary"
               />
 
               Files and messages remain inside
@@ -614,7 +614,7 @@ export function GigDetailClient({
             <p className="flex items-start gap-2">
               <MessageSquare
                 size={12}
-                className="mt-0.5 text-emerald-700"
+                className="mt-0.5 text-primary"
               />
 
               Revisions remain connected to the

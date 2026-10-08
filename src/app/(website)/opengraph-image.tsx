@@ -22,7 +22,7 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "72px 80px",
-          background: "linear-gradient(135deg, #0f172a 0%, #111827 55%, #064e3b 100%)",
+          background: "radial-gradient(circle at 80% 0%, #12306b 0%, #0B1B3D 40%, #060D1F 100%)",
           color: "#ffffff",
         }}
       >
@@ -32,25 +32,25 @@ export default function OpengraphImage() {
               width: 64,
               height: 64,
               borderRadius: 16,
-              background: "#10b981",
+              background: "#1F8BFF",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 40,
               fontWeight: 800,
-              color: "#0f172a",
+              color: "#FFFFFF",
             }}
           >
             T
           </div>
           <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: 2 }}>{brand.brandName}</div>
-          <div style={{ display: "flex", marginLeft: "auto", fontSize: 28, color: "#6ee7b7" }}>{brand.domain}</div>
+          <div style={{ display: "flex", marginLeft: "auto", fontSize: 28, color: "#29C3FF" }}>{brand.domain}</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.05, maxWidth: 960 }}>
             Websites, domains, hosting &amp; growth
           </div>
-          <div style={{ fontSize: 30, color: "#a7f3d0", maxWidth: 960 }}>{brand.positioning}</div>
+          <div style={{ fontSize: 30, color: "#29C3FF", maxWidth: 960, letterSpacing: 2 }}>Digital Solutions. Real Results.</div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
           {SERVICES.map((label) => (
@@ -60,9 +60,9 @@ export default function OpengraphImage() {
                 display: "flex",
                 padding: "8px 16px",
                 borderRadius: 999,
-                border: "2px solid rgba(167, 243, 208, 0.45)",
+                border: "2px solid rgba(41, 195, 255, 0.45)",
                 fontSize: 22,
-                color: "#d1fae5",
+                color: "#D6ECFF",
               }}
             >
               {label}
