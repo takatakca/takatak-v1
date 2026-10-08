@@ -12,8 +12,8 @@ export default async function LeadInboxPage() {
     <div className="space-y-5">
       <LeadsHeader
         title="Lead Inbox"
-        subtitle="All tracked leads. Every record is an internal foundation demo — nothing is imported from FLEXS or any provider, and no outreach is sent."
-        badges={[{ label: "Foundation" }, { label: "Internal demo" }]}
+        subtitle="All tracked leads, including requests and orders sent from the takatak.ca website. Open a lead for the full request and attached files. No outreach is sent automatically."
+        badges={[{ label: "No automation" }]}
       />
       <LeadsSourceBanner source={data.source} label={data.sourceLabel} />
       {data.leads.length ? (

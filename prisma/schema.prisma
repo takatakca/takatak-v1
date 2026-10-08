@@ -421,6 +421,7 @@ model Client {
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
   leads                     Lead[]
+  leadAttachments           LeadAttachment[]
   billingInvoiceRequests    BillingInvoiceRequest[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
@@ -3078,6 +3079,7 @@ model Lead {
   leadCampaign    LeadCampaign?  @relation(fields: [leadCampaignId], references: [id])
   assignedProfile Profile?       @relation("AssignedLeads", fields: [assignedProfileId], references: [id])
   activities      LeadActivity[]
+  attachments     LeadAttachment[]
 
   @@index([clientId])
   @@index([businessBrandId])
@@ -4128,6 +4130,28 @@ model HockeyTravelProfile {
   @@map("hockey_travel_profiles")
 }
 
+/// Files a website visitor attached to their request. Stored in a private
+/// bucket; staff download through short-lived signed links only.
+model LeadAttachment {
+  id            String   @id @db.Uuid
+  clientId      String   @db.Uuid
+  leadId        String   @db.Uuid
+  storageBucket String
+  storagePath   String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  status        String   @default("quarantined")
+  createdAt     DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([storageBucket, storagePath], map: "lead_attachment_storage_key")
+  @@index([leadId])
+  @@index([clientId, createdAt])
+  @@map("lead_attachments")
+}
 
 // ════════════════════════════════════════════════════════════
 // GROUPE TAKATAK Billing — ecosystem invoice request queue.

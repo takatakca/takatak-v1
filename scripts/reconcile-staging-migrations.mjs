@@ -27,6 +27,7 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261006120000_takatak_billing_invoice_requests",
   "20261006140000_client_stripe_connect_accounts",
   "20261006150000_billing_invoice_checkout_sessions",
+  "20261008090000_website_lead_attachments",
 ];
 
 function fail(message) {

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { UpmindScripts } from "@/components/website/domain/upmind-scripts";
+import { HostingRequestFallback } from "@/components/website/hosting/HostingRequestFallback";
 import {
   UPMIND_CURRENCY,
   UPMIND_HOSTING_PLANS,
@@ -55,11 +56,31 @@ function UpmindPlanCard({
   );
 }
 
+/** Time allowed for the Upmind widget script to register before falling back. */
+const WIDGET_LOAD_TIMEOUT_MS = 10_000;
+
 export function UpmindHostingPlans({
   clientId = null,
 }: {
   clientId?: string | null;
 }) {
+  const [widgetsUnavailable, setWidgetsUnavailable] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.customElements) return;
+    if (window.customElements.get("upm-widget")) return;
+    let settled = false;
+    void window.customElements.whenDefined("upm-widget").then(() => {
+      settled = true;
+    });
+    const timer = window.setTimeout(() => {
+      if (!settled && !window.customElements.get("upm-widget")) setWidgetsUnavailable(true);
+    }, WIDGET_LOAD_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  if (widgetsUnavailable) return <HostingRequestFallback />;
+
   return (
     <>
       <UpmindScripts />

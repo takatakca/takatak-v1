@@ -97,6 +97,12 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Website lead capture safeguards
+        run: npm run qa:website-leads
+
+      - name: Lead detail actions
+        run: npm run qa:lead-actions
+
       - name: Client invoicing (Stripe Connect) safeguards
         run: npm run qa:client-invoicing
 
