@@ -2,7 +2,6 @@ import "server-only";
 
 import { getApplicationOrigin, resolvePublicUrl } from "@/lib/config/app-origin";
 import { ServiceError } from "@/lib/services/service-error";
-import { getMetaAppId } from "@/lib/social/providers/meta-oauth";
 
 export const THREADS_OAUTH_AUTHORIZE_HOST = "https://www.threads.net";
 
@@ -50,7 +49,17 @@ function assertAbsoluteHttpsOrLocalhost(value: string): void {
 }
 
 export function getThreadsAppId(): string {
-  return trimEnv("THREADS_APP_ID") || getMetaAppId();
+  const appId = trimEnv("THREADS_APP_ID");
+
+  if (!appId) {
+    throw new ServiceError(
+      "unavailable",
+      "Threads authorization is not configured. Ask an administrator to configure the Threads API application.",
+      { status: 503 },
+    );
+  }
+
+  return appId;
 }
 
 export function getThreadsOAuthRedirectUri(): string {

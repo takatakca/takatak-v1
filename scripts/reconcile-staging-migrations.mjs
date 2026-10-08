@@ -24,6 +24,10 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261003194500_takatak_ads_foundation",
   "20261004190000_community_content_moderation",
   "20261005043500_ahmv_smart_departure_entitlement",
+  "20261006120000_takatak_billing_invoice_requests",
+  "20261006140000_client_stripe_connect_accounts",
+  "20261006150000_billing_invoice_checkout_sessions",
+  "20261008090000_website_lead_attachments",
 ];
 
 function fail(message) {
@@ -118,6 +122,7 @@ try {
   }
 
   const approved = new Set(APPROVED_DEPLOY_MIGRATIONS);
+  const approvedRepoMigrations = repoMigrations.filter((name) => approved.has(name));
 
   const supabaseRows = await client.query(
     `select version, name, statements
@@ -157,29 +162,12 @@ try {
     externallyApplied.push(migration);
   }
 
-  const pending = repoMigrations.filter(
+  const pending = approvedRepoMigrations.filter(
     (name) => !applied.has(name) && !externallyApplied.includes(name),
   );
-  const unexpectedPending = pending.filter((name) => !approved.has(name));
-  if (unexpectedPending.length > 0) {
-    fail(
-      "Unexpected staging migrations are pending: " +
-        unexpectedPending.join(", "),
-    );
-  }
-
-  if (pending.length > 0) {
-    const firstPendingIndex = repoMigrations.indexOf(pending[0]);
-    const expectedSuffix = repoMigrations.slice(firstPendingIndex);
-    if (
-      pending.length !== expectedSuffix.length ||
-      pending.some((name, index) => name !== expectedSuffix[index])
-    ) {
-      fail(
-        "Staging pending migrations are not a contiguous repository suffix. Refusing out-of-order deploy.",
-      );
-    }
-  }
+  const unrelatedPending = repoMigrations.filter(
+    (name) => !approved.has(name) && !applied.has(name),
+  );
 
   console.log("[staging-migrations] Project verified:", EXPECTED_PROJECT_REF);
   console.log(
@@ -191,7 +179,11 @@ try {
     externallyApplied,
   );
   console.log("[staging-migrations] Pending approved migrations:", pending.length);
-  console.log("[staging-migrations] Pending list:", pending);
+  console.log("[staging-migrations] Pending approved list:", pending);
+  console.log(
+    "[staging-migrations] Unrelated repo migrations intentionally outside this AHMV staging gate:",
+    unrelatedPending.length,
+  );
 
   if (mode === "audit") {
     console.log("[staging-migrations] AUDIT PASS. No staging mutation performed.");
@@ -215,24 +207,19 @@ try {
     refreshedRows.rows.map((row) => String(row.migration_name)),
   );
 
-  const pendingAfterResolve = repoMigrations.filter(
+  const pendingAfterResolve = approvedRepoMigrations.filter(
     (name) => !applied.has(name),
   );
-  const unexpectedAfterResolve = pendingAfterResolve.filter(
-    (name) => !approved.has(name),
-  );
-  if (unexpectedAfterResolve.length > 0) {
+
+  if (pendingAfterResolve.length > 0) {
     fail(
-      "Unexpected staging migrations remain pending after history reconciliation: " +
-        unexpectedAfterResolve.join(", "),
+      "Approved AHMV staging migrations still require SQL application after verified history reconciliation: " +
+        pendingAfterResolve.join(", ") +
+        ". Refusing global prisma migrate deploy because unrelated repo migrations are outside this staging gate.",
     );
   }
 
-  if (pendingAfterResolve.length > 0) {
-    runPrisma(["deploy"], databaseUrl);
-  } else {
-    console.log("[staging-migrations] No staging migrations remain to apply.");
-  }
+  console.log("[staging-migrations] All approved AHMV staging migrations are reconciled.");
 
   const finalRows = await client.query(
     `select migration_name
@@ -240,7 +227,7 @@ try {
        where finished_at is not null and rolled_back_at is null`,
   );
   applied = new Set(finalRows.rows.map((row) => String(row.migration_name)));
-  const finalPending = repoMigrations.filter((name) => !applied.has(name));
+  const finalPending = approvedRepoMigrations.filter((name) => !applied.has(name));
   if (finalPending.length !== 0) {
     fail(
       "Staging still has pending repository migrations after deploy: " +

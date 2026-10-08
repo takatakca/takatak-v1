@@ -28,6 +28,8 @@ export const SOCIAL_BILLING_NETWORKS = [
   'pinterest',
   'bluesky',
   'twitch',
+  'web',
+  'blog',
 ] as const;
 
 export type SocialBillingNetwork = (typeof SOCIAL_BILLING_NETWORKS)[number];

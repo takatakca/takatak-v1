@@ -47,6 +47,15 @@ function clearHandoffCookie(response: NextResponse, origin: string): void {
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const origin = applicationOrigin();
+  const packedCookie = request.cookies.get(HANDOFF_COOKIE)?.value;
+
+  console.log("[instagram-oauth-handoff] ENTER", {
+    url: request.url,
+    origin,
+    hasCookie: Boolean(packedCookie),
+    cookieNames: request.cookies.getAll().map((cookie) => cookie.name),
+    hasQueryString: Boolean(request.nextUrl.searchParams.toString()),
+  });
 
   if (request.nextUrl.searchParams.toString()) {
     logSocialOAuthEvent("instagram-oauth-handoff", {
@@ -61,7 +70,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return response;
   }
 
-  const packed = request.cookies.get(HANDOFF_COOKIE)?.value;
+  const packed = packedCookie;
   if (!packed) {
     const response = redirectTo(
       "/dashboard/social?connections=open&social_oauth=failed",
@@ -80,18 +89,72 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         ? access.profileId
         : null;
 
+    const handoffQuery = handoffPayloadToRawQuery(payload);
+
+    console.log("[instagram-oauth-handoff] PAYLOAD", {
+      hasCode: Boolean(handoffQuery.code),
+      hasState: Boolean(handoffQuery.state),
+      hasError: Boolean(handoffQuery.error),
+      profileId,
+    });
+
     const result = await processDirectAccountOAuthCallback({
       provider: "instagram",
-      rawQuery: handoffPayloadToRawQuery(payload),
+      rawQuery: handoffQuery,
       profileId,
-      exchangeCode: ({ code }) =>
-        exchangeInstagramCodeForStoredCredential({ code }),
+      exchangeCode: async ({ code, codeVerifier }) => {
+        console.log("[instagram-oauth-handoff] TOKEN_EXCHANGE_START", {
+          hasCode: Boolean(code),
+          hasCodeVerifier: Boolean(codeVerifier),
+        });
+
+        try {
+          const token = await exchangeInstagramCodeForStoredCredential({
+            code,
+          });
+
+          console.log("[instagram-oauth-handoff] TOKEN_EXCHANGE_OK", {
+            externalSubjectId: token.externalSubjectId,
+            displayName: token.displayName,
+            hasAccessToken: Boolean(token.accessToken),
+            scopes: token.scopes,
+          });
+
+          return token;
+        } catch (error) {
+          console.error("[instagram-oauth-handoff] TOKEN_EXCHANGE_FAILED", {
+            message:
+              error instanceof Error
+                ? error.message
+                : String(error),
+            stack:
+              error instanceof Error
+                ? error.stack
+                : undefined,
+          });
+          throw error;
+        }
+      },
+    });
+
+    console.log("[instagram-oauth-handoff] RESULT", {
+      outcome: result.outcome,
+      returnPath: result.returnPath,
+      message: result.message,
     });
 
     const response = redirectTo(result.returnPath);
     clearHandoffCookie(response, origin);
     return response;
-  } catch {
+  } catch (error) {
+    console.error("[instagram-oauth-handoff] FAILED", error);
+
+    logSocialOAuthEvent("instagram-oauth-handoff", {
+      stage: "processing",
+      outcome: "failed",
+      provider: "instagram",
+    });
+
     const response = redirectTo(
       "/dashboard/social?connections=open&social_oauth=failed",
     );

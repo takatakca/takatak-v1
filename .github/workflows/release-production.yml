@@ -1,0 +1,159 @@
+name: Promote verified TAKATAK production artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_sha:
+        description: Exact current green main SHA (40 characters)
+        required: true
+        type: string
+      ci_run_id:
+        description: Successful main push CI run that produced the artifact
+        required: true
+        type: string
+      confirm_production_origin:
+        description: Type https://takatak.ca
+        required: true
+        type: string
+      mode:
+        description: Validate artifact only, or promote using already configured production transport
+        required: true
+        default: validate
+        type: choice
+        options:
+          - validate
+          - promote
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: takatak-production-promotion
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: production
+    env:
+      RELEASE_SHA: ${{ inputs.release_sha }}
+      CI_RUN_ID: ${{ inputs.ci_run_id }}
+      PRODUCTION_ORIGIN: ${{ inputs.confirm_production_origin }}
+      PROMOTION_MODE: ${{ inputs.mode }}
+    steps:
+      - name: Checkout reviewed promotion tools
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.x
+      - name: Attest exact main CI and artifact provenance
+        id: evidence
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const policy = await import(`${process.env.GITHUB_WORKSPACE}/scripts/production-release-policy.mjs`);
+            const releaseSha = process.env.RELEASE_SHA;
+            const ciRunId = process.env.CI_RUN_ID;
+            policy.validateReleaseRequest({releaseSha, ciRunId, origin: process.env.PRODUCTION_ORIGIN, mode: process.env.PROMOTION_MODE});
+            const {owner, repo} = context.repo;
+            const main = await github.rest.repos.getBranch({owner, repo, branch: 'main'});
+            const run = await github.rest.actions.getWorkflowRun({owner, repo, run_id: Number(ciRunId)});
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {owner, repo, run_id: Number(ciRunId), per_page: 100});
+            const artifact = artifacts.find(item => item.name === `takatak-ci-${releaseSha}`);
+            const artifactId = policy.validateCiEvidence({releaseSha, ciRunId, currentMain: main.data.commit.sha, repository: `${owner}/${repo}`, run: run.data, artifact});
+            core.setOutput('artifact_id', artifactId);
+            core.info('Current main, successful CI and non-expired Linux artifact attested.');
+      - name: Download the exact attested CI artifact
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.evidence.outputs.artifact_id }}
+          run-id: ${{ inputs.ci_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/takatak-release
+          merge-multiple: true
+      - name: Verify tarball checksum and safe archive paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {validateArtifactFiles} from './scripts/production-release-policy.mjs';
+          await validateArtifactFiles(`${process.env.RUNNER_TEMP}/takatak-release`, process.env.RELEASE_SHA);
+          console.log('CI tarball checksum accepted.');
+          NODE
+          python3 scripts/validate-production-archive.py "$RUNNER_TEMP/takatak-release/takatak-ci-$RELEASE_SHA.tar.gz"
+          mkdir -p "$RUNNER_TEMP/takatak-inspect"
+          tar -xzf "$RUNNER_TEMP/takatak-release/takatak-ci-$RELEASE_SHA.tar.gz" -C "$RUNNER_TEMP/takatak-inspect"
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {validateBuildMetadata} from './scripts/production-release-policy.mjs';
+          const root = `${process.env.RUNNER_TEMP}/takatak-inspect`;
+          const meta = JSON.parse(await readFile(`${root}/build-metadata.json`, 'utf8'));
+          validateBuildMetadata(meta, process.env.RELEASE_SHA, await readFile(`${root}/app/BUILD_ID`, 'utf8'));
+          console.log('Linux Node 22 artifact profile and BUILD_ID accepted.');
+          NODE
+          node scripts/audit-production-artifact.cjs "$RUNNER_TEMP/takatak-inspect"
+      - name: Validate already configured production transport
+        if: inputs.mode == 'promote'
+        env:
+          TKT_HOST: ${{ secrets.TAKATAK_PRODUCTION_HOST }}
+          TKT_PORT: ${{ secrets.TAKATAK_PRODUCTION_SSH_PORT }}
+          TKT_USER: ${{ secrets.TAKATAK_PRODUCTION_USER }}
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_PRODUCTION_APP_ROOT }}
+          TKT_PRIVATE_KEY: ${{ secrets.TAKATAK_PRODUCTION_SSH_PRIVATE_KEY }}
+          TKT_KNOWN_HOSTS: ${{ secrets.TAKATAK_PRODUCTION_KNOWN_HOSTS }}
+          TKT_RESTART_COMMAND: ${{ secrets.TAKATAK_PRODUCTION_RESTART_COMMAND }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {validateTransport} from './scripts/production-release-policy.mjs';
+          validateTransport(process.env);
+          console.log('Production transport is present; values are not displayed.');
+          NODE
+          install -m 700 -d "$RUNNER_TEMP/takatak-ssh"
+          printf '%s\n' "$TKT_PRIVATE_KEY" > "$RUNNER_TEMP/takatak-ssh/key"
+          printf '%s\n' "$TKT_KNOWN_HOSTS" > "$RUNNER_TEMP/takatak-ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/takatak-ssh/key" "$RUNNER_TEMP/takatak-ssh/known_hosts"
+          cat > "$RUNNER_TEMP/takatak-ssh/config" <<EOF
+          Host takatak-production
+            HostName $TKT_HOST
+            User $TKT_USER
+            Port $TKT_PORT
+            IdentityFile $RUNNER_TEMP/takatak-ssh/key
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile $RUNNER_TEMP/takatak-ssh/known_hosts
+            ConnectTimeout 30
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+          EOF
+          chmod 600 "$RUNNER_TEMP/takatak-ssh/config"
+      - name: Refuse main drift before any production write
+        if: inputs.mode == 'promote'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const main = await github.rest.repos.getBranch({...context.repo, branch:'main'});
+            if (main.data.commit.sha !== process.env.RELEASE_SHA) throw new Error('Main changed; refusing production promotion.');
+      - name: Preflight and promote immutable release with rollback
+        if: inputs.mode == 'promote'
+        env:
+          TKT_APP_ROOT: ${{ secrets.TAKATAK_PRODUCTION_APP_ROOT }}
+          TKT_RESTART_COMMAND: ${{ secrets.TAKATAK_PRODUCTION_RESTART_COMMAND }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: bash deploy/linux/promote-production.sh
+      - name: Validation summary
+        if: inputs.mode == 'validate'
+        run: echo "Artifact validated. No production connection, upload, activation, migration or provider configuration was performed."
+      - name: Remove temporary SSH material
+        if: always()
+        shell: bash
+        run: |
+          rm -f "$RUNNER_TEMP/takatak-ssh/key" "$RUNNER_TEMP/takatak-ssh/known_hosts" "$RUNNER_TEMP/takatak-ssh/config"

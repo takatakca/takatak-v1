@@ -126,6 +126,7 @@ export async function scheduleDueFacebookCompetitorRefreshes(options?: {
   const now = new Date();
   const due = await prisma.socialCompetitorTrack.findMany({
     where: {
+      platform: "facebook",
       status: "active",
       OR: [{ nextRefreshAt: null }, { nextRefreshAt: { lte: now } }],
     },
