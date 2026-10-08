@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
 
-import { TakatakEcosystemHero } from "@/components/website/home/TakatakEcosystemHero";
-import { PromoMarquee } from "@/components/website/promotions/PromoMarquee";
-import { TrendingProjectsRail } from "@/components/website/home/TrendingProjectsRail";
-import { DiscoverySection } from "@/components/website/home/DiscoverySection";
-import { PopularBusinessUpgrades } from "@/components/website/home/PopularBusinessUpgrades";
-import { DomainHostingSpotlight } from "@/components/website/home/DomainHostingSpotlight";
-import { PricingGateways } from "@/components/website/home/PricingGateways";
-import { BusinessTransformationStage } from "@/components/website/home/BusinessTransformationStage";
-import { ManagedDeliveryJourney } from "@/components/website/home/ManagedDeliveryJourney";
-import { ConciergeSupportSection } from "@/components/website/home/ConciergeSupportSection";
+import { HomeHero } from "@/components/website/home/HomeHero";
+import { HomeEcosystemGrid } from "@/components/website/home/HomeEcosystemGrid";
+import { HomeHowItWorks } from "@/components/website/home/HomeHowItWorks";
+import { HomePricingTeaser } from "@/components/website/home/HomePricingTeaser";
 import { FinalCtaSection } from "@/components/website/home/FinalCtaSection";
 import { brand } from "@/lib/website/brand";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
@@ -23,6 +17,7 @@ export const metadata: Metadata = {
   },
 };
 
+// Short homepage (Oct 2026): hero, services, how it works, pricing, final call to action.
 export default function HomePage() {
   return (
     <>
@@ -32,16 +27,10 @@ export default function HomePage() {
           __html: websiteStructuredData(getApplicationOrigin()),
         }}
       />
-      <TakatakEcosystemHero />
-      <PromoMarquee />
-      <TrendingProjectsRail />
-      <DiscoverySection />
-      <BusinessTransformationStage />
-      <PopularBusinessUpgrades />
-      <DomainHostingSpotlight />
-      <PricingGateways />
-      <ManagedDeliveryJourney />
-      <ConciergeSupportSection />
+      <HomeHero />
+      <HomeEcosystemGrid />
+      <HomeHowItWorks />
+      <HomePricingTeaser />
       <FinalCtaSection />
     </>
   );
