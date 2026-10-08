@@ -12,6 +12,7 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 - **Billing:** `main` already has a Facturations integration (#124: billing request queue → Facturations drafts). `claude/facturations-billing-integration` (#138) is likely a duplicate: compare, then close #138. #129 (Stripe client invoicing) is a separate system.
 
 ## Open work
+- 2026-10-08 | claude (session 01KBGh1v) | claude/brand-blue → #142 | PR open | Public site from green to GROUPE TAKATAK brand blue (tokens, 58 classes, share image) | merge when green; swap the old gold TK logo after the owner uploads files to knowledgeAI/brand/
 - 2026-10-08 | claude (session 01KBGh1v) | main | ready to deploy | main now has #130–#134 and #139 merged (colours, cleanup, website requests→Leads, https/SEO, work log) | owner: add the 7 TAKATAK_PRODUCTION_* secrets in GitHub › Settings › Environments › production, then run "Promote verified TAKATAK production artifact" (validate, then promote)
 - 2026-10-08 | owner + TAKATAK-V1 session (01W1ntbf) | Coolify deploy | blocked: secrets | Deploy: takatak.ca via GitHub Actions "Promote verified TAKATAK production artifact" (needs 7 TAKATAK_PRODUCTION_* secrets in GitHub › Environments › production); test copy at knowledge.takatak.ca via Coolify | owner adds COOLIFY_API_TOKEN, SUPABASE_ACCESS_TOKEN, PROD_DATABASE_URL, PROD_DIRECT_URL, EMAIL_USER, EMAIL_PASSWORD to the cloud environment secrets + an AI provider API key, then starts a new session
 - 2026-10-08 | claude (session 01KBGh1v) | claude/seo-site-audit → #135 | hold (overlaps #117) | SEO audit dashboard | owner picks this or #117
@@ -33,6 +34,7 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 - 2026-09-30 | other agent | upgrade/1lv-master-marketplace-ingestion-v2 → #7 | draft | 1LV marketplace ingestion | part of 1LV decision
 
 ## Done
+- 2026-10-08 | claude (session 01KBGh1v) | main (all 32 repos) | done | BRAND.md + brand rule in AGENTS.md everywhere (Facturations via PR #162); production artifact validated (run 37749578770) | owner adds production secrets, then promote
 - 2026-10-08 | claude (session 01KBGh1v) | claude/website-theme-colors → #131 | merged | Website colour classes (bg-primary etc.) render again (~700 classes); CI guard qa:website-theme | upload a production build to put it live
 - 2026-10-08 | claude (session 01KBGh1v) | claude/website-seo-https → #132 | merged | http→https redirect, canonical URLs, og:image, JSON-LD, shorter titles | upload a production build to put it live
 - 2026-10-08 | claude (session 01KBGh1v) | claude/lead-detail-missing-table → #139 | merged | Lead page works before the lead_attachments migration runs | upload a production build to put it live
