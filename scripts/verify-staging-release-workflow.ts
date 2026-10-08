@@ -44,6 +44,23 @@ requireText(
   "Human approval accepted for staging apply",
   "staging app release only after an approved migration apply",
 );
+requireText(
+  "node scripts/staging-release-approval.mjs",
+  "shared approval evidence check",
+);
+requireText("migration_run_id", "manual release points at an approved migration run");
+requireText(
+  '[ "$decision" = "skip" ]',
+  "an audit release is skipped instead of deployed",
+);
+requireText(
+  "ERROR: Staging release refused.",
+  "a manual release without approval evidence fails",
+);
+forbidText(
+  'if [ "${{ github.event_name }}" = "workflow_run" ]; then',
+  "approval evidence must not be limited to automatic releases",
+);
 requireText("Refuse stale release before staging activation", "stale-main activation guard");
 forbidText("pcjfahhlozsseqqevimi", "production Supabase project ref");
 forbidText("TAKATAK_PRODUCTION_", "production deployment secrets");

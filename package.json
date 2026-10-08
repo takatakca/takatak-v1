@@ -118,7 +118,7 @@
     "qa:hockey-family-child-lifecycle": "tsx --require ./scripts/register-server-only.cjs scripts/verify-hockey-family-child-lifecycle.ts",
     "qa:hockey-family-backend": "npm run qa:hockey-parent-preferences && npm run qa:hockey-supporter-credit && npm run qa:hockey-event-engine && npm run qa:hockey-sms-worker && npm run qa:hockey-google-calendar && npm run qa:hockey-source-filter && npm run qa:hockey-family-isolation && npm run qa:hockey-smart-departure && npm run qa:hockey-write-origin && npm run qa:hockey-readiness && npm run qa:hockey-family-invites && npm run qa:hockey-family-game-logistics && npm run qa:hockey-family-rsvp && npm run qa:hockey-family-guardian-access && npm run qa:hockey-family-child-lifecycle",
     "qa:ahmv-team-feed": "tsx scripts/verify-ahmv-team-feed-bridge.ts",
-    "qa:staging-release": "tsx scripts/verify-staging-release-workflow.ts",
+    "qa:staging-release": "node --test scripts/staging-migration-history.test.mjs scripts/staging-release-approval.test.mjs && tsx scripts/verify-staging-release-workflow.ts",
     "ahmv:teams:seed": "tsx scripts/seed-ahmv-public-teams.ts",
     "qa:ahmv-public-teams": "tsx scripts/verify-ahmv-public-teams.ts",
     "qa:ahmv-operational-readiness": "tsx scripts/verify-ahmv-operational-readiness.ts",

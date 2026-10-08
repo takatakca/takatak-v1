@@ -131,7 +131,8 @@ jobs:
         run: |
           node --check scripts/reconcile-staging-migrations.mjs
           node --check scripts/staging-migration-history.mjs
-          node --test scripts/staging-migration-history.test.mjs
+          node --check scripts/staging-release-approval.mjs
+          node --test scripts/staging-migration-history.test.mjs scripts/staging-release-approval.test.mjs
           npm run qa:staging-release
 
       - name: AHMV operational readiness safeguards

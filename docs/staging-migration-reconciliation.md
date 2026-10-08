@@ -26,9 +26,9 @@ The earlier audit that reported zero externally applied migrations used the brok
 
 A successful CI `workflow_run` sets `RECONCILE_MODE=audit`. The step `Human approval accepted for staging apply` runs only for a dispatch apply, and it fails unless the phrase and main both match. A skipped approval step is not success.
 
-`.github/workflows/release-staging.yml` deploys after that workflow only when the same step finished with conclusion `success`. An audit, including a green main CI audit, sets `ready=false` and exits without building or deploying. A manual dispatch of the release workflow itself is unchanged.
+`.github/workflows/release-staging.yml` asks `scripts/staging-release-approval.mjs` for evidence before either a manual or an automatic release can build. The evidence is a successful run of this reconcile workflow whose event is `workflow_dispatch`, whose head is the same main SHA being released, and whose approval step conclusion is `success`. An audit leaves that step skipped, so the release decision is `skip`: `ready=false`, no build, and no deploy. A manual release must pass `migration_run_id` for that approved run. Any other result is `refuse` and the release job fails. There is no longer a path that checks this evidence only for `workflow_run`.
 
-Do not merge this branch until that gate is present on the pull request and the safeguard test passes.
+Merging this pull request installs that gate. It does not apply SQL or change migration history. Do not dispatch apply until a separate approval, and do not treat this document as that approval.
 
 ## What apply would do later
 
@@ -36,7 +36,7 @@ Apply does not execute migration SQL. For each approved migration whose Supabase
 
 ## Static review of the 19 approved files
 
-Reviewed from `prisma/migrations/*/migration.sql` on main `9a0a74da09822ab481bffdf53912ef34b9dd936a`. No staging rows were read or written for this review. Live Prisma-versus-Supabase classification is filled in after the corrected read-only audit.
+Reviewed from `prisma/migrations/*/migration.sql` on main `9a0a74da09822ab481bffdf53912ef34b9dd936a`. No staging rows were read or written for this review. The live Prisma-versus-Supabase classification is in Live history below.
 
 None of the 19 files contain `DROP TABLE`, `DROP COLUMN`, `DELETE FROM`, or `TRUNCATE`. The `UPDATE` matches in the files are `ON UPDATE CASCADE` foreign keys and `BEFORE UPDATE` triggers on the new tables. They do not update customer or reservation rows.
 
@@ -69,7 +69,7 @@ New tables reference existing `clients`, `profiles`, `master_identities`, `leads
 
 ## Backup plan before any future apply
 
-1. Keep this pull request unmerged and leave `RECONCILE_MODE` on audit.
+1. Leave `RECONCILE_MODE` on audit. This repository does not contain a backup of the staging database. A backup is not ready until someone takes one.
 2. In the Supabase staging project `utuvzrqvivqyziibobvu`, take a logical backup of the whole database before any apply. Store it outside the app server. Confirm the backup includes `public` data, `public._prisma_migrations`, and `supabase_migrations.schema_migrations`.
 3. Record row counts for customer, reservation, lead, and client tables before and after. Apply must not change those counts.
 4. Do not run `prisma migrate deploy`, `prisma migrate reset`, or any SQL file by hand as part of this reconciliation.
