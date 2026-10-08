@@ -120,7 +120,7 @@ async function main() {
     const detail = readFileSync("src/lib/leads/lead-detail.ts", "utf8");
     assert.match(detail, /code === "P2021"/);
     assert.match(detail, /if \(isMissingTable\(error\)\) return \[\];/);
-    assert.doesNotMatch(detail, /include: \{[^}]*attachments:/s, "attachments are loaded separately, not joined");
+    assert.doesNotMatch(detail, /include: \{[\s\S]*?attachments:/, "attachments are loaded separately, not joined");
   });
 
   console.log(`\n${passed} lead action checks passed.`);
