@@ -91,23 +91,23 @@ function readConsent(user: User): SupabaseProfileIdentity['consent'] {
   return { termsAcceptedAt: terms, privacyAcceptedAt: privacy };
 }
 
-/** A confirmed phone is enough. Email remains valid, and is optional. */
+/**
+ * A confirmed phone is enough. A recovery email is trusted only after the
+ * provider confirms it. Client-editable user_metadata is never that proof.
+ */
 export function resolveSupabaseProfileIdentity(
   user: User,
 ): SupabaseProfileIdentity | null {
-  const authEmail = readOptionalEmail(user.email);
-  const metadataEmail = readOptionalEmail(user.user_metadata?.email);
-  const email = authEmail || metadataEmail;
+  const confirmedEmail = readOptionalEmail(user.email);
+  const email =
+    confirmedEmail && user.email_confirmed_at ? confirmedEmail : null;
 
   const authPhone =
     typeof user.phone === 'string' ? normalizePhone(user.phone) : null;
-  const metadataPhone =
-    typeof user.user_metadata?.phone === 'string'
-      ? normalizePhone(user.user_metadata.phone)
-      : null;
-  const phone = authPhone || metadataPhone;
-  const emailVerified = Boolean(authEmail && user.email_confirmed_at);
-  const phoneVerified = Boolean(authPhone && user.phone_confirmed_at);
+  const phone =
+    authPhone && user.phone_confirmed_at ? authPhone : null;
+  const emailVerified = email !== null;
+  const phoneVerified = phone !== null;
 
   if (!email && !phoneVerified) {
     return null;

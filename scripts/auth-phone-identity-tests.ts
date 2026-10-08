@@ -71,20 +71,30 @@ function main() {
   );
   assert("email login still resolves", emailUser?.email === "owner@example.com" && emailUser?.emailVerified === true);
 
-  const optionalEmail = resolveSupabaseProfileIdentity(
+  const spoofedRecovery = resolveSupabaseProfileIdentity(
     user({
       phone: "+15145550123",
       phone_confirmed_at: "2026-10-08T00:01:00.000Z",
       user_metadata: {
-        email: "mia@example.com",
-        phone: "+15145550123",
+        email: "victim@example.com",
+        phone: "+19995550123",
       },
     }),
   );
   assert(
-    "optional recovery email is stored but not treated as verified",
-    optionalEmail?.email === "mia@example.com" && optionalEmail?.emailVerified === false && optionalEmail?.phoneVerified === true,
+    "registration metadata cannot become a recovery email or phone",
+    spoofedRecovery?.email === null &&
+      spoofedRecovery?.emailVerified === false &&
+      spoofedRecovery?.phone === "+15145550123",
   );
+
+  const unconfirmedEmail = resolveSupabaseProfileIdentity(
+    user({
+      email: "mia@example.com",
+      user_metadata: { email: "mia@example.com" },
+    }),
+  );
+  assert("an unconfirmed auth email is not an identity", unconfirmedEmail === null);
 
   if (failed > 0) {
     console.error(`[auth-phone-identity] ${failed} failed`);

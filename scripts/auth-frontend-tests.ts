@@ -71,9 +71,31 @@ async function main() {
     loginForm.includes('useState<Mode>("phone")'),
   );
   assert(
-    "registration accepts a phone without an email",
-    registrationForm.includes("const emailError = email ? validateEmail(email) : undefined") &&
-      registrationForm.includes("Recovery email"),
+    "registration does not submit an unverified recovery email",
+    !registrationForm.includes("validateEmail") &&
+      registrationForm.includes("confirm the message sent to that inbox"),
+  );
+
+  const accessRoute = readFileSync(
+    resolve(process.cwd(), "src/app/api/account/access/route.ts"),
+    "utf8",
+  );
+  const profileSync = readFileSync(
+    resolve(process.cwd(), "src/lib/auth/profile-sync.ts"),
+    "utf8",
+  );
+  assert(
+    "account access cannot mark a new email confirmed",
+    !accessRoute.includes("email_confirm") &&
+      !accessRoute.includes("updateUserById") &&
+      accessRoute.includes("verificationPending") &&
+      accessRoute.includes("account_email_verification_requested"),
+  );
+  assert(
+    "profile sync ignores client-supplied email metadata",
+    !profileSync.includes("user_metadata?.email") &&
+      !profileSync.includes("user_metadata.email") &&
+      profileSync.includes("email_confirmed_at"),
   );
 
   const json = await parseAuthResponse(

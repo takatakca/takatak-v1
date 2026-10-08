@@ -1,13 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Loader2, Mail, Phone, UserRound } from "lucide-react";
+import { Loader2, Phone, UserRound } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 import {
-  normalizeEmail,
   normalizePersonName,
-  validateEmail,
   validateFirstName,
   validateLastName,
 } from "@/lib/auth/registration-validation";
@@ -16,7 +14,6 @@ import { normalizePhone, validatePhone } from "@/lib/auth/otp/phone";
 type Values = {
   firstName: string;
   lastName: string;
-  email: string;
   phone: string;
   acceptedTerms: boolean;
 };
@@ -24,7 +21,6 @@ type Values = {
 const INITIAL: Values = {
   firstName: "",
   lastName: "",
-  email: "",
   phone: "",
   acceptedTerms: false,
 };
@@ -68,17 +64,14 @@ export function MasterPhoneRegistrationForm() {
 
     const firstName = normalizePersonName(values.firstName);
     const lastName = normalizePersonName(values.lastName);
-    const email = normalizeEmail(values.email);
     const phone = normalizePhone(values.phone);
 
     const errors: Record<string, string> = {};
     const firstNameError = validateFirstName(firstName);
     const lastNameError = validateLastName(lastName);
-    const emailError = email ? validateEmail(email) : undefined;
     const phoneError = validatePhone(values.phone);
     if (firstNameError) errors.firstName = firstNameError;
     if (lastNameError) errors.lastName = lastNameError;
-    if (emailError) errors.email = emailError;
     if (phoneError || !phone) errors.phone = phoneError ?? "Enter a valid phone number.";
     if (!values.acceptedTerms) {
       errors.acceptedTerms = "You must agree to the Terms and Privacy Policy.";
@@ -109,7 +102,6 @@ export function MasterPhoneRegistrationForm() {
           last_name: lastName,
           full_name: `${firstName} ${lastName}`.trim(),
           display_name: `${firstName} ${lastName}`.trim(),
-          ...(email ? { email } : {}),
           phone,
           source_application: "TAKATAK",
           takatak_terms_accepted_at: capturedAt,
@@ -161,15 +153,9 @@ export function MasterPhoneRegistrationForm() {
         </div>
       </div>
 
-      <div>
-        <label htmlFor="email" className="mb-1.5 block text-xs font-semibold text-foreground">Recovery email <span className="font-normal text-muted-foreground">(optional)</span></label>
-        <div className="relative">
-          <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-          <input id="email" type="email" autoComplete="email" inputMode="email" value={values.email} disabled={loading} onChange={(event) => update("email", event.target.value)} className={inputClass} placeholder="you@company.com" />
-        </div>
-        <p className="mt-1 text-xs text-muted-foreground">Optional. Your mobile number is the TAKATAK identity. Add an email later if you want account recovery.</p>
-        {fieldErrors.email ? <p className="mt-1 text-xs text-rose-600">{fieldErrors.email}</p> : null}
-      </div>
+      <p className="text-xs leading-relaxed text-muted-foreground">
+        Your mobile number is the TAKATAK identity. A recovery email can be added after verification, and it works only after you confirm the message sent to that inbox.
+      </p>
 
       <div>
         <label htmlFor="phone" className="mb-1.5 block text-xs font-semibold text-foreground">Mobile number</label>
