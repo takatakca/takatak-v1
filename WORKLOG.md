@@ -9,7 +9,7 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 - **Reviews / reputation** are built twice: `claude/qmaps-listings-reviews-sync` (QMAPS reviews in Local Listings) and #117 (Birdeye-style reputation). Decide which screen is the reviews dashboard.
 - **AI** is built twice: `claude/ai-studio-generation` (AI Studio drafts) and #117 (AI agents with credits). Decide which one owns content generation.
 - **1LV bridge** has four overlapping drafts: #7, #17, #18, #23. Keep one.
-- **Billing:** #129 (Stripe client invoicing, merged base #124) and `claude/facturations-billing-integration` (Facturations/Wave drafts) are different systems. Confirm both are wanted.
+- **Billing:** `main` already has a Facturations integration (#124: billing request queue → Facturations drafts). `claude/facturations-billing-integration` (#138) is likely a duplicate: compare, then close #138. #129 (Stripe client invoicing) is a separate system.
 
 ## Open work
 - 2026-10-08 | owner + TAKATAK-V1 session (01W1ntbf) | Coolify deploy | blocked: secrets | Deploy: takatak.ca via GitHub Actions "Promote verified TAKATAK production artifact" (needs 7 TAKATAK_PRODUCTION_* secrets in GitHub › Environments › production); test copy at knowledge.takatak.ca via Coolify | owner adds COOLIFY_API_TOKEN, SUPABASE_ACCESS_TOKEN, PROD_DATABASE_URL, PROD_DIRECT_URL, EMAIL_USER, EMAIL_PASSWORD to the cloud environment secrets + an AI provider API key, then starts a new session
