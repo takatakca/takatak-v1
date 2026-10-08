@@ -83,4 +83,17 @@ New tables reference existing `clients`, `profiles`, `master_identities`, `leads
 
 ## Live history
 
-The corrected audit has not been recorded in this file yet. Fill the externally applied, SQL-mismatch, and genuinely pending lists from that run before anyone considers apply.
+Read-only audit [37762369395](https://github.com/takatakca/takatak-v1/actions/runs/37762369395) ran on `0ee466acdecd41547c69bf2d3aecadf8a3f8c56e` at 2026-10-08T10:16:20Z. `RECONCILE_MODE` was `audit`. The approval step was skipped. The log ends with `AUDIT PASS. No staging mutation performed.` Project ref `utuvzrqvivqyziibobvu` was verified. The database URL was masked.
+
+The same run's release listener [37762430242](https://github.com/takatakca/takatak-v1/actions/runs/37762430242) skipped `staging-release` before any step. No staging deploy started.
+
+Equivalence uses `canonicalSql`: line endings, SQL comments, schema/table comments, whitespace, and double quotes are removed, then the text is lowercased. A mismatch fails the audit. This run did not fail, so every Supabase history row it matched is equivalent under that function. There is no SQL-mismatch class in this run.
+
+| Class | Migrations |
+| --- | --- |
+| Already recorded in Prisma | `20261003062000_hockey_membership_foundation` |
+| Supabase history matches repository SQL, Prisma history does not yet record it | the 18 names printed by the audit: parent team preferences, membership RLS lockdown, supporter grants, parent event engine, Google calendar, smart departure, family team isolation, guardian invites, game logistics, family event RSVP, AHMV product catalog, AHMV schedule snapshot, ads foundation, community content moderation, smart departure entitlement, billing invoice requests, client Stripe Connect accounts, billing invoice checkout sessions |
+| Absent from both histories | `20261008090000_website_lead_attachments` |
+| Outside this gate | 15 unrelated repository migrations. The audit prints the count only |
+
+The 18 matching rows would, on a later approved apply, be recorded with `prisma migrate resolve --applied` and their SQL would not run again. `website_lead_attachments` is still pending, so that same apply would still refuse `prisma migrate deploy` and stop. Do not apply until a separate approval, a fresh backup, and a decision about that one pending file.
