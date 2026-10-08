@@ -163,34 +163,6 @@ ALTER TABLE "customer_interactions" ADD CONSTRAINT "customer_interactions_custom
 ALTER TABLE "customer_import_batches" ADD CONSTRAINT "customer_import_batches_clientId_fkey" FOREIGN KEY ("clientId") REFERENCES "clients"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "customer_import_batches" ADD CONSTRAINT "customer_import_batches_businessBrandId_fkey" FOREIGN KEY ("businessBrandId") REFERENCES "business_brands"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
-CREATE OR REPLACE FUNCTION public.customer_intelligence_has_access(p_client_id uuid)
-RETURNS boolean
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = pg_catalog
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.profiles p
-    WHERE p."authUserId" = auth.uid()
-      AND p.status::text = 'active'
-      AND (
-        p.role::text IN ('owner','admin')
-        OR EXISTS (
-          SELECT 1
-          FROM public.client_memberships cm
-          WHERE cm."profileId" = p.id
-            AND cm."clientId" = p_client_id
-            AND cm.status::text = 'active'
-        )
-      )
-  );
-$$;
-
-REVOKE ALL ON FUNCTION public.customer_intelligence_has_access(uuid) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.customer_intelligence_has_access(uuid) TO authenticated;
-
 ALTER TABLE public.customer_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_reservations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_source_evidence ENABLE ROW LEVEL SECURITY;
@@ -198,12 +170,15 @@ ALTER TABLE public.customer_interactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.customer_import_batches ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "customer_profiles_select_by_workspace" ON public.customer_profiles
-FOR SELECT TO authenticated USING (public.customer_intelligence_has_access("clientId"));
+FOR SELECT TO authenticated USING (private.has_client_access("clientId"));
 CREATE POLICY "customer_reservations_select_by_workspace" ON public.customer_reservations
-FOR SELECT TO authenticated USING (public.customer_intelligence_has_access("clientId"));
+FOR SELECT TO authenticated USING (private.has_client_access("clientId"));
 CREATE POLICY "customer_source_evidence_select_by_workspace" ON public.customer_source_evidence
-FOR SELECT TO authenticated USING (public.customer_intelligence_has_access("clientId"));
+FOR SELECT TO authenticated USING (private.has_client_access("clientId"));
 CREATE POLICY "customer_interactions_select_by_workspace" ON public.customer_interactions
-FOR SELECT TO authenticated USING (public.customer_intelligence_has_access("clientId"));
+FOR SELECT TO authenticated USING (private.has_client_access("clientId"));
 CREATE POLICY "customer_import_batches_select_by_workspace" ON public.customer_import_batches
-FOR SELECT TO authenticated USING (public.customer_intelligence_has_access("clientId"));
+FOR SELECT TO authenticated USING (private.has_client_access("clientId"));
+
+-- Keep Data API authorization membership-only. Platform-admin global views remain on the Prisma/server path.
+DROP FUNCTION IF EXISTS public.customer_intelligence_has_access(uuid);
