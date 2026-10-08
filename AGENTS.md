@@ -18,3 +18,7 @@ Line format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 ## Brand rule
 
 Everything visual or written for TAKATAK follows `BRAND.md` (logo, colours, tagline, services). Electric blue on deep navy; never the old gold "TK" logo; green is for status only.
+
+## MIMT / TAKATAK AUTH — mandatory product context
+
+For any TAKATAK phone login, Twilio SMS, customer identity/CRM, MIMT telecom, wholesale Internet, SIM/eSIM, or MIMT.ca website task: **read [`docs/mimt/README.md`](docs/mimt/README.md) and the relevant linked runbook first**. Current P0 is [TAKATAK AUTH issue #141](https://github.com/takatakca/takatak-v1/issues/141). Do not create duplicate projects, assume supplier API access, or import private subscribers/communications into agency knowledge. Document actual tests and hand off through WORKLOG.md.
