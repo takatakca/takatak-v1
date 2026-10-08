@@ -12,11 +12,10 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 - **Billing:** #129 (Stripe client invoicing, merged base #124) and `claude/facturations-billing-integration` (Facturations/Wave drafts) are different systems. Confirm both are wanted.
 
 ## Open work
-- 2026-10-08 | owner + TAKATAK-V1 session (01W1ntbf) | Coolify deploy | blocked: secrets | Deploy dashboard to Contabo/Coolify (plan: staging copy at knowledge.takatak.ca with AI Studio) | owner adds COOLIFY_API_TOKEN, SUPABASE_ACCESS_TOKEN, PROD_DATABASE_URL, PROD_DIRECT_URL, EMAIL_USER, EMAIL_PASSWORD to the cloud environment secrets + an AI provider API key, then starts a new session
+- 2026-10-08 | owner + TAKATAK-V1 session (01W1ntbf) | Coolify deploy | blocked: secrets | Deploy: takatak.ca via GitHub Actions "Promote verified TAKATAK production artifact" (needs 7 TAKATAK_PRODUCTION_* secrets in GitHub › Environments › production); test copy at knowledge.takatak.ca via Coolify | owner adds COOLIFY_API_TOKEN, SUPABASE_ACCESS_TOKEN, PROD_DATABASE_URL, PROD_DIRECT_URL, EMAIL_USER, EMAIL_PASSWORD to the cloud environment secrets + an AI provider API key, then starts a new session
 - 2026-10-08 | claude (session 01KBGh1v) | claude/website-theme-colors → #131 | ready | Website buttons/accents render colourless (~700 classes); fix + CI guard | merge first; then upload a production build
-- 2026-10-08 | claude (session 01KBGh1v) | claude/repo-hygiene → #133 | ready | Remove 9 stray backups, compact promo invite, lint | merge
 - 2026-10-08 | claude (session 01KBGh1v) | claude/website-seo-https → #132 | ready | http→https redirect, canonical, og:image, JSON-LD, titles | merge; after upload re-audit takatak.ca
-- 2026-10-08 | claude (session 01KBGh1v) | claude/website-lead-capture → #134 | ready (main merged in, migration renamed 20261008090000, staging-only approval) | Website forms + checkout → Leads, notifications, file uploads, lead page | merge main in, migration 20261006150000, set WEBSITE_LEADS_* env
+- 2026-10-08 | claude (session 01KBGh1v) | claude/lead-detail-missing-table → #139 | PR open | Lead page keeps working before the lead_attachments migration runs | merge before promoting main to production
 - 2026-10-08 | claude (session 01KBGh1v) | claude/seo-site-audit → #135 | hold (overlaps #117) | SEO audit dashboard | owner picks this or #117
 - 2026-10-08 | claude (session 01KBGh1v) | claude/qmaps-listings-reviews-sync → #136 | hold (overlaps #117) | QMAPS listings/reviews → V1 | owner decides reviews owner
 - 2026-10-08 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | hold (overlaps #117) | AI Studio draft generation (OpenAI/Claude) | owner decides AI owner
@@ -36,4 +35,6 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 - 2026-09-30 | other agent | upgrade/1lv-master-marketplace-ingestion-v2 → #7 | draft | 1LV marketplace ingestion | part of 1LV decision
 
 ## Done
+- 2026-10-08 | claude (session 01KBGh1v) | claude/website-lead-capture → #134 | merged | Website forms + checkout → Leads, notifications, file uploads, lead page | set WEBSITE_LEADS_* env; approve migration 20261008090000 for production
+- 2026-10-08 | claude (session 01KBGh1v) | claude/repo-hygiene → #133 | merged | Removed 9 stray backups, compact promo invite, lint | none
 - 2026-10-08 | claude (session 01KBGh1v) | claude/agent-worklog-rule → #130 | PR open | Work log rule, this log, stop reminder; same rule pushed to the other TAKATAK repos (Facturations via its PR #162) | merge #130
