@@ -424,6 +424,12 @@ model Client {
   billingInvoiceRequests    BillingInvoiceRequest[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
+  customerProfiles          CustomerProfile[]
+  customerReservations      CustomerReservation[]
+  customerSourceEvidence    CustomerSourceEvidence[]
+  customerInteractions      CustomerInteraction[]
+  customerImportBatches     CustomerImportBatch[]
+  customerImportAuthorizations CustomerImportAuthorization[]
 
   adSubscription            AdSubscription?
   adCampaigns               AdCampaign[]
@@ -637,6 +643,9 @@ model BusinessBrand {
   contentContributions       ContentContribution[]
   contentPublications        ContentPublication[]
   contributionAssets          ContributionAsset[]
+  customerProfiles            CustomerProfile[]
+  customerReservations        CustomerReservation[]
+  customerImportBatches       CustomerImportBatch[]
 
   @@unique([id, clientId])
   @@index([clientId])
@@ -4232,4 +4241,196 @@ model ClientStripeConnectAccount {
   client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
 
   @@map("client_stripe_connect_accounts")
+}
+
+// ════════════════════════════════════════════════════════════
+// Customer Intelligence / CRM
+// Tenant-owned end-customer data. This is intentionally separate from
+// model Client, which is the TAKATAK workspace / tenant root.
+// No source dataset or customer PII belongs in the Git repository.
+// ════════════════════════════════════════════════════════════
+
+model CustomerProfile {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  businessBrandId  String?   @db.Uuid
+  externalKey      String
+  displayName      String?
+  firstName        String?
+  lastName         String?
+  email            String?
+  normalizedEmail  String?
+  phone            String?
+  normalizedPhone  String?
+  addressLine1     String?
+  addressLine2     String?
+  city             String?
+  region           String?
+  postalCode       String?
+  country          String?
+  evidenceStatus   String    @default("observed")
+  firstSeenAt      DateTime?
+  lastSeenAt       DateTime?
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  client         Client                    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand  BusinessBrand?            @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  reservations   CustomerReservation[]
+  sourceEvidence CustomerSourceEvidence[]
+  interactions   CustomerInteraction[]
+
+  @@unique([clientId, externalKey])
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([normalizedEmail])
+  @@index([normalizedPhone])
+  @@index([lastSeenAt])
+  @@map("customer_profiles")
+}
+
+model CustomerReservation {
+  id                String    @id @default(uuid()) @db.Uuid
+  clientId          String    @db.Uuid
+  businessBrandId   String?   @db.Uuid
+  customerProfileId String?   @db.Uuid
+  reservationNumber String
+  sourceSystem      String
+  accommodationCode String?
+  accommodationType String?
+  arrivalDate       DateTime? @db.Date
+  departureDate     DateTime? @db.Date
+  nights            Int?
+  adults            Int?
+  children          Int?
+  statusText        String?
+  totalMinor        Int?
+  paidMinor         Int?
+  balanceMinor      Int?
+  currency          String    @default("CAD")
+  sourceDate        DateTime?
+  sourceMessageId   String?
+  sourceUrl         String?
+  metadata          Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand   BusinessBrand?   @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  customerProfile CustomerProfile? @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  sourceEvidence  CustomerSourceEvidence[]
+
+  @@unique([clientId, sourceSystem, reservationNumber])
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([customerProfileId])
+  @@index([arrivalDate])
+  @@index([departureDate])
+  @@index([sourceMessageId])
+  @@map("customer_reservations")
+}
+
+model CustomerSourceEvidence {
+  id                    String    @id @default(uuid()) @db.Uuid
+  clientId              String    @db.Uuid
+  customerProfileId     String?   @db.Uuid
+  customerReservationId String?   @db.Uuid
+  externalKey           String
+  sourceType            String
+  sourceSystem          String
+  sourceAccount         String?
+  sourceRecordId        String?
+  sourceDate            DateTime?
+  subject               String?
+  sourceUrl             String?
+  metadata              Json?
+  createdAt             DateTime  @default(now())
+
+  client              Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  customerProfile     CustomerProfile?     @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+  customerReservation CustomerReservation? @relation(fields: [customerReservationId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, externalKey])
+  @@index([clientId])
+  @@index([customerProfileId])
+  @@index([customerReservationId])
+  @@index([sourceSystem])
+  @@index([sourceRecordId])
+  @@index([sourceDate])
+  @@map("customer_source_evidence")
+}
+
+model CustomerInteraction {
+  id                String   @id @default(uuid()) @db.Uuid
+  clientId          String   @db.Uuid
+  customerProfileId String?  @db.Uuid
+  externalKey       String
+  occurredAt        DateTime?
+  direction         String?
+  channel           String   @default("email")
+  subject           String?
+  snippet           String?
+  sourceAccount     String?
+  sourceMessageId   String?
+  sourceUrl         String?
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  client          Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  customerProfile CustomerProfile? @relation(fields: [customerProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, externalKey])
+  @@index([clientId])
+  @@index([customerProfileId])
+  @@index([occurredAt])
+  @@index([sourceMessageId])
+  @@map("customer_interactions")
+}
+
+model CustomerImportBatch {
+  id                String    @id @default(uuid()) @db.Uuid
+  clientId          String    @db.Uuid
+  businessBrandId   String?   @db.Uuid
+  sourceName        String
+  sourceFileSha256  String
+  status            String    @default("prepared")
+  sourcePeriodStart DateTime?
+  sourcePeriodEnd   DateTime?
+  customerRows      Int       @default(0)
+  reservationRows   Int       @default(0)
+  evidenceRows      Int       @default(0)
+  interactionRows   Int       @default(0)
+  errorMessage      String?
+  importedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  client        Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+
+  @@unique([clientId, sourceFileSha256])
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("customer_import_batches")
+}
+
+
+model CustomerImportAuthorization {
+  id          String    @id @default(uuid()) @db.Uuid
+  clientId    String    @db.Uuid
+  tokenHash   String    @unique
+  label       String
+  status      String    @default("active")
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, status])
+  @@index([expiresAt])
+  @@map("customer_import_authorizations")
 }
