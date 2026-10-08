@@ -17,7 +17,17 @@ import {
   stripePercentage,
   validateClientInvoiceInput,
 } from "../src/lib/billing/client-invoicing/invoice-input";
+import {
+  canActOnClientInvoice,
+  clientInvoiceActionKey,
+  filterClientIssuedInvoices,
+  isStripeInvoiceId,
+  parseClientInvoiceAction,
+  parseClientInvoiceFilter,
+  summarizeClientIssuedInvoices,
+} from "../src/lib/billing/client-invoicing/invoice-actions";
 import { clientInvoiceContentHash, clientInvoiceIdempotencyKey } from "../src/lib/billing/client-invoicing/invoice-keys";
+import type { ClientInvoiceView } from "../src/lib/billing/client-invoices/invoice-view";
 
 import { readBoundedText } from "../src/lib/http/read-bounded-text";
 
@@ -155,7 +165,10 @@ assert.ok(roles.includes('"/dashboard/client-billing": "manage_settings"'));
 const invoiceService = read("src/lib/billing/client-invoicing/invoice-service.ts");
 assert.ok(invoiceService.startsWith('import "server-only";'));
 assert.ok(invoiceService.includes('clientConnectState(row) !== "active"'), "invoices only on an active connected account");
-assert.equal((invoiceService.match(/\{ stripeAccount, idempotencyKey/g) ?? []).length, 6, "every write is on the connected account with a key");
+assert.equal((invoiceService.match(/\{ stripeAccount, idempotencyKey/g) ?? []).length, 7, "every write is on the connected account with a key");
+for (const call of ["sendInvoice(input.invoiceId, {}, options)", "voidInvoice(input.invoiceId, {}, options)", "pay(input.invoiceId, { paid_out_of_band: true }, options)"]) {
+  assert.ok(invoiceService.includes(call), `invoice action uses the keyed connected-account options: ${call}`);
+}
 assert.ok(invoiceService.includes('pending_invoice_items_behavior: "exclude"'));
 assert.equal(/application_fee|transfer_data|charges\.create|payouts/.test(invoiceService), false, "no platform fee or fund movement");
 const invoiceRoute = read("src/app/api/billing/client-invoicing/invoices/route.ts");
@@ -181,6 +194,80 @@ for (const needle of [
   assert.ok(migration.includes(needle), `migration: ${needle}`);
 }
 pass("routes are workspace-gated and origin-checked; webhook is signed; table is locked down and the link immutable");
+
+
+// Invoice actions and dashboard summary.
+for (const action of ["remind", "void", "mark_paid"]) {
+  assert.deepEqual(parseClientInvoiceAction({ action }), { ok: true, action });
+}
+for (const body of [{ action: "delete" }, { action: "VOID" }, { action: ["void"] }, {}, null, "void", { action: "pay" }]) {
+  assert.equal(parseClientInvoiceAction(body).ok, false);
+}
+assert.ok(isStripeInvoiceId("in_1PqRsTuVwXyZ"));
+for (const id of ["in_short", "cus_1PqRsTuVwXyZ", "in_1PqRs/../x", "in_1PqRsTuVwXyZ?x=1", "", 42, `in_${"a".repeat(65)}`]) {
+  assert.equal(isStripeInvoiceId(id), false, String(id));
+}
+assert.deepEqual((["open", "overdue", "paid", "void", "uncollectible", "refunded"] as const).map(canActOnClientInvoice), [true, true, false, false, false, false]);
+pass("only remind / void / mark_paid on a well-formed Stripe invoice id; only open or overdue invoices can be acted on");
+
+const morning = new Date("2026-10-08T08:00:00Z");
+const evening = new Date("2026-10-08T23:59:00Z");
+const nextDay = new Date("2026-10-09T00:01:00Z");
+assert.equal(clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "remind", morning), clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "remind", evening));
+assert.notEqual(clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "remind", evening), clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "remind", nextDay));
+assert.equal(clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "void", morning), clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "void", nextDay));
+assert.notEqual(clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "void"), clientInvoiceActionKey("c2", "in_1PqRsTuVwXyZ", "void"));
+assert.notEqual(clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "void"), clientInvoiceActionKey("c1", "in_1PqRsTuVwXyz", "void"), "invoice ids stay case-sensitive");
+assert.notEqual(clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "void"), clientInvoiceActionKey("c1", "in_1PqRsTuVwXyZ", "mark_paid"));
+pass("at most one reminder email per invoice per day; void / mark paid keys never change; keys are per workspace and per invoice");
+
+const now = new Date("2026-10-08T12:00:00Z");
+const row = (over: Partial<ClientInvoiceView>): ClientInvoiceView => ({
+  id: "in_1PqRsTuVwXyZ", source: "stripe", number: "N-1", description: null, issuedAt: "2026-09-01T00:00:00.000Z", dueAt: null, paidAt: null,
+  currency: "CAD", totalMinor: 0, amountDueMinor: 0, amountPaidMinor: 0, status: "open", payUrl: null, pdfUrl: null, checkoutRequestId: null, ...over,
+});
+const sample = [
+  row({ status: "open", amountDueMinor: 11498, totalMinor: 11498 }),
+  row({ status: "overdue", amountDueMinor: 5000, totalMinor: 7000, amountPaidMinor: 2000 }),
+  row({ status: "paid", amountPaidMinor: 20000, paidAt: "2026-10-01T10:00:00.000Z" }),
+  row({ status: "paid", amountPaidMinor: 99999, paidAt: "2026-08-01T10:00:00.000Z" }),
+  row({ status: "paid", amountPaidMinor: 777, paidAt: "2026-10-09T10:00:00.000Z" }),
+  row({ status: "void", amountDueMinor: 0, totalMinor: 4000 }),
+  row({ status: "open", currency: "USD", amountDueMinor: 123456 }),
+];
+assert.deepEqual(summarizeClientIssuedInvoices(sample, now), {
+  currency: "CAD",
+  outstandingMinor: 16498,
+  outstandingCount: 2,
+  overdueMinor: 5000,
+  overdueCount: 1,
+  paidLast30DaysMinor: 20000,
+  paidLast30DaysCount: 1,
+  otherCurrencyCount: 1,
+});
+assert.equal(summarizeClientIssuedInvoices([], now).outstandingMinor, 0);
+pass("summary: amount still owed, overdue and paid in the last 30 days; void ignored; other currencies never added to CAD");
+
+assert.deepEqual(filterClientIssuedInvoices(sample, "unpaid").map((i) => i.status), ["open", "overdue", "open"]);
+assert.deepEqual(filterClientIssuedInvoices(sample, "overdue").map((i) => i.status), ["overdue"]);
+assert.equal(filterClientIssuedInvoices(sample, "paid").length, 3);
+assert.equal(filterClientIssuedInvoices(sample, "all").length, sample.length);
+for (const value of ["unpaid", "overdue", "paid", "all"]) assert.equal(parseClientInvoiceFilter(value), value);
+for (const value of [undefined, ["paid"], "PAID", "x"]) assert.equal(parseClientInvoiceFilter(value), "all");
+pass("invoice list filters: to collect, overdue, paid; unknown filter shows everything");
+
+const actionRoute = read("src/app/api/billing/client-invoicing/invoices/[invoiceId]/route.ts");
+assert.ok(actionRoute.includes('requireWorkspaceApiPermission("manage_settings")'), "action route is workspace-gated");
+assert.ok(actionRoute.includes("readJsonBody(request)"), "action route checks the write origin");
+assert.ok(actionRoute.includes("isStripeInvoiceId(invoiceId)"), "action route validates the invoice id");
+assert.ok(actionRoute.includes("gate.access.activeClientId"), "action uses the active workspace, never the request");
+const actionService = read("src/lib/billing/client-invoicing/invoice-service.ts");
+assert.ok(actionService.includes("stripe.invoices.retrieve(input.invoiceId, {}, { stripeAccount })"), "invoice re-read from the workspace's own account");
+assert.ok(actionService.includes("paid_out_of_band: true"), "mark paid never charges the customer");
+assert.ok(actionService.includes("auditLog.create"), "every action is audit-logged");
+const nav = read("src/lib/dashboard/dashboard-config.ts");
+assert.ok(nav.includes('href: "/dashboard/client-billing"'), "client billing is reachable from the sidebar");
+pass("action route is workspace-gated and origin-checked; invoice re-read on the workspace's account; audited; in the sidebar");
 
 async function boundedBodyChecks() {
   const chunked = (parts: string[]) => new Request("https://takatak.test/x", {
