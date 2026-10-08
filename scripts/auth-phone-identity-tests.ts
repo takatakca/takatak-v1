@@ -91,10 +91,18 @@ function main() {
   const unconfirmedEmail = resolveSupabaseProfileIdentity(
     user({
       email: "mia@example.com",
-      user_metadata: { email: "mia@example.com" },
+      user_metadata: { email: "victim@example.com" },
     }),
   );
-  assert("an unconfirmed auth email is not an identity", unconfirmedEmail === null);
+  assert(
+    "an unconfirmed Auth email can create a profile but is not verified",
+    unconfirmedEmail?.email === "mia@example.com" &&
+      unconfirmedEmail.emailVerified === false,
+  );
+  assert(
+    "metadata cannot replace the Auth email",
+    unconfirmedEmail?.email !== "victim@example.com",
+  );
 
   if (failed > 0) {
     console.error(`[auth-phone-identity] ${failed} failed`);

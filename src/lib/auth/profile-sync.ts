@@ -92,21 +92,22 @@ function readConsent(user: User): SupabaseProfileIdentity['consent'] {
 }
 
 /**
- * A confirmed phone is enough. A recovery email is trusted only after the
- * provider confirms it. Client-editable user_metadata is never that proof.
+ * A confirmed phone is enough to open an account. The Auth user's own email
+ * can create a profile before confirmation so registration can send its code.
+ * That address is not a verified recovery email until email_confirmed_at.
+ * Client-editable user_metadata is never that proof.
  */
 export function resolveSupabaseProfileIdentity(
   user: User,
 ): SupabaseProfileIdentity | null {
-  const confirmedEmail = readOptionalEmail(user.email);
-  const email =
-    confirmedEmail && user.email_confirmed_at ? confirmedEmail : null;
+  const authEmail = readOptionalEmail(user.email);
+  const email = authEmail;
+  const emailVerified = Boolean(email && user.email_confirmed_at);
 
   const authPhone =
     typeof user.phone === 'string' ? normalizePhone(user.phone) : null;
   const phone =
     authPhone && user.phone_confirmed_at ? authPhone : null;
-  const emailVerified = email !== null;
   const phoneVerified = phone !== null;
 
   if (!email && !phoneVerified) {
