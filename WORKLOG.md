@@ -7,7 +7,7 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
 
-- [ ] **Staging database secret.** In GitHub → takatak-v1 → Settings → Environments → `staging`, set `TAKATAK_STAGING_DATABASE_URL` to the staging Supabase connection string. *Blocks:* "Reconcile TAKATAK staging migrations" and the staging deploy (they stop at "Validate staging database secret"). *(2026-10-07)*
+- [ ] **Staging migrations: approve and apply.** First merge #147 (staging apply gate). Then take a backup of the staging Supabase project. Then run "Reconcile TAKATAK staging migrations" with mode `apply` and the approval phrase from `docs/staging-migration-reconciliation.md`. *Blocks:* the staging deploy, including billing. *(2026-10-08; the staging secret is set, and audit run 37762369395 matched the three billing migrations)*
 - [ ] **Production secrets.** In GitHub → Settings → Environments → `production`, add the 7 `TAKATAK_PRODUCTION_*` secrets, then run "Promote verified TAKATAK production artifact". *Blocks:* deploying `main` to takatak.ca. *(2026-10-08, session 01KBGh1v)*
 - [ ] **Deploy agent secrets.** Add `COOLIFY_API_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `PROD_DATABASE_URL`, `PROD_DIRECT_URL`, `EMAIL_USER`, `EMAIL_PASSWORD` and an AI provider API key to the Claude cloud environment secrets. *Blocks:* the Coolify test copy and AI features. *(2026-10-08, session 01W1ntbf)*
 - [ ] **Merge #129** (client billing dashboard). CI is green. *Blocks:* clients managing their invoices. *(2026-10-08, session 01HWFgGo)*
@@ -17,7 +17,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 ## ▶ Next up (priority order: first item an agent can do; skip anything waiting on a person)
 1. **TK-027:** an accepted order lead becomes a Facturations draft through the billing queue (`enqueueInvoiceRequest`). Website requests→Leads is on `main`. *(billing, session 01HWFgGo)*
 2. **After Facturations #160 merges:** pin `FACTURATIONS_REF` in `ci.yml` to the new Facturations `main` and add issue → pay to the contract test.
-3. **After the staging secret is set:** check that reconcile records the three billing migrations and that staging deploys.
+3. **After the staging apply is approved and run:** check that the three billing migrations are recorded and that staging deploys. Then turn on billing on staging (go-live guide, steps 7–10).
 4. Then the `Open work` lines below and knowledgeAI `docs/11-DEV-BACKLOG.md`.
 
 ## ⚠ Overlaps to settle before more work (owner decision)
