@@ -102,15 +102,15 @@ npm run ops:readiness -- --origin https://staging.takatak.ca
 Les 9 migrations Growth ne sont **pas** dans `APPROVED_DEPLOY_MIGRATIONS`. Les reconcilers ne les appliqueront pas tant qu'elles n'y sont pas ajoutées :
 
 ```
-20261006120000_growth_reputation_and_ai_credits
-20261006150000_growth_analytics_and_conversations
-20261006180000_growth_agents_and_delivery
-20261006210000_growth_agent_schedules
-20261007090000_growth_review_showcase
-20261007120000_growth_google_data_sources
-20261007150000_growth_google_business_profile
-20261007180000_growth_plan_subscriptions
-20261007210000_growth_site_domain_verification
+20261009010000_growth_reputation_and_ai_credits
+20261009020000_growth_analytics_and_conversations
+20261009030000_growth_agents_and_delivery
+20261009040000_growth_agent_schedules
+20261009050000_growth_review_showcase
+20261009060000_growth_google_data_sources
+20261009070000_growth_google_business_profile
+20261009080000_growth_plan_subscriptions
+20261009090000_growth_site_domain_verification
 ```
 
 1. Faire une sauvegarde de la base.

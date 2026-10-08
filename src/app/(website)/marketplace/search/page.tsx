@@ -10,8 +10,8 @@ import {
 } from "@/lib/website/marketplace-catalog";
 
 export const metadata: Metadata = {
-  title:
-    "Search marketplace — TAKATAK",
+  title: "Search marketplace",
+  alternates: { canonical: "/marketplace/search" },
 };
 
 function readValue(
@@ -127,7 +127,7 @@ export default async function MarketplaceSearchPage({
             name="q"
             defaultValue={query}
             placeholder="Search packages"
-            className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+            className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
           />
         </div>
 
@@ -192,7 +192,7 @@ export default async function MarketplaceSearchPage({
 
         <button
           type="submit"
-          className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white"
         >
           Apply
         </button>
@@ -219,7 +219,7 @@ export default async function MarketplaceSearchPage({
 
           <Link
             href="/marketplace/post-project"
-            className="mt-4 inline-flex rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-4 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white"
           >
             Post a project
           </Link>

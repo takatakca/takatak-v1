@@ -97,6 +97,21 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Website lead capture safeguards
+        run: npm run qa:website-leads
+
+      - name: Lead detail actions
+        run: npm run qa:lead-actions
+
+      - name: Client invoicing (Stripe Connect) safeguards
+        run: npm run qa:client-invoicing
+
+      - name: Website theme colours registered
+        run: npm run qa:website-theme
+
+      - name: Website SEO and HTTPS redirect
+        run: npm run qa:website-seo
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
@@ -105,6 +120,10 @@ jobs:
 
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
+
+      - name: GROUPE TAKATAK billing (Facturations) safeguards
+        run: npm run qa:billing
+
       - name: Client invoice center safeguards
         run: npm run qa:client-invoices
 
@@ -310,10 +329,26 @@ jobs:
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
 
+      - name: GROUPE TAKATAK billing ↔ real Facturations contract (pinned SHA)
+        env:
+          # Exact takatakca/Facturations commit whose integration v1 contract
+          # this branch is verified against. Bump deliberately, with review.
+          FACTURATIONS_REF: eb1e02a10efdf9767dca0eeb04b5010209d18f07
+        run: bash scripts/ci-billing-facturations-contract.sh
+      - name: Client invoicing (Stripe Connect) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoicing-db
+
       - name: Client invoice center against the ephemeral database
         env:
           NODE_ENV: development
         run: npm run qa:client-invoices-db
+
+      - name: GROUPE TAKATAK billing ecosystem feed against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:billing-feed-db
 
       - name: Build (webpack)
         env:
@@ -329,6 +364,9 @@ jobs:
         run: npm run artifact:pack
         env:
           TAKATAK_BUILD_ID: ci-${{ github.sha }}
+
+      - name: Validate archive paths before upload
+        run: python3 scripts/validate-production-archive.py var/artifacts/ci-${{ github.sha }}/takatak-ci-${{ github.sha }}.tar.gz
 
       - name: Artifact content audit
         run: node scripts/audit-production-artifact.cjs var/artifacts/ci-${{ github.sha }}

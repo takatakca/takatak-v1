@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Pricing (CAD)",
   description:
     "Transparent CAD pricing for domains, hosting, websites, apps, branding, marketing, VoIP, automation and design services.",
+  alternates: { canonical: "/pricing" },
 };
 
 export default function PricingPage() {

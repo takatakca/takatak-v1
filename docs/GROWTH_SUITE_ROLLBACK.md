@@ -11,15 +11,15 @@ This runbook covers every change on branch `claude/festive-newton-5i9rv7`. It fo
 | Commit | Change | Migration |
 |---|---|---|
 | `3f58a49` | Phase 1: connectors hub, SEO site audit, reputation and AI Engine pages | none |
-| `94ea93d` | Phase 2: reputation backend, AI credit ledger | `20261006120000_growth_reputation_and_ai_credits` |
-| `95954b3` | Phase 3: first-party analytics, audiences, web chat | `20261006150000_growth_analytics_and_conversations` |
-| `cec90d7` | Phase 4: automatic delivery, credit checkout, AI agent queue | `20261006180000_growth_agents_and_delivery` |
-| `dad7899` | Phase 5: agent schedules, low-rating trigger, review → lead | `20261006210000_growth_agent_schedules` |
-| `f833f35` | Phase 6: review showcase, Chat Concierge, Web Vitals | `20261007090000_growth_review_showcase` |
-| `68a321c` | Phase 7: GA4, Search Console, monthly report | `20261007120000_growth_google_data_sources` |
-| `a9d14f8` | Phase 8: Google Business Profile | `20261007150000_growth_google_business_profile` |
-| `3a0a24a` | Phase 9: plan subscriptions and entitlements | `20261007180000_growth_plan_subscriptions` |
-| `7f84125` | Security fix: Google links require verified website ownership | `20261007210000_growth_site_domain_verification` |
+| `94ea93d` | Phase 2: reputation backend, AI credit ledger | `20261009010000_growth_reputation_and_ai_credits` |
+| `95954b3` | Phase 3: first-party analytics, audiences, web chat | `20261009020000_growth_analytics_and_conversations` |
+| `cec90d7` | Phase 4: automatic delivery, credit checkout, AI agent queue | `20261009030000_growth_agents_and_delivery` |
+| `dad7899` | Phase 5: agent schedules, low-rating trigger, review → lead | `20261009040000_growth_agent_schedules` |
+| `f833f35` | Phase 6: review showcase, Chat Concierge, Web Vitals | `20261009050000_growth_review_showcase` |
+| `68a321c` | Phase 7: GA4, Search Console, monthly report | `20261009060000_growth_google_data_sources` |
+| `a9d14f8` | Phase 8: Google Business Profile | `20261009070000_growth_google_business_profile` |
+| `3a0a24a` | Phase 9: plan subscriptions and entitlements | `20261009080000_growth_plan_subscriptions` |
+| `7f84125` | Security fix: Google links require verified website ownership | `20261009090000_growth_site_domain_verification` |
 | `5758789` | This rollback runbook and down script | none |
 | `9aa5702` | Fixes for 10 code-review findings (billing order, chat polling, client IP, agents, DST) | none |
 

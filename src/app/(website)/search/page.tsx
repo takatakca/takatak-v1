@@ -6,7 +6,8 @@ import { PUBLIC_SERVICES } from "@/lib/website/public-services";
 import { searchMarketplacePackages } from "@/lib/website/marketplace-catalog";
 
 export const metadata: Metadata = {
-  title: "Search — TAKATAK",
+  title: "Search",
+  alternates: { canonical: "/search" },
 };
 
 function readValue(

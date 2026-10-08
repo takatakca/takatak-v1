@@ -20,7 +20,8 @@ import {
   identitySessionCookies,
   staleTenantCookieClears,
 } from "@/lib/auth/workspace-session-cookies";
-import { originFromRequest } from "@/lib/config/app-origin";
+import { isProductionAppRuntime, originFromRequest } from "@/lib/config/app-origin";
+import { httpsRedirectTarget } from "@/lib/security/https-redirect";
 import {
   AUTH_IDENTITY_COOKIE,
   AUTH_VERIFIED_AT_COOKIE,
@@ -103,6 +104,14 @@ function applyVerifiedIdentity(
 }
 
 export default async function proxy(request: NextRequest) {
+  const secureUrl = httpsRedirectTarget({
+    headers: request.headers,
+    pathname: request.nextUrl.pathname,
+    search: request.nextUrl.search,
+    production: isProductionAppRuntime(),
+  });
+  if (secureUrl) return NextResponse.redirect(secureUrl, 308);
+
   const env = getSupabaseEnv();
   if (!env) return passthroughWithoutClientIdentity(request);
 

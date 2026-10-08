@@ -50,7 +50,7 @@ The dashboard never calls model providers. AI tasks go to the owner's gateway (`
 
 ## Phase 2 — Reputation backend + AI credit ledger
 
-Migration: `prisma/migrations/20261006120000_growth_reputation_and_ai_credits`. It adds:
+Migration: `prisma/migrations/20261009010000_growth_reputation_and_ai_credits`. It adds:
 - **Tables:** `review_profiles`, `review_requests`, `review_responses`, `ai_credit_accounts`, `ai_credit_entries`.
 - **Permissions:** `view_reputation` and `manage_reputation`.
 - **Database checks:** rating must be 1–5, balance must be ≥ 0, a ledger entry can't be 0.
@@ -104,7 +104,7 @@ Platform admins grant, sell or adjust credits on `/dashboard/growth/ai-engine`. 
 
 ## Phase 3: First-party analytics, retargeting audiences, web chat
 
-Migration: `prisma/migrations/20261006150000_growth_analytics_and_conversations`. It adds:
+Migration: `prisma/migrations/20261009020000_growth_analytics_and_conversations`. It adds:
 - **Tables:** `analytics_sites`, `analytics_events`, `analytics_audiences`, `chat_widgets`, `chat_conversations`, `chat_messages`.
 - **Permissions:** `view_conversations` and `manage_conversations`.
 - **Database checks:** message length, lookback range, accent colour format.
@@ -154,7 +154,7 @@ Staff inbox:
 
 ## Phase 4: Automatic delivery, card checkout for credits, AI agent workforce
 
-Migration: `prisma/migrations/20261006180000_growth_agents_and_delivery`. It adds:
+Migration: `prisma/migrations/20261009030000_growth_agents_and_delivery`. It adds:
 - **New columns on `review_requests`:** `sentAt`, `deliveryStatus`, `providerMessageId` and `recipientMasked`.
 - **New tables:** `ai_agent_settings` and `ai_agent_runs`.
 - **Database checks and access:** RLS on both tables, browser grants revoked, and `ai_agent_runs` added to the advisor's sensitive-table list.
@@ -206,7 +206,7 @@ Other rules:
 
 ## Phase 5: Autopilot schedules, automatic triggers, review → lead
 
-Migration: `prisma/migrations/20261006210000_growth_agent_schedules`. It is additive only:
+Migration: `prisma/migrations/20261009040000_growth_agent_schedules`. It is additive only:
 - **`ai_agent_settings`:** new `schedule`, `scheduleWeekday`, `scheduleHour` and `lastScheduledFor` columns, an index, and range checks.
 - **`review_responses`:** new `leadId` column.
 
@@ -230,7 +230,7 @@ When a customer ticked "contact me", **Create lead for follow-up** in the feedba
 
 ## Phase 6: Review showcase, AI that acts, Core Web Vitals
 
-Migration: `prisma/migrations/20261007090000_growth_review_showcase` adds `review_responses.publishConsent` and `review_responses.hiddenFromShowcase`, plus an index. It is additive and **not** in the approved deploy lists yet.
+Migration: `prisma/migrations/20261009050000_growth_review_showcase` adds `review_responses.publishConsent` and `review_responses.hiddenFromShowcase`, plus an index. It is additive and **not** in the approved deploy lists yet.
 
 ### Review showcase (Birdeye-style widget)
 
@@ -273,14 +273,14 @@ The SEO page runs Google PageSpeed Insights v5 for mobile or desktop: performanc
 
 ## Phase 7: Google Analytics 4, Search Console, monthly growth report
 
-Migration: `prisma/migrations/20261007120000_growth_google_data_sources` adds `analytics_sites.ga4PropertyId` and `analytics_sites.searchConsoleProperty`, each with a format check. It is **not** in the approved deploy lists yet.
+Migration: `prisma/migrations/20261009060000_growth_google_data_sources` adds `analytics_sites.ga4PropertyId` and `analytics_sites.searchConsoleProperty`, each with a format check. It is **not** in the approved deploy lists yet.
 
 ### Google data (official APIs, read-only)
 
 - **One TAKATAK service account:** set `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` (a PEM key; escaped `\n` is fine). The app signs its own RS256 assertion and caches the token.
 - **Per website:** under Analytics → Tracked websites → Google connections, paste the **GA4 property ID** and the **Search Console property** (`sc-domain:example.com` or `https://www.example.com/`).
   - The client first adds the service-account email as a Viewer in GA4 and as a user in Search Console. The email is shown in that form.
-  - **Ownership check (security fix, migration `20261007210000_growth_site_domain_verification`).** Every workspace shares one service account, so an identifier alone proves nothing: without this, a workspace could link another business's `sc-domain:` or GA4 ID and read its data. Now:
+  - **Ownership check (security fix, migration `20261009090000_growth_site_domain_verification`).** Every workspace shares one service account, so an identifier alone proves nothing: without this, a workspace could link another business's `sc-domain:` or GA4 ID and read its data. Now:
     - each website has its own random verification token;
     - the owner publishes it as a DNS TXT record on the domain (`takatak-site-verification=<token>`) or a `<meta name="takatak-site-verification">` tag in the homepage `<head>`, then clicks **Verify ownership**. The page must be served from the domain itself or its `www.` alias after redirects, and the fetch uses the site-audit SSRF guard;
     - linking requires a verified domain. The Search Console property must be `sc-domain:<domain>` or a URL prefix on `<domain>` / `www.<domain>`. The GA4 property must have a web data stream on that domain, checked live with the Analytics Admin API (read-only scope);
@@ -301,7 +301,7 @@ Each number is compared with the previous month, and the page lists French highl
 
 ## Phase 8: Google Business Profile (import Google reviews, publish replies)
 
-Migration: `prisma/migrations/20261007150000_growth_google_business_profile` adds `google_business_connections`, `google_business_oauth_states`, `google_business_locations` and `external_reviews`. All four have RLS, browser grants revoked and value checks, and are on the advisor's sensitive list. The migration is **not** in the approved deploy lists yet.
+Migration: `prisma/migrations/20261009070000_growth_google_business_profile` adds `google_business_connections`, `google_business_oauth_states`, `google_business_locations` and `external_reviews`. All four have RLS, browser grants revoked and value checks, and are on the advisor's sensitive list. The migration is **not** in the approved deploy lists yet.
 
 ### Setup
 
@@ -331,7 +331,7 @@ The Business Profile APIs require Google's access approval for the project.
 
 ## Phase 9: Plan subscriptions and entitlements
 
-Migration: `prisma/migrations/20261007180000_growth_plan_subscriptions` adds:
+Migration: `prisma/migrations/20261009080000_growth_plan_subscriptions` adds:
 - **`growth_subscriptions`:** one row per client and plan, separate from the Social `client_subscriptions`.
 - **`growth_billing_events`:** Stripe event IDs, for idempotency.
 

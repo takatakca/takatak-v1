@@ -34,8 +34,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default:
-      "TAKATAK — Business services marketplace: websites, domains, hosting & growth",
+    default: "TAKATAK — Websites, domains, hosting & growth",
     template: "%s — TAKATAK",
   },
   description:

@@ -177,7 +177,7 @@ export function CategoryResults({
           <span className="inline-flex items-center gap-1.5">
             <ShieldCheck
               size={13}
-              className="text-emerald-700"
+              className="text-primary"
             />
 
             Escrow protected
@@ -186,7 +186,7 @@ export function CategoryResults({
           <span className="inline-flex items-center gap-1.5">
             <Clock
               size={13}
-              className="text-emerald-700"
+              className="text-primary"
             />
 
             Avg. delivery 3–7 days
@@ -195,7 +195,7 @@ export function CategoryResults({
           <span className="inline-flex items-center gap-1.5">
             <BadgeCheck
               size={13}
-              className="text-emerald-700"
+              className="text-primary"
             />
 
             Verified by Groupe TAKATAK
@@ -219,7 +219,7 @@ export function CategoryResults({
             type="number"
             min="0"
             placeholder="Any"
-            className="w-28 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-950 outline-none focus:border-emerald-600"
+            className="w-28 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-950 outline-none focus:border-primary"
           />
         </div>
 
@@ -238,7 +238,7 @@ export function CategoryResults({
             type="number"
             min="1"
             placeholder="Any"
-            className="w-28 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-950 outline-none focus:border-emerald-600"
+            className="w-28 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-950 outline-none focus:border-primary"
           />
         </div>
 
@@ -254,7 +254,7 @@ export function CategoryResults({
                 event.target.value,
               )
             }
-            className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-950 outline-none focus:border-emerald-600"
+            className="rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm text-slate-950 outline-none focus:border-primary"
           >
             <option value="recommended">
               Recommended
@@ -302,7 +302,7 @@ export function CategoryResults({
             href={`/marketplace/post-project?category=${encodeURIComponent(
               category.slug,
             )}`}
-            className="mt-4 inline-flex rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+            className="mt-4 inline-flex rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white"
           >
             Post a custom project
           </Link>
@@ -336,7 +336,7 @@ export function CategoryResults({
           href={`/marketplace/post-project?category=${encodeURIComponent(
             category.slug,
           )}`}
-          className="shrink-0 rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white"
+          className="shrink-0 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white"
         >
           Post a project
         </Link>

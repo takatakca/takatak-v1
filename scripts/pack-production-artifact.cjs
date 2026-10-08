@@ -37,6 +37,9 @@ function copy(from, to, options = {}) {
   fs.cpSync(from, to, {
     recursive: true,
     force: true,
+    // Keep relative links (node_modules/.bin) relative; the default rewrites
+    // them to absolute build-machine paths, which escape the artifact.
+    verbatimSymlinks: true,
     filter(src) {
       const name = path.basename(src);
       if (name === ".git") return false;

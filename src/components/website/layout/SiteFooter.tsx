@@ -19,7 +19,7 @@ const cols = [
     links: [
       { to: "/marketplace", label: "How TAKATAK works" },
       { to: "/marketplace/post-project", label: "Post a project" },
-      { to: "/dashboard/marketplace", label: "Manage projects" },
+      { to: "/dashboard", label: "Manage projects" },
       { to: "/dashboard/support", label: "Support" },
     ],
   },
