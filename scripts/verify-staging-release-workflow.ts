@@ -40,6 +40,10 @@ requireText("check-module-load.ts", "remote module-load verification");
 requireText("/api/health", "health smoke");
 requireText("/api/health/ready", "readiness smoke");
 requireText("Roll back failed staging activation", "automatic staging rollback");
+requireText(
+  "Human approval accepted for staging apply",
+  "staging app release only after an approved migration apply",
+);
 requireText("Refuse stale release before staging activation", "stale-main activation guard");
 forbidText("pcjfahhlozsseqqevimi", "production Supabase project ref");
 forbidText("TAKATAK_PRODUCTION_", "production deployment secrets");
@@ -73,13 +77,22 @@ for (const forbidden of [
 }
 
 if (!migrationSource.includes("github.event.workflow_run.head_branch == 'main'")) {
-  throw new Error("Staging migrations must auto-apply only after green main CI.");
+  throw new Error("Automatic staging audit must stay limited to green main CI.");
 }
 if (!migrationSource.includes("github.event.workflow_run.conclusion == 'success'")) {
   throw new Error("Staging migrations must require green upstream CI.");
 }
-if (!migrationSource.includes("github.event_name == 'workflow_run' && 'apply' || inputs.mode")) {
-  throw new Error("Automatic staging migration run must use apply mode.");
+if (migrationSource.includes("github.event_name == 'workflow_run' && 'apply'")) {
+  throw new Error("A green main CI run must not select staging apply mode.");
+}
+if (!migrationSource.includes("inputs.approval == 'approve-staging-migrations'")) {
+  throw new Error("Staging apply must require the approval phrase approve-staging-migrations.");
+}
+if (!migrationSource.includes("Human approval accepted for staging apply")) {
+  throw new Error("Staging apply must record an explicit approval step.");
+}
+if (!migrationSource.includes("|| 'audit'")) {
+  throw new Error("Staging reconciliation must default to audit.");
 }
 
 if (!migrationSource.includes("node scripts/reconcile-staging-migrations.mjs")) {
@@ -98,6 +111,15 @@ for (const needle of [
 }
 if (reconcilerSource.includes('runPrisma(["deploy"]')) {
   throw new Error("AHMV staging reconciliation must not run global prisma migrate deploy.");
+}
+if (!reconcilerSource.includes("migrationHistorySlug(migration)")) {
+  throw new Error("Staging history lookup must use the real numeric-prefix slug.");
+}
+if (!reconcilerSource.includes("supabaseHistorySql(history.statements)")) {
+  throw new Error("Staging history SQL must join statements with a real newline.");
+}
+if (reconcilerSource.includes("replace(/^\\\\d+_/") || reconcilerSource.includes('join("\\\\n")')) {
+  throw new Error("Staging reconciler still contains the escaped prefix or newline bug.");
 }
 
 console.log("TAKATAK staging migration + release workflow safeguards: PASS");

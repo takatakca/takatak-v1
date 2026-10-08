@@ -10,6 +10,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: takatak-staging-release
@@ -60,9 +61,19 @@ jobs:
         env:
           STAGING_APP_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
           STAGING_ANON_KEY: ${{ secrets.TAKATAK_STAGING_SUPABASE_ANON_KEY }}
+          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_run" ]; then
+            approved="$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}/jobs" \
+              --jq '.jobs[].steps[] | select(.name == "Human approval accepted for staging apply" and .conclusion == "success") | .name')"
+            if [ -z "$approved" ]; then
+              echo "::warning title=Staging release skipped::The migration workflow did not record a successful approved apply."
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
           missing=()
 
           test -n "${STAGING_APP_URL:-}" || missing+=("TAKATAK_STAGING_APP_URL repository/environment variable")
