@@ -195,6 +195,74 @@ export function ahmvScheduleMaxAgeMinutes(
     : 360;
 }
 
+
+const OFFICIAL_AHMV_WEEKLY_HOSTS = new Set(["ahmverdun.com", "www.ahmverdun.com"]);
+const MAX_OFFICIAL_WEEK_SPAN_MS = 8 * 86_400_000;
+const MAX_OFFICIAL_WEEK_VALIDITY_MS = 14 * 86_400_000;
+const OFFICIAL_WEEK_GRACE_MS = 12 * 60 * 60_000;
+
+function isOfficialAhmvWeeklyDocument(sourceUrl: string) {
+  try {
+    const url = new URL(sourceUrl);
+    return (
+      url.protocol === "https:" &&
+      OFFICIAL_AHMV_WEEKLY_HOSTS.has(url.hostname.toLowerCase()) &&
+      /\/storage\//i.test(url.pathname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Returns the last instant at which a normalized snapshot may be considered
+ * fresh.
+ *
+ * Live/API snapshots use the configured max-age exactly. A bounded official
+ * AHMV weekly document may remain fresh through the activities it explicitly
+ * publishes, because its real source timestamp is the publication time, not an
+ * importer execution time. This never rewrites updatedAt.
+ */
+export function ahmvScheduleFreshUntil(
+  input: AhmvScheduleSnapshotInput,
+  env: Record<string, string | undefined> = process.env,
+): Date {
+  const sourceUpdatedMs = Date.parse(input.updatedAt);
+  const configuredUntil =
+    sourceUpdatedMs + ahmvScheduleMaxAgeMinutes(env) * 60_000;
+
+  if (
+    input.status !== "active" ||
+    input.events.length === 0 ||
+    !isOfficialAhmvWeeklyDocument(input.sourceUrl)
+  ) {
+    return new Date(configuredUntil);
+  }
+
+  const starts = input.events.map((item) => Date.parse(item.startsAt));
+  const ends = input.events.map((item) =>
+    Date.parse(item.endsAt ?? item.startsAt),
+  );
+  const firstEvent = Math.min(...starts);
+  const lastEvent = Math.max(...ends);
+
+  if (
+    !Number.isFinite(firstEvent) ||
+    !Number.isFinite(lastEvent) ||
+    lastEvent < firstEvent ||
+    lastEvent - firstEvent > MAX_OFFICIAL_WEEK_SPAN_MS
+  ) {
+    return new Date(configuredUntil);
+  }
+
+  const boundedOfficialUntil = Math.min(
+    lastEvent + OFFICIAL_WEEK_GRACE_MS,
+    sourceUpdatedMs + MAX_OFFICIAL_WEEK_VALIDITY_MS,
+  );
+
+  return new Date(Math.max(configuredUntil, boundedOfficialUntil));
+}
+
 export function normalizeAhmvScheduleLookup(value: string): string {
   return value
     .normalize("NFD")

@@ -387,6 +387,7 @@ export const en = {
   "fallback.hosting.error": "We couldn't send your request. Please try again or email support@takatak.ca.",
   "fallback.domain.received": "Domain registration request received",
   "fallback.domain.receivedBody": "We'll verify availability for {domain} and contact you before registration.",
+  "fallback.domain.reference": "Reference: {reference}",
   "fallback.domain.createAccount": "Create account",
   "fallback.domain.viewHosting": "View hosting plans",
   "fallback.domain.contactRequired": "Add an email or phone number so TAKATAK can contact you.",

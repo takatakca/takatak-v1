@@ -310,6 +310,7 @@ function readExpiresAt(
 export async function exchangeMetaAuthorizationCode(options: {
   code: string;
   codeVerifier: string;
+  redirectUri?: string;
 }): Promise<{
   accessToken: string;
   tokenType: string | null;
@@ -326,7 +327,7 @@ export async function exchangeMetaAuthorizationCode(options: {
   url.searchParams.set("client_id", getMetaAppId());
   url.searchParams.set(
     "redirect_uri",
-    getMetaOAuthRedirectUri(),
+    options.redirectUri ?? getMetaOAuthRedirectUri(),
   );
   url.searchParams.set(
     "client_secret",

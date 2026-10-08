@@ -74,6 +74,7 @@ export async function listFacebookCompetitors(options: {
     where: {
       clientId: options.clientId,
       businessBrandId: options.businessBrandId,
+      platform: "facebook",
       status: "active",
     },
     orderBy: { createdAt: "asc" },
@@ -179,6 +180,7 @@ export async function addFacebookCompetitor(options: {
     where: {
       clientId: options.clientId,
       businessBrandId: options.businessBrandId,
+      platform: "facebook",
       status: "active",
     },
   });

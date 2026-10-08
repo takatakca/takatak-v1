@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
+import { getSocialAvatar } from "@/lib/social/avatars/social-avatar-service";
 import { fetchFacebookAccountPicture } from "@/lib/social/media/facebook-picture";
+import { fetchGoogleBusinessAccountPicture } from "@/lib/social/media/google-business-picture";
 import { isUuid } from "@/lib/validation/common";
 
 export const runtime = "nodejs";
@@ -26,10 +28,41 @@ export async function GET(
   }
 
   try {
-    const picture = await fetchFacebookAccountPicture({
+    const storedAvatar = await getSocialAvatar({
       clientId: gate.access.activeClientId,
       accountId,
     });
+
+    if (storedAvatar) {
+      const response = new NextResponse(
+        storedAvatar.bytes as unknown as BodyInit,
+        {
+          status: 200,
+          headers: {
+            "Content-Type": storedAvatar.contentType,
+            "Content-Length": String(storedAvatar.byteSize),
+            "Cache-Control":
+              "private, max-age=3600, stale-while-revalidate=86400",
+          },
+        },
+      );
+
+      if (storedAvatar.etag) {
+        response.headers.set("ETag", storedAvatar.etag);
+      }
+
+      return response;
+    }
+
+    const picture =
+      (await fetchFacebookAccountPicture({
+        clientId: gate.access.activeClientId,
+        accountId,
+      })) ??
+      (await fetchGoogleBusinessAccountPicture({
+        clientId: gate.access.activeClientId,
+        accountId,
+      }));
 
     if (!picture) {
       return new NextResponse(null, { status: 404 });

@@ -4,8 +4,8 @@ import { PostProjectForm } from "@/components/website/marketplace/post-project-f
 import { getWebsiteSession } from "@/lib/website/website-session";
 
 export const metadata: Metadata = {
-  title:
-    "Post a project — TAKATAK Marketplace",
+  title: "Post a project",
+  alternates: { canonical: "/marketplace/post-project" },
 };
 
 export default async function PostProjectPage() {

@@ -3,7 +3,7 @@ name: Build and deploy TAKATAK staging
 on:
   workflow_run:
     workflows:
-      - CI
+      - Reconcile TAKATAK staging migrations
     types:
       - completed
   workflow_dispatch:
@@ -33,7 +33,7 @@ jobs:
     environment: staging
 
     steps:
-      - name: Checkout exact green release
+      - name: Checkout exact migration-verified release
         uses: actions/checkout@v4
         with:
           ref: ${{ env.RELEASE_SHA }}

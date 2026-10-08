@@ -30,14 +30,14 @@ export async function generateMetadata({
 
   if (!category) {
     return {
-      title:
-        "Category not found — TAKATAK",
+      title: "Category not found",
     };
   }
 
   return {
-    title: `${category.name} — TAKATAK Marketplace`,
+    title: `${category.name} — Marketplace`,
     description: `Browse ${category.name} packages on the TAKATAK marketplace.`,
+    alternates: { canonical: `/marketplace/category/${category.slug}` },
   };
 }
 

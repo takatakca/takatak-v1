@@ -3,12 +3,18 @@ export const SOCIAL_CONNECTION_PROVIDERS = [
   "instagram",
   "threads",
   "google",
+  "google_business",
   "linkedin",
   "tiktok",
   "pinterest",
   "x",
   "bluesky",
   "twitch",
+  "web",
+  "blog",
+  "meta_ads",
+  "google_ads",
+  "looker_studio",
 ] as const;
 
 export type SocialConnectionProviderValue =
@@ -17,6 +23,10 @@ export type SocialConnectionProviderValue =
 export type ProviderEnvironmentName =
   | "META_APP_ID"
   | "META_APP_SECRET"
+  | "INSTAGRAM_APP_ID"
+  | "INSTAGRAM_APP_SECRET"
+  | "THREADS_APP_ID"
+  | "THREADS_APP_SECRET"
   | "GOOGLE_SOCIAL_CLIENT_ID"
   | "GOOGLE_SOCIAL_CLIENT_SECRET"
   | "LINKEDIN_CLIENT_ID"
@@ -27,9 +37,10 @@ export type ProviderEnvironmentName =
   | "PINTEREST_APP_SECRET"
   | "X_CLIENT_ID"
   | "X_CLIENT_SECRET"
-  | "BLUESKY_APP_PASSWORD"
+  | "BLUESKY_OAUTH_PRIVATE_JWK"
   | "TWITCH_CLIENT_ID"
-  | "TWITCH_CLIENT_SECRET";
+  | "TWITCH_CLIENT_SECRET"
+  | "GOOGLE_ADS_DEVELOPER_TOKEN";
 
 export type SocialProviderDefinition = {
   provider: SocialConnectionProviderValue;
@@ -39,7 +50,8 @@ export type SocialProviderDefinition = {
   authorizationType:
     | "oauth2"
     | "oauth2_pkce"
-    | "app_password";
+    | "app_password"
+    | "site_verification";
   requiredEnvironment: ProviderEnvironmentName[];
   implemented: boolean;
   connectable: boolean;

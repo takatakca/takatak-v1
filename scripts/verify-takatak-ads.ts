@@ -222,11 +222,34 @@ function verifyPrivacyAndRoutes(): void {
   pass("browser event API cannot submit lead or conversion events");
 }
 
+
+function verifyAhmvPublisherSeed(): void {
+  const root = process.cwd();
+  const seed = fs.readFileSync(
+    path.join(root, "scripts", "seed-ahmv-ads-publisher.ts"),
+    "utf8",
+  );
+
+  assert.ok(seed.includes('domain: "ahmverdun.ca"'));
+  assert.equal(seed.includes('domain: "ahmverdun.com"'), false);
+  assert.ok(seed.includes('"https://ahmverdun.ca"'));
+  assert.ok(seed.includes('"https://www.ahmverdun.ca"'));
+  assert.ok(seed.includes('"https://ahmverdun.com"'));
+  assert.ok(seed.includes('"https://www.ahmverdun.com"'));
+  assert.ok(seed.includes('pagePattern: "/equipes*"'));
+  assert.ok(seed.includes('pagePattern: "/nouvelles*"'));
+  assert.ok(seed.includes('pagePattern: "/galerie*"'));
+  assert.equal(seed.includes('pagePattern: "/photos*"'), false);
+
+  pass("AHMV ADS publisher seed uses .ca canonical domain and canonical routes");
+}
+
 console.log("TAKATAK ADS foundation verification");
 console.log("===================================");
 verifyCatalog();
 verifyLifecycle();
 verifyTargeting();
 verifyPrivacyAndRoutes();
+verifyAhmvPublisherSeed();
 console.log("===================================");
 console.log("PASS  TAKATAK ADS foundation verified");

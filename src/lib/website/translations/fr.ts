@@ -389,6 +389,7 @@ export const fr: Record<TranslationKey, string> = {
   "fallback.hosting.error": "L'envoi a échoué. Réessayez ou écrivez à support@takatak.ca.",
   "fallback.domain.received": "Demande d'enregistrement de domaine reçue",
   "fallback.domain.receivedBody": "Nous vérifierons la disponibilité de {domain} et vous contacterons avant l'enregistrement.",
+  "fallback.domain.reference": "Référence : {reference}",
   "fallback.domain.createAccount": "Créer un compte",
   "fallback.domain.viewHosting": "Voir les forfaits d'hébergement",
   "fallback.domain.contactRequired": "Ajoutez un courriel ou un téléphone pour que TAKATAK puisse vous joindre.",

@@ -470,7 +470,8 @@ export async function listModerationQueue(options: {
       ...(options.status ? { status: options.status } : { status: "pending_review" }),
     },
     orderBy: [
-      { priority: "desc" },
+      // String priorities sort member_priority before standard in ascending order.
+      { priority: "asc" },
       { reviewDueAt: "asc" },
       { createdAt: "asc" },
     ],

@@ -24,19 +24,19 @@ const PLACEMENTS = [
   {
     code: "team-inline-01",
     name: "AHMV Team pages — Inline",
-    pagePattern: "/equipes/*",
+    pagePattern: "/equipes*",
     format: "responsive-display",
   },
   {
     code: "news-inline-01",
     name: "AHMV News — Inline",
-    pagePattern: "/nouvelles/*",
+    pagePattern: "/nouvelles*",
     format: "responsive-display",
   },
   {
     code: "gallery-inline-01",
     name: "AHMV Gallery — Inline",
-    pagePattern: "/photos*",
+    pagePattern: "/galerie*",
     format: "responsive-display",
   },
 ] as const;
@@ -53,7 +53,7 @@ async function main(): Promise<void> {
     where: { code: PUBLISHER_CODE },
     update: {
       name: "AHM Verdun",
-      domain: "ahmverdun.com",
+      domain: "ahmverdun.ca",
       category: "hockey",
       country: "Canada",
       region: "Quebec",
@@ -69,7 +69,7 @@ async function main(): Promise<void> {
     create: {
       code: PUBLISHER_CODE,
       name: "AHM Verdun",
-      domain: "ahmverdun.com",
+      domain: "ahmverdun.ca",
       category: "hockey",
       country: "Canada",
       region: "Quebec",

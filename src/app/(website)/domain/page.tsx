@@ -4,6 +4,7 @@ import { DomainPageContent } from "@/components/website/pages/domain-page-conten
 
 export const metadata: Metadata = {
   title: "Domain Names",
+  alternates: { canonical: "/domain" },
 };
 
 export default function DomainPage() {

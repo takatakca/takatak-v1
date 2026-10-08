@@ -2,23 +2,42 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { FacebookConnectPage } from "@/components/social/platforms/facebook-connect-page";
+import { GoogleBusinessConnectPage } from "@/components/social/platforms/google-business-connect-page";
 import {
   InstagramConnectPage,
   ThreadsConnectPage,
 } from "@/components/social/platforms/instagram-connect-page";
 import { TikTokConnectPage } from "@/components/social/platforms/tiktok-connect-page";
 import { YoutubeConnectPage } from "@/components/social/platforms/youtube-connect-page";
+import { BlogConnectPage } from "@/components/social/platforms/blog-connect-page";
+import { WebConnectPage } from "@/components/social/platforms/web-connect-page";
+import { GoogleAdsConnectPage } from "@/components/social/platforms/google-ads-connect-page";
+import { LookerStudioConnectPage } from "@/components/social/platforms/looker-studio-connect-page";
+import { MetaAdsConnectPage } from "@/components/social/platforms/meta-ads-connect-page";
+import { BlueskySubscribedDashboard } from "@/components/social/platforms/bluesky-subscribed-dashboard";
+import { TwitchConnectPage } from "@/components/social/platforms/twitch-connect-page";
 import { XConnectPage } from "@/components/social/platforms/x-connect-page";
 import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-request";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { resolveCanonicalFacebookDashboard } from "@/lib/social/connections/facebook-dashboard-resolve";
+import { resolveCanonicalGoogleBusinessDashboard } from "@/lib/social/connections/google-business-dashboard-resolve";
 import { resolveCanonicalInstagramDashboard } from "@/lib/social/connections/instagram-dashboard-resolve";
 import { resolveCanonicalThreadsDashboard } from "@/lib/social/connections/threads-dashboard-resolve";
 import { resolveCanonicalTikTokDashboard } from "@/lib/social/connections/tiktok-dashboard-resolve";
 import { resolveCanonicalYoutubeDashboard } from "@/lib/social/connections/youtube-dashboard-resolve";
+import { resolveCanonicalBlogDashboard } from "@/lib/social/connections/blog-dashboard-resolve";
+import { resolveCanonicalWebDashboard } from "@/lib/social/connections/web-dashboard-resolve";
+import { resolveCanonicalGoogleAdsDashboard } from "@/lib/social/connections/google-ads-dashboard-resolve";
+import { resolveCanonicalLookerStudioDashboard } from "@/lib/social/connections/looker-studio-dashboard-resolve";
+import { resolveCanonicalMetaAdsDashboard } from "@/lib/social/connections/meta-ads-dashboard-resolve";
+import { resolveCanonicalBlueskyDashboard } from "@/lib/social/connections/bluesky-dashboard-resolve";
+import { resolveCanonicalTwitchDashboard } from "@/lib/social/connections/twitch-dashboard-resolve";
 import { resolveCanonicalXDashboard } from "@/lib/social/connections/x-dashboard-resolve";
-import { toAccountPictureSrc } from "@/lib/social/media/remote-image";
+import {
+  toAccountPictureSrc,
+  toClientSocialImageUrl,
+} from "@/lib/social/media/remote-image";
 import { getSelectedFacebookPageSyncSnapshot } from "@/lib/social/sync/facebook-page-initial-sync";
 import { hasSocialHistory } from "@/lib/social/social-history";
 
@@ -77,6 +96,31 @@ const SOCIAL_PLATFORMS = {
     name: "Google Business Profile",
     description:
       "Review business-profile visibility, interactions and customer activity.",
+  },
+  web: {
+    name: "Web",
+    description:
+      "Connect a public website and confirm it with a homepage verification tag.",
+  },
+  blog: {
+    name: "Blog",
+    description:
+      "Create a TAKATAK blog page for a website that is already connected.",
+  },
+  meta_ads: {
+    name: "Meta Ads",
+    description:
+      "Connect a Meta ad account and review the account chosen for this brand.",
+  },
+  google_ads: {
+    name: "Google Ads",
+    description:
+      "Connect a Google Ads account and review the account chosen for this brand.",
+  },
+  looker_studio: {
+    name: "Looker Studio",
+    description:
+      "Connect a Looker Studio report and open it for this brand.",
   },
 } as const;
 
@@ -453,7 +497,7 @@ export default async function SocialPlatformPage({
       } else if (tiktok.kind === "ready") {
         isConnected = true;
         connectedLabel = tiktok.accountName;
-        profileImageUrl = toAccountPictureSrc(tiktok.socialAccountId);
+        profileImageUrl = toClientSocialImageUrl(tiktok.profileImageUrl);
       }
     } catch (error) {
       console.error(
@@ -473,6 +517,161 @@ export default async function SocialPlatformPage({
         hasSocialHistory={hasPreviousSocialHistory}
         connectedLabel={connectedLabel}
         profileImageUrl={profileImageUrl}
+        resolutionIssue={resolutionIssue}
+      />
+    );
+  }
+
+  if (platform === "google_business") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/google_business",
+    );
+
+    const brand =
+      await resolveBrandSessionContextFromRequest(
+        access,
+      );
+
+    let isConnected = false;
+    let accountName: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue:
+      | "ambiguous"
+      | "missing"
+      | null = null;
+
+    try {
+      const googleBusiness =
+        await resolveCanonicalGoogleBusinessDashboard({
+          clientId: access.activeClientId,
+          businessBrandId: brand.activeBrandId,
+        });
+
+      if (googleBusiness.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (googleBusiness.kind === "ready") {
+        isConnected = true;
+        accountName = googleBusiness.accountName;
+        profileImageUrl = toAccountPictureSrc(googleBusiness.socialAccountId);
+      }
+    } catch (error) {
+      console.error(
+        "[social-google-business] Connection status could not be loaded:",
+        error instanceof Error
+          ? error.message
+          : "Unknown error",
+      );
+    }
+
+    return (
+      <GoogleBusinessConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        accountName={accountName}
+        profileImageUrl={profileImageUrl}
+        resolutionIssue={resolutionIssue}
+      />
+    );
+  }
+
+  if (platform === "blog") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/blog",
+    );
+    const brand = await resolveBrandSessionContextFromRequest(access);
+
+    let isConnected = false;
+    let siteUrl: string | null = null;
+    let blogUrl: string | null = null;
+    let accountName: string | null = null;
+    let needsWebsite = false;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+
+    try {
+      const blogAccount = await resolveCanonicalBlogDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (blogAccount.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (blogAccount.kind === "needs_website") {
+        needsWebsite = true;
+      } else if (blogAccount.kind === "ready") {
+        isConnected = true;
+        siteUrl = blogAccount.siteUrl;
+        blogUrl = blogAccount.blogUrl;
+        accountName = blogAccount.accountName;
+      }
+    } catch (error) {
+      console.error(
+        "[social-blog] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <BlogConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(access, "manage_social_accounts")}
+        isConnected={isConnected}
+        siteUrl={siteUrl}
+        blogUrl={blogUrl}
+        accountName={accountName}
+        needsWebsite={needsWebsite}
+        resolutionIssue={resolutionIssue}
+      />
+    );
+  }
+
+  if (platform === "web") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/web",
+    );
+    const brand = await resolveBrandSessionContextFromRequest(access);
+
+    let isConnected = false;
+    let siteUrl: string | null = null;
+    let accountName: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+
+    try {
+      const website = await resolveCanonicalWebDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (website.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (website.kind === "ready") {
+        isConnected = true;
+        siteUrl = website.siteUrl;
+        accountName = website.accountName;
+      }
+    } catch (error) {
+      console.error(
+        "[social-web] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <WebConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        siteUrl={siteUrl}
+        accountName={accountName}
         resolutionIssue={resolutionIssue}
       />
     );
@@ -516,6 +715,264 @@ export default async function SocialPlatformPage({
 
     return (
       <XConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(
+          access,
+          "manage_social_accounts",
+        )}
+        isConnected={isConnected}
+        hasSocialHistory={hasPreviousSocialHistory}
+        connectedLabel={connectedLabel}
+        profileImageUrl={profileImageUrl}
+        resolutionIssue={resolutionIssue}
+      />
+    );
+  }
+
+  if (platform === "meta_ads") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/meta_ads",
+    );
+    const brand = await resolveBrandSessionContextFromRequest(access);
+
+    let state: "connect" | "choose" | "empty" | "ready" | "ambiguous" =
+      "connect";
+    let connectionId: string | null = null;
+    let connectedLabel: string | null = null;
+    let currency: string | null = null;
+    let choices: { id: string; displayName: string; currency: string }[] = [];
+
+    try {
+      const metaAds = await resolveCanonicalMetaAdsDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (metaAds.kind === "ambiguous") {
+        state = "ambiguous";
+      } else if (metaAds.kind === "ready") {
+        state = "ready";
+        connectionId = metaAds.connectionId;
+        connectedLabel = metaAds.accountName;
+        currency = metaAds.currency;
+      } else if (metaAds.kind === "choose") {
+        state = "choose";
+        connectionId = metaAds.connectionId;
+        choices = metaAds.accounts;
+      } else if (metaAds.kind === "empty") {
+        state = "empty";
+        connectionId = metaAds.connectionId;
+      }
+    } catch (error) {
+      console.error(
+        "[social-meta-ads] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <MetaAdsConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(access, "manage_social_accounts")}
+        connectionId={connectionId}
+        state={state}
+        connectedLabel={connectedLabel}
+        currency={currency}
+        choices={choices}
+      />
+    );
+  }
+
+  if (platform === "google_ads") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/google_ads",
+    );
+    const brand = await resolveBrandSessionContextFromRequest(access);
+
+    let state: "connect" | "choose" | "empty" | "ready" | "ambiguous" =
+      "connect";
+    let connectionId: string | null = null;
+    let connectedLabel: string | null = null;
+    let currency: string | null = null;
+    let choices: { id: string; displayName: string; currency: string }[] = [];
+
+    try {
+      const googleAds = await resolveCanonicalGoogleAdsDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (googleAds.kind === "ambiguous") {
+        state = "ambiguous";
+      } else if (googleAds.kind === "ready") {
+        state = "ready";
+        connectionId = googleAds.connectionId;
+        connectedLabel = googleAds.accountName;
+        currency = googleAds.currency;
+      } else if (googleAds.kind === "choose") {
+        state = "choose";
+        connectionId = googleAds.connectionId;
+        choices = googleAds.accounts;
+      } else if (googleAds.kind === "empty") {
+        state = "empty";
+        connectionId = googleAds.connectionId;
+      }
+    } catch (error) {
+      console.error(
+        "[social-google-ads] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <GoogleAdsConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(access, "manage_social_accounts")}
+        connectionId={connectionId}
+        state={state}
+        connectedLabel={connectedLabel}
+        currency={currency}
+        choices={choices}
+      />
+    );
+  }
+
+  if (platform === "looker_studio") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/looker_studio",
+    );
+    const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
+
+    let state: "connect" | "choose" | "empty" | "ready" | "ambiguous" =
+      "connect";
+    let connectionId: string | null = null;
+    let connectedLabel: string | null = null;
+    let owner: string | null = null;
+    let reportUrl: string | null = null;
+    let choices: { id: string; displayName: string; owner: string }[] = [];
+
+    try {
+      const looker = await resolveCanonicalLookerStudioDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (looker.kind === "ambiguous") {
+        state = "ambiguous";
+      } else if (looker.kind === "ready") {
+        state = "ready";
+        connectionId = looker.connectionId;
+        connectedLabel = looker.accountName;
+        owner = looker.owner;
+        reportUrl = looker.reportUrl;
+      } else if (looker.kind === "choose") {
+        state = "choose";
+        connectionId = looker.connectionId;
+        choices = looker.reports;
+      } else if (looker.kind === "empty") {
+        state = "empty";
+        connectionId = looker.connectionId;
+        connectedLabel = looker.accountName;
+      }
+    } catch (error) {
+      console.error(
+        "[social-looker-studio] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <LookerStudioConnectPage
+        activeBrandId={brand.activeBrandId}
+        canManage={hasEffectivePermission(access, "manage_social_accounts")}
+        connectionId={connectionId}
+        state={state}
+        hasSocialHistory={hasPreviousSocialHistory}
+        connectedLabel={connectedLabel}
+        owner={owner}
+        reportUrl={reportUrl}
+        choices={choices}
+      />
+    );
+  }
+
+  if (platform === "bluesky") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/bluesky",
+    );
+    const brand = await resolveBrandSessionContextFromRequest(access);
+
+    let handle: string | null = null;
+    let profileImageUrl: string | null = null;
+    try {
+      const bluesky = await resolveCanonicalBlueskyDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+      if (bluesky.kind === "ready") {
+        handle = bluesky.handle;
+        profileImageUrl = toAccountPictureSrc(bluesky.socialAccountId);
+      }
+    } catch (error) {
+      console.error(
+        "[social-bluesky] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    if (handle) {
+      return (
+        <BlueskySubscribedDashboard handle={handle} imageUrl={profileImageUrl} />
+      );
+    }
+  }
+
+  if (platform === "twitch") {
+    const access = await requireWorkspacePermission(
+      "view_social",
+      "/dashboard/social/twitch",
+    );
+    const brand = await resolveBrandSessionContextFromRequest(access);
+    const hasPreviousSocialHistory = await hasSocialHistory({
+      clientId: access.activeClientId,
+      businessBrandId: brand.activeBrandId,
+    });
+
+    let isConnected = false;
+    let connectedLabel: string | null = null;
+    let profileImageUrl: string | null = null;
+    let resolutionIssue: "ambiguous" | "missing" | null = null;
+
+    try {
+      const twitchAccount = await resolveCanonicalTwitchDashboard({
+        clientId: access.activeClientId,
+        businessBrandId: brand.activeBrandId,
+      });
+
+      if (twitchAccount.kind === "ambiguous") {
+        resolutionIssue = "ambiguous";
+      } else if (twitchAccount.kind === "ready") {
+        isConnected = true;
+        connectedLabel = twitchAccount.accountName;
+        profileImageUrl = toClientSocialImageUrl(twitchAccount.profileImageUrl);
+      }
+    } catch (error) {
+      console.error(
+        "[social-twitch] Connection status could not be loaded:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+    }
+
+    return (
+      <TwitchConnectPage
         activeBrandId={brand.activeBrandId}
         canManage={hasEffectivePermission(
           access,

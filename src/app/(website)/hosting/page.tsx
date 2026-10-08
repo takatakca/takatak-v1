@@ -5,6 +5,7 @@ import { getWebsiteSession } from "@/lib/website/website-session";
 
 export const metadata: Metadata = {
   title: "Web Hosting",
+  alternates: { canonical: "/hosting" },
 };
 
 export const dynamic = "force-dynamic";
