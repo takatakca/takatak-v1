@@ -5,6 +5,10 @@ Full Social payment write-up (steps, plans, Stripe vs Upmind):
 **[SOCIAL_PAYMENT.md](./SOCIAL_PAYMENT.md)**  
 **[SOCIAL_PAYMENT_CONFIRM.md](./SOCIAL_PAYMENT_CONFIRM.md)** — how to apply migrations, where to click, what you can see today.
 
+**Ecosystem invoicing (all GROUPE TAKATAK apps → Facturations):**
+`src/lib/billing/invoices/` — see
+**[docs/TAKATAK_BILLING_FACTURATIONS_FOUNDATION.md](../../../docs/TAKATAK_BILLING_FACTURATIONS_FOUNDATION.md)**.
+
 Social subscription lives on the **Client** (workspace). Domains and hosting
 stay on Upmind. **Social payment is Stripe** (Steps 6–7).
 

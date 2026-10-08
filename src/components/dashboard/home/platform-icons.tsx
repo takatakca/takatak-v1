@@ -48,6 +48,7 @@ function BrandMark({ platform, size }: { platform: string; size: number }) {
       return <FaXTwitter size={size} color="#111111" />;
     case "google_business":
     case "google_ads":
+    case "looker_studio":
     case "google":
       return <FaGoogle size={size} color="#4285F4" />;
     default:

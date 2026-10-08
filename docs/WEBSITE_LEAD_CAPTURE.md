@@ -60,7 +60,7 @@ Before this change, files picked in "Post a project" stayed in the browser and w
 **Storage**
 
 - Files go to a **private** Supabase Storage bucket under `website-leads/<workspace>/<yyyy>/<mm>/<lead>/<id>.<ext>`.
-- Each file is recorded in the new table `lead_attachments` (migration `20261006150000_website_lead_attachments`; RLS on; a database CHECK enforces the 10 MB limit), with status `quarantined`.
+- Each file is recorded in the new table `lead_attachments` (migration `20261008090000_website_lead_attachments`; RLS on; a database CHECK enforces the 10 MB limit), with status `quarantined`.
 - If the database write fails, the stored object is removed.
 
 **Staff access**

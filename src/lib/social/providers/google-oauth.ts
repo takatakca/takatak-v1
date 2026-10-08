@@ -16,7 +16,19 @@ export const GOOGLE_OAUTH_YOUTUBE_SCOPES = [
   "https://www.googleapis.com/auth/yt-analytics.readonly",
 ] as const;
 
-export const GOOGLE_OAUTH_START_SCOPES = GOOGLE_OAUTH_YOUTUBE_SCOPES;
+export const GOOGLE_OAUTH_BUSINESS_SCOPES = [
+  "openid",
+  "email",
+  "profile",
+  "https://www.googleapis.com/auth/business.manage",
+] as const;
+
+export type GoogleOAuthPurpose = "youtube" | "google_business";
+
+// Backward-compatible YouTube alias used by the existing
+// connection tests and any older callers.
+export const GOOGLE_OAUTH_START_SCOPES =
+  GOOGLE_OAUTH_YOUTUBE_SCOPES;
 
 function trimEnv(name: string): string | null {
   const value = process.env[name]?.trim();
@@ -91,6 +103,7 @@ export function getGoogleOAuthRedirectUri(): string {
 export function buildGoogleAuthorizationUrl(options: {
   state: string;
   codeChallenge: string;
+  purpose?: GoogleOAuthPurpose;
 }): string {
   if (!options.state.trim() || !options.codeChallenge.trim()) {
     throw new ServiceError(
@@ -104,7 +117,11 @@ export function buildGoogleAuthorizationUrl(options: {
   url.searchParams.set("client_id", getGoogleSocialClientId());
   url.searchParams.set("redirect_uri", getGoogleOAuthRedirectUri());
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", GOOGLE_OAUTH_START_SCOPES.join(" "));
+  const scopes =
+    options.purpose === "google_business"
+      ? GOOGLE_OAUTH_BUSINESS_SCOPES
+      : GOOGLE_OAUTH_YOUTUBE_SCOPES;
+  url.searchParams.set("scope", scopes.join(" "));
   url.searchParams.set("state", options.state);
   url.searchParams.set("code_challenge", options.codeChallenge);
   url.searchParams.set("code_challenge_method", "S256");
