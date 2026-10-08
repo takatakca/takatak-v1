@@ -30,7 +30,7 @@
       oklch(0.18 0.01 260);
   
     --primary:
-      oklch(0.52 0.16 152);
+      oklch(0.531 0.191 259.1); /* GROUPE TAKATAK brand blue #1565D8 (see BRAND.md) */
   
     --primary-foreground:
       oklch(1 0 0);
@@ -48,7 +48,7 @@
       oklch(0.48 0.01 260);
   
     --accent:
-      oklch(0.55 0.17 152);
+      oklch(0.531 0.191 259.1);
   
     --accent-foreground:
       oklch(1 0 0);
@@ -72,18 +72,18 @@
       oklch(0.94 0.004 250);
   
     --ring:
-      oklch(0.52 0.16 152);
+      oklch(0.641 0.195 254.8);
   
     --gradient-hero:
       linear-gradient(
         135deg,
-        oklch(0.52 0.16 152) 0%,
-        oklch(0.6 0.17 175) 100%
+        oklch(0.531 0.191 259.1) 0%,
+        oklch(0.641 0.195 254.8) 100%
       );
   
     --shadow-glow:
       0 16px 48px -20px
-        oklch(0.52 0.16 152 / 0.35);
+        oklch(0.641 0.195 254.8 / 0.4);
   
     --shadow-card:
       0 1px 2px
@@ -104,10 +104,10 @@
       sans-serif;
   
     --brand-dark:
-      oklch(0.18 0.03 260);
+      oklch(0.163 0.04 265.1); /* navy #060D1F */
   
     --brand-dark-2:
-      oklch(0.22 0.035 260);
+      oklch(0.231 0.069 263.1); /* midnight #0B1B3D */
   
     --brand-dark-foreground:
       oklch(0.985 0.003 250);
@@ -119,10 +119,10 @@
       oklch(1 0 0 / 0.1);
   
     --brand-accent-cyan:
-      oklch(0.78 0.13 200);
+      oklch(0.768 0.146 230.9);
   
     --brand-accent-violet:
-      oklch(0.72 0.15 290);
+      oklch(0.641 0.195 254.8);
   }
 
   html:has(.website-surface) body {
@@ -213,7 +213,7 @@
   
   .website-surface ::selection {
     background:
-      oklch(0.52 0.16 152 / 0.22);
+      oklch(0.641 0.195 254.8 / 0.25);
   
     color:
       oklch(0.18 0.01 260);

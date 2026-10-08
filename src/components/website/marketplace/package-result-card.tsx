@@ -18,7 +18,7 @@ export function PackageResultCard({
   pkg: MarketplacePackage;
 }) {
   return (
-    <article className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-emerald-500/50 hover:shadow-lg">
+    <article className="group flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white transition hover:border-primary/50 hover:shadow-lg">
       <Link
         href={`/marketplace/gigs/${pkg.id}`}
       >
@@ -34,7 +34,7 @@ export function PackageResultCard({
 
         <Link
           href={`/marketplace/gigs/${pkg.id}`}
-          className="mt-1 line-clamp-2 font-semibold leading-snug text-slate-950 transition hover:text-emerald-700"
+          className="mt-1 line-clamp-2 font-semibold leading-snug text-slate-950 transition hover:text-primary"
         >
           {pkg.title}
         </Link>
@@ -85,7 +85,7 @@ export function PackageResultCard({
 
             <Link
               href={`/marketplace/gigs/${pkg.id}`}
-              className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-500"
+              className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
             >
               View
             </Link>
@@ -95,7 +95,7 @@ export function PackageResultCard({
         <p className="mt-3 inline-flex items-center gap-1 text-[10px] text-slate-500">
           <ShieldCheck
             size={11}
-            className="text-emerald-700"
+            className="text-primary"
           />
 
           TAKATAK-managed · payment released
