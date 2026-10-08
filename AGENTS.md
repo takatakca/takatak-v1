@@ -14,3 +14,7 @@ Cheap to follow: read only what is listed here.
 4. One line per piece of work, newest first. Details go in the PR, not the log.
 
 Line format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
+
+## Brand rule
+
+Everything visual or written for TAKATAK follows `BRAND.md` (logo, colours, tagline, services). Electric blue on deep navy; never the old gold "TK" logo; green is for status only.
