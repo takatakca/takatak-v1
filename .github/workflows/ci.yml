@@ -342,6 +342,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:billing-feed-db
 
+      - name: Won website order lead → billing queue against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:lead-order-billing-db
+
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
