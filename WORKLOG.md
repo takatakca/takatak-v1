@@ -4,6 +4,22 @@ Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
 
+## 🔴 Needs a human (post-its)
+Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
+
+- [ ] **Staging database secret.** In GitHub → takatak-v1 → Settings → Environments → `staging`, set `TAKATAK_STAGING_DATABASE_URL` to the staging Supabase connection string. *Blocks:* "Reconcile TAKATAK staging migrations" and the staging deploy (they stop at "Validate staging database secret"). *(2026-10-07)*
+- [ ] **Production secrets.** In GitHub → Settings → Environments → `production`, add the 7 `TAKATAK_PRODUCTION_*` secrets, then run "Promote verified TAKATAK production artifact". *Blocks:* deploying `main` to takatak.ca. *(2026-10-08, session 01KBGh1v)*
+- [ ] **Deploy agent secrets.** Add `COOLIFY_API_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `PROD_DATABASE_URL`, `PROD_DIRECT_URL`, `EMAIL_USER`, `EMAIL_PASSWORD` and an AI provider API key to the Claude cloud environment secrets. *Blocks:* the Coolify test copy and AI features. *(2026-10-08, session 01W1ntbf)*
+- [ ] **Merge #129** (client billing dashboard). CI is green. *Blocks:* clients managing their invoices. *(2026-10-08, session 01HWFgGo)*
+- [ ] **Approve Facturations #158, #159, #160 as `takatakmtl`.** The agent merges them once approved. *Blocks:* Facturations staging and the issuance status shown to clients. *(2026-10-07, session 01HWFgGo)*
+- [ ] **Owner decisions** listed under "Overlaps to settle" below.
+
+## ▶ Next up (priority order: first item an agent can do; skip anything waiting on a person)
+1. **TK-027:** an accepted order lead becomes a Facturations draft through the billing queue (`enqueueInvoiceRequest`). Website requests→Leads is on `main`. *(billing, session 01HWFgGo)*
+2. **After Facturations #160 merges:** pin `FACTURATIONS_REF` in `ci.yml` to the new Facturations `main` and add issue → pay to the contract test.
+3. **After the staging secret is set:** check that reconcile records the three billing migrations and that staging deploys.
+4. Then the `Open work` lines below and knowledgeAI `docs/11-DEV-BACKLOG.md`.
+
 ## ⚠ Overlaps to settle before more work (owner decision)
 - **SEO audit** is built twice: `claude/seo-site-audit` and the Growth Suite (#117). Keep one.
 - **Reviews / reputation** are built twice: `claude/qmaps-listings-reviews-sync` (QMAPS reviews in Local Listings) and #117 (Birdeye-style reputation). Decide which screen is the reviews dashboard.
@@ -19,7 +35,8 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 - 2026-10-08 | claude (session 01KBGh1v) | claude/qmaps-listings-reviews-sync → #136 | hold (overlaps #117) | QMAPS listings/reviews → V1 | owner decides reviews owner
 - 2026-10-08 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | hold (overlaps #117) | AI Studio draft generation (OpenAI/Claude) | owner decides AI owner
 - 2026-10-08 | claude (session 01KBGh1v) | claude/facturations-billing-integration → #138 | likely duplicate | Read-only Facturations invoice drafts | main already has a Facturations integration (#124, billing request queue); compare, then close #138
-- 2026-10-08 | other agent | claude/client-billing-dashboard → #129 | PR open | Stripe client billing page actions | review/merge
+- 2026-10-08 | claude (session 01HWFgGo) | claude/needs-human-board → PR | PR open | "Needs a human" post-its + "Next up" queue at the top of this log | owner merges
+- 2026-10-08 | claude (session 01HWFgGo) | claude/client-billing-dashboard → #129 | PR open, CI green | Client billing dashboard: summary, filters, remind / void / mark paid, sidebar entry | owner merges
 - 2026-10-08 | other agent | feature/havana-customer-intelligence → #128 | draft | Tenant-isolated customer intelligence (CRM) | finish or close
 - 2026-10-07 | other agent | claude/festive-newton-5i9rv7 → #117 | PR open, 15k lines | Growth Suite (reputation, analytics, chat, AI agents, Google, plans) | settle overlaps above, then review
 - 2026-10-05 | other agent | infra/contabo-coolify → #104 | draft | Contabo/Coolify hosting foundation | owner: is hosting moving off MochaHost?
