@@ -58,7 +58,7 @@ function initialsFor(data: Extract<AccountSettingsPageData, { source: "database"
       .join("")
       .toUpperCase();
   }
-  return data.email.slice(0, 2).toUpperCase();
+  return data.email.slice(0, 2).toUpperCase() || "U";
 }
 
 function PremiumMark() {
@@ -454,7 +454,7 @@ function AccountPanel({
         </label>
         <p className="mt-2 text-sm text-slate-500">
           When this field is empty the monthly summary is addressed to{" "}
-          {data.email}. Delivery is saved as a preference; monthly emails are
+          {data.email || "no address until you add a verified email"}. Delivery is saved as a preference; monthly emails are
           not sent yet.
         </p>
         {fieldErrors.monthlySummaryEmail ? (
@@ -754,19 +754,17 @@ function AccessPanel({
           Access information
         </h2>
         <p className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          This is your access information. You&apos;ll need to introduce your
-          password to perform any change.
+          Add an email for recovery. Confirm the email before using it to sign in.
         </p>
 
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-600">
-            E-mail *
+            E-mail (optional for phone-only accounts)
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
-              required
               className={inputClassName}
             />
             {fieldErrors.email ? (

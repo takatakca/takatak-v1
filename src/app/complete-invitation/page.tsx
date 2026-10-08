@@ -103,6 +103,7 @@ export default async function CompleteInvitationPage() {
 
   if (
     !profile ||
+    !profile.email ||
     profile.status === "disabled" ||
     profile.memberships.length === 0
   ) {

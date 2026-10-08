@@ -106,7 +106,7 @@ export function collectEnvPreflight(): PreflightResult {
       "TWILIO_AUTH_TOKEN",
       "TWILIO_VERIFY_SERVICE_SID",
     ]) {
-      checks.push(check(name, "feature"));
+      checks.push(check(name, "feature", { message: "Direct Twilio helper configuration only; does not verify Supabase Phone Auth or SMS delivery." }));
     }
   } else {
     checks.push(check("TWILIO_ACCOUNT_SID", "optional"));

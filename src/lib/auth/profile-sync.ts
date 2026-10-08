@@ -1,3 +1,4 @@
+import type { Prisma } from '@prisma/client';
 import type { User } from '@supabase/supabase-js';
 import { ensureDefaultSocialSubscription } from '@/lib/billing/social/ensure-default-subscription';
 import { getPrisma } from '@/lib/db/prisma';
@@ -52,8 +53,8 @@ function getMetadataName(
   return validationError ? null : normalizedValue;
 }
 
-function getProfileIdentity(user: User): {
-  email: string;
+export function getProfileIdentity(user: User): {
+  email: string | null;
   phone: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -66,50 +67,41 @@ function getProfileIdentity(user: User): {
     typeof user.email === 'string' && user.email.trim()
       ? normalizeEmail(user.email)
       : '';
-  const metadataEmail =
-    typeof user.user_metadata?.email === 'string'
-      ? normalizeEmail(user.user_metadata.email)
-      : '';
-  const email = authEmail || metadataEmail;
-
-  if (!email || validateEmail(email)) {
-    return null;
-  }
-
+  // Only provider-confirmed contacts may participate in unique identity binding.
+  // user_metadata is client editable and is never proof of contact ownership.
+  const email = authEmail && !validateEmail(authEmail) && user.email_confirmed_at
+    ? authEmail : null;
   const authPhone =
     typeof user.phone === 'string' ? normalizePhone(user.phone) : null;
-  const metadataPhone =
-    typeof user.user_metadata?.phone === 'string'
-      ? normalizePhone(user.user_metadata.phone)
-      : null;
-  const phone = authPhone || metadataPhone;
+  const phone = authPhone && user.phone_confirmed_at ? authPhone : null;
+  if (!email && !phone) return null;
 
   const firstName = getMetadataName(user, 'first_name');
   const lastName = getMetadataName(user, 'last_name');
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
-  const emailVerified = Boolean(authEmail && user.email_confirmed_at);
-  const phoneVerified = Boolean(authPhone && user.phone_confirmed_at);
+  const emailVerified = Boolean(email);
+  const phoneVerified = Boolean(phone);
 
   return {
     email,
     phone,
     firstName,
     lastName,
-    displayName: fullName || email.split('@')[0] || 'User',
+    displayName: fullName || email?.split('@')[0] || 'User',
     emailVerified,
     phoneVerified,
     verified: emailVerified || phoneVerified,
   };
 }
 
-type PrismaClientInstance = NonNullable<ReturnType<typeof getPrisma>>;
+type PrismaClientInstance = Prisma.TransactionClient;
 
 async function ensureMasterIdentityForVerifiedProfile(
   prisma: PrismaClientInstance,
   input: {
     profileId: string;
     authUserId: string;
-    email: string;
+    email: string | null;
     phone: string | null;
     firstName: string | null;
     lastName: string | null;
@@ -122,146 +114,156 @@ async function ensureMasterIdentityForVerifiedProfile(
     return true;
   }
 
-  return prisma.$transaction(async (transaction) => {
-    const [currentIdentity, authIdentity, emailIdentity, phoneIdentity] =
-      await Promise.all([
-        transaction.masterIdentity.findUnique({
-          where: { profileId: input.profileId },
-        }),
-        transaction.masterIdentity.findUnique({
-          where: { authUserId: input.authUserId },
-        }),
-        input.emailVerified
-          ? transaction.masterIdentity.findUnique({
-              where: { primaryEmail: input.email },
-            })
-          : Promise.resolve(null),
-        input.phoneVerified && input.phone
-          ? transaction.masterIdentity.findUnique({
-              where: { primaryPhone: input.phone },
-            })
-          : Promise.resolve(null),
-      ]);
+  const transaction = prisma;
+  const [currentIdentity, authIdentity, emailIdentity, phoneIdentity] =
+    await Promise.all([
+      transaction.masterIdentity.findUnique({
+        where: { profileId: input.profileId },
+      }),
+      transaction.masterIdentity.findUnique({
+        where: { authUserId: input.authUserId },
+      }),
+      input.emailVerified && input.email
+        ? transaction.masterIdentity.findUnique({
+            where: { primaryEmail: input.email },
+          })
+        : Promise.resolve(null),
+      input.phoneVerified && input.phone
+        ? transaction.masterIdentity.findUnique({
+            where: { primaryPhone: input.phone },
+          })
+        : Promise.resolve(null),
+    ]);
 
-    const candidateIds = new Set(
-      [authIdentity, emailIdentity, phoneIdentity]
-        .map((identity) => identity?.id ?? null)
-        .filter((id): id is string => id !== null),
-    );
+  if ([currentIdentity, authIdentity, emailIdentity, phoneIdentity].some(
+    (record) => record && record.accountStatus !== null && record.accountStatus !== 'active',
+  )) return false;
 
-    if (candidateIds.size > 1) {
+  const candidateIds = new Set(
+    [authIdentity, emailIdentity, phoneIdentity]
+      .map((identity) => identity?.id ?? null)
+      .filter((id): id is string => id !== null),
+  );
+
+  if (candidateIds.size > 1) {
+    return false;
+  }
+
+  for (const identity of [authIdentity, emailIdentity, phoneIdentity]) {
+    if (identity?.profileId && identity.profileId !== input.profileId) {
+      return false;
+    }
+    if (
+      identity?.authUserId &&
+      identity.authUserId !== input.authUserId
+    ) {
+      return false;
+    }
+  }
+
+  if (currentIdentity) {
+    if (
+      (currentIdentity.authUserId &&
+        currentIdentity.authUserId !== input.authUserId) ||
+      (authIdentity && authIdentity.id !== currentIdentity.id) ||
+      (emailIdentity && emailIdentity.id !== currentIdentity.id) ||
+      (phoneIdentity && phoneIdentity.id !== currentIdentity.id)
+    ) {
       return false;
     }
 
-    for (const identity of [authIdentity, emailIdentity, phoneIdentity]) {
-      if (identity?.profileId && identity.profileId !== input.profileId) {
-        return false;
-      }
-      if (
-        identity?.authUserId &&
-        identity.authUserId !== input.authUserId
-      ) {
-        return false;
-      }
-    }
-
-    if (currentIdentity) {
-      if (
-        (currentIdentity.authUserId &&
-          currentIdentity.authUserId !== input.authUserId) ||
-        (authIdentity && authIdentity.id !== currentIdentity.id) ||
-        (emailIdentity && emailIdentity.id !== currentIdentity.id) ||
-        (phoneIdentity && phoneIdentity.id !== currentIdentity.id)
-      ) {
-        return false;
-      }
-
-      await transaction.masterIdentity.update({
-        where: { id: currentIdentity.id },
-        data: {
-          authUserId: currentIdentity.authUserId ?? input.authUserId,
-          primaryEmail: input.emailVerified
-            ? input.email
-            : currentIdentity.primaryEmail,
-          primaryEmailVerified:
-            currentIdentity.primaryEmailVerified || input.emailVerified,
-          primaryPhone:
-            input.phoneVerified && input.phone
-              ? input.phone
-              : currentIdentity.primaryPhone,
-          primaryPhoneVerified:
-            currentIdentity.primaryPhoneVerified || input.phoneVerified,
-          firstName: currentIdentity.firstName ?? input.firstName,
-          lastName: currentIdentity.lastName ?? input.lastName,
-          registeredAt:
-            currentIdentity.registeredAt ?? input.registeredAt ?? undefined,
-          accountStatus: currentIdentity.accountStatus ?? 'active',
-        },
-      });
-
-      return true;
-    }
-
-    const candidateIdentity = authIdentity ?? phoneIdentity ?? emailIdentity;
-
-    if (candidateIdentity) {
-      await transaction.masterIdentity.update({
-        where: { id: candidateIdentity.id },
-        data: {
-          profileId: input.profileId,
-          authUserId: candidateIdentity.authUserId ?? input.authUserId,
-          primaryEmail: input.emailVerified
-            ? input.email
-            : candidateIdentity.primaryEmail,
-          primaryEmailVerified:
-            candidateIdentity.primaryEmailVerified || input.emailVerified,
-          primaryPhone:
-            input.phoneVerified && input.phone
-              ? input.phone
-              : candidateIdentity.primaryPhone,
-          primaryPhoneVerified:
-            candidateIdentity.primaryPhoneVerified || input.phoneVerified,
-          firstName: candidateIdentity.firstName ?? input.firstName,
-          lastName: candidateIdentity.lastName ?? input.lastName,
-          registeredAt:
-            candidateIdentity.registeredAt ?? input.registeredAt ?? undefined,
-          accountStatus: candidateIdentity.accountStatus ?? 'active',
-        },
-      });
-
-      return true;
-    }
-
-    await transaction.masterIdentity.create({
+    await transaction.masterIdentity.update({
+      where: { id: currentIdentity.id },
       data: {
-        profileId: input.profileId,
-        authUserId: input.authUserId,
-        primaryEmail: input.emailVerified ? input.email : null,
-        primaryEmailVerified: input.emailVerified,
+        authUserId: currentIdentity.authUserId ?? input.authUserId,
+        primaryEmail: input.emailVerified
+          ? input.email
+          : currentIdentity.primaryEmail,
+        primaryEmailVerified:
+          currentIdentity.primaryEmailVerified || input.emailVerified,
         primaryPhone:
-          input.phoneVerified && input.phone ? input.phone : null,
-        primaryPhoneVerified: input.phoneVerified,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        registeredAt: input.registeredAt ?? undefined,
-        accountStatus: 'active',
+          input.phoneVerified && input.phone
+            ? input.phone
+            : currentIdentity.primaryPhone,
+        primaryPhoneVerified:
+          currentIdentity.primaryPhoneVerified || input.phoneVerified,
+        firstName: currentIdentity.firstName ?? input.firstName,
+        lastName: currentIdentity.lastName ?? input.lastName,
+        registeredAt:
+          currentIdentity.registeredAt ?? input.registeredAt ?? undefined,
+        accountStatus: currentIdentity.accountStatus ?? 'active',
       },
     });
 
     return true;
+  }
+
+  const candidateIdentity = authIdentity ?? phoneIdentity ?? emailIdentity;
+
+  if (candidateIdentity) {
+    if (candidateIdentity.authUserId !== input.authUserId) return false;
+    await transaction.masterIdentity.update({
+      where: { id: candidateIdentity.id },
+      data: {
+        profileId: input.profileId,
+        authUserId: candidateIdentity.authUserId ?? input.authUserId,
+        primaryEmail: input.emailVerified
+          ? input.email
+          : candidateIdentity.primaryEmail,
+        primaryEmailVerified:
+          candidateIdentity.primaryEmailVerified || input.emailVerified,
+        primaryPhone:
+          input.phoneVerified && input.phone
+            ? input.phone
+            : candidateIdentity.primaryPhone,
+        primaryPhoneVerified:
+          candidateIdentity.primaryPhoneVerified || input.phoneVerified,
+        firstName: candidateIdentity.firstName ?? input.firstName,
+        lastName: candidateIdentity.lastName ?? input.lastName,
+        registeredAt:
+          candidateIdentity.registeredAt ?? input.registeredAt ?? undefined,
+        accountStatus: candidateIdentity.accountStatus ?? 'active',
+      },
+    });
+
+    return true;
+  }
+
+  await transaction.masterIdentity.create({
+    data: {
+      profileId: input.profileId,
+      authUserId: input.authUserId,
+      primaryEmail: input.emailVerified ? input.email : null,
+      primaryEmailVerified: input.emailVerified,
+      primaryPhone:
+        input.phoneVerified && input.phone ? input.phone : null,
+      primaryPhoneVerified: input.phoneVerified,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      registeredAt: input.registeredAt ?? undefined,
+      accountStatus: 'active',
+    },
   });
+
+  return true;
 }
 export async function ensurePersonalClientWorkspace(
   profileId: string,
-  email: string,
+  email: string | null,
   displayName: string,
 ): Promise<void> {
   const prisma = getPrisma();
+  if (!prisma) throw new Error('Database is unavailable.');
+  await prisma.$transaction((transaction) =>
+    ensurePersonalWorkspace(transaction, profileId, email, displayName));
+}
 
-  if (!prisma) {
-    throw new Error('Database is unavailable.');
-  }
-
+async function ensurePersonalWorkspace(
+  prisma: Prisma.TransactionClient,
+  profileId: string,
+  email: string | null,
+  displayName: string,
+): Promise<void> {
   const existingMembership = await prisma.clientMembership.findFirst({
     where: {
       profileId,
@@ -277,327 +279,105 @@ export async function ensurePersonalClientWorkspace(
     return;
   }
 
-  await prisma.$transaction(async (transaction) => {
-    await transaction.client.createMany({
-      data: [
-        {
-          id: profileId,
-          name: `${displayName}'s Workspace`,
-          email,
-          companyName: null,
-          status: 'active',
-          assignedProfileId: profileId,
-        },
-      ],
-      skipDuplicates: true,
-    });
-
-    const membershipResult = await transaction.clientMembership.createMany({
-      data: [
-        {
-          profileId,
-          clientId: profileId,
-          role: 'owner',
-        },
-      ],
-      skipDuplicates: true,
-    });
-
-    await ensureDefaultSocialSubscription(transaction, profileId);
-
-    if (membershipResult.count === 1) {
-      await transaction.auditLog.create({
-        data: {
-          profileId,
-          clientId: profileId,
-          action: 'personal_workspace_created',
-          entityType: 'Client',
-          entityId: profileId,
-          metadata: {
-            source: 'verified_registration',
-          },
-        },
-      });
-    }
+  const transaction = prisma;
+  await transaction.client.createMany({
+    data: [
+      {
+        id: profileId,
+        name: `${displayName}'s Workspace`,
+        email,
+        companyName: null,
+        status: 'active',
+        assignedProfileId: profileId,
+      },
+    ],
+    skipDuplicates: true,
   });
+
+  const membershipResult = await transaction.clientMembership.createMany({
+    data: [
+      {
+        profileId,
+        clientId: profileId,
+        role: 'owner',
+      },
+    ],
+    skipDuplicates: true,
+  });
+
+  await ensureDefaultSocialSubscription(transaction, profileId);
+
+  if (membershipResult.count === 1) {
+    await transaction.auditLog.create({
+      data: {
+        profileId,
+        clientId: profileId,
+        action: 'personal_workspace_created',
+        entityType: 'Client',
+        entityId: profileId,
+        metadata: {
+          source: 'verified_registration',
+        },
+      },
+    });
+  }
 }
+
+class IdentityConflict extends Error {}
 
 export async function ensureProfileForSupabaseUser(
   user: User,
   options: ProfileSyncOptions = {},
+  dependencies: { getPrisma?: typeof getPrisma } = {},
 ): Promise<ProfileSyncOutcome> {
-  const shouldCreatePersonalWorkspace =
-    options.createPersonalWorkspace !== false;
-  const prisma = getPrisma();
-
-  if (!prisma) {
-    return { outcome: 'unavailable' };
-  }
-
+  const prisma = (dependencies.getPrisma ?? getPrisma)();
+  if (!prisma) return { outcome: 'unavailable' };
   const identity = getProfileIdentity(user);
+  if (!identity) return { outcome: 'denied' };
 
-  if (!identity) {
-    return { outcome: 'error' };
-  }
-
-  try {
-    const existingProfile = await prisma.profile.findUnique({
-      where: {
-        authUserId: user.id,
-      },
-      select: {
-        id: true,
-        email: true,
-        phone: true,
-        firstName: true,
-        lastName: true,
-        displayName: true,
-        status: true,
-        _count: {
-          select: {
-            memberships: true,
-          },
-        },
-      },
-    });
-
-    if (existingProfile) {
-      const firstName = identity.firstName ?? existingProfile.firstName;
-
-      const lastName = identity.lastName ?? existingProfile.lastName;
-
-      const displayName =
-        identity.firstName || identity.lastName
-          ? identity.displayName
-          : existingProfile.displayName || identity.displayName;
-
-      const status =
-        existingProfile.status === 'disabled'
-          ? 'disabled'
-          : identity.verified
-            ? 'active'
-            : existingProfile.status;
-
-      const requiresUpdate =
-        existingProfile.email !== identity.email ||
-        existingProfile.phone !== identity.phone ||
-        existingProfile.firstName !== firstName ||
-        existingProfile.lastName !== lastName ||
-        existingProfile.displayName !== displayName ||
-        existingProfile.status !== status;
-
-      const hasWorkspace = existingProfile._count.memberships > 0;
-
-      if (!requiresUpdate) {
-        if (
-          shouldCreatePersonalWorkspace &&
-          identity.verified &&
-          existingProfile.status !== 'disabled' &&
-          !hasWorkspace
-        ) {
-          await ensurePersonalClientWorkspace(
-            existingProfile.id,
-            identity.email,
-            displayName,
-          );
-        }
-
-        const masterIdentityLinked =
-          await ensureMasterIdentityForVerifiedProfile(prisma, {
-            profileId: existingProfile.id,
-            authUserId: user.id,
-            email: identity.email,
-            phone: identity.phone,
-            firstName,
-            lastName,
-            emailVerified: identity.emailVerified,
-            phoneVerified: identity.phoneVerified,
-            registeredAt: user.created_at ? new Date(user.created_at) : null,
-          });
-
-        if (!masterIdentityLinked) {
-          console.error(
-            '[profile-sync] Verified contact conflicts with another master identity',
-          );
-          return { outcome: 'denied' };
-        }
-
-        return {
-          outcome: 'existing',
-          profileId: existingProfile.id,
+  // Retry only bounded uniqueness/serialization races. Every retry executes all gates.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await prisma.$transaction(async (transaction): Promise<ProfileSyncOutcome> => {
+        const existing = await transaction.profile.findUnique({ where: { authUserId: user.id } });
+        if (existing?.status === 'disabled') throw new IdentityConflict();
+        const firstName = identity.firstName ?? existing?.firstName ?? null;
+        const lastName = identity.lastName ?? existing?.lastName ?? null;
+        const displayName = identity.firstName || identity.lastName
+          ? identity.displayName : existing?.displayName || identity.displayName;
+        const data = {
+          email: identity.email, phone: identity.phone, firstName, lastName,
+          displayName, status: 'active' as const,
         };
-      }
-
-      const updatedProfile = await prisma.profile.update({
-        where: {
-          id: existingProfile.id,
-        },
-        data: {
-          email: identity.email,
-          phone: identity.phone,
-          firstName,
-          lastName,
-          displayName,
-          status,
-        },
-      });
-
-      if (
-        shouldCreatePersonalWorkspace &&
-        identity.verified &&
-        updatedProfile.status !== 'disabled' &&
-        !hasWorkspace
-      ) {
-        await ensurePersonalClientWorkspace(
-          updatedProfile.id,
-          identity.email,
-          displayName,
+        const changed = existing && Object.entries(data).some(
+          ([key, value]) => existing[key as keyof typeof data] !== value,
         );
-      }
+        const profile = existing
+          ? changed ? await transaction.profile.update({ where: { id: existing.id }, data }) : existing
+          : await transaction.profile.create({ data: { ...data, authUserId: user.id, role: 'user' } });
 
-      const masterIdentityLinked =
-        await ensureMasterIdentityForVerifiedProfile(prisma, {
-          profileId: updatedProfile.id,
-          authUserId: user.id,
-          email: identity.email,
-          phone: identity.phone,
-          firstName,
-          lastName,
-          emailVerified: identity.emailVerified,
-          phoneVerified: identity.phoneVerified,
+        const linked = await ensureMasterIdentityForVerifiedProfile(transaction, {
+          profileId: profile.id, authUserId: user.id,
+          email: identity.email, phone: identity.phone, firstName, lastName,
+          emailVerified: identity.emailVerified, phoneVerified: identity.phoneVerified,
           registeredAt: user.created_at ? new Date(user.created_at) : null,
         });
-
-      if (!masterIdentityLinked) {
-        console.error(
-          '[profile-sync] Verified contact conflicts with another master identity',
-        );
-        return { outcome: 'denied' };
-      }
-
-      return {
-        outcome: 'updated',
-        profileId: updatedProfile.id,
-      };
-    }
-
-    const createdProfile = await prisma.profile.create({
-      data: {
-        authUserId: user.id,
-        email: identity.email,
-        phone: identity.phone,
-        firstName: identity.firstName,
-        lastName: identity.lastName,
-        displayName: identity.displayName,
-        role: 'user',
-        status: identity.verified ? 'active' : 'invited',
-      },
-    });
-
-    if (
-      shouldCreatePersonalWorkspace &&
-      identity.verified &&
-      createdProfile.status !== 'disabled'
-    ) {
-      await ensurePersonalClientWorkspace(
-        createdProfile.id,
-        identity.email,
-        identity.displayName,
-      );
-    }
-
-    const masterIdentityLinked =
-      await ensureMasterIdentityForVerifiedProfile(prisma, {
-        profileId: createdProfile.id,
-        authUserId: user.id,
-        email: identity.email,
-        phone: identity.phone,
-        firstName: identity.firstName,
-        lastName: identity.lastName,
-        emailVerified: identity.emailVerified,
-        phoneVerified: identity.phoneVerified,
-        registeredAt: user.created_at ? new Date(user.created_at) : null,
-      });
-
-    if (!masterIdentityLinked) {
-      console.error(
-        '[profile-sync] Verified contact conflicts with another master identity',
-      );
-      return { outcome: 'denied' };
-    }
-
-    return {
-      outcome: 'created',
-      profileId: createdProfile.id,
-    };
-  } catch (error) {
-    if (isUniqueConstraintError(error)) {
-      try {
-        const concurrentProfile = await prisma.profile.findUnique({
-          where: {
-            authUserId: user.id,
-          },
-          select: {
-            id: true,
-            authUserId: true,
-          },
-        });
-
-        if (concurrentProfile) {
-          return {
-            outcome: 'existing',
-            profileId: concurrentProfile.id,
-          };
+        if (!linked) throw new IdentityConflict();
+        if (options.createPersonalWorkspace !== false) {
+          await ensurePersonalWorkspace(transaction, profile.id, identity.email, displayName);
         }
-
-        const [emailCollision, phoneCollision] = await Promise.all([
-          prisma.profile.findUnique({
-            where: {
-              email: identity.email,
-            },
-            select: {
-              id: true,
-              authUserId: true,
-            },
-          }),
-          identity.phone
-            ? prisma.profile.findUnique({
-                where: {
-                  phone: identity.phone,
-                },
-                select: {
-                  id: true,
-                  authUserId: true,
-                },
-              })
-            : Promise.resolve(null),
-        ]);
-
-        if (emailCollision && emailCollision.authUserId !== user.id) {
-          console.error(
-            '[profile-sync] Email is already bound to a different auth user',
-          );
-          return { outcome: 'denied' };
-        }
-
-        if (phoneCollision && phoneCollision.authUserId !== user.id) {
-          console.error(
-            '[profile-sync] Phone is already bound to a different auth user',
-          );
-          return { outcome: 'denied' };
-        }
-      } catch {
-        return { outcome: 'error' };
-      }
+        return { outcome: existing ? changed ? 'updated' : 'existing' : 'created', profileId: profile.id };
+      }, { isolationLevel: 'Serializable' });
+    } catch (error) {
+      if (error instanceof IdentityConflict) return { outcome: 'denied' };
+      const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : null;
+      if ((isUniqueConstraintError(error) || code === 'P2034') && attempt < 2) continue;
+      // Do not log database error messages: unique-constraint details can contain contacts.
+      console.error('[profile-sync] Synchronization failed', { code: code === 'P2002' ? 'contact_conflict' : 'database_error' });
+      return { outcome: isUniqueConstraintError(error) ? 'denied' : 'error' };
     }
-
-    console.error(
-      '[profile-sync] Profile synchronization failed:',
-      error instanceof Error ? error.message : 'Unknown error',
-    );
-
-    return { outcome: 'error' };
   }
+  return { outcome: 'error' };
 }
 
 export async function ensureProfileForAuthenticatedUser(): Promise<ProfileSyncOutcome> {

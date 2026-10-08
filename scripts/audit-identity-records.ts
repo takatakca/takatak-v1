@@ -72,10 +72,12 @@ async function main() {
     authList.push(profile.id);
     authUserIds.set(profile.authUserId, authList);
 
-    const emailKey = profile.email.trim().toLowerCase();
+    const emailKey = profile.email?.trim().toLowerCase();
+    if (emailKey) {
     const emailList = emails.get(emailKey) ?? [];
     emailList.push(profile.id);
     emails.set(emailKey, emailList);
+    }
 
     if (profile.memberships.length === 0) {
       findings.push({

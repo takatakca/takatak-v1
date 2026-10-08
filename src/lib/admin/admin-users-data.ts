@@ -68,7 +68,7 @@ export async function getAdminUsersData(): Promise<AdminUsersData> {
         id: profile.id,
         authUserId: profile.authUserId,
         displayName: profile.displayName,
-        email: profile.email,
+        email: profile.email ?? "",
         platformRole: profile.role,
         profileStatus: profile.status,
         memberships: profile.memberships.map(

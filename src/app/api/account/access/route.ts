@@ -1,8 +1,8 @@
+import { originFromRequest } from "@/lib/config/app-origin";
 import { NextRequest } from "next/server";
 
 import { validateAccountAccessInput } from "@/lib/account/account-access-validation";
-import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
-import { isPrismaKnownRequestError } from "@/lib/db/prisma-errors";
+import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import {
@@ -60,9 +60,9 @@ export async function PATCH(request: NextRequest) {
   }
 
   const prisma = getPrisma();
-  const admin = getSupabaseAdminClient();
+  const supabase = await createSupabaseServerClient({ persistSessionCookies: true });
 
-  if (!prisma || !admin) {
+  if (!prisma || !supabase) {
     return jsonResponse(
       { ok: false, message: "Access settings are temporarily unavailable." },
       503,
@@ -89,7 +89,10 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const emailChanged = email !== profile.email;
+    if (!email && profile.email) {
+      return jsonResponse({ ok: false, message: "A verified email cannot be removed here." }, 400);
+    }
+    const emailChanged = Boolean(email && email !== profile.email);
     if (!emailChanged && !newPassword) {
       return jsonResponse(
         { ok: false, message: "There are no access changes to save." },
@@ -120,13 +123,18 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user || user.id !== profile.authUserId) {
+      return jsonResponse({ ok: false, message: "Please sign in again." }, 401);
+    }
+
     if (emailChanged || newPassword) {
-      const { error: authError } = await admin.auth.admin.updateUserById(
-        profile.authUserId,
+      const { error: authError } = await supabase.auth.updateUser(
         {
-          ...(emailChanged ? { email, email_confirm: true } : {}),
+          ...(emailChanged ? { email } : {}),
           ...(newPassword ? { password: newPassword } : {}),
         },
+        { emailRedirectTo: `${originFromRequest(request)}/auth/callback?next=/dashboard/account` },
       );
 
       if (authError) {
@@ -148,68 +156,25 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
-    if (emailChanged) {
-      try {
-        await prisma.$transaction(async (transaction) => {
-          await transaction.profile.update({
-            where: { id: profile.id },
-            data: { email },
-          });
-
-          await transaction.auditLog.create({
-            data: {
-              profileId: access.profileId,
-              clientId:
-                access.mode === "client_scoped"
-                  ? access.activeClientId
-                  : null,
-              action: "account_access_updated",
-              entityType: "Profile",
-              entityId: profile.id,
-              metadata: {
-                note: `${profile.displayName ?? email} updated their sign-in email.`,
-              },
-            },
-          });
-        });
-      } catch (error) {
-        if (isPrismaKnownRequestError(error) && error.code === "P2002") {
-          return jsonResponse(
-            {
-              ok: false,
-              message: "An account already exists for this email address.",
-              fieldErrors: {
-                email: "An account already exists for this email address.",
-              },
-            },
-            409,
-          );
-        }
-        throw error;
-      }
-    } else {
-      await prisma.auditLog.create({
-        data: {
-          profileId: access.profileId,
-          clientId:
-            access.mode === "client_scoped" ? access.activeClientId : null,
-          action: "account_password_updated",
-          entityType: "Profile",
-          entityId: profile.id,
-          metadata: {
-            note: `${profile.displayName ?? profile.email} updated their password.`,
-          },
-        },
-      });
-    }
+    // Supabase sends the confirmation; profile-sync copies only the confirmed email.
+    await prisma.auditLog.create({
+      data: {
+        profileId: access.profileId,
+        clientId: access.mode === "client_scoped" ? access.activeClientId : null,
+        action: emailChanged ? "account_email_verification_requested" : "account_password_updated",
+        entityType: "Profile", entityId: profile.id,
+        metadata: { emailChangeRequested: emailChanged, passwordChanged: Boolean(newPassword) },
+      },
+    });
 
     return jsonResponse(
       {
         ok: true,
         message: emailChanged
-          ? "Your sign-in email was updated."
+          ? "Check your email to confirm the change before using it to sign in."
           : "Your password was updated.",
-        email,
+        email: profile.email,
+        verificationPending: emailChanged,
       },
       200,
     );

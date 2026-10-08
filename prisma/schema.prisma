@@ -288,7 +288,7 @@ enum SocialOnboardingStatus {
 model Profile {
   id                    String        @id @default(uuid()) @db.Uuid
   authUserId            String        @unique @db.Uuid
-  email                 String        @unique
+  email                 String?       @unique
   firstName             String?
   lastName              String?
   displayName           String?

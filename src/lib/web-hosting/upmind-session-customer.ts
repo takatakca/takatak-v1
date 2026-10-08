@@ -80,12 +80,14 @@ export async function linkUpmindCustomerForProfile(
         await ensurePersonalClientWorkspace(
           profile.id,
           profile.email,
-          profile.displayName || profile.email,
+          profile.displayName || profile.email || "User",
         );
 
         if (profile.upmindClientId) {
           return profile.upmindClientId;
         }
+
+        if (!profile.email) return null; // Email-required billing must not block phone authentication.
 
         const { clientId } = await findOrCreateUpmindCustomer({
           email: profile.email,

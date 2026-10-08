@@ -14,4 +14,9 @@ if (!result.ok) {
   process.exit(1);
 }
 
-console.log("Preflight passed.");
+console.log("Environment preflight passed; this is not an authentication delivery test.");
+console.log("Supabase connectivity: not tested");
+console.log("Supabase Phone provider configuration / SMS delivery: not tested (direct TWILIO_VERIFY variables are not proof)");
+console.log("Email OTP delivery: not tested");
+console.log("Profile / MasterIdentity / tenant isolation: not tested");
+console.log("MIMT telecom: separate service, not tested");

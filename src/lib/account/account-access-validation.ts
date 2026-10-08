@@ -34,7 +34,7 @@ export function validateAccountAccessInput(
   const email = normalizeEmail(
     typeof value.email === "string" ? value.email : "",
   );
-  const emailError = validateEmail(email);
+  const emailError = email ? validateEmail(email) : undefined;
   if (emailError) {
     fieldErrors.email = emailError;
   }

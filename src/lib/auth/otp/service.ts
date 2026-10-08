@@ -92,7 +92,7 @@ export async function sendEmailOtp(
     },
   });
 
-  if (!profile) {
+  if (!profile?.email) {
     return {
       ok: false,
       status: 401,
@@ -334,7 +334,7 @@ export async function verifyEmailOtp(
     },
   });
 
-  if (!profile) {
+  if (!profile?.email) {
     return {
       ok: false,
       status: 400,
@@ -583,7 +583,7 @@ export async function verifyPhoneOtp(
     },
   });
 
-  if (!profile?.phone) {
+  if (!profile?.phone || !profile.email) {
     return {
       ok: false,
       status: 401,

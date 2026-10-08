@@ -156,7 +156,7 @@ export async function getAccountSettingsPageData(
     return {
       source: "database",
       profileId: profile.id,
-      email: profile.email,
+      email: profile.email ?? "",
       phone: profile.phone,
       firstName: profile.firstName ?? "",
       lastName: profile.lastName ?? "",

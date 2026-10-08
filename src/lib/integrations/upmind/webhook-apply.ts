@@ -47,7 +47,7 @@ async function findTakataClientId(
   await ensurePersonalClientWorkspace(
     profile.id,
     profile.email,
-    profile.displayName || profile.email,
+    profile.displayName || profile.email || "User",
   );
 
   const membership = await prisma.clientMembership.findFirst({
