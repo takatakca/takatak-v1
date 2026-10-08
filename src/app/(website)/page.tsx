@@ -12,10 +12,11 @@ import { ManagedDeliveryJourney } from "@/components/website/home/ManagedDeliver
 import { ConciergeSupportSection } from "@/components/website/home/ConciergeSupportSection";
 import { FinalCtaSection } from "@/components/website/home/FinalCtaSection";
 import { brand } from "@/lib/website/brand";
+import { getApplicationOrigin } from "@/lib/config/app-origin";
+import { websiteStructuredData } from "@/lib/website/structured-data";
 
 export const metadata: Metadata = {
-  title:
-    "TAKATAK — Business services marketplace: websites, domains, hosting & growth",
+  title: { absolute: "TAKATAK — Websites, domains, hosting & growth" },
   description: brand.tagline,
   alternates: {
     canonical: "/",
@@ -25,6 +26,12 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: websiteStructuredData(getApplicationOrigin()),
+        }}
+      />
       <TakatakEcosystemHero />
       <PromoMarquee />
       <TrendingProjectsRail />

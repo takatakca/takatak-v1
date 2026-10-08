@@ -15,8 +15,10 @@ import { hasEffectivePermission } from '@/lib/security/effective-permissions';
 import { requireWorkspacePermission } from '@/lib/security/workspace-guard';
 import { getSocialConnectionsData } from '@/lib/social/connections/social-connection-data';
 import { pickConnectedPlatformAccount } from '@/lib/social/connections/social-selected-page-identity';
+import { supplementalSidebarAccounts } from '@/lib/social/connections/social-sidebar-accounts';
 import {
   getSocialProviderDefinition,
+  isSocialConnectionProvider,
   listSocialProviderReadiness,
 } from '@/lib/social/providers/registry';
 import { getSocialShellBilling } from '@/lib/billing/social/billing-banner';
@@ -129,7 +131,9 @@ export default async function SocialLayout({
         status: account.status,
         accessStatus: account.accessStatus,
         profileImageUrl:
-          account.platform === 'facebook'
+          account.platform === 'facebook' ||
+          account.platform === 'instagram' ||
+          account.platform === 'threads'
             ? toAccountPictureSrc(account.id)
             : toClientSocialImageUrl(account.profileImageUrl),
       })),
@@ -193,10 +197,26 @@ export default async function SocialLayout({
         displayName: account.displayName,
         status: account.status,
         profileImageUrl:
-          account.platform === 'facebook'
+          account.platform === 'facebook' ||
+          account.platform === 'instagram' ||
+          account.platform === 'threads'
             ? toAccountPictureSrc(account.id)
             : toClientSocialImageUrl(account.profileImageUrl),
       }));
+
+    accounts.push(
+      ...supplementalSidebarAccounts(
+        records.map((connection) => ({
+          id: connection.id,
+          status: connection.status,
+          displayName: connection.displayName,
+          platforms: isSocialConnectionProvider(connection.provider)
+            ? getSocialProviderDefinition(connection.provider).platforms
+            : [],
+        })),
+        new Set(accounts.map((account) => account.platform)),
+      ),
+    );
   }
 
   return (

@@ -25,9 +25,18 @@ function markSeen() {
   }
 }
 
+/** Pages where visitors are filling in a form: the invite never interrupts them. */
+const FORM_PAGES = ["/signup", "/register", "/login", "/otp", "/checkout", "/dashboard", "/marketplace/post-project", "/privacy-manager"];
+
+function isTyping(): boolean {
+  const active = document.activeElement;
+  return active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
+}
+
 /**
- * Animated new-client invite. Appears once per visitor after 10s or 35% scroll,
- * captures an email and hands off to signup with the FIRST10 intent preserved.
+ * Animated new-client invite. Appears once per visitor after 10s or 35% scroll
+ * (never over a form being filled in), captures an email and hands off to
+ * signup with the FIRST10 intent preserved. Compact on small screens.
  */
 export function AnimatedPromoInvite() {
   const { t } = useLanguage();
@@ -38,13 +47,7 @@ export function AnimatedPromoInvite() {
   const [email, setEmail] = useState("");
   const armed = useRef(false);
 
-  const suppressed =
-    isAuthenticated ||
-    pathname.startsWith("/signup") ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/otp") ||
-    pathname.startsWith("/checkout") ||
-    pathname.startsWith("/dashboard");
+  const suppressed = isAuthenticated || FORM_PAGES.some((page) => pathname.startsWith(page));
 
   useEffect(() => {
     if (suppressed || armed.current) return;
@@ -54,8 +57,15 @@ export function AnimatedPromoInvite() {
 
     armed.current = true;
     let done = false;
+    let retry: number | undefined;
     const show = () => {
       if (done) return;
+      // Someone typing in a field is busy: try again a little later.
+      if (isTyping()) {
+        window.clearTimeout(retry);
+        retry = window.setTimeout(show, 8_000);
+        return;
+      }
       done = true;
       setOpen(true);
       markSeen();
@@ -70,6 +80,7 @@ export function AnimatedPromoInvite() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(retry);
       window.removeEventListener("scroll", onScroll);
     };
   }, [suppressed]);
@@ -94,9 +105,9 @@ export function AnimatedPromoInvite() {
   };
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-4 pb-24 sm:justify-start sm:pb-6 sm:pl-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-20 sm:justify-start sm:px-4 sm:pb-6 sm:pl-6">
       <div className="tk-rise-in pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-primary/40 bg-card shadow-[var(--shadow-glow)]">
-        <div className="relative p-5">
+        <div className="relative p-4 sm:p-5">
           <button
             type="button"
             onClick={close}
@@ -109,27 +120,27 @@ export function AnimatedPromoInvite() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary">
             <Gift size={12} /> {t("promo.invite.eyebrow")}
           </span>
-          <h2 className="mt-3 text-lg font-bold leading-6 text-foreground">{t("promo.invite.title")}</h2>
-          <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{t("promo.invite.subtitle")}</p>
+          <h2 className="mt-2 pr-8 text-base font-bold leading-6 text-foreground sm:mt-3 sm:text-lg">{t("promo.invite.title")}</h2>
+          <p className="mt-1.5 hidden text-sm leading-6 text-muted-foreground sm:block">{t("promo.invite.subtitle")}</p>
 
-          <form onSubmit={submit} className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <form onSubmit={submit} className="mt-3 flex flex-row gap-2 sm:mt-4">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder={t("promo.invite.placeholder")}
               aria-label={t("promo.invite.placeholder")}
-              className="min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary"
+              className="hidden min-w-0 flex-1 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-primary sm:block"
             />
             <button
               type="submit"
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              className="inline-flex flex-1 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:flex-none"
             >
               {t("promo.invite.cta")} <ArrowRight size={14} />
             </button>
           </form>
 
-          <p className="mt-3 text-[11px] leading-4 text-muted-foreground">{t("promo.invite.legal")}</p>
+          <p className="mt-2 text-[11px] leading-4 text-muted-foreground sm:mt-3">{t("promo.invite.legal")}</p>
         </div>
       </div>
     </div>

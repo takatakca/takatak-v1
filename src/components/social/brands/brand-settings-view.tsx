@@ -77,6 +77,7 @@ function platformLabel(platform: string): string {
     x: "X",
     google_business: "Google Business",
     google: "Google",
+    looker_studio: "Looker Studio",
   };
   return labels[platform] ?? platform;
 }

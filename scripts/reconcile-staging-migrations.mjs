@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
+import { canonicalSql } from "./production-migration-normalization.mjs";
 
 const { Client } = pg;
 
@@ -23,6 +24,10 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261003194500_takatak_ads_foundation",
   "20261004190000_community_content_moderation",
   "20261005043500_ahmv_smart_departure_entitlement",
+  "20261006120000_takatak_billing_invoice_requests",
+  "20261006140000_client_stripe_connect_accounts",
+  "20261006150000_billing_invoice_checkout_sessions",
+  "20261008090000_website_lead_attachments",
 ];
 
 function fail(message) {
@@ -116,43 +121,105 @@ try {
     );
   }
 
-  const pending = repoMigrations.filter((name) => !applied.has(name));
   const approved = new Set(APPROVED_DEPLOY_MIGRATIONS);
-  const unexpectedPending = pending.filter((name) => !approved.has(name));
-  if (unexpectedPending.length > 0) {
-    fail(
-      "Unexpected staging migrations are pending: " +
-        unexpectedPending.join(", "),
-    );
-  }
+  const approvedRepoMigrations = repoMigrations.filter((name) => approved.has(name));
 
-  if (pending.length > 0) {
-    const firstPendingIndex = repoMigrations.indexOf(pending[0]);
-    const expectedSuffix = repoMigrations.slice(firstPendingIndex);
-    if (
-      pending.length !== expectedSuffix.length ||
-      pending.some((name, index) => name !== expectedSuffix[index])
-    ) {
+  const supabaseRows = await client.query(
+    `select version, name, statements
+       from supabase_migrations.schema_migrations`,
+  );
+  const supabaseByName = new Map(
+    supabaseRows.rows.map((row) => [String(row.name), row]),
+  );
+
+  const externallyApplied = [];
+  for (const migration of APPROVED_DEPLOY_MIGRATIONS) {
+    if (applied.has(migration)) continue;
+
+    const slug = migration.replace(/^\\d+_/, "");
+    const history = supabaseByName.get(slug);
+    if (!history) continue;
+
+    const sqlPath = join(migrationsRoot, migration, "migration.sql");
+    if (!existsSync(sqlPath)) {
+      fail("Migration SQL is missing for Supabase history verification: " + migration);
+    }
+
+    const repoSql = readFileSync(sqlPath, "utf8");
+    const historySql = Array.isArray(history.statements)
+      ? history.statements.join("\\n")
+      : "";
+
+    if (canonicalSql(historySql) !== canonicalSql(repoSql)) {
       fail(
-        "Staging pending migrations are not a contiguous repository suffix. Refusing out-of-order deploy.",
+        "Supabase staging migration history does not match repository SQL: " +
+          slug +
+          "@" +
+          String(history.version),
       );
     }
+
+    externallyApplied.push(migration);
   }
 
+  const pending = approvedRepoMigrations.filter(
+    (name) => !applied.has(name) && !externallyApplied.includes(name),
+  );
+  const unrelatedPending = repoMigrations.filter(
+    (name) => !approved.has(name) && !applied.has(name),
+  );
+
   console.log("[staging-migrations] Project verified:", EXPECTED_PROJECT_REF);
+  console.log(
+    "[staging-migrations] Verified externally-applied Supabase migrations:",
+    externallyApplied.length,
+  );
+  console.log(
+    "[staging-migrations] Externally-applied list:",
+    externallyApplied,
+  );
   console.log("[staging-migrations] Pending approved migrations:", pending.length);
-  console.log("[staging-migrations] Pending list:", pending);
+  console.log("[staging-migrations] Pending approved list:", pending);
+  console.log(
+    "[staging-migrations] Unrelated repo migrations intentionally outside this AHMV staging gate:",
+    unrelatedPending.length,
+  );
 
   if (mode === "audit") {
     console.log("[staging-migrations] AUDIT PASS. No staging mutation performed.");
     process.exit(0);
   }
 
-  if (pending.length > 0) {
-    runPrisma(["deploy"], databaseUrl);
-  } else {
-    console.log("[staging-migrations] No staging migrations remain to apply.");
+  for (const migration of externallyApplied) {
+    console.log(
+      "[staging-migrations] Recording verified Supabase-applied migration in Prisma:",
+      migration,
+    );
+    runPrisma(["resolve", "--applied", migration], databaseUrl);
   }
+
+  const refreshedRows = await client.query(
+    `select migration_name
+       from public._prisma_migrations
+       where finished_at is not null and rolled_back_at is null`,
+  );
+  applied = new Set(
+    refreshedRows.rows.map((row) => String(row.migration_name)),
+  );
+
+  const pendingAfterResolve = approvedRepoMigrations.filter(
+    (name) => !applied.has(name),
+  );
+
+  if (pendingAfterResolve.length > 0) {
+    fail(
+      "Approved AHMV staging migrations still require SQL application after verified history reconciliation: " +
+        pendingAfterResolve.join(", ") +
+        ". Refusing global prisma migrate deploy because unrelated repo migrations are outside this staging gate.",
+    );
+  }
+
+  console.log("[staging-migrations] All approved AHMV staging migrations are reconciled.");
 
   const finalRows = await client.query(
     `select migration_name
@@ -160,7 +227,7 @@ try {
        where finished_at is not null and rolled_back_at is null`,
   );
   applied = new Set(finalRows.rows.map((row) => String(row.migration_name)));
-  const finalPending = repoMigrations.filter((name) => !applied.has(name));
+  const finalPending = approvedRepoMigrations.filter((name) => !applied.has(name));
   if (finalPending.length !== 0) {
     fail(
       "Staging still has pending repository migrations after deploy: " +

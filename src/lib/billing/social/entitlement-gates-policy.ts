@@ -20,6 +20,9 @@ export type SocialNetworkConnectInput = {
 
 const PROVIDER_TO_NETWORK: Record<string, SocialBillingNetwork> = {
   meta: 'facebook',
+  meta_ads: 'facebook',
+  google_ads: 'youtube',
+  looker_studio: 'youtube',
   instagram: 'instagram',
   threads: 'threads',
   google: 'youtube',
@@ -29,6 +32,8 @@ const PROVIDER_TO_NETWORK: Record<string, SocialBillingNetwork> = {
   x: 'x',
   bluesky: 'bluesky',
   twitch: 'twitch',
+  web: 'web',
+  blog: 'blog',
 };
 
 const BILLABLE_POST_STATUSES = [

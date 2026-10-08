@@ -34,8 +34,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default:
-      "TAKATAK — Business services marketplace: websites, domains, hosting & growth",
+    default: "TAKATAK — Websites, domains, hosting & growth",
     template: "%s — TAKATAK",
   },
   description:
@@ -44,6 +43,11 @@ export const metadata: Metadata = {
   authors: [{ name: "TAKATAK" }],
   creator: "TAKATAK",
   publisher: "TAKATAK",
+
+  other: {
+    "takatak-site-verification": "Uiqdl66eHgBENWGITqm8nInBumnb1n2b"
+  },
+
   metadataBase: new URL(getApplicationOrigin()),
   openGraph: {
     type: "website",
