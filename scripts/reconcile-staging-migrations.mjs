@@ -236,6 +236,7 @@ try {
     "[staging-migrations] Unrelated repo migrations intentionally outside this AHMV staging gate:",
     unrelatedPending.length,
   );
+  console.log("[staging-migrations] Unrelated pending list:", unrelatedPending);
 
   if (mode === "audit") {
     console.log("[staging-migrations] AUDIT PASS. No staging mutation performed.");
