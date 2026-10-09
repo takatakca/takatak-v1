@@ -48,7 +48,7 @@ async function main() {
   delete process.env.ANTHROPIC_API_KEY;
   const actor = await prisma.profile.create({ data: { authUserId: randomUUID(), email: `ai-keys-${randomUUID()}@example.test` } });
 
-  const openaiKey = `sk-test-${randomUUID()}AB12`;
+  const openaiKey = `fake-openai-key-${randomUUID()}AB12`;
   await expectServiceError(saveProviderKey({ provider: "not_a_provider", apiKey: openaiKey, actorProfileId: actor.id }), "invalid_input");
   await expectServiceError(saveProviderKey({ provider: "openai", apiKey: "short", actorProfileId: actor.id }), "invalid_input");
   await saveProviderKey({ provider: "openai", apiKey: `  ${openaiKey}  `, actorProfileId: actor.id });
@@ -81,7 +81,7 @@ async function main() {
   assert.equal(checks, 4);
   console.log("PASS the test is a read-only request with the key in its header; only a 2xx marks the key as working, every result is audited");
 
-  const claudeKey = `sk-ant-test-${randomUUID()}CD34`;
+  const claudeKey = `fake-claude-key-${randomUUID()}CD34`;
   await saveProviderKey({ provider: "anthropic", apiKey: claudeKey, actorProfileId: actor.id });
   const claudeCalls: Call[] = [];
   const modelsPage = { data: [], has_more: false, first_id: null, last_id: null };
@@ -107,7 +107,7 @@ async function main() {
   await expectServiceError(checkSavedProviderKey({ provider: "gemini", actorProfileId: actor.id, fetchImpl: fakeFetch(200, []) }), "not_found");
   console.log("PASS providers with no read-only endpoint are never marked as working; testing a missing key is refused");
 
-  const replacement = `sk-test-${randomUUID()}EF56`;
+  const replacement = `fake-openai-key-${randomUUID()}EF56`;
   await saveProviderKey({ provider: "openai", apiKey: replacement, actorProfileId: actor.id });
   const replaced = await prisma.aiProviderCredential.findUniqueOrThrow({ where: { provider: "openai" } });
   assert.equal(replaced.id, row.id);
@@ -116,7 +116,7 @@ async function main() {
   assert.equal(await prisma.auditLog.count({ where: { entityId: row.id, action: "ai_provider_key.replaced" } }), 1);
   // A check that finishes after the key was replaced does not mark the new key.
   const raceFetch: CheckFetch = (async () => {
-    await saveProviderKey({ provider: "openai", apiKey: `sk-test-${randomUUID()}GH78`, actorProfileId: actor.id });
+    await saveProviderKey({ provider: "openai", apiKey: `fake-openai-key-${randomUUID()}GH78`, actorProfileId: actor.id });
     return new Response("{}", { status: 200 });
   }) as unknown as CheckFetch;
   await checkSavedProviderKey({ provider: "openai", actorProfileId: actor.id, fetchImpl: raceFetch });
@@ -138,8 +138,8 @@ async function main() {
   assert.equal(await removeProviderKey({ provider: "openai", actorProfileId: actor.id }), false);
   assert.equal(await resolveProviderKey("openai"), null);
   assert.equal(await prisma.auditLog.count({ where: { entityId: row.id, action: "ai_provider_key.removed" } }), 1);
-  process.env.OPENAI_API_KEY = "sk-env-fallback-key-0000";
-  assert.equal(await resolveProviderKey("openai"), "sk-env-fallback-key-0000", "with no saved key, the server variable is used");
+  process.env.OPENAI_API_KEY = "fake-env-fallback-key-0000";
+  assert.equal(await resolveProviderKey("openai"), "fake-env-fallback-key-0000", "with no saved key, the server variable is used");
   views = await listProviderKeys();
   assert.equal(views.find((v) => v.key === "openai")!.state, "env_only");
   delete process.env.OPENAI_API_KEY;

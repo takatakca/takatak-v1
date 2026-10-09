@@ -38,7 +38,7 @@ for (const entry of AI_PROVIDER_CATALOG) {
   }
   if (entry.check.kind === "none") assert.ok(entry.check.reason.length > 10, `${entry.key} says why it has no test`);
 }
-const secret = "sk-test-0123456789abcdefWXYZ";
+const secret = "fake-provider-key-0123456789WXYZ";
 const openai = buildCheckRequest(providerEntry("openai")!, secret)!;
 assert.equal(openai.url, "https://api.openai.com/v1/models");
 assert.equal(openai.headers.Authorization, `Bearer ${secret}`);
