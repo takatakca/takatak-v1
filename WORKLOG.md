@@ -13,7 +13,6 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - [ ] **Approve Facturations #158, #159, #160 as `takatakmtl`.** The agent merges them once approved. *Blocks:* Facturations staging and the issuance status shown to clients. *(2026-10-07, session 01HWFgGo)*
 - [ ] **⏸ ON HOLD (owner, 2026-10-09): MIMT is paused. Agents do not start MIMT work until the owner reopens it.** **Share the MIMT repository with Claude.** mimt.ca runs Next.js, but its repo is not visible to agents (`takatakca/mimt`, `MIMT`, `mimtca` not found). Add it in github.com/settings/installations › Claude › Repository access, and write its exact name here. *Blocks:* building the MIMT app and the MIMT API client behind `/dashboard/voip`. *(2026-10-09, session 01HWFgGo)*
 - [ ] **MochaHost WordPress cleanup.** Owner decided: keep mielaissa.ca, besoinavocat.ca, actionavocat.ca, inntime.ca; remove every other WordPress site in the bolon.ca cPanel account; never touch takatak.ca, facturations.bolon.ca or the Node apps (1lv, qmaps, rentauto, mimt, pppmtl…), DNS zones, email or domain registrations. Either the owner sends the ticket the agent drafted, or adds `CPANEL_API_TOKEN`, `CPANEL_USER`, `CPANEL_HOST` to the cloud environment secrets so an agent can do it. *(2026-10-09, session 01HWFgGo)*
-- [ ] **Owner decisions** listed under "Overlaps to settle" below.
 
 ## ▶ Next up (priority order: first item an agent can do; skip anything waiting on a person)
 1. **Homepage redesign: done** (#150 and #151 merged): shorter homepage, ecosystem grid, `/ecosystem` "Our brands" page, premium website. (TK-027 is done: #146.)
@@ -21,12 +20,11 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 3. **After the staging apply is approved and run:** check that the three billing migrations are recorded and that staging deploys. Then turn on billing on staging (go-live guide, steps 7–10).
 4. Then the `Open work` lines below and knowledgeAI `docs/11-DEV-BACKLOG.md`.
 
-## ⚠ Overlaps to settle before more work (owner decision)
-- **SEO audit** is built twice: `claude/seo-site-audit` and the Growth Suite (#117). Keep one.
-- **Reviews / reputation** are built twice: `claude/qmaps-listings-reviews-sync` (QMAPS reviews in Local Listings) and #117 (Birdeye-style reputation). Decide which screen is the reviews dashboard.
-- **AI** is built twice: `claude/ai-studio-generation` (AI Studio drafts) and #117 (AI agents with credits). Decide which one owns content generation.
-- **1LV bridge** has four overlapping drafts: #7, #17, #18, #23. Keep one.
-- **Billing:** `main` already has a Facturations integration (#124: billing request queue → Facturations drafts). `claude/facturations-billing-integration` (#138) is likely a duplicate: compare, then close #138. #129 (Stripe client invoicing) is a separate system.
+## ⚠ Overlaps: settled (owner, triage 2026-10-08)
+- SEO audit → #135, QMAPS reviews → #136, AI drafts → #137. #117 is split into one PR per phase.
+- 1LV bridge: already on main; #7, #17, #18, #23 and #28 closed.
+- Billing: #124 on main; #138 closed.
+- **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
 - 2026-10-09 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #117 | merging into main (owner request) | Growth Suite (reputation, analytics, chat, AI agents, Google, plans). Merged main (incl. #151–#154); 9 Growth migrations renamed to 20261009010000–20261009090000 so they sort after the billing migrations (never applied anywhere); rollback script still exact; homepage and Social untouched | owner approved the 9 Growth migrations for staging (2026-10-09): back up staging, run the staging reconciler apply, deploy; production DB approval later; close or merge #135/#136/#137 (overlaps)
@@ -36,7 +34,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - 2026-10-09 | claude (session 01HWFgGo, website agent) | claude/website-premium → PR | done (merged d06542f) | Premium website: 9 core categories, sales page per category, real imagery, interactions | owner merges
 - 2026-10-08 | claude (session 01HWFgGo, homepage agent) | claude/homepage-redesign → #150 | done (merged 4e91de9) | Shorter homepage (5 sections), ecosystem grid, /ecosystem "Our brands" page | owner merges; owner confirms which brands GROUPE TAKATAK owns and runs (registry marks none as owned + active yet, so the brand list is empty and its links are hidden)
 - 2026-10-08 | claude (session 01HWFgGo) | claude/lead-order-billing → #146 | done (merged 750dad3) | TK-027: won takatak.ca order lead → billing queue → Facturations draft (Invoice card on the lead page, explicit taxes) | owner merges; then mark an order Won and create its invoice request
-- 2026-10-08 | claude (session 01KBGh1v) | main | waiting on owner | Triage of all 23 open PRs. Merge: #144 #129 #146 #147 #101 #95 #75. Close: #7 #17 #18 #23 (already on main), #145 (dup of #148). Owner yes/no: #148, #135-137 vs #117 (split #117), #128, #104, #27, #28, #143/#140 | owner replies "approve triage" (Launch Board step 6); then merge in that order and close
+- 2026-10-09 | claude (session 01KBGh1v) | main | done (owner approved) | PR triage applied. Merged #101 #95 (#129 #144 #146 #147 #148 by other sessions). Closed #7 #17 #18 #23 #28 #145 #140 (folded into #143). Decisions noted on #117 #128 #104 #27. Full dev list: docs/DEV-TODO.md | merge #75 and #143 when CI is green; then #135-#137 (rename migrations, off the production list)
 - 2026-10-08 | cursor | fix/staging-migration-audit → #147 | done (merged 82df62e by session 01HWFgGo) | Manual and automatic staging releases now require the same migration-approval evidence. An audit skips the release and cannot select apply. `website_lead_attachments` is still the missing migration. No backup has been taken and no SQL was applied. | Merge #147 only to install the gate. Apply stays a separate approval after a staging backup.
 - 2026-10-08 | claude (session 01KBGh1v) | claude/brand-blue → #142 | done (merged 4103db4) | Public site from green to GROUPE TAKATAK brand blue (tokens, 58 classes, share image) | swap the old gold TK logo after the owner uploads files to knowledgeAI/brand/
 - 2026-10-08 | claude (session 01KBGh1v) | main | ready to deploy | main now has #130–#134 and #139 merged (colours, cleanup, website requests→Leads, https/SEO, work log) | owner: add the 7 TAKATAK_PRODUCTION_* secrets in GitHub › Settings › Environments › production, then run "Promote verified TAKATAK production artifact" (validate, then promote)
