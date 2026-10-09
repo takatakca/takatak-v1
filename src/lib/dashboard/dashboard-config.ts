@@ -30,6 +30,7 @@ import {
   MapPin,
   MapPinned,
   Megaphone,
+  Phone,
   PlugZap,
   Plus,
   Receipt,
@@ -124,6 +125,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { label: "Security", href: "/dashboard/web-hosting/security", icon: Shield },
         ],
       },
+      { label: "Business phone", href: "/dashboard/voip", icon: Phone },
     ],
   },
   {
