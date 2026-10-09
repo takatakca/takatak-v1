@@ -121,6 +121,9 @@ jobs:
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
 
+      - name: TAKATAK Growth Suite safeguards
+        run: npm run qa:growth-suite
+
       - name: GROUPE TAKATAK billing (Facturations) safeguards
         run: npm run qa:billing
 
@@ -323,6 +326,11 @@ jobs:
             echo "::error title=qa:tenant-isolation::$(grep -E 'FAIL |crashed|Error' /tmp/qa-tenant.log | tail -n 40 | tr '\n' ' | ')"
             exit "$status"
           fi
+
+      - name: Growth Suite backend (reputation + AI credits) on ephemeral DB
+        env:
+          NODE_ENV: development
+        run: npm run qa:growth-backend
 
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma

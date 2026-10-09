@@ -34,6 +34,18 @@ const SECRET_TABLES = [
   "master_merchants",
   "client_stripe_connect_accounts",
   "source_merchants",
+  "review_requests",
+  "review_responses",
+  "ai_credit_accounts",
+  "ai_credit_entries",
+  "analytics_events",
+  "chat_conversations",
+  "chat_messages",
+  "ai_agent_runs",
+  "google_business_connections",
+  "google_business_oauth_states",
+  "external_reviews",
+  "growth_subscriptions",
   "_prisma_migrations",
 ];
 
