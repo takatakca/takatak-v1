@@ -102,7 +102,10 @@ test("the reconciler exits audit before it can record or apply SQL", () => {
   const auditExit = source.indexOf("AUDIT PASS. No staging mutation performed.");
   const resolve = source.indexOf('["resolve", "--applied"');
   assert.ok(mode >= 0 && auditExit > mode && resolve > auditExit);
-  assert.equal(source.includes('runPrisma(["deploy"]'), false);
+  const deploy = source.indexOf('runPrisma(["deploy"]');
+  const guard = source.indexOf("canDeployApprovedPending({ pendingAfterResolve, unrelatedPending })");
+  assert.ok(deploy > auditExit && guard > auditExit && deploy > guard);
+  assert.equal(source.indexOf('runPrisma(["deploy"]', deploy + 1), -1);
 });
 
 test("release workflow cannot skip the evidence check", () => {
