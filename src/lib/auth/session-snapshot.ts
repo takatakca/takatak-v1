@@ -3,7 +3,7 @@ import type {
   PlatformRoleKey,
   RoleKey,
 } from "@/lib/security/roles";
-import type { DashboardServiceModule } from "@/lib/services/service-modules";
+import type { SidebarServiceModule } from "@/lib/services/service-modules";
 
 export interface SessionSnapshot {
   configured: boolean;
@@ -41,5 +41,5 @@ export interface SessionSnapshot {
    * Optional dashboard services provisioned for the active workspace.
    * These are commercial entitlements, not permission grants.
    */
-  enabledServiceModules: DashboardServiceModule[];
+  enabledServiceModules: SidebarServiceModule[];
 }

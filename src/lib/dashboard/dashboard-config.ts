@@ -43,6 +43,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Ticket,
   UserPlus,
   UserRound,
   Users,
@@ -109,6 +110,12 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/dashboard/rentauto",
         icon: CarFront,
         serviceModule: "rentauto",
+      },
+      {
+        label: "ALKAO — Billetterie",
+        href: "/dashboard/ticketing",
+        icon: Ticket,
+        serviceModule: "ticketing",
       },
       {
         label: "Hosting",
