@@ -32,7 +32,15 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261006140000_client_stripe_connect_accounts",
   "20261006150000_billing_invoice_checkout_sessions",
   "20261008090000_website_lead_attachments",
+  // Schema already applied on TAKATAK STAGING as Supabase history
+  // 20261008105429_phone_only_profile_email. Resolve records Prisma history
+  // only; it must not run the ALTER again.
+  "20261008153000_phone_only_profile_email",
 ];
+
+const SUPABASE_HISTORY_NAMES = {
+  "20261008153000_phone_only_profile_email": "phone_only_profile_email",
+};
 
 function fail(message) {
   console.error("[staging-migrations] " + message);
@@ -140,7 +148,8 @@ try {
   for (const migration of APPROVED_DEPLOY_MIGRATIONS) {
     if (applied.has(migration)) continue;
 
-    const slug = migrationHistorySlug(migration);
+    const slug =
+      SUPABASE_HISTORY_NAMES[migration] ?? migrationHistorySlug(migration);
     const history = supabaseByName.get(slug);
     if (!history) continue;
 

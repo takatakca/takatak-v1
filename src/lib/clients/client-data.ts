@@ -32,7 +32,7 @@ export interface ClientDetail {
   owners: Array<{
     id: string;
     displayName: string;
-    email: string;
+    email: string | null;
     status: string;
   }>;
   brandCount: number;
@@ -70,9 +70,9 @@ export type ClientDetailData =
 
 function displayProfileName(profile: {
   displayName: string | null;
-  email: string;
+  email: string | null;
 }): string {
-  return profile.displayName ?? profile.email;
+  return profile.displayName ?? profile.email ?? "TAKATAK user";
 }
 
 export async function getClientDirectoryData(
@@ -314,7 +314,8 @@ export async function getClientDetailData(
             id: membership.id,
             displayName:
               membership.profile.displayName ??
-              membership.profile.email,
+              membership.profile.email ??
+              "TAKATAK user",
             email: membership.profile.email,
             status: membership.status,
           }),

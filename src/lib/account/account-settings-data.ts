@@ -27,7 +27,7 @@ export type AccountSettingsPageData =
   | {
       source: "database";
       profileId: string;
-      email: string;
+      email: string | null;
       phone: string | null;
       firstName: string;
       lastName: string;

@@ -58,6 +58,46 @@ async function main() {
       resendRoute.includes("phone_auth_migrated"),
   );
 
+  const loginForm = readFileSync(
+    resolve(process.cwd(), "src/components/auth/master-phone-login-form.tsx"),
+    "utf8",
+  );
+  const registrationForm = readFileSync(
+    resolve(process.cwd(), "src/components/auth/master-phone-registration-form.tsx"),
+    "utf8",
+  );
+  assert(
+    "login opens on the mobile number",
+    loginForm.includes('useState<Mode>("phone")'),
+  );
+  assert(
+    "registration does not submit an unverified recovery email",
+    !registrationForm.includes("validateEmail") &&
+      registrationForm.includes("confirm the message sent to that inbox"),
+  );
+
+  const accessRoute = readFileSync(
+    resolve(process.cwd(), "src/app/api/account/access/route.ts"),
+    "utf8",
+  );
+  const profileSync = readFileSync(
+    resolve(process.cwd(), "src/lib/auth/profile-sync.ts"),
+    "utf8",
+  );
+  assert(
+    "account access cannot mark a new email confirmed",
+    !accessRoute.includes("email_confirm") &&
+      !accessRoute.includes("updateUserById") &&
+      accessRoute.includes("verificationPending") &&
+      accessRoute.includes("account_email_verification_requested"),
+  );
+  assert(
+    "profile sync ignores client-supplied email metadata",
+    !profileSync.includes("user_metadata?.email") &&
+      !profileSync.includes("user_metadata.email") &&
+      profileSync.includes("email_confirmed_at"),
+  );
+
   const json = await parseAuthResponse(
     new Response(JSON.stringify({ ok: false, message: "Invalid OTP recheck!", code: "invalid_otp" }), {
       status: 400,
