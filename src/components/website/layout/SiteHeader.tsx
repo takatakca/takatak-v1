@@ -41,7 +41,7 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="relative sticky top-0 z-50 overflow-visible">
+    <header className="brand-dark relative sticky top-0 z-50 overflow-visible">
       {/* Blur on a sibling layer so dropdowns are not clipped by backdrop-filter. */}
       <div
         aria-hidden

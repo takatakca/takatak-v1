@@ -3,6 +3,10 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
 import { canonicalSql } from "./production-migration-normalization.mjs";
+import {
+  migrationHistorySlug,
+  supabaseHistorySql,
+} from "./staging-migration-history.mjs";
 
 const { Client } = pg;
 
@@ -145,7 +149,7 @@ try {
     if (applied.has(migration)) continue;
 
     const slug =
-      SUPABASE_HISTORY_NAMES[migration] ?? migration.replace(/^\\d+_/, "");
+      SUPABASE_HISTORY_NAMES[migration] ?? migrationHistorySlug(migration);
     const history = supabaseByName.get(slug);
     if (!history) continue;
 
@@ -155,9 +159,7 @@ try {
     }
 
     const repoSql = readFileSync(sqlPath, "utf8");
-    const historySql = Array.isArray(history.statements)
-      ? history.statements.join("\\n")
-      : "";
+    const historySql = supabaseHistorySql(history.statements);
 
     if (canonicalSql(historySql) !== canonicalSql(repoSql)) {
       fail(
