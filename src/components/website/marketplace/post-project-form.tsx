@@ -468,7 +468,7 @@ export function PostProjectForm({
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/marketplace"
-                  className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white"
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white"
                 >
                   Back to marketplace
                 </Link>
@@ -512,7 +512,7 @@ export function PostProjectForm({
           </p>
         </div>
 
-        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+        <div className="inline-flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-primary">
           <ShieldCheck size={14} />
           TAKATAK-managed engagement
         </div>
@@ -524,7 +524,7 @@ export function PostProjectForm({
           className="space-y-6"
         >
           {prefillMessage ? (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+            <div className="rounded-lg border border-primary/25 bg-primary/5 px-3 py-2 text-xs text-primary">
               {prefillMessage}
             </div>
           ) : null}
@@ -549,7 +549,7 @@ export function PostProjectForm({
                 required
                 maxLength={200}
                 placeholder="e.g. Build a 5-page website for my bakery"
-                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
               />
             </div>
 
@@ -568,7 +568,7 @@ export function PostProjectForm({
                   }
                   maxLength={120}
                   placeholder="Optional"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
                 />
               </div>
 
@@ -617,7 +617,7 @@ export function PostProjectForm({
               rows={7}
               maxLength={5000}
               placeholder="Goals, target audience, references, must-haves and deadlines…"
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
             />
 
             <div>
@@ -753,7 +753,7 @@ export function PostProjectForm({
                 className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 text-sm ${
                   visibility ===
                   option.value
-                    ? "border-emerald-600 bg-emerald-50"
+                    ? "border-primary bg-primary/5"
                     : "border-slate-200 hover:bg-slate-50"
                 }`}
               >
@@ -802,7 +802,7 @@ export function PostProjectForm({
                   autoComplete="name"
                   aria-label="Your name"
                   placeholder="Your name"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
                 />
 
                 <input
@@ -817,7 +817,7 @@ export function PostProjectForm({
                   autoComplete="email"
                   aria-label="Email"
                   placeholder="Email"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
                 />
 
                 <input
@@ -832,7 +832,7 @@ export function PostProjectForm({
                   autoComplete="tel"
                   aria-label="Phone"
                   placeholder="Phone"
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-600"
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
                 />
               </div>
 
@@ -876,7 +876,7 @@ export function PostProjectForm({
             <button
               disabled={submitting || uploading}
               type="submit"
-              className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+              className="rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
             >
               {uploading
                 ? "Sending files…"
@@ -908,7 +908,7 @@ export function PostProjectForm({
             <h3 className="flex items-center gap-2 font-semibold text-slate-950">
               <ShieldCheck
                 size={16}
-                className="text-emerald-700"
+                className="text-primary"
               />
 
               How TAKATAK organizes delivery
@@ -928,7 +928,7 @@ export function PostProjectForm({
                 >
                   <Check
                     size={14}
-                    className="mt-1 shrink-0 text-emerald-700"
+                    className="mt-1 shrink-0 text-primary"
                   />
 
                   {item}
@@ -949,7 +949,7 @@ export function PostProjectForm({
 
             <Link
               href="/marketplace"
-              className="mt-3 inline-flex text-sm font-semibold text-emerald-700"
+              className="mt-3 inline-flex text-sm font-semibold text-primary"
             >
               Browse packages →
             </Link>

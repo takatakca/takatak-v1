@@ -2,14 +2,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, Paperclip } from "lucide-react";
 
+import { LeadOrderBillingForm } from "@/components/billing/lead-order-billing-form";
 import { LeadActionsForm } from "@/components/leads/lead-actions-form";
 import { EmptyState } from "@/components/saas/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { getLeadOrderBilling, type LeadOrderBillingState } from "@/lib/billing/invoices/lead-order-service";
 import { getLeadDetail } from "@/lib/leads/lead-detail";
 import { LEAD_PRIORITY_LABELS, LEAD_STATUS_LABELS, leadToneForStatus } from "@/lib/leads/status";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
+import { getPlatformAdminAccess } from "@/lib/security/platform-admin-access";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +40,23 @@ function money(cents: number, currency: string | null): string {
   return new Intl.NumberFormat("en-CA", { style: "currency", currency: currency || "CAD" }).format(cents / 100);
 }
 
+const BILLING_STATUS_LABELS: Record<string, string> = {
+  pending: "queued — review it in Admin › Billing",
+  submitting: "sending",
+  submitted: "draft created in Facturations",
+  failed: "failed — retry from Admin › Billing",
+  rejected: "rejected",
+  needs_reconciliation: "needs reconciliation",
+  cancelled: "cancelled",
+};
+
+const BLOCKER_COPY: Record<string, string> = {
+  not_an_order: "This lead is not a takatak.ca package order.",
+  not_won: "Mark the lead as Won to bill this order.",
+  no_email: "Add the customer's email to bill this order.",
+  no_name: "Add the customer's name or company to bill this order.",
+};
+
 function size(bytes: number): string {
   return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
@@ -54,6 +74,16 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const { access } = await getServerAccessContext();
   const canEdit = access.mode === "client_scoped" && hasEffectivePermission(access, "edit_content");
+  // Billing a won order is a platform owner/admin action, like the billing queue.
+  const platform = await getPlatformAdminAccess();
+  let billing: LeadOrderBillingState | null = null;
+  if (platform.mode === "authorized") {
+    try {
+      billing = await getLeadOrderBilling(lead.id);
+    } catch {
+      billing = null;
+    }
+  }
 
   const contact = [
     lead.email ? { label: "Email", value: lead.email, href: `mailto:${lead.email}` } : null,
@@ -131,6 +161,35 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         </div>
 
         <div className="space-y-4">
+          {billing ? (
+            <Card>
+              <CardHeader title="Invoice" subtitle="Facturations, through the billing queue." />
+              <CardBody className="space-y-2 text-sm">
+                {billing.request ? (
+                  <>
+                    <p>
+                      Invoice request <Badge tone="neutral">{BILLING_STATUS_LABELS[billing.request.status] ?? billing.request.status}</Badge>
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Estimate {money(Number(billing.request.estimatedTotalCents), "CAD")} · due {billing.request.dueDate}
+                    </p>
+                    <Link href="/dashboard/admin/billing" className="text-xs font-medium text-emerald-700 hover:underline">
+                      Open Admin › Billing
+                    </Link>
+                  </>
+                ) : billing.blockers.length ? (
+                  <ul className="list-disc space-y-1 pl-4 text-slate-600">
+                    {billing.blockers.map((blocker) => (
+                      <li key={blocker}>{BLOCKER_COPY[blocker]}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <LeadOrderBillingForm leadId={lead.id} totalCents={billing.order.totalCents} />
+                )}
+              </CardBody>
+            </Card>
+          ) : null}
+
           <Card>
             <CardHeader title="Contact" />
             <CardBody className="space-y-2 text-sm">

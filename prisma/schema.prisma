@@ -288,7 +288,8 @@ enum SocialOnboardingStatus {
 model Profile {
   id                    String        @id @default(uuid()) @db.Uuid
   authUserId            String        @unique @db.Uuid
-  email                 String        @unique
+  /// Login email when the person has one. Null for a verified phone-only identity.
+  email                 String?       @unique
   firstName             String?
   lastName              String?
   displayName           String?

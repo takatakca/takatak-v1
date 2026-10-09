@@ -7,9 +7,15 @@ on:
     types:
       - completed
   workflow_dispatch:
+    inputs:
+      migration_run_id:
+        description: "Run id of a successful staging migration apply on this exact main SHA. The run must contain a successful step named Human approval accepted for staging apply."
+        required: true
+        type: string
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: takatak-staging-release
@@ -60,9 +66,31 @@ jobs:
         env:
           STAGING_APP_URL: ${{ vars.TAKATAK_STAGING_APP_URL }}
           STAGING_ANON_KEY: ${{ secrets.TAKATAK_STAGING_SUPABASE_ANON_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          UPSTREAM_RUN_ID: ${{ github.event.workflow_run.id }}
+          MIGRATION_RUN_ID: ${{ inputs.migration_run_id }}
+          RELEASE_SHA: ${{ env.RELEASE_SHA }}
         shell: bash
         run: |
           set -euo pipefail
+          set +e
+          decision="$(node scripts/staging-release-approval.mjs)"
+          status=$?
+          set -e
+          if [ "$decision" = "accepted" ] && [ "$status" -eq 0 ]; then
+            echo "Verified staging migration approval for ${RELEASE_SHA}."
+          elif [ "$decision" = "skip" ] && [ "$status" -eq 0 ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "block_reason=missing-migration-approval" >> "$GITHUB_OUTPUT"
+            echo "::warning title=Staging release skipped::The migration workflow did not record a successful approved apply for this SHA."
+            exit 0
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "block_reason=missing-migration-approval" >> "$GITHUB_OUTPUT"
+            echo "ERROR: Staging release refused. Manual and automatic releases both need a successful step named Human approval accepted for staging apply on this main SHA."
+            exit 1
+          fi
           missing=()
 
           test -n "${STAGING_APP_URL:-}" || missing+=("TAKATAK_STAGING_APP_URL repository/environment variable")
@@ -71,6 +99,7 @@ jobs:
           if [ "${#missing[@]}" -gt 0 ]; then
             printf '::warning title=TAKATAK staging build blocked::Missing %s\n' "${missing[*]}"
             echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "block_reason=missing-build-configuration" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -90,7 +119,8 @@ jobs:
       - name: Report unavailable staging build
         if: steps.build-config.outputs.ready != 'true'
         run: |
-          echo "No staging artifact was built because staging public build configuration is incomplete."
+          echo "No staging artifact was built."
+          echo "Reason: ${{ steps.build-config.outputs.block_reason }}"
           echo "Production remains untouched."
 
       - name: Setup Node.js

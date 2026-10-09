@@ -9,13 +9,18 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Audit or apply approved staging migrations"
+        description: "audit is read-only. apply changes the staging schema and needs the approval phrase."
         required: true
         default: audit
         type: choice
         options:
           - audit
           - apply
+      approval:
+        description: "Apply only: type approve-staging-migrations. Leave empty for audit."
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -39,7 +44,8 @@ jobs:
       RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
       CONFIRM_PROJECT_REF: utuvzrqvivqyziibobvu
       TAKATAK_STAGING_DATABASE_URL: ${{ secrets.TAKATAK_STAGING_DATABASE_URL }}
-      RECONCILE_MODE: ${{ github.event_name == 'workflow_run' && 'apply' || inputs.mode }}
+      # A green main CI run is audit only. Apply cannot be selected by that path.
+      RECONCILE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'apply' && inputs.approval == 'approve-staging-migrations' && 'apply' || 'audit' }}
 
     steps:
       - name: Checkout exact green release
@@ -47,7 +53,25 @@ jobs:
         with:
           ref: ${{ env.RELEASE_SHA }}
 
+      - name: Human approval accepted for staging apply
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'apply'
+        env:
+          APPROVAL: ${{ inputs.approval }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$APPROVAL" != "approve-staging-migrations" ]; then
+            echo "ERROR: apply is refused until approval is exactly approve-staging-migrations."
+            exit 1
+          fi
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "ERROR: apply is allowed only from main."
+            exit 1
+          fi
+          echo "Apply approval accepted for current main."
+
       - name: Refuse stale main release
+        if: github.event_name != 'workflow_dispatch' || inputs.mode == 'apply'
         shell: bash
         run: |
           set -euo pipefail

@@ -10,7 +10,7 @@ import {
   startClientConnectOnboarding,
   syncClientConnectAccount,
 } from "@/lib/billing/client-invoicing/connect-service";
-import { createAndSendClientInvoice, listClientIssuedInvoices } from "@/lib/billing/client-invoicing/invoice-service";
+import { applyClientInvoiceAction, createAndSendClientInvoice, listClientIssuedInvoices } from "@/lib/billing/client-invoicing/invoice-service";
 import { validateClientInvoiceInput } from "@/lib/billing/client-invoicing/invoice-input";
 import { ServiceError } from "@/lib/services/service-error";
 
@@ -68,6 +68,13 @@ function invoiceFakes() {
       create: async (params: any, opts: any) => idem("invoice", opts, params, () => { const i = { id: `in_T${++n}`, account: opts.stripeAccount, status: "draft", number: null, created: Math.floor(Date.now() / 1000), currency: "cad", total: 0, amount_due: 0, amount_paid: 0, amount_remaining: 0, due_date: null, description: null, ...params }; store.invoices.set(i.id, i); return i; }),
       finalizeInvoice: async (id: string, params: any, opts: any) => idem("finalize", opts, params, () => { const i = store.invoices.get(id); assert.equal(i.account, opts.stripeAccount); Object.assign(i, { status: "open", number: `CLI-${n}`, hosted_invoice_url: "https://invoice.stripe.com/i/acct/x" }); return { ...i }; }),
       sendInvoice: async (id: string, params: any, opts: any) => idem("send", opts, params, () => ({ ...store.invoices.get(id) })),
+      retrieve: async (id: string, _params: any, { stripeAccount }: any) => {
+        const i = store.invoices.get(id);
+        if (!i || i.account !== stripeAccount) throw Object.assign(new Error("No such invoice"), { type: "StripeInvalidRequestError", code: "resource_missing" });
+        return { ...i };
+      },
+      voidInvoice: async (id: string, params: any, opts: any) => idem("void", opts, params, () => { const i = store.invoices.get(id); assert.equal(i.status, "open"); Object.assign(i, { status: "void", amount_remaining: 0 }); return { ...i }; }),
+      pay: async (id: string, params: any, opts: any) => idem("pay", opts, params, () => { const i = store.invoices.get(id); assert.equal(i.status, "open"); assert.equal(params.paid_out_of_band, true); Object.assign(i, { status: "paid", amount_paid: i.amount_due, amount_remaining: 0, status_transitions: { paid_at: Math.floor(Date.now() / 1000) } }); return { ...i }; }),
       list: async (_: any, { stripeAccount }: any) => ({ data: [...store.invoices.values()].filter((i) => i.account === stripeAccount) }),
     },
     invoiceItems: {
@@ -215,5 +222,53 @@ async function main() {
   assert.equal(listed.status, "ok");
   assert.equal(listed.status === "ok" ? listed.invoices.length : 0, 4);
   console.log("PASS a new invoice reuses the customer and tax rates; the list shows this account's invoices");
+
+  // Invoice actions: remind, mark paid offline, void.
+  const actor = await prisma.profile.create({ data: { authUserId: randomUUID(), email: `actions-${randomUUID()}@example.test` } });
+  const openIds = [...store.invoices.values()].filter((i) => i.account === accountId && i.status === "open").map((i) => i.id);
+  assert.ok(openIds.length >= 3);
+  const [toRemind, toPay, toVoid] = openIds;
+  assert.equal((await listClientIssuedInvoices(client.id) as any).invoices.find((i: any) => i.id === toRemind).remindable, true, "send_invoice invoices can be reminded");
+
+  const day1 = new Date("2026-10-08T09:00:00Z");
+  await applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toRemind, action: "remind", now: day1 });
+  await applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toRemind, action: "remind", now: new Date("2026-10-08T20:00:00Z") });
+  await applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toRemind, action: "remind", now: new Date("2026-10-09T09:00:00Z") });
+  const reminders = writes.filter((w) => w.kind === "send" && w.key?.startsWith("tkcinv1_") && w.account === accountId).slice(-3);
+  assert.equal(reminders[0].key, reminders[1].key, "two clicks the same day → same key → Stripe emails once");
+  assert.notEqual(reminders[1].key, reminders[2].key, "the next day a new reminder can go out");
+  console.log("PASS reminders go out from the client's own account, at most once per invoice per day");
+
+  const paid = await applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toPay, action: "mark_paid" });
+  assert.equal(paid.status, "paid");
+  assert.equal(store.invoices.get(toPay).status, "paid");
+  await expectServiceError(applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toPay, action: "void" }), "conflict");
+  await expectServiceError(applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toPay, action: "remind" }), "conflict");
+  console.log("PASS mark paid records an offline payment (nothing charged); a paid invoice can no longer be voided or reminded");
+
+  const voided = await applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toVoid, action: "void" });
+  assert.equal(voided.status, "void");
+  await expectServiceError(applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: toVoid, action: "mark_paid" }), "conflict");
+  console.log("PASS void closes an open invoice for good");
+
+  const writesBefore = writes.length;
+  await expectServiceError(applyClientInvoiceAction({ clientId: other.id, profileId: actor.id, invoiceId: toRemind, action: "void" }), "conflict");
+  await expectServiceError(applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: "in_UNKNOWN000000", action: "void" }), "not_found");
+  store.invoices.set("in_FOREIGN0000001", { id: "in_FOREIGN0000001", account: "acct_SOMEONEELSE01", status: "open", created: Math.floor(Date.now() / 1000), currency: "cad", total: 100, amount_due: 100, amount_paid: 0, amount_remaining: 100, collection_method: "send_invoice" });
+  await expectServiceError(applyClientInvoiceAction({ clientId: client.id, profileId: actor.id, invoiceId: "in_FOREIGN0000001", action: "void" }), "not_found");
+  assert.equal(store.invoices.get("in_FOREIGN0000001").status, "open");
+  assert.equal(writes.length, writesBefore, "no Stripe write for another workspace, an unknown id or another account's invoice");
+  console.log("PASS another workspace, an unknown id or another account's invoice cannot be touched");
+
+  const audits = await prisma.auditLog.findMany({ where: { clientId: client.id, entityType: "stripe_invoice" }, orderBy: { createdAt: "asc" } });
+  assert.deepEqual(audits.map((a) => [a.action, a.entityId, a.profileId]), [
+    ["client_invoicing.invoice_reminded", toRemind, actor.id],
+    ["client_invoicing.invoice_reminded", toRemind, actor.id],
+    ["client_invoicing.invoice_reminded", toRemind, actor.id],
+    ["client_invoicing.invoice_marked_paid", toPay, actor.id],
+    ["client_invoicing.invoice_voided", toVoid, actor.id],
+  ]);
+  assert.equal((await prisma.auditLog.count({ where: { clientId: other.id, entityType: "stripe_invoice" } })), 0);
+  console.log("PASS every action is audit-logged with who did it; refused actions leave no audit entry");
 }
 main().then(() => process.exit(0), (e) => { console.error(String(e?.stack ?? e).slice(0, 1200)); process.exit(1); });
