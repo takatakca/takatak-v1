@@ -80,8 +80,12 @@ export async function linkUpmindCustomerForProfile(
         await ensurePersonalClientWorkspace(
           profile.id,
           profile.email,
-          profile.displayName || profile.email,
+          profile.displayName || profile.email || "TAKATAK user",
         );
+
+        if (!profile.email) {
+          return profile.upmindClientId;
+        }
 
         if (profile.upmindClientId) {
           return profile.upmindClientId;

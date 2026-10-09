@@ -1,4 +1,5 @@
 import type { User } from '@supabase/supabase-js';
+import type { Prisma } from '@prisma/client';
 import { ensureDefaultSocialSubscription } from '@/lib/billing/social/ensure-default-subscription';
 import { getPrisma } from '@/lib/db/prisma';
 import {
@@ -52,8 +53,8 @@ function getMetadataName(
   return validationError ? null : normalizedValue;
 }
 
-function getProfileIdentity(user: User): {
-  email: string;
+export type SupabaseProfileIdentity = {
+  email: string | null;
   phone: string | null;
   firstName: string | null;
   lastName: string | null;
@@ -61,60 +62,155 @@ function getProfileIdentity(user: User): {
   emailVerified: boolean;
   phoneVerified: boolean;
   verified: boolean;
-} | null {
-  const authEmail =
-    typeof user.email === 'string' && user.email.trim()
-      ? normalizeEmail(user.email)
-      : '';
-  const metadataEmail =
-    typeof user.user_metadata?.email === 'string'
-      ? normalizeEmail(user.user_metadata.email)
-      : '';
-  const email = authEmail || metadataEmail;
+  consent: { termsAcceptedAt: string; privacyAcceptedAt: string } | null;
+};
 
-  if (!email || validateEmail(email)) {
+function readOptionalEmail(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) {
     return null;
   }
 
+  const email = normalizeEmail(value);
+  return validateEmail(email) ? null : email;
+}
+
+function readConsent(user: User): SupabaseProfileIdentity['consent'] {
+  const terms =
+    typeof user.user_metadata?.takatak_terms_accepted_at === 'string'
+      ? user.user_metadata.takatak_terms_accepted_at
+      : '';
+  const privacy =
+    typeof user.user_metadata?.takatak_privacy_accepted_at === 'string'
+      ? user.user_metadata.takatak_privacy_accepted_at
+      : '';
+
+  if (!terms || !privacy) {
+    return null;
+  }
+
+  return { termsAcceptedAt: terms, privacyAcceptedAt: privacy };
+}
+
+/**
+ * A confirmed phone is enough to open an account. The Auth user's own email
+ * can create a profile before confirmation so registration can send its code.
+ * That address is not a verified recovery email until email_confirmed_at.
+ * Client-editable user_metadata is never that proof.
+ */
+export function resolveSupabaseProfileIdentity(
+  user: User,
+): SupabaseProfileIdentity | null {
+  const authEmail = readOptionalEmail(user.email);
+  const email = authEmail;
+  const emailVerified = Boolean(email && user.email_confirmed_at);
+
   const authPhone =
     typeof user.phone === 'string' ? normalizePhone(user.phone) : null;
-  const metadataPhone =
-    typeof user.user_metadata?.phone === 'string'
-      ? normalizePhone(user.user_metadata.phone)
-      : null;
-  const phone = authPhone || metadataPhone;
+  const phone =
+    authPhone && user.phone_confirmed_at ? authPhone : null;
+  const phoneVerified = phone !== null;
+
+  if (!email && !phoneVerified) {
+    return null;
+  }
 
   const firstName = getMetadataName(user, 'first_name');
   const lastName = getMetadataName(user, 'last_name');
   const fullName = [firstName, lastName].filter(Boolean).join(' ');
-  const emailVerified = Boolean(authEmail && user.email_confirmed_at);
-  const phoneVerified = Boolean(authPhone && user.phone_confirmed_at);
 
   return {
     email,
     phone,
     firstName,
     lastName,
-    displayName: fullName || email.split('@')[0] || 'User',
+    displayName: fullName || (email ? email.split('@')[0] : null) || phone || 'User',
     emailVerified,
     phoneVerified,
     verified: emailVerified || phoneVerified,
+    consent: readConsent(user),
   };
 }
 
 type PrismaClientInstance = NonNullable<ReturnType<typeof getPrisma>>;
+
+async function recordTakatakRelationship(
+  transaction: Prisma.TransactionClient,
+  identityId: string,
+  input: {
+    authUserId: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    emailVerified: boolean;
+    phoneVerified: boolean;
+    consent: SupabaseProfileIdentity['consent'];
+  },
+): Promise<boolean> {
+  const existing = await transaction.sourceProfile.findUnique({
+    where: {
+      sourceApplication_externalUserId: {
+        sourceApplication: 'takatak',
+        externalUserId: input.authUserId,
+      },
+    },
+    select: { id: true, identityId: true },
+  });
+
+  if (existing && existing.identityId !== identityId) {
+    return false;
+  }
+
+  const collectedFields = {
+    firstName: input.firstName,
+    lastName: input.lastName,
+    email: input.email,
+    phone: input.phone,
+    sourceApplication: 'takatak',
+  };
+  const verifiedFields = [
+    ...(input.emailVerified && input.email ? ['email'] : []),
+    ...(input.phoneVerified && input.phone ? ['phone'] : []),
+  ];
+  const data = {
+    collectedFields,
+    verifiedFields,
+    accountStatus: 'active',
+    lastSynchronizedAt: new Date(),
+    ...(input.consent ? { consentRecords: input.consent } : {}),
+  };
+
+  if (existing) {
+    await transaction.sourceProfile.update({
+      where: { id: existing.id },
+      data,
+    });
+    return true;
+  }
+
+  await transaction.sourceProfile.create({
+    data: {
+      identityId,
+      sourceApplication: 'takatak',
+      externalUserId: input.authUserId,
+      ...data,
+    },
+  });
+  return true;
+}
 
 async function ensureMasterIdentityForVerifiedProfile(
   prisma: PrismaClientInstance,
   input: {
     profileId: string;
     authUserId: string;
-    email: string;
+    email: string | null;
     phone: string | null;
     firstName: string | null;
     lastName: string | null;
     emailVerified: boolean;
     phoneVerified: boolean;
+    consent: SupabaseProfileIdentity['consent'];
     registeredAt?: Date | null;
   },
 ): Promise<boolean> {
@@ -131,7 +227,7 @@ async function ensureMasterIdentityForVerifiedProfile(
         transaction.masterIdentity.findUnique({
           where: { authUserId: input.authUserId },
         }),
-        input.emailVerified
+        input.emailVerified && input.email
           ? transaction.masterIdentity.findUnique({
               where: { primaryEmail: input.email },
             })
@@ -180,9 +276,10 @@ async function ensureMasterIdentityForVerifiedProfile(
         where: { id: currentIdentity.id },
         data: {
           authUserId: currentIdentity.authUserId ?? input.authUserId,
-          primaryEmail: input.emailVerified
-            ? input.email
-            : currentIdentity.primaryEmail,
+          primaryEmail:
+            input.emailVerified && input.email
+              ? input.email
+              : currentIdentity.primaryEmail,
           primaryEmailVerified:
             currentIdentity.primaryEmailVerified || input.emailVerified,
           primaryPhone:
@@ -199,7 +296,7 @@ async function ensureMasterIdentityForVerifiedProfile(
         },
       });
 
-      return true;
+      return recordTakatakRelationship(transaction, currentIdentity.id, input);
     }
 
     const candidateIdentity = authIdentity ?? phoneIdentity ?? emailIdentity;
@@ -210,9 +307,10 @@ async function ensureMasterIdentityForVerifiedProfile(
         data: {
           profileId: input.profileId,
           authUserId: candidateIdentity.authUserId ?? input.authUserId,
-          primaryEmail: input.emailVerified
-            ? input.email
-            : candidateIdentity.primaryEmail,
+          primaryEmail:
+            input.emailVerified && input.email
+              ? input.email
+              : candidateIdentity.primaryEmail,
           primaryEmailVerified:
             candidateIdentity.primaryEmailVerified || input.emailVerified,
           primaryPhone:
@@ -229,14 +327,18 @@ async function ensureMasterIdentityForVerifiedProfile(
         },
       });
 
-      return true;
+      return recordTakatakRelationship(
+        transaction,
+        candidateIdentity.id,
+        input,
+      );
     }
 
-    await transaction.masterIdentity.create({
+    const createdIdentity = await transaction.masterIdentity.create({
       data: {
         profileId: input.profileId,
         authUserId: input.authUserId,
-        primaryEmail: input.emailVerified ? input.email : null,
+        primaryEmail: input.emailVerified && input.email ? input.email : null,
         primaryEmailVerified: input.emailVerified,
         primaryPhone:
           input.phoneVerified && input.phone ? input.phone : null,
@@ -248,12 +350,12 @@ async function ensureMasterIdentityForVerifiedProfile(
       },
     });
 
-    return true;
+    return recordTakatakRelationship(transaction, createdIdentity.id, input);
   });
 }
 export async function ensurePersonalClientWorkspace(
   profileId: string,
-  email: string,
+  email: string | null,
   displayName: string,
 ): Promise<void> {
   const prisma = getPrisma();
@@ -334,7 +436,7 @@ export async function ensureProfileForSupabaseUser(
     return { outcome: 'unavailable' };
   }
 
-  const identity = getProfileIdentity(user);
+  const identity = resolveSupabaseProfileIdentity(user);
 
   if (!identity) {
     return { outcome: 'error' };
@@ -378,8 +480,10 @@ export async function ensureProfileForSupabaseUser(
             ? 'active'
             : existingProfile.status;
 
+      const nextEmail = identity.email ?? existingProfile.email;
+
       const requiresUpdate =
-        existingProfile.email !== identity.email ||
+        existingProfile.email !== nextEmail ||
         existingProfile.phone !== identity.phone ||
         existingProfile.firstName !== firstName ||
         existingProfile.lastName !== lastName ||
@@ -406,12 +510,13 @@ export async function ensureProfileForSupabaseUser(
           await ensureMasterIdentityForVerifiedProfile(prisma, {
             profileId: existingProfile.id,
             authUserId: user.id,
-            email: identity.email,
+            email: nextEmail,
             phone: identity.phone,
             firstName,
             lastName,
             emailVerified: identity.emailVerified,
             phoneVerified: identity.phoneVerified,
+            consent: identity.consent,
             registeredAt: user.created_at ? new Date(user.created_at) : null,
           });
 
@@ -433,7 +538,7 @@ export async function ensureProfileForSupabaseUser(
           id: existingProfile.id,
         },
         data: {
-          email: identity.email,
+          email: nextEmail,
           phone: identity.phone,
           firstName,
           lastName,
@@ -459,12 +564,13 @@ export async function ensureProfileForSupabaseUser(
         await ensureMasterIdentityForVerifiedProfile(prisma, {
           profileId: updatedProfile.id,
           authUserId: user.id,
-          email: identity.email,
+          email: nextEmail,
           phone: identity.phone,
           firstName,
           lastName,
           emailVerified: identity.emailVerified,
           phoneVerified: identity.phoneVerified,
+          consent: identity.consent,
           registeredAt: user.created_at ? new Date(user.created_at) : null,
         });
 
@@ -516,6 +622,7 @@ export async function ensureProfileForSupabaseUser(
         lastName: identity.lastName,
         emailVerified: identity.emailVerified,
         phoneVerified: identity.phoneVerified,
+        consent: identity.consent,
         registeredAt: user.created_at ? new Date(user.created_at) : null,
       });
 
@@ -551,15 +658,17 @@ export async function ensureProfileForSupabaseUser(
         }
 
         const [emailCollision, phoneCollision] = await Promise.all([
-          prisma.profile.findUnique({
-            where: {
-              email: identity.email,
-            },
-            select: {
-              id: true,
-              authUserId: true,
-            },
-          }),
+          identity.email
+            ? prisma.profile.findUnique({
+                where: {
+                  email: identity.email,
+                },
+                select: {
+                  id: true,
+                  authUserId: true,
+                },
+              })
+            : Promise.resolve(null),
           identity.phone
             ? prisma.profile.findUnique({
                 where: {

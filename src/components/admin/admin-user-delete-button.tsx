@@ -19,8 +19,8 @@ type DeleteUserResponse = {
 
 type AdminUserDeleteButtonProps = {
   profileId: string;
-  displayName: string;
-  email: string;
+  displayName: string | null;
+  email: string | null;
   blockedReason?: string | null;
 };
 
@@ -209,7 +209,7 @@ export function AdminUserDeleteButton({
       <ConfirmationDialog
         open={dialogOpen}
         title="Permanently delete user?"
-        description={`You are about to permanently delete ${displayName} (${email}). Their Supabase login, application profile, and all workspace memberships will be removed. This action cannot be undone.`}
+        description={`You are about to permanently delete ${displayName ?? "this TAKATAK identity"}${email ? ` (${email})` : ""}. Their Supabase login, application profile, and all workspace memberships will be removed. This action cannot be undone.`}
         loading={loading}
         proceedLabel="Permanently delete user"
         onCancel={cancelConfirmation}

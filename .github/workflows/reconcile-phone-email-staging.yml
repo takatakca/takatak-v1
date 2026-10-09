@@ -1,0 +1,49 @@
+name: Record staging phone-email Prisma history
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  record-history:
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: staging
+    env:
+      CONFIRM_PROJECT_REF: utuvzrqvivqyziibobvu
+      TAKATAK_STAGING_DATABASE_URL: ${{ secrets.TAKATAK_STAGING_DATABASE_URL }}
+
+    steps:
+      - name: Checkout this branch
+        uses: actions/checkout@v4
+
+      - name: Refuse production project
+        shell: bash
+        run: |
+          set -euo pipefail
+          if printf '%s' "$TAKATAK_STAGING_DATABASE_URL" | grep -q 'pcjfahhlozsseqqevimi'; then
+            echo "ERROR: refusing production database."
+            exit 1
+          fi
+          case "$TAKATAK_STAGING_DATABASE_URL" in
+            *utuvzrqvivqyziibobvu*) ;;
+            *)
+              echo "ERROR: database URL is not TAKATAK STAGING."
+              exit 1
+              ;;
+          esac
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.x
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Record already-applied nullable email migration
+        run: node scripts/resolve-phone-email-staging.mjs
