@@ -126,8 +126,14 @@ for (const needle of [
     throw new Error(`Missing AHMV-scoped staging reconciliation safeguard: ${needle}`);
   }
 }
-if (reconcilerSource.includes('runPrisma(["deploy"]')) {
-  throw new Error("AHMV staging reconciliation must not run global prisma migrate deploy.");
+if (
+  reconcilerSource.includes('runPrisma(["deploy"]') &&
+  !/if \(canDeployApprovedPending\(\{ pendingAfterResolve, unrelatedPending \}\)\) \{[^}]*runPrisma\(\["deploy"\]/.test(reconcilerSource)
+) {
+  throw new Error("Staging prisma migrate deploy must be guarded by canDeployApprovedPending.");
+}
+if (reconcilerSource.split('runPrisma(["deploy"]').length > 2) {
+  throw new Error("Staging reconciliation may call prisma migrate deploy only once, behind its guard.");
 }
 if (!reconcilerSource.includes("migrationHistorySlug(migration)")) {
   throw new Error("Staging history lookup must use the real numeric-prefix slug.");
