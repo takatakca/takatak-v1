@@ -1,6 +1,6 @@
 # MIMT — canonical product & agent onboarding (8 October 2026)
 
-> **One place, one priority.** This folder is the long-term product brief for MIMT under the TAKATAK ecosystem, **not** a second codebase or a mandate to create ten tickets. Main execution issue: [TAKATAK AUTH #141](https://github.com/takatakca/takatak-v1/issues/141). Existing MIMT architecture draft: [PR #140](https://github.com/takatakca/takatak-v1/pull/140). No merge, deployment or procurement is authorized by these documents.
+> **One place, one priority.** This folder is the long-term product brief for MIMT under the TAKATAK ecosystem, **not** a second codebase or a mandate to create ten tickets. Main execution issue: [TAKATAK AUTH #141](https://github.com/takatakca/takatak-v1/issues/141). Product boundary and integration contract (from former PR #140): [INDEPENDENT_PRODUCT_BOUNDARY.md](INDEPENDENT_PRODUCT_BOUNDARY.md). No merge, deployment or procurement is authorized by these documents.
 >
 > **Every incoming agent:** read `AGENTS.md`, top 40 lines of `WORKLOG.md`, open PR titles, this README, and the relevant detailed file below **before writing code**. Claim a worklog entry; don't duplicate active work. Report real evidence. Keep unknowns visibly unknown.
 
