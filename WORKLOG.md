@@ -14,7 +14,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - [ ] **Owner decisions** listed under "Overlaps to settle" below.
 
 ## ▶ Next up (priority order: first item an agent can do; skip anything waiting on a person)
-1. **Homepage redesign** (shorter homepage, ecosystem grid, new `/ecosystem` "Our brands" page). Session 01HWFgGo is building it on `claude/homepage-redesign`. Don't edit `src/app/(website)/page.tsx` or `src/components/website/home/*` until it merges. (TK-027 is done: #146.)
+1. **Homepage redesign: done** (#150 and #151 merged): shorter homepage, ecosystem grid, `/ecosystem` "Our brands" page, premium website. (TK-027 is done: #146.)
 2. **After Facturations #160 merges:** pin `FACTURATIONS_REF` in `ci.yml` to the new Facturations `main` and add issue → pay to the contract test.
 3. **After the staging apply is approved and run:** check that the three billing migrations are recorded and that staging deploys. Then turn on billing on staging (go-live guide, steps 7–10).
 4. Then the `Open work` lines below and knowledgeAI `docs/11-DEV-BACKLOG.md`.
@@ -27,8 +27,9 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Billing:** `main` already has a Facturations integration (#124: billing request queue → Facturations drafts). `claude/facturations-billing-integration` (#138) is likely a duplicate: compare, then close #138. #129 (Stripe client invoicing) is a separate system.
 
 ## Open work
-- 2026-10-09 | claude (session 01HWFgGo, website agent) | claude/website-premium → PR | PR open | Premium website: 9 core categories, sales page per category, real imagery, interactions | owner merges
-- 2026-10-08 | claude (session 01HWFgGo, homepage agent) | claude/homepage-redesign → #150 | PR open | Shorter homepage (5 sections), ecosystem grid, /ecosystem "Our brands" page | owner merges; owner confirms which brands GROUPE TAKATAK owns and runs (registry marks none as owned + active yet, so the brand list is empty and its links are hidden)
+- 2026-10-09 | claude (session 01HWFgGo, voip agent) | claude/voip-dashboard-shell → PR | PR open | VoIP dashboard shell (/dashboard/voip): numbers, calls, voicemail, transfers; shows "MIMT not connected" until MIMT is wired | merge; then MIMT API client (Gate 3)
+- 2026-10-09 | claude (session 01HWFgGo, website agent) | claude/website-premium → PR | done (merged d06542f) | Premium website: 9 core categories, sales page per category, real imagery, interactions | owner merges
+- 2026-10-08 | claude (session 01HWFgGo, homepage agent) | claude/homepage-redesign → #150 | done (merged 4e91de9) | Shorter homepage (5 sections), ecosystem grid, /ecosystem "Our brands" page | owner merges; owner confirms which brands GROUPE TAKATAK owns and runs (registry marks none as owned + active yet, so the brand list is empty and its links are hidden)
 - 2026-10-08 | claude (session 01HWFgGo) | claude/lead-order-billing → #146 | done (merged 750dad3) | TK-027: won takatak.ca order lead → billing queue → Facturations draft (Invoice card on the lead page, explicit taxes) | owner merges; then mark an order Won and create its invoice request
 - 2026-10-08 | claude (session 01KBGh1v) | main | waiting on owner | Triage of all 23 open PRs. Merge: #144 #129 #146 #147 #101 #95 #75. Close: #7 #17 #18 #23 (already on main), #145 (dup of #148). Owner yes/no: #148, #135-137 vs #117 (split #117), #128, #104, #27, #28, #143/#140 | owner replies "approve triage" (Launch Board step 6); then merge in that order and close
 - 2026-10-08 | cursor | fix/staging-migration-audit → #147 | done (merged 82df62e by session 01HWFgGo) | Manual and automatic staging releases now require the same migration-approval evidence. An audit skips the release and cannot select apply. `website_lead_attachments` is still the missing migration. No backup has been taken and no SQL was applied. | Merge #147 only to install the gate. Apply stays a separate approval after a staging backup.
