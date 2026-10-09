@@ -27,6 +27,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Billing:** `main` already has a Facturations integration (#124: billing request queue → Facturations drafts). `claude/facturations-billing-integration` (#138) is likely a duplicate: compare, then close #138. #129 (Stripe client invoicing) is a separate system.
 
 ## Open work
+- 2026-10-09 | claude (session 01HWFgGo, website agent) | claude/website-premium → PR | PR open | Premium website: 9 core categories, sales page per category, real imagery, interactions | owner merges
 - 2026-10-08 | claude (session 01HWFgGo, homepage agent) | claude/homepage-redesign → #150 | PR open | Shorter homepage (5 sections), ecosystem grid, /ecosystem "Our brands" page | owner merges; owner confirms which brands GROUPE TAKATAK owns and runs (registry marks none as owned + active yet, so the brand list is empty and its links are hidden)
 - 2026-10-08 | claude (session 01HWFgGo) | claude/lead-order-billing → #146 | done (merged 750dad3) | TK-027: won takatak.ca order lead → billing queue → Facturations draft (Invoice card on the lead page, explicit taxes) | owner merges; then mark an order Won and create its invoice request
 - 2026-10-08 | claude (session 01KBGh1v) | main | waiting on owner | Triage of all 23 open PRs. Merge: #144 #129 #146 #147 #101 #95 #75. Close: #7 #17 #18 #23 (already on main), #145 (dup of #148). Owner yes/no: #148, #135-137 vs #117 (split #117), #128, #104, #27, #28, #143/#140 | owner replies "approve triage" (Launch Board step 6); then merge in that order and close
