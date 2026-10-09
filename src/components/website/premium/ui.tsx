@@ -287,18 +287,17 @@ export function CountUp({
   }, [value, reduced]);
 
   const text = format ? format(shown) : String(Math.round(shown));
+  const final = format ? format(value) : String(value);
+  // The invisible copy reserves the final width, so counting never shifts the layout.
   return (
-    <span ref={ref} className={`tabular-nums ${className}`}>
-      {/* Reserve the final width so counting never shifts the layout. */}
-      <span className="relative inline-block">
-        <span className="invisible" aria-hidden>
-          {format ? format(value) : String(value)}
-        </span>
-        <span className="absolute inset-0 text-left" aria-hidden>
-          {text}
-        </span>
-        <span className="sr-only">{format ? format(value) : String(value)}</span>
+    <span ref={ref} className="relative inline-block tabular-nums">
+      <span className={`invisible ${className}`} aria-hidden>
+        {final}
       </span>
+      <span className={`absolute left-0 top-0 whitespace-nowrap ${className}`} aria-hidden>
+        {text}
+      </span>
+      <span className="sr-only">{final}</span>
     </span>
   );
 }

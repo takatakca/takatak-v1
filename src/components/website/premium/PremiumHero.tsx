@@ -31,7 +31,7 @@ export function PremiumHero() {
           >
             {tk("home.lead.title")}
           </h1>
-          <p className="mt-4 text-[13px] font-semibold uppercase tracking-[0.32em] text-[var(--tk-cyan)]">
+          <p className="mt-4 text-[12px] font-semibold uppercase tracking-[0.2em] text-[var(--tk-cyan)] sm:text-[13px] sm:tracking-[0.32em]">
             {tk("home.lead.tagline")}
           </p>
           <p className="mt-6 max-w-xl text-base leading-7 text-white/72 sm:text-[17px]">{tk("home.p.subtitle")}</p>
@@ -95,7 +95,7 @@ export function PremiumHero() {
             <FloatCard icon={<AtSign size={15} />} title={tk("mock.domainConnected")} subtitle="yourbrand.ca" />
           </div>
           <div className="tk-drift-late absolute -right-2 top-[42%] hidden w-[230px] sm:block lg:-right-6">
-            <FloatCard tone="ok" icon={<ShieldCheck size={15} />} title={tk("mock.sslActive")} subtitle={tk("mock.sslBackups")} />
+            <FloatCard tone="ok" icon={<ShieldCheck size={15} />} title={tk("mock.sslActive")} subtitle={tk("cat.hosting.h2")} />
           </div>
           <div style={reviews} className="tk-drift-late absolute -bottom-6 left-4 w-[220px] sm:-left-6 sm:w-[250px]">
             <FloatCard

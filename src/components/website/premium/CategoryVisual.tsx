@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Image from "next/image";
 
 import type { CoreCategory } from "@/lib/website/core-categories";
-import { Mock } from "./mockups";
+import { ScaledMock } from "./ScaledMock";
 import { IllustrationTag, SegmentedTabs, accentStyle, useCopy } from "./ui";
 
 /**
@@ -76,10 +76,10 @@ export function CategoryVisual({
                   />
                 </div>
               ) : (
-                <div className="absolute inset-0 p-2.5 sm:p-4">
-                  {view.mock && <Mock kind={view.mock} />}
-                  <IllustrationTag className="absolute bottom-3 left-3 sm:bottom-4 sm:left-4" />
-                </div>
+                <>
+                  {view.mock && <ScaledMock kind={view.mock} />}
+                  <IllustrationTag className="absolute bottom-3 right-3" />
+                </>
               )}
             </div>
           </div>

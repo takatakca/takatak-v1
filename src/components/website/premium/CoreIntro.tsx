@@ -45,7 +45,7 @@ export function CoreIntro() {
                     <CountUp
                       value={s.value}
                       format={s.format}
-                      className="tk-gradient-text block text-3xl font-extrabold tracking-tight sm:text-4xl"
+                      className="tk-gradient-text text-3xl font-extrabold tracking-tight sm:text-4xl"
                     />
                     <span className="mt-1 block text-[13px] leading-5 text-white/60">{s.label}</span>
                   </dd>

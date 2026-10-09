@@ -36,12 +36,12 @@ function Window({ title, children, right }: { title: string; children: ReactNode
           <span className="h-2 w-2 rounded-full bg-white/15" />
           <span className="h-2 w-2 rounded-full bg-white/10" />
         </span>
-        <span className="truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55 sm:text-[11px]">
+        <span className="truncate font-semibold uppercase tracking-[0.16em] text-white/55 text-[11px]">
           {title}
         </span>
         <span className="ml-auto">{right}</span>
       </div>
-      <div className="min-h-0 flex-1 p-3 sm:p-4">{children}</div>
+      <div className="min-h-0 flex-1 p-4">{children}</div>
     </div>
   );
 }
@@ -79,8 +79,8 @@ function DomainSearchMock() {
     <Window title="takatak.ca / domain">
       <div className="flex items-center gap-2 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-2">
         <Globe2 size={14} className="text-[var(--tk-accent)]" aria-hidden />
-        <span className="text-xs font-medium text-white sm:text-sm">yourbrand</span>
-        <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-[var(--tk-accent)] px-2 py-1 text-[10px] font-bold text-[#04122B] sm:text-[11px]">
+        <span className="font-medium text-white text-sm">yourbrand</span>
+        <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-[var(--tk-accent)] px-2 py-1 font-bold text-[#04122B] text-[11px]">
           <Search size={11} aria-hidden /> .ca
         </span>
       </div>
@@ -88,7 +88,7 @@ function DomainSearchMock() {
         {rows.map((r) => (
           <li
             key={r.tld}
-            className={`flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[11px] sm:py-2 sm:text-xs ${
+            className={`flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs ${
               r.ok ? "border-white/10 bg-white/[0.04]" : "border-white/5 bg-transparent opacity-55"
             }`}
           >
@@ -123,9 +123,9 @@ function DnsMock() {
   ];
   return (
     <Window title={tk("mock.dnsTitle")}>
-      <ul className="grid gap-1.5 font-mono text-[10px] sm:text-[11px]">
+      <ul className="grid gap-1.5 font-mono text-[11px]">
         {rows.map(([type, host, value]) => (
-          <li key={type} className="grid grid-cols-[52px_34px_1fr_auto] items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 sm:py-2">
+          <li key={type} className="grid grid-cols-[52px_34px_1fr_auto] items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
             <span className="font-bold text-[var(--tk-accent)]">{type}</span>
             <span className="text-white/60">{host}</span>
             <span className="truncate text-white/85">{value}</span>
@@ -152,19 +152,19 @@ function ServerMock() {
       }
     >
       <div className="grid h-full grid-cols-[1fr_auto] gap-3">
-        <ul className="grid content-start gap-1.5 text-[11px] sm:text-xs">
+        <ul className="grid content-start gap-1.5 text-xs">
           {[
             { icon: Lock, label: tk("mock.sslActive") },
             { icon: HardDrive, label: tk("mock.lastBackup") },
             { icon: Server, label: tk("mock.staging") },
           ].map(({ icon: Icon, label }) => (
-            <li key={label} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 sm:py-2">
+            <li key={label} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
               <Icon size={13} className="text-[var(--tk-accent-2)]" aria-hidden />
               <span className="text-white/85">{label}</span>
               <Check size={13} className="ml-auto text-emerald-300" aria-hidden />
             </li>
           ))}
-          <li className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 sm:py-2">
+          <li className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
             <div className="flex justify-between text-white/70">
               <span>{tk("mock.storage")}</span>
               <span>{silver.features[1]}</span>
@@ -174,7 +174,7 @@ function ServerMock() {
             </div>
           </li>
         </ul>
-        <div className="hidden w-28 flex-col justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3 sm:flex">
+        <div className="w-28 flex-col justify-between rounded-xl border border-white/10 bg-white/[0.04] p-3 flex">
           <span className="text-[10px] uppercase tracking-[0.16em] text-white/50">Silver</span>
           <span className="text-lg font-extrabold text-white">{money(lang, silver.amount)}</span>
           <span className="text-[10px] text-white/50">{tk("cadence.monthly")}</span>
@@ -198,15 +198,15 @@ function CampaignMock() {
           <div key={r.platform} className="rounded-lg border border-white/10 bg-white/[0.04] p-2.5">
             <div className="flex items-center gap-2">
               <CircleDot size={12} className="text-[var(--tk-accent)]" aria-hidden />
-              <span className="text-[11px] font-bold text-white sm:text-xs">{r.platform}</span>
-              <span className="truncate text-[10px] text-white/50 sm:text-[11px]">{r.name}</span>
+              <span className="font-bold text-white text-xs">{r.platform}</span>
+              <span className="truncate text-white/50 text-[11px]">{r.name}</span>
               <span className="ml-auto flex h-5 items-end gap-0.5" aria-hidden>
                 {r.bars.map((b, i) => (
                   <span key={i} className="tk-accent-bg w-1 rounded-sm opacity-80" style={{ height: `${b}%` }} />
                 ))}
               </span>
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-2 text-[10px] sm:text-[11px]">
+            <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
               {[
                 [tk("mock.spend"), money(lang, r.spend)],
                 [tk("mock.clicks"), nf.format(r.clicks)],
@@ -239,14 +239,14 @@ function SocialCalendarMock() {
       <div className="grid h-full grid-cols-5 gap-1.5">
         {days.map((day) => (
           <div key={day.d} className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-white/[0.07] bg-white/[0.03] p-1.5">
-            <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-white/45 sm:text-[10px]">{tk(day.d)}</span>
+            <span className="font-semibold uppercase tracking-[0.14em] text-white/45 text-[10px]">{tk(day.d)}</span>
             {day.posts.map((p, i) => (
               <div key={i} className="rounded-md border border-white/10 bg-[color-mix(in_oklab,var(--tk-accent)_14%,transparent)] p-1.5">
-                <p className="truncate text-[9px] font-bold text-white sm:text-[10px]">{p.net}</p>
-                <p className="hidden truncate text-[9px] text-white/60 sm:block">{tk(p.title)}</p>
-                <p className={`mt-1 inline-flex items-center gap-1 text-[8px] sm:text-[9px] ${p.ok ? "text-emerald-200" : "text-amber-200"}`}>
+                <p className="truncate font-bold text-white text-[10px]">{p.net}</p>
+                <p className="truncate text-[9px] text-white/60 block">{tk(p.title)}</p>
+                <p className={`mt-1 inline-flex items-center gap-1 text-[9px] ${p.ok ? "text-emerald-200" : "text-amber-200"}`}>
                   <StatusDot tone={p.ok ? "ok" : "warn"} />
-                  <span className="hidden sm:inline">{p.ok ? tk("mock.approved") : tk("mock.toApprove")}</span>
+                  <span className="inline">{p.ok ? tk("mock.approved") : tk("mock.toApprove")}</span>
                 </p>
               </div>
             ))}
@@ -286,8 +286,8 @@ function ListingMock() {
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-2">
-            <p className="truncate text-xs font-bold text-white sm:text-sm">{tk("mock.bizName")}</p>
-            <p className="truncate text-[10px] text-white/55 sm:text-[11px]">{tk("mock.bizCategory")}</p>
+            <p className="truncate font-bold text-white text-sm">{tk("mock.bizName")}</p>
+            <p className="truncate text-white/55 text-[11px]">{tk("mock.bizCategory")}</p>
             <p className="mt-1 inline-flex items-center gap-1 text-[10px] text-emerald-200">
               <StatusDot tone="ok" /> {tk("mock.openNow")}
             </p>
@@ -295,12 +295,12 @@ function ListingMock() {
           <div className="grid grid-cols-2 gap-1.5">
             {stats.map(([k, v]) => (
               <div key={k} className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5">
-                <p className="truncate text-[9px] text-white/50 sm:text-[10px]">{tk(k)}</p>
-                <p className="text-xs font-bold text-white sm:text-sm">{nf.format(v)}</p>
+                <p className="truncate text-white/50 text-[10px]">{tk(k)}</p>
+                <p className="font-bold text-white text-sm">{nf.format(v)}</p>
               </div>
             ))}
           </div>
-          <p className="hidden items-center gap-1.5 text-[10px] text-white/70 sm:flex">
+          <p className="items-center gap-1.5 text-[10px] text-white/70 flex">
             <Check size={12} className="text-emerald-300" aria-hidden /> {tk("mock.nap")}
           </p>
         </div>
@@ -329,7 +329,7 @@ function ReviewsMock() {
                 <span className="text-[11px] font-semibold text-white">{r.who}</span>
                 <Stars n={r.n} />
               </div>
-              <p className="truncate text-[10px] text-white/65 sm:text-[11px]">{tk(r.text)}</p>
+              <p className="truncate text-white/65 text-[11px]">{tk(r.text)}</p>
             </div>
             <span
               className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${
@@ -352,20 +352,20 @@ function ReviewRequestMock() {
       <div className="relative h-full max-h-[270px] w-[46%] max-w-[170px] rounded-[26px] border border-white/15 bg-[#081430] p-2 shadow-[0_30px_60px_-30px_rgb(0_0_0/0.9)]">
         <div className="mx-auto mb-2 h-1 w-10 rounded-full bg-white/15" />
         <div className="flex h-[calc(100%-12px)] flex-col justify-end gap-2 rounded-[18px] bg-[linear-gradient(180deg,#0E2552,#0A1A3C)] p-2">
-          <div className="rounded-xl rounded-bl-sm bg-white/10 p-2 text-[9px] leading-snug text-white/85 sm:text-[10px]">
+          <div className="rounded-xl rounded-bl-sm bg-white/10 p-2 leading-snug text-white/85 text-[10px]">
             {tk("mock.requestMsg")}
           </div>
-          <span className="tk-accent-bg inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-[9px] font-bold text-white sm:text-[10px]">
+          <span className="tk-accent-bg inline-flex items-center justify-center gap-1 rounded-lg py-1.5 font-bold text-white text-[10px]">
             <Star size={10} className="fill-white" aria-hidden /> {tk("mock.requestCta")}
           </span>
         </div>
       </div>
-      <div className="hidden max-w-[45%] flex-col gap-2 sm:flex">
+      <div className="max-w-[45%] flex-col gap-2 flex">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">{tk("mock.requestTitle")}</p>
         <Stars n={5} className="scale-125 origin-left" />
         <SoonTag className="self-start" />
       </div>
-      <SoonTag className="absolute right-3 top-3 sm:hidden" />
+      <SoonTag className="absolute right-3 top-3 hidden" />
     </div>
   );
 }
@@ -377,25 +377,25 @@ function AiGenerateMock() {
       <div className="grid h-full grid-cols-[0.85fr_1.15fr] gap-2.5">
         <div className="flex flex-col gap-1.5">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-2">
-            <p className="text-[9px] uppercase tracking-[0.16em] text-white/45 sm:text-[10px]">{tk("mock.brandVoice")}</p>
-            <p className="mt-0.5 text-[10px] font-semibold text-white sm:text-[11px]">{tk("mock.voiceTraits")}</p>
+            <p className="uppercase tracking-[0.16em] text-white/45 text-[10px]">{tk("mock.brandVoice")}</p>
+            <p className="mt-0.5 font-semibold text-white text-[11px]">{tk("mock.voiceTraits")}</p>
           </div>
           <div className="rounded-lg border border-[color-mix(in_oklab,var(--tk-accent)_45%,transparent)] bg-[color-mix(in_oklab,var(--tk-accent)_12%,transparent)] p-2">
-            <p className="text-[9px] uppercase tracking-[0.16em] text-white/45 sm:text-[10px]">{tk("mock.brief")}</p>
-            <p className="mt-0.5 text-[10px] text-white sm:text-[11px]">{tk("mock.briefText")}</p>
+            <p className="uppercase tracking-[0.16em] text-white/45 text-[10px]">{tk("mock.brief")}</p>
+            <p className="mt-0.5 text-white text-[11px]">{tk("mock.briefText")}</p>
           </div>
           <span className="tk-accent-bg mt-auto inline-flex items-center justify-center gap-1 rounded-lg py-1.5 text-[10px] font-bold text-white">
             <Sparkles size={11} aria-hidden /> AI
           </span>
         </div>
-        <div className="flex min-w-0 flex-col gap-1.5 text-[10px] sm:text-[11px]">
+        <div className="flex min-w-0 flex-col gap-1.5 text-[11px]">
           {[
             ["mock.caption", tk("mock.captionText")],
             ["mock.hashtags", "#brunch #montreal #weekend"],
             ["mock.hook", tk("mock.hookText")],
           ].map(([k, v]) => (
             <div key={k} className="rounded-lg border border-white/10 bg-white/[0.04] p-2">
-              <p className="text-[9px] uppercase tracking-[0.16em] text-[var(--tk-accent-2)] sm:text-[10px]">{tk(k)}</p>
+              <p className="uppercase tracking-[0.16em] text-[var(--tk-accent-2)] text-[10px]">{tk(k)}</p>
               <p className="mt-0.5 line-clamp-2 text-white/85">{v}</p>
             </div>
           ))}
@@ -424,18 +424,18 @@ function InvoiceMock() {
     }).format(n);
   return (
     <div className="flex h-full items-center justify-center">
-      <div className="flex h-full w-full max-w-[420px] flex-col rounded-xl bg-[#F5F8FC] p-3 text-[#0B1B3D] shadow-[0_30px_60px_-28px_rgb(0_0_0/0.9)] sm:p-4">
+      <div className="flex h-full w-full max-w-[420px] flex-col rounded-xl bg-[#F5F8FC] text-[#0B1B3D] shadow-[0_30px_60px_-28px_rgb(0_0_0/0.9)] p-4">
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1565D8]">{tk("mock.invoice")}</p>
-            <p className="text-sm font-extrabold sm:text-base">#1042</p>
+            <p className="font-extrabold text-base">#1042</p>
           </div>
-          <div className="text-right text-[9px] text-[#4A5A75] sm:text-[10px]">
+          <div className="text-right text-[#4A5A75] text-[10px]">
             <p>{tk("mock.billTo")}</p>
             <p className="font-semibold text-[#0B1B3D]">{tk("mock.clientName")}</p>
           </div>
         </div>
-        <ul className="mt-2 grid gap-1 border-y border-[#0B1B3D]/10 py-1.5 text-[10px] sm:text-[11px]">
+        <ul className="mt-2 grid gap-1 border-y border-[#0B1B3D]/10 py-1.5 text-[11px]">
           {lines.map((l) => (
             <li key={l.label} className="flex justify-between gap-2">
               <span className="truncate">{l.label}</span>
@@ -443,7 +443,7 @@ function InvoiceMock() {
             </li>
           ))}
         </ul>
-        <dl className="mt-1.5 grid gap-0.5 text-[10px] text-[#4A5A75] sm:text-[11px]">
+        <dl className="mt-1.5 grid gap-0.5 text-[#4A5A75] text-[11px]">
           {[
             [tk("mock.subtotal"), subtotal],
             [tk("mock.gst"), gst],
@@ -454,14 +454,14 @@ function InvoiceMock() {
               <dd className="tabular-nums">{m(v as number)}</dd>
             </div>
           ))}
-          <div className="mt-0.5 flex justify-between border-t border-[#0B1B3D]/10 pt-1 text-xs font-extrabold text-[#0B1B3D] sm:text-sm">
+          <div className="mt-0.5 flex justify-between border-t border-[#0B1B3D]/10 pt-1 font-extrabold text-[#0B1B3D] text-sm">
             <dt>{tk("mock.total")}</dt>
             <dd className="tabular-nums">{m(total)}</dd>
           </div>
         </dl>
         <div className="mt-auto flex items-center justify-between pt-2">
-          <span className="text-[9px] text-[#4A5A75] sm:text-[10px]">{tk("mock.dueIn")}</span>
-          <span className="rounded-md bg-[#1565D8] px-2.5 py-1 text-[10px] font-bold text-white sm:text-[11px]">{tk("mock.payOnline")}</span>
+          <span className="text-[#4A5A75] text-[10px]">{tk("mock.dueIn")}</span>
+          <span className="rounded-md bg-[#1565D8] px-2.5 py-1 font-bold text-white text-[11px]">{tk("mock.payOnline")}</span>
         </div>
       </div>
     </div>
@@ -478,7 +478,7 @@ function InvoiceListMock() {
   const chip = { ok: "bg-emerald-400/15 text-emerald-200", warn: "bg-amber-400/15 text-amber-200", bad: "bg-rose-400/15 text-rose-200" };
   return (
     <Window title={tk("mock.invoice")}>
-      <div className="mb-2 flex gap-1 text-[9px] sm:text-[10px]">
+      <div className="mb-2 flex gap-1 text-[10px]">
         {["mock.paid", "mock.open", "mock.overdue"].map((k, i) => (
           <span key={k} className={`rounded-full border px-2 py-0.5 ${i === 0 ? "border-[var(--tk-accent)] text-white" : "border-white/12 text-white/55"}`}>
             {tk(k)}
@@ -487,7 +487,7 @@ function InvoiceListMock() {
       </div>
       <ul className="grid gap-1.5">
         {rows.map((r) => (
-          <li key={r.n} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[10px] sm:py-2 sm:text-[11px]">
+          <li key={r.n} className="flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2 text-[11px]">
             <span className="font-mono font-semibold text-white/80">{r.n}</span>
             <span className="truncate text-white/60">{r.who}</span>
             <span className="ml-auto font-semibold tabular-nums text-white">{money(lang, r.amount)}</span>
@@ -504,7 +504,7 @@ function InvoiceListMock() {
 
 function CallFlowMock() {
   const { tk } = useCopy();
-  const node = "rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-1.5 text-center text-[10px] font-semibold text-white sm:text-[11px]";
+  const node = "rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-1.5 text-center font-semibold text-white text-[11px]";
   return (
     <Window title={tk("mock.attendant")} right={<SoonTag />}>
       <div className="flex h-full flex-col items-center justify-between gap-1">
@@ -513,8 +513,8 @@ function CallFlowMock() {
         </div>
         <ArrowDown size={12} className="text-white/35" aria-hidden />
         <div className="tk-accent-ring rounded-xl bg-[color-mix(in_oklab,var(--tk-accent)_14%,transparent)] px-3 py-1.5 text-center">
-          <p className="text-[10px] font-bold text-white sm:text-[11px]">{tk("mock.attendant")}</p>
-          <p className="text-[9px] text-white/65 sm:text-[10px]">
+          <p className="font-bold text-white text-[11px]">{tk("mock.attendant")}</p>
+          <p className="text-white/65 text-[10px]">
             {tk("mock.press1")} · {tk("mock.press2")}
           </p>
         </div>
@@ -573,7 +573,7 @@ export function FloatCard({
   className?: string;
 }) {
   return (
-    <div className={`tk-glass flex items-center gap-2.5 rounded-2xl px-3 py-2.5 ${className}`}>
+    <div className={`tk-glass-solid flex items-center gap-2.5 rounded-2xl px-3 py-2.5 ${className}`}>
       <span
         aria-hidden
         className={`grid h-8 w-8 shrink-0 place-items-center rounded-xl ${

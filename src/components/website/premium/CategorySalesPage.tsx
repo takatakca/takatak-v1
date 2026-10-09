@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { ArrowUpRight, Check, ChevronDown, Clock3 } from "lucide-react";
 
@@ -15,9 +15,11 @@ import {
 } from "@/lib/website/core-categories";
 import { Link } from "@/lib/website/nav";
 import { pricing } from "@/lib/website/pricing";
+import { useHeaderHeight } from "./CategoryNavigator";
 import { CategoryVisual } from "./CategoryVisual";
 import { DomainSearchDialog } from "./DomainSearchDialog";
-import { FloatCard, Mock } from "./mockups";
+import { FloatCard } from "./mockups";
+import { ScaledMock } from "./ScaledMock";
 import { CategoryPricing } from "./CategoryPricing";
 import {
   AvailabilityBadge,
@@ -39,7 +41,8 @@ const SECTIONS = ["included", "how", "see", "pricing", "faq"] as const;
 function faqVars(key: CategoryKey, lang: "en" | "fr"): Record<string, string | number> {
   if (key === "social") {
     return {
-      price: key === "social" ? money(lang, SOCIAL_X_ADDON_MONTHLY) : "",
+      price: money(lang, SOCIAL_X_ADDON_MONTHLY),
+      managed: money(lang, pricing.social[0].amount),
       pct: SOCIAL_ANNUAL_SAVINGS_PERCENT,
     };
   }
@@ -63,6 +66,7 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
   const name = tk(`cat.${k}.name`);
   const vars = faqVars(k, lang);
   const ctaProps = { onDomainSearch: openDomain, page: category.route };
+  useHeaderHeight();
 
   return (
     <div className="tk-page tk-premium brand-dark" style={accentStyle(category)}>
@@ -91,7 +95,7 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
               </div>
             </div>
             <h1 id="cat-title" className="mt-7 text-balance text-[36px] font-extrabold leading-[1.04] tracking-[-0.035em] text-white sm:text-5xl lg:text-[54px]">
-              <span className="tk-gradient-text">{tk(`cat.${k}.title`)}</span>
+              <span className="tk-gradient-text">{tk(`cat.${k}.headline`)}</span>
             </h1>
             <p className="mt-5 text-base leading-7 text-white/72 sm:text-[17px]">{tk(`cat.${k}.promise`)}</p>
             <ul className="mt-6 grid gap-2.5">
@@ -141,7 +145,7 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
       {/* In-page navigation */}
       <nav
         aria-label={tk("cat.page.nav")}
-        className="sticky z-30 border-y border-white/[0.08] bg-[#060D1F]/80 backdrop-blur-xl"
+        className="sticky z-30 border-y border-white/[0.08] bg-[#060D1F]/95 backdrop-blur-xl"
         style={{ top: "var(--tk-header-h, 64px)" }}
       >
         <ul className="tk-no-scrollbar mx-auto flex max-w-7xl gap-1.5 overflow-x-auto px-4 py-2.5">
@@ -160,8 +164,6 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
           </li>
         </ul>
       </nav>
-
-      <HeaderHeightSync />
 
       {/* 2. What's included */}
       <Section id="included" title={tk("cat.page.included")} subtitle={tk("cat.page.includedSub")}>
@@ -221,10 +223,10 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
                       />
                     </div>
                   ) : (
-                    <div className="absolute inset-0 p-3 sm:p-4">
-                      {view.mock && <Mock kind={view.mock} />}
-                      <IllustrationTag className="absolute bottom-4 left-4" />
-                    </div>
+                    <>
+                      {view.mock && <ScaledMock kind={view.mock} />}
+                      <IllustrationTag className="absolute bottom-3 right-3" />
+                    </>
                   )}
                 </div>
                 <figcaption className="flex items-center justify-between gap-3 px-3 pb-2 pt-3.5">
@@ -275,7 +277,9 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
                 <h2 id="cat-cta-title" className="mt-3 text-3xl font-extrabold tracking-[-0.03em] text-white sm:text-[42px]">
                   {tk("cat.page.ctaTitle")}
                 </h2>
-                <p className="mt-3 text-base leading-7 text-white/68">{tk("cat.page.ctaBody")}</p>
+                <p className="mt-3 text-base leading-7 text-white/68">
+                  {tk(category.availability === "planned" ? "cat.price.plannedBody" : "cat.page.ctaBody")}
+                </p>
               </div>
               <div className="flex flex-wrap gap-3">
                 <CtaButton cta={category.primary} {...ctaProps} className="!px-6 !py-3.5 text-[15px]" />
@@ -303,7 +307,7 @@ function Section({
   title: string;
   subtitle?: string;
   tinted?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section
@@ -356,23 +360,4 @@ function OtherCategories({ current }: { current: CoreCategory }) {
       </div>
     </section>
   );
-}
-
-/** Mirrors the header height into --tk-header-h for the sticky in-page nav. */
-function HeaderHeightSync() {
-  useHeaderHeightEffect();
-  return null;
-}
-
-import { useEffect } from "react";
-function useHeaderHeightEffect() {
-  useEffect(() => {
-    const header = document.querySelector<HTMLElement>("header");
-    if (!header) return;
-    const apply = () => document.documentElement.style.setProperty("--tk-header-h", `${header.offsetHeight}px`);
-    apply();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(apply) : null;
-    ro?.observe(header);
-    return () => ro?.disconnect();
-  }, []);
 }

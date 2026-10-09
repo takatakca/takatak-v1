@@ -8,7 +8,7 @@ import { accentStyle, useCopy } from "./ui";
 export const blockId = (key: string) => `core-${key}`;
 
 /** Keeps --tk-header-h on <html> equal to the sticky site header's height. */
-function useHeaderHeight() {
+export function useHeaderHeight() {
   useEffect(() => {
     const header = document.querySelector<HTMLElement>("header");
     if (!header) return;
@@ -59,11 +59,11 @@ export function CategoryNavigator() {
   return (
     <nav
       aria-label={tk("home.core.nav")}
-      className="sticky z-30 border-y border-white/[0.08] bg-[#060D1F]/80 backdrop-blur-xl"
+      className="sticky z-30 border-y border-white/[0.08] bg-[#060D1F]/95 backdrop-blur-xl"
       style={{ top: "var(--tk-header-h, 64px)" }}
     >
       <div className="mx-auto max-w-7xl px-4">
-        <ul ref={listRef} className="tk-no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto py-2.5">
+        <ul ref={listRef} className="tk-no-scrollbar -mx-1 flex gap-1 overflow-x-auto py-2.5 xl:justify-between">
           {CORE_CATEGORIES.map((c) => {
             const Icon = c.icon;
             return (
@@ -72,9 +72,9 @@ export function CategoryNavigator() {
                   href={`#${blockId(c.key)}`}
                   data-active={active === c.key}
                   aria-current={active === c.key ? "true" : undefined}
-                  className="tk-nav-pill inline-flex items-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-[13px] font-semibold text-white/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tk-cyan)]"
+                  className="tk-nav-pill inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-transparent px-2.5 py-1.5 text-[12.5px] font-semibold text-white/60 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--tk-cyan)]"
                 >
-                  <Icon size={14} className="tk-accent-text" aria-hidden />
+                  <Icon size={14} className="tk-accent-text lg:hidden 2xl:inline-block" aria-hidden />
                   {c.index !== null && <span className="text-[11px] tabular-nums text-white/40">0{c.index}</span>}
                   {tk(`cat.${c.key}.name`)}
                 </a>

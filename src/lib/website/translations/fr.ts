@@ -834,7 +834,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.website.name": "Site web",
   "cat.website.eyebrow": "Là où tout commence",
-  "cat.website.title": "Un site qui vous positionne en chef de file de votre marché.",
+  "cat.website.headline": "Un site qui vous positionne en chef de file de votre marché.",
   "cat.website.promise": "Design sur mesure, pages rapides, appels à l'action clairs et fondations SEO. Conçu, construit et lancé par notre équipe, puis relié à tout ce que vous gérez avec TAKATAK.",
   "cat.website.h1": "Design sur mesure, pensé d'abord pour le mobile",
   "cat.website.h2": "Formulaires de contact et statistiques intégrés",
@@ -881,7 +881,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.domains.name": "Domaines",
   "cat.domains.eyebrow": "Votre marque en ligne",
-  "cat.domains.title": "Réservez le nom dont vos clients se souviendront.",
+  "cat.domains.headline": "Réservez le nom dont vos clients se souviendront.",
   "cat.domains.promise": "Enregistrez votre .ca, .com, .net ou .org en quelques minutes; le DNS, le courriel d'affaires et les renouvellements sont pris en charge par notre équipe.",
   "cat.domains.h1": "Recherche et enregistrement .ca, .com, .net et .org",
   "cat.domains.h2": "DNS et enregistrements courriel configurés pour vous",
@@ -925,7 +925,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.hosting.name": "Hébergement",
   "cat.hosting.eyebrow": "Rapide et sécuritaire",
-  "cat.hosting.title": "Un hébergement qui vous garde rapide, protégé et en ligne.",
+  "cat.hosting.headline": "Un hébergement qui vous garde rapide, protégé et en ligne.",
   "cat.hosting.promise": "Hébergement géré avec SSL gratuit, sauvegardes quotidiennes, courriel d'affaires et cPanel. Configuré et soutenu par une équipe au Canada.",
   "cat.hosting.h1": "SSL gratuit sur tous les forfaits",
   "cat.hosting.h2": "Sauvegardes quotidiennes avec restauration assistée",
@@ -982,7 +982,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.marketing.name": "Marketing et publicité",
   "cat.marketing.eyebrow": "Stratégie et publicité",
-  "cat.marketing.title": "Des campagnes qui amènent des clients, avec des chiffres fiables.",
+  "cat.marketing.headline": "Des campagnes qui amènent des clients, avec des chiffres fiables.",
   "cat.marketing.promise": "Stratégie, configuration de campagnes et optimisation mensuelle sur Meta Ads et Google Ads. Vos comptes sont reliés à TAKATAK : les résultats se mesurent, ils ne se devinent pas.",
   "cat.marketing.h1": "Comptes Meta Ads et Google Ads connectés",
   "cat.marketing.h2": "Dépenses, portée, clics, CPC et CTR en une seule vue",
@@ -1026,7 +1026,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.social.name": "Médias sociaux",
   "cat.social.eyebrow": "Contenu et croissance",
-  "cat.social.title": "Tous vos réseaux, un seul tableau de bord serein.",
+  "cat.social.headline": "Tous vos réseaux, un seul tableau de bord serein.",
   "cat.social.promise": "Reliez vos marques sur neuf réseaux, voyez ce qui performe, suivez vos concurrents et planifiez le contenu avec approbations. Ou confiez le tout à notre équipe.",
   "cat.social.h1": "Facebook, Instagram, TikTok, YouTube et plus, connectés",
   "cat.social.h2": "Analytique, meilleures publications et veille concurrentielle",
@@ -1074,13 +1074,13 @@ export const fr: Record<TranslationKey, string> = {
   "cat.social.faq3.q": "Puis-je payer à l'année?",
   "cat.social.faq3.a": "Oui. La facturation annuelle vous fait économiser {pct} % sur chaque forfait libre-service.",
   "cat.social.faq4.q": "Votre équipe peut-elle tout gérer pour moi?",
-  "cat.social.faq4.a": "Oui. Les forfaits gérés commencent à {price}/mois, avec un contenu planifié et préparé par notre équipe.",
+  "cat.social.faq4.a": "Oui. Les forfaits gérés commencent à {managed}/mois, avec un contenu planifié et préparé par notre équipe.",
   "cat.social.cta": "Démarrer mon forfait",
   "cat.social.cta2": "Déjà client? Choisir un forfait",
 
   "cat.local.name": "Fiches locales",
   "cat.local.eyebrow": "Soyez trouvé",
-  "cat.local.title": "Soyez la première entreprise qu'on trouve dans le coin.",
+  "cat.local.headline": "Soyez la première entreprise qu'on trouve dans le coin.",
   "cat.local.promise": "Un profil Google Business complet et cohérent, des fiches locales à jour, et les vues, appels et demandes d'itinéraire suivis dans votre tableau de bord.",
   "cat.local.h1": "Google Business Profile connecté",
   "cat.local.h2": "Vues Maps et Recherche, appels, clics et itinéraires",
@@ -1124,7 +1124,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.reviews.name": "Avis et réputation",
   "cat.reviews.eyebrow": "Récolter, suivre, répondre",
-  "cat.reviews.title": "Faites de chaque avis votre meilleur vendeur.",
+  "cat.reviews.headline": "Faites de chaque avis votre meilleur vendeur.",
   "cat.reviews.promise": "Voyez chaque nouvel avis Google dès son arrivée, sachez lesquels attendent encore une réponse, et laissez notre équipe répondre dans votre ton. Les demandes d'avis et les brouillons de réponse par IA s'en viennent.",
   "cat.reviews.h1": "Avis Google suivis dans votre tableau de bord",
   "cat.reviews.h2": "Répondus et en attente, en un coup d'œil",
@@ -1165,7 +1165,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.ai.name": "AI Studio",
   "cat.ai.eyebrow": "Travaillez plus intelligemment",
-  "cat.ai.title": "La voix de votre marque, démultipliée par l'IA.",
+  "cat.ai.headline": "La voix de votre marque, démultipliée par l'IA.",
   "cat.ai.promise": "AI Studio est l'espace TAKATAK pour le contenu IA : profils de voix de marque, bibliothèque de résultats et, bientôt, légendes, plans de campagne et scripts vidéo dans votre style. Dès aujourd'hui, notre équipe conçoit aussi des assistants et des automatisations sur mesure.",
   "cat.ai.h1": "Des profils de voix de marque qui guident chaque résultat",
   "cat.ai.h2": "Une bibliothèque de résultats et de gabarits",
@@ -1209,7 +1209,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.billing.name": "Facturation",
   "cat.billing.eyebrow": "Soyez payé plus vite",
-  "cat.billing.title": "Des factures professionnelles. Payées en ligne.",
+  "cat.billing.headline": "Des factures professionnelles. Payées en ligne.",
   "cat.billing.promise": "Reliez votre propre compte Stripe, facturez vos clients en dollars canadiens avec TPS et TVQ, et recevez les paiements par carte directement dans votre compte bancaire. Rappels, statuts et toutes vos factures au même endroit.",
   "cat.billing.h1": "Jusqu'à quatre lignes de taxes par facture, comme la TPS et la TVQ",
   "cat.billing.h2": "Paiements par carte versés directement dans votre compte",
@@ -1251,7 +1251,7 @@ export const fr: Record<TranslationKey, string> = {
 
   "cat.voip.name": "Téléphonie d'affaires",
   "cat.voip.eyebrow": "Prévu · pas encore lancé",
-  "cat.voip.title": "Un système téléphonique d'affaires, pensé pour votre façon de travailler.",
+  "cat.voip.headline": "Un système téléphonique d'affaires, pensé pour votre façon de travailler.",
   "cat.voip.promise": "Nous préparons un service de téléphonie d'affaires TAKATAK : numéros d'affaires, standard automatique, postes pour votre équipe, messagerie vocale et transfert d'appels. Il n'est pas encore lancé. Inscrivez-vous à la liste d'attente : vous serez les premiers contactés.",
   "cat.voip.h1": "Numéros d'affaires et standard automatique",
   "cat.voip.h2": "Postes, messagerie vocale et transfert d'appels",
@@ -1395,6 +1395,7 @@ export const fr: Record<TranslationKey, string> = {
   "home.pf.subtitle": "Dites-nous où vous voulez aller. Nous mettons en place le site, les outils et le moteur de croissance pour vous y mener, et nous restons à vos côtés après le lancement.",
   "home.pf.quote": "Décrire mon projet",
   "pricing.planned": "Prévu · prix au lancement",
+  "pricing.more": "Autres services",
   "cat.website.alt.design": "Ordinateur portable affichant un site d'entreprise moderne",
   "cat.website.alt.store": "Boutique en ligne affichée sur un ordinateur portable et un téléphone",
   "cat.website.alt.mobile": "Deux téléphones affichant l'interface d'une application mobile",

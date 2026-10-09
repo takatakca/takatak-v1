@@ -154,8 +154,6 @@ export interface CoreCategory {
   accent2: string;
   availability: Availability;
   views: readonly CategoryView[];
-  /** Small mock layered over the main visual for depth. */
-  floating?: MockKind;
   included: readonly IncludedItem[];
   steps: number;
   faqs: number;
@@ -268,7 +266,6 @@ export const CORE_CATEGORIES: readonly CoreCategory[] = [
       { id: "search", mock: "domainSearch" },
       { id: "dns", mock: "dns" },
     ],
-    floating: "dns",
     included: [
       { icon: Globe2 },
       { icon: ArrowRightLeft },

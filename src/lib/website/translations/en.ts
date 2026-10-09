@@ -832,7 +832,7 @@ export const en = {
 
   "cat.website.name": "Website",
   "cat.website.eyebrow": "Where every customer starts",
-  "cat.website.title": "A website that makes you look like the leader in your market.",
+  "cat.website.headline": "A website that makes you look like the leader in your market.",
   "cat.website.promise": "Custom design, fast pages, clear calls to action and SEO foundations. Designed, built and launched by our team, then connected to everything else you run with TAKATAK.",
   "cat.website.h1": "Custom design, mobile-first",
   "cat.website.h2": "Contact forms and analytics wired in",
@@ -879,7 +879,7 @@ export const en = {
 
   "cat.domains.name": "Domains",
   "cat.domains.eyebrow": "Your brand online",
-  "cat.domains.title": "Claim the name your customers will remember.",
+  "cat.domains.headline": "Claim the name your customers will remember.",
   "cat.domains.promise": "Register your .ca, .com, .net or .org in minutes, with DNS, business email and renewals handled by our team.",
   "cat.domains.h1": "Search and register .ca, .com, .net and .org",
   "cat.domains.h2": "DNS and email records configured for you",
@@ -923,7 +923,7 @@ export const en = {
 
   "cat.hosting.name": "Hosting",
   "cat.hosting.eyebrow": "Fast and secure",
-  "cat.hosting.title": "Hosting that keeps you fast, safe and online.",
+  "cat.hosting.headline": "Hosting that keeps you fast, safe and online.",
   "cat.hosting.promise": "Managed hosting with free SSL, daily backups, business email and cPanel. Set up and supported by people in Canada.",
   "cat.hosting.h1": "Free SSL on every plan",
   "cat.hosting.h2": "Daily backups with restore support",
@@ -980,7 +980,7 @@ export const en = {
 
   "cat.marketing.name": "Marketing & ads",
   "cat.marketing.eyebrow": "Strategy and ads",
-  "cat.marketing.title": "Campaigns that bring customers, with numbers you can trust.",
+  "cat.marketing.headline": "Campaigns that bring customers, with numbers you can trust.",
   "cat.marketing.promise": "Strategy, campaign setup and monthly optimization on Meta Ads and Google Ads, with your accounts connected to TAKATAK so results are measured, not guessed.",
   "cat.marketing.h1": "Meta Ads and Google Ads accounts connected",
   "cat.marketing.h2": "Spend, reach, clicks, CPC and CTR in one view",
@@ -1024,7 +1024,7 @@ export const en = {
 
   "cat.social.name": "Social media",
   "cat.social.eyebrow": "Content and growth",
-  "cat.social.title": "Every network, one calm dashboard.",
+  "cat.social.headline": "Every network, one calm dashboard.",
   "cat.social.promise": "Connect your brands across nine networks, see what performs, track your competitors and plan content with approvals. Or let our team run it for you.",
   "cat.social.h1": "Facebook, Instagram, TikTok, YouTube and more, connected",
   "cat.social.h2": "Analytics, top posts and competitor tracking",
@@ -1072,13 +1072,13 @@ export const en = {
   "cat.social.faq3.q": "Can I pay yearly?",
   "cat.social.faq3.a": "Yes. Annual billing saves {pct}% on every self-serve plan.",
   "cat.social.faq4.q": "Can your team run it for me?",
-  "cat.social.faq4.a": "Yes. Managed plans start at {price}/month, with content planned and prepared by our team.",
+  "cat.social.faq4.a": "Yes. Managed plans start at {managed}/month, with content planned and prepared by our team.",
   "cat.social.cta": "Start my plan",
   "cat.social.cta2": "Already a client? Choose a plan",
 
   "cat.local.name": "Local listings",
   "cat.local.eyebrow": "Get found",
-  "cat.local.title": "Be the first business they find nearby.",
+  "cat.local.headline": "Be the first business they find nearby.",
   "cat.local.promise": "A complete, consistent Google Business Profile and local listings, with views, calls and direction requests tracked in your dashboard.",
   "cat.local.h1": "Google Business Profile connected",
   "cat.local.h2": "Maps and Search views, calls, clicks and directions",
@@ -1122,7 +1122,7 @@ export const en = {
 
   "cat.reviews.name": "Reviews & reputation",
   "cat.reviews.eyebrow": "Collect, monitor, answer",
-  "cat.reviews.title": "Turn every review into your best salesperson.",
+  "cat.reviews.headline": "Turn every review into your best salesperson.",
   "cat.reviews.promise": "See every new Google review as it arrives, know which ones still need an answer, and let our team reply in your voice. Review requests and AI reply drafts are on the way.",
   "cat.reviews.h1": "Google reviews monitored in your dashboard",
   "cat.reviews.h2": "Answered and unanswered, at a glance",
@@ -1163,7 +1163,7 @@ export const en = {
 
   "cat.ai.name": "AI Studio",
   "cat.ai.eyebrow": "Work smarter",
-  "cat.ai.title": "Your brand's voice, multiplied by AI.",
+  "cat.ai.headline": "Your brand's voice, multiplied by AI.",
   "cat.ai.promise": "AI Studio is the TAKATAK workspace for AI content: brand voice profiles, a saved library and, coming soon, captions, campaign plans and video scripts in your style. Today, our team also builds custom assistants and automations.",
   "cat.ai.h1": "Brand voice profiles that guide every output",
   "cat.ai.h2": "A saved library of outputs and templates",
@@ -1207,7 +1207,7 @@ export const en = {
 
   "cat.billing.name": "Billing & invoicing",
   "cat.billing.eyebrow": "Get paid faster",
-  "cat.billing.title": "Send professional invoices. Get paid online.",
+  "cat.billing.headline": "Send professional invoices. Get paid online.",
   "cat.billing.promise": "Connect your own Stripe account, invoice your customers in Canadian dollars with GST and QST, and get paid by card straight to your bank. Reminders, statuses and every invoice in one place.",
   "cat.billing.h1": "Up to four tax lines per invoice, such as GST and QST",
   "cat.billing.h2": "Card payments straight to your bank account",
@@ -1249,7 +1249,7 @@ export const en = {
 
   "cat.voip.name": "Business phone",
   "cat.voip.eyebrow": "Planned · not launched",
-  "cat.voip.title": "A business phone system, built for how you work.",
+  "cat.voip.headline": "A business phone system, built for how you work.",
   "cat.voip.promise": "We are preparing a TAKATAK business phone service: business numbers, an auto-attendant, extensions for your team, voicemail and call forwarding. It is not launched yet. Join the waitlist and we will contact you first.",
   "cat.voip.h1": "Business numbers and an auto-attendant",
   "cat.voip.h2": "Extensions, voicemail and call forwarding",
@@ -1393,6 +1393,7 @@ export const en = {
   "home.pf.subtitle": "Tell us where you want to be. We set up the website, the tools and the growth engine to get you there, and we stay with you after launch.",
   "home.pf.quote": "Describe my project",
   "pricing.planned": "Planned · prices at launch",
+  "pricing.more": "More services",
   "cat.website.alt.design": "Laptop displaying a modern business website",
   "cat.website.alt.store": "Online store shown on a laptop and a smartphone",
   "cat.website.alt.mobile": "Two smartphones showing a mobile app interface",

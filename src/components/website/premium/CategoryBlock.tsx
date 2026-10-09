@@ -3,7 +3,7 @@
 import { ArrowRight, Check, Clock3 } from "lucide-react";
 
 import { Reveal } from "@/components/website/home/Reveal";
-import type { CoreCategory } from "@/lib/website/core-categories";
+import { CORE_CATEGORIES, type CoreCategory } from "@/lib/website/core-categories";
 import { Link } from "@/lib/website/nav";
 import { blockId } from "./CategoryNavigator";
 import { CategoryVisual } from "./CategoryVisual";
@@ -33,7 +33,7 @@ export function CategoryBlock({ category, reverse = false }: { category: CoreCat
       {category.index !== null && (
         <span
           aria-hidden
-          className={`tk-number-outline pointer-events-none absolute top-6 hidden select-none text-[180px] font-extrabold leading-none opacity-30 lg:block ${
+          className={`tk-number-outline pointer-events-none absolute top-0 hidden -translate-y-[22%] select-none text-[200px] font-extrabold leading-none opacity-[0.16] lg:block ${
             reverse ? "right-[4%]" : "left-[2%]"
           }`}
         >
@@ -55,7 +55,7 @@ export function CategoryBlock({ category, reverse = false }: { category: CoreCat
           </div>
 
           <h2 id={`${id}-title`} className="mt-6 text-balance text-[28px] font-extrabold leading-[1.1] tracking-[-0.025em] text-white sm:text-[38px]">
-            {tk(`cat.${category.key}.title`)}
+            {tk(`cat.${category.key}.headline`)}
           </h2>
           <p className="mt-4 text-[15px] leading-7 text-white/70">{tk(`cat.${category.key}.promise`)}</p>
 
@@ -110,5 +110,16 @@ export function CategoryBlock({ category, reverse = false }: { category: CoreCat
         </Reveal>
       </div>
     </section>
+  );
+}
+
+/** All core category blocks, alternating sides (website first, then 01–09). */
+export function CoreCategoryBlocks() {
+  return (
+    <>
+      {CORE_CATEGORIES.map((category, i) => (
+        <CategoryBlock key={category.key} category={category} reverse={i % 2 === 1} />
+      ))}
+    </>
   );
 }

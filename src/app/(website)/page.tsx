@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { CategoryBlock } from "@/components/website/premium/CategoryBlock";
+import { CoreCategoryBlocks } from "@/components/website/premium/CategoryBlock";
 import { CategoryNavigator } from "@/components/website/premium/CategoryNavigator";
 import { CoreIntro } from "@/components/website/premium/CoreIntro";
 import { PremiumFinalCta } from "@/components/website/premium/PremiumFinalCta";
@@ -8,7 +8,6 @@ import { PremiumHero } from "@/components/website/premium/PremiumHero";
 import { PriceTeaser } from "@/components/website/premium/PriceTeaser";
 import { brand } from "@/lib/website/brand";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
-import { CORE_CATEGORIES } from "@/lib/website/core-categories";
 import { websiteStructuredData } from "@/lib/website/structured-data";
 
 export const metadata: Metadata = {
@@ -34,9 +33,7 @@ export default function HomePage() {
       <div id="core" className="relative" style={{ scrollMarginTop: "var(--tk-header-h, 64px)" }}>
         <CoreIntro />
         <CategoryNavigator />
-        {CORE_CATEGORIES.map((category, i) => (
-          <CategoryBlock key={category.key} category={category} reverse={i % 2 === 1} />
-        ))}
+        <CoreCategoryBlocks />
       </div>
       <PriceTeaser />
       <PremiumFinalCta />
