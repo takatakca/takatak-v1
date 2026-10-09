@@ -105,6 +105,8 @@
     "ops:twilio-check": "node scripts/ops/twilio-check.mjs",
     "qa:billing": "tsx scripts/verify-takatak-billing.ts && tsx scripts/verify-billing-feed.ts && tsx scripts/verify-lead-order-billing.ts",
     "qa:billing-feed-db": "tsx --require ./scripts/register-server-only.cjs scripts/billing-feed-db-tests.ts",
+    "qa:ai-provider-keys": "tsx --require ./scripts/register-server-only.cjs scripts/verify-ai-provider-keys.ts",
+    "qa:ai-provider-keys-db": "tsx --require ./scripts/register-server-only.cjs scripts/ai-provider-keys-db-tests.ts",
     "qa:lead-order-billing-db": "tsx --require ./scripts/register-server-only.cjs scripts/lead-order-billing-db-tests.ts",
     "qa:client-invoices": "tsx scripts/verify-client-invoices.ts",
     "qa:client-invoices-db": "tsx --require ./scripts/register-server-only.cjs scripts/client-invoices-db-tests.ts && tsx --require ./scripts/register-server-only.cjs scripts/client-invoice-checkout-db-tests.ts",
@@ -135,6 +137,7 @@
     "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
     "@atproto/oauth-client-node": "^0.5.7",
     "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "6.19.3",

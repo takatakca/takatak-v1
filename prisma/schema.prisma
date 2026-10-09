@@ -4776,3 +4776,25 @@ model ClientStripeConnectAccount {
 
   @@map("client_stripe_connect_accounts")
 }
+
+/// AI provider API keys entered by platform owners/admins in Admin › AI provider
+/// keys. The key is AES-256-GCM encrypted (GROWTH_TOKEN_ENCRYPTION_KEY_V1) with
+/// the provider as additional data; only the last four characters are kept in
+/// clear for display. Server-side Prisma access only.
+model AiProviderCredential {
+  id                 String    @id @default(uuid()) @db.Uuid
+  provider           String    @unique
+  ciphertext         String
+  iv                 String
+  authTag            String
+  keyVersion         Int
+  keyHint            String
+  lastCheckedAt      DateTime?
+  lastCheckOutcome   String?
+  createdByProfileId String?   @db.Uuid
+  updatedByProfileId String?   @db.Uuid
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@map("ai_provider_credentials")
+}
