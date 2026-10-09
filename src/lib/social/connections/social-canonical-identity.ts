@@ -241,6 +241,22 @@ export function pickConnectedPlatformAccount<
     return pickSelectedXAccount(matches);
   }
 
+  if (platform === "twitch") {
+    return pickSelectedTwitchAccount(matches);
+  }
+
+  if (platform === "meta_ads") {
+    return pickSelectedMetaAdsAccount(matches);
+  }
+
+  if (platform === "google_ads") {
+    return pickSelectedGoogleAdsAccount(matches);
+  }
+
+  if (platform === "looker_studio") {
+    return pickSelectedLookerStudioAccount(matches);
+  }
+
   return (
     matches.find((account) => account.status === "connected") ??
     null
@@ -587,6 +603,299 @@ export function pickSelectedXAccount<
   });
 
   const connected = xAccounts.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
+}
+
+export type StrictSelectedTwitchResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedTwitchAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedTwitchResult<T> {
+  const twitchAccounts = accounts.filter((account) => {
+    if (account.platform !== "twitch") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = twitchAccounts.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedTwitchAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedTwitchAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const twitchAccounts = accounts.filter((account) => {
+    if (account.platform !== "twitch") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = twitchAccounts.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
+}
+
+export type StrictSelectedMetaAdsResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedMetaAdsAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedMetaAdsResult<T> {
+  const adAccounts = accounts.filter((account) => {
+    if (account.platform !== "meta_ads") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = adAccounts.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedMetaAdsAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedMetaAdsAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const adAccounts = accounts.filter((account) => {
+    if (account.platform !== "meta_ads") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = adAccounts.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
+}
+
+export type StrictSelectedGoogleAdsResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedGoogleAdsAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedGoogleAdsResult<T> {
+  const adAccounts = accounts.filter((account) => {
+    if (account.platform !== "google_ads") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = adAccounts.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedGoogleAdsAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedGoogleAdsAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const adAccounts = accounts.filter((account) => {
+    if (account.platform !== "google_ads") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = adAccounts.filter(
+    (account) => account.status === "connected",
+  );
+  if (connected.length === 1) {
+    return connected[0]!;
+  }
+
+  return null;
+}
+
+export type StrictSelectedLookerStudioResult<T> =
+  | { kind: "ready"; account: T }
+  | { kind: "missing" }
+  | { kind: "ambiguous" };
+
+export function pickSelectedLookerStudioAccountStrict<
+  T extends SelectedPageCandidate,
+>(
+  accounts: readonly T[],
+  connectionId?: string | null,
+): StrictSelectedLookerStudioResult<T> {
+  const reports = accounts.filter((account) => {
+    if (account.platform !== "looker_studio") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const selected = reports.filter(
+    (account) =>
+      account.status === "connected" &&
+      (account.accessStatus === "selected" ||
+        account.accessStatus == null),
+  );
+
+  if (selected.length > 1) {
+    return { kind: "ambiguous" };
+  }
+  if (selected.length === 1) {
+    return { kind: "ready", account: selected[0]! };
+  }
+
+  return { kind: "missing" };
+}
+
+export function pickSelectedLookerStudioAccount<
+  T extends SelectedPageCandidate,
+>(accounts: readonly T[], connectionId?: string | null): T | null {
+  const strict = pickSelectedLookerStudioAccountStrict(accounts, connectionId);
+  if (strict.kind === "ready") {
+    return strict.account;
+  }
+  if (strict.kind === "ambiguous") {
+    return null;
+  }
+
+  const reports = accounts.filter((account) => {
+    if (account.platform !== "looker_studio") return false;
+    if (
+      connectionId &&
+      account.providerConnectionId &&
+      account.providerConnectionId !== connectionId
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const connected = reports.filter(
     (account) => account.status === "connected",
   );
   if (connected.length === 1) {

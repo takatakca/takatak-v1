@@ -80,6 +80,8 @@ enum PermissionKey {
   view_reports
   view_social
   manage_social_accounts
+  view_ads
+  manage_ads
 }
 
 enum ClientStatus {
@@ -286,7 +288,8 @@ enum SocialOnboardingStatus {
 model Profile {
   id                    String        @id @default(uuid()) @db.Uuid
   authUserId            String        @unique @db.Uuid
-  email                 String        @unique
+  /// Login email when the person has one. Null for a verified phone-only identity.
+  email                 String?       @unique
   firstName             String?
   lastName              String?
   displayName           String?
@@ -322,6 +325,12 @@ model Profile {
   socialBrandAssignments   SocialBrandAccountAssignment[] @relation("SocialBrandAssignmentAssignedBy")
   socialOnboarding         SocialOnboarding?
   masterIdentity           MasterIdentity?
+  contentContributions     ContentContribution[]          @relation("ContributionContributor")
+  moderatedContributions   ContentContribution[]          @relation("ContributionModerator")
+  contributionEvents       ContentContributionEvent[]     @relation("ContributionEventActor")
+  contributorReputations   ContributorReputation[]
+  createdBillingInvoiceRequests   BillingInvoiceRequest[] @relation("BillingInvoiceRequestCreatedBy")
+  submittedBillingInvoiceRequests BillingInvoiceRequest[] @relation("BillingInvoiceRequestSubmittedBy")
 
   @@map("profiles")
 }
@@ -367,6 +376,7 @@ model Client {
   assignedProfile           Profile?                          @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
   subscription              ClientSubscription?
+  stripeConnectAccount      ClientStripeConnectAccount?
   customRoles               WorkspaceCustomRole[]
   rolePermissionOverrides   WorkspaceRolePermissionOverride[]
   userInvitations           UserInvitation[]
@@ -380,6 +390,11 @@ model Client {
   socialAccounts            SocialAccount[]
   socialProviderConnections SocialProviderConnection[]
   socialBrandAssignments    SocialBrandAccountAssignment[]
+  managedContentItems        ManagedContentItem[]
+  contentContributions       ContentContribution[]
+  contentPublications        ContentPublication[]
+  contributionAssets          ContributionAsset[]
+  contributorReputations      ContributorReputation[]
   socialOAuthStates         SocialOAuthState[]
   socialAccountSyncStates   SocialAccountSyncState[]
   campaigns                 Campaign[]
@@ -407,9 +422,13 @@ model Client {
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
   leads                     Lead[]
+  leadAttachments           LeadAttachment[]
+  billingInvoiceRequests    BillingInvoiceRequest[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
 
+  adSubscription            AdSubscription?
+  adCampaigns               AdCampaign[]
   @@index([status])
   @@index([createdAt])
   @@index([assignedProfileId])
@@ -615,6 +634,11 @@ model BusinessBrand {
   socialProviderConnections SocialProviderConnection[]
   socialOAuthStates         SocialOAuthState[]
   socialBrandAssignments    SocialBrandAccountAssignment[]
+  adCampaigns               AdCampaign[]
+  managedContentItems        ManagedContentItem[]
+  contentContributions       ContentContribution[]
+  contentPublications        ContentPublication[]
+  contributionAssets          ContributionAsset[]
 
   @@unique([id, clientId])
   @@index([clientId])
@@ -893,6 +917,11 @@ enum SocialPlatform {
   pinterest
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialAccountStatus {
@@ -918,12 +947,18 @@ enum SocialConnectionProvider {
   instagram
   threads
   google
+  google_business
   linkedin
   tiktok
   pinterest
   x
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialConnectionStatus {
@@ -1039,6 +1074,12 @@ model SocialAccount {
   displayName            String?
   profileUrl             String?
   profileImageUrl        String?
+  avatarStorageKey       String?
+  avatarContentType      String?
+  avatarByteSize         Int?
+  avatarSourceUrl        String?
+  avatarSyncedAt         DateTime?
+  avatarSyncError        String?
   category               String?
   accountType            String?
   status                 SocialAccountStatus       @default(not_connected)
@@ -1065,6 +1106,7 @@ model SocialAccount {
 
   @@unique([integrationAccountId, platform, externalAccountId])
   @@unique([providerConnectionId, platform, externalAccountId])
+  @@index([avatarStorageKey])
   /// Partial unique: one connected Facebook Page per Client
   /// (see migration sa_one_connected_facebook_page_per_client_key).
   /// Partial unique: one connected Facebook Page per provider connection
@@ -1085,6 +1127,30 @@ model SocialAccount {
   /// (see migration sa_one_connected_x_account_per_client_key).
   /// Partial unique: one connected X account per connection
   /// (see migration sa_one_connected_x_per_connection_key).
+  /// Partial unique: one connected Twitch channel per Client
+  /// (see migration sa_one_connected_twitch_account_per_client_key).
+  /// Partial unique: one connected Twitch channel per connection
+  /// (see migration sa_one_connected_twitch_per_connection_key).
+  /// Partial unique: one connected website host per Client
+  /// (see migration sa_one_connected_web_site_per_client_key).
+  /// Partial unique: one connected website per web connection
+  /// (see migration sa_one_connected_web_per_connection_key).
+  /// Partial unique: one connected blog host per Client
+  /// (see migration sa_one_connected_blog_per_client_key).
+  /// Partial unique: one connected blog per blog connection
+  /// (see migration sa_one_connected_blog_per_connection_key).
+  /// Partial unique: one connected Meta ad account per Client
+  /// (see migration sa_one_connected_meta_ads_account_per_client_key).
+  /// Partial unique: one connected Meta ad account per connection
+  /// (see migration sa_one_connected_meta_ads_per_connection_key).
+  /// Partial unique: one connected Google Ads account per Client
+  /// (see migration sa_one_connected_google_ads_account_per_client_key).
+  /// Partial unique: one connected Google Ads account per connection
+  /// (see migration sa_one_connected_google_ads_per_connection_key).
+  /// Partial unique: one connected Looker Studio report per Client
+  /// (see migration sa_one_connected_looker_studio_report_per_client_key).
+  /// Partial unique: one connected Looker Studio report per connection
+  /// (see migration sa_one_connected_looker_studio_per_connection_key).
   @@index([clientId])
   @@index([businessBrandId])
   @@index([integrationAccountId])
@@ -1195,11 +1261,12 @@ model SocialProviderConnection {
   businessBrand BusinessBrand @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Cascade)
   createdBy     Profile?      @relation("SocialConnectionCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
 
-  credential     SocialCredential?
-  oauthStates    SocialOAuthState[]
-  socialAccounts SocialAccount[]
-  adAccounts     SocialAdAccount[]
-  syncStates     SocialAccountSyncState[]
+  credential          SocialCredential?
+  oauthStates         SocialOAuthState[]
+  blueskyOAuthRecords BlueskyOAuthStore[]
+  socialAccounts      SocialAccount[]
+  adAccounts          SocialAdAccount[]
+  syncStates          SocialAccountSyncState[]
 
   /// Same Meta user MAY authorize multiple Brands in one Client.
   /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
@@ -1328,6 +1395,37 @@ model SocialOAuthState {
   @@index([businessBrandId, clientId])
   @@index([connectionId, clientId, businessBrandId, provider])
   @@map("social_oauth_states")
+}
+
+/// Encrypted AT Protocol OAuth state and session storage.
+///
+/// The SDK payload contains DPoP private key material and OAuth credentials.
+/// Payloads are encrypted with AES-256-GCM before database persistence.
+/// Browser-facing Supabase roles receive no access to this table.
+model BlueskyOAuthStore {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  connectionId     String    @db.Uuid
+  /// state | session
+  kind             String
+  /// OAuth state for state records; DID for session records.
+  storeKey         String
+  encryptedPayload String
+  iv               String
+  authTag          String
+  keyVersion       Int       @default(1)
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  connection SocialProviderConnection @relation(fields: [connectionId, clientId], references: [id, clientId], onDelete: Cascade)
+
+  @@unique([connectionId, kind, storeKey], map: "bluesky_oauth_store_scope_key")
+  @@index([clientId])
+  @@index([connectionId, kind])
+  @@index([kind, storeKey])
+  @@index([expiresAt])
+  @@map("bluesky_oauth_store")
 }
 
 /// Social media campaign owned by a client/brand.
@@ -1468,6 +1566,8 @@ model SocialCompetitorTrack {
   category           String?
   /// active | removed
   status             String    @default("active")
+  /// facebook | twitch. Facebook sync only reads facebook rows.
+  platform           String    @default("facebook")
   /// available | stale | unavailable | permission_denied | rate_limited | failed | pending
   availability       String    @default("pending")
   /// ready | feature_required | permission_denied | unavailable | unknown
@@ -1494,6 +1594,7 @@ model SocialCompetitorTrack {
   @@index([nextRefreshAt])
   @@index([dispatchJobId])
   @@index([businessBrandId])
+  @@index([platform])
   @@map("social_competitor_tracks")
 }
 
@@ -2563,6 +2664,241 @@ model LocalVisibilitySnapshot {
 }
 
 // ════════════════════════════════════════════════════════════
+// TAKATAK COMMUNITY CONTENT / CONTRIBUTOR MODERATION
+// Generic tenant-scoped engine. AHMV is the first publisher.
+// Human moderation remains authoritative; community edits never write
+// directly to source-of-truth hockey systems.
+// ════════════════════════════════════════════════════════════
+
+model ManagedContentItem {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  publisherCode   String
+  resourceType    String
+  resourceKey     String
+  title           String?
+  canonicalUrl    String?
+  sourceKind      String
+  sourceUrl       String?
+  snapshot        Json
+  editableFields  String[] @default([])
+  version         Int      @default(1)
+  lastSyncedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client            Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand     BusinessBrand?        @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  contributions     ContentContribution[]
+  publications      ContentPublication[]
+
+  @@unique([publisherCode, resourceType, resourceKey], map: "managed_content_publisher_resource_key")
+  @@index([clientId, publisherCode])
+  @@index([businessBrandId, publisherCode])
+  @@index([resourceType, resourceKey])
+  @@index([lastSyncedAt])
+  @@map("managed_content_items")
+}
+
+model ContentContribution {
+  id                    String   @id @default(uuid()) @db.Uuid
+  clientId              String   @db.Uuid
+  businessBrandId       String?  @db.Uuid
+  managedContentItemId  String?  @db.Uuid
+  publisherCode         String
+  idempotencyKey        String
+  resourceType          String
+  resourceKey           String
+  action                String
+  targetUrl             String?
+  originalVersion       Int?
+  originalSnapshot      Json?
+  proposedPatch         Json
+  reason                String?
+  evidenceUrls          String[] @default([])
+  attachmentUrls        String[] @default([])
+  contributorProfileId  String?  @db.Uuid
+  contributorAuthUserId String?  @db.Uuid
+  contributorTier       String   @default("guest")
+  priority              String   @default("standard")
+  reviewDueAt           DateTime
+  status                String   @default("pending_review")
+  aiReviewStatus        String   @default("pending")
+  aiReview              Json?
+  moderatorProfileId    String?  @db.Uuid
+  moderatorComment      String?
+  reviewedAt            DateTime?
+  approvedAt            DateTime?
+  publishedAt           DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  client             Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand?        @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  managedContentItem ManagedContentItem?   @relation(fields: [managedContentItemId], references: [id], onDelete: SetNull)
+  contributor        Profile?              @relation("ContributionContributor", fields: [contributorProfileId], references: [id], onDelete: SetNull)
+  moderator          Profile?              @relation("ContributionModerator", fields: [moderatorProfileId], references: [id], onDelete: SetNull)
+  events             ContentContributionEvent[]
+  publication        ContentPublication?
+  pointLedger        ContributionPointLedger[]
+  assets             ContributionAsset[]
+
+  @@unique([publisherCode, idempotencyKey], map: "content_contribution_publisher_idempotency_key")
+  @@index([clientId, status, priority])
+  @@index([businessBrandId, status])
+  @@index([publisherCode, status, reviewDueAt])
+  @@index([resourceType, resourceKey])
+  @@index([contributorProfileId, createdAt])
+  @@index([moderatorProfileId, reviewedAt])
+  @@map("content_contributions")
+}
+
+model ContributionAsset {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  contributionId  String?  @db.Uuid
+  publisherCode   String
+  storageBucket   String
+  storagePath     String
+  originalName    String
+  mimeType        String
+  sizeBytes       Int
+  status          String   @default("quarantined")
+  expiresAt       DateTime
+  approvedAt      DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?       @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  contribution  ContentContribution? @relation(fields: [contributionId], references: [id], onDelete: SetNull)
+
+  @@unique([storageBucket, storagePath], map: "contribution_asset_storage_key")
+  @@index([clientId, publisherCode, status])
+  @@index([businessBrandId, status])
+  @@index([contributionId, status])
+  @@index([expiresAt, status])
+  @@map("contribution_assets")
+}
+
+model ContentContributionEvent {
+  id             String   @id @default(uuid()) @db.Uuid
+  contributionId String   @db.Uuid
+  actorProfileId String?  @db.Uuid
+  eventType      String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  contribution ContentContribution @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  actor        Profile?            @relation("ContributionEventActor", fields: [actorProfileId], references: [id], onDelete: SetNull)
+
+  @@index([contributionId, createdAt])
+  @@index([actorProfileId, createdAt])
+  @@index([eventType, createdAt])
+  @@map("content_contribution_events")
+}
+
+model ContentPublication {
+  id                   String   @id @default(uuid()) @db.Uuid
+  clientId             String   @db.Uuid
+  businessBrandId      String?  @db.Uuid
+  contributionId       String   @unique @db.Uuid
+  managedContentItemId String?  @db.Uuid
+  publisherCode        String
+  resourceType         String
+  resourceKey          String
+  patch                Json
+  version              Int
+  status               String   @default("ready")
+  active               Boolean  @default(true)
+  acknowledgedAt       DateTime?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  client             Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand?       @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  contribution       ContentContribution  @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  managedContentItem ManagedContentItem?  @relation(fields: [managedContentItemId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, publisherCode, active])
+  @@index([businessBrandId, active])
+  @@index([publisherCode, resourceType, resourceKey, active])
+  @@index([status, createdAt])
+  @@map("content_publications")
+}
+
+model ContributorReputation {
+  id                 String   @id @default(uuid()) @db.Uuid
+  clientId           String   @db.Uuid
+  profileId          String   @db.Uuid
+  publisherCode      String
+  points             Int      @default(0)
+  submittedCount     Int      @default(0)
+  approvedCount      Int      @default(0)
+  publishedCount     Int      @default(0)
+  rejectedCount      Int      @default(0)
+  currentBadge       String   @default("new_contributor")
+  lastContributionAt DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  client    Client                     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile   Profile                    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  pointLedger  ContributionPointLedger[]
+  rewardLedger ContributionRewardLedger[]
+
+  @@unique([clientId, profileId, publisherCode], map: "contributor_reputation_scope_key")
+  @@index([clientId, publisherCode, points])
+  @@index([profileId, publisherCode])
+  @@index([currentBadge])
+  @@map("contributor_reputations")
+}
+
+model ContributionPointLedger {
+  id             String   @id @default(uuid()) @db.Uuid
+  reputationId   String   @db.Uuid
+  contributionId String?  @db.Uuid
+  points         Int
+  reason         String
+  createdAt      DateTime @default(now())
+
+  reputation   ContributorReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+  contribution ContentContribution?  @relation(fields: [contributionId], references: [id], onDelete: SetNull)
+
+  @@unique([reputationId, contributionId, reason], map: "contribution_points_idempotency_key")
+  @@index([reputationId, createdAt])
+  @@index([contributionId])
+  @@map("contribution_point_ledger")
+}
+
+model ContributionRewardLedger {
+  id              String   @id @default(uuid()) @db.Uuid
+  reputationId    String   @db.Uuid
+  code            String
+  thresholdPoints Int
+  units           Int
+  status          String   @default("available")
+  issuedAt        DateTime @default(now())
+  redeemedAt      DateTime?
+  metadata        Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  reputation ContributorReputation @relation(fields: [reputationId], references: [id], onDelete: Cascade)
+
+  @@unique([reputationId, code, thresholdPoints], map: "contribution_reward_milestone_key")
+  @@index([reputationId, status])
+  @@index([code, status])
+  @@index([issuedAt])
+  @@map("contribution_reward_ledger")
+}
+
+
+// ════════════════════════════════════════════════════════════
 // Phase 12 — Leads / FLEXS Module Foundation
 // FLEXS is NOT connected. Every "_internal" status is internal
 // foundation tracking only — no lead was really imported,
@@ -2744,6 +3080,7 @@ model Lead {
   leadCampaign    LeadCampaign?  @relation(fields: [leadCampaignId], references: [id])
   assignedProfile Profile?       @relation("AssignedLeads", fields: [assignedProfileId], references: [id])
   activities      LeadActivity[]
+  attachments     LeadAttachment[]
 
   @@index([clientId])
   @@index([businessBrandId])
@@ -2839,9 +3176,23 @@ model MasterIdentity {
   hockeyMemberships   HockeyMembership[]
   hockeyStripeEvents  HockeyStripeWebhookEvent[]
 
+  experienceLaunchCodes ExperienceLaunchCode[]
+  billingInvoiceRequests BillingInvoiceRequest[]
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
+  hockeyParentPreferences HockeyParentTeamPreference[]
+  hockeyPremiumGrants       HockeyPremiumGrant[]
+  hockeyDeliveryJobs        HockeyDeliveryJob[]
+  hockeyCalendarConnections HockeyCalendarConnection[]
+  hockeyCalendarOAuthStates HockeyCalendarOAuthState[]
+  hockeyFamiliesOwned       HockeyFamily[] @relation("HockeyFamilyOwner")
+  hockeyFamilyMemberships   HockeyFamilyMember[] @relation("HockeyFamilyLinkedIdentity")
+  hockeyFamilyInvitesCreated HockeyFamilyInvite[] @relation("HockeyFamilyInviteCreator")
+  hockeyFamilyInvitesAccepted HockeyFamilyInvite[] @relation("HockeyFamilyInviteAccepted")
+  hockeyFamilyPlansCreated    HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanCreator")
+  hockeyFamilyRsvpsUpdated     HockeyFamilyEventRsvp[] @relation("HockeyFamilyRsvpUpdater")
+  hockeyTravelProfiles      HockeyTravelProfile[]
 }
 
 /// Person/family hockey membership owned by the TAKATAK master identity.
@@ -2876,6 +3227,24 @@ model HockeyMembership {
 
 /// Idempotency ledger for hockey Stripe events. Raw webhook payloads are never
 /// stored here.
+/// Latest normalized public AHMV schedule snapshot consumed by AHMV Phone/SMS/Voice.
+/// This is public schedule data only: no roster, child or family data belongs here.
+model AhmvScheduleSnapshot {
+  id              String   @id @default(uuid()) @db.Uuid
+  tenant          String   @unique @default("ahmverdun")
+  status          String
+  sourceUrl       String
+  sourceUpdatedAt DateTime
+  events          Json
+  eventCount      Int      @default(0)
+  contentHash     String
+  receivedAt      DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([sourceUpdatedAt])
+  @@map("ahmv_schedule_snapshots")
+}
+
 model HockeyStripeWebhookEvent {
   id                String          @id @default(uuid()) @db.Uuid
   stripeEventId     String          @unique
@@ -3022,4 +3391,870 @@ model SourceMerchant {
   @@index([merchantId])
   @@index([sourceApplication, lastSynchronizedAt])
   @@map("source_merchants")
+}
+
+// ════════════════════════════════════════════════════════════
+// GROUPE TAKATAK — configurable product / entitlement catalog
+// Prices and product entitlements are data, never application constants.
+// ════════════════════════════════════════════════════════════
+
+model ProductCatalog {
+  id          String               @id @default(uuid()) @db.Uuid
+  code        String               @unique
+  name        String
+  status      String               @default("active")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  plans        ProductPlan[]
+  entitlements ProductEntitlement[]
+
+  @@index([status])
+  @@map("product_catalog")
+}
+
+model ProductPlan {
+  id                String                   @id @default(uuid()) @db.Uuid
+  productId         String                   @db.Uuid
+  code              String
+  legacyCode        String?
+  name              String
+  status            String                   @default("active")
+  selfServeEligible Boolean                  @default(false)
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+
+  product      ProductCatalog             @relation(fields: [productId], references: [id], onDelete: Cascade)
+  prices       ProductPrice[]
+  entitlements ProductPlanEntitlement[]
+
+  @@unique([productId, code])
+  @@unique([productId, legacyCode])
+  @@index([status])
+  @@map("product_plans")
+}
+
+model ProductPrice {
+  id              String      @id @default(uuid()) @db.Uuid
+  planId          String      @db.Uuid
+  currency        String      @default("CAD")
+  unitAmountMinor Int
+  billingInterval String
+  intervalCount   Int         @default(1)
+  provider        String      @default("stripe")
+  providerPriceId String?     @unique
+  active          Boolean     @default(true)
+  startsAt        DateTime    @default(now())
+  endsAt          DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  plan ProductPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, active])
+  @@index([currency])
+  @@map("product_prices")
+}
+
+model ProductEntitlement {
+  id          String                   @id @default(uuid()) @db.Uuid
+  productId   String                   @db.Uuid
+  code        String
+  name        String
+  description String?
+  active      Boolean                  @default(true)
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  product ProductCatalog            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  plans   ProductPlanEntitlement[]
+
+  @@unique([productId, code])
+  @@index([active])
+  @@map("product_entitlements")
+}
+
+model ProductPlanEntitlement {
+  planId        String @db.Uuid
+  entitlementId String @db.Uuid
+
+  plan        ProductPlan        @relation(fields: [planId], references: [id], onDelete: Cascade)
+  entitlement ProductEntitlement @relation(fields: [entitlementId], references: [id], onDelete: Cascade)
+
+  @@id([planId, entitlementId])
+  @@map("product_plan_entitlements")
+}
+
+/// One-time, short-lived browser handoff from TAKATAK Auth to an independent
+/// product experience. Only a SHA-256 hash of the launch code is persisted.
+model ExperienceLaunchCode {
+  id              String    @id @default(uuid()) @db.Uuid
+  codeHash        String    @unique
+  identityId      String    @db.Uuid
+  productCode     String
+  entitlementCode String
+  expiresAt       DateTime
+  usedAt          DateTime?
+  createdAt       DateTime  @default(now())
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, productCode, entitlementCode])
+  @@index([expiresAt])
+  @@map("experience_launch_codes")
+}
+
+
+// Voluntary product-development support. This is intentionally separate from
+// membership subscriptions and does not imply charitable/tax receipt status.
+model SupportContribution {
+  id                       String   @id @default(uuid()) @db.Uuid
+  customerId               String?  @db.Uuid
+  organizationId           String?  @db.Uuid
+  productCode              String   @default("ahmv")
+  amountMinor              Int
+  currency                 String   @default("CAD")
+  frequency                String   @default("one_time")
+  provider                 String   @default("stripe")
+  stripePaymentIntentId    String?  @unique
+  stripeSubscriptionId     String?  @unique
+  status                   String
+  source                   String?
+  campaign                 String?
+  feesMinor                Int      @default(0)
+  netAmountMinor           Int
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@index([productCode, status, createdAt])
+  @@index([customerId])
+  @@index([organizationId])
+  @@map("support_contributions")
+}
+
+enum AdsPublisherStatus {
+  active
+  paused
+  retired
+}
+
+enum AdsPlacementStatus {
+  active
+  paused
+  retired
+}
+
+enum AdsCampaignStatus {
+  draft
+  active
+  paused
+  completed
+  canceled
+}
+
+enum AdsCampaignScope {
+  single_site
+  local_network
+  max_lead_pro
+}
+
+enum AdsPricingModel {
+  cpm
+  cpc
+  cpl
+  fixed
+}
+
+enum AdsCreativeStatus {
+  draft
+  active
+  paused
+  rejected
+  archived
+}
+
+enum AdsEventType {
+  impression
+  click
+  lead
+  call
+  form_submit
+  conversion
+}
+
+/// Public site/application participating in the TAKATAK-owned ad network.
+/// V1 publishers are platform-managed; external publisher revenue-share can be
+/// added later without changing advertiser ownership.
+model AdPublisher {
+  id        String             @id @default(uuid()) @db.Uuid
+  code      String             @unique
+  name      String
+  domain    String
+  category  String?
+  country   String             @default("Canada")
+  region    String?
+  city      String?
+  postalPrefix String?
+  allowedOrigins String[]      @default([])
+  status    AdsPublisherStatus @default(active)
+  metadata  Json?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  placements AdPlacement[]
+
+  @@index([status])
+  @@index([domain])
+  @@map("ad_publishers")
+}
+
+/// Named inventory slot embedded on a TAKATAK publisher.
+model AdPlacement {
+  id             String             @id @default(uuid()) @db.Uuid
+  publisherId    String             @db.Uuid
+  code           String
+  name           String
+  pagePattern    String?
+  format         String             @default("display")
+  width          Int?
+  height         Int?
+  device         String?
+  status         AdsPlacementStatus @default(active)
+  floorCpmCents  Int                @default(0)
+  metadata       Json?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  publisher          AdPublisher          @relation(fields: [publisherId], references: [id], onDelete: Cascade)
+  campaignPlacements AdCampaignPlacement[]
+  events             AdEvent[]
+
+  @@unique([publisherId, code])
+  @@index([code])
+  @@index([status])
+  @@map("ad_placements")
+}
+
+/// ADS subscription is intentionally separate from the Social subscription.
+/// Entitlements are derived server-side from planCode + lifecycle status.
+model AdSubscription {
+  id                     String             @id @default(uuid()) @db.Uuid
+  clientId               String             @unique @db.Uuid
+  status                 SubscriptionStatus @default(trial)
+  planCode               String?
+  planName               String?
+  provider               String?
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  currentPeriodStart     DateTime?
+  currentPeriodEnd       DateTime?
+  cancelAtPeriodEnd      Boolean            @default(false)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([planCode])
+  @@index([externalCustomerId])
+  @@index([externalSubscriptionId])
+  @@map("ad_subscriptions")
+}
+
+/// Advertiser campaign. It is separate from the existing Social Campaign model.
+model AdCampaign {
+  id              String            @id @default(uuid()) @db.Uuid
+  clientId        String            @db.Uuid
+  businessBrandId String?           @db.Uuid
+  name            String
+  status          AdsCampaignStatus @default(draft)
+  scope           AdsCampaignScope
+  objective       String?
+  pricingModel    AdsPricingModel   @default(fixed)
+  budgetCents     Int
+  dailyBudgetCents Int?
+  spentCents      Int               @default(0)
+  bidCents        Int?
+  currency        String            @default("CAD")
+  startsAt        DateTime?
+  endsAt          DateTime?
+  targeting       Json?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  client             Client                @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand      BusinessBrand?        @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  creatives          AdCreative[]
+  placements         AdCampaignPlacement[]
+  events             AdEvent[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@index([status])
+  @@index([scope])
+  @@index([startsAt, endsAt])
+  @@map("ad_campaigns")
+}
+
+model AdCreative {
+  id             String            @id @default(uuid()) @db.Uuid
+  campaignId     String            @db.Uuid
+  name           String
+  headline       String
+  body           String?
+  callToAction   String?
+  destinationUrl String
+  imageUrl       String?
+  status         AdsCreativeStatus @default(draft)
+  metadata       Json?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  campaign AdCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  events   AdEvent[]
+
+  @@index([campaignId, status])
+  @@map("ad_creatives")
+}
+
+model AdCampaignPlacement {
+  campaignId  String   @db.Uuid
+  placementId String   @db.Uuid
+  createdAt   DateTime @default(now())
+
+  campaign  AdCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  placement AdPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, placementId])
+  @@index([placementId])
+  @@map("ad_campaign_placements")
+}
+
+/// Event ledger intentionally stores no raw IP address, email, phone number or
+/// browser fingerprint. Lead/call conversion linkage is added server-to-server
+/// through FLEXS in a later integration layer.
+model AdEvent {
+  id           String       @id @default(uuid()) @db.Uuid
+  campaignId   String       @db.Uuid
+  creativeId   String?      @db.Uuid
+  placementId  String       @db.Uuid
+  type         AdsEventType
+  dedupeKey    String?      @unique
+  occurredAt   DateTime     @default(now())
+  country      String?
+  region       String?
+  city         String?
+  postalPrefix String?
+  locale       String?
+  metadata     Json?
+
+  campaign  AdCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  creative  AdCreative? @relation(fields: [creativeId], references: [id], onDelete: SetNull)
+  placement AdPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@index([campaignId, occurredAt])
+  @@index([creativeId, occurredAt])
+  @@index([placementId, occurredAt])
+  @@index([type, occurredAt])
+  @@map("ad_events")
+}
+
+
+model HockeyParentTeamPreference {
+  id                    String   @id @default(uuid()) @db.Uuid
+  identityId            String   @db.Uuid
+  sourceApplication     String   @default("ahmverdun")
+  teamId                String
+  smsReminders          Boolean  @default(false)
+  calendarSync          Boolean  @default(false)
+  departureAlerts       Boolean  @default(false)
+  arrivalBufferMinutes  Int      @default(30)
+  smsConsentAt          DateTime?
+  calendarConsentAt     DateTime?
+  departureConsentAt    DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication, teamId])
+  @@index([identityId, sourceApplication])
+  @@index([sourceApplication, teamId])
+  @@map("hockey_parent_team_preferences")
+}
+
+
+model HockeyPremiumGrant {
+  id                String   @id @default(uuid()) @db.Uuid
+  identityId        String   @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  grantType         String   @default("supporter_thank_you")
+  sourceReference   String
+  status            String   @default("available")
+  planCode          String   @default("hockey_member_weekly_10")
+  grantedWeeks      Int      @default(4)
+  activatedAt       DateTime?
+  expiresAt         DateTime?
+  revokedAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceApplication, sourceReference])
+  @@index([identityId, sourceApplication, status])
+  @@index([identityId, expiresAt])
+  @@map("hockey_premium_grants")
+}
+
+
+model HockeyTeamEvent {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  sourceEventId     String
+  teamId            String
+  eventType         String
+  title             String
+  startsAt          DateTime
+  endsAt            DateTime?
+  timezone          String   @default("America/Toronto")
+  arenaName         String?
+  arenaAddress      String?
+  arenaLatitude     Float?
+  arenaLongitude    Float?
+  status            String   @default("confirmed")
+  sourceUrl         String?
+  sourceUpdatedAt   DateTime
+  payloadHash       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  deliveryJobs     HockeyDeliveryJob[]
+  calendarMappings HockeyCalendarEventMapping[]
+  familyPlans      HockeyFamilyEventPlan[]
+  familyRsvps      HockeyFamilyEventRsvp[]
+
+  @@unique([sourceApplication, sourceEventId])
+  @@index([sourceApplication, teamId, startsAt])
+  @@index([startsAt, status])
+  @@map("hockey_team_events")
+}
+
+
+model HockeyDeliveryJob {
+  id             String   @id @default(uuid()) @db.Uuid
+  identityId     String   @db.Uuid
+  teamEventId    String   @db.Uuid
+  kind           String
+  status         String   @default("queued")
+  scheduledAt    DateTime
+  dedupeKey      String   @unique
+  eventRevision  String
+  attemptCount   Int      @default(0)
+  lockedAt       DateTime?
+  completedAt    DateTime?
+  lastErrorCode  String?
+  lastErrorMessage String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  identity  MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledAt])
+  @@index([identityId, status])
+  @@index([teamEventId, kind])
+  @@map("hockey_delivery_jobs")
+}
+
+
+model HockeyCalendarConnection {
+  id                   String   @id @default(uuid()) @db.Uuid
+  identityId           String   @db.Uuid
+  sourceApplication    String   @default("ahmverdun")
+  provider             String   @default("google")
+  status               String   @default("pending")
+  externalAccountId    String?
+  displayName          String?
+  calendarId           String   @default("primary")
+  scopes               String[] @default([])
+  tokenCiphertext      String?
+  tokenIv              String?
+  tokenAuthTag         String?
+  tokenKeyVersion      Int      @default(1)
+  accessTokenExpiresAt DateTime?
+  connectedAt          DateTime?
+  lastValidatedAt      DateTime?
+  lastErrorCode        String?
+  lastErrorMessage     String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+  mappings HockeyCalendarEventMapping[]
+
+  @@unique([identityId, sourceApplication, provider])
+  @@index([status])
+  @@index([identityId, status])
+  @@map("hockey_calendar_connections")
+}
+
+
+model HockeyCalendarOAuthState {
+  id                   String   @id @default(uuid()) @db.Uuid
+  identityId           String   @db.Uuid
+  sourceApplication    String   @default("ahmverdun")
+  provider             String   @default("google")
+  stateHash            String   @unique
+  verifierCiphertext   String
+  verifierIv           String
+  verifierAuthTag      String
+  verifierKeyVersion   Int      @default(1)
+  status               String   @default("pending")
+  returnPath           String
+  expiresAt            DateTime
+  consumedAt           DateTime?
+  errorMessage         String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@index([identityId, status])
+  @@index([expiresAt])
+  @@map("hockey_calendar_oauth_states")
+}
+
+
+model HockeyCalendarEventMapping {
+  id              String   @id @default(uuid()) @db.Uuid
+  connectionId    String   @db.Uuid
+  teamEventId     String   @db.Uuid
+  providerEventId String
+  eventRevision   String
+  status          String   @default("active")
+  lastSyncedAt    DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  connection HockeyCalendarConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  teamEvent  HockeyTeamEvent @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+
+  @@unique([connectionId, teamEventId])
+  @@index([providerEventId])
+  @@index([teamEventId])
+  @@map("hockey_calendar_event_mappings")
+}
+
+
+model HockeyPublicTeam {
+  id                String   @id @default(uuid()) @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  teamId            String
+  categorySlug      String?
+  level             String?
+  name              String
+  seasonCode        String?
+  active            Boolean  @default(true)
+  sourceUpdatedAt   DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  selections HockeyFamilyTeamSelection[]
+
+  @@unique([sourceApplication, teamId])
+  @@index([sourceApplication, active])
+  @@index([categorySlug, level])
+  @@map("hockey_public_teams")
+}
+
+
+model HockeyFamily {
+  id                String   @id @default(uuid()) @db.Uuid
+  ownerIdentityId   String   @db.Uuid
+  sourceApplication String   @default("ahmverdun")
+  displayName       String?
+  status            String   @default("active")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  owner      MasterIdentity            @relation("HockeyFamilyOwner", fields: [ownerIdentityId], references: [id], onDelete: Cascade)
+  members    HockeyFamilyMember[]
+  selections HockeyFamilyTeamSelection[]
+  invites     HockeyFamilyInvite[]
+  eventPlans  HockeyFamilyEventPlan[]
+  eventRsvps   HockeyFamilyEventRsvp[]
+
+  @@unique([ownerIdentityId, sourceApplication])
+  @@index([status])
+  @@map("hockey_families")
+}
+
+
+model HockeyFamilyMember {
+  id               String   @id @default(uuid()) @db.Uuid
+  familyId         String   @db.Uuid
+  linkedIdentityId String?  @db.Uuid
+  memberCode       String   @unique
+  memberType       String
+  displayName      String
+  status           String   @default("active")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  family         HockeyFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  linkedIdentity MasterIdentity? @relation("HockeyFamilyLinkedIdentity", fields: [linkedIdentityId], references: [id], onDelete: SetNull)
+  selections     HockeyFamilyTeamSelection[]
+  plansAsChild   HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanChild")
+  plansAsDriver  HockeyFamilyEventPlan[] @relation("HockeyFamilyPlanDriver")
+  eventRsvps     HockeyFamilyEventRsvp[]
+
+  @@unique([familyId, linkedIdentityId])
+  @@index([familyId, memberType, status])
+  @@index([linkedIdentityId, status])
+  @@map("hockey_family_members")
+}
+
+
+model HockeyFamilyTeamSelection {
+  id            String   @id @default(uuid()) @db.Uuid
+  familyId      String   @db.Uuid
+  memberId      String   @db.Uuid
+  publicTeamId  String   @db.Uuid
+  selectionType String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  family     HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  member     HockeyFamilyMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  publicTeam HockeyPublicTeam   @relation(fields: [publicTeamId], references: [id], onDelete: Restrict)
+
+  @@unique([memberId, publicTeamId, selectionType])
+  @@index([familyId, selectionType])
+  @@index([publicTeamId])
+  @@map("hockey_family_team_selections")
+}
+
+
+model HockeyFamilyInvite {
+  id                 String   @id @default(uuid()) @db.Uuid
+  familyId           String   @db.Uuid
+  inviterIdentityId  String   @db.Uuid
+  acceptedIdentityId String?  @db.Uuid
+  tokenHash          String   @unique
+  role               String   @default("guardian")
+  status             String   @default("pending")
+  expiresAt          DateTime
+  acceptedAt         DateTime?
+  revokedAt          DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  family           HockeyFamily    @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  inviterIdentity  MasterIdentity  @relation("HockeyFamilyInviteCreator", fields: [inviterIdentityId], references: [id], onDelete: Cascade)
+  acceptedIdentity MasterIdentity? @relation("HockeyFamilyInviteAccepted", fields: [acceptedIdentityId], references: [id], onDelete: SetNull)
+
+  @@index([familyId, status, expiresAt])
+  @@index([inviterIdentityId, status])
+  @@index([acceptedIdentityId])
+  @@map("hockey_family_invites")
+}
+
+
+model HockeyFamilyEventPlan {
+  id                  String   @id @default(uuid()) @db.Uuid
+  familyId            String   @db.Uuid
+  teamEventId         String   @db.Uuid
+  childMemberId       String   @db.Uuid
+  driverMemberId      String   @db.Uuid
+  createdByIdentityId String   @db.Uuid
+  status              String   @default("planned")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  family    HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent    @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  child     HockeyFamilyMember @relation("HockeyFamilyPlanChild", fields: [childMemberId], references: [id], onDelete: Cascade)
+  driver    HockeyFamilyMember @relation("HockeyFamilyPlanDriver", fields: [driverMemberId], references: [id], onDelete: Cascade)
+  createdBy MasterIdentity     @relation("HockeyFamilyPlanCreator", fields: [createdByIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, teamEventId, childMemberId])
+  @@index([familyId, status])
+  @@index([teamEventId, status])
+  @@index([driverMemberId, status])
+  @@map("hockey_family_event_plans")
+}
+
+
+model HockeyFamilyEventRsvp {
+  id                  String   @id @default(uuid()) @db.Uuid
+  familyId            String   @db.Uuid
+  teamEventId         String   @db.Uuid
+  childMemberId       String   @db.Uuid
+  updatedByIdentityId String   @db.Uuid
+  status              String
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  family    HockeyFamily       @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  teamEvent HockeyTeamEvent    @relation(fields: [teamEventId], references: [id], onDelete: Cascade)
+  child     HockeyFamilyMember @relation(fields: [childMemberId], references: [id], onDelete: Cascade)
+  updatedBy MasterIdentity     @relation("HockeyFamilyRsvpUpdater", fields: [updatedByIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, teamEventId, childMemberId])
+  @@index([familyId, status])
+  @@index([teamEventId, status])
+  @@map("hockey_family_event_rsvps")
+}
+
+
+model HockeyTravelProfile {
+  id                 String   @id @default(uuid()) @db.Uuid
+  identityId         String   @db.Uuid
+  sourceApplication  String   @default("ahmverdun")
+  status             String   @default("active")
+  originLabel        String?
+  originCiphertext   String
+  originIv           String
+  originAuthTag      String
+  originKeyVersion   Int      @default(1)
+  departureConsentAt DateTime
+  lastUsedAt         DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication])
+  @@index([status])
+  @@index([identityId, status])
+  @@map("hockey_travel_profiles")
+}
+
+/// Files a website visitor attached to their request. Stored in a private
+/// bucket; staff download through short-lived signed links only.
+model LeadAttachment {
+  id            String   @id @db.Uuid
+  clientId      String   @db.Uuid
+  leadId        String   @db.Uuid
+  storageBucket String
+  storagePath   String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  status        String   @default("quarantined")
+  createdAt     DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([storageBucket, storagePath], map: "lead_attachment_storage_key")
+  @@index([leadId])
+  @@index([clientId, createdAt])
+  @@map("lead_attachments")
+}
+
+// ════════════════════════════════════════════════════════════
+// GROUPE TAKATAK Billing — ecosystem invoice request queue.
+// Every TAKATAK app feeds invoice requests here; a platform OWNER submits
+// them to the independent Facturations service, which creates a DRAFT only.
+// See docs/TAKATAK_BILLING_FACTURATIONS_FOUNDATION.md.
+// ════════════════════════════════════════════════════════════
+
+enum BillingInvoiceRequestStatus {
+  pending
+  submitting
+  submitted
+  failed
+  rejected
+  needs_reconciliation
+  cancelled
+}
+
+model BillingInvoiceRequest {
+  id                     String                      @id @default(uuid()) @db.Uuid
+  /// Feeding app code (src/lib/billing/invoices/source-apps.ts).
+  sourceApp              String
+  /// Stable reference inside the feeding app. Unique per sourceApp.
+  sourceReference        String
+  clientId               String?                     @db.Uuid
+  masterIdentityId       String?                     @db.Uuid
+  /// Facturations Idempotency-Key derived from this row id: stable for every retry
+  /// of this request, and never shared with another TAKATAK install.
+  idempotencyKey         String                      @unique
+  /// Validated Facturations DraftInput. Immutable after insert (DB trigger).
+  draft                  Json
+  draftHash              String
+  currency               String                      @default("CAD")
+  /// Local estimate only; Facturations recalculates the authoritative draft.
+  estimatedTotalCents    BigInt
+  status                 BillingInvoiceRequestStatus @default(pending)
+  facturationsDraftId    String?                     @unique @db.Uuid
+  facturationsTotalCents BigInt?
+  submitAttempts         Int                         @default(0)
+  lastErrorCode          String?
+  lastAttemptAt          DateTime?
+  submittedAt            DateTime?
+  cancelledAt            DateTime?
+  createdByProfileId     String?                     @db.Uuid
+  submittedByProfileId   String?                     @db.Uuid
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+
+  client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  checkoutSessions BillingInvoiceCheckoutSession[]
+  masterIdentity MasterIdentity? @relation(fields: [masterIdentityId], references: [id], onDelete: SetNull)
+  createdBy      Profile?        @relation("BillingInvoiceRequestCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
+  submittedBy    Profile?        @relation("BillingInvoiceRequestSubmittedBy", fields: [submittedByProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceApp, sourceReference])
+  @@index([status, createdAt])
+  @@index([clientId])
+  @@index([masterIdentityId])
+  @@index([createdByProfileId])
+  @@index([submittedByProfileId])
+  @@map("billing_invoice_requests")
+}
+
+/// GROUPE TAKATAK Billing — Stripe Checkout sessions a client opened to pay a
+/// Facturations invoice. One open session per invoice and amount is reused;
+/// a completed one blocks a second payment; an outdated one is expired first.
+model BillingInvoiceCheckoutSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  requestId       String   @db.Uuid
+  clientId        String   @db.Uuid
+  issuedInvoiceId String   @db.Uuid
+  stripeSessionId String   @unique
+  amountCents     BigInt
+  createdAt       DateTime @default(now())
+
+  request BillingInvoiceRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, createdAt])
+  @@map("billing_invoice_checkout_sessions")
+}
+
+/// Client invoicing — the client's OWN Stripe account (Stripe Connect,
+/// Stripe-hosted dashboard). Invoices a client sends to its customers live on
+/// this account; funds never pass through GROUPE TAKATAK.
+model ClientStripeConnectAccount {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @unique @db.Uuid
+  stripeAccountId      String    @unique
+  chargesEnabled       Boolean   @default(false)
+  payoutsEnabled       Boolean   @default(false)
+  detailsSubmitted     Boolean   @default(false)
+  country              String?
+  defaultCurrency      String?
+  lastSyncedAt         DateTime?
+  /// Newest Stripe state applied (event.created or retrieve time). Older
+  /// Connect events arriving late are ignored.
+  lastStripeEventAt    DateTime?
+  connectedByProfileId String?   @db.Uuid
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  @@map("client_stripe_connect_accounts")
 }

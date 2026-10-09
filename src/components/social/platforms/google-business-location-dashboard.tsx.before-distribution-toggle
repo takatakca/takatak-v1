@@ -1,0 +1,570 @@
+"use client";
+
+import {
+  CalendarDays,
+  GitCompareArrows,
+  Info,
+  RefreshCw,
+} from "lucide-react";
+import Image from "next/image";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import { SocialSummaryChart } from "@/components/social/analytics/social-summary-chart";
+import {
+  SUMMARY_PAGE_BG,
+  metricValue,
+} from "@/components/social/analytics/social-summary-tokens";
+
+type AnalyticsPoint = {
+  date: string;
+  maps: number | null;
+  search: number | null;
+  website: number | null;
+  phone: number | null;
+  directions: number | null;
+};
+
+type AnalyticsKeyword = {
+  keyword: string;
+  impressions: number | null;
+  threshold: number | null;
+};
+
+type AnalyticsResponse = {
+  ok?: boolean;
+  connected?: boolean;
+  message?: string;
+  notice?: string;
+  account?: {
+    name?: string | null;
+    category?: string | null;
+    profileUrl?: string | null;
+  };
+  range?: {
+    start: string;
+    end: string;
+  };
+  totals?: {
+    maps: number | null;
+    search: number | null;
+    reach: number | null;
+    website: number | null;
+    phone: number | null;
+    directions: number | null;
+    clicks: number | null;
+  };
+  points?: AnalyticsPoint[];
+  keywords?: AnalyticsKeyword[];
+  dataAvailable?: boolean;
+};
+
+const RANGES = [30, 60, 90] as const;
+
+function isoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function createRange(days: number) {
+  const end = new Date();
+  end.setUTCHours(0, 0, 0, 0);
+  end.setUTCDate(end.getUTCDate() - 1);
+
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - days + 1);
+
+  return {
+    start: isoDate(start),
+    end: isoDate(end),
+  };
+}
+
+function displayDate(value: string): string {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function formatValue(value: number | null | undefined): string {
+  return typeof value === "number" ? value.toLocaleString() : "—";
+}
+
+function totalPoint(point: AnalyticsPoint): number | null {
+  const known = [point.maps, point.search].filter(
+    (value): value is number => typeof value === "number",
+  );
+
+  return known.length
+    ? known.reduce((total, value) => total + value, 0)
+    : null;
+}
+
+function MetricCard({
+  label,
+  value,
+  color,
+  active,
+  onClick,
+}: {
+  label: string;
+  value: number | null | undefined;
+  color: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex min-h-[98px] min-w-[170px] flex-1 flex-col items-center justify-center rounded-[11px] px-5 py-4 text-center transition ${
+        active
+          ? "ring-2 ring-[#20242A]/20 ring-offset-2"
+          : "hover:brightness-[0.98]"
+      }`}
+      style={{ backgroundColor: color }}
+    >
+      <strong className="text-[30px] font-medium leading-none text-[#20242A]">
+        {formatValue(value)}
+      </strong>
+      <span className="mt-2 text-[14px] font-medium text-[#30343A]">
+        {label}
+      </span>
+    </button>
+  );
+}
+
+export function GoogleBusinessLocationDashboard({
+  accountName,
+  profileImageUrl = null,
+}: {
+  accountName: string;
+  profileImageUrl?: string | null;
+}) {
+  const [rangeDays, setRangeDays] = useState<number>(30);
+  const [compareEnabled, setCompareEnabled] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState<
+    "maps" | "search" | "total"
+  >("total");
+  const [analytics, setAnalytics] =
+    useState<AnalyticsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [imageFailed, setImageFailed] = useState(false);
+
+  const range = useMemo(
+    () => createRange(rangeDays),
+    [rangeDays],
+  );
+
+  const loadAnalytics = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const query = new URLSearchParams({
+          start: range.start,
+          end: range.end,
+        });
+
+        const response = await fetch(
+          `/api/social/google-business/analytics?${query.toString()}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            signal,
+          },
+        );
+
+        const body = (await response.json()) as AnalyticsResponse;
+
+        if (!response.ok) {
+          throw new Error(
+            body.message ??
+              "Google Business Profile analytics could not be loaded.",
+          );
+        }
+
+        setAnalytics(body);
+      } catch (loadError) {
+        if (
+          loadError instanceof DOMException &&
+          loadError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Google Business Profile analytics could not be loaded.",
+        );
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    [range.end, range.start],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadAnalytics(controller.signal);
+
+    return () => controller.abort();
+  }, [loadAnalytics]);
+
+  const points = analytics?.points ?? [];
+  const totals = analytics?.totals;
+  const keywords = analytics?.keywords ?? [];
+
+  const chartPoints = useMemo(
+    () =>
+      points.map((point) => {
+        const value =
+          selectedMetric === "maps"
+            ? point.maps
+            : selectedMetric === "search"
+              ? point.search
+              : totalPoint(point);
+
+        return {
+          date: point.date,
+          value: metricValue(value),
+        };
+      }),
+    [points, selectedMetric],
+  );
+
+  const chartLabel =
+    selectedMetric === "maps"
+      ? "Google Maps"
+      : selectedMetric === "search"
+        ? "Google Search"
+        : "Total reach";
+
+  const maps = totals?.maps ?? null;
+  const search = totals?.search ?? null;
+  const total = totals?.reach ?? null;
+
+  const knownReach =
+    typeof maps === "number" || typeof search === "number";
+  const distributionTotal =
+    (typeof maps === "number" ? maps : 0) +
+    (typeof search === "number" ? search : 0);
+
+  const mapsPercent =
+    knownReach && distributionTotal > 0
+      ? (typeof maps === "number" ? maps : 0) /
+        distributionTotal *
+        100
+      : null;
+
+  const searchPercent =
+    knownReach && distributionTotal > 0
+      ? (typeof search === "number" ? search : 0) /
+        distributionTotal *
+        100
+      : null;
+
+  const resolvedAccountName =
+    analytics?.account?.name?.trim() || accountName;
+
+  return (
+    <div
+      className="space-y-6 px-1 pb-24"
+      style={{ backgroundColor: SUMMARY_PAGE_BG }}
+    >
+      <div
+        className="sticky top-[66px] z-20 -mx-1 flex flex-col gap-4 border-b border-[#E1E4E7] px-1 pb-4 pt-3 lg:flex-row lg:items-end lg:justify-between"
+        style={{ backgroundColor: SUMMARY_PAGE_BG }}
+      >
+        <nav
+          aria-label="Google Business Profile analytics sections"
+          className="flex min-w-0 gap-1 overflow-x-auto"
+        >
+          {[
+            "LOCATION",
+            "REVIEWS",
+            "PHOTOS AND VIDEOS",
+            "POSTS",
+          ].map((label, index) => (
+            <button
+              key={label}
+              type="button"
+              disabled={index !== 0}
+              className={`relative min-w-fit px-3 py-3 text-[12px] font-semibold tracking-wide ${
+                index === 0
+                  ? "text-[#20242A]"
+                  : "cursor-default text-[#6B7280]"
+              }`}
+            >
+              {label}
+              {index === 0 ? (
+                <span className="absolute inset-x-2 bottom-0 h-[2px] bg-[#20242A]" />
+              ) : null}
+            </button>
+          ))}
+        </nav>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
+            <span>Main period</span>
+            <span className="flex h-11 items-center gap-2 rounded-[10px] border border-[#D7DBE0] bg-white px-3 text-sm text-[#30343A] shadow-sm">
+              <CalendarDays className="h-4 w-4 text-[#9AA1A9]" />
+              <span className="font-medium text-[#20242A]">
+                {displayDate(range.start)} - {displayDate(range.end)}
+              </span>
+              <select
+                value={rangeDays}
+                onChange={(event) =>
+                  setRangeDays(Number(event.target.value))
+                }
+                aria-label="Select Google Business Profile date range"
+                className="max-w-[105px] bg-transparent text-[#505761] outline-none"
+              >
+                {RANGES.map((days) => (
+                  <option key={days} value={days}>
+                    Last {days} days
+                  </option>
+                ))}
+              </select>
+            </span>
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
+            <span>Comparison period</span>
+            <button
+              type="button"
+              onClick={() =>
+                setCompareEnabled((current) => !current)
+              }
+              className={`inline-flex h-11 items-center gap-2 rounded-[10px] border px-3 text-sm font-medium shadow-sm ${
+                compareEnabled
+                  ? "border-[#8996F6] bg-[#EEF0FF] text-[#30343A]"
+                  : "border-[#D7DBE0] bg-white text-[#505761]"
+              }`}
+            >
+              <GitCompareArrows className="h-4 w-4 text-[#9AA1A9]" />
+              {compareEnabled
+                ? "Comparison on"
+                : "Create comparison view"}
+            </button>
+          </label>
+        </div>
+      </div>
+
+      <div className="flex items-start gap-3 rounded-[10px] border border-[#8495FF] bg-[#EEF0FF] px-4 py-3 text-sm text-[#303B78]">
+        <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#6477F3]" />
+        <p>
+          Some Google Business Profile metrics may not be available
+          for the last 5–6 days. Keywords from the previous month
+          may not be fully updated during the first days of the
+          current month.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-[22px] font-medium text-[#20242A]">
+          Location
+        </h1>
+
+        <div className="flex items-center gap-3 text-sm font-medium text-[#30343A]">
+          {profileImageUrl && !imageFailed ? (
+            <Image
+              src={profileImageUrl}
+              alt=""
+              width={42}
+              height={42}
+              unoptimized
+              onError={() => setImageFailed(true)}
+              className="h-10 w-10 rounded-full border border-[#E5E7EB] object-cover"
+            />
+          ) : (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EEF0FF] text-sm font-bold text-[#566DF1]">
+              {resolvedAccountName.slice(0, 1).toUpperCase()}
+            </div>
+          )}
+          <span>{resolvedAccountName}</span>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="flex min-h-[420px] items-center justify-center rounded-[14px] border border-[#E8EAED] bg-white">
+          <RefreshCw className="h-6 w-6 animate-spin text-[#566DF1]" />
+        </div>
+      ) : error ? (
+        <div className="rounded-[14px] border border-red-200 bg-white p-6">
+          <p className="text-sm text-red-700">{error}</p>
+          <button
+            type="button"
+            onClick={() => void loadAnalytics()}
+            className="mt-4 rounded-[9px] bg-[#20242A] px-4 py-2 text-sm font-semibold text-white"
+          >
+            Try again
+          </button>
+        </div>
+      ) : analytics?.connected === false ? (
+        <div className="rounded-[14px] border border-[#E8EAED] bg-white p-8 text-center text-sm text-[#6B7280]">
+          {analytics.notice ??
+            "No connected Google Business Profile location is selected."}
+        </div>
+      ) : (
+        <>
+          <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 shadow-[0_3px_14px_rgba(15,23,42,0.04)] sm:px-7">
+            <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <h2 className="text-[19px] font-medium text-[#20242A]">
+                Reach
+              </h2>
+
+              <div className="flex flex-wrap gap-4 lg:w-[52%]">
+                <MetricCard
+                  label="Google Maps"
+                  value={maps}
+                  color="#8994F2"
+                  active={selectedMetric === "maps"}
+                  onClick={() => setSelectedMetric("maps")}
+                />
+                <MetricCard
+                  label="Google Search"
+                  value={search}
+                  color="#F0A4DF"
+                  active={selectedMetric === "search"}
+                  onClick={() => setSelectedMetric("search")}
+                />
+                <MetricCard
+                  label="Total"
+                  value={total}
+                  color="#E9AA2D"
+                  active={selectedMetric === "total"}
+                  onClick={() => setSelectedMetric("total")}
+                />
+              </div>
+            </div>
+
+            <SocialSummaryChart
+              points={chartPoints}
+              seriesLabel={chartLabel}
+              seriesColor={
+                selectedMetric === "maps"
+                  ? "#7D89ED"
+                  : selectedMetric === "search"
+                    ? "#E68ACF"
+                    : "#E3A126"
+              }
+              showMarkers
+            />
+          </section>
+
+          <section className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 sm:px-7">
+              <h2 className="text-[18px] font-medium text-[#20242A]">
+                Reach distribution by source
+              </h2>
+
+              <div className="mt-8 space-y-6">
+                {[
+                  {
+                    label: "Google Maps",
+                    value: maps,
+                    percent: mapsPercent,
+                    color: "#8994F2",
+                  },
+                  {
+                    label: "Google Search",
+                    value: search,
+                    percent: searchPercent,
+                    color: "#F0A4DF",
+                  },
+                ].map((item) => (
+                  <div key={item.label}>
+                    <div className="mb-2 flex items-center justify-between gap-4 text-sm">
+                      <span className="font-medium text-[#30343A]">
+                        {item.label}
+                      </span>
+                      <span className="text-[#6B7280]">
+                        {formatValue(item.value)}
+                        {item.percent !== null
+                          ? ` · ${item.percent.toFixed(1)}%`
+                          : ""}
+                      </span>
+                    </div>
+                    <div className="h-3 overflow-hidden rounded-full bg-[#EEF0F3]">
+                      {item.percent !== null ? (
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${item.percent}%`,
+                            backgroundColor: item.color,
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="overflow-hidden rounded-[14px] border border-[#E8EAED] bg-white">
+              <div className="px-5 py-6 sm:px-7">
+                <h2 className="text-[18px] font-medium text-[#20242A]">
+                  Keywords
+                </h2>
+              </div>
+
+              <div className="max-h-[380px] overflow-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="sticky top-0 bg-[#FAFAFB] text-xs text-[#8A919A]">
+                    <tr>
+                      <th className="px-6 py-3 font-medium">
+                        Keyword
+                      </th>
+                      <th className="px-6 py-3 text-right font-medium">
+                        Impressions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#EEF0F2]">
+                    {keywords.length ? (
+                      keywords.map((keyword) => (
+                        <tr key={keyword.keyword}>
+                          <td className="px-6 py-4 font-medium text-[#30343A]">
+                            {keyword.keyword}
+                          </td>
+                          <td className="px-6 py-4 text-right text-[#5F6770]">
+                            {keyword.impressions !== null
+                              ? keyword.impressions.toLocaleString()
+                              : keyword.threshold !== null
+                                ? `< ${keyword.threshold.toLocaleString()}`
+                                : "—"}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={2}
+                          className="px-6 py-12 text-center text-[#8A919A]"
+                        >
+                          No keyword data available
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  );
+}

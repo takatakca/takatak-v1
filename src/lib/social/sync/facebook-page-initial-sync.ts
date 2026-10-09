@@ -954,7 +954,7 @@ async function finalizeSyncState(options: {
         clientId: options.clientId,
         status: "connected",
       },
-      select: { id: true },
+      select: { id: true, businessBrandId: true },
     });
 
   if (!liveConnection) {
@@ -1076,12 +1076,29 @@ async function finalizeSyncState(options: {
 
   const {
     computeNextIncrementalAt,
+    FACEBOOK_AHMV_COMMUNITY_INTERVAL_MS,
     FACEBOOK_BACKFILL_HORIZON_DAYS,
     shiftDateOnly,
   } = await import("@/lib/social/sync/facebook-page-sync-schedule");
 
+  const liveBrand = success
+    ? await prisma.businessBrand.findFirst({
+        where: {
+          id: liveConnection.businessBrandId,
+          clientId: options.clientId,
+        },
+        select: { website: true },
+      })
+    : null;
+
   const nextIncrementalAt = success
-    ? computeNextIncrementalAt(options.socialAccountId, now)
+    ? computeNextIncrementalAt(
+        options.socialAccountId,
+        now,
+        liveBrand?.website === "https://ahmverdun.ca"
+          ? FACEBOOK_AHMV_COMMUNITY_INTERVAL_MS
+          : undefined,
+      )
     : undefined;
 
   const horizonStart = shiftDateOnly(
@@ -1610,7 +1627,9 @@ async function runInitialFacebookPageSyncUncoalesced(options: {
       pageAccessToken: pageCredential.accessToken,
       externalPageId: account.externalAccountId!,
       since: rangeStart,
-      until: rangeEnd,
+      // Content is live data, not a finalized daily analytics series. Include
+      // the current UTC day so a post made today can reach the website today.
+      until: new Date().toISOString().slice(0, 10),
       generation,
       transport: options.transport,
     });

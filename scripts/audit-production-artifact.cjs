@@ -84,6 +84,10 @@ assert(
   "required deployment/preflight scripts",
   fs.existsSync(path.join(appRoot, "scripts", "production-preflight.ts")),
 );
+assert(
+  "AHMV content production smoke",
+  fs.existsSync(path.join(appRoot, "scripts", "smoke-ahmv-content.ts")),
+);
 assert("BUILD_ID", has("BUILD_ID"));
 assert("build-metadata.json", fs.existsSync(metadataFile));
 

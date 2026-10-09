@@ -4,13 +4,22 @@ import { assertClientCanConnectSocial } from "@/lib/billing/client-subscription-
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import { persistDiscoveredYoutubeChannels } from "@/lib/social/connections/social-youtube-account-service";
+import { persistGoogleBusinessLocations } from "@/lib/social/connections/social-google-business-account-service";
 import { completeSocialOAuthState } from "@/lib/social/connections/social-connection-service";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
 import {
   exchangeGoogleCodeForStoredCredential,
   GoogleTokenConsumedError,
 } from "@/lib/social/providers/google-token";
-import { listYoutubeChannelsForAccessToken } from "@/lib/social/providers/google-youtube";
+import {
+  listYoutubeChannelsForAccessToken,
+  type YoutubeChannelRecord,
+} from "@/lib/social/providers/google-youtube";
+import {
+  listGoogleBusinessLocations,
+  type GoogleBusinessLocationRecord,
+} from "@/lib/social/providers/google-business-profile";
+import type { GoogleOAuthPurpose } from "@/lib/social/providers/google-oauth";
 import {
   decryptSocialValue,
   hashOAuthState,
@@ -86,6 +95,15 @@ function readKeyVersion(metadata: unknown): number {
   return typeof value === "number" && Number.isInteger(value) && value > 0
     ? value
     : 1;
+}
+
+function readGooglePurpose(metadata: unknown): GoogleOAuthPurpose {
+  if (typeof metadata !== "object" || metadata === null || Array.isArray(metadata)) {
+    return "youtube";
+  }
+  return (metadata as Record<string, unknown>).googlePurpose === "google_business"
+    ? "google_business"
+    : "youtube";
 }
 
 function parseCallbackInput(
@@ -228,24 +246,50 @@ export async function processGoogleOAuthCallback(options: {
 
   if (
     !oauthState ||
-    oauthState.provider !== "google" ||
+    (
+      oauthState.provider !== "google" &&
+      oauthState.provider !== "google_business"
+    ) ||
     !verifyOAuthStateHash(input.state, oauthState.stateHash)
   ) {
     logSocialOAuthEvent("google-oauth-callback", {
       stage: "state_lookup",
       outcome: "invalid_state",
-      provider: "google",
+      provider:
+        oauthState?.provider === "google_business"
+          ? "google_business"
+          : "google",
     });
     return safeFailResult("failed", "The Google authorization response was invalid.");
   }
 
   const returnPath = sanitizeReturnPath(oauthState.returnPath);
 
+  const purpose: GoogleOAuthPurpose =
+    oauthState.provider === "google_business"
+      ? "google_business"
+      : "youtube";
+
+  const storedPurpose =
+    readGooglePurpose(oauthState.metadata);
+
+  if (storedPurpose !== purpose) {
+    return safeFailResult(
+      "failed",
+      "The Google authorization service does not match the requested connection.",
+      returnPath,
+    );
+  }
+
+  // Each Google product owns a separate provider connection.
+  // A callback must never preserve or mutate the other product's row.
+  const preserveConnection = false;
+
   if (oauthState.status === "completed") {
     logSocialOAuthEvent("google-oauth-callback", {
       stage: "state_lookup",
       outcome: "already_completed",
-      provider: "google",
+      provider: oauthState.provider,
     });
     return {
       outcome: "accepted",
@@ -326,12 +370,12 @@ export async function processGoogleOAuthCallback(options: {
       errorMessage: cancelled
         ? "User cancelled Google authorization."
         : "Google returned an authorization error.",
-      failConnection: !cancelled,
+      failConnection: !cancelled && !preserveConnection,
     });
     logSocialOAuthEvent("google-oauth-callback", {
       stage: "provider_result",
       outcome: cancelled ? "cancelled" : "provider_error",
-      provider: "google",
+      provider: oauthState.provider,
     });
     return safeFailResult(
       cancelled ? "cancelled" : "failed",
@@ -369,7 +413,10 @@ export async function processGoogleOAuthCallback(options: {
 
   try {
     await assertClientCanConnectSocial(prisma, oauthState.clientId, {
-      provider: "google",
+      provider:
+        oauthState.provider === "google_business"
+          ? "google"
+          : oauthState.provider,
       reconnect: true,
     });
 
@@ -400,7 +447,7 @@ export async function processGoogleOAuthCallback(options: {
       where: {
         clientId: oauthState.clientId,
         businessBrandId: oauthState.businessBrandId,
-        provider: "google",
+        provider: oauthState.provider,
         status: {
           in: ["pending_authorization", "authorized", "connected"],
         },
@@ -416,15 +463,23 @@ export async function processGoogleOAuthCallback(options: {
       );
     }
 
-    const channels = await listYoutubeChannelsForAccessToken({
-      accessToken: tokenResult.accessToken,
-    });
+    let businessLocations: GoogleBusinessLocationRecord[] = [];
+    let youtubeChannels: YoutubeChannelRecord[] = [];
+    if (purpose === "google_business") {
+      businessLocations = await listGoogleBusinessLocations({
+        accessToken: tokenResult.accessToken,
+      });
+    } else {
+      youtubeChannels = await listYoutubeChannelsForAccessToken({
+        accessToken: tokenResult.accessToken,
+      });
+    }
 
     await completeSocialOAuthState({
       oauthStateId: oauthState.id,
       connectionId: oauthState.connectionId,
       clientId: oauthState.clientId,
-      provider: "google",
+      provider: oauthState.provider,
       profileId: options.profileId,
       externalSubjectId: tokenResult.externalSubjectId,
       displayName: tokenResult.displayName,
@@ -439,14 +494,23 @@ export async function processGoogleOAuthCallback(options: {
       },
       accessTokenExpiresAt: tokenResult.expiresAt,
       refreshTokenExpiresAt: null,
+      preserveConnectionStatus: preserveConnection,
     });
 
-    const persisted = await persistDiscoveredYoutubeChannels({
-      clientId: oauthState.clientId,
-      profileId: options.profileId,
-      connectionId: oauthState.connectionId,
-      channels,
-    });
+    const persisted =
+      purpose === "google_business"
+        ? await persistGoogleBusinessLocations({
+            clientId: oauthState.clientId,
+            profileId: options.profileId,
+            connectionId: oauthState.connectionId,
+            locations: businessLocations,
+          })
+        : await persistDiscoveredYoutubeChannels({
+            clientId: oauthState.clientId,
+            profileId: options.profileId,
+            connectionId: oauthState.connectionId,
+            channels: youtubeChannels,
+          });
 
     const { invalidateBrandSelectorCache } = await import(
       "@/lib/security/brand-context"
@@ -456,15 +520,21 @@ export async function processGoogleOAuthCallback(options: {
     logSocialOAuthEvent("google-oauth-callback", {
       stage: "complete",
       outcome: "ok",
-      provider: "google",
+      provider: oauthState.provider,
     });
 
     const message =
-      persisted.selected
-        ? "YouTube connected successfully."
-        : persisted.storedCount === 0
-          ? "Google is authorized, but this account has no YouTube channel to select."
-          : "Choose a YouTube channel to finish connecting.";
+      purpose === "google_business"
+        ? persisted.storedCount === 0
+          ? "Google is authorized, but this account has no Business Profile locations."
+          : persisted.storedCount === 1
+            ? "Google Business Profile connected successfully."
+            : `${persisted.storedCount} Google Business Profile locations connected successfully.`
+        : "selected" in persisted && persisted.selected
+          ? "YouTube connected successfully."
+          : persisted.storedCount === 0
+            ? "Google is authorized, but this account has no YouTube channel to select."
+            : "Choose a YouTube channel to finish connecting.";
 
     return {
       outcome: "accepted",
@@ -480,13 +550,13 @@ export async function processGoogleOAuthCallback(options: {
         error instanceof ServiceError
           ? error.message
           : "Google authorization failed.",
-      failConnection: true,
+      failConnection: !preserveConnection,
     });
 
     logSocialOAuthEvent("google-oauth-callback", {
       stage: "complete",
       outcome: "failed",
-      provider: "google",
+      provider: oauthState.provider,
     });
 
     return safeFailResult(

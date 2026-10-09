@@ -78,7 +78,7 @@ function EducationColumn({
 
 export function FacebookConnectPage({
   activeBrandId,
-  activeBrandName: _activeBrandName,
+  activeBrandName,
   canManage,
   isConnected,
   hasSocialHistory,
@@ -145,6 +145,8 @@ export function FacebookConnectPage({
             "/dashboard/social/facebook",
             searchParams,
           ),
+          communityContent:
+            activeBrandName?.trim().toLowerCase() === "ahm verdun",
         }),
       });
 
@@ -237,8 +239,9 @@ export function FacebookConnectPage({
             Connect your Facebook page
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            Discover how your community grows, what content gets the most reach
-            and how you compare to your competitors.
+            {activeBrandName?.trim().toLowerCase() === "ahm verdun"
+              ? "Connect the official AHM Verdun Page and enable the Community feed for public posts that tag the association."
+              : "Discover how your community grows, what content gets the most reach and how you compare to your competitors."}
           </p>
           {error ? (
             <p className="mt-3 text-sm text-rose-700" role="alert">

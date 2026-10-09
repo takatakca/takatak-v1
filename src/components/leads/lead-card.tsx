@@ -1,6 +1,9 @@
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody } from "@/components/ui/card";
 import { LEAD_PRIORITY_LABELS, LEAD_STATUS_LABELS, leadToneForStatus } from "@/lib/leads/status";
+import { isLeadId } from "@/lib/leads/lead-id";
 import type { LeadSummary } from "@/lib/leads/types";
 
 export function LeadCard({ lead }: { lead: LeadSummary }) {
@@ -9,7 +12,15 @@ export function LeadCard({ lead }: { lead: LeadSummary }) {
       <CardBody className="space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <h3 className="text-sm font-semibold text-slate-900">{lead.name ?? "Unnamed lead"}</h3>
+            <h3 className="text-sm font-semibold text-slate-900">
+              {isLeadId(lead.id) ? (
+                <Link href={`/dashboard/leads/${lead.id}`} className="hover:underline">
+                  {lead.name ?? "Unnamed lead"}
+                </Link>
+              ) : (
+                lead.name ?? "Unnamed lead"
+              )}
+            </h3>
             <p className="text-[11px] text-slate-400">
               {[lead.company, lead.email, lead.phone].filter(Boolean).join(" · ") || "No contact details"}
             </p>

@@ -28,7 +28,7 @@ function validateDomain(domain: string): TranslationKey | null {
 
 export function DomainRequestFallback({ diagnosticCode }: { diagnosticCode?: string }) {
   const { user, isAuthenticated } = useAuth();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const [domain, setDomain] = useState("yourbrand");
   const [tld, setTld] = useState<SupportedDomainTld>("ca");
@@ -36,6 +36,7 @@ export function DomainRequestFallback({ diagnosticCode }: { diagnosticCode?: str
   const [contactEmail, setContactEmail] = useState(user?.email ?? "");
   const [contactPhone, setContactPhone] = useState(user?.phone ?? "");
   const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
+  const [reference, setReference] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fullDomain = useMemo(() => cleanDomain(domain, tld), [domain, tld]);
 
@@ -49,14 +50,15 @@ export function DomainRequestFallback({ diagnosticCode }: { diagnosticCode?: str
       return;
     }
     setStatus("submitting");
-    await createDomainRequest({
+    const stored = await createDomainRequest({
       domain: fullDomain,
       tld,
       contactName: contactName || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "TAKATAK customer",
       contactEmail: contactEmail || user?.email || undefined,
       contactPhone: contactPhone || user?.phone || undefined,
       source: diagnosticCode ? `upmind_fallback:${diagnosticCode}` : "upmind_fallback",
-    });
+    }, { language: lang });
+    setReference(stored.localOnly ? null : stored.id);
     setStatus("done");
   };
 
@@ -74,6 +76,11 @@ export function DomainRequestFallback({ diagnosticCode }: { diagnosticCode?: str
             <p className="mt-2 text-sm text-muted-foreground">
               {t("fallback.domain.receivedBody", { domain: fullDomain })}
             </p>
+            {reference && (
+              <p className="mt-2 text-xs font-medium text-foreground">
+                {t("fallback.domain.reference", { reference })}
+              </p>
+            )}
             <div className="mt-5 flex flex-wrap gap-2">
               {!isAuthenticated && (
                 <button onClick={continueSignup} className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">

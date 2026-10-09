@@ -1,4 +1,4 @@
-import { Activity, Bell, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, PlugZap, Settings, ShoppingBag, Users } from "lucide-react";
+import { Activity, Bell, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, PackageOpen, PlugZap, Receipt, Settings, ShoppingBag, Users } from "lucide-react";
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminBoundaryWarning } from "@/components/admin/admin-boundary-warning";
 import { AdminHeader } from "@/components/admin/admin-header";
@@ -20,6 +20,8 @@ const OPERATIONS = [
   { href: "/dashboard/admin/clients", title: "Clients", description: "Client accounts with brand, service, and member counts.", icon: Building2 },
   { href: "/dashboard/admin/users", title: "Users", description: "Profiles and client memberships (read-only).", icon: Users },
   { href: "/dashboard/admin/services", title: "Services", description: "Service instances across all clients.", icon: Briefcase },
+  { href: "/dashboard/admin/billing", title: "Billing • Facturations", description: "Ecosystem invoice queue fed by every TAKATAK app; drafts created in Facturations.", icon: Receipt },
+  { href: "/dashboard/admin/products/ahmv", title: "Product • AHMV", description: "Customers, subscriptions, revenue, entitlements and product operations.", icon: PackageOpen },
   { href: "/dashboard/admin/jobs", title: "Jobs Monitor", description: "Planned jobs and logs. No worker runs them yet.", icon: Activity },
   { href: "/dashboard/admin/integration-events", title: "Integration Events", description: "Provider event log (webhooks, tests).", icon: PlugZap },
   { href: "/dashboard/admin/audit-logs", title: "Audit Logs", description: "System-internal audit trail with safe notes.", icon: ClipboardList },

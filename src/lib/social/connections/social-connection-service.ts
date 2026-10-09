@@ -34,8 +34,15 @@ import {
 import { buildInstagramAuthorizationUrl } from "@/lib/social/providers/instagram-oauth";
 import { buildThreadsAuthorizationUrl } from "@/lib/social/providers/threads-oauth";
 import { buildTikTokAuthorizationUrl } from "@/lib/social/providers/tiktok-oauth";
-import { buildGoogleAuthorizationUrl } from "@/lib/social/providers/google-oauth";
+import {
+  buildGoogleAuthorizationUrl,
+  type GoogleOAuthPurpose,
+} from "@/lib/social/providers/google-oauth";
 import { buildXAuthorizationUrl } from "@/lib/social/providers/x-oauth";
+import { buildTwitchAuthorizationUrl } from "@/lib/social/providers/twitch-oauth";
+import { buildMetaAdsAuthorizationUrl } from "@/lib/social/providers/meta-ads-oauth";
+import { buildGoogleAdsAuthorizationUrl } from "@/lib/social/providers/google-ads-oauth";
+import { buildLookerStudioAuthorizationUrl } from "@/lib/social/providers/looker-studio-oauth";
 import type { SocialConnectionProviderValue } from "@/lib/social/providers/types";
 import { assertProfileCanManageSocialAccounts } from "@/lib/social/connections/social-connection-auth";
 import {
@@ -93,6 +100,7 @@ function buildAuthorizationUrl(options: {
   state: string;
   codeChallenge: string;
   metaScopeSet?: MetaOAuthScopeSet;
+  googlePurpose?: GoogleOAuthPurpose;
 }): string {
   if (options.provider === "meta") {
     return buildMetaAuthorizationUrl({
@@ -120,15 +128,47 @@ function buildAuthorizationUrl(options: {
     });
   }
 
-  if (options.provider === "google") {
+  if (
+    options.provider === "google" ||
+    options.provider === "google_business"
+  ) {
     return buildGoogleAuthorizationUrl({
       state: options.state,
       codeChallenge: options.codeChallenge,
+      purpose: options.googlePurpose,
     });
   }
 
   if (options.provider === "x") {
     return buildXAuthorizationUrl({
+      state: options.state,
+      codeChallenge: options.codeChallenge,
+    });
+  }
+
+  if (options.provider === "twitch") {
+    return buildTwitchAuthorizationUrl({
+      state: options.state,
+      codeChallenge: options.codeChallenge,
+    });
+  }
+
+  if (options.provider === "meta_ads") {
+    return buildMetaAdsAuthorizationUrl({
+      state: options.state,
+      codeChallenge: options.codeChallenge,
+    });
+  }
+
+  if (options.provider === "google_ads") {
+    return buildGoogleAdsAuthorizationUrl({
+      state: options.state,
+      codeChallenge: options.codeChallenge,
+    });
+  }
+
+  if (options.provider === "looker_studio") {
+    return buildLookerStudioAuthorizationUrl({
       state: options.state,
       codeChallenge: options.codeChallenge,
     });
@@ -169,6 +209,7 @@ function readAuthorizationUrlFromMetadata(
 function prepareOAuthAttemptMaterial(options: {
   provider: SocialConnectionProviderValue;
   metaScopeSet?: MetaOAuthScopeSet;
+  googlePurpose?: GoogleOAuthPurpose;
 }): {
   publicState: string;
   encryptedVerifier: {
@@ -205,6 +246,7 @@ function prepareOAuthAttemptMaterial(options: {
     state: publicState,
     codeChallenge,
     metaScopeSet: options.metaScopeSet,
+    googlePurpose: options.googlePurpose,
   });
 
   const expiresAt = new Date(
@@ -240,6 +282,8 @@ async function insertOAuthAttempt(
     };
     authorizationUrl: string;
     expiresAt: Date;
+    googlePurpose?: GoogleOAuthPurpose;
+    preserveConnection?: boolean;
   },
 ) {
   await transaction.socialOAuthState.create({
@@ -264,6 +308,12 @@ async function insertOAuthAttempt(
           options.encryptedVerifier.keyVersion,
         // Public redirect destination only — never tokens or verifiers.
         authorizationUrl: options.authorizationUrl,
+        ...(options.googlePurpose
+          ? { googlePurpose: options.googlePurpose }
+          : {}),
+        ...(options.preserveConnection
+          ? { preserveConnection: true }
+          : {}),
       },
     },
   });
@@ -323,6 +373,8 @@ export async function createSocialOAuthState(options: {
   businessBrandId: string;
   provider: SocialConnectionProviderValue;
   returnPath: string;
+  communityContent?: boolean;
+  googlePurpose?: GoogleOAuthPurpose;
 }): Promise<CreatedSocialOAuthState> {
   const prisma = requirePrisma();
 
@@ -333,6 +385,37 @@ export async function createSocialOAuthState(options: {
       profileId: options.profileId,
     },
   );
+
+  if (options.provider === "web" || options.provider === "blog") {
+    throw new ServiceError(
+      "invalid_input",
+      options.provider === "blog"
+        ? "Blog connections are started from the blog form."
+        : "Website connections are started from the website form.",
+    );
+  }
+
+  if (
+    options.provider === "google" &&
+    options.googlePurpose !== "youtube"
+  ) {
+    throw new ServiceError(
+      "invalid_input",
+      "YouTube authorization requires the YouTube Google service.",
+      { status: 400 },
+    );
+  }
+
+  if (
+    options.provider === "google_business" &&
+    options.googlePurpose !== "google_business"
+  ) {
+    throw new ServiceError(
+      "invalid_input",
+      "Google Business Profile authorization requires the Business Profile service.",
+      { status: 400 },
+    );
+  }
 
   const existingXAccount =
     options.provider === "x"
@@ -358,7 +441,10 @@ export async function createSocialOAuthState(options: {
     prisma,
     options.clientId,
     {
-      provider: options.provider,
+      provider:
+        options.provider === "google_business"
+          ? "google"
+          : options.provider,
       reconnect: Boolean(existingXAccount),
     },
   );
@@ -444,12 +530,16 @@ export async function createSocialOAuthState(options: {
       },
     });
 
+  // YouTube and Google Business Profile have independent provider rows.
+  // Neither connection may augment or reuse the other provider's row.
+  const augmentGoogleConnection = false;
+
   const startDecision = canStartProviderConnect({
     implemented: definition.implemented,
     connectable: readiness.connectable,
     providerState: readiness.state,
     connectionStatus:
-      blockingConnection?.status ?? null,
+      augmentGoogleConnection ? null : blockingConnection?.status ?? null,
     isPrimaryStartCard: true,
   });
 
@@ -462,6 +552,11 @@ export async function createSocialOAuthState(options: {
 
   const material = prepareOAuthAttemptMaterial({
     provider: options.provider,
+    metaScopeSet:
+      options.provider === "meta" && options.communityContent
+        ? "facebook_pages_community"
+        : undefined,
+    googlePurpose: options.googlePurpose,
   });
 
   const connection = await runSocialDbTransaction(
@@ -493,7 +588,7 @@ export async function createSocialOAuthState(options: {
           },
         });
 
-      if (currentBlocking) {
+      if (currentBlocking && !augmentGoogleConnection) {
         throwStartDecisionError(
           currentBlocking.status ===
             "pending_authorization"
@@ -524,7 +619,9 @@ export async function createSocialOAuthState(options: {
           },
         });
 
-      const upserted = reusable
+      const upserted = currentBlocking && augmentGoogleConnection
+        ? currentBlocking
+        : reusable
         ? await transaction.socialProviderConnection.update({
             where: { id: reusable.id },
             data: {
@@ -557,7 +654,7 @@ export async function createSocialOAuthState(options: {
             },
           });
 
-      if (upserted.status !== "pending_authorization") {
+      if (!augmentGoogleConnection && upserted.status !== "pending_authorization") {
         throw new ServiceError(
           "conflict",
           "The social provider connection left an invalid early status.",
@@ -591,6 +688,8 @@ export async function createSocialOAuthState(options: {
         encryptedVerifier: material.encryptedVerifier,
         authorizationUrl: material.authorizationUrl,
         expiresAt: material.expiresAt,
+        googlePurpose: options.googlePurpose,
+        preserveConnection: augmentGoogleConnection,
       });
 
       return upserted;
@@ -1729,6 +1828,7 @@ export async function completeSocialOAuthState(options: {
   tokenPayload: SocialTokenPayload;
   accessTokenExpiresAt?: Date | null;
   refreshTokenExpiresAt?: Date | null;
+  preserveConnectionStatus?: boolean;
 }): Promise<void> {
   const prisma = requirePrisma();
 
@@ -1744,6 +1844,8 @@ export async function completeSocialOAuthState(options: {
         id: true,
         clientId: true,
         provider: true,
+        scopes: true,
+        displayName: true,
       },
     });
 
@@ -1756,6 +1858,9 @@ export async function completeSocialOAuthState(options: {
 
   const clientId = options.clientId ?? connection.clientId;
   const provider = options.provider ?? connection.provider;
+  const combinedScopes = Array.from(
+    new Set([...(connection.scopes ?? []), ...(options.scopes ?? [])]),
+  );
 
   // Keep an existing Page access token across user-token refresh so analytics
   // sync does not lose Page credentials after reconnect.
@@ -1787,6 +1892,25 @@ export async function completeSocialOAuthState(options: {
           provider,
         }),
       );
+      if (
+        provider === "google" ||
+        provider === "google_business" ||
+        provider === "google_ads" ||
+        provider === "looker_studio"
+      ) {
+        tokenPayload = {
+          ...previous,
+          ...tokenPayload,
+          refreshToken:
+            tokenPayload.refreshToken ?? previous.refreshToken ?? null,
+          scopes: Array.from(
+            new Set([
+              ...(previous.scopes ?? []),
+              ...(tokenPayload.scopes ?? []),
+            ]),
+          ),
+        };
+      }
       const pageCredential = readMetaFacebookPageCredential(previous);
       if (pageCredential) {
         tokenPayload = withMetaFacebookPageCredential(tokenPayload, {
@@ -1921,12 +2045,17 @@ export async function completeSocialOAuthState(options: {
           id: options.connectionId,
         },
         data: {
-          status: "authorized",
+          ...(options.preserveConnectionStatus
+            ? {}
+            : { status: "authorized" as const }),
           authorizedAt: now,
           externalSubjectId:
             options.externalSubjectId ?? null,
-          displayName: options.displayName ?? null,
-          scopes: options.scopes ?? [],
+          displayName:
+            options.preserveConnectionStatus
+              ? connection.displayName ?? options.displayName ?? null
+              : options.displayName ?? null,
+          scopes: combinedScopes,
           accessTokenExpiresAt:
             options.accessTokenExpiresAt ?? null,
           refreshTokenExpiresAt:

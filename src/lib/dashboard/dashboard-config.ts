@@ -30,10 +30,12 @@ import {
   MapPin,
   MapPinned,
   Megaphone,
+  Phone,
   PlugZap,
   Plus,
   Receipt,
   Search,
+  Send,
   Server,
   Settings,
   Share2,
@@ -41,7 +43,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
-  Trophy,
+  Ticket,
   UserPlus,
   UserRound,
   Users,
@@ -92,26 +94,28 @@ export const NAV_SECTIONS: NavSection[] = [
         { label: "Hosting", href: "/dashboard/web-hosting/hosting", icon: Server },
       ] },
       { label: "Social Media", href: "/dashboard/social", icon: Share2, hasDropdown: true },
-      { label: "Advertising", href: "/dashboard/advertising", icon: Megaphone, hasDropdown: true },
+      { label: "TAKATAK ADS", href: "/dashboard/advertising", icon: Megaphone },
       { label: "Reviews", href: "/dashboard/local-listings/reviews", icon: Star, hasDropdown: true },
       { label: "Local Listings", href: "/dashboard/local-listings", icon: MapPin },
       { label: "Leads", href: "/dashboard/leads", icon: Filter },
       { label: "AI Studio", href: "/dashboard/ai-studio", icon: Sparkles },
+      { label: "Content Moderation", href: "/dashboard/contributions", icon: ListChecks },
     ],
   },
   {
     title: "Services",
     items: [
       {
-        label: "Hockey / AHMV",
-        href: "/dashboard/hockey",
-        icon: Trophy,
-      },
-      {
         label: "Rentauto",
         href: "/dashboard/rentauto",
         icon: CarFront,
         serviceModule: "rentauto",
+      },
+      {
+        label: "ALKAO — Billetterie",
+        href: "/dashboard/ticketing",
+        icon: Ticket,
+        serviceModule: "ticketing",
       },
       {
         label: "Hosting",
@@ -128,6 +132,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { label: "Security", href: "/dashboard/web-hosting/security", icon: Shield },
         ],
       },
+      { label: "Business phone", href: "/dashboard/voip", icon: Phone },
     ],
   },
   {
@@ -145,6 +150,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Analytics Reports", href: "/dashboard/reports", icon: FileBarChart2 },
       { label: "Custom Reports", href: "/dashboard/reports/builder", icon: FileText },
       { label: "Invoices", href: "/dashboard/invoices", icon: Receipt },
+      { label: "Bill my customers", href: "/dashboard/client-billing", icon: Send },
       { label: "Files", href: "/dashboard/files", icon: FolderOpen },
       { label: "Support", href: "/dashboard/support", icon: LifeBuoy },
     ],
@@ -185,8 +191,8 @@ export function pageTitleForPath(pathname: string): string {
 }
 
 export function pageSubtitleForPath(pathname: string): string | null {
-  if (pathname === "/dashboard/hockey" || pathname.startsWith("/dashboard/hockey/")) {
-    return "Manage your personal AHMV membership, premium entitlements, Stripe billing and future family hockey services.";
+  if (pathname === "/dashboard/contributions" || pathname.startsWith("/dashboard/contributions/")) {
+    return "Moderate community-proposed content changes, contributor reputation and publisher delivery.";
   }
   if (pathname === "/dashboard/web-hosting/domains" || pathname.startsWith("/dashboard/web-hosting/domains/")) {
     return "Manage your domains, DNS settings, renewals, redirects, and connection status.";

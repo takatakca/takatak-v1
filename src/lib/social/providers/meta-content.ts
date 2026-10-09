@@ -13,6 +13,12 @@ const MAX_PAGES = 20;
 
 export type FacebookContentType = "post" | "reel" | "story";
 
+export type FacebookContentSourceKind =
+  | "page_published"
+  | "page_tagged"
+  | "page_reel"
+  | "page_story";
+
 export type MetricFieldStatus =
   | "confirmed"
   | "confirmed_zero"
@@ -33,6 +39,7 @@ export type FacebookContentMetricStatus = {
 
 export type FacebookContentItemDraft = {
   contentType: FacebookContentType;
+  sourceKind: FacebookContentSourceKind;
   externalObjectId: string;
   externalIdHash: string;
   publishedAt: string;
@@ -366,6 +373,7 @@ async function paginateEdge(options: {
 function mapPostRow(
   row: Record<string, unknown>,
   contentType: FacebookContentType,
+  sourceKind: FacebookContentSourceKind,
   retrievedAt: string,
 ): FacebookContentItemDraft | null {
   const id = readString(row, "id");
@@ -448,6 +456,7 @@ function mapPostRow(
 
   return {
     contentType,
+    sourceKind,
     externalObjectId: id,
     externalIdHash: hashExternalContentId(id),
     publishedAt: publishedAt.toISOString(),
@@ -564,7 +573,9 @@ export async function fetchFacebookPageContent(options: {
     });
     partial = partial || posts.partial;
     const mapped = posts.rows
-      .map((row) => mapPostRow(row, "post", retrievedAt))
+      .map((row) =>
+        mapPostRow(row, "post", "page_published", retrievedAt),
+      )
       .filter((row): row is FacebookContentItemDraft => row != null)
       .filter((row) => {
         const day = row.publishedAt.slice(0, 10);
@@ -577,6 +588,47 @@ export async function fetchFacebookPageContent(options: {
         "post",
         "published_posts",
         posts.error,
+        mapped.length,
+        coverage.coveredFrom,
+        coverage.coveredThrough,
+      ),
+    );
+  }
+
+  // Public posts from people/Pages that explicitly tag this Page.
+  // This edge requires pages_read_user_content. A denied permission remains a
+  // report-level capability gap; it must never be treated as deleted content.
+  {
+    const tagged = await paginateEdge({
+      path: `/${encodeURIComponent(pageId)}/tagged`,
+      pageAccessToken: options.pageAccessToken,
+      fields:
+        "id,message,created_time,permalink_url,full_picture,shares,reactions.summary(true).limit(0),comments.summary(true).limit(0)",
+      since: options.since,
+      until: options.until,
+      transport,
+      stage: "page_tagged",
+    });
+    partial = partial || tagged.partial;
+    const alreadySeen = new Set(items.map((item) => item.externalIdHash));
+    const mapped = tagged.rows
+      .map((row) => mapPostRow(row, "post", "page_tagged", retrievedAt))
+      .filter((row): row is FacebookContentItemDraft => row != null)
+      .filter((row) => {
+        const day = row.publishedAt.slice(0, 10);
+        return (
+          day >= options.since &&
+          day <= options.until &&
+          !alreadySeen.has(row.externalIdHash)
+        );
+      });
+    items.push(...mapped);
+    const coverage = coverageDates(mapped);
+    report.push(
+      reportFromError(
+        "post",
+        "tagged",
+        tagged.error,
         mapped.length,
         coverage.coveredFrom,
         coverage.coveredThrough,
@@ -598,7 +650,7 @@ export async function fetchFacebookPageContent(options: {
     });
     partial = partial || reels.partial;
     const mapped = reels.rows
-      .map((row) => mapPostRow(row, "reel", retrievedAt))
+      .map((row) => mapPostRow(row, "reel", "page_reel", retrievedAt))
       .filter((row): row is FacebookContentItemDraft => row != null)
       .filter((row) => {
         const day = row.publishedAt.slice(0, 10);
@@ -636,7 +688,7 @@ export async function fetchFacebookPageContent(options: {
           ...row,
           id: readString(row, "post_id") ?? readString(row, "id"),
         };
-        return mapPostRow(normalized, "story", retrievedAt);
+        return mapPostRow(normalized, "story", "page_story", retrievedAt);
       })
       .filter((row): row is FacebookContentItemDraft => row != null)
       .filter((row) => {

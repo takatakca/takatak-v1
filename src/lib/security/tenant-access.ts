@@ -315,7 +315,7 @@ export type ShellProfileDetails = {
   firstName: string | null;
   lastName: string | null;
   displayName: string | null;
-  email: string;
+  email: string | null;
   role: PlatformRoleKey;
 };
 

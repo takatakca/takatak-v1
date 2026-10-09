@@ -91,7 +91,9 @@ export type Permission =
   | "approve_content"
   | "view_reports"
   | "view_social"
-  | "manage_social_accounts";
+  | "manage_social_accounts"
+  | "view_ads"
+  | "manage_ads";
 
 export const ALL_PERMISSIONS: Permission[] = [
   "view_dashboard",
@@ -116,6 +118,8 @@ export const ALL_PERMISSIONS: Permission[] = [
   "view_reports",
   "view_social",
   "manage_social_accounts",
+  "view_ads",
+  "manage_ads",
 ];
 
 export const ROLE_PERMISSIONS: Record<
@@ -145,6 +149,8 @@ export const ROLE_PERMISSIONS: Record<
     "edit_content",
     "approve_content",
     "view_reports",
+    "view_ads",
+    "manage_ads",
   ],
 
   editor: [
@@ -154,6 +160,7 @@ export const ROLE_PERMISSIONS: Record<
     "edit_content",
     "approve_content",
     "view_reports",
+    "view_ads",
   ],
 
   staff: [
@@ -162,12 +169,14 @@ export const ROLE_PERMISSIONS: Record<
     "create_content",
     "edit_content",
     "view_reports",
+    "view_ads",
   ],
 
   viewer: [
     "view_dashboard",
     "view_social",
     "view_reports",
+    "view_ads",
   ],
 };
 
@@ -182,6 +191,9 @@ export const MODULE_ACCESS: Record<
   "/dashboard/locations": "manage_brands",
   "/dashboard/services": "manage_services",
   "/dashboard/social": "view_social",
+  "/dashboard/ads": "view_ads",
+  "/dashboard/advertising": "view_ads",
+  "/dashboard/contributions": "approve_content",
   "/dashboard/integrations": "manage_integrations",
   "/dashboard/jobs": "manage_jobs",
   "/dashboard/activity": "view_activity_log",
@@ -190,8 +202,10 @@ export const MODULE_ACCESS: Record<
   "/dashboard/social/users": "view_team",
   "/dashboard/social/settings": "view_social",
   "/dashboard/billing": "view_social",
+  "/dashboard/invoices": "manage_settings",
   "/dashboard/admin": "view_admin",
   "/dashboard/settings": "manage_settings",
+  "/dashboard/client-billing": "manage_settings",
 };
 
 const VALID_ROLES: RoleKey[] = [

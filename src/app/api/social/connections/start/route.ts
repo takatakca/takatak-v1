@@ -81,6 +81,11 @@ export async function POST(
 
         returnPath:
           validation.data.returnPath,
+
+        communityContent:
+          validation.data.communityContent,
+        googlePurpose:
+          validation.data.googlePurpose,
       });
 
     revalidatePath(
@@ -104,11 +109,21 @@ export async function POST(
               ? "Continue to Threads to authorize this brand."
               : authorization.provider === "tiktok"
                 ? "Continue to TikTok to authorize this brand."
-                : authorization.provider === "google"
-                  ? "Continue to Google to authorize YouTube for this brand."
-                  : authorization.provider === "x"
+                : authorization.provider === "google_business"
+                  ? "Continue to Google to authorize Business Profile for this brand."
+                  : authorization.provider === "google"
+                    ? "Continue to Google to authorize YouTube for this brand."
+                    : authorization.provider === "x"
                     ? "Continue to X to authorize this brand."
-                    : "Continue to Facebook to authorize this brand.",
+                    : authorization.provider === "twitch"
+                      ? "Continue to Twitch to authorize this brand."
+                      : authorization.provider === "meta_ads"
+                        ? "Continue to Facebook to authorize Meta Ads for this brand."
+                        : authorization.provider === "google_ads"
+                          ? "Continue to Google to authorize Google Ads for this brand."
+                          : authorization.provider === "looker_studio"
+                            ? "Continue to Google to authorize Looker Studio for this brand."
+                            : "Continue to Facebook to authorize this brand.",
 
         authorization: {
           authorizationUrl:

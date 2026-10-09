@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Today's Deals",
   description:
     "Limited-time bundles and discounts across TAKATAK services.",
+  alternates: { canonical: "/deals" },
 };
 
 export default function DealsPage() {

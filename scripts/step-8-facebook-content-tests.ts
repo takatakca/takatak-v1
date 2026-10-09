@@ -100,9 +100,11 @@ section("equal-length comparison periods");
 
 function mockTransport(handlers: {
   posts?: Record<string, unknown>[];
+  tagged?: Record<string, unknown>[];
   reels?: Record<string, unknown>[];
   stories?: Record<string, unknown>[];
   postsError?: MetaInsightError;
+  taggedError?: MetaInsightError;
   reelsError?: MetaInsightError;
   storiesError?: MetaInsightError;
   demographics?: Record<string, unknown>;
@@ -115,6 +117,10 @@ function mockTransport(handlers: {
       if (stage === "page_posts" || href.includes("published_posts")) {
         if (handlers.postsError) throw handlers.postsError;
         return { data: handlers.posts ?? [] };
+      }
+      if (stage === "page_tagged" || href.includes("/tagged")) {
+        if (handlers.taggedError) throw handlers.taggedError;
+        return { data: handlers.tagged ?? [] };
       }
       if (stage === "page_reels" || href.includes("video_reels")) {
         if (handlers.reelsError) throw handlers.reelsError;
@@ -131,6 +137,19 @@ function mockTransport(handlers: {
       return { data: [] };
     },
   };
+}
+
+section("community OAuth scope stays opt-in");
+{
+  const { resolveMetaOAuthScopes } = await import(
+    "../src/lib/social/providers/meta-oauth"
+  );
+  const base = resolveMetaOAuthScopes("facebook_pages");
+  const community = resolveMetaOAuthScopes("facebook_pages_community");
+  assert.equal(base.includes("pages_read_user_content" as never), false);
+  assert.equal(community.includes("pages_read_user_content" as never), true);
+  assert.equal(community.includes("pages_read_engagement"), true);
+  console.log("ok: community read permission is opt-in and preserves base Page scopes");
 }
 
 section("empty Page with no content");
@@ -183,6 +202,17 @@ section("posts, reels, stories, and mixed content");
           },
         },
       ],
+      tagged: [
+        {
+          id: "t1",
+          message: "Parent tagged AHM Verdun",
+          created_time: "2026-08-01T12:00:00+0000",
+          permalink_url: "https://facebook.com/example/posts/tagged-1",
+          full_picture: "https://cdn.example/tagged.jpg",
+          reactions: { summary: { total_count: 4 } },
+          comments: { summary: { total_count: 1 } },
+        },
+      ],
       reels: [
         {
           id: "r1",
@@ -207,7 +237,7 @@ section("posts, reels, stories, and mixed content");
     }),
   });
 
-  assert.equal(result.items.length, 4);
+  assert.equal(result.items.length, 5);
   const byType = Object.fromEntries(
     ["post", "reel", "story"].map((type) => [
       type,
@@ -215,7 +245,12 @@ section("posts, reels, stories, and mixed content");
     ]),
   ) as Record<string, FacebookContentItemDraft[]>;
 
-  assert.equal(byType.post.length, 1);
+  assert.equal(byType.post.length, 2);
+  assert.equal(byType.post[0]!.sourceKind, "page_published");
+  assert.equal(
+    byType.post.find((item) => item.externalObjectId === "t1")!.sourceKind,
+    "page_tagged",
+  );
   assert.equal(byType.post[0]!.reactions, 0);
   assert.equal(byType.post[0]!.comments, 2);
   assert.equal(byType.post[0]!.shares, 1);

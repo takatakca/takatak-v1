@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 
 import { validateAccountAccessInput } from "@/lib/account/account-access-validation";
-import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
-import { isPrismaKnownRequestError } from "@/lib/db/prisma-errors";
+import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
+import { originFromRequest } from "@/lib/config/app-origin";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import {
@@ -60,9 +60,11 @@ export async function PATCH(request: NextRequest) {
   }
 
   const prisma = getPrisma();
-  const admin = getSupabaseAdminClient();
+  const supabase = await createSupabaseServerClient({
+    persistSessionCookies: true,
+  });
 
-  if (!prisma || !admin) {
+  if (!prisma || !supabase) {
     return jsonResponse(
       { ok: false, message: "Access settings are temporarily unavailable." },
       503,
@@ -89,7 +91,20 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const emailChanged = email !== profile.email;
+    if (email === null && profile.email) {
+      return jsonResponse(
+        {
+          ok: false,
+          message: "Enter an email address, or leave your current email unchanged.",
+          fieldErrors: {
+            email: "Enter an email address, or leave your current email unchanged.",
+          },
+        },
+        400,
+      );
+    }
+
+    const emailChanged = email !== null && email !== profile.email;
     if (!emailChanged && !newPassword) {
       return jsonResponse(
         { ok: false, message: "There are no access changes to save." },
@@ -97,16 +112,25 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (emailChanged) {
-      const taken = await prisma.profile.findFirst({
-        where: {
-          email,
-          id: { not: profile.id },
-        },
-        select: { id: true },
-      });
+    if (email && emailChanged) {
+      const [takenProfile, takenIdentity] = await Promise.all([
+        prisma.profile.findFirst({
+          where: {
+            email,
+            id: { not: profile.id },
+          },
+          select: { id: true },
+        }),
+        prisma.masterIdentity.findFirst({
+          where: {
+            primaryEmail: email,
+            NOT: { profileId: profile.id },
+          },
+          select: { id: true },
+        }),
+      ]);
 
-      if (taken) {
+      if (takenProfile || takenIdentity) {
         return jsonResponse(
           {
             ok: false,
@@ -120,13 +144,28 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+    if (userError || !user || user.id !== profile.authUserId) {
+      return jsonResponse(
+        { ok: false, message: "Please sign in again." },
+        401,
+      );
+    }
+
     if (emailChanged || newPassword) {
-      const { error: authError } = await admin.auth.admin.updateUserById(
-        profile.authUserId,
+      const { error: authError } = await supabase.auth.updateUser(
         {
-          ...(emailChanged ? { email, email_confirm: true } : {}),
+          ...(emailChanged && email ? { email } : {}),
           ...(newPassword ? { password: newPassword } : {}),
         },
+        emailChanged
+          ? {
+              emailRedirectTo: `${originFromRequest(request)}/auth/callback?next=/dashboard/account`,
+            }
+          : undefined,
       );
 
       if (authError) {
@@ -141,75 +180,40 @@ export async function PATCH(request: NextRequest) {
             message:
               authError.message.toLowerCase().includes("password")
                 ? "The new password could not be saved."
-                : "The email address could not be updated.",
+                : "The confirmation message could not be sent.",
           },
           502,
         );
       }
     }
 
-    if (emailChanged) {
-      try {
-        await prisma.$transaction(async (transaction) => {
-          await transaction.profile.update({
-            where: { id: profile.id },
-            data: { email },
-          });
-
-          await transaction.auditLog.create({
-            data: {
-              profileId: access.profileId,
-              clientId:
-                access.mode === "client_scoped"
-                  ? access.activeClientId
-                  : null,
-              action: "account_access_updated",
-              entityType: "Profile",
-              entityId: profile.id,
-              metadata: {
-                note: `${profile.displayName ?? email} updated their sign-in email.`,
-              },
-            },
-          });
-        });
-      } catch (error) {
-        if (isPrismaKnownRequestError(error) && error.code === "P2002") {
-          return jsonResponse(
-            {
-              ok: false,
-              message: "An account already exists for this email address.",
-              fieldErrors: {
-                email: "An account already exists for this email address.",
-              },
-            },
-            409,
-          );
-        }
-        throw error;
-      }
-    } else {
-      await prisma.auditLog.create({
-        data: {
-          profileId: access.profileId,
-          clientId:
-            access.mode === "client_scoped" ? access.activeClientId : null,
-          action: "account_password_updated",
-          entityType: "Profile",
-          entityId: profile.id,
-          metadata: {
-            note: `${profile.displayName ?? profile.email} updated their password.`,
-          },
+    await prisma.auditLog.create({
+      data: {
+        profileId: access.profileId,
+        clientId:
+          access.mode === "client_scoped" ? access.activeClientId : null,
+        action: emailChanged
+          ? "account_email_verification_requested"
+          : "account_password_updated",
+        entityType: "Profile",
+        entityId: profile.id,
+        metadata: {
+          emailChangeRequested: emailChanged,
+          passwordChanged: Boolean(newPassword),
         },
-      });
-    }
+      },
+    });
 
     return jsonResponse(
       {
         ok: true,
         message: emailChanged
-          ? "Your sign-in email was updated."
+          ? newPassword
+            ? "Your password was updated. Confirm the new email from the message we sent before it can be used."
+            : "Check the new email and confirm it before it can be used."
           : "Your password was updated.",
-        email,
+        email: profile.email,
+        verificationPending: emailChanged,
       },
       200,
     );
