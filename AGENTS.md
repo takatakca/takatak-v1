@@ -25,3 +25,7 @@ Everything visual or written for TAKATAK follows `BRAND.md` (logo, colours, tagl
 - Start the app with `npm run dev -- --hostname 0.0.0.0 --port 3000`. No secrets are required for local development. Without Supabase env vars, a non-production runtime stays in foundation mode: `/login` shows "Auth not configured yet", `/dashboard` renders mock data, and `GET /api/health` reports `database` and `supabase` as `not_configured`.
 - Leave `NODE_ENV` unset for this demo. A production runtime without auth is blocked on purpose.
 - Checks that do not need a database: `npm run typecheck`, `npm run lint`, `npm run qa:access`, `npm run test:auth`, and `npm run build` (`next build --webpack`).
+
+## MIMT / TAKATAK AUTH — mandatory product context
+
+For any TAKATAK phone login, Twilio SMS, customer identity/CRM, MIMT telecom, wholesale Internet, SIM/eSIM, or MIMT.ca website task: **read [`docs/mimt/README.md`](docs/mimt/README.md) and the relevant linked runbook first**. Current P0 is [TAKATAK AUTH issue #141](https://github.com/takatakca/takatak-v1/issues/141). Do not create duplicate projects, assume supplier API access, or import private subscribers/communications into agency knowledge. Document actual tests and hand off through WORKLOG.md.
