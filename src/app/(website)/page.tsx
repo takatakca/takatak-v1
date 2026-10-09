@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 
-import { HomeHero } from "@/components/website/home/HomeHero";
-import { HomeEcosystemGrid } from "@/components/website/home/HomeEcosystemGrid";
-import { HomeHowItWorks } from "@/components/website/home/HomeHowItWorks";
-import { HomePricingTeaser } from "@/components/website/home/HomePricingTeaser";
-import { FinalCtaSection } from "@/components/website/home/FinalCtaSection";
+import { CoreCategoryBlocks } from "@/components/website/premium/CategoryBlock";
+import { CategoryNavigator } from "@/components/website/premium/CategoryNavigator";
+import { CoreIntro } from "@/components/website/premium/CoreIntro";
+import { PremiumFinalCta } from "@/components/website/premium/PremiumFinalCta";
+import { PremiumHero } from "@/components/website/premium/PremiumHero";
+import { PriceTeaser } from "@/components/website/premium/PriceTeaser";
 import { brand } from "@/lib/website/brand";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { websiteStructuredData } from "@/lib/website/structured-data";
@@ -17,21 +18,25 @@ export const metadata: Metadata = {
   },
 };
 
-// Short homepage (Oct 2026): hero, services, how it works, pricing, final call to action.
+// Premium homepage (Oct 2026): hero, the TAKATAK core (website + 9 categories
+// in the owner's order, with a sticky navigator), pricing teaser, final call to action.
 export default function HomePage() {
   return (
-    <>
+    <div className="tk-page tk-premium brand-dark">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: websiteStructuredData(getApplicationOrigin()),
         }}
       />
-      <HomeHero />
-      <HomeEcosystemGrid />
-      <HomeHowItWorks />
-      <HomePricingTeaser />
-      <FinalCtaSection />
-    </>
+      <PremiumHero />
+      <div id="core" className="relative" style={{ scrollMarginTop: "var(--tk-header-h, 64px)" }}>
+        <CoreIntro />
+        <CategoryNavigator />
+        <CoreCategoryBlocks />
+      </div>
+      <PriceTeaser />
+      <PremiumFinalCta />
+    </div>
   );
 }

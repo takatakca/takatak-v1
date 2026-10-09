@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { CategorySalesPage } from "@/components/website/premium/CategorySalesPage";
 import { ServiceProductPage } from "@/components/website/services/ServiceProductPage";
+import { SERVICE_SLUG_TO_CATEGORY } from "@/lib/website/core-categories";
 import {
   getServicePage,
   servicePages,
@@ -42,6 +44,12 @@ export default async function ServicePage({
 
   if (!service) {
     notFound();
+  }
+
+  // The TAKATAK core categories get the premium sales page; other services keep theirs.
+  const category = SERVICE_SLUG_TO_CATEGORY[service.slug];
+  if (category) {
+    return <CategorySalesPage categoryKey={category} />;
   }
 
   return <ServiceProductPage page={service} />;
