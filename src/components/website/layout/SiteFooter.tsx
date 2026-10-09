@@ -36,11 +36,17 @@ const cols = [
   {
     title: "Business Solutions",
     links: [
+      // The TAKATAK core, in the owner's order (src/lib/website/core-categories.ts).
+      { to: "/services/websites", label: "Websites" },
       { to: "/domain", label: "Domains" },
       { to: "/hosting", label: "Hosting" },
-      { to: "/services/local-listings", label: "Local Visibility" },
-      { to: "/services/lead-generation", label: "Lead Generation" },
-      { to: "/services/ai-business-tools", label: "AI Tools" },
+      { to: "/services/marketing", label: "Marketing & ads" },
+      { to: "/services/social-media", label: "Social media" },
+      { to: "/services/local-listings", label: "Local listings" },
+      { to: "/services/reviews", label: "Reviews & reputation" },
+      { to: "/services/ai-studio", label: "AI Studio" },
+      { to: "/services/billing", label: "Billing & invoicing" },
+      { to: "/services/voip", label: "Business phone (planned)" },
     ],
   },
   {
