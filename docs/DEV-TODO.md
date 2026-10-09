@@ -51,9 +51,9 @@ The kit is in knowledgeAI `deploy/ai-studio/` (README has every command).
 
 | PR | Task |
 |---|---|
-| #75, #143 | Merge when CI is green (Claude session 01KBGh1v is doing this). |
-| #135 SEO audit, #136 QMAPS reviews, #137 AI drafts | Approved to keep (they win over #117). For each: merge `main` in, rename its migration to a date after `20261008153000`, **remove it from the production approved list** (keep it on the staging list), get CI green, merge. One at a time. |
-| #117 Growth Suite | Split into one PR per phase: reputation (writes into the same listing reviews as #136), analytics, website chat, agents and credits (on top of #137), Google, plans. Same migration rules. Drop the parts #135–#137 already cover. |
+| #75, #143 | Done (merged 2026-10-09). |
+| #117 Growth Suite | **Merged 2026-10-09** at the owner's request: reputation, analytics, chat, AI agents and credits, Google, plans. Its 9 migrations are on the staging list only. Production needs the owner's approval, like 1.5. See `docs/GROWTH_SUITE_PASSATION.md` and `docs/GROWTH_SUITE_ROLLBACK.md`. |
+| #135 SEO audit, #136 QMAPS reviews, #137 AI drafts | **Owner to confirm** whether these still go in on top of #117. If yes, each must be rebuilt on current `main` (one at a time): <br>• #135: add its stored multi-page audit to #117's SEO page instead of replacing it. <br>• #136: feed QMAPS reviews into the same reviews data that #117's reputation module shows (one reviews dashboard). <br>• #137: real model calls for AI Studio drafts. #117's AI engine expects an external gateway that doesn't exist yet. <br>Also: rename migrations to a date after the latest on main, staging list only. |
 | #128 Customer intelligence | **Blocked:** privacy review (Quebec Law 25: consent, purpose, retention, access, deletion) before any production migration. |
 | #104 Coolify, #27 Food Hub | **Frozen** until the site is live (owner decision). See the PR comments for what each needs when picked up. |
 | MIMT | **Paused by the owner** (see `WORKLOG.md`). Don't start MIMT work. |
