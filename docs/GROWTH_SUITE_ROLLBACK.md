@@ -4,8 +4,8 @@ This runbook covers every change on branch `claude/festive-newton-5i9rv7`. It fo
 
 ## Where things stand
 
-- **`main` is untouched.** All Growth Suite work lives on this branch. Nothing is merged, deployed or applied to staging or production.
-- **The migrations are gated.** None of the Growth migrations are in `APPROVED_DEPLOY_MIGRATIONS`, in either `scripts/reconcile-staging-migrations.mjs` or `scripts/reconcile-production-migrations.mjs`, so the reconcilers will not apply them. Approve them one at a time, staging first.
+- **Merged into `main` on 2026-10-09** at the owner's request. Nothing is applied to the staging or production databases until the staging reconciler runs with its approval phrase.
+- **Migration approval.** On 2026-10-09 the owner approved the 9 Growth migrations for staging (`scripts/reconcile-staging-migrations.mjs`). They are not in `scripts/reconcile-production-migrations.mjs` yet; production database approval is a separate step.
 - **Every phase is a single commit.** Each one can be reviewed, kept or reverted on its own:
 
 | Commit | Change | Migration |

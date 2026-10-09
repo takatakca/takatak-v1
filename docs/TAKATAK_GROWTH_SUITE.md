@@ -58,7 +58,7 @@ Migration: `prisma/migrations/20261009010000_growth_reputation_and_ai_credits`. 
 
 ### Production approval gate
 
-The migration is **not** in `APPROVED_DEPLOY_MIGRATIONS` in `scripts/reconcile-staging-migrations.mjs` or `scripts/reconcile-production-migrations.mjs`. That is deliberate: until the owner adds it to both lists, the reconcilers report it as unexpected-pending and refuse to deploy. To ship:
+**Status (2026-10-09):** the owner approved all 9 Growth migrations for staging; they are in `APPROVED_DEPLOY_MIGRATIONS` in `scripts/reconcile-staging-migrations.mjs`. They are **not** yet in `scripts/reconcile-production-migrations.mjs`, whose list also still lacks the billing migrations: production database approval is a separate owner step. To ship:
 1. Add it to the staging list.
 2. Run the staging reconciler.
 3. Verify.
@@ -110,7 +110,7 @@ Migration: `prisma/migrations/20261009020000_growth_analytics_and_conversations`
 - **Database checks:** message length, lookback range, accent colour format.
 - **Access:** RLS on every table, browser-role grants revoked, and the event and chat tables added to the advisor's sensitive-table list.
 
-Like Phase 2, it is **not** in the approved deploy lists yet.
+It is approved for staging (2026-10-09), not yet for production.
 
 ### TAKATAK Analytics (cookie-free)
 
@@ -159,7 +159,7 @@ Migration: `prisma/migrations/20261009030000_growth_agents_and_delivery`. It add
 - **New tables:** `ai_agent_settings` and `ai_agent_runs`.
 - **Database checks and access:** RLS on both tables, browser grants revoked, and `ai_agent_runs` added to the advisor's sensitive-table list.
 
-It is **not** in the approved deploy lists yet.
+It is approved for staging (2026-10-09), not yet for production.
 
 ### Automatic review requests (SMS / WhatsApp)
 
@@ -210,7 +210,7 @@ Migration: `prisma/migrations/20261009040000_growth_agent_schedules`. It is addi
 - **`ai_agent_settings`:** new `schedule`, `scheduleWeekday`, `scheduleHour` and `lastScheduledFor` columns, an index, and range checks.
 - **`review_responses`:** new `leadId` column.
 
-It is **not** in the approved deploy lists yet.
+It is approved for staging (2026-10-09), not yet for production.
 
 ### Autopilot
 
@@ -230,7 +230,7 @@ When a customer ticked "contact me", **Create lead for follow-up** in the feedba
 
 ## Phase 6: Review showcase, AI that acts, Core Web Vitals
 
-Migration: `prisma/migrations/20261009050000_growth_review_showcase` adds `review_responses.publishConsent` and `review_responses.hiddenFromShowcase`, plus an index. It is additive and **not** in the approved deploy lists yet.
+Migration: `prisma/migrations/20261009050000_growth_review_showcase` adds `review_responses.publishConsent` and `review_responses.hiddenFromShowcase`, plus an index. It is additive, approved for staging (2026-10-09), not yet for production.
 
 ### Review showcase (Birdeye-style widget)
 
@@ -273,7 +273,7 @@ The SEO page runs Google PageSpeed Insights v5 for mobile or desktop: performanc
 
 ## Phase 7: Google Analytics 4, Search Console, monthly growth report
 
-Migration: `prisma/migrations/20261009060000_growth_google_data_sources` adds `analytics_sites.ga4PropertyId` and `analytics_sites.searchConsoleProperty`, each with a format check. It is **not** in the approved deploy lists yet.
+Migration: `prisma/migrations/20261009060000_growth_google_data_sources` adds `analytics_sites.ga4PropertyId` and `analytics_sites.searchConsoleProperty`, each with a format check. It is approved for staging (2026-10-09), not yet for production.
 
 ### Google data (official APIs, read-only)
 
@@ -301,7 +301,7 @@ Each number is compared with the previous month, and the page lists French highl
 
 ## Phase 8: Google Business Profile (import Google reviews, publish replies)
 
-Migration: `prisma/migrations/20261009070000_growth_google_business_profile` adds `google_business_connections`, `google_business_oauth_states`, `google_business_locations` and `external_reviews`. All four have RLS, browser grants revoked and value checks, and are on the advisor's sensitive list. The migration is **not** in the approved deploy lists yet.
+Migration: `prisma/migrations/20261009070000_growth_google_business_profile` adds `google_business_connections`, `google_business_oauth_states`, `google_business_locations` and `external_reviews`. All four have RLS, browser grants revoked and value checks, and are on the advisor's sensitive list. It is approved for staging (2026-10-09), not yet for production.
 
 ### Setup
 
@@ -335,7 +335,7 @@ Migration: `prisma/migrations/20261009080000_growth_plan_subscriptions` adds:
 - **`growth_subscriptions`:** one row per client and plan, separate from the Social `client_subscriptions`.
 - **`growth_billing_events`:** Stripe event IDs, for idempotency.
 
-Both have RLS and revoked grants. The migration is **not** in the approved deploy lists yet.
+Both have RLS and revoked grants. It is approved for staging (2026-10-09), not yet for production.
 
 - **Subscribe:** `GROWTH_BILLING_ENABLED=true` plus `STRIPE_SECRET_KEY` turns on **Subscribe** buttons on Plans & Pricing (for clients with `manage_settings`). Checkout is a Stripe subscription, billed monthly in CAD with prices from the catalog; TAKATAK One is the bundle. **Manage billing** opens the Stripe customer portal.
 - **Webhook:** `POST /api/billing/growth/webhook`, signed with `STRIPE_GROWTH_WEBHOOK_SECRET`. Subscribe it to `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` and `invoice.paid`.

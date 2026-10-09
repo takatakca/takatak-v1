@@ -99,7 +99,7 @@ npm run ops:readiness -- --origin https://staging.takatak.ca
 
 ### b) Migrations (staging d'abord, une à la fois)
 
-Les 9 migrations Growth ne sont **pas** dans `APPROVED_DEPLOY_MIGRATIONS`. Les reconcilers ne les appliqueront pas tant qu'elles n'y sont pas ajoutées :
+Le 2026-10-09, le propriétaire a approuvé les 9 migrations Growth pour staging : elles sont dans `APPROVED_DEPLOY_MIGRATIONS` de `scripts/reconcile-staging-migrations.mjs`. Elles ne sont pas encore dans la liste de production :
 
 ```
 20261009010000_growth_reputation_and_ai_credits
@@ -114,7 +114,7 @@ Les 9 migrations Growth ne sont **pas** dans `APPROVED_DEPLOY_MIGRATIONS`. Les r
 ```
 
 1. Faire une sauvegarde de la base.
-2. Les ajouter dans `scripts/reconcile-staging-migrations.mjs`, puis déployer en staging.
+2. Lancer « Reconcile TAKATAK staging migrations » en mode `apply` avec la phrase d'approbation, puis déployer en staging.
 3. Lancer `npm run qa:growth-backend` contre une base jetable.
 4. Si tout va bien en staging, faire la même chose dans `scripts/reconcile-production-migrations.mjs`.
 

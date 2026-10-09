@@ -36,6 +36,17 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   // 20261008105429_phone_only_profile_email. Resolve records Prisma history
   // only; it must not run the ALTER again.
   "20261008153000_phone_only_profile_email",
+  // Growth Suite (#117), approved by the owner on 2026-10-09. Additive only;
+  // rollback: docs/GROWTH_SUITE_ROLLBACK.md.
+  "20261009010000_growth_reputation_and_ai_credits",
+  "20261009020000_growth_analytics_and_conversations",
+  "20261009030000_growth_agents_and_delivery",
+  "20261009040000_growth_agent_schedules",
+  "20261009050000_growth_review_showcase",
+  "20261009060000_growth_google_data_sources",
+  "20261009070000_growth_google_business_profile",
+  "20261009080000_growth_plan_subscriptions",
+  "20261009090000_growth_site_domain_verification",
 ];
 
 const SUPABASE_HISTORY_NAMES = {
