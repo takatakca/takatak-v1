@@ -1,0 +1,517 @@
+"use client";
+
+import { RefreshCw } from "lucide-react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+
+type MetricCardProps = {
+  label: string;
+  value: number | null;
+  className: string;
+};
+
+function MetricCard({
+  label,
+  value,
+  className,
+}: MetricCardProps) {
+  return (
+    <div
+      className={`flex min-h-[88px] min-w-[150px] flex-1 flex-col items-center justify-center rounded-[12px] px-5 py-3 text-center ${className}`}
+    >
+      <strong className="text-[28px] font-medium leading-none">
+        {value === null ? "—" : value.toLocaleString()}
+      </strong>
+      <span className="mt-2 text-[13px] font-medium">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+type AnalyticsPoint = {
+  date: string;
+  maps: number | null;
+  search: number | null;
+  website: number | null;
+  phone: number | null;
+  directions: number | null;
+};
+
+type AnalyticsKeyword = {
+  keyword: string;
+  impressions: number | null;
+  threshold: number | null;
+};
+
+type AnalyticsResponse = {
+  ok?: boolean;
+  connected?: boolean;
+  message?: string;
+  notice?: string;
+  range?: {
+    start: string;
+    end: string;
+  };
+  totals?: {
+    maps: number | null;
+    search: number | null;
+    reach: number | null;
+    website: number | null;
+    phone: number | null;
+    directions: number | null;
+    clicks: number | null;
+  };
+  points?: AnalyticsPoint[];
+  keywords?: AnalyticsKeyword[];
+  dataAvailable?: boolean;
+};
+
+function isoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function initialRange(): {
+  start: string;
+  end: string;
+} {
+  const end = new Date();
+  end.setUTCHours(0, 0, 0, 0);
+  end.setUTCDate(end.getUTCDate() - 1);
+
+  const start = new Date(end);
+  start.setUTCDate(start.getUTCDate() - 29);
+
+  return {
+    start: isoDate(start),
+    end: isoDate(end),
+  };
+}
+
+function formatDateLabel(value: string): string {
+  const date = new Date(`${value}T00:00:00Z`);
+
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+function RealLineChart({
+  points,
+  series,
+}: {
+  points: AnalyticsPoint[];
+  series: Array<{
+    key: string;
+    label: string;
+    color: string;
+    value: (point: AnalyticsPoint) => number | null;
+  }>;
+}) {
+  const chart = useMemo(() => {
+    const knownValues = points.flatMap((point) =>
+      series
+        .map((item) => item.value(point))
+        .filter(
+          (value): value is number =>
+            typeof value === "number",
+        ),
+    );
+
+    if (knownValues.length === 0) {
+      return null;
+    }
+
+    const maximum = Math.max(...knownValues, 1);
+    const width = 1000;
+    const height = 250;
+    const top = 15;
+    const bottom = 32;
+    const chartHeight = height - top - bottom;
+
+    const lines = series.map((item) => {
+      const pathParts: string[] = [];
+      let drawing = false;
+
+      points.forEach((point, index) => {
+        const value = item.value(point);
+
+        if (value === null) {
+          drawing = false;
+          return;
+        }
+
+        const x =
+          points.length <= 1
+            ? width / 2
+            : (index / (points.length - 1)) * width;
+
+        const y =
+          top +
+          chartHeight -
+          (value / maximum) * chartHeight;
+
+        pathParts.push(
+          `${drawing ? "L" : "M"} ${x.toFixed(2)} ${y.toFixed(2)}`,
+        );
+        drawing = true;
+      });
+
+      return {
+        ...item,
+        path: pathParts.join(" "),
+      };
+    });
+
+    return {
+      width,
+      height,
+      maximum,
+      lines,
+    };
+  }, [points, series]);
+
+
+  const labelIndexes = Array.from(
+    new Set([
+      0,
+      Math.floor((points.length - 1) / 3),
+      Math.floor(((points.length - 1) * 2) / 3),
+      points.length - 1,
+    ]),
+  );
+
+  const displayChart = chart ?? {
+    width: 1000,
+    height: 300,
+    lines: [],
+  };
+
+  return (
+    <div className="mt-7">
+      <div className="mb-4 flex flex-wrap justify-end gap-4">
+        {series.map((item) => (
+          <span
+            key={item.key}
+            className="inline-flex items-center gap-2 text-xs text-slate-500"
+          >
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                backgroundColor: item.color,
+              }}
+            />
+            {item.label}
+          </span>
+        ))}
+      </div>
+
+      <div className="relative w-full overflow-hidden ">
+        <svg
+          viewBox={`0 0 ${displayChart.width} ${displayChart.height}`}
+          className="h-[250px] w-full"
+          role="img"
+          aria-label="Google Business Profile performance chart"
+          preserveAspectRatio="none"
+        >
+          {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
+            const y =
+              15 +
+              (displayChart.height - 47) * ratio;
+
+            return (
+              <line
+                key={ratio}
+                x1="0"
+                x2={displayChart.width}
+                y1={y}
+                y2={y}
+                stroke="#e8ebef"
+                strokeWidth="1"
+                vectorEffect="non-scaling-stroke"
+              />
+            );
+          })}
+
+          {displayChart.lines.map((line) =>
+            line.path ? (
+              <path
+                key={line.key}
+                d={line.path}
+                fill="none"
+                stroke={line.color}
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : null,
+          )}
+        </svg>
+
+        <div className="flex justify-between gap-3 text-[11px] text-slate-400 ">
+          {labelIndexes.map((index) => (
+            <span key={points[index].date}>
+              {formatDateLabel(points[index].date)}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatLongDate(value: string): string {
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(
+    new Date(`${value}T00:00:00Z`),
+  );
+}
+
+function LocationAnalytics({
+  accountName,
+  profileImageUrl,
+}: {
+  accountName: string;
+  profileImageUrl: string | null;
+}) {
+  const range = useMemo(() => initialRange(), []);
+
+  const [analytics, setAnalytics] =
+    useState<AnalyticsResponse | null>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [imageFailed, setImageFailed] =
+    useState(false);
+
+  const loadAnalytics = useCallback(
+    async (signal?: AbortSignal) => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const query = new URLSearchParams({
+          start: range.start,
+          end: range.end,
+        });
+
+        const response = await fetch(
+          `/api/social/google-business/analytics?${query.toString()}`,
+          {
+            method: "GET",
+            credentials: "same-origin",
+            cache: "no-store",
+            signal,
+          },
+        );
+
+        const body =
+          (await response
+            .json()
+            .catch(() => ({}))) as AnalyticsResponse;
+
+        if (!response.ok || body.ok === false) {
+          throw new Error(
+            body.message ||
+              "Google Business Profile analytics could not be loaded.",
+          );
+        }
+
+        setAnalytics(body);
+      } catch (loadError) {
+        if (
+          loadError instanceof DOMException &&
+          loadError.name === "AbortError"
+        ) {
+          return;
+        }
+
+        setAnalytics(null);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "Google Business Profile analytics could not be loaded.",
+        );
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      }
+    },
+    [range],
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    void loadAnalytics(controller.signal);
+
+    return () => {
+      controller.abort();
+    };
+  }, [loadAnalytics]);
+
+  const totals =
+    analytics?.totals ?? {
+      maps: null,
+      search: null,
+      reach: null,
+      website: null,
+      phone: null,
+      directions: null,
+      clicks: null,
+    };
+
+  const points =
+    analytics?.points ?? [];
+
+  const reachSeries = useMemo(
+    () => [
+      {
+        key: "maps",
+        label: "Google Maps",
+        color: "#6875e8",
+        value: (point: AnalyticsPoint) =>
+          point.maps,
+      },
+      {
+        key: "search",
+        label: "Google Search",
+        color: "#df6fc4",
+        value: (point: AnalyticsPoint) =>
+          point.search,
+      },
+    ],
+    [],
+  );
+
+  return (
+    <div className="min-h-full bg-white px-1 pb-16 pt-2">
+      <section
+        aria-labelledby="gbp-location-heading"
+        className="bg-white pb-7"
+      >
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h2
+            id="gbp-location-heading"
+            className="text-[22px] font-medium text-[#242930]"
+          >
+            Location
+          </h2>
+
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="relative h-12 w-12 shrink-0">
+              {profileImageUrl && !imageFailed ? (
+                <Image
+                  src={profileImageUrl}
+                  alt={accountName}
+                  fill
+                  sizes="48px"
+                  className="rounded-full object-cover"
+                  onError={() => setImageFailed(true)}
+                />
+              ) : (
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-[#e4e7eb] bg-[#f4f5f7] text-base font-semibold text-[#5f6670]"
+                  aria-hidden="true"
+                >
+                  {accountName
+                    .trim()
+                    .charAt(0)
+                    .toUpperCase()}
+                </span>
+              )}
+
+              <span
+                className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white bg-[#4285f4] text-[11px] font-bold text-white shadow-sm"
+                aria-label="Google Business Profile"
+              >
+                G
+              </span>
+            </div>
+
+            <p className="max-w-[460px] truncate text-[15px] font-medium text-[#30353c]">
+              {accountName}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-[16px] border border-[#e4e7eb] bg-white">
+        <div className="px-6 py-7 lg:px-9">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <h3 className="text-[18px] font-medium text-[#282d34]">
+              Reach
+            </h3>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <MetricCard
+                label="Google Maps"
+                value={totals.maps}
+                className="bg-[#8792f2] text-[#202744]"
+              />
+
+              <MetricCard
+                label="Google Search"
+                value={totals.search}
+                className="bg-[#f4a2df] text-[#55284a]"
+              />
+
+              <MetricCard
+                label="Total"
+                value={totals.reach}
+                className="bg-[#edac2d] text-[#533b10]"
+              />
+            </div>
+          </div>
+
+          {error ? (
+            <div
+              role="alert"
+              className="flex min-h-[300px] items-center justify-center text-sm text-rose-700"
+            >
+              {error}
+            </div>
+          ) : loading && !analytics ? (
+            <div className="flex min-h-[300px] items-center justify-center gap-3 text-sm text-slate-500">
+              <RefreshCw className="h-5 w-5 animate-spin" />
+              Loading real Google data…
+            </div>
+          ) : (
+            <RealLineChart
+              points={points}
+              series={reachSeries}
+            />
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export function GoogleBusinessLocationDashboard({
+  accountName,
+  profileImageUrl = null,
+}: {
+  accountName: string;
+  profileImageUrl?: string | null;
+}) {
+  return (
+    <LocationAnalytics
+      accountName={accountName}
+      profileImageUrl={profileImageUrl}
+    />
+  );
+}

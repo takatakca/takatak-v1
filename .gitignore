@@ -58,3 +58,6 @@ next-env.d.ts
 /supabase/.branches
 
 /newfixarchv/
+
+# Local editor/lint backups
+*.before-lint-fix

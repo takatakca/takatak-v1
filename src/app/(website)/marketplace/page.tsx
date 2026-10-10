@@ -11,9 +11,10 @@ import { WorkflowsBlock } from "@/components/website/marketplace/WorkflowsBlock"
 import { TrustBlock } from "@/components/website/marketplace/TrustBlock";
 
 export const metadata: Metadata = {
-  title: "TAKATAK Marketplace — Hire vetted talent",
+  title: "Marketplace — Hire vetted talent",
   description:
     "Logos, websites, content, automation and more. Delivered through TAKATAK with escrowed payments.",
+  alternates: { canonical: "/marketplace" },
 };
 
 export default function MarketplacePage() {

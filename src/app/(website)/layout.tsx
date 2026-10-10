@@ -5,7 +5,7 @@ import type {
 import type { ReactNode } from "react";
 import {
   Inter,
-  Space_Grotesk,
+  Montserrat,
 } from "next/font/google";
 
 import { SiteShell } from "@/components/website/layout/SiteShell";
@@ -26,7 +26,8 @@ const inter = Inter({
   variable: "--font-website-body",
 });
 
-const spaceGrotesk = Space_Grotesk({
+// Headings: Montserrat, the closest free match to the brand wordmark (BRAND.md).
+const montserrat = Montserrat({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-website-display",
@@ -34,8 +35,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: {
-    default:
-      "TAKATAK — Business services marketplace: websites, domains, hosting & growth",
+    default: "TAKATAK — Websites, domains, hosting & growth",
     template: "%s — TAKATAK",
   },
   description:
@@ -44,6 +44,11 @@ export const metadata: Metadata = {
   authors: [{ name: "TAKATAK" }],
   creator: "TAKATAK",
   publisher: "TAKATAK",
+
+  other: {
+    "takatak-site-verification": "Uiqdl66eHgBENWGITqm8nInBumnb1n2b"
+  },
+
   metadataBase: new URL(getApplicationOrigin()),
   openGraph: {
     type: "website",
@@ -63,7 +68,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#ffffff",
+  themeColor: "#060D1F",
 };
 
 export default async function WebsiteLayout({
@@ -75,7 +80,7 @@ export default async function WebsiteLayout({
 
   return (
     <div
-      className={`website-surface ${inter.variable} ${spaceGrotesk.variable}`}
+      className={`website-surface ${inter.variable} ${montserrat.variable}`}
     >
       <UpmindHeadScripts />
       <WebsiteProviders

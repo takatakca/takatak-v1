@@ -25,6 +25,7 @@ export function serviceErrorResponse(
   return jsonResponse(
     {
       ok: false,
+      code: error.code,
       message: error.message,
       ...(error.fieldErrors
         ? {

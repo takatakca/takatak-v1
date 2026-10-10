@@ -67,6 +67,7 @@ function sanitizeFatal(error) {
 }
 
 const appDir = __dirname;
+const releaseSha = require("./scripts/server-release.cjs").readReleaseSha(appDir);
 loadDotEnv(path.join(appDir, ".env"));
 process.env.NODE_ENV = "production";
 process.env.DATABASE_URL = forceNoVerifySsl(process.env.DATABASE_URL);
@@ -170,6 +171,9 @@ app
   .then(() => {
     server = createServer((req, res) => {
       const parsedUrl = parse(req.url, true);
+      if (parsedUrl.pathname === "/api/health" && releaseSha) {
+        res.setHeader("X-TAKATAK-Release", releaseSha);
+      }
       handle(req, res, parsedUrl);
     });
 

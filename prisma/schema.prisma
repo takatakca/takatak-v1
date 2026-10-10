@@ -82,6 +82,10 @@ enum PermissionKey {
   manage_social_accounts
   view_ads
   manage_ads
+  view_reputation
+  manage_reputation
+  view_conversations
+  manage_conversations
 }
 
 enum ClientStatus {
@@ -288,7 +292,8 @@ enum SocialOnboardingStatus {
 model Profile {
   id                    String        @id @default(uuid()) @db.Uuid
   authUserId            String        @unique @db.Uuid
-  email                 String        @unique
+  /// Login email when the person has one. Null for a verified phone-only identity.
+  email                 String?       @unique
   firstName             String?
   lastName              String?
   displayName           String?
@@ -328,6 +333,8 @@ model Profile {
   moderatedContributions   ContentContribution[]          @relation("ContributionModerator")
   contributionEvents       ContentContributionEvent[]     @relation("ContributionEventActor")
   contributorReputations   ContributorReputation[]
+  createdBillingInvoiceRequests   BillingInvoiceRequest[] @relation("BillingInvoiceRequestCreatedBy")
+  submittedBillingInvoiceRequests BillingInvoiceRequest[] @relation("BillingInvoiceRequestSubmittedBy")
 
   @@map("profiles")
 }
@@ -373,6 +380,7 @@ model Client {
   assignedProfile           Profile?                          @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
   subscription              ClientSubscription?
+  stripeConnectAccount      ClientStripeConnectAccount?
   customRoles               WorkspaceCustomRole[]
   rolePermissionOverrides   WorkspaceRolePermissionOverride[]
   userInvitations           UserInvitation[]
@@ -418,11 +426,31 @@ model Client {
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
   leads                     Lead[]
+  leadAttachments           LeadAttachment[]
+  billingInvoiceRequests    BillingInvoiceRequest[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
 
   adSubscription            AdSubscription?
   adCampaigns               AdCampaign[]
+  reviewProfiles            ReviewProfile[]
+  reviewRequests            ReviewRequest[]
+  reviewResponses           ReviewResponse[]
+  aiCreditAccount           AiCreditAccount?
+  aiCreditEntries           AiCreditEntry[]
+  analyticsSites            AnalyticsSite[]
+  analyticsEvents           AnalyticsEvent[]
+  analyticsAudiences        AnalyticsAudience[]
+  chatWidgets               ChatWidget[]
+  chatConversations         ChatConversation[]
+  chatMessages              ChatMessage[]
+  aiAgentSettings           AiAgentSetting[]
+  aiAgentRuns               AiAgentRun[]
+  googleBusinessConnection  GoogleBusinessConnection?
+  googleBusinessOAuthStates GoogleBusinessOAuthState[]
+  googleBusinessLocations   GoogleBusinessLocation[]
+  externalReviews           ExternalReview[]
+  growthSubscriptions       GrowthSubscription[]
   @@index([status])
   @@index([createdAt])
   @@index([assignedProfileId])
@@ -621,6 +649,9 @@ model BusinessBrand {
   visibilitySnapshots       LocalVisibilitySnapshot[]
   leadSources               LeadSource[]
   leadCampaigns             LeadCampaign[]
+  reviewProfiles            ReviewProfile[]
+  analyticsSites            AnalyticsSite[]
+  chatWidgets               ChatWidget[]
   leads                     Lead[]
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
@@ -911,6 +942,11 @@ enum SocialPlatform {
   pinterest
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialAccountStatus {
@@ -936,12 +972,18 @@ enum SocialConnectionProvider {
   instagram
   threads
   google
+  google_business
   linkedin
   tiktok
   pinterest
   x
   bluesky
   twitch
+  web
+  blog
+  meta_ads
+  google_ads
+  looker_studio
 }
 
 enum SocialConnectionStatus {
@@ -1057,6 +1099,12 @@ model SocialAccount {
   displayName            String?
   profileUrl             String?
   profileImageUrl        String?
+  avatarStorageKey       String?
+  avatarContentType      String?
+  avatarByteSize         Int?
+  avatarSourceUrl        String?
+  avatarSyncedAt         DateTime?
+  avatarSyncError        String?
   category               String?
   accountType            String?
   status                 SocialAccountStatus       @default(not_connected)
@@ -1083,6 +1131,7 @@ model SocialAccount {
 
   @@unique([integrationAccountId, platform, externalAccountId])
   @@unique([providerConnectionId, platform, externalAccountId])
+  @@index([avatarStorageKey])
   /// Partial unique: one connected Facebook Page per Client
   /// (see migration sa_one_connected_facebook_page_per_client_key).
   /// Partial unique: one connected Facebook Page per provider connection
@@ -1103,6 +1152,30 @@ model SocialAccount {
   /// (see migration sa_one_connected_x_account_per_client_key).
   /// Partial unique: one connected X account per connection
   /// (see migration sa_one_connected_x_per_connection_key).
+  /// Partial unique: one connected Twitch channel per Client
+  /// (see migration sa_one_connected_twitch_account_per_client_key).
+  /// Partial unique: one connected Twitch channel per connection
+  /// (see migration sa_one_connected_twitch_per_connection_key).
+  /// Partial unique: one connected website host per Client
+  /// (see migration sa_one_connected_web_site_per_client_key).
+  /// Partial unique: one connected website per web connection
+  /// (see migration sa_one_connected_web_per_connection_key).
+  /// Partial unique: one connected blog host per Client
+  /// (see migration sa_one_connected_blog_per_client_key).
+  /// Partial unique: one connected blog per blog connection
+  /// (see migration sa_one_connected_blog_per_connection_key).
+  /// Partial unique: one connected Meta ad account per Client
+  /// (see migration sa_one_connected_meta_ads_account_per_client_key).
+  /// Partial unique: one connected Meta ad account per connection
+  /// (see migration sa_one_connected_meta_ads_per_connection_key).
+  /// Partial unique: one connected Google Ads account per Client
+  /// (see migration sa_one_connected_google_ads_account_per_client_key).
+  /// Partial unique: one connected Google Ads account per connection
+  /// (see migration sa_one_connected_google_ads_per_connection_key).
+  /// Partial unique: one connected Looker Studio report per Client
+  /// (see migration sa_one_connected_looker_studio_report_per_client_key).
+  /// Partial unique: one connected Looker Studio report per connection
+  /// (see migration sa_one_connected_looker_studio_per_connection_key).
   @@index([clientId])
   @@index([businessBrandId])
   @@index([integrationAccountId])
@@ -1213,11 +1286,12 @@ model SocialProviderConnection {
   businessBrand BusinessBrand @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Cascade)
   createdBy     Profile?      @relation("SocialConnectionCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
 
-  credential     SocialCredential?
-  oauthStates    SocialOAuthState[]
-  socialAccounts SocialAccount[]
-  adAccounts     SocialAdAccount[]
-  syncStates     SocialAccountSyncState[]
+  credential          SocialCredential?
+  oauthStates         SocialOAuthState[]
+  blueskyOAuthRecords BlueskyOAuthStore[]
+  socialAccounts      SocialAccount[]
+  adAccounts          SocialAdAccount[]
+  syncStates          SocialAccountSyncState[]
 
   /// Same Meta user MAY authorize multiple Brands in one Client.
   /// Duplicate control is Brand-scoped live unique (above), not Client+subject unique.
@@ -1346,6 +1420,37 @@ model SocialOAuthState {
   @@index([businessBrandId, clientId])
   @@index([connectionId, clientId, businessBrandId, provider])
   @@map("social_oauth_states")
+}
+
+/// Encrypted AT Protocol OAuth state and session storage.
+///
+/// The SDK payload contains DPoP private key material and OAuth credentials.
+/// Payloads are encrypted with AES-256-GCM before database persistence.
+/// Browser-facing Supabase roles receive no access to this table.
+model BlueskyOAuthStore {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  connectionId     String    @db.Uuid
+  /// state | session
+  kind             String
+  /// OAuth state for state records; DID for session records.
+  storeKey         String
+  encryptedPayload String
+  iv               String
+  authTag          String
+  keyVersion       Int       @default(1)
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  connection SocialProviderConnection @relation(fields: [connectionId, clientId], references: [id, clientId], onDelete: Cascade)
+
+  @@unique([connectionId, kind, storeKey], map: "bluesky_oauth_store_scope_key")
+  @@index([clientId])
+  @@index([connectionId, kind])
+  @@index([kind, storeKey])
+  @@index([expiresAt])
+  @@map("bluesky_oauth_store")
 }
 
 /// Social media campaign owned by a client/brand.
@@ -1486,6 +1591,8 @@ model SocialCompetitorTrack {
   category           String?
   /// active | removed
   status             String    @default("active")
+  /// facebook | twitch. Facebook sync only reads facebook rows.
+  platform           String    @default("facebook")
   /// available | stale | unavailable | permission_denied | rate_limited | failed | pending
   availability       String    @default("pending")
   /// ready | feature_required | permission_denied | unavailable | unknown
@@ -1512,6 +1619,7 @@ model SocialCompetitorTrack {
   @@index([nextRefreshAt])
   @@index([dispatchJobId])
   @@index([businessBrandId])
+  @@index([platform])
   @@map("social_competitor_tracks")
 }
 
@@ -2998,6 +3106,7 @@ model Lead {
   leadCampaign    LeadCampaign?  @relation(fields: [leadCampaignId], references: [id])
   assignedProfile Profile?       @relation("AssignedLeads", fields: [assignedProfileId], references: [id])
   activities      LeadActivity[]
+  attachments     LeadAttachment[]
 
   @@index([clientId])
   @@index([businessBrandId])
@@ -3094,6 +3203,7 @@ model MasterIdentity {
   hockeyStripeEvents  HockeyStripeWebhookEvent[]
 
   experienceLaunchCodes ExperienceLaunchCode[]
+  billingInvoiceRequests BillingInvoiceRequest[]
   @@index([primaryEmail])
   @@index([primaryPhone])
   @@map("master_identities")
@@ -4045,4 +4155,625 @@ model HockeyTravelProfile {
   @@index([status])
   @@index([identityId, status])
   @@map("hockey_travel_profiles")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — Reputation (review funnel) and AI credits.
+// Server-side Prisma only; RLS enabled with no PostgREST policies.
+// ---------------------------------------------------------------------------
+
+enum ReviewChannel {
+  link
+  qr
+  sms
+  whatsapp
+  email
+}
+
+enum ReviewRequestStatus {
+  created
+  opened
+  rated
+}
+
+enum ReviewFeedbackStatus {
+  new
+  acknowledged
+  resolved
+}
+
+enum AiCreditReason {
+  purchase
+  grant
+  debit
+  refund
+  adjustment
+}
+
+model ReviewProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  clientId          String   @db.Uuid
+  businessBrandId   String?  @db.Uuid
+  name              String
+  publicSlug        String   @unique
+  googlePlaceId     String?
+  facebookReviewUrl String?
+  thankYouMessage   String?
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  client        Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?   @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  requests      ReviewRequest[]
+  responses     ReviewResponse[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("review_profiles")
+}
+
+model ReviewRequest {
+  id                 String              @id @default(uuid()) @db.Uuid
+  clientId           String              @db.Uuid
+  profileId          String              @db.Uuid
+  channel            ReviewChannel       @default(link)
+  recipientName      String?
+  tokenHash          String              @unique
+  status             ReviewRequestStatus @default(created)
+  expiresAt          DateTime
+  openedAt           DateTime?
+  ratedAt            DateTime?
+  sentAt             DateTime?
+  deliveryStatus     String?
+  providerMessageId  String?
+  recipientMasked    String?
+  createdByProfileId String?             @db.Uuid
+  createdAt          DateTime            @default(now())
+
+  client   Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile  ReviewProfile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  response ReviewResponse?
+
+  @@index([clientId, createdAt])
+  @@index([profileId, createdAt])
+  @@map("review_requests")
+}
+
+model ReviewResponse {
+  id                  String               @id @default(uuid()) @db.Uuid
+  clientId            String               @db.Uuid
+  profileId           String               @db.Uuid
+  requestId           String?              @unique @db.Uuid
+  rating              Int                  @db.SmallInt
+  feedback            String?
+  contactName         String?
+  contactEmail        String?
+  contactPhone        String?
+  followUpConsent     Boolean              @default(false)
+  publishConsent      Boolean              @default(false)
+  hiddenFromShowcase  Boolean              @default(false)
+  publicLinkClickedAt DateTime?
+  status              ReviewFeedbackStatus @default(new)
+  resolvedAt          DateTime?
+  resolvedByProfileId String?              @db.Uuid
+  leadId              String?              @db.Uuid
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  client  Client         @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile ReviewProfile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  request ReviewRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([profileId, createdAt])
+  @@index([clientId, status])
+  @@index([profileId, publishConsent])
+  @@map("review_responses")
+}
+
+model AiCreditAccount {
+  clientId  String   @id @db.Uuid
+  balance   Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("ai_credit_accounts")
+}
+
+model AiCreditEntry {
+  id             String         @id @default(uuid()) @db.Uuid
+  clientId       String         @db.Uuid
+  delta          Int
+  balanceAfter   Int
+  reason         AiCreditReason
+  actionKey      String?
+  idempotencyKey String         @unique
+  note           String?
+  actorProfileId String?        @db.Uuid
+  createdAt      DateTime       @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("ai_credit_entries")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — first-party analytics, retargeting audiences and web chat.
+// Cookie-free analytics: visitors are a daily-rotating salted hash, no raw IP.
+// Server-side Prisma only; RLS enabled with no PostgREST policies.
+// ---------------------------------------------------------------------------
+
+enum AnalyticsEventType {
+  pageview
+  event
+  conversion
+}
+
+enum ChatConversationStatus {
+  open
+  closed
+}
+
+enum ChatSender {
+  visitor
+  staff
+  ai
+  system
+}
+
+model AnalyticsSite {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  name            String
+  domain          String
+  publicKey       String   @unique
+  allowedOrigins  String[] @default([])
+  active          Boolean  @default(true)
+  ga4PropertyId   String?
+  searchConsoleProperty String?
+  verificationToken String   @default(dbgenerated("replace((gen_random_uuid())::text, '-'::text, ''::text)"))
+  domainVerifiedAt  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?      @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  events        AnalyticsEvent[]
+  audiences     AnalyticsAudience[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("analytics_sites")
+}
+
+model AnalyticsEvent {
+  id           String             @id @default(uuid()) @db.Uuid
+  siteId       String             @db.Uuid
+  clientId     String             @db.Uuid
+  type         AnalyticsEventType @default(pageview)
+  name         String?
+  path         String
+  referrerHost String?
+  utmSource    String?
+  utmMedium    String?
+  utmCampaign  String?
+  country      String?
+  region       String?
+  city         String?
+  device       String?
+  browser      String?
+  visitorHash  String
+  occurredAt   DateTime           @default(now())
+
+  site   AnalyticsSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  client Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([siteId, occurredAt])
+  @@index([clientId, occurredAt])
+  @@index([siteId, type, occurredAt])
+  @@map("analytics_events")
+}
+
+model AnalyticsAudience {
+  id           String   @id @default(uuid()) @db.Uuid
+  clientId     String   @db.Uuid
+  siteId       String   @db.Uuid
+  name         String
+  pathPrefixes String[] @default([])
+  eventNames   String[] @default([])
+  lookbackDays Int      @default(30)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  client Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  site   AnalyticsSite @relation(fields: [siteId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@index([siteId])
+  @@map("analytics_audiences")
+}
+
+model ChatWidget {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  businessBrandId String?  @db.Uuid
+  name            String
+  publicKey       String   @unique
+  allowedOrigins  String[] @default([])
+  greeting        String?
+  accentColor     String   @default("#4f46e5")
+  whatsappNumber  String?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client        Client             @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand?     @relation(fields: [businessBrandId], references: [id], onDelete: SetNull)
+  conversations ChatConversation[]
+
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("chat_widgets")
+}
+
+model ChatConversation {
+  id                String                 @id @default(uuid()) @db.Uuid
+  clientId          String                 @db.Uuid
+  widgetId          String                 @db.Uuid
+  visitorTokenHash  String                 @unique
+  visitorName       String?
+  visitorEmail      String?
+  visitorPhone      String?
+  pageUrl           String?
+  status            ChatConversationStatus @default(open)
+  unreadForStaff    Int                    @default(0)
+  leadId            String?                @db.Uuid
+  lastMessageAt     DateTime               @default(now())
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  client   Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  widget   ChatWidget    @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+
+  @@index([clientId, status, lastMessageAt])
+  @@index([widgetId, lastMessageAt])
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String     @id @default(uuid()) @db.Uuid
+  conversationId String     @db.Uuid
+  clientId       String     @db.Uuid
+  sender         ChatSender
+  body           String
+  staffProfileId String?    @db.Uuid
+  createdAt      DateTime   @default(now())
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  client       Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([clientId, createdAt])
+  @@map("chat_messages")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — AI agent workforce. The TAKATAK AI Gateway claims runs over a
+// bearer-authenticated API; anything that publishes or spends waits for a
+// human approval in the dashboard. Server-side Prisma only; RLS enabled.
+// ---------------------------------------------------------------------------
+
+enum AiAgentRunStatus {
+  queued
+  running
+  awaiting_approval
+  approved
+  executing
+  completed
+  rejected
+  failed
+  canceled
+}
+
+model AiAgentSetting {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  agentKey        String
+  enabled         Boolean  @default(false)
+  requireApproval  Boolean   @default(true)
+  instructions     String?
+  schedule         String    @default("off")
+  scheduleWeekday  Int?      @db.SmallInt
+  scheduleHour     Int       @default(9) @db.SmallInt
+  lastScheduledFor DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, agentKey])
+  @@index([enabled, schedule])
+  @@map("ai_agent_settings")
+}
+
+model AiAgentRun {
+  id                   String           @id @default(uuid()) @db.Uuid
+  clientId             String           @db.Uuid
+  agentKey             String
+  status               AiAgentRunStatus @default(queued)
+  trigger              String           @default("manual")
+  input                Json?
+  output               Json?
+  creditsDebited       Int              @default(0)
+  error                String?
+  requestedByProfileId String?          @db.Uuid
+  decidedByProfileId   String?          @db.Uuid
+  claimedAt            DateTime?
+  decidedAt            DateTime?
+  completedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@index([status, createdAt])
+  @@map("ai_agent_runs")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — Google Business Profile (per-client OAuth). Refresh tokens and
+// PKCE verifiers are AES-256-GCM encrypted with client-bound AAD; OAuth states
+// are stored only as hashes and are single-use. Server-side Prisma only.
+// ---------------------------------------------------------------------------
+
+model GoogleBusinessConnection {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @unique @db.Uuid
+  status               String    @default("active")
+  tokenCiphertext      String
+  tokenIv              String
+  tokenAuthTag         String
+  tokenKeyVersion      Int       @default(1)
+  connectedByProfileId String?   @db.Uuid
+  lastSyncAt           DateTime?
+  lastError            String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client    Client                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  locations GoogleBusinessLocation[]
+
+  @@map("google_business_connections")
+}
+
+model GoogleBusinessOAuthState {
+  id                 String    @id @default(uuid()) @db.Uuid
+  clientId           String    @db.Uuid
+  profileId          String    @db.Uuid
+  stateHash          String    @unique
+  verifierCiphertext String
+  verifierIv         String
+  verifierAuthTag    String
+  verifierKeyVersion Int       @default(1)
+  expiresAt          DateTime
+  usedAt             DateTime?
+  createdAt          DateTime  @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("google_business_oauth_states")
+}
+
+model GoogleBusinessLocation {
+  id              String   @id @default(uuid()) @db.Uuid
+  clientId        String   @db.Uuid
+  connectionId    String   @db.Uuid
+  resourceName    String
+  title           String
+  address         String?
+  reviewProfileId String?  @db.Uuid
+  syncEnabled     Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  client     Client                   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  connection GoogleBusinessConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  reviews    ExternalReview[]
+
+  @@unique([clientId, resourceName])
+  @@index([connectionId])
+  @@map("google_business_locations")
+}
+
+model ExternalReview {
+  id               String    @id @default(uuid()) @db.Uuid
+  clientId         String    @db.Uuid
+  locationId       String    @db.Uuid
+  source           String    @default("google")
+  externalId       String
+  reviewerName     String?
+  rating           Int       @db.SmallInt
+  comment          String?
+  externalCreateAt DateTime
+  externalUpdateAt DateTime
+  replyComment     String?
+  replyUpdatedAt   DateTime?
+  importedAt       DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  client   Client                 @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  location GoogleBusinessLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([locationId, externalId])
+  @@index([clientId, externalCreateAt])
+  @@map("external_reviews")
+}
+
+// ---------------------------------------------------------------------------
+// Growth Suite — modular plan subscriptions (Stripe). One row per client+plan.
+// Separate from the Social ClientSubscription. Webhook events are recorded by
+// id for idempotency; payloads are not stored.
+// ---------------------------------------------------------------------------
+
+model GrowthSubscription {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @db.Uuid
+  planKey              String
+  status               String    @default("incomplete")
+  stripeCustomerId     String?
+  stripeSubscriptionId String?   @unique
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, planKey])
+  @@index([stripeCustomerId])
+  @@map("growth_subscriptions")
+}
+
+model GrowthBillingEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+
+  @@map("growth_billing_events")
+}
+
+/// Files a website visitor attached to their request. Stored in a private
+/// bucket; staff download through short-lived signed links only.
+model LeadAttachment {
+  id            String   @id @db.Uuid
+  clientId      String   @db.Uuid
+  leadId        String   @db.Uuid
+  storageBucket String
+  storagePath   String
+  originalName  String
+  mimeType      String
+  sizeBytes     Int
+  status        String   @default("quarantined")
+  createdAt     DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  lead   Lead   @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  @@unique([storageBucket, storagePath], map: "lead_attachment_storage_key")
+  @@index([leadId])
+  @@index([clientId, createdAt])
+  @@map("lead_attachments")
+}
+
+// ════════════════════════════════════════════════════════════
+// GROUPE TAKATAK Billing — ecosystem invoice request queue.
+// Every TAKATAK app feeds invoice requests here; a platform OWNER submits
+// them to the independent Facturations service, which creates a DRAFT only.
+// See docs/TAKATAK_BILLING_FACTURATIONS_FOUNDATION.md.
+// ════════════════════════════════════════════════════════════
+
+enum BillingInvoiceRequestStatus {
+  pending
+  submitting
+  submitted
+  failed
+  rejected
+  needs_reconciliation
+  cancelled
+}
+
+model BillingInvoiceRequest {
+  id                     String                      @id @default(uuid()) @db.Uuid
+  /// Feeding app code (src/lib/billing/invoices/source-apps.ts).
+  sourceApp              String
+  /// Stable reference inside the feeding app. Unique per sourceApp.
+  sourceReference        String
+  clientId               String?                     @db.Uuid
+  masterIdentityId       String?                     @db.Uuid
+  /// Facturations Idempotency-Key derived from this row id: stable for every retry
+  /// of this request, and never shared with another TAKATAK install.
+  idempotencyKey         String                      @unique
+  /// Validated Facturations DraftInput. Immutable after insert (DB trigger).
+  draft                  Json
+  draftHash              String
+  currency               String                      @default("CAD")
+  /// Local estimate only; Facturations recalculates the authoritative draft.
+  estimatedTotalCents    BigInt
+  status                 BillingInvoiceRequestStatus @default(pending)
+  facturationsDraftId    String?                     @unique @db.Uuid
+  facturationsTotalCents BigInt?
+  submitAttempts         Int                         @default(0)
+  lastErrorCode          String?
+  lastAttemptAt          DateTime?
+  submittedAt            DateTime?
+  cancelledAt            DateTime?
+  createdByProfileId     String?                     @db.Uuid
+  submittedByProfileId   String?                     @db.Uuid
+  createdAt              DateTime                    @default(now())
+  updatedAt              DateTime                    @updatedAt
+
+  client         Client?         @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  checkoutSessions BillingInvoiceCheckoutSession[]
+  masterIdentity MasterIdentity? @relation(fields: [masterIdentityId], references: [id], onDelete: SetNull)
+  createdBy      Profile?        @relation("BillingInvoiceRequestCreatedBy", fields: [createdByProfileId], references: [id], onDelete: SetNull)
+  submittedBy    Profile?        @relation("BillingInvoiceRequestSubmittedBy", fields: [submittedByProfileId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceApp, sourceReference])
+  @@index([status, createdAt])
+  @@index([clientId])
+  @@index([masterIdentityId])
+  @@index([createdByProfileId])
+  @@index([submittedByProfileId])
+  @@map("billing_invoice_requests")
+}
+
+/// GROUPE TAKATAK Billing — Stripe Checkout sessions a client opened to pay a
+/// Facturations invoice. One open session per invoice and amount is reused;
+/// a completed one blocks a second payment; an outdated one is expired first.
+model BillingInvoiceCheckoutSession {
+  id              String   @id @default(uuid()) @db.Uuid
+  requestId       String   @db.Uuid
+  clientId        String   @db.Uuid
+  issuedInvoiceId String   @db.Uuid
+  stripeSessionId String   @unique
+  amountCents     BigInt
+  createdAt       DateTime @default(now())
+
+  request BillingInvoiceRequest @relation(fields: [requestId], references: [id], onDelete: Restrict)
+
+  @@index([requestId, createdAt])
+  @@map("billing_invoice_checkout_sessions")
+}
+
+/// Client invoicing — the client's OWN Stripe account (Stripe Connect,
+/// Stripe-hosted dashboard). Invoices a client sends to its customers live on
+/// this account; funds never pass through GROUPE TAKATAK.
+model ClientStripeConnectAccount {
+  id                   String    @id @default(uuid()) @db.Uuid
+  clientId             String    @unique @db.Uuid
+  stripeAccountId      String    @unique
+  chargesEnabled       Boolean   @default(false)
+  payoutsEnabled       Boolean   @default(false)
+  detailsSubmitted     Boolean   @default(false)
+  country              String?
+  defaultCurrency      String?
+  lastSyncedAt         DateTime?
+  /// Newest Stripe state applied (event.created or retrieve time). Older
+  /// Connect events arriving late are ignored.
+  lastStripeEventAt    DateTime?
+  connectedByProfileId String?   @db.Uuid
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+
+  @@map("client_stripe_connect_accounts")
 }

@@ -4,6 +4,7 @@ import {
   type SocialPlatformKey,
   type SocialSummaryData,
 } from "@/components/social/analytics/social-summary-dashboard";
+import { PLATFORM_NAMES } from "@/components/social/analytics/social-summary-tokens";
 import { getPrisma } from "@/lib/db/prisma";
 import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
 import { hasSocialHistory } from "@/lib/social/social-history";
@@ -12,6 +13,15 @@ import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 
 export const dynamic =
   "force-dynamic";
+
+function isSummaryPlatform(
+  value: string,
+): value is SocialPlatformKey {
+  return Object.prototype.hasOwnProperty.call(
+    PLATFORM_NAMES,
+    value,
+  );
+}
 
 export default async function SocialSummaryPage() {
   const access =
@@ -430,68 +440,49 @@ export default async function SocialSummaryPage() {
     ]);
 
     data.accounts =
-      accounts.map(
-        (account) => ({
-          ...account,
-
-          platform:
-            account.platform as SocialPlatformKey,
-        }),
+      accounts.flatMap((account) =>
+        isSummaryPlatform(account.platform)
+          ? [
+              {
+                ...account,
+                platform: account.platform,
+              },
+            ]
+          : [],
       );
 
     data.accountDaily =
-      accountDaily.map(
-        (row) => ({
-          date: row.date
-            .toISOString()
-            .slice(0, 10),
-
-          platform:
-            row.platform as SocialPlatformKey,
-
-          followers:
-            row.followers,
-
-          impressions:
-            row.impressions,
-
-          reach:
-            row.reach,
-
-          engagement:
-            row.engagement,
-
-          clicks:
-            row.clicks,
-        }),
+      accountDaily.flatMap((row) =>
+        isSummaryPlatform(row.platform)
+          ? [
+              {
+                date: row.date.toISOString().slice(0, 10),
+                platform: row.platform,
+                followers: row.followers,
+                impressions: row.impressions,
+                reach: row.reach,
+                engagement: row.engagement,
+                clicks: row.clicks,
+              },
+            ]
+          : [],
       );
 
-    data.posts =
-      posts.map(
-        (post) => ({
-          id: post.id,
-
-          platform:
-            post.platform as SocialPlatformKey,
-
-          caption:
-            post.caption,
-
-          status:
-            post.status,
-
-          scheduledAt:
-            post.scheduledAt?.toISOString() ??
-            null,
-
-          publishedAt:
-            post.publishedAt?.toISOString() ??
-            null,
-
-          createdAt:
-            post.createdAt.toISOString(),
-        }),
-      );
+    data.posts = posts.flatMap((post) =>
+      isSummaryPlatform(post.platform)
+        ? [
+            {
+              id: post.id,
+              platform: post.platform,
+              caption: post.caption,
+              status: post.status,
+              scheduledAt: post.scheduledAt?.toISOString() ?? null,
+              publishedAt: post.publishedAt?.toISOString() ?? null,
+              createdAt: post.createdAt.toISOString(),
+            },
+          ]
+        : [],
+    );
 
     data.adAccounts =
       adAccounts.map(

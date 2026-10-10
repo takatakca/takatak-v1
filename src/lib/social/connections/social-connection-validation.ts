@@ -1,5 +1,6 @@
 import { isSocialConnectionProvider } from "@/lib/social/providers/registry";
 import type { SocialConnectionProviderValue } from "@/lib/social/providers/types";
+import type { GoogleOAuthPurpose } from "@/lib/social/providers/google-oauth";
 import { isUuid } from "@/lib/validation/common";
 
 export type CreateSocialOAuthStateInput = {
@@ -7,6 +8,7 @@ export type CreateSocialOAuthStateInput = {
   businessBrandId: string;
   returnPath: string;
   communityContent: boolean;
+  googlePurpose?: GoogleOAuthPurpose;
 };
 
 export type ValidationResult<T> =
@@ -76,6 +78,11 @@ export function validateCreateSocialOAuthState(
   const returnPath =
     suppliedReturnPath ||
     "/dashboard/social/accounts";
+  const googlePurpose =
+    record.googlePurpose === "youtube" ||
+    record.googlePurpose === "google_business"
+      ? record.googlePurpose
+      : undefined;
 
   const communityContent = record.communityContent === true;
 
@@ -91,6 +98,41 @@ export function validateCreateSocialOAuthState(
   ) {
     fieldErrors.provider =
       "Select a supported social provider.";
+  }
+
+  if (provider === "web") {
+    fieldErrors.provider =
+      "Website connections are started from the website form.";
+  }
+
+  if (provider === "blog") {
+    fieldErrors.provider =
+      "Blog connections are started from the blog form.";
+  }
+
+  if (
+    provider === "google" &&
+    googlePurpose !== "youtube"
+  ) {
+    fieldErrors.googlePurpose =
+      "YouTube authorization requires the YouTube Google service.";
+  }
+
+  if (
+    provider === "google_business" &&
+    googlePurpose !== "google_business"
+  ) {
+    fieldErrors.googlePurpose =
+      "Google Business Profile authorization requires the Business Profile service.";
+  }
+
+  if (
+    provider !== "google" &&
+    provider !== "google_business" &&
+    record.googlePurpose !== undefined
+  ) {
+    fieldErrors.googlePurpose =
+      "Google service selection is only valid for Google authorization.";
   }
 
   if (
@@ -129,6 +171,7 @@ export function validateCreateSocialOAuthState(
       businessBrandId,
       returnPath,
       communityContent,
+      ...(googlePurpose ? { googlePurpose } : {}),
     },
   };
 }
