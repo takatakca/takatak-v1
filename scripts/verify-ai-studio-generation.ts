@@ -10,7 +10,7 @@ import { dbProvider, generateForWorkspace, GENERATION_SOURCE, type GenerationDb 
 
 const CLIENT = "11111111-1111-4111-8111-111111111111";
 const VOICE = "33333333-3333-4333-8333-333333333333";
-const KEY = "sk-test-0123456789abcdefghij";
+const KEY = "placeholder-key-0123456789abcdefghij"; // not a real key; no provider prefix so the secret scan stays quiet
 
 let passed = 0;
 async function check(name: string, fn: () => void | Promise<void>) {
