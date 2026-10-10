@@ -28,7 +28,8 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
-- 2026-10-10 | cursor | cursor/tk-069-ai-studio-handoff → #167 | PR | TK-069: send a saved AI draft into social approval and show that workspace's credit usage and estimated cost | CI green, then the next developer item
+- 2026-10-10 | cursor | cursor/tk-022-seo-history → #168 | PR | TK-022: weekly SEO re-audits, score history, and a white-label PDF | CI green, then the next developer item
+- 2026-10-10 | cursor | cursor/tk-069-ai-studio-handoff → #167 | done (merged 130a118) | TK-069: send a saved AI draft into social approval and show that workspace's credit usage and estimated cost | next developer item
 - 2026-10-10 | cursor | cursor/tk-014-catalog-prices → #165 | done (merged) | TK-014: public prices read from ProductCatalog when a CAD plan exists, otherwise the current catalog | seed takatak_public plans when the owner is ready
 - 2026-10-10 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | PR open, CI running | AI Studio live drafts (OpenAI/Claude) rebuilt on #117; no migration (vendor in job metadata); test key fixed for the secret scan | merge when green; wire #155 resolveProviderKey into readAiStudioConfig once #155 merges
 - 2026-10-09 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #158 | PR open (#157 merged 28d92ba) | Staging migration gate: phone-only verified by live schema; apply deploys pending only when all are approved. Staging audit now PASSES (19 recorded, 10 approved pending) but 15 unapproved repo migrations are unrecorded on staging, so apply would refuse; #158 prints their names | merge #158, re-run staging audit, owner decides on the 15; then backup + apply + staging deploy

@@ -118,6 +118,9 @@ jobs:
       - name: Website SEO and HTTPS redirect
         run: npm run qa:website-seo
 
+      - name: SEO score history
+        run: npm run qa:seo-history
+
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
 
