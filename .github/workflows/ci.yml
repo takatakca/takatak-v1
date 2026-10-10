@@ -115,6 +115,9 @@ jobs:
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
 
+      - name: AI Studio generation safeguards
+        run: npm run qa:ai-studio-generation
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 

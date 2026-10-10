@@ -90,6 +90,7 @@
     "qa:website-seo": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-seo.ts",
     "qa:voip-dashboard": "tsx scripts/verify-voip-dashboard.ts",
     "qa:website-categories": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-categories.ts",
+    "qa:ai-studio-generation": "tsx --require ./scripts/register-server-only.cjs scripts/verify-ai-studio-generation.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",
     "qa:1lv-legacy-upgrade": "tsx scripts/ci-check-one-lv-legacy-upgrade.ts",
     "qa:ahmv-schedule-feed": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-schedule-feed-tests.ts",
