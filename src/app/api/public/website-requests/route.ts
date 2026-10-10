@@ -1,6 +1,7 @@
 import { after, type NextRequest } from "next/server";
 
 import { getSessionUser } from "@/lib/auth/supabase-server";
+import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { getPrisma } from "@/lib/db/prisma";
 import { jsonResponse } from "@/lib/security/api-response";
@@ -9,6 +10,8 @@ import { readJsonBody } from "@/lib/security/write-request";
 import { createUploadToken } from "@/lib/website-leads/attachments";
 import { readWebsiteLeadsConfig } from "@/lib/website-leads/config";
 import { sendLeadAlert } from "@/lib/website-leads/notify";
+import { promoAuditStore } from "@/lib/promotions/audit-store";
+import { promoStatus, redeemPromo } from "@/lib/promotions/service";
 import { priceMarketplaceOrder } from "@/lib/website-leads/package-pricing";
 import { allowRequest, hashRequestSource } from "@/lib/website-leads/rate-limit";
 import {
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Package orders are priced from the TAKATAK catalog, never from the browser.
-  const pricedOrder = value.order ? priceMarketplaceOrder(value.order) : null;
+  let pricedOrder = value.order ? priceMarketplaceOrder(value.order) : null;
   if (value.kind === "package_order" && !pricedOrder) {
     return jsonResponse(
       { ok: false, code: "invalid_fields", fieldErrors: { package: "invalid" } },
@@ -86,6 +89,37 @@ export async function POST(request: NextRequest) {
   const prisma = getPrisma();
   if (!prisma) {
     return jsonResponse({ ok: false, code: "unavailable" }, 503);
+  }
+
+  let redeemProfileId: string | null = null;
+  if (pricedOrder?.promoCode && identity) {
+    let profile = await prisma.profile.findUnique({
+      where: { authUserId: identity.id },
+      select: { id: true },
+    });
+    if (!profile) {
+      const user = await getSessionUser();
+      if (user?.id === identity.id) {
+        const sync = await ensureProfileForSupabaseUser(user, {
+          createPersonalWorkspace: false,
+        });
+        if (
+          sync.outcome === "existing" ||
+          sync.outcome === "created" ||
+          sync.outcome === "updated"
+        ) {
+          profile = { id: sync.profileId };
+        }
+      }
+    }
+    if (profile) {
+      const status = await promoStatus(promoAuditStore(prisma), profile.id, pricedOrder.promoCode);
+      if (status === "redeemed") {
+        pricedOrder = priceMarketplaceOrder({ ...value.order!, promoCode: null });
+      } else if (pricedOrder.discountCents > 0) {
+        redeemProfileId = profile.id;
+      }
+    }
   }
 
   try {
@@ -109,6 +143,14 @@ export async function POST(request: NextRequest) {
         });
         if (status !== "sent") console.warn(`[website-requests] team alert ${status}`);
       });
+    }
+    if (redeemProfileId && pricedOrder?.promoCode && !recorded.duplicate) {
+      await redeemPromo(
+        promoAuditStore(prisma),
+        redeemProfileId,
+        pricedOrder.promoCode,
+        recorded.reference,
+      );
     }
     return jsonResponse(
       {

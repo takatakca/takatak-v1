@@ -502,6 +502,8 @@ export const fr: Record<TranslationKey, string> = {
   "promo.invite.cta": "Obtenir 10 %",
   "promo.invite.dismiss": "Non merci",
   "promo.invite.legal": "Une utilisation par entreprise. Appliqué au paiement.",
+  "promo.code.rejected": "Ce code ne peut pas être appliqué.",
+  "promo.code.unavailable": "Impossible de vérifier ce code. Réessayez.",
 
   "nav.findDomain": "Trouver mon domaine",
   "nav.searchOpen": "Rechercher les services TAKATAK",
