@@ -30,7 +30,7 @@ assert(service.includes('status !== "active"'), "suspended/canceled access is re
 assert(launch.includes("/login?next=%2Fapi%2Fexperiences%2Frevers%2Flaunch"), "launch uses the existing TAKATAK login flow");
 assert(exchange.includes("authorizeReversExperienceService"), "exchange is service-token protected");
 assert(eventRoute.includes("X-TAKATAK-Signature"), "REVERS event receiver uses the current HMAC contract");
-assert(signature.includes("SHA256(body)"), "HMAC contract hashes the request body");
+assert(signature.includes("sha256Hex(input.body)"), "HMAC contract hashes the request body");
 assert(eventRoute.includes("IntegrationRequestNonce"), "REVERS events use nonce replay protection");
 assert(eventRoute.includes("sourceApplication: REVERS_INTEGRATION_ID"), "events are stored under the REVERS integration");
 assert(migration.includes("revers_access"), "REVERS access entitlement is seeded");
