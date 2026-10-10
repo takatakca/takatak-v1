@@ -94,7 +94,7 @@ QMAPS_SYNC_CLIENT_ID=<shared integration id>
 QMAPS_SYNC_WEBHOOK_SECRET=<32+ char secret, also set on the QMAPS sender>
 ```
 
-The database migration `20261006120000_qmaps_listing_review_external_ids` adds nullable `externalId` columns, unique per provider. It is additive only.
+The database migration `20261010070000_qmaps_listing_review_external_ids` adds nullable `externalId` columns, unique per provider. It is additive only. It is **not** on the staging or production approved list: the owner approves it before it is applied anywhere (renamed on 2026-10-10 so it sorts after the Growth Suite migrations; the old date collided with `20261006120000_takatak_billing_invoice_requests`).
 
 ## Verification
 
