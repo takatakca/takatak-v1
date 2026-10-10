@@ -17,7 +17,7 @@ const launch = read("src/app/api/experiences/revers/launch/route.ts");
 const exchange = read("src/app/api/experiences/revers/exchange/route.ts");
 const eventRoute = read("src/app/api/v1/integrations/revers/events/route.ts");
 const signature = read("src/lib/integrations/revers/signature.ts");
-const migration = read("prisma/migrations/20261010050000_revers_product_access/migration.sql");
+const migration = read("prisma/migrations/20261010100000_revers_product_access/migration.sql");
 const nonceMigration = read("prisma/migrations/20261010051000_integration_request_nonces/migration.sql");
 
 assert(service.includes('REVERS_PRODUCT_CODE = "revers"'), "REVERS product code is fixed");
