@@ -48,6 +48,24 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261009070000_growth_google_business_profile",
   "20261009080000_growth_plan_subscriptions",
   "20261009090000_growth_site_domain_verification",
+  // Social connector migrations already on main but never recorded on staging
+  // (audit run 37975083623). Approved for staging by the owner on 2026-10-09.
+  // Additive: enum values, tables and partial unique indexes. Social code is unchanged.
+  "20260924010000_bluesky_oauth_encrypted_store",
+  "20260924030000_google_business_independent_provider",
+  "20261001010000_web_site_provider",
+  "20261001020000_web_site_uniqueness",
+  "20261001030000_blog_provider",
+  "20261001040000_blog_uniqueness",
+  "20261001050000_twitch_account_uniqueness",
+  "20261001060000_meta_ads_provider",
+  "20261001070000_meta_ads_uniqueness",
+  "20261001080000_google_ads_provider",
+  "20261001090000_google_ads_uniqueness",
+  "20261001100000_looker_studio_provider",
+  "20261001110000_looker_studio_uniqueness",
+  "20261003180000_twitch_competitor_platform",
+  "20261004020000_social_avatar_storage",
 ];
 
 const SUPABASE_HISTORY_NAMES = {
