@@ -81,6 +81,11 @@ export async function POST(request: Request) {
   }
   const ev = parseEvent(rawBody);
   if (!ev) return json({ error: "invalid_event" }, 422);
+  // MIMT-independent subscriber events are not TAKATAK agency records.
+  // Do not retain events with no TAKATAK-linked identity/workspace reference.
+  if (!safeOpaqueId(ev.data.global_user_id) && !safeOpaqueId(ev.data.workspace_id)) {
+    return json({ received: true, ignored: true, processed: false }, 202);
+  }
   const prisma = getPrisma();
   if (!prisma) return json({ error: "database_unavailable" }, 503);
   const digest = createHash("sha256").update(rawBody).digest("hex");
