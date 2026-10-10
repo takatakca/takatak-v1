@@ -4,6 +4,15 @@ Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
 
+## 🔒 Release control (owner, 2026-10-10)
+Until the owner lifts it, **one coordinator merges and deploys**: the TAKATAK-V1 session (01W1ntbf). Every other agent (Claude, Codex, Cursor, ChatGPT) and every person-run bot:
+- does **not** merge into `main` or push to `main` (WORKLOG and docs included): open a PR and hand its number to the coordinator;
+- does **not** dispatch staging apply, staging release or production promote, and does not re-run deploying workflows;
+- does **not** deploy, restart or change env on Coolify, MochaHost, Supabase, Stripe, Twilio or DNS;
+- does **not** add migrations to `APPROVED_DEPLOY_MIGRATIONS`. A new migration on `main` blocks the staging apply until it is approved.
+
+Own branches, PRs and CI fixes are fine. The coordinator merges one PR at a time after the owner's OK.
+
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
 
