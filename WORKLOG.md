@@ -28,7 +28,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
-- 2026-10-10 | cursor | cursor/tk-022-seo-history → PR | active | TK-022: weekly SEO re-audits, score history, and a white-label PDF | CI, then open the PR
+- 2026-10-10 | cursor | cursor/tk-022-seo-history → #168 | PR | TK-022: weekly SEO re-audits, score history, and a white-label PDF | CI green, then the next developer item
 - 2026-10-10 | cursor | cursor/tk-069-ai-studio-handoff → #167 | PR | TK-069: send a saved AI draft into social approval and show that workspace's credit usage and estimated cost | CI
 - 2026-10-10 | cursor | cursor/tk-014-catalog-prices → #165 | done (merged) | TK-014: public prices read from ProductCatalog when a CAD plan exists, otherwise the current catalog | seed takatak_public plans when the owner is ready
 - 2026-10-10 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | PR open, CI running | AI Studio live drafts (OpenAI/Claude) rebuilt on #117; no migration (vendor in job metadata); test key fixed for the secret scan | merge when green; wire #155 resolveProviderKey into readAiStudioConfig once #155 merges
