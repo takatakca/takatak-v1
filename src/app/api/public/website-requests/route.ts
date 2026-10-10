@@ -10,6 +10,7 @@ import { createUploadToken } from "@/lib/website-leads/attachments";
 import { readWebsiteLeadsConfig } from "@/lib/website-leads/config";
 import { sendLeadAlert } from "@/lib/website-leads/notify";
 import { priceMarketplaceOrder } from "@/lib/website-leads/package-pricing";
+import { loadPublicCatalogRows } from "@/lib/website/load-public-catalog";
 import { allowRequest, hashRequestSource } from "@/lib/website-leads/rate-limit";
 import {
   recordWebsiteRequest,
@@ -75,7 +76,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Package orders are priced from the TAKATAK catalog, never from the browser.
-  const pricedOrder = value.order ? priceMarketplaceOrder(value.order) : null;
+  const pricedOrder = value.order
+    ? priceMarketplaceOrder(value.order, await loadPublicCatalogRows())
+    : null;
   if (value.kind === "package_order" && !pricedOrder) {
     return jsonResponse(
       { ok: false, code: "invalid_fields", fieldErrors: { package: "invalid" } },

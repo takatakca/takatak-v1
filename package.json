@@ -85,6 +85,7 @@
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
     "qa:1lv-master-api": "tsx --require ./scripts/register-server-only.cjs scripts/one-lv-master-api-tests.ts",
     "qa:website-leads": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-lead-capture.ts",
+    "qa:catalog-prices": "tsx --require ./scripts/register-server-only.cjs scripts/verify-catalog-prices.ts",
     "qa:lead-actions": "tsx --require ./scripts/register-server-only.cjs scripts/verify-lead-actions.ts",
     "qa:website-theme": "tsx scripts/verify-website-theme.ts",
     "qa:website-seo": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-seo.ts",

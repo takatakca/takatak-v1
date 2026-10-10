@@ -6,7 +6,8 @@ import { Reveal } from "@/components/website/home/Reveal";
 import { CategoryIcon, Kicker, NavyBackdrop, accentStyle, cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
 import { CORE_CATEGORIES, SOCIAL_SOFTWARE_PLANS, type CategoryKey } from "@/lib/website/core-categories";
 import { Link } from "@/lib/website/nav";
-import { pricingGroups, type PricingGroup } from "@/lib/website/pricing";
+import { usePublicPricing } from "@/lib/website/catalog-pricing-context";
+import { type PricingGroup } from "@/lib/website/pricing";
 
 // Core category → pricing group in src/lib/website/pricing.ts.
 const GROUP_FOR: Partial<Record<CategoryKey, string>> = {
@@ -45,8 +46,9 @@ function PriceRows({ rows }: { rows: readonly Row[] }) {
 /** /pricing: every price from the code catalogs, in the order of the TAKATAK core. */
 export function PricingPageContent() {
   const { tk } = useCopy();
+  const { pricingGroups: groups } = usePublicPricing();
   const groupRows = (key: string): Row[] => {
-    const group = pricingGroups.find((g) => g.key === key);
+    const group = groups.find((g) => g.key === key);
     if (!group) return [];
     return group.tiers.map((tier) => ({
       key: tier.key,
@@ -62,7 +64,7 @@ export function PricingPageContent() {
     amount: p.entry.displayMonthlyCad,
     cadence: "monthly",
   }));
-  const more = pricingGroups.filter((g) => !CORE_GROUPS.has(g.key));
+  const more = groups.filter((g) => !CORE_GROUPS.has(g.key));
 
   return (
     <div className="tk-page tk-premium brand-dark">

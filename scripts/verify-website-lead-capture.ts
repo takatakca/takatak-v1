@@ -396,7 +396,7 @@ async function main() {
       assert.doesNotMatch(readFileSync(file, "utf8"), /\/dashboard\/marketplace/, file);
     }
     const route = readFileSync("src/app/api/public/website-requests/route.ts", "utf8");
-    assert.match(route, /priceMarketplaceOrder\(value\.order\)/);
+    assert.match(route, /priceMarketplaceOrder\(value\.order/);
   });
 
 
