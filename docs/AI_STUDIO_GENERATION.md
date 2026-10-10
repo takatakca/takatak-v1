@@ -45,11 +45,13 @@ AI_STUDIO_DAILY_LIMIT=50
 
 A ChatGPT subscription is not an API key. The owner needs an API key from platform.openai.com (OpenAI) or console.anthropic.com (Anthropic).
 
-Migration `20261006160000_ai_provider_anthropic` adds `anthropic` to the `AiProvider` enum.
+**No database change.** The `AiProvider` enum has no `anthropic` value, and adding one is a migration that needs owner approval. Claude jobs and provider events are therefore stored with provider `internal` (a model called from TAKATAK's server). The real vendor and model are always in `metadata.provider` and `metadata.model`. Every generation job is marked `metadata.source = "ai_studio_generation"`; the daily cap counts only those jobs, not Social sync jobs, which also use `internal`.
+
+**Keys.** Keys are read only in `readAiStudioConfig()` (`src/lib/ai/generation/config.ts`), from environment variables. When #155 (encrypted per-provider key store in Admin › AI provider keys) is merged, that one function is where the stored key gets resolved.
 
 ## Verification
 
-- `npm run qa:ai-studio-generation` (runs in CI): 8 checks covering:
+- `npm run qa:ai-studio-generation` (runs in CI): 9 checks covering:
   - config gate
   - input whitelist, including a bug found and fixed: `"toString"` was accepted as a content type
   - prompt rules
@@ -60,7 +62,8 @@ Migration `20261006160000_ai_provider_anthropic` adds `anthropic` to the `AiProv
   - foreign brand voice refused
   - failure bookkeeping
   - route and page gating
-- Migration: a fresh PostgreSQL with `main`'s schema plus this migration matches the branch schema exactly (`prisma migrate diff` exit 0).
+  - Claude stored without a database change (vendor in metadata); no migration on either approved list
+- Rebuilt on 2026-10-10 on top of the Growth Suite (#117): no schema change compared with `main`.
 - Real network test on real PostgreSQL: both providers were called with a deliberately invalid key. Each returned `auth`; the job was recorded `failed`, a provider event `failed / auth` was written, and no draft was saved.
 - **Not yet done:** a successful generation with a real key. That needs the owner's API key on the server.
 
@@ -69,3 +72,4 @@ Migration `20261006160000_ai_provider_anthropic` adds `anthropic` to the `AiProv
 - Sending a draft to the approval workflow or to Social publishing.
 - Campaign builder and video-ideas pages (they remain foundations).
 - Usage and cost dashboard.
+- Charging the Growth Suite AI credits ledger (`src/lib/ai-credits/`) per generation. Today a per-workspace daily cap applies.

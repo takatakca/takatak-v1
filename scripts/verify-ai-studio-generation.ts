@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { DEFAULT_ANTHROPIC_MODEL, readAiStudioConfig } from "../src/lib/ai/generation/config";
 import { buildPrompt, parseGenerateRequest, type GenerateRequest } from "../src/lib/ai/generation/prompt";
 import { callProvider, MAX_OUTPUT_TOKENS } from "../src/lib/ai/generation/provider-call";
-import { generateForWorkspace, type GenerationDb } from "../src/lib/ai/generation/service";
+import { dbProvider, generateForWorkspace, GENERATION_SOURCE, type GenerationDb } from "../src/lib/ai/generation/service";
 
 const CLIENT = "11111111-1111-4111-8111-111111111111";
 const VOICE = "33333333-3333-4333-8333-333333333333";
@@ -162,6 +162,20 @@ async function main() {
     assert.equal(fake.events[0].status, "succeeded");
     assert.equal(JSON.stringify(fake.events).includes("Promouvoir"), false, "prompt text never stored in provider events");
     assert.deepEqual((fake.countWhere() as Row).clientId, CLIENT);
+    assert.deepEqual((fake.countWhere() as Row).metadata, { path: ["source"], equals: GENERATION_SOURCE }, "the cap counts only AI Studio generation jobs");
+    assert.equal((fake.jobs[0].metadata as Row).source, GENERATION_SOURCE);
+  });
+
+  await check("Claude jobs need no enum change: stored as internal, vendor in metadata", async () => {
+    const fake = fakeDb();
+    const outcome = await generateForWorkspace(fake.db, async () => ({ ok: true, text: "Texte", inputTokens: 1, outputTokens: 1 }), { ...input, provider: "anthropic", model: "claude-test" });
+    assert.ok(outcome.ok);
+    assert.equal(fake.jobs[0].provider, "internal");
+    assert.equal((fake.jobs[0].metadata as Row).provider, "anthropic");
+    assert.equal(fake.events[0].provider, "internal");
+    assert.equal((fake.events[0].metadata as Row).provider, "anthropic");
+    assert.equal((fake.outputs[0].metadata as Row).provider, "anthropic");
+    assert.equal(dbProvider("openai"), "openai");
   });
 
   await check("daily cap, foreign brand voices and provider failures are handled", async () => {
@@ -184,7 +198,7 @@ async function main() {
     assert.equal(throwing.jobs[0].status, "failed");
   });
 
-  await check("route, page and migration keep generation gated and workspace-scoped", () => {
+  await check("route and page keep generation gated and workspace-scoped; no migration", () => {
     const route = readFileSync("src/app/api/ai-studio/generate/route.ts", "utf8");
     assert.ok(route.indexOf("readAiStudioConfig()") < route.indexOf("requireWorkspaceApiPermission(\"create_content\")"));
     assert.match(route, /requireWorkspaceApiPermission\("create_content"\)/);
@@ -194,8 +208,11 @@ async function main() {
     assert.match(page, /access\.mode === "client_scoped" && hasEffectivePermission\(access, "create_content"\)/);
     const form = readFileSync("src/components/ai-studio/content-generator-form.tsx", "utf8");
     assert.doesNotMatch(form, /API_KEY|apiKey/);
-    const migration = readFileSync("prisma/migrations/20261006160000_ai_provider_anthropic/migration.sql", "utf8");
-    assert.match(migration, /ALTER TYPE "AiProvider" ADD VALUE IF NOT EXISTS 'anthropic'/);
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    assert.doesNotMatch(schema.slice(schema.indexOf("enum AiProvider")).split("}")[0], /anthropic/, "no database change: no new AiProvider value");
+    for (const list of ["scripts/reconcile-production-migrations.mjs", "scripts/reconcile-staging-migrations.mjs"]) {
+      assert.doesNotMatch(readFileSync(list, "utf8"), /ai_provider_anthropic/, `${list} approves no AI Studio migration`);
+    }
   });
 
   console.log(`\n${passed} AI Studio generation checks passed.`);

@@ -25,6 +25,19 @@ function strings(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string").slice(0, 30) : [];
 }
 
+/** Marks AI Studio generation jobs, so the daily cap counts only them. */
+export const GENERATION_SOURCE = "ai_studio_generation";
+
+/**
+ * The `AiProvider` database enum has no `anthropic` value, and adding one is a
+ * migration that needs owner approval. Claude jobs are stored as `internal`
+ * (a model called from TAKATAK's server); the real vendor is always in
+ * `metadata.provider`.
+ */
+export function dbProvider(provider: AiStudioProvider): "openai" | "internal" {
+  return provider === "openai" ? "openai" : "internal";
+}
+
 export async function generateForWorkspace(
   db: GenerationDb,
   call: (prompt: { system: string; user: string }) => Promise<GenerationResult>,
@@ -44,7 +57,7 @@ export async function generateForWorkspace(
   const usedToday = await db.aiContentJob.count({
     where: {
       clientId: input.clientId,
-      provider: { not: null },
+      metadata: { path: ["source"], equals: GENERATION_SOURCE },
       status: { in: ["running", "completed", "failed"] },
       createdAt: { gte: new Date(now.getTime() - DAY_MS) },
     },
@@ -69,12 +82,18 @@ export async function generateForWorkspace(
       clientId: input.clientId,
       businessBrandId: voice?.businessBrandId ?? null,
       brandVoiceId: voice?.id ?? null,
-      provider: input.provider,
+      provider: dbProvider(input.provider),
       kind: request.kind,
       status: "running",
       promptSummary: `${request.platform} · ${request.goal}`.slice(0, 300),
       startedAt: now,
-      metadata: { model: input.model, language: request.language, requestedBy: input.profileId },
+      metadata: {
+        source: GENERATION_SOURCE,
+        provider: input.provider,
+        model: input.model,
+        language: request.language,
+        requestedBy: input.profileId,
+      },
     },
     select: { id: true },
   });
@@ -93,11 +112,11 @@ export async function generateForWorkspace(
     });
     await db.aiProviderEvent.create({
       data: {
-        provider: input.provider,
+        provider: dbProvider(input.provider),
         eventType: "generation",
         status: "failed",
         message: result.code,
-        metadata: { clientId: input.clientId, jobId: job.id, model: input.model },
+        metadata: { clientId: input.clientId, jobId: job.id, provider: input.provider, model: input.model },
       },
     });
     return { ok: false, reason: result.code };
@@ -132,12 +151,13 @@ export async function generateForWorkspace(
     });
     await tx.aiProviderEvent.create({
       data: {
-        provider: input.provider,
+        provider: dbProvider(input.provider),
         eventType: "generation",
         status: "succeeded",
         metadata: {
           clientId: input.clientId,
           jobId: job.id,
+          provider: input.provider,
           model: input.model,
           inputTokens: result.inputTokens,
           outputTokens: result.outputTokens,
