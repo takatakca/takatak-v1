@@ -27,7 +27,7 @@
     "artifact:smoke": "node scripts/artifact-startup-smoke.cjs",
     "smoke:auth": "tsx scripts/smoke-auth-json.ts",
     "smoke:ahmv-content": "tsx scripts/smoke-ahmv-content.ts",
-    "qa": "npm run db:generate && npm run check:sources && npm run typecheck && npm run lint && npm run test:auth && npm run test:identity && npm run build && npm run check:modules && npm run qa:ads",
+    "qa": "npm run db:generate && npm run check:sources && npm run typecheck && npm run lint && npm run test:auth && npm run test:identity && npm run qa:revers-experience && npm run build && npm run check:modules && npm run qa:ads",
     "qa:auth": "npm run test:auth",
     "qa:client-invoicing": "tsx scripts/verify-client-invoicing.ts",
     "qa:client-invoicing-db": "tsx --require ./scripts/register-server-only.cjs scripts/client-invoicing-db-tests.ts",
@@ -136,7 +136,8 @@
     "qa:ahmv-public-teams": "tsx scripts/verify-ahmv-public-teams.ts",
     "qa:ahmv-operational-readiness": "tsx scripts/verify-ahmv-operational-readiness.ts",
     "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts",
-    "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs"
+    "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs",
+    "qa:revers-experience": "tsx scripts/revers-experience-bridge-tests.ts"
   },
   "dependencies": {
     "@atproto/oauth-client-node": "^0.5.7",
