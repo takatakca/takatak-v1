@@ -104,14 +104,18 @@ export async function POST(request: Request) {
       );
     }
 
-    return jsonResponse(
-      existing.responsePayload ?? {
-        ok: true,
-        duplicate: true,
-        eventId: parsed.eventId,
-      },
-      200,
-    );
+    const duplicateResponse =
+      existing.responsePayload &&
+      typeof existing.responsePayload === "object" &&
+      !Array.isArray(existing.responsePayload)
+        ? (existing.responsePayload as Record<string, unknown>)
+        : {
+            ok: true,
+            duplicate: true,
+            eventId: parsed.eventId,
+          };
+
+    return jsonResponse(duplicateResponse, 200);
   }
 
   const responsePayload = {
