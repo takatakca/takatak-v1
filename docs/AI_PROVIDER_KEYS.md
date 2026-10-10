@@ -37,9 +37,9 @@ GitHub Models was retired on 2026-07-30, so it has no slot.
 ## Setup
 
 1. Put `GROWTH_TOKEN_ENCRYPTION_KEY_V1` (32 random bytes, Base64) in the server environment. The Growth Suite already uses it for Google tokens.
-2. Apply migration `20261009100000_ai_provider_credentials`.
+2. Apply migration `20261009100000_ai_provider_key_store`.
    - Like every migration, it goes through the approved staging and production lists first. It is not in those lists yet.
-   - Rollback: `scripts/rollback/ai-provider-credentials-down.sql`.
+   - Rollback: `scripts/rollback/ai-provider-key-store-down.sql`.
 3. Open Admin › AI provider keys, paste each key, then press **Test the key**.
 
 ## Tests

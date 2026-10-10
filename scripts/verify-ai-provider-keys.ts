@@ -98,11 +98,11 @@ assert.ok(actions.includes('access.mode !== "authorized"'), "the foundation demo
 const row = src("src/components/admin/ai-provider-key-row.tsx");
 assert.ok(row.includes('type="password"') && row.includes('autoComplete="off"'), "the key field is masked and not autofilled");
 
-const migration = src("prisma/migrations/20261009100000_ai_provider_credentials/migration.sql");
+const migration = src("prisma/migrations/20261009100000_ai_provider_key_store/migration.sql");
 assert.ok(migration.includes('ALTER TABLE "ai_provider_credentials" ENABLE ROW LEVEL SECURITY'));
 assert.ok(migration.includes("REVOKE ALL ON TABLE \"ai_provider_credentials\""));
 assert.ok(src("scripts/ci-rls-advisor-catalog.ts").includes('"ai_provider_credentials"'), "listed as a secret table");
-assert.ok(fs.existsSync(path.join(root, "scripts/rollback/ai-provider-credentials-down.sql")));
+assert.ok(fs.existsSync(path.join(root, "scripts/rollback/ai-provider-key-store-down.sql")));
 pass("server-only store, admin-only page and actions, masked input, RLS on, no browser grants, rollback present");
 
 console.log("\nAI PROVIDER KEYS SAFEGUARDS: ALL PASSED");
