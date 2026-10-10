@@ -15,6 +15,9 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - [ ] **MochaHost WordPress cleanup.** Owner decided: keep mielaissa.ca, besoinavocat.ca, actionavocat.ca, inntime.ca; remove every other WordPress site in the bolon.ca cPanel account; never touch takatak.ca, facturations.bolon.ca or the Node apps (1lv, qmaps, rentauto, mimt, pppmtl…), DNS zones, email or domain registrations. Either the owner sends the ticket the agent drafted, or adds `CPANEL_API_TOKEN`, `CPANEL_USER`, `CPANEL_HOST` to the cloud environment secrets so an agent can do it. *(2026-10-09, session 01HWFgGo)*
 - [ ] **Approve 2 small migrations (Claude session 01KBGh1v):** `20261010070000_qmaps_listing_review_external_ids` (#136: 2 nullable columns) and `20261010080000_seo_site_audits` (#135: 2 new tables). Both additive. Reply "approve 135 136 migrations"; they then go on the staging list and the PRs merge. *(2026-10-10)*
 
+## MIMT webhook work
+- 2026-10-10 | ChatGPT (MIMT secure webhook intake) | fix/mimt-webhook-receiver-20261010 → PR pending | review required | Added HMAC-protected MIMT event receipt endpoint and dual-environment production .env runbook without secret values; no merge, migration, deployment, CRM identity link or production secret change | CI review; owner configures identical 64-hex runtime secret in MIMT Coolify and active/persistent TAKATAK MochaHost .env, then authorized staging tests before release
+
 ## ▶ Next up (priority order: first item an agent can do; skip anything waiting on a person)
 1. **Homepage redesign: done** (#150 and #151 merged): shorter homepage, ecosystem grid, `/ecosystem` "Our brands" page, premium website. (TK-027 is done: #146.)
 2. **After Facturations #160 merges:** pin `FACTURATIONS_REF` in `ci.yml` to the new Facturations `main` and add issue → pay to the contract test.
