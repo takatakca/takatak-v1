@@ -31,7 +31,7 @@ Up to 10 pages per site, within a 35-second budget and 6 seconds per request:
 
 ## Data
 
-- Migration `20261006140000_seo_site_audits` adds two tables:
+- Migration `20261010080000_seo_site_audits` (renamed on 2026-10-10 to sort after main's latest; on no approved list until the owner approves it) adds two tables:
   - `seo_audits`: status, score, pages scanned, summary.
   - `seo_audit_issues`
 - Both are tenant-scoped by `clientId` and have RLS enabled with no policies (no Data API access). They are additive only.
