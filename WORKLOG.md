@@ -28,7 +28,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
-- 2026-10-10 | cursor | cursor/tk-013-server-promos → PR | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI, then merge
+- 2026-10-10 | cursor | cursor/tk-013-server-promos → #164 | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI, then merge
 - 2026-10-10 | cursor | main | blocked: production secrets | Production artifact validate passed for b244f9c (CI 38030337096, validate run 38039823036). Smoke of the live site: home loads; http://takatak.ca stays on http; /ecosystem is 404. knowledge.takatak.ca and lab.takatak.ca have no DNS. | owner adds the 7 TAKATAK_PRODUCTION_* secrets, then promote
 - 2026-10-10 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | PR open, CI running | AI Studio live drafts (OpenAI/Claude) rebuilt on #117; no migration (vendor in job metadata); test key fixed for the secret scan | merge when green; wire #155 resolveProviderKey into readAiStudioConfig once #155 merges
 - 2026-10-09 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #158 | PR open (#157 merged 28d92ba) | Staging migration gate: phone-only verified by live schema; apply deploys pending only when all are approved. Staging audit now PASSES (19 recorded, 10 approved pending) but 15 unapproved repo migrations are unrecorded on staging, so apply would refuse; #158 prints their names | merge #158, re-run staging audit, owner decides on the 15; then backup + apply + staging deploy
