@@ -88,6 +88,9 @@ jobs:
       - name: TAKATAK community content moderation safeguards
         run: npm run qa:content-contributions
 
+      - name: MIMT signed-webhook verification safeguards
+        run: npm run qa:mimt-webhook
+
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
