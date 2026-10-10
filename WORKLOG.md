@@ -3,6 +3,7 @@
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
+- 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR pending | active | Add the verified TAKATAK experience-launch bridge for REVERS CANADA | implement REVERS product entitlement, one-time launch/exchange, tests and handoff
 
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
