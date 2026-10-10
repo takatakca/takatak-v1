@@ -63,6 +63,7 @@ function payload(requestId = "r2f-request-0001") {
   };
 }
 
+async function main() {
 {
   assert.deepEqual(readR2FIntakeConfig({}), { enabled: false });
   assert.deepEqual(
@@ -331,3 +332,9 @@ function fakeDb(options: { forcedRecentCount?: number } = {}) {
 }
 
 console.log("R2F intake safeguards: PASS");
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
