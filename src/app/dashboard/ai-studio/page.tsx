@@ -17,7 +17,8 @@ const TOOLS = [
   { label: "Campaign Builder", href: "/dashboard/ai-studio/campaign-builder", note: "Campaign plans and post ideas" },
   { label: "Video Ideas", href: "/dashboard/ai-studio/video-ideas", note: "Reels/TikTok concepts and scripts" },
   { label: "Brand Voice", href: "/dashboard/ai-studio/brand-voice", note: "Voice profiles feeding future prompts" },
-  { label: "Saved Outputs", href: "/dashboard/ai-studio/saved", note: "Templates and saved content" },
+  { label: "Saved Outputs", href: "/dashboard/ai-studio/saved", note: "Envoyer un brouillon à l'approbation" },
+  { label: "Utilisation et coût", href: "/dashboard/ai-studio/usage", note: "Solde de crédits et coût estimé" },
   { label: "Provider Status", href: "/dashboard/ai-studio/provider-status", note: "OpenAI / TryHolo readiness" },
 ];
 
@@ -103,7 +104,9 @@ export default async function AiStudioOverviewPage() {
         </div>
         <h2 className="pt-2 text-sm font-semibold text-slate-900">Recent Saved Outputs</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {data.recentOutputs.map((o) => <SavedOutputCard key={o.id} output={o} />)}
+          {data.recentOutputs.map((o) => (
+            <SavedOutputCard key={o.id} output={o} canSend={data.source === "database"} />
+          ))}
         </div>
       </section>
     </div>
