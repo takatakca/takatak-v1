@@ -5,11 +5,9 @@ import Prisma directly. Every function returns `{ source, sourceLabel, ... }`
 — database when configured and queries succeed, otherwise typed mock
 foundation data mirroring the seed, with safe error logging and no crashes.
 
-Hard boundaries of this layer (Phase 10):
-- NO real PDF export — metrics literally record `report_export_enabled: No`.
-- NO real delivery, email sending, or public share links —
-  `report_delivery_enabled: No`; ReportShare `shared_internal` means internal
-  tracking only and no share was seeded at all.
+Hard boundaries of this layer:
+- PDF export is an authenticated download for one workspace (`/dashboard/reports/export/pdf`).
+- Delivery writes a ReportShare (`shared_internal`) and an in-dashboard notification. It does not send email and it does not create a public link.
 - NO AI summary calls — every summary/section is hand-written foundation text
   prefixed "[Internal foundation summary — …not AI-generated]" or
   "[Foundation content — internal preview, not AI-generated]".

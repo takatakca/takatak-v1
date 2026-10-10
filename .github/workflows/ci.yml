@@ -121,6 +121,9 @@ jobs:
       - name: SEO score history
         run: npm run qa:seo-history
 
+      - name: Report export and delivery
+        run: npm run qa:report-export
+
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
 
