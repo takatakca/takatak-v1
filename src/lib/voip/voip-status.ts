@@ -2,10 +2,8 @@
 //
 // VoIP belongs to MIMT, an independent telecom app. TAKATAK only shows an
 // authorized overview. This module is pure: it reads environment values and
-// never makes a network call. No live check against MIMT exists yet, so it
-// can never report a verified or connected state. The full vocabulary is
-// listed for the later MIMT API client (Gate 3); this module only returns the
-// first two states.
+// never makes a network call. The live overview request is mimt-client.ts
+// (Gate 3). This module only returns the first two states.
 
 export type VoipConnectionState =
   | "not_configured"
