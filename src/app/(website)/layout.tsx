@@ -14,6 +14,7 @@ import { AnimatedPromoInvite } from "@/components/website/promotions/AnimatedPro
 import { SignupPromoModal } from "@/components/website/promotions/SignupPromoModal";
 import { LiveChatLauncher } from "@/components/website/support/LiveChatLauncher";
 import { getWebsiteSession } from "@/lib/website/website-session";
+import { loadPublicCatalogRows } from "@/lib/website/load-public-catalog";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { WebsiteProviders } from "@/lib/website/website-providers";
 import { UpmindHeadScripts } from "@/components/website/domain/upmind-head-scripts";
@@ -77,6 +78,7 @@ export default async function WebsiteLayout({
   children: ReactNode;
 }) {
   const session = await getWebsiteSession();
+  const catalogRows = await loadPublicCatalogRows();
 
   return (
     <div
@@ -86,6 +88,7 @@ export default async function WebsiteLayout({
       <WebsiteProviders
         isAuthenticated={session.isAuthenticated}
         email={session.email}
+        catalogRows={catalogRows}
       >
         <PromoTopBar />
         <SiteShell>{children}</SiteShell>
