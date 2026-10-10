@@ -124,6 +124,9 @@ jobs:
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
 
+      - name: AI provider keys safeguards
+        run: npm run qa:ai-provider-keys
+
       - name: GROUPE TAKATAK billing (Facturations) safeguards
         run: npm run qa:billing
 
@@ -360,6 +363,11 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:lead-order-billing-db
+
+      - name: AI provider keys against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:ai-provider-keys-db
 
       - name: Build (webpack)
         env:
