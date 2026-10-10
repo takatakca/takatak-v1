@@ -3,11 +3,11 @@ import { join } from "node:path";
 
 const root = process.cwd();
 
-function read(path) {
+function read(path: string): string {
   return readFileSync(join(root, path), "utf8");
 }
 
-function assert(condition, message) {
+function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
   console.log("PASS:", message);
 }
