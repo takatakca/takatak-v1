@@ -2525,6 +2525,8 @@ model LocalListing {
   businessBrandId   String?            @db.Uuid
   serviceInstanceId String?            @db.Uuid
   provider          ListingProvider    @default(internal_demo)
+  /// Provider-side id (e.g. QMAPS business uuid). Unique per provider.
+  externalId        String?
   name              String
   platformName      String
   category          String?
@@ -2550,6 +2552,7 @@ model LocalListing {
   photos              ListingPhoto[]
   visibilitySnapshots LocalVisibilitySnapshot[]
 
+  @@unique([provider, externalId])
   @@index([clientId])
   @@index([businessBrandId])
   @@index([serviceInstanceId])
@@ -2600,6 +2603,8 @@ model ListingReview {
   businessBrandId String?             @db.Uuid
   localListingId  String?             @db.Uuid
   provider        ListingProvider     @default(internal_demo)
+  /// Provider-side id (e.g. QMAPS review uuid). Unique per provider.
+  externalId      String?
   reviewerName    String?
   rating          Int?
   title           String?
@@ -2616,6 +2621,7 @@ model ListingReview {
   businessBrand BusinessBrand? @relation(fields: [businessBrandId], references: [id])
   localListing  LocalListing?  @relation(fields: [localListingId], references: [id])
 
+  @@unique([provider, externalId])
   @@index([clientId])
   @@index([businessBrandId])
   @@index([localListingId])

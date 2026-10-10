@@ -115,6 +115,9 @@ jobs:
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
 
+      - name: QMAPS listings and reviews sync safeguards
+        run: npm run qa:qmaps-sync
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
