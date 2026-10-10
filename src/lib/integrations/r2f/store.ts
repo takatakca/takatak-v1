@@ -7,6 +7,18 @@ import { getPrisma } from "@/lib/db/prisma";
 
 import type { R2FLeadRequest } from "./types";
 
+type TransactionClient = Pick<
+  Prisma.TransactionClient,
+  "sourceSynchronizationEvent" | "leadSource" | "lead" | "auditLog" | "notification"
+>;
+
+export interface R2FLeadStoreDb {
+  $transaction<T>(
+    fn: (transaction: TransactionClient) => Promise<T>,
+    options?: { maxWait?: number; timeout?: number },
+  ): Promise<T>;
+}
+
 const SOURCE_NAME = "R2F RAPIDE2FIX";
 const FLOOD_WINDOW_MS = 10 * 60 * 1000;
 const FLOOD_LIMIT = 100;
@@ -63,19 +75,16 @@ function composeMessage(request: R2FLeadRequest): string {
     .slice(0, 5000);
 }
 
-export async function recordR2FLead(
+export async function recordR2FLeadWithDb(
+  db: R2FLeadStoreDb,
   request: R2FLeadRequest,
   rawBody: string,
   clientId: string,
+  now = new Date(),
 ): Promise<R2FLeadResult> {
-  const prisma = getPrisma();
-  if (!prisma) throw new Error("database_unavailable");
-
   const payloadHash = hashPayload(rawBody);
   const synchronizationEventId = `r2f:${request.requestId}`;
-  const now = new Date();
-
-  return prisma.$transaction(
+  return db.$transaction(
     async (tx) => {
       const previousEvent = await tx.sourceSynchronizationEvent.findUnique({
         where: { eventId: synchronizationEventId },
@@ -269,5 +278,21 @@ export async function recordR2FLead(
       maxWait: 5_000,
       timeout: 15_000,
     },
+  );
+}
+
+export async function recordR2FLead(
+  request: R2FLeadRequest,
+  rawBody: string,
+  clientId: string,
+): Promise<R2FLeadResult> {
+  const prisma = getPrisma();
+  if (!prisma) throw new Error("database_unavailable");
+
+  return recordR2FLeadWithDb(
+    prisma,
+    request,
+    rawBody,
+    clientId,
   );
 }
