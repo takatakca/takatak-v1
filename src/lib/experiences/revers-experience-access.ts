@@ -89,6 +89,10 @@ async function getReversCatalogPlan() {
 }
 
 export async function createReversExperienceLaunch(authUserId: string) {
+  // Validate the final callback before creating any identity-side access records.
+  // A missing deployment configuration must not leave a new membership behind.
+  const callback = reversCallbackUrl();
+
   const prisma = getPrisma();
   if (!prisma) {
     throw new ServiceError(
@@ -161,7 +165,6 @@ export async function createReversExperienceLaunch(authUserId: string) {
     },
   });
 
-  const callback = reversCallbackUrl();
   callback.searchParams.set("code", rawCode);
 
   return {
