@@ -103,6 +103,9 @@ jobs:
       - name: Public catalog price safeguards
         run: npm run qa:catalog-prices
 
+      - name: AI Studio approval handoff
+        run: npm run qa:ai-handoff
+
       - name: Lead detail actions
         run: npm run qa:lead-actions
 
