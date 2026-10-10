@@ -89,6 +89,7 @@
     "qa:lead-actions": "tsx --require ./scripts/register-server-only.cjs scripts/verify-lead-actions.ts",
     "qa:website-theme": "tsx scripts/verify-website-theme.ts",
     "qa:website-seo": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-seo.ts",
+    "qa:seo-history": "tsx --require ./scripts/register-server-only.cjs scripts/verify-seo-history.ts",
     "qa:voip-dashboard": "tsx scripts/verify-voip-dashboard.ts",
     "qa:website-categories": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-categories.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",
