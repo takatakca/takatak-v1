@@ -5,30 +5,30 @@
  */
 
 const FACEBOOK_IMAGE_HOSTS = [
-  "graph.facebook.com",
-  "graph.instagram.com",
-  "fbcdn.net",
-  "fbsbx.com",
-  "cdninstagram.com",
+  'graph.facebook.com',
+  'graph.instagram.com',
+  'fbcdn.net',
+  'fbsbx.com',
+  'cdninstagram.com',
 ] as const;
 
 const TIKTOK_IMAGE_HOSTS = [
-  "tiktokcdn.com",
-  "tiktokcdn-us.com",
-  "tiktokcdn-eu.com",
-  "muscdn.com",
+  'tiktokcdn.com',
+  'tiktokcdn-us.com',
+  'tiktokcdn-eu.com',
+  'muscdn.com',
 ] as const;
 
-const X_IMAGE_HOSTS = [
-  "pbs.twimg.com",
-  "abs.twimg.com",
-  "twimg.com",
-] as const;
+const X_IMAGE_HOSTS = ['pbs.twimg.com', 'abs.twimg.com', 'twimg.com'] as const;
+
+const TWITCH_IMAGE_HOSTS = ['jtvnw.net'] as const;
+
+const BLUESKY_IMAGE_HOSTS = ['cdn.bsky.app'] as const;
 
 const YOUTUBE_IMAGE_HOSTS = [
-  "ytimg.com",
-  "ggpht.com",
-  "googleusercontent.com",
+  'ytimg.com',
+  'ggpht.com',
+  'googleusercontent.com',
 ] as const;
 
 export function isFacebookHostedImageUrl(
@@ -51,12 +51,30 @@ export function isTikTokHostedImageUrl(
   );
 }
 
-export function isXHostedImageUrl(
+export function isXHostedImageUrl(value: string | null | undefined): boolean {
+  const hostname = hostnameOf(value);
+  if (!hostname) return false;
+  return X_IMAGE_HOSTS.some(
+    (host) => hostname === host || hostname.endsWith(`.${host}`),
+  );
+}
+
+export function isTwitchHostedImageUrl(
   value: string | null | undefined,
 ): boolean {
   const hostname = hostnameOf(value);
   if (!hostname) return false;
-  return X_IMAGE_HOSTS.some(
+  return TWITCH_IMAGE_HOSTS.some(
+    (host) => hostname === host || hostname.endsWith(`.${host}`),
+  );
+}
+
+export function isBlueskyHostedImageUrl(
+  value: string | null | undefined,
+): boolean {
+  const hostname = hostnameOf(value);
+  if (!hostname) return false;
+  return BLUESKY_IMAGE_HOSTS.some(
     (host) => hostname === host || hostname.endsWith(`.${host}`),
   );
 }
@@ -74,15 +92,19 @@ export function isYoutubeHostedImageUrl(
 export function isAllowedSocialImageUrl(
   value: string | null | undefined,
 ): boolean {
-  if (typeof value !== "string" || !value.trim()) return false;
+  if (typeof value !== 'string' || !value.trim()) return false;
   try {
     const url = new URL(value.trim());
     return (
-      url.protocol === "https:" &&
+      url.protocol === 'https:' &&
       (isFacebookHostedImageUrl(url.href) ||
+        url.hostname === 'graph.threads.net' ||
+        url.hostname.endsWith('.threads.net') ||
         isTikTokHostedImageUrl(url.href) ||
         isXHostedImageUrl(url.href) ||
-        isYoutubeHostedImageUrl(url.href))
+        isYoutubeHostedImageUrl(url.href) ||
+        isTwitchHostedImageUrl(url.href) ||
+        isBlueskyHostedImageUrl(url.href))
     );
   } catch {
     return false;
@@ -92,7 +114,7 @@ export function isAllowedSocialImageUrl(
 export function toAccountPictureSrc(
   accountId: string | null | undefined,
 ): string | null {
-  const id = typeof accountId === "string" ? accountId.trim() : "";
+  const id = typeof accountId === 'string' ? accountId.trim() : '';
   if (!id) return null;
   return `/api/social/media/picture/${id}`;
 }
@@ -100,14 +122,14 @@ export function toAccountPictureSrc(
 export function toClientSocialImageUrl(
   value: string | null | undefined,
 ): string | null {
-  const trimmed = typeof value === "string" ? value.trim() : "";
+  const trimmed = typeof value === 'string' ? value.trim() : '';
   if (!trimmed) return null;
   if (!isAllowedSocialImageUrl(trimmed)) return trimmed;
   return `/api/social/media/remote?u=${encodeURIComponent(trimmed)}`;
 }
 
 function hostnameOf(value: string | null | undefined): string | null {
-  if (typeof value !== "string" || !value.trim()) return null;
+  if (typeof value !== 'string' || !value.trim()) return null;
   try {
     return new URL(value.trim()).hostname.toLowerCase();
   } catch {

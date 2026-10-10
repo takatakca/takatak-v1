@@ -19,3 +19,13 @@ export function isEnabledServiceStatus(
 ): boolean {
   return (ENABLED_SERVICE_STATUSES as readonly string[]).includes(value);
 }
+
+/**
+ * Sidebar modules whose access is not read from ServiceInstance, so they need
+ * no database change. ALKAO Ticketing: see src/lib/ticketing/alkao-access.ts.
+ */
+export const EXTERNAL_SERVICE_MODULES = ["ticketing"] as const;
+
+export type SidebarServiceModule =
+  | DashboardServiceModule
+  | (typeof EXTERNAL_SERVICE_MODULES)[number];

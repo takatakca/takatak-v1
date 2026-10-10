@@ -8,12 +8,14 @@ export const TIKTOK_OAUTH_AUTHORIZE_HOST = "https://www.tiktok.com";
 export const TIKTOK_OAUTH_CALLBACK_PATH = "/api/social/callback/tiktok";
 
 /**
- * Login Kit identity + profile. Publishing and ads stay out of this start
- * request so a personal TikTok account can connect without extra products.
+ * Login Kit identity, profile, account stats, and video list.
+ * Publishing and ads stay out of this start request.
  */
 export const TIKTOK_OAUTH_START_SCOPES = [
   "user.info.basic",
   "user.info.profile",
+  "user.info.stats",
+  "video.list",
 ] as const;
 
 function trimEnv(name: string): string | null {

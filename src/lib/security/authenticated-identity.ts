@@ -19,14 +19,21 @@ export function sessionMatchesProfile(input: {
   const sessionEmail = normalizeIdentityEmail(input.sessionEmail);
   const profileEmail = normalizeIdentityEmail(input.profileEmail);
 
-  return (
-    sessionUserId.length > 0 &&
-    profileAuthUserId.length > 0 &&
-    sessionUserId === profileAuthUserId &&
-    sessionEmail.length > 0 &&
-    profileEmail.length > 0 &&
-    sessionEmail === profileEmail
-  );
+  if (
+    sessionUserId.length === 0 ||
+    profileAuthUserId.length === 0 ||
+    sessionUserId !== profileAuthUserId
+  ) {
+    return false;
+  }
+
+  // Email is a second check when both sides have one. A phone-only
+  // Supabase user has no email; the auth user id is the identity.
+  if (sessionEmail.length > 0 && profileEmail.length > 0) {
+    return sessionEmail === profileEmail;
+  }
+
+  return true;
 }
 
 export function cookieUserMatchesAccessToken(input: {

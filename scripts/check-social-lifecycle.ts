@@ -95,10 +95,31 @@ const PROVIDERS: ProviderFixture[] = [
   },
   {
     provider: "twitch",
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
-    providerState: "planned",
+    providerState: "ready_for_authorization",
+  },
+  {
+    provider: "meta_ads",
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
+    providerState: "ready_for_authorization",
+  },
+  {
+    provider: "google_ads",
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
+    providerState: "ready_for_authorization",
+  },
+  {
+    provider: "looker_studio",
+    implemented: true,
+    connectable: true,
+    supportsMultipleAccounts: false,
+    providerState: "ready_for_authorization",
   },
 ];
 

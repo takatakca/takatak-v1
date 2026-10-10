@@ -101,6 +101,15 @@ export async function sendEmailOtp(
     };
   }
 
+  if (!profile.email) {
+    return {
+      ok: false,
+      status: 401,
+      message: "Email address not found",
+      code: "email_not_found",
+    };
+  }
+
   if (profile.status === "disabled") {
     return disabledAccount();
   }
@@ -335,6 +344,15 @@ export async function verifyEmailOtp(
   });
 
   if (!profile) {
+    return {
+      ok: false,
+      status: 400,
+      message: "Email not found",
+      code: "email_not_found",
+    };
+  }
+
+  if (!profile.email) {
     return {
       ok: false,
       status: 400,
@@ -684,6 +702,16 @@ export async function verifyPhoneOtp(
       status: 400,
       message: "Invalid or expired code",
       code: "invalid_otp",
+    };
+  }
+
+  if (!profile.email) {
+    return {
+      ok: false,
+      status: 409,
+      message:
+        "Phone verification is handled by TAKATAK Supabase Phone Auth. Start the SMS flow from the TAKATAK login screen.",
+      code: "invalid_request",
     };
   }
 

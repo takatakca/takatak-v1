@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 
 import { FaInstagram, FaFacebook, FaTiktok, FaYoutube } from "react-icons/fa";
+import { SiBluesky } from "react-icons/si";
 
 export type SocialPlatformKey =
   | "web"
@@ -205,9 +206,9 @@ export function SocialPlatformIcon({
       return (
         <span
           aria-hidden="true"
-          className={`inline-flex ${className} items-center justify-center text-[0.62em] font-black uppercase leading-none ${color}`}
+          className={`inline-flex items-center justify-center leading-none ${iconClassName}`}
         >
-          BS
+          <SiBluesky size={22} />
         </span>
       );
   }

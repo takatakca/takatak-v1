@@ -1,0 +1,112 @@
+name: Validate current TAKATAK production artifact
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: takatak-production-artifact-validation
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      RELEASE_SHA: ${{ github.event.workflow_run.head_sha }}
+      CI_RUN_ID: ${{ github.event.workflow_run.id }}
+    steps:
+      - name: Checkout exact green release
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_SHA }}
+
+      - name: Refuse stale main artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          CURRENT_MAIN="$(git ls-remote origin refs/heads/main | awk '{print $1}')"
+          test -n "$CURRENT_MAIN"
+          test "$CURRENT_MAIN" = "$RELEASE_SHA" || {
+            echo "Current main advanced; skipping stale production artifact validation."
+            exit 1
+          }
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.23.x
+
+      - name: Attest exact main CI and artifact provenance
+        id: evidence
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const policy = await import(`${process.env.GITHUB_WORKSPACE}/scripts/production-release-policy.mjs`);
+            const releaseSha = process.env.RELEASE_SHA;
+            const ciRunId = Number(process.env.CI_RUN_ID);
+            const {owner, repo} = context.repo;
+            const main = await github.rest.repos.getBranch({owner, repo, branch: 'main'});
+            const run = await github.rest.actions.getWorkflowRun({owner, repo, run_id: ciRunId});
+            const artifacts = await github.paginate(
+              github.rest.actions.listWorkflowRunArtifacts,
+              {owner, repo, run_id: ciRunId, per_page: 100},
+            );
+            const artifact = artifacts.find(item => item.name === `takatak-ci-${releaseSha}`);
+            const artifactId = policy.validateCiEvidence({
+              releaseSha,
+              ciRunId,
+              currentMain: main.data.commit.sha,
+              repository: `${owner}/${repo}`,
+              run: run.data,
+              artifact,
+            });
+            core.setOutput('artifact_id', artifactId);
+            core.info('Current main CI artifact provenance accepted.');
+
+      - name: Download exact CI artifact
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.evidence.outputs.artifact_id }}
+          run-id: ${{ env.CI_RUN_ID }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/takatak-release
+          merge-multiple: true
+
+      - name: Validate immutable production artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import {validateArtifactFiles} from './scripts/production-release-policy.mjs';
+          await validateArtifactFiles(`${process.env.RUNNER_TEMP}/takatak-release`, process.env.RELEASE_SHA);
+          console.log('CI tarball checksum accepted.');
+          NODE
+          python3 scripts/validate-production-archive.py "$RUNNER_TEMP/takatak-release/takatak-ci-$RELEASE_SHA.tar.gz"
+          mkdir -p "$RUNNER_TEMP/takatak-inspect"
+          tar -xzf "$RUNNER_TEMP/takatak-release/takatak-ci-$RELEASE_SHA.tar.gz" -C "$RUNNER_TEMP/takatak-inspect"
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {validateBuildMetadata} from './scripts/production-release-policy.mjs';
+          const root = `${process.env.RUNNER_TEMP}/takatak-inspect`;
+          const meta = JSON.parse(await readFile(`${root}/build-metadata.json`, 'utf8'));
+          validateBuildMetadata(meta, process.env.RELEASE_SHA, await readFile(`${root}/app/BUILD_ID`, 'utf8'));
+          console.log('Linux Node 22 artifact profile and BUILD_ID accepted.');
+          NODE
+          node scripts/audit-production-artifact.cjs "$RUNNER_TEMP/takatak-inspect"
+
+      - name: Validation summary
+        run: |
+          echo "Production artifact validation succeeded."
+          echo "SHA: $RELEASE_SHA"
+          echo "No production connection, upload, activation, migration, DNS or provider change was performed."

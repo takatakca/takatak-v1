@@ -93,7 +93,11 @@ export type Permission =
   | "view_social"
   | "manage_social_accounts"
   | "view_ads"
-  | "manage_ads";
+  | "manage_ads"
+  | "view_reputation"
+  | "manage_reputation"
+  | "view_conversations"
+  | "manage_conversations";
 
 export const ALL_PERMISSIONS: Permission[] = [
   "view_dashboard",
@@ -120,6 +124,10 @@ export const ALL_PERMISSIONS: Permission[] = [
   "manage_social_accounts",
   "view_ads",
   "manage_ads",
+  "view_reputation",
+  "manage_reputation",
+  "view_conversations",
+  "manage_conversations",
 ];
 
 export const ROLE_PERMISSIONS: Record<
@@ -151,6 +159,10 @@ export const ROLE_PERMISSIONS: Record<
     "view_reports",
     "view_ads",
     "manage_ads",
+    "view_reputation",
+    "manage_reputation",
+    "view_conversations",
+    "manage_conversations",
   ],
 
   editor: [
@@ -161,6 +173,10 @@ export const ROLE_PERMISSIONS: Record<
     "approve_content",
     "view_reports",
     "view_ads",
+    "view_reputation",
+    "manage_reputation",
+    "view_conversations",
+    "manage_conversations",
   ],
 
   staff: [
@@ -170,6 +186,9 @@ export const ROLE_PERMISSIONS: Record<
     "edit_content",
     "view_reports",
     "view_ads",
+    "view_reputation",
+    "view_conversations",
+    "manage_conversations",
   ],
 
   viewer: [
@@ -177,6 +196,8 @@ export const ROLE_PERMISSIONS: Record<
     "view_social",
     "view_reports",
     "view_ads",
+    "view_reputation",
+    "view_conversations",
   ],
 };
 
@@ -193,6 +214,9 @@ export const MODULE_ACCESS: Record<
   "/dashboard/social": "view_social",
   "/dashboard/ads": "view_ads",
   "/dashboard/advertising": "view_ads",
+  "/dashboard/growth/reviews": "view_reputation",
+  "/dashboard/growth/conversations": "view_conversations",
+  "/dashboard/growth/report": "view_reports",
   "/dashboard/contributions": "approve_content",
   "/dashboard/integrations": "manage_integrations",
   "/dashboard/jobs": "manage_jobs",
@@ -202,8 +226,10 @@ export const MODULE_ACCESS: Record<
   "/dashboard/social/users": "view_team",
   "/dashboard/social/settings": "view_social",
   "/dashboard/billing": "view_social",
+  "/dashboard/invoices": "manage_settings",
   "/dashboard/admin": "view_admin",
   "/dashboard/settings": "manage_settings",
+  "/dashboard/client-billing": "manage_settings",
 };
 
 const VALID_ROLES: RoleKey[] = [

@@ -10,7 +10,7 @@ import {
 } from "@/lib/validation/common";
 
 export interface AccountAccessInput {
-  email: string;
+  email: string | null;
   newPassword: string | null;
 }
 
@@ -27,16 +27,17 @@ export function validateAccountAccessInput(
 
   const fieldErrors: Record<string, string> = {};
 
-  if (typeof value.email !== "string") {
-    fieldErrors.email = "Email is required.";
+  const rawEmail = typeof value.email === "string" ? value.email.trim() : "";
+  if (value.email !== undefined && value.email !== null && typeof value.email !== "string") {
+    fieldErrors.email = "Enter a valid email address.";
   }
 
-  const email = normalizeEmail(
-    typeof value.email === "string" ? value.email : "",
-  );
-  const emailError = validateEmail(email);
-  if (emailError) {
-    fieldErrors.email = emailError;
+  const email = rawEmail ? normalizeEmail(rawEmail) : null;
+  if (email) {
+    const emailError = validateEmail(email);
+    if (emailError) {
+      fieldErrors.email = emailError;
+    }
   }
 
   let newPassword: string | null = null;

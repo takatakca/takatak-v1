@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Check, ShieldCheck } from "lucide-react";
+import { Check, CheckCircle2, ShieldCheck } from "lucide-react";
 import { IoArrowBack } from "react-icons/io5";
 
 import { CheckoutScrollArrow } from "@/components/website/checkout/checkout-scroll-arrow";
@@ -14,6 +14,7 @@ import {
   readCheckoutSelection,
   type CheckoutSelection,
 } from "@/lib/website/marketplace-storage";
+import { submitWebsiteRequest } from "@/lib/website/website-requests";
 import styles from "./checkout-domain.module.css";
 
 function dollars(cents: number): string {
@@ -26,10 +27,78 @@ function dollars(cents: number): string {
 function MarketplaceOrder({
   selection,
   onClear,
+  onSent,
 }: {
   selection: CheckoutSelection;
   onClear: () => void;
+  onSent: () => void;
 }) {
+  const [sending, setSending] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
+  const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function sendOrder() {
+    setSending(true);
+    setError(null);
+    const result = await submitWebsiteRequest({
+      kind: "package_order",
+      packageId: selection.packageId,
+      tierName: selection.tierName,
+      addons: selection.addons.map((item) => item.label),
+      promoCode: selection.promoCode ?? undefined,
+      sourcePage: "/checkout",
+    });
+    setSending(false);
+    if (result.status === "sent") {
+      setReference(result.reference);
+      setConfirmedTotal(result.totalCents ?? selection.finalTotalCents);
+      onSent();
+      return;
+    }
+    if (result.status === "rate_limited") {
+      setError("Too many requests were sent. Please wait a few minutes and try again.");
+      return;
+    }
+    if (result.status === "invalid") {
+      setError("This package is no longer available as selected. Please choose it again from the marketplace.");
+      return;
+    }
+    setError("We couldn't send your order right now. Your selection is kept — please try again shortly or email support@takatak.ca.");
+  }
+
+  if (reference) {
+    return (
+      <section className="mx-auto max-w-3xl px-4 py-16">
+        <div className="rounded-2xl border border-primary/25 bg-primary/5 p-8">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 size={24} className="mt-0.5 shrink-0 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold text-slate-950">Order received</h1>
+              <p className="mt-2 text-sm leading-6 text-slate-700">
+                TAKATAK received your order for “{selection.title}” ({selection.tierName}).
+                A specialist will confirm the scope and send your invoice. Nothing is charged
+                until you approve it.
+              </p>
+              <p className="mt-3 text-sm font-medium text-slate-900">
+                Reference: {reference}
+                {confirmedTotal !== null ? ` · Quoted total ${dollars(confirmedTotal)} CAD` : null}
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/marketplace" className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white">
+                  Back to marketplace
+                </Link>
+                <Link href="/dashboard" className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800">
+                  Go to my dashboard
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="mx-auto max-w-5xl px-4 py-16">
       <div className="mx-auto max-w-2xl">
@@ -37,13 +106,13 @@ function MarketplaceOrder({
           Review your TAKATAK order
         </h1>
         <p className="mt-2 text-slate-600">
-          Confirm the selected package before continuing inside your TAKATAK
-          dashboard.
+          Confirm the selected package and send it to TAKATAK. A specialist
+          confirms the scope before anything is charged.
         </p>
         <div className="mt-8 overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div className="flex items-center justify-between bg-[#090a1a] px-6 py-4 text-white">
             <span className="inline-flex items-center gap-2 font-semibold">
-              <ShieldCheck size={17} className="text-emerald-400" />
+              <ShieldCheck size={17} className="text-sky-400" />
               TAKATAK order summary
             </span>
             <span className="text-xs text-slate-400">CAD</span>
@@ -68,7 +137,7 @@ function MarketplaceOrder({
               {selection.addons.map((item) => (
                 <div key={item.label} className="flex justify-between">
                   <span className="inline-flex items-center gap-2 text-slate-600">
-                    <Check size={13} className="text-emerald-700" />
+                    <Check size={13} className="text-primary" />
                     {item.label}
                   </span>
                   <span className="font-medium text-slate-950">
@@ -77,7 +146,7 @@ function MarketplaceOrder({
                 </div>
               ))}
               {selection.discountCents > 0 ? (
-                <div className="flex justify-between text-emerald-700">
+                <div className="flex justify-between text-primary">
                   <span>FIRST10 discount</span>
                   <span>-{dollars(selection.discountCents)}</span>
                 </div>
@@ -89,12 +158,22 @@ function MarketplaceOrder({
                 {dollars(selection.finalTotalCents)}
               </span>
             </div>
-            <Link
-              href="/dashboard/marketplace"
-              className="mt-6 inline-flex w-full justify-center rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white"
+            {error ? (
+              <p role="alert" className="mt-6 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
+                {error}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              onClick={sendOrder}
+              disabled={sending}
+              className="mt-6 inline-flex w-full justify-center rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
-              Continue in dashboard
-            </Link>
+              {sending ? "Sending…" : "Send order to TAKATAK"}
+            </button>
+            <p className="mt-2 text-center text-xs text-slate-500">
+              No payment is taken now. Final price is confirmed on your invoice.
+            </p>
             <button
               type="button"
               onClick={onClear}
@@ -135,6 +214,7 @@ export function CheckoutClient({
           clearCheckoutSelection();
           setSelection(null);
         }}
+        onSent={() => clearCheckoutSelection()}
       />
     );
   }

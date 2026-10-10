@@ -112,8 +112,8 @@ export async function resolveCanonicalTikTokDashboard(options: {
       connectionId: connection.id,
       socialAccountId: strict.account.id,
       accountName:
-        strict.account.displayName ??
         strict.account.handle ??
+        strict.account.displayName ??
         "TikTok account",
       profileImageUrl: strict.account.profileImageUrl,
       connectionStatus: connection.status,

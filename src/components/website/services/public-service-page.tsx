@@ -26,7 +26,7 @@ export function PublicServicePage({
         <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-700">
           <Sparkles
             size={12}
-            className="text-emerald-700"
+            className="text-primary"
           />
 
           {service.status === "live"
@@ -47,7 +47,7 @@ export function PublicServicePage({
             href={`/register?next=${encodeURIComponent(
               service.dashboardRoute,
             )}`}
-            className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-6 py-3 font-semibold text-white transition hover:bg-emerald-500"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 font-semibold text-white transition hover:bg-primary/90"
           >
             {service.ctaLabel}
             <ArrowRight size={16} />
@@ -75,7 +75,7 @@ export function PublicServicePage({
                   key={item}
                   className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
                 >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-xs font-bold text-emerald-800">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary">
                     {index + 1}
                   </span>
 
@@ -107,7 +107,7 @@ export function PublicServicePage({
               >
                 <CheckCircle2
                   size={16}
-                  className="mt-0.5 shrink-0 text-emerald-700"
+                  className="mt-0.5 shrink-0 text-primary"
                 />
 
                 {item}
@@ -117,7 +117,7 @@ export function PublicServicePage({
 
           <Link
             href={service.dashboardRoute}
-            className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-emerald-700"
+            className="mt-6 inline-flex items-center gap-1 text-sm font-semibold text-primary"
           >
             Open dashboard
             <ArrowRight size={14} />

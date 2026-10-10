@@ -120,7 +120,7 @@ export interface PublicServiceDefinition {
         status: "beta",
         ctaLabel: "Browse marketplace",
         dashboardRoute:
-          "/dashboard/marketplace",
+          "/dashboard",
       },
     ];
   
