@@ -100,6 +100,9 @@ jobs:
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
+      - name: R2F signed lead intake safeguards
+        run: npm run qa:r2f-intake
+
       - name: Lead detail actions
         run: npm run qa:lead-actions
 

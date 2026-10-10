@@ -4,6 +4,8 @@ Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
 
+- 2026-10-10 | ChatGPT | feat/r2f-intake-v1 → PR pending | active | Issue #160 phase 1: dedicated signed R2F lead intake into TAKATAK without weakening takatak.ca forms | implement parser/signature/store route + QA, open PR
+
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
 
