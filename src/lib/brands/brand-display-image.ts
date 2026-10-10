@@ -113,6 +113,8 @@ export function listConnectedPlatformIcons(
   platforms: readonly string[],
 ): string[] {
   const preferredOrder = [
+    "web",
+    "blog",
     "facebook",
     "instagram",
     "threads",
@@ -126,6 +128,8 @@ export function listConnectedPlatformIcons(
     "bluesky",
     "twitch",
     "meta_ads",
+    "google_ads",
+    "looker_studio",
   ];
 
   const unique = [

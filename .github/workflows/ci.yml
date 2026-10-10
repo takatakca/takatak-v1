@@ -97,6 +97,24 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: Website lead capture safeguards
+        run: npm run qa:website-leads
+
+      - name: Lead detail actions
+        run: npm run qa:lead-actions
+
+      - name: Client invoicing (Stripe Connect) safeguards
+        run: npm run qa:client-invoicing
+
+      - name: Website theme colours registered
+        run: npm run qa:website-theme
+
+      - name: Website SEO and HTTPS redirect
+        run: npm run qa:website-seo
+
+      - name: Business phone (VoIP) dashboard safeguards
+        run: npm run qa:voip-dashboard
+
       - name: SEO site audit safeguards
         run: npm run qa:seo-audit
 
@@ -106,12 +124,24 @@ jobs:
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
 
+      - name: TAKATAK Growth Suite safeguards
+        run: npm run qa:growth-suite
+
+      - name: GROUPE TAKATAK billing (Facturations) safeguards
+        run: npm run qa:billing
+
+      - name: Client invoice center safeguards
+        run: npm run qa:client-invoices
+
       - name: Secret scan
         run: npm run qa:secrets
 
       - name: TAKATAK staging migration + release safeguards
         run: |
           node --check scripts/reconcile-staging-migrations.mjs
+          node --check scripts/staging-migration-history.mjs
+          node --check scripts/staging-release-approval.mjs
+          node --test scripts/staging-migration-history.test.mjs scripts/staging-release-approval.test.mjs
           npm run qa:staging-release
 
       - name: AHMV operational readiness safeguards
@@ -121,6 +151,9 @@ jobs:
         run: |
           node --check scripts/reconcile-production-migrations.mjs
           node scripts/verify-production-migration-normalization.mjs
+
+      - name: Manual production promotion safeguards
+        run: npm run qa:production-release
 
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
@@ -297,8 +330,39 @@ jobs:
             exit "$status"
           fi
 
+      - name: Growth Suite backend (reputation + AI credits) on ephemeral DB
+        env:
+          NODE_ENV: development
+        run: npm run qa:growth-backend
+
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
+
+      - name: GROUPE TAKATAK billing ↔ real Facturations contract (pinned SHA)
+        env:
+          # Exact takatakca/Facturations commit whose integration v1 contract
+          # this branch is verified against. Bump deliberately, with review.
+          FACTURATIONS_REF: eb1e02a10efdf9767dca0eeb04b5010209d18f07
+        run: bash scripts/ci-billing-facturations-contract.sh
+      - name: Client invoicing (Stripe Connect) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoicing-db
+
+      - name: Client invoice center against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:client-invoices-db
+
+      - name: GROUPE TAKATAK billing ecosystem feed against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:billing-feed-db
+
+      - name: Won website order lead → billing queue against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:lead-order-billing-db
 
       - name: Build (webpack)
         env:
@@ -314,6 +378,9 @@ jobs:
         run: npm run artifact:pack
         env:
           TAKATAK_BUILD_ID: ci-${{ github.sha }}
+
+      - name: Validate archive paths before upload
+        run: python3 scripts/validate-production-archive.py var/artifacts/ci-${{ github.sha }}/takatak-ci-${{ github.sha }}.tar.gz
 
       - name: Artifact content audit
         run: node scripts/audit-production-artifact.cjs var/artifacts/ci-${{ github.sha }}

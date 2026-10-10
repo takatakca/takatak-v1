@@ -12,6 +12,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { XSubscribedDashboard } from "@/components/social/platforms/x-subscribed-dashboard";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -159,49 +160,34 @@ export function XConnectPage({
   if (isConnected || hasSocialHistory) {
     return (
       <div className="space-y-7 px-1 pb-16 pt-2">
-        <header className="flex items-center gap-4">
-          {profileImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={profileImageUrl}
-              alt=""
-              referrerPolicy="no-referrer"
-              className="h-14 w-14 rounded-full object-cover"
-            />
-          ) : (
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black text-lg font-semibold text-white">
-              {(connectedLabel ?? "X").slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <div>
-            <p className="text-sm font-medium text-slate-500">X</p>
-            <h1 className="text-[28px] font-semibold leading-tight text-[#20242A]">
-              {connectedLabel ?? "X account"}
-            </h1>
-          </div>
-        </header>
-
-        <section className="rounded-[18px] border border-slate-200 bg-white px-7 py-6">
-          <h2 className="text-[18px] font-semibold text-slate-950">
-            {isConnected ? "Account connected" : "No X account connected"}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            {isConnected
-              ? "Account connected. Analytics will appear here after the next sync step."
-              : "Your saved X history remains stored. Reconnect the same account to restore only that account’s analytics."}
-          </p>
-          {!isConnected ? (
+        {!isConnected ? (
+          <section className="flex flex-col gap-4 rounded-[14px] border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-[17px] font-semibold text-slate-950">
+                No X account connected
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Your saved X history remains stored. Reconnect the same
+                account to restore only that account&apos;s analytics.
+              </p>
+            </div>
             <Link
               href={withSocialPreview(
                 "/dashboard/social/x?connections=open",
                 searchParams,
               )}
-              className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
             >
               Reconnect X
             </Link>
-          ) : null}
-        </section>
+          </section>
+        ) : null}
+
+        <XSubscribedDashboard
+          accountName={connectedLabel ?? "X account"}
+          profileImageUrl={profileImageUrl}
+          isConnected={isConnected}
+        />
       </div>
     );
   }

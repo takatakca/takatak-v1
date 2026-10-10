@@ -1,6 +1,7 @@
 import { Link } from "@/lib/website/nav";
 import { brand } from "@/lib/website/brand";
 import { TakatakLogo } from "@/components/brand/takatak-logo";
+import { hasOwnedBrands } from "@/lib/website/owned-brands";
 
 const cols = [
   {
@@ -19,7 +20,7 @@ const cols = [
     links: [
       { to: "/marketplace", label: "How TAKATAK works" },
       { to: "/marketplace/post-project", label: "Post a project" },
-      { to: "/dashboard/marketplace", label: "Manage projects" },
+      { to: "/dashboard", label: "Manage projects" },
       { to: "/dashboard/support", label: "Support" },
     ],
   },
@@ -35,17 +36,25 @@ const cols = [
   {
     title: "Business Solutions",
     links: [
+      // The TAKATAK core, in the owner's order (src/lib/website/core-categories.ts).
+      { to: "/services/websites", label: "Websites" },
       { to: "/domain", label: "Domains" },
       { to: "/hosting", label: "Hosting" },
-      { to: "/services/local-listings", label: "Local Visibility" },
-      { to: "/services/lead-generation", label: "Lead Generation" },
-      { to: "/services/ai-business-tools", label: "AI Tools" },
+      { to: "/services/marketing", label: "Marketing & ads" },
+      { to: "/services/social-media", label: "Social media" },
+      { to: "/services/local-listings", label: "Local listings" },
+      { to: "/services/reviews", label: "Reviews & reputation" },
+      { to: "/services/ai-studio", label: "AI Studio" },
+      { to: "/services/billing", label: "Billing & invoicing" },
+      { to: "/services/voip", label: "Business phone (planned)" },
     ],
   },
   {
     title: "Company",
     links: [
       { to: "/", label: "About TAKATAK" },
+      // Shown once src/lib/website/owned-brands.ts lists a confirmed brand.
+      ...(hasOwnedBrands ? [{ to: "/ecosystem", label: "Our brands" }] : []),
       { to: "/deals", label: "Today's Deals" },
       { to: "/login", label: "Sign in" },
       { to: "/register", label: "Get started" },

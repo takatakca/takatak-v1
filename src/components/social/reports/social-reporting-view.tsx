@@ -160,16 +160,25 @@ export function SocialReportingView({
 
           <FeatureCard
             title="Looker Studio"
-            description="Connect TAKATAK data to Looker Studio for custom dashboards. That connection is not wired yet."
+            description="Connect a Looker Studio report for this brand and open it from TAKATAK."
             icon={BarChart3}
             iconClass="bg-[#fee2e2] text-[#dc2626]"
             imageSrc="/img/looker-studio.png"
             imageAlt=""
           >
-            <UpgradeButton
-              href={billingHref}
-              label="Connect Looker Studio"
-            />
+            {reportsUnlocked ? (
+              <Link
+                href="/dashboard/social/looker_studio"
+                className="inline-flex h-10 items-center justify-center rounded-md bg-[#2a1728] px-4 text-[13px] font-semibold text-white transition hover:bg-[#3b2438]"
+              >
+                Connect Looker Studio
+              </Link>
+            ) : (
+              <UpgradeButton
+                href={billingHref}
+                label="Connect Looker Studio"
+              />
+            )}
           </FeatureCard>
         </div>
 

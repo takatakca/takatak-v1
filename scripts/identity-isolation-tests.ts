@@ -340,6 +340,12 @@ async function main() {
         sessionEmail: ACCOUNT_A.email,
         profileAuthUserId: ACCOUNT_A.authUserId,
         profileEmail: ACCOUNT_A.email,
+      }) === true &&
+      sessionMatchesProfile({
+        sessionUserId: ACCOUNT_A.authUserId,
+        sessionEmail: null,
+        profileAuthUserId: ACCOUNT_A.authUserId,
+        profileEmail: null,
       }) === true,
   );
 

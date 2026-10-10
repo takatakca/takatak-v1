@@ -13,7 +13,6 @@ import {
   SOCIAL_DB_TRANSACTION_SELECTION_TIMEOUT_MS,
 } from "@/lib/social/connections/social-db-transaction";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
-import { disconnectThreadsAccountsForConnection } from "@/lib/social/connections/social-threads-account-service";
 import {
   fetchLinkedInstagramForFacebookPage,
   instagramConnectionEligible,
@@ -95,7 +94,7 @@ function decryptConnectionPayload(options: {
 
 /**
  * Disconnect Instagram professional accounts on a Meta connection.
- * Does not touch Facebook Page selection or the Meta user token.
+ * Does not touch Facebook, Threads, or any independent provider credential.
  */
 export async function disconnectInstagramAccountsForConnection(options: {
   clientId: string;
@@ -121,11 +120,6 @@ export async function disconnectInstagramAccountsForConnection(options: {
       },
     });
 
-    await disconnectThreadsAccountsForConnection({
-      clientId: options.clientId,
-      connectionId: options.connectionId,
-      transaction: options.transaction,
-    });
   };
 
   if (options.transaction) {

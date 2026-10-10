@@ -58,7 +58,7 @@ function initialsFor(data: Extract<AccountSettingsPageData, { source: "database"
       .join("")
       .toUpperCase();
   }
-  return data.email.slice(0, 2).toUpperCase();
+  return (data.email ?? data.phone ?? "TA").slice(0, 2).toUpperCase();
 }
 
 function PremiumMark() {
@@ -454,7 +454,7 @@ function AccountPanel({
         </label>
         <p className="mt-2 text-sm text-slate-500">
           When this field is empty the monthly summary is addressed to{" "}
-          {data.email}. Delivery is saved as a preference; monthly emails are
+          {data.email ?? "the recovery email you add later"}. Delivery is saved as a preference; monthly emails are
           not sent yet.
         </p>
         {fieldErrors.monthlySummaryEmail ? (
@@ -522,7 +522,7 @@ function AccessPanel({
   data: Extract<AccountSettingsPageData, { source: "database" }>;
 }) {
   const router = useRouter();
-  const [email, setEmail] = useState(data.email);
+  const [email, setEmail] = useState(data.email ?? "");
   const [newPassword, setNewPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -538,7 +538,7 @@ function AccessPanel({
   const [verifyCode, setVerifyCode] = useState("");
 
   const dirty =
-    email.trim().toLowerCase() !== data.email.toLowerCase() ||
+    email.trim().toLowerCase() !== (data.email ?? "").toLowerCase() ||
     newPassword.length > 0;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -760,13 +760,13 @@ function AccessPanel({
 
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-600">
-            E-mail *
+            E-mail
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               autoComplete="email"
-              required
+              placeholder="Optional recovery email"
               className={inputClassName}
             />
             {fieldErrors.email ? (

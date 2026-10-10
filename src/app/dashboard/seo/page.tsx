@@ -1,15 +1,20 @@
-import { Globe2, Info } from "lucide-react";
+import Link from "next/link";
+import { Globe2 } from "lucide-react";
 
-import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
+import { ConnectorGrid } from "@/components/growth/connector-card";
+import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
+import { PageSpeedForm } from "@/components/growth/pagespeed-form";
+import { SiteAuditForm } from "@/components/growth/site-audit-form";
 import { EmptyState } from "@/components/saas/empty-state";
 import { RunAuditButton } from "@/components/seo/run-audit-button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardBody } from "@/components/ui/card";
-import { MODULE_PLACEHOLDERS } from "@/lib/dashboard/dashboard-config";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getPrisma } from "@/lib/db/prisma";
+import { requireGrowthAccess } from "@/lib/growth/access";
+import { getConnectorStatuses } from "@/lib/growth/status";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
-import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 import { CHECK_LABELS } from "@/lib/seo/checks";
+import { pageSpeedConfigured } from "@/lib/seo/pagespeed";
 import { loadSeoOverview, type SeoOverviewSite } from "@/lib/seo/service";
 
 export const dynamic = "force-dynamic";
@@ -133,42 +138,82 @@ function SiteAudit({ site, canRun }: { site: SeoOverviewSite; canRun: boolean })
   );
 }
 
-export default async function SeoPage() {
-  const access = await requireWorkspacePermission("view_reports", "/dashboard/seo");
-  const prisma = getPrisma();
-  if (!prisma) return <ModulePlaceholder def={MODULE_PLACEHOLDERS.seo} />;
+export default async function SeoOverviewPage() {
+  const { access, showSetupDetails } = await requireGrowthAccess("/dashboard/seo");
+  const seoConnectors = getConnectorStatuses().filter((c) => c.category === "seo" || c.key === "search_console" || c.key === "brightlocal");
 
-  const sites = await loadSeoOverview(prisma, access.activeClientId);
-  const canRun = hasEffectivePermission(access, "manage_brands");
+  // Saved multi-page audits of this workspace's own websites (#135).
+  const prisma = getPrisma();
+  const workspaceAudits =
+    prisma && access.mode === "client_scoped" && hasEffectivePermission(access, "view_reports")
+      ? { sites: await loadSeoOverview(prisma, access.activeClientId), canRun: hasEffectivePermission(access, "manage_brands") }
+      : null;
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-xl font-semibold tracking-tight text-slate-900">SEO</h1>
-        <Badge tone="accent">Technical audit</Badge>
-      </div>
-      <p className="max-w-2xl text-sm leading-relaxed text-slate-600">
-        TAKATAK scans up to 10 pages of each website in this workspace and checks what search engines need: secure access, titles and descriptions, headings, mobile readiness, indexing rules, sitemap, images and speed.
-      </p>
+    <div className="space-y-6">
+      <GrowthHeader
+        title="SEO"
+        description="Audit this workspace's websites and any client page, then layer in keyword, backlink and local-rank data as each SEO provider is connected."
+        badges={[{ label: "Site audit live", tone: "success" }]}
+      />
 
-      {sites.length === 0 ? (
-        <EmptyState
-          icon={Globe2}
-          title="No website linked to this workspace yet"
-          description="Add a domain in Web Integration or a website on a brand, and it will appear here for auditing."
+      {workspaceAudits ? (
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Your websites: saved audits</h2>
+            <p className="mt-1 max-w-2xl text-xs text-slate-600">
+              Up to 10 pages per website, 22 checks: secure access, titles and descriptions, headings, mobile readiness, indexing rules,
+              sitemap, images and speed. Results are kept so you can compare over time.
+            </p>
+          </div>
+          {workspaceAudits.sites.length === 0 ? (
+            <EmptyState
+              icon={Globe2}
+              title="No website linked to this workspace yet"
+              description="Add a domain in Web Integration or a website on a brand, and it will appear here for auditing."
+            />
+          ) : (
+            workspaceAudits.sites.map((site) => <SiteAudit key={site.host} site={site} canRun={workspaceAudits.canRun} />)
+          )}
+        </section>
+      ) : null}
+
+      <Card>
+        <CardHeader
+          title="Quick check of any page"
+          subtitle="Checks one live page, robots.txt and sitemap right now. Nothing is stored; no third-party API is called."
         />
-      ) : (
-        <div className="space-y-4">
-          {sites.map((site) => (
-            <SiteAudit key={site.host} site={site} canRun={canRun} />
-          ))}
-        </div>
-      )}
+        <CardBody>
+          <SiteAuditForm />
+        </CardBody>
+      </Card>
 
-      <p className="flex items-start gap-1.5 text-xs text-slate-400">
-        <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        Keyword rankings and backlinks need Google Search Console or an SEO data provider, which are not connected yet. Audits only read public pages of this workspace&apos;s own websites.
-      </p>
+      <Card>
+        <CardHeader title="Speed & Core Web Vitals" subtitle="Google PageSpeed Insights: the same speed scores Google uses for ranking." />
+        <CardBody>
+          <PageSpeedForm configured={pageSpeedConfigured()} />
+        </CardBody>
+      </Card>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link href="/dashboard/seo/keywords" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-indigo-300">
+          <p className="text-sm font-semibold text-slate-900">Keywords →</p>
+          <p className="mt-1 text-xs text-slate-600">Rank tracking, search volume and opportunities.</p>
+        </Link>
+        <Link href="/dashboard/seo/backlinks" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-indigo-300">
+          <p className="text-sm font-semibold text-slate-900">Backlinks →</p>
+          <p className="mt-1 text-xs text-slate-600">Referring domains, new and lost links, toxic link watch.</p>
+        </Link>
+      </div>
+
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-slate-900">SEO data providers</h2>
+        <ConnectorGrid connectors={seoConnectors} showSetupDetails={showSetupDetails} />
+        <HonestyNote>
+          Keyword volumes, rankings and backlink counts are never estimated. They appear only after a provider above has real credentials and a
+          verified API call.
+        </HonestyNote>
+      </section>
     </div>
   );
 }

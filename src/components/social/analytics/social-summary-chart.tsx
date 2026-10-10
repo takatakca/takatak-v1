@@ -16,6 +16,13 @@ export type ChartPoint = {
   value: MetricValue;
 };
 
+export type ChartTooltipSeries = {
+  label: string;
+  color: string;
+  points: ChartPoint[];
+  format?: (value: number) => string;
+};
+
 type ActivePoint = {
   index: number;
   x: number;
@@ -51,12 +58,25 @@ export function SocialSummaryChart({
   seriesLabel,
   seriesColor = SUMMARY_CHART_SERIES,
   showMarkers = false,
+  includeEndLabel = true,
+  showBaseline = false,
+  dense = false,
+  hideFlatZero = false,
+  tooltipSeries,
 }: {
   points: ChartPoint[];
   seriesLabel: string;
   seriesColor?: string;
   /** Account charts use Metricool day dots; Posts/Ads charts stay clean lines. */
   showMarkers?: boolean;
+  /** Keep the last day off the axis when it is not on the 3-day step. */
+  includeEndLabel?: boolean;
+  showBaseline?: boolean;
+  dense?: boolean;
+  /** An all-zero series stays on the axis line instead of drawing a second stroke. */
+  hideFlatZero?: boolean;
+  /** Growth hover lists every metric for that day. Other charts keep one row. */
+  tooltipSeries?: ChartTooltipSeries[];
 }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [width, setWidth] = useState(720);
@@ -148,16 +168,18 @@ export function SocialSummaryChart({
       });
     }
 
-    const last = points[points.length - 1];
-    if (labels[labels.length - 1]?.date !== last.date) {
-      labels.push({
-        date: last.date,
-        x: coords[coords.length - 1]?.x ?? PAD.left + plotWidth,
-      });
+    if (includeEndLabel) {
+      const last = points[points.length - 1];
+      if (labels[labels.length - 1]?.date !== last.date) {
+        labels.push({
+          date: last.date,
+          x: coords[coords.length - 1]?.x ?? PAD.left + plotWidth,
+        });
+      }
     }
 
     return labels;
-  }, [points, coords, plotWidth]);
+  }, [points, coords, plotWidth, includeEndLabel]);
 
   const yTicks =
     yMax === 10
@@ -178,7 +200,19 @@ export function SocialSummaryChart({
   }
 
   const activePoint = active ? coords[active.index] : null;
-  const tooltipWidth = 148;
+  const tooltipRows = tooltipSeries?.length
+    ? tooltipSeries.map((series) => {
+        const match = series.points.find(
+          (point) => point.date === activePoint?.point.date,
+        );
+        return {
+          label: series.label,
+          color: series.color,
+          text: match ? formatMetric(match.value, series.format) : "—",
+        };
+      })
+    : null;
+  const tooltipWidth = tooltipRows ? 168 : 148;
   const tooltipLeft = active
     ? Math.min(
         Math.max(active.x - tooltipWidth / 2, 4),
@@ -191,7 +225,7 @@ export function SocialSummaryChart({
 
   return (
     <div
-      className="relative w-full overflow-visible pb-14"
+      className={`relative w-full overflow-visible ${dense ? "pb-1" : "pb-14"}`}
       onMouseLeave={clearActive}
     >
       <svg
@@ -201,6 +235,17 @@ export function SocialSummaryChart({
         viewBox={`0 0 ${width} ${HEIGHT}`}
         className="h-[240px] w-full overflow-visible"
       >
+        {showBaseline ? (
+          <line
+            x1={PAD.left}
+            x2={Math.max(width - PAD.right, PAD.left)}
+            y1={PAD.top + plotHeight}
+            y2={PAD.top + plotHeight}
+            stroke="#E4E7EC"
+            strokeWidth={1}
+          />
+        ) : null}
+
         {yTicks.map((tick) => {
           const y = PAD.top + plotHeight - (tick / yMax) * plotHeight;
 
@@ -233,7 +278,12 @@ export function SocialSummaryChart({
           </text>
         ))}
 
-        {path && numericValues.some((value) => value != null) ? (
+        {path &&
+        numericValues.some((value) => value != null) &&
+        !(
+          hideFlatZero &&
+          numericValues.every((value) => value == null || value === 0)
+        ) ? (
           <path
             d={path}
             fill="none"
@@ -317,38 +367,56 @@ export function SocialSummaryChart({
       {active && activePoint ? (
         <div
           role="tooltip"
-          className="pointer-events-none absolute z-10 rounded-[8px] border border-[#E5E7EB] bg-white px-3 py-2 text-[12px] shadow-[0_4px_16px_rgba(15,23,42,0.12)]"
+          className="pointer-events-none absolute z-10 rounded-[8px] border border-[#E6E8EC] bg-white px-3 py-2.5 text-[13px] text-[#30343A] shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
           style={{
             left: tooltipLeft,
-            top:
-              activePoint.y != null
+            top: tooltipRows
+              ? HEIGHT + 4
+              : activePoint.y != null
                 ? activePoint.y + 14
                 : PAD.top + plotHeight / 2,
             width: tooltipWidth,
           }}
         >
-          <span
-            aria-hidden="true"
-            className="absolute bottom-full h-0 w-0 border-x-[7px] border-b-[7px] border-x-transparent border-b-white drop-shadow-sm"
-            style={{ left: tooltipPointerOffset, transform: "translateX(-50%)" }}
-          />
-          <p className="font-semibold text-[#30343A]">
-            {displayDate(activePoint.point.date)}
-          </p>
-          <p className="mt-1.5 flex items-center gap-2 font-medium text-[#505761]">
+          {tooltipRows ? null : (
             <span
               aria-hidden="true"
-              className="inline-block h-2.5 w-2.5 rounded-[2px]"
-              style={{ backgroundColor: seriesColor }}
+              className="absolute bottom-full h-0 w-0 border-x-[7px] border-b-[7px] border-x-transparent border-b-white drop-shadow-sm"
+              style={{ left: tooltipPointerOffset, transform: "translateX(-50%)" }}
             />
-            <span>
-              {seriesLabel}:{" "}
-              {activePoint.value == null
-                ? "—"
-                : formatMetric(activePoint.point.value)}
-              {activePoint.value == null ? " (not synchronized)" : ""}
-            </span>
-          </p>
+          )}
+          <p className="font-semibold">{displayDate(activePoint.point.date)}</p>
+          {tooltipRows ? (
+            <div className="mt-2 space-y-1.5">
+              {tooltipRows.map((row) => (
+                <p key={row.label} className="flex items-center gap-2 font-medium">
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-2.5 w-2.5 rounded-[2px]"
+                    style={{ backgroundColor: row.color }}
+                  />
+                  <span>
+                    {row.label}: {row.text}
+                  </span>
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1.5 flex items-center gap-2 font-medium text-[#505761]">
+              <span
+                aria-hidden="true"
+                className="inline-block h-2.5 w-2.5 rounded-[2px]"
+                style={{ backgroundColor: seriesColor }}
+              />
+              <span>
+                {seriesLabel}:{" "}
+                {activePoint.value == null
+                  ? "—"
+                  : formatMetric(activePoint.point.value)}
+                {activePoint.value == null ? " (not synchronized)" : ""}
+              </span>
+            </p>
+          )}
         </div>
       ) : null}
 

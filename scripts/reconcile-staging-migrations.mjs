@@ -3,6 +3,11 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import pg from "pg";
 import { canonicalSql } from "./production-migration-normalization.mjs";
+import {
+  canDeployApprovedPending,
+  migrationHistorySlug,
+  supabaseHistorySql,
+} from "./staging-migration-history.mjs";
 
 const { Client } = pg;
 
@@ -24,8 +29,46 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261003194500_takatak_ads_foundation",
   "20261004190000_community_content_moderation",
   "20261005043500_ahmv_smart_departure_entitlement",
-  "20261006140000_seo_site_audits",
+  "20261006120000_takatak_billing_invoice_requests",
+  "20261006140000_client_stripe_connect_accounts",
+  "20261006150000_billing_invoice_checkout_sessions",
+  "20261008090000_website_lead_attachments",
+  // Schema already applied on TAKATAK STAGING as Supabase history
+  // 20261008105429_phone_only_profile_email. Resolve records Prisma history
+  // only; it must not run the ALTER again.
+  "20261008153000_phone_only_profile_email",
+  // Growth Suite (#117), approved by the owner on 2026-10-09. Additive only;
+  // rollback: docs/GROWTH_SUITE_ROLLBACK.md.
+  "20261009010000_growth_reputation_and_ai_credits",
+  "20261009020000_growth_analytics_and_conversations",
+  "20261009030000_growth_agents_and_delivery",
+  "20261009040000_growth_agent_schedules",
+  "20261009050000_growth_review_showcase",
+  "20261009060000_growth_google_data_sources",
+  "20261009070000_growth_google_business_profile",
+  "20261009080000_growth_plan_subscriptions",
+  "20261009090000_growth_site_domain_verification",
 ];
+
+const SUPABASE_HISTORY_NAMES = {
+  "20261008153000_phone_only_profile_email": "phone_only_profile_email",
+};
+
+// Applied on staging by hand through the Supabase migration API, with SQL text
+// that differs from the repository file. Accepted only when the live schema is
+// exactly what the repository migration produces.
+const SCHEMA_VERIFIED_HISTORY = {
+  "20261008153000_phone_only_profile_email": {
+    description: "public.profiles.email is nullable text",
+    sql: `select count(*)::int as ok
+            from information_schema.columns
+           where table_schema = 'public'
+             and table_name = 'profiles'
+             and column_name = 'email'
+             and data_type = 'text'
+             and is_nullable = 'YES'`,
+  },
+};
 
 function fail(message) {
   console.error("[staging-migrations] " + message);
@@ -119,6 +162,7 @@ try {
   }
 
   const approved = new Set(APPROVED_DEPLOY_MIGRATIONS);
+  const approvedRepoMigrations = repoMigrations.filter((name) => approved.has(name));
 
   const supabaseRows = await client.query(
     `select version, name, statements
@@ -132,7 +176,8 @@ try {
   for (const migration of APPROVED_DEPLOY_MIGRATIONS) {
     if (applied.has(migration)) continue;
 
-    const slug = migration.replace(/^\\d+_/, "");
+    const slug =
+      SUPABASE_HISTORY_NAMES[migration] ?? migrationHistorySlug(migration);
     const history = supabaseByName.get(slug);
     if (!history) continue;
 
@@ -142,11 +187,22 @@ try {
     }
 
     const repoSql = readFileSync(sqlPath, "utf8");
-    const historySql = Array.isArray(history.statements)
-      ? history.statements.join("\\n")
-      : "";
+    const historySql = supabaseHistorySql(history.statements);
 
     if (canonicalSql(historySql) !== canonicalSql(repoSql)) {
+      const schemaCheck = SCHEMA_VERIFIED_HISTORY[migration];
+      if (schemaCheck) {
+        const verified = await client.query(schemaCheck.sql);
+        if (verified.rows[0]?.ok === 1) {
+          console.log(
+            "[staging-migrations] History SQL text differs; live schema verified instead:",
+            migration,
+            "(" + schemaCheck.description + ")",
+          );
+          externallyApplied.push(migration);
+          continue;
+        }
+      }
       fail(
         "Supabase staging migration history does not match repository SQL: " +
           slug +
@@ -158,29 +214,12 @@ try {
     externallyApplied.push(migration);
   }
 
-  const pending = repoMigrations.filter(
+  const pending = approvedRepoMigrations.filter(
     (name) => !applied.has(name) && !externallyApplied.includes(name),
   );
-  const unexpectedPending = pending.filter((name) => !approved.has(name));
-  if (unexpectedPending.length > 0) {
-    fail(
-      "Unexpected staging migrations are pending: " +
-        unexpectedPending.join(", "),
-    );
-  }
-
-  if (pending.length > 0) {
-    const firstPendingIndex = repoMigrations.indexOf(pending[0]);
-    const expectedSuffix = repoMigrations.slice(firstPendingIndex);
-    if (
-      pending.length !== expectedSuffix.length ||
-      pending.some((name, index) => name !== expectedSuffix[index])
-    ) {
-      fail(
-        "Staging pending migrations are not a contiguous repository suffix. Refusing out-of-order deploy.",
-      );
-    }
-  }
+  const unrelatedPending = repoMigrations.filter(
+    (name) => !approved.has(name) && !applied.has(name),
+  );
 
   console.log("[staging-migrations] Project verified:", EXPECTED_PROJECT_REF);
   console.log(
@@ -192,7 +231,12 @@ try {
     externallyApplied,
   );
   console.log("[staging-migrations] Pending approved migrations:", pending.length);
-  console.log("[staging-migrations] Pending list:", pending);
+  console.log("[staging-migrations] Pending approved list:", pending);
+  console.log(
+    "[staging-migrations] Unrelated repo migrations intentionally outside this AHMV staging gate:",
+    unrelatedPending.length,
+  );
+  console.log("[staging-migrations] Unrelated pending list:", unrelatedPending);
 
   if (mode === "audit") {
     console.log("[staging-migrations] AUDIT PASS. No staging mutation performed.");
@@ -216,24 +260,25 @@ try {
     refreshedRows.rows.map((row) => String(row.migration_name)),
   );
 
-  const pendingAfterResolve = repoMigrations.filter(
+  const pendingAfterResolve = approvedRepoMigrations.filter(
     (name) => !applied.has(name),
   );
-  const unexpectedAfterResolve = pendingAfterResolve.filter(
-    (name) => !approved.has(name),
-  );
-  if (unexpectedAfterResolve.length > 0) {
+
+  if (canDeployApprovedPending({ pendingAfterResolve, unrelatedPending })) {
+    console.log(
+      "[staging-migrations] Every pending repository migration is approved. Applying:",
+      pendingAfterResolve,
+    );
+    runPrisma(["deploy"], databaseUrl);
+  } else if (pendingAfterResolve.length > 0) {
     fail(
-      "Unexpected staging migrations remain pending after history reconciliation: " +
-        unexpectedAfterResolve.join(", "),
+      "Approved AHMV staging migrations still require SQL application after verified history reconciliation: " +
+        pendingAfterResolve.join(", ") +
+        ". Refusing global prisma migrate deploy because unrelated repo migrations are outside this staging gate.",
     );
   }
 
-  if (pendingAfterResolve.length > 0) {
-    runPrisma(["deploy"], databaseUrl);
-  } else {
-    console.log("[staging-migrations] No staging migrations remain to apply.");
-  }
+  console.log("[staging-migrations] All approved AHMV staging migrations are reconciled.");
 
   const finalRows = await client.query(
     `select migration_name
@@ -241,7 +286,7 @@ try {
        where finished_at is not null and rolled_back_at is null`,
   );
   applied = new Set(finalRows.rows.map((row) => String(row.migration_name)));
-  const finalPending = repoMigrations.filter((name) => !applied.has(name));
+  const finalPending = approvedRepoMigrations.filter((name) => !applied.has(name));
   if (finalPending.length !== 0) {
     fail(
       "Staging still has pending repository migrations after deploy: " +

@@ -2,7 +2,7 @@ import "server-only";
 
 import { getApplicationOrigin, resolvePublicUrl } from "@/lib/config/app-origin";
 import { ServiceError } from "@/lib/services/service-error";
-import { getMetaAppId, getMetaGraphApiVersion } from "@/lib/social/providers/meta-oauth";
+import { getMetaGraphApiVersion } from "@/lib/social/providers/meta-oauth";
 
 export const INSTAGRAM_OAUTH_AUTHORIZE_HOST =
   "https://www.instagram.com";
@@ -51,7 +51,17 @@ function assertAbsoluteHttpsOrLocalhost(value: string): void {
 }
 
 export function getInstagramAppId(): string {
-  return trimEnv("INSTAGRAM_APP_ID") || getMetaAppId();
+  const appId = trimEnv("INSTAGRAM_APP_ID");
+
+  if (!appId) {
+    throw new ServiceError(
+      "unavailable",
+      "Direct Instagram authorization is not configured. Connect Instagram through Facebook, or ask an administrator to configure Instagram Login.",
+      { status: 503 },
+    );
+  }
+
+  return appId;
 }
 
 export function getInstagramOAuthRedirectUri(): string {

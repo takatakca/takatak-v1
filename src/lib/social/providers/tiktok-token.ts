@@ -335,3 +335,65 @@ export async function exchangeTikTokCodeForStoredCredential(options: {
     profileImageUrl: identity.profileImageUrl,
   };
 }
+
+export async function refreshTikTokAccessToken(refreshToken: string): Promise<{
+  accessToken: string;
+  refreshToken: string | null;
+  expiresAt: Date | null;
+  refreshExpiresAt: Date | null;
+  scopes: string[];
+}> {
+  const token = refreshToken.trim();
+  if (!token) {
+    throw new ServiceError(
+      "forbidden",
+      "TikTok authorization has expired. Reconnect the account.",
+      { status: 401 },
+    );
+  }
+
+  const form = new URLSearchParams();
+  form.set("client_key", getTikTokClientKey());
+  form.set("client_secret", getTikTokClientSecret());
+  form.set("grant_type", "refresh_token");
+  form.set("refresh_token", token);
+
+  const tokenRecord = await fetchJson(
+    `${TOKEN_HOST}/v2/oauth/token/`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: form.toString(),
+    },
+    "refresh",
+  );
+
+  const accessToken = readString(tokenRecord, "access_token");
+  if (!accessToken) {
+    throw new ServiceError(
+      "forbidden",
+      "TikTok authorization has expired. Reconnect the account.",
+      { status: 401 },
+    );
+  }
+
+  const expiresIn = readPositiveSeconds(tokenRecord, "expires_in");
+  const refreshExpiresIn = readPositiveSeconds(
+    tokenRecord,
+    "refresh_expires_in",
+  );
+  const now = Date.now();
+  const scope = readString(tokenRecord, "scope");
+
+  return {
+    accessToken,
+    refreshToken: readString(tokenRecord, "refresh_token"),
+    expiresAt: expiresIn ? new Date(now + expiresIn * 1000) : null,
+    refreshExpiresAt: refreshExpiresIn
+      ? new Date(now + refreshExpiresIn * 1000)
+      : null,
+    scopes: scope ? scope.split(/[,\s]+/).filter(Boolean) : [],
+  };
+}

@@ -4,7 +4,9 @@
 // Phase 6+ (real adapters). Keep pages thin: they render from this file.
 
 import {
+  BarChart3,
   Bell,
+  Bot,
   BotMessageSquare,
   Briefcase,
   Building2,
@@ -30,10 +32,14 @@ import {
   MapPin,
   MapPinned,
   Megaphone,
+  MessageCircle,
+  Phone,
   PlugZap,
   Plus,
   Receipt,
+  Rocket,
   Search,
+  Send,
   Server,
   Settings,
   Share2,
@@ -41,6 +47,9 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Tags,
+  Target,
+  Ticket,
   UserPlus,
   UserRound,
   Users,
@@ -100,6 +109,21 @@ export const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    title: "Growth Suite",
+    items: [
+      { label: "Growth Hub", href: "/dashboard/growth", icon: Rocket },
+      { label: "Analytics", href: "/dashboard/growth/analytics", icon: BarChart3 },
+      { label: "Monthly Report", href: "/dashboard/growth/report", icon: FileBarChart2 },
+      { label: "Reputation & Reviews", href: "/dashboard/growth/reviews", icon: Star },
+      { label: "Conversations", href: "/dashboard/growth/conversations", icon: MessageCircle },
+      { label: "Ads Manager", href: "/dashboard/growth/ads-manager", icon: Megaphone },
+      { label: "Retargeting & Geo", href: "/dashboard/growth/audiences", icon: Target },
+      { label: "AI Engine & Credits", href: "/dashboard/growth/ai-engine", icon: Bot },
+      { label: "Connectors", href: "/dashboard/growth/connectors", icon: PlugZap },
+      { label: "Plans & Pricing", href: "/dashboard/growth/pricing", icon: Tags },
+    ],
+  },
+  {
     title: "Services",
     items: [
       {
@@ -107,6 +131,12 @@ export const NAV_SECTIONS: NavSection[] = [
         href: "/dashboard/rentauto",
         icon: CarFront,
         serviceModule: "rentauto",
+      },
+      {
+        label: "ALKAO — Billetterie",
+        href: "/dashboard/ticketing",
+        icon: Ticket,
+        serviceModule: "ticketing",
       },
       {
         label: "Hosting",
@@ -123,6 +153,7 @@ export const NAV_SECTIONS: NavSection[] = [
           { label: "Security", href: "/dashboard/web-hosting/security", icon: Shield },
         ],
       },
+      { label: "Business phone", href: "/dashboard/voip", icon: Phone },
     ],
   },
   {
@@ -140,6 +171,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Analytics Reports", href: "/dashboard/reports", icon: FileBarChart2 },
       { label: "Custom Reports", href: "/dashboard/reports/builder", icon: FileText },
       { label: "Invoices", href: "/dashboard/invoices", icon: Receipt },
+      { label: "Bill my customers", href: "/dashboard/client-billing", icon: Send },
       { label: "Files", href: "/dashboard/files", icon: FolderOpen },
       { label: "Support", href: "/dashboard/support", icon: LifeBuoy },
     ],

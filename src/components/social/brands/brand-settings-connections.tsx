@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { FaLinkedin } from "react-icons/fa";
 
+import { BlogConnectDialog } from "@/components/social/connections/blog-connect-dialog";
+import { WebSiteConnectDialog } from "@/components/social/connections/web-site-connect-dialog";
 import { requestSocialBrandSelectorRefresh } from "@/components/social/navigation/social-brand-selector-events";
 import {
   SocialPlatformIcon,
@@ -37,22 +39,20 @@ const CONNECTION_CARDS: ConnectionCard[] = [
     label: "Web",
     actionLabel: "Connect a web page",
     platform: "web",
-    accountPlatform: null,
-    provider: null,
+    accountPlatform: "web",
+    provider: "web",
     backgroundClassName: "bg-[#8790f6] hover:bg-[#7883ec]",
     textClassName: "text-white",
-    planned: true,
   },
   {
     key: "blog",
     label: "Blog",
     actionLabel: "Connect a blog",
     platform: "blog",
-    accountPlatform: null,
-    provider: null,
+    accountPlatform: "blog",
+    provider: "blog",
     backgroundClassName: "bg-[#b8cdd1] hover:bg-[#aac1c6]",
     textClassName: "text-white",
-    planned: true,
   },
   {
     key: "facebook",
@@ -181,22 +181,20 @@ const CONNECTION_CARDS: ConnectionCard[] = [
     label: "Meta Ads",
     actionLabel: "Connect a Meta Ads account",
     platform: "meta_ads",
-    accountPlatform: null,
-    provider: null,
+    accountPlatform: "meta_ads",
+    provider: "meta_ads",
     backgroundClassName: "bg-[#126df7] hover:bg-[#075fde]",
     textClassName: "text-white",
-    planned: true,
   },
   {
     key: "google-ads",
     label: "Google Ads",
     actionLabel: "Connect a Google Ads account",
     platform: "google_ads",
-    accountPlatform: null,
-    provider: null,
+    accountPlatform: "google_ads",
+    provider: "google_ads",
     backgroundClassName: "bg-[#4d8bf6] hover:bg-[#3c7de7]",
     textClassName: "text-white",
-    planned: true,
   },
   {
     key: "tiktok-ads",
@@ -214,16 +212,17 @@ const CONNECTION_CARDS: ConnectionCard[] = [
     label: "Looker Studio",
     actionLabel: "Connect Looker Studio",
     platform: "looker_studio",
-    accountPlatform: null,
-    provider: null,
+    accountPlatform: "looker_studio",
+    provider: "looker_studio",
     backgroundClassName: "bg-[#f7fadf] hover:bg-[#eff4cc]",
     textClassName: "text-slate-900",
-    planned: true,
   },
 ];
 
 function accountKind(account: BrandSettingsConnection, card: ConnectionCard): string {
   if (card.accountPlatform === "facebook") return "Page";
+  if (card.accountPlatform === "web") return "Website";
+  if (card.accountPlatform === "blog") return "Blog";
   if (card.accountPlatform === "instagram") return "Professional account";
   if (card.accountPlatform === "tiktok") {
     const type = account.accountType?.toLowerCase() ?? "";
@@ -234,6 +233,7 @@ function accountKind(account: BrandSettingsConnection, card: ConnectionCard): st
   if (card.platform.endsWith("_ads") || card.platform === "meta_ads") {
     return "Ads account";
   }
+  if (card.platform === "looker_studio") return "Report";
   return "Account";
 }
 
@@ -291,6 +291,8 @@ export function BrandSettingsConnections({
   const router = useRouter();
   const searchParams = useSearchParams();
   const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [webConnectOpen, setWebConnectOpen] = useState(false);
+  const [blogConnectOpen, setBlogConnectOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -327,6 +329,20 @@ export function BrandSettingsConnections({
       return;
     }
 
+    if (card.provider === "web") {
+      setWebConnectOpen(true);
+      setMessage(null);
+      setError(null);
+      return;
+    }
+
+    if (card.provider === "blog") {
+      setBlogConnectOpen(true);
+      setMessage(null);
+      setError(null);
+      return;
+    }
+
     const meta = providerMeta(card.provider);
     if (card.planned || !meta?.implemented) {
       setError(null);
@@ -348,7 +364,13 @@ export function BrandSettingsConnections({
 
     try {
       const returnPath = withSocialPreview(
-        "/dashboard/social/brands/settings?tab=connections",
+        card.provider === "meta_ads"
+          ? "/dashboard/social/meta_ads"
+          : card.provider === "google_ads"
+            ? "/dashboard/social/google_ads"
+            : card.provider === "looker_studio"
+              ? "/dashboard/social/looker_studio"
+              : "/dashboard/social/brands/settings?tab=connections",
         searchParams,
       );
 
@@ -464,6 +486,7 @@ export function BrandSettingsConnections({
   }
 
   return (
+    <>
     <section className="mt-8">
       {message ? (
         <p className="mb-5 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
@@ -492,6 +515,18 @@ export function BrandSettingsConnections({
             shell?.provider === "meta" &&
             (shell.status === "authorized" ||
               shell.status === "reauthorization_required");
+          const metaAdsNeedsChoice =
+            card.provider === "meta_ads" &&
+            !connected &&
+            shell?.status === "authorized";
+          const googleAdsNeedsChoice =
+            card.provider === "google_ads" &&
+            !connected &&
+            shell?.status === "authorized";
+          const lookerStudioNeedsChoice =
+            card.provider === "looker_studio" &&
+            !connected &&
+            shell?.status === "authorized";
 
           return (
             <article key={card.key} className="min-w-0">
@@ -554,6 +589,24 @@ export function BrandSettingsConnections({
                 >
                   Select a Facebook page
                 </a>
+              ) : metaAdsNeedsChoice ||
+                googleAdsNeedsChoice ||
+                lookerStudioNeedsChoice ? (
+                <a
+                  href={withSocialPreview(
+                    card.provider === "google_ads"
+                      ? "/dashboard/social/google_ads"
+                      : card.provider === "looker_studio"
+                        ? "/dashboard/social/looker_studio"
+                        : "/dashboard/social/meta_ads",
+                    searchParams,
+                  )}
+                  className={`flex min-h-[48px] w-full items-center justify-center gap-2 rounded-md px-3 text-[15px] font-medium ${card.backgroundClassName} ${card.textClassName}`}
+                >
+                  {lookerStudioNeedsChoice
+                    ? "Choose a report"
+                    : "Choose an ad account"}
+                </a>
               ) : (
                 <button
                   type="button"
@@ -591,5 +644,32 @@ export function BrandSettingsConnections({
         })}
       </div>
     </section>
+    {webConnectOpen ? (
+      <WebSiteConnectDialog
+        businessBrandId={brandId}
+        onClose={() => setWebConnectOpen(false)}
+        onConnected={(host) => {
+          setWebConnectOpen(false);
+          setError(null);
+          setMessage(`${host} is connected.`);
+          requestSocialBrandSelectorRefresh();
+          router.refresh();
+        }}
+      />
+    ) : null}
+    {blogConnectOpen ? (
+      <BlogConnectDialog
+        businessBrandId={brandId}
+        onClose={() => setBlogConnectOpen(false)}
+        onConnected={(host) => {
+          setBlogConnectOpen(false);
+          setError(null);
+          setMessage(`The blog page for ${host} is ready.`);
+          requestSocialBrandSelectorRefresh();
+          router.refresh();
+        }}
+      />
+    ) : null}
+    </>
   );
 }

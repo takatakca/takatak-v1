@@ -18,6 +18,7 @@ async function sendGrid(options: {
   to: string;
   subject: string;
   text: string;
+  fromName?: string;
 }) {
   const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
     method: "POST",
@@ -29,7 +30,7 @@ async function sendGrid(options: {
       personalizations: [{ to: [{ email: options.to }] }],
       from: {
         email: getOtpSenderEmail(),
-        name: "TAKATAK Moderation",
+        name: options.fromName ?? "TAKATAK Moderation",
       },
       subject: options.subject,
       content: [{ type: "text/plain", value: options.text }],
@@ -45,6 +46,8 @@ export async function sendModeratorEmail(options: {
   to: string;
   subject: string;
   text: string;
+  /** SendGrid display name; defaults to "TAKATAK Moderation". */
+  fromName?: string;
 }): Promise<ModeratorEmailResult> {
   try {
     if (isSendgridConfigured()) {
