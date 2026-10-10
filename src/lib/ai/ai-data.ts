@@ -5,6 +5,7 @@
 import { getPrisma } from "@/lib/db/prisma";
 import { clientWhere, resolveDataScope } from "@/lib/security/data-scope";
 import type { TenantAccess } from "@/lib/security/tenant-access";
+import { readHandoffPostId } from "./handoff";
 import { getAiProviderStatuses } from "./providers";
 import type {
   AiJobSummary,
@@ -122,6 +123,7 @@ export async function getSavedOutputsData(access?: TenantAccess): Promise<Source
           origin: o.origin, status: o.status,
           brandName: o.businessBrand?.name ?? null, voiceName: o.brandVoice?.name ?? null,
           createdAt: o.createdAt.toISOString().slice(0, 10),
+          socialPostId: readHandoffPostId(o.metadata),
         })),
       };
     } catch (error) {
