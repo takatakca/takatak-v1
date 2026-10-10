@@ -125,9 +125,14 @@ function payload(requestId = "r2f-request-0001") {
   assert.equal(good.ok, true);
 
   const missingContact = payload();
-  missingContact.contact.email = null;
-  missingContact.contact.phone = null;
-  const noContact = validateR2FLeadRequest(missingContact);
+  const noContact = validateR2FLeadRequest({
+    ...missingContact,
+    contact: {
+      ...missingContact.contact,
+      email: null,
+      phone: null,
+    },
+  });
   assert.equal(noContact.ok, false);
   if (!noContact.ok) assert.equal(noContact.fieldErrors.contactMethod, "required");
 
