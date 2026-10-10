@@ -431,6 +431,7 @@ model Client {
   leadPipelineStages        LeadPipelineStage[]
   leadActivities            LeadActivity[]
 
+  seoAudits                 SeoAudit[]
   adSubscription            AdSubscription?
   adCampaigns               AdCampaign[]
   reviewProfiles            ReviewProfile[]
@@ -4775,4 +4776,51 @@ model ClientStripeConnectAccount {
   client Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
 
   @@map("client_stripe_connect_accounts")
+}
+
+// ════════════════════════════════════════════════════════════
+// SEO — technical site audits (no third-party SEO provider).
+// TAKATAK fetches only the workspace's own domains / brand websites.
+// ════════════════════════════════════════════════════════════
+
+/// One technical SEO audit of a workspace website. status: running |
+/// completed | failed. score is 0-100 once completed.
+model SeoAudit {
+  id                 String    @id @default(uuid()) @db.Uuid
+  clientId           String    @db.Uuid
+  host               String
+  status             String    @default("running")
+  score              Int?
+  pagesScanned       Int       @default(0)
+  summary            Json?
+  failureReason      String?
+  requestedProfileId String?   @db.Uuid
+  startedAt          DateTime  @default(now())
+  finishedAt         DateTime?
+  createdAt          DateTime  @default(now())
+
+  client Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  issues SeoAuditIssue[]
+
+  @@index([clientId, host, startedAt])
+  @@index([clientId, status])
+  @@map("seo_audits")
+}
+
+/// A finding from a SeoAudit. severity: critical | warning | notice.
+model SeoAuditIssue {
+  id        String   @id @default(uuid()) @db.Uuid
+  auditId   String   @db.Uuid
+  clientId  String   @db.Uuid
+  checkKey  String
+  severity  String
+  pageUrl   String?
+  detail    String?
+  createdAt DateTime @default(now())
+
+  audit SeoAudit @relation(fields: [auditId], references: [id], onDelete: Cascade)
+
+  @@index([auditId])
+  @@index([clientId])
+  @@map("seo_audit_issues")
 }

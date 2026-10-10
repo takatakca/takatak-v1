@@ -115,6 +115,9 @@ jobs:
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
 
+      - name: SEO site audit safeguards
+        run: npm run qa:seo-audit
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
