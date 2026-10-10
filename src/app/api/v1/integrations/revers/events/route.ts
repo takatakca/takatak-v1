@@ -114,36 +114,50 @@ export async function POST(request: Request) {
     );
   }
 
-  try {
-    await prisma.integrationRequestNonce.create({
-      data: {
-        integrationId: REVERS_INTEGRATION_ID,
-        nonce,
-        expiresAt: new Date(Date.now() + 5 * 60_000),
-      },
-    });
-  } catch {
-    return jsonResponse({ ok: false, message: "Replay detected." }, 409);
-  }
-
   const responsePayload = {
     ok: true,
     accepted: true,
     eventId: parsed.eventId,
   };
 
-  await prisma.sourceSynchronizationEvent.create({
-    data: {
-      eventId: parsed.eventId,
-      eventType: parsed.eventType,
-      sourceApplication: REVERS_INTEGRATION_ID,
-      payloadHash,
-      payload: parsed.payload as Prisma.InputJsonValue,
-      responsePayload: responsePayload as Prisma.InputJsonValue,
-      status: "RECEIVED",
-      createdAt: new Date(parsed.occurredAt),
-    },
-  });
+  try {
+    await prisma.$transaction(async (transaction) => {
+      await transaction.integrationRequestNonce.create({
+        data: {
+          integrationId: REVERS_INTEGRATION_ID,
+          nonce,
+          expiresAt: new Date(Date.now() + 5 * 60_000),
+        },
+      });
+
+      await transaction.sourceSynchronizationEvent.create({
+        data: {
+          eventId: parsed.eventId,
+          eventType: parsed.eventType,
+          sourceApplication: REVERS_INTEGRATION_ID,
+          payloadHash,
+          payload: parsed.payload as Prisma.InputJsonValue,
+          responsePayload: responsePayload as Prisma.InputJsonValue,
+          status: "RECEIVED",
+          createdAt: new Date(parsed.occurredAt),
+        },
+      });
+    });
+  } catch {
+    const duplicate = await prisma.sourceSynchronizationEvent.findUnique({
+      where: { eventId: parsed.eventId },
+      select: { payloadHash: true },
+    });
+
+    if (duplicate?.payloadHash === payloadHash) {
+      return jsonResponse(
+        { ...responsePayload, duplicate: true },
+        200,
+      );
+    }
+
+    return jsonResponse({ ok: false, message: "Replay or idempotency conflict." }, 409);
+  }
 
   const response = jsonResponse(responsePayload, 202);
   response.headers.set("Cache-Control", "no-store");
