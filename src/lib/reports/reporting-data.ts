@@ -1,6 +1,6 @@
 // Phase 10 — Reporting data access. DB-first, honest mock fallback.
-// This file NEVER: exports PDFs, sends/delivers reports, creates share
-// links, generates AI summaries, or calls OpenAI/TryHolo/Metricool/Upmind.
+// PDF export and in-dashboard delivery live in export-document.ts and the
+// reports actions. This file does not send email or call a provider.
 
 import { getPrisma } from "@/lib/db/prisma";
 import { clientWhere, resolveDataScope } from "@/lib/security/data-scope";
@@ -17,7 +17,7 @@ import type {
 } from "./types";
 
 const MOCK_LABEL = "Mock foundation data — database not connected yet.";
-const DB_LABEL = "Database — live foundation records (export and delivery not active).";
+const DB_LABEL = "Database — live report records. PDF export and in-dashboard delivery are available for this workspace.";
 
 // ── Mock foundation data (mirrors the seed) ──────────────────
 const MOCK_TEMPLATES: ReportTemplateSummary[] = [
