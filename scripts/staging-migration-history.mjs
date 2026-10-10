@@ -15,3 +15,17 @@ export function migrationHistorySlug(migrationName) {
 export function supabaseHistorySql(statements) {
   return Array.isArray(statements) ? statements.join("\n") : "";
 }
+
+/**
+ * Apply may run `prisma migrate deploy` only when every repository migration
+ * still pending on staging is on the approved list. Any unapproved pending
+ * migration keeps the old refusal, so deploy can never apply SQL nobody approved.
+ */
+export function canDeployApprovedPending({ pendingAfterResolve, unrelatedPending }) {
+  return (
+    Array.isArray(pendingAfterResolve) &&
+    Array.isArray(unrelatedPending) &&
+    pendingAfterResolve.length > 0 &&
+    unrelatedPending.length === 0
+  );
+}

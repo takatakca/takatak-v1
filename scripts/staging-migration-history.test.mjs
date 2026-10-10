@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  canDeployApprovedPending,
   migrationHistorySlug,
   supabaseHistorySql,
 } from "./staging-migration-history.mjs";
@@ -32,4 +33,20 @@ test("a missing statement list becomes empty SQL", () => {
   assert.equal(supabaseHistorySql(null), "");
   assert.equal(supabaseHistorySql(undefined), "");
   assert.equal(supabaseHistorySql("select 1;"), "");
+});
+
+test("deploy runs only when every pending migration is approved", () => {
+  assert.equal(
+    canDeployApprovedPending({ pendingAfterResolve: ["20261009010000_growth"], unrelatedPending: [] }),
+    true,
+  );
+  assert.equal(
+    canDeployApprovedPending({
+      pendingAfterResolve: ["20261009010000_growth"],
+      unrelatedPending: ["20261009100000_not_approved"],
+    }),
+    false,
+  );
+  assert.equal(canDeployApprovedPending({ pendingAfterResolve: [], unrelatedPending: [] }), false);
+  assert.equal(canDeployApprovedPending({}), false);
 });

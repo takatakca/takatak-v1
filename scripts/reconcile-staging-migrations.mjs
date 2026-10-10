@@ -4,6 +4,7 @@ import { join } from "node:path";
 import pg from "pg";
 import { canonicalSql } from "./production-migration-normalization.mjs";
 import {
+  canDeployApprovedPending,
   migrationHistorySlug,
   supabaseHistorySql,
 } from "./staging-migration-history.mjs";
@@ -51,6 +52,22 @@ const APPROVED_DEPLOY_MIGRATIONS = [
 
 const SUPABASE_HISTORY_NAMES = {
   "20261008153000_phone_only_profile_email": "phone_only_profile_email",
+};
+
+// Applied on staging by hand through the Supabase migration API, with SQL text
+// that differs from the repository file. Accepted only when the live schema is
+// exactly what the repository migration produces.
+const SCHEMA_VERIFIED_HISTORY = {
+  "20261008153000_phone_only_profile_email": {
+    description: "public.profiles.email is nullable text",
+    sql: `select count(*)::int as ok
+            from information_schema.columns
+           where table_schema = 'public'
+             and table_name = 'profiles'
+             and column_name = 'email'
+             and data_type = 'text'
+             and is_nullable = 'YES'`,
+  },
 };
 
 function fail(message) {
@@ -173,6 +190,19 @@ try {
     const historySql = supabaseHistorySql(history.statements);
 
     if (canonicalSql(historySql) !== canonicalSql(repoSql)) {
+      const schemaCheck = SCHEMA_VERIFIED_HISTORY[migration];
+      if (schemaCheck) {
+        const verified = await client.query(schemaCheck.sql);
+        if (verified.rows[0]?.ok === 1) {
+          console.log(
+            "[staging-migrations] History SQL text differs; live schema verified instead:",
+            migration,
+            "(" + schemaCheck.description + ")",
+          );
+          externallyApplied.push(migration);
+          continue;
+        }
+      }
       fail(
         "Supabase staging migration history does not match repository SQL: " +
           slug +
@@ -206,6 +236,7 @@ try {
     "[staging-migrations] Unrelated repo migrations intentionally outside this AHMV staging gate:",
     unrelatedPending.length,
   );
+  console.log("[staging-migrations] Unrelated pending list:", unrelatedPending);
 
   if (mode === "audit") {
     console.log("[staging-migrations] AUDIT PASS. No staging mutation performed.");
@@ -233,7 +264,13 @@ try {
     (name) => !applied.has(name),
   );
 
-  if (pendingAfterResolve.length > 0) {
+  if (canDeployApprovedPending({ pendingAfterResolve, unrelatedPending })) {
+    console.log(
+      "[staging-migrations] Every pending repository migration is approved. Applying:",
+      pendingAfterResolve,
+    );
+    runPrisma(["deploy"], databaseUrl);
+  } else if (pendingAfterResolve.length > 0) {
     fail(
       "Approved AHMV staging migrations still require SQL application after verified history reconciliation: " +
         pendingAfterResolve.join(", ") +

@@ -32,7 +32,11 @@ Merging this pull request installs that gate. It does not apply SQL or change mi
 
 ## What apply would do later
 
-Apply does not execute migration SQL. For each approved migration whose Supabase `statements` match the repository file, it records Prisma history with `prisma migrate resolve --applied`. If any approved migration is still pending after that, it exits and refuses `prisma migrate deploy`. Unrelated repository migrations stay outside the allowlist.
+Apply first records Prisma history, with `prisma migrate resolve --applied`, for each approved migration that Supabase already applied and whose SQL matches the repository file. `20261008153000_phone_only_profile_email` was applied by hand with different SQL text. It is accepted only when the live column `public.profiles.email` is nullable `text`, which is exactly what the repository migration produces.
+
+Then, only when **every** repository migration still pending on staging is on the approved list, apply runs `prisma migrate deploy` for them. If any pending migration is not approved, apply refuses and changes nothing more. Audit never records or applies anything.
+
+Rehearsed on 2026-10-09 against a local copy shaped like staging, with migrations up to `20261005043500` applied and the phone change done by hand. The old script reproduced the staging error `history does not match repository SQL: phone_only_profile_email`. The new audit passed, and apply recorded the phone change and applied the 13 approved migrations: billing, `website_lead_attachments` and the 9 Growth migrations. The final checks passed.
 
 ## Static review of the 19 approved files
 
