@@ -3408,6 +3408,20 @@ model SourceSynchronizationEvent {
   @@map("source_synchronization_events")
 }
 
+/// Short-lived nonce ledger for signed server-to-server integration requests.
+/// Nonces are integration-scoped and prevent replay of a valid HMAC request.
+model IntegrationRequestNonce {
+  id            String   @id @default(uuid()) @db.Uuid
+  integrationId String
+  nonce         String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@unique([integrationId, nonce])
+  @@index([expiresAt])
+  @@map("integration_request_nonces")
+}
+
 model MasterMerchant {
   id           String   @id @default(uuid()) @db.Uuid
   legalName    String?
