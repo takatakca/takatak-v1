@@ -1,6 +1,8 @@
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
 
+- 2026-10-11 | ChatGPT (Twilio/OTP validation) | fix/twilio-otp-e164-validation-20261011 → PR #173 | PR open / CI running | Harden phone E.164 validation for TAKATAK Supabase OTP; regression tests, no production change | verify CI, then review PR before merging
+
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
