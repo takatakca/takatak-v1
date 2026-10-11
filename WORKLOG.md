@@ -30,7 +30,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
-- 2026-10-11 | cursor | cursor/tk-004-apostrophe-lint → PR | active | Fix the apostrophes that failed lint on the merged QMAPS workspace screen | open the PR and wait for CI
+- 2026-10-11 | cursor | cursor/tk-004-apostrophe-lint → #172 | PR | Fix the apostrophes that failed lint on the merged QMAPS workspace screen | wait for CI
 - 2026-10-11 | cursor | cursor/tk-004-qmaps-workspace → #171 | done (merged 39adab5) | TK-004 and TK-024: link a QMAPS business to a client workspace and reply to a QMAPS review only when QMAPS accepts it | CI failed on apostrophes; follow-up branch fixes them
 - 2026-10-11 | cursor | rentautoca takatak-sync-outbox | blocked: no staging URL or TAKATAK_SYNC_RUNNER_SECRET | TK-008: run the Rentauto outbox once on staging | owner provides the staging function URL and runner secret; do not call production
 - 2026-10-10 | cursor | cursor/tk-026-report-export → #169 | done (merged a49825b) | TK-026: export a client report as PDF and deliver it inside the dashboard | next developer item
