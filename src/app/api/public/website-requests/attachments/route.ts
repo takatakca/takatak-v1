@@ -28,6 +28,7 @@ const REFUSAL_STATUS: Record<AttachmentRefusal, number> = {
   too_many_files: 409,
   lead_quota_exceeded: 413,
   storage_failed: 503,
+  infected: 422,
 };
 
 /** Attaches one file to a website lead, using the upload token from that lead's response. */
