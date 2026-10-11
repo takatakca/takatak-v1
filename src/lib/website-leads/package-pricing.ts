@@ -3,6 +3,8 @@
 // from the TAKATAK catalog, never from client-supplied totals.
 
 import { normalizePromoCode, quotePromo } from "@/lib/promotions/catalog";
+import type { CatalogPriceRow } from "@/lib/website/catalog-prices";
+import { pricePackageFromCatalog } from "@/lib/website/catalog-prices";
 import { getMarketplacePackage } from "@/lib/website/marketplace-catalog";
 
 export type PackageOrderSelection = {
@@ -26,8 +28,12 @@ export type PricedPackageOrder = {
   totalCents: number;
 };
 
-export function priceMarketplaceOrder(selection: PackageOrderSelection): PricedPackageOrder | null {
-  const pkg = getMarketplacePackage(selection.packageId);
+export function priceMarketplaceOrder(
+  selection: PackageOrderSelection,
+  catalogRows: readonly CatalogPriceRow[] = [],
+): PricedPackageOrder | null {
+  const stored = getMarketplacePackage(selection.packageId);
+  const pkg = stored ? pricePackageFromCatalog(stored, catalogRows) : null;
   if (!pkg) return null;
   const tier = pkg.tiers.find((item) => item.name === selection.tierName);
   if (!tier) return null;

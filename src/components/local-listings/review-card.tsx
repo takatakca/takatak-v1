@@ -30,7 +30,9 @@ export function ReviewCard({ review }: { review: ListingReviewSummary }) {
           <Badge tone={localToneForStatus(review.sentiment)}>{SENTIMENT_LABELS[review.sentiment] ?? review.sentiment}</Badge>
           <Badge tone={localToneForStatus(review.replyStatus)}>{REPLY_STATUS_LABELS[review.replyStatus] ?? review.replyStatus}</Badge>
           <Badge tone="muted">{LISTING_PROVIDER_LABELS[review.provider] ?? review.provider}</Badge>
-          {review.replyStatus === "draft_reply" ? <span>Draft reply — future workflow.</span> : null}
+          {review.qmapsReplyState === "sent_to_qmaps" ? <Badge tone="success">Envoyée à QMAPS</Badge> : null}
+          {review.qmapsReplyState === "not_sent" ? <span>Brouillon conservé. QMAPS n&apos;a pas reçu la réponse.</span> : null}
+          {review.replyStatus === "draft_reply" && !review.qmapsReplyState ? <span>Draft reply — future workflow.</span> : null}
         </div>
       </CardBody>
     </Card>

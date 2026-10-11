@@ -1,8 +1,10 @@
+- 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
 
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
+- 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR pending | active | Add the TAKATAK experience-launch bridge and signed event intake for REVERS CANADA | run bridge QA, review PR, configure production secrets/callback, then verify exchange
 
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
@@ -28,8 +30,13 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
-- 2026-10-10 | cursor | cursor/tk-013-server-promos → #164 | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI, then merge
-- 2026-10-10 | cursor | main | blocked: production secrets | Production artifact validate passed for b244f9c (CI 38030337096, validate run 38039823036). Smoke of the live site: home loads; http://takatak.ca stays on http; /ecosystem is 404. knowledge.takatak.ca and lab.takatak.ca have no DNS. | owner adds the 7 TAKATAK_PRODUCTION_* secrets, then promote
+- 2026-10-11 | cursor | cursor/tk-013-server-promos → #164 | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI after the main merge, then the owner can merge
+- 2026-10-11 | cursor | cursor/tk-004-qmaps-workspace → #171 | done (merged 39adab5) | TK-004 and TK-024: link a QMAPS business to a client workspace and reply to a QMAPS review only when QMAPS accepts it | apostrophe follow-up is #172
+- 2026-10-11 | cursor | rentautoca takatak-sync-outbox | blocked: no staging URL or TAKATAK_SYNC_RUNNER_SECRET | TK-008: run the Rentauto outbox once on staging | owner provides the staging function URL and runner secret; do not call production
+- 2026-10-10 | cursor | cursor/tk-026-report-export → #169 | done (merged a49825b) | TK-026: export a client report as PDF and deliver it inside the dashboard | next developer item
+- 2026-10-10 | cursor | cursor/tk-022-seo-history → #168 | done (merged) | TK-022: weekly SEO re-audits, score history, and a white-label PDF | next developer item
+- 2026-10-10 | cursor | cursor/tk-069-ai-studio-handoff → #167 | done (merged 130a118) | TK-069: send a saved AI draft into social approval and show that workspace's credit usage and estimated cost | next developer item
+- 2026-10-10 | cursor | cursor/tk-014-catalog-prices → #165 | done (merged) | TK-014: public prices read from ProductCatalog when a CAD plan exists, otherwise the current catalog | seed takatak_public plans when the owner is ready
 - 2026-10-10 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | PR open, CI running | AI Studio live drafts (OpenAI/Claude) rebuilt on #117; no migration (vendor in job metadata); test key fixed for the secret scan | merge when green; wire #155 resolveProviderKey into readAiStudioConfig once #155 merges
 - 2026-10-09 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #158 | PR open (#157 merged 28d92ba) | Staging migration gate: phone-only verified by live schema; apply deploys pending only when all are approved. Staging audit now PASSES (19 recorded, 10 approved pending) but 15 unapproved repo migrations are unrecorded on staging, so apply would refuse; #158 prints their names | merge #158, re-run staging audit, owner decides on the 15; then backup + apply + staging deploy
 - 2026-10-09 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #117 | done (merged 04bf3fc) | Growth Suite (reputation, analytics, chat, AI agents, Google, plans). Merged main (incl. #151–#154); 9 Growth migrations renamed to 20261009010000–20261009090000 so they sort after the billing migrations (never applied anywhere); rollback script still exact; homepage and Social untouched | owner approved the 9 Growth migrations for staging (2026-10-09): back up staging, run the staging reconciler apply, deploy; production DB approval later; close or merge #135/#136/#137 (overlaps)

@@ -20,7 +20,7 @@ export interface LeadDetail {
   sourceName: string | null;
   createdAt: Date;
   website: { kind: string | null; sourcePage: string | null; language: string | null } | null;
-  attachments: { id: string; originalName: string; mimeType: string; sizeBytes: number; createdAt: Date }[];
+  attachments: { id: string; originalName: string; mimeType: string; sizeBytes: number; status: string; createdAt: Date }[];
   activities: { id: string; type: string; status: string; title: string; note: string | null; dueAt: Date | null; createdAt: Date }[];
 }
 
@@ -49,7 +49,7 @@ async function loadAttachments(
     return await prisma.leadAttachment.findMany({
       where: { leadId, status: { not: "deleted" } },
       orderBy: { createdAt: "asc" },
-      select: { id: true, originalName: true, mimeType: true, sizeBytes: true, createdAt: true },
+      select: { id: true, originalName: true, mimeType: true, sizeBytes: true, status: true, createdAt: true },
     });
   } catch (error) {
     if (isMissingTable(error)) return [];

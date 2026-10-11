@@ -1,8 +1,12 @@
+"use client";
+
 import { Link } from "@/lib/website/nav";
 import { ArrowRight } from "lucide-react";
-import { featuredPrices, formatCAD, cadenceLabel } from "@/lib/website/pricing";
+import { usePublicPricing } from "@/lib/website/catalog-pricing-context";
+import { formatCAD, cadenceLabel } from "@/lib/website/pricing";
 
 export function FeaturedPricingSection() {
+  const { featuredPrices } = usePublicPricing();
   return (
     <section className="relative py-16 md:py-24">
       <div className="mx-auto max-w-7xl px-4">
