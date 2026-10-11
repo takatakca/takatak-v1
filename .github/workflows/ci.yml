@@ -100,6 +100,9 @@ jobs:
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
+      - name: Lead attachment malware scan
+        run: npm run qa:attachment-scan
+
       - name: Public catalog price safeguards
         run: npm run qa:catalog-prices
 
