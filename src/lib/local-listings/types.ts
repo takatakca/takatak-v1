@@ -19,6 +19,7 @@ export interface LocalListingSummary {
   status: string;
   napStatus: string;
   lastCheckedAt: string | null;
+  qmapsLinkState?: "saved_in_takatak" | "confirmed_on_qmaps" | null;
 }
 
 export interface ListingCitationSummary {
@@ -44,6 +45,7 @@ export interface ListingReviewSummary {
   sentiment: string;
   listingName: string | null;
   reviewedAt: string | null;
+  qmapsReplyState?: "not_sent" | "sent_to_qmaps" | null;
 }
 
 export interface ListingPhotoSummary {

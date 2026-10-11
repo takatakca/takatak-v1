@@ -14,6 +14,7 @@ import {
   MAX_ATTACHMENTS_PER_LEAD,
   MAX_TOTAL_BYTES_PER_LEAD,
 } from "./attachment-rules";
+import { attachmentStatusFor, scanForMalware } from "./malware-scan";
 
 export { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_LEAD, MAX_TOTAL_BYTES_PER_LEAD };
 export const UPLOAD_TOKEN_TTL_MS = 30 * 60 * 1000;
@@ -133,7 +134,8 @@ export type AttachmentRefusal =
   | "lead_not_found"
   | "too_many_files"
   | "lead_quota_exceeded"
-  | "storage_failed";
+  | "storage_failed"
+  | "infected";
 
 export type AttachmentResult =
   | { ok: true; id: string; name: string; sizeBytes: number }
@@ -167,6 +169,7 @@ export async function recordLeadAttachment(
   const now = input.now ?? new Date();
   const month = `${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const path = `website-leads/${input.clientId}/${month}/${input.leadId}/${id}.${check.extension}`;
+  const verdict = scanForMalware(input.bytes);
 
   try {
     await storage.upload(path, input.bytes, check.mime);
@@ -185,12 +188,16 @@ export async function recordLeadAttachment(
         originalName: check.safeName,
         mimeType: check.mime,
         sizeBytes: input.bytes.length,
-        status: "quarantined",
+        status: attachmentStatusFor(verdict),
       },
     });
   } catch (error) {
     await storage.remove(path).catch(() => undefined);
     throw error;
+  }
+
+  if (verdict === "infected") {
+    return { ok: false, reason: "infected" };
   }
 
   return { ok: true, id, name: check.safeName, sizeBytes: input.bytes.length };

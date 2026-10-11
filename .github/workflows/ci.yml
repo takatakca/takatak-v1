@@ -100,6 +100,18 @@ jobs:
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
+      - name: Promotion code safeguards
+        run: npm run qa:promotions
+
+      - name: Lead attachment malware scan
+        run: npm run qa:attachment-scan
+
+      - name: Public catalog price safeguards
+        run: npm run qa:catalog-prices
+
+      - name: AI Studio approval handoff
+        run: npm run qa:ai-handoff
+
       - name: Lead detail actions
         run: npm run qa:lead-actions
 
@@ -111,6 +123,15 @@ jobs:
 
       - name: Website SEO and HTTPS redirect
         run: npm run qa:website-seo
+
+      - name: SEO score history
+        run: npm run qa:seo-history
+
+      - name: Report export and delivery
+        run: npm run qa:report-export
+
+      - name: QMAPS workspace link and review reply
+        run: npm run qa:qmaps-bridge
 
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard

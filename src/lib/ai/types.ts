@@ -56,6 +56,8 @@ export interface SavedOutputSummary {
   brandName: string | null;
   voiceName: string | null;
   createdAt: string;
+  /** Set after the draft is handed to the social approval queue. */
+  socialPostId?: string | null;
 }
 
 export interface AiStudioKpis {

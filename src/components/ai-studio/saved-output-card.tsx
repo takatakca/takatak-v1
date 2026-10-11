@@ -1,9 +1,21 @@
+import Link from "next/link";
+
+import { sendSavedOutputToApproval } from "@/app/dashboard/ai-studio/saved/actions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody } from "@/components/ui/card";
 import { AI_KIND_LABELS, AI_ORIGIN_LABELS, AI_OUTPUT_STATUS_LABELS, aiToneForStatus } from "@/lib/ai/status";
 import type { SavedOutputSummary } from "@/lib/ai/types";
 
-export function SavedOutputCard({ output }: { output: SavedOutputSummary }) {
+export function SavedOutputCard({
+  output,
+  canSend = false,
+}: {
+  output: SavedOutputSummary;
+  canSend?: boolean;
+}) {
+  const sent = Boolean(output.socialPostId);
+  const sendable = canSend && !sent && output.status !== "archived";
+
   return (
     <Card>
       <CardBody className="space-y-2">
@@ -21,6 +33,22 @@ export function SavedOutputCard({ output }: { output: SavedOutputSummary }) {
           {AI_OUTPUT_STATUS_LABELS[output.status] ?? output.status} · {output.createdAt}
           {output.voiceName ? ` · Voice: ${output.voiceName}` : ""}
         </p>
+        {sent ? (
+          <Link href="/dashboard/social/approvals" className="inline-block text-xs font-medium text-indigo-700 hover:text-indigo-500">
+            {"Voir l'approbation"}
+          </Link>
+        ) : null}
+        {sendable ? (
+          <form action={sendSavedOutputToApproval}>
+            <input type="hidden" name="outputId" value={output.id} />
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-500"
+            >
+              {"Envoyer à l'approbation"}
+            </button>
+          </form>
+        ) : null}
       </CardBody>
     </Card>
   );

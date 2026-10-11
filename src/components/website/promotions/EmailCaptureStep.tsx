@@ -28,7 +28,10 @@ export function EmailCaptureStep({
     setBusy(true);
     // Only report success once the promotion layer confirms eligibility.
     const result = await claimPromoBackend(PROMO_CODE);
-    const reserved = "promotion" in result || result.state.status !== "used";
+    const reserved =
+      "promotion" in result
+        ? result.promotion.status !== "redeemed"
+        : result.state.status === "claimed" || result.state.status === "pending";
     trackPromo("signup_promo_claimed", { surface: "welcome_flow" });
     setBusy(false);
     onDone({ email: email.trim(), firstName: firstName.trim(), reserved });
