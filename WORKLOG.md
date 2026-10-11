@@ -10,7 +10,7 @@ Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `clau
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
 
 - [ ] **Staging migrations: approve and apply.** #147 (the staging apply gate) is merged. Take a backup of the staging Supabase project. Then run "Reconcile TAKATAK staging migrations" with mode `apply` and the approval phrase from `docs/staging-migration-reconciliation.md`. *Blocks:* the staging deploy, including billing. *(2026-10-08; the staging secret is set, and audit run 37762369395 matched the three billing migrations)*
-- [ ] **Production secrets.** In GitHub → Settings → Environments → `production`, add the 7 `TAKATAK_PRODUCTION_*` secrets, then run "Promote verified TAKATAK production artifact". *Blocks:* deploying `main` to takatak.ca. *(2026-10-08, session 01KBGh1v)*
+- [ ] **Production secrets.** In GitHub → Settings → Environments → `production`, add the 7 `TAKATAK_PRODUCTION_*` secrets, then run "Promote verified TAKATAK production artifact" with `mode: promote`. Validate already passed on 2026-10-10 for `b244f9cdf11dffd363d896975403e424966b2cc5` (CI run 38030337096, validate run 38039823036). *Blocks:* deploying `main` to takatak.ca. *(2026-10-08, session 01KBGh1v)*
 - [ ] **Deploy agent secrets.** Add `COOLIFY_API_TOKEN`, `SUPABASE_ACCESS_TOKEN`, `PROD_DATABASE_URL`, `PROD_DIRECT_URL`, `EMAIL_USER`, `EMAIL_PASSWORD` and an AI provider API key to the Claude cloud environment secrets. *Blocks:* the Coolify test copy and AI features. *(2026-10-08, session 01W1ntbf)*
 - [ ] **Approve Facturations #158, #159, #160 as `takatakmtl`.** The agent merges them once approved. *Blocks:* Facturations staging and the issuance status shown to clients. *(2026-10-07, session 01HWFgGo)*
 - [ ] **⏸ ON HOLD (owner, 2026-10-09): MIMT is paused. Agents do not start MIMT work until the owner reopens it.** **Share the MIMT repository with Claude.** mimt.ca runs Next.js, but its repo is not visible to agents (`takatakca/mimt`, `MIMT`, `mimtca` not found). Add it in github.com/settings/installations › Claude › Repository access, and write its exact name here. *Blocks:* building the MIMT app and the MIMT API client behind `/dashboard/voip`. *(2026-10-09, session 01HWFgGo)*
@@ -30,8 +30,9 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
-- 2026-10-11 | cursor | cursor/tk-004-apostrophe-lint → #172 | PR | Fix the apostrophes that failed lint on the merged QMAPS workspace screen | wait for CI
-- 2026-10-11 | cursor | cursor/tk-004-qmaps-workspace → #171 | done (merged 39adab5) | TK-004 and TK-024: link a QMAPS business to a client workspace and reply to a QMAPS review only when QMAPS accepts it | CI failed on apostrophes; follow-up branch fixes them
+- 2026-10-11 | cursor | cursor/tk-013-server-promos → #164 | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI, then the owner can merge
+- 2026-10-11 | cursor | cursor/tk-004-apostrophe-lint → #172 | done (merged 31bb3a8) | Fix the apostrophes that failed lint on the merged QMAPS workspace screen | none
+- 2026-10-11 | cursor | cursor/tk-004-qmaps-workspace → #171 | done (merged 39adab5) | TK-004 and TK-024: link a QMAPS business to a client workspace and reply to a QMAPS review only when QMAPS accepts it | apostrophes fixed on main by #172
 - 2026-10-11 | cursor | rentautoca takatak-sync-outbox | blocked: no staging URL or TAKATAK_SYNC_RUNNER_SECRET | TK-008: run the Rentauto outbox once on staging | owner provides the staging function URL and runner secret; do not call production
 - 2026-10-10 | cursor | cursor/tk-026-report-export → #169 | done (merged a49825b) | TK-026: export a client report as PDF and deliver it inside the dashboard | next developer item
 - 2026-10-10 | cursor | cursor/tk-022-seo-history → #168 | done (merged) | TK-022: weekly SEO re-audits, score history, and a white-label PDF | next developer item

@@ -24,6 +24,8 @@ import {
   saveCheckoutSelection,
   saveQuotePrefill,
 } from "@/lib/website/marketplace-storage";
+import { previewPromoBackend } from "@/lib/website/promotions";
+import { useLanguage } from "@/lib/website/use-language";
 
 function dollars(
   cents: number,
@@ -41,6 +43,7 @@ export function GigDetailClient({
   related: MarketplacePackage[];
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [tierIndex, setTierIndex] =
     useState(
@@ -59,6 +62,9 @@ export function GigDetailClient({
 
   const [promoApplied, setPromoApplied] =
     useState(false);
+
+  const [promoNote, setPromoNote] =
+    useState<string | null>(null);
 
   const tier =
     pkg.tiers[tierIndex];
@@ -150,13 +156,24 @@ export function GigDetailClient({
     );
   }
 
-  function applyPromo() {
-    setPromoApplied(
-      promoCode
-        .trim()
-        .toUpperCase() ===
-        "FIRST10",
-    );
+  async function applyPromo() {
+    const code = promoCode.trim();
+    if (!code) {
+      setPromoApplied(false);
+      setPromoNote(null);
+      return;
+    }
+    const preview = await previewPromoBackend({
+      code,
+      subtotalCents: subtotal,
+    });
+    if (preview && preview.discountCents > 0) {
+      setPromoApplied(true);
+      setPromoNote(null);
+      return;
+    }
+    setPromoApplied(false);
+    setPromoNote(preview ? t("promo.code.rejected") : t("promo.code.unavailable"));
   }
 
   return (
@@ -539,6 +556,7 @@ export function GigDetailClient({
                       setPromoApplied(
                         false,
                       );
+                      setPromoNote(null);
                     }}
                     placeholder="FIRST10"
                     className="min-w-0 flex-1 rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-primary"
@@ -557,6 +575,10 @@ export function GigDetailClient({
                   <p className="mt-2 text-xs text-primary">
                     10% discount applied: -
                     {dollars(discount)}
+                  </p>
+                ) : promoNote ? (
+                  <p className="mt-2 text-xs text-destructive">
+                    {promoNote}
                   </p>
                 ) : null}
               </div>

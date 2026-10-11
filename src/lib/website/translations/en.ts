@@ -500,6 +500,8 @@ export const en = {
   "promo.invite.cta": "Claim 10% off",
   "promo.invite.dismiss": "No thanks",
   "promo.invite.legal": "One use per business. Applied at checkout.",
+  "promo.code.rejected": "This code can't be applied.",
+  "promo.code.unavailable": "We couldn't check that code. Please try again.",
 
   "nav.findDomain": "Find my domain",
   "nav.searchOpen": "Search TAKATAK services",
