@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import { normalizePhone, validatePhone } from "../src/lib/auth/otp/phone";
 import { resolveSupabaseProfileIdentity } from "../src/lib/auth/profile-sync";
 
 let failed = 0;
@@ -25,6 +26,16 @@ function user(partial: Partial<User> & { phone?: string | null }): User {
 
 function main() {
   console.log("[auth-phone-identity] verified phone is enough");
+
+  // Regression: invalid numbers must fail client-side before Supabase /otp.
+  assert("format Canadian 10 digit", normalizePhone("(514) 555-0123") === "+15145550123");
+  assert("format Canadian 11 digit", normalizePhone("1 514 555 0123") === "+15145550123");
+  assert("preserve E.164 international", normalizePhone("+44 7700 900123") === "+447700900123");
+  assert("reject eight digit without country", normalizePhone("51455501") === null);
+  assert("reject missing NANP area digit", normalizePhone("0145550123") === null);
+  assert("reject malformed international prefix", normalizePhone("+05145550123") === null);
+  assert("reject extensions / letters", normalizePhone("5145550123 ext 5") === null);
+  assert("invalid phone shows field error", validatePhone("5551234") === "Enter a valid phone number.");
 
   const phoneOnly = resolveSupabaseProfileIdentity(
     user({
