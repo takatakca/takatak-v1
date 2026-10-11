@@ -24,6 +24,8 @@ export function LocalListingCard({ listing }: { listing: LocalListingSummary }) 
           <Badge tone={localToneForStatus(listing.napStatus)}>{NAP_STATUS_LABELS[listing.napStatus] ?? listing.napStatus}</Badge>
           <span>{[listing.city, listing.region, listing.country].filter(Boolean).join(", ")}</span>
           {listing.lastCheckedAt ? <span>· Checked {listing.lastCheckedAt}</span> : <span>· Never checked</span>}
+          {listing.qmapsLinkState === "confirmed_on_qmaps" ? <Badge tone="success">Confirmé sur QMAPS</Badge> : null}
+          {listing.qmapsLinkState === "saved_in_takatak" ? <Badge tone="warning">Enregistré dans TAKATAK seulement</Badge> : null}
         </div>
       </CardBody>
     </Card>

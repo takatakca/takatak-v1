@@ -28,7 +28,9 @@ export default async function VideoIdeasPage() {
       />
       <AiSourceBanner source={data.source} label={data.sourceLabel} />
       <div className="grid gap-3 sm:grid-cols-2">
-        {videoOutputs.map((o) => <SavedOutputCard key={o.id} output={o} />)}
+        {videoOutputs.map((o) => (
+          <SavedOutputCard key={o.id} output={o} canSend={data.source === "database"} />
+        ))}
       </div>
     </div>
   );

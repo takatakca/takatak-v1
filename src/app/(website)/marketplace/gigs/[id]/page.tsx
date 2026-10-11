@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { GigDetailClient } from "@/components/website/marketplace/gig-detail-client";
+import { pricePackageFromCatalog, pricePackagesFromCatalog } from "@/lib/website/catalog-prices";
+import { loadPublicCatalogRows } from "@/lib/website/load-public-catalog";
 import {
   getMarketplacePackage,
   MARKETPLACE_PACKAGES,
@@ -49,21 +51,19 @@ export default async function GigPage({
   }>;
 }) {
   const { id } = await params;
+  const found = getMarketplacePackage(id);
 
-  const pkg =
-    getMarketplacePackage(id);
-
-  if (!pkg) {
+  if (!found) {
     notFound();
   }
+
+  const rows = await loadPublicCatalogRows();
+  const pkg = pricePackageFromCatalog(found, rows);
 
   return (
     <GigDetailClient
       pkg={pkg}
-      related={relatedPackages(
-        pkg,
-        3,
-      )}
+      related={pricePackagesFromCatalog(relatedPackages(found, 3), rows)}
     />
   );
 }

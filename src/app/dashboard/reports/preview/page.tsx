@@ -11,14 +11,20 @@ import { getReportPreviewData } from "@/lib/reports/reporting-data";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportPreviewPage() {
-  const data = await getReportPreviewData();
+export default async function ReportPreviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ id?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const raw = Array.isArray(params.id) ? params.id[0] : params.id;
+  const data = await getReportPreviewData(raw);
   return (
     <div className="space-y-5">
       <ReportHeader
         title="Report Preview"
-        subtitle="Internal preview of the first foundation report draft. No public link and no PDF export exist."
-        badges={[{ label: "Internal preview", status: "draft" }, { label: "Export not active" }]}
+        subtitle="Aperçu interne du rapport. Le PDF et la remise restent dans cet espace."
+        badges={[{ label: "Internal preview", status: "draft" }, { label: "PDF" }]}
       />
       <ReportSourceBanner source={data.source} label={data.sourceLabel} />
       {data.report ? (
