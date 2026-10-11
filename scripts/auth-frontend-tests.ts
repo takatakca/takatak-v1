@@ -6,6 +6,7 @@ import {
   parseAuthResponse,
 } from "../src/lib/auth/parse-auth-response";
 import { phoneAuthMessage } from "../src/lib/auth/phone-auth-message";
+import { normalizePhone, validatePhone } from "../src/lib/auth/otp/phone";
 
 let failed = 0;
 
@@ -20,6 +21,14 @@ function assert(name: string, ok: boolean, detail = "") {
 
 async function main() {
   console.log("[auth-frontend] phone OTP error messages");
+  assert("Nigeria local with chosen country", normalizePhone("070 1234 5678", "NG") === "+2347012345678");
+  assert("Nigeria international remains unchanged", normalizePhone("+234 701 234 5678", "CA") === "+2347012345678");
+  assert("Nigeria local never becomes invalid +0", normalizePhone("070 1234 5678") === null);
+  assert("Canada local stays supported", normalizePhone("(514) 555-0123") === "+15145550123");
+  assert("Unspecified international local number needs +country", normalizePhone("07700900123", "INTL") === null);
+  assert("Nigerian leading 0 is not E.164", normalizePhone("+07012345678") === null);
+  assert("Bad phone inputs are rejected", validatePhone("not-a-number") !== undefined);
+  assert("Country-specific format guidance", validatePhone("07012345678", "CA")?.includes("selected country") === true);
   assert("unknown number → create identity", phoneAuthMessage("Signups not allowed for otp", "otp_disabled").includes("Create your identity"));
   assert("unknown number (message only)", phoneAuthMessage("Signups not allowed for otp").includes("Create your identity"));
   assert("phone provider off", phoneAuthMessage("Unsupported phone provider", "phone_provider_disabled").includes("not enabled"));
