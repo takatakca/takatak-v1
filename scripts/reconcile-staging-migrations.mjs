@@ -66,6 +66,10 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261001110000_looker_studio_uniqueness",
   "20261003180000_twitch_competitor_platform",
   "20261004020000_social_avatar_storage",
+  // Merged to main on 2026-10-10 (#162 REVERS bridge). Approved for staging by
+  // the owner on 2026-10-11. Additive: new tables with RLS and REVERS catalog rows.
+  "20261010051000_integration_request_nonces",
+  "20261010100000_revers_product_access",
 ];
 
 const SUPABASE_HISTORY_NAMES = {
