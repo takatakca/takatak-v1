@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
   }
 
   // Package orders are priced from the TAKATAK catalog, never from the browser.
-  const catalogRows = await loadPublicCatalogRows();
+  const catalogRows = value.order ? await loadPublicCatalogRows() : [];
   let pricedOrder = value.order ? priceMarketplaceOrder(value.order, catalogRows) : null;
   if (value.kind === "package_order" && !pricedOrder) {
     return jsonResponse(

@@ -30,7 +30,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
-- 2026-10-11 | cursor | cursor/tk-013-server-promos → #164 | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI after merging the apostrophe fix, then the owner can merge
+- 2026-10-11 | cursor | cursor/tk-013-server-promos → #164 | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI, then the owner can merge
 - 2026-10-11 | cursor | cursor/tk-004-apostrophe-lint → #172 | done (merged 31bb3a8) | Fix the apostrophes that failed lint on the merged QMAPS workspace screen | none
 - 2026-10-11 | cursor | cursor/tk-004-qmaps-workspace → #171 | done (merged 39adab5) | TK-004 and TK-024: link a QMAPS business to a client workspace and reply to a QMAPS review only when QMAPS accepts it | apostrophes fixed on main by #172
 - 2026-10-11 | cursor | rentautoca takatak-sync-outbox | blocked: no staging URL or TAKATAK_SYNC_RUNNER_SECRET | TK-008: run the Rentauto outbox once on staging | owner provides the staging function URL and runner secret; do not call production
