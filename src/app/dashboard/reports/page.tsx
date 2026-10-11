@@ -11,8 +11,15 @@ import { getReportsOverviewData } from "@/lib/reports/reporting-data";
 
 export const dynamic = "force-dynamic";
 
-export default async function ReportsOverviewPage() {
+export default async function ReportsOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ delivery?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const raw = Array.isArray(params.delivery) ? params.delivery[0] : params.delivery;
   const data = await getReportsOverviewData();
+  const canExport = data.source === "database";
   const kpis = [
     { label: "Reports", value: data.kpis.reports, icon: FileText },
     { label: "Templates", value: data.kpis.templates, icon: LayoutTemplate },
@@ -24,9 +31,25 @@ export default async function ReportsOverviewPage() {
     <div className="space-y-6">
       <ReportHeader
         title="Reports"
-        subtitle="Build client-ready summaries from TAKATAK services before export and delivery are enabled."
-        badges={[{ label: "Foundation", status: "draft" }, { label: "Export not active" }, { label: "Delivery not active" }]}
+        subtitle="Client reports for this workspace. A PDF stays private, and delivery stays inside the dashboard."
+        badges={[{ label: "PDF" }, { label: "In-dashboard delivery" }]}
       />
+
+      {raw === "sent" ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Rapport remis dans le tableau de bord. Aucun courriel n&apos;a été envoyé.
+        </p>
+      ) : null}
+      {raw === "already" ? (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          Ce rapport est déjà remis dans le tableau de bord.
+        </p>
+      ) : null}
+      {raw === "refused" || raw === "denied" || raw === "unavailable" ? (
+        <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          Ce rapport ne peut pas être remis depuis cet espace.
+        </p>
+      ) : null}
 
       <section aria-label="Report KPIs">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
@@ -45,7 +68,7 @@ export default async function ReportsOverviewPage() {
       <section className="space-y-3" aria-label="Recent drafts">
         <h2 className="text-sm font-semibold text-slate-900">Recent Report Drafts</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {data.drafts.map((d) => <ReportDraftCard key={d.id} draft={d} />)}
+          {data.drafts.map((d) => <ReportDraftCard key={d.id} draft={d} canExport={canExport} />)}
         </div>
       </section>
 

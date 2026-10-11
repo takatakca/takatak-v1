@@ -1,8 +1,10 @@
+- 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
 
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
+- 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR pending | active | Add the TAKATAK experience-launch bridge and signed event intake for REVERS CANADA | run bridge QA, review PR, configure production secrets/callback, then verify exchange
 
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
@@ -29,7 +31,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 
 ## Open work
 - 2026-10-10 | cursor | cursor/tk-065-attachment-scan → #170 | PR | TK-065: scan lead attachments before they can be downloaded | CI green, then the next developer item
-- 2026-10-10 | cursor | cursor/tk-026-report-export → #169 | PR | TK-026: export a client report as PDF and deliver it inside the dashboard | CI
+- 2026-10-10 | cursor | cursor/tk-026-report-export → #169 | done (merged a49825b) | TK-026: export a client report as PDF and deliver it inside the dashboard | next developer item
 - 2026-10-10 | cursor | cursor/tk-022-seo-history → #168 | done (merged) | TK-022: weekly SEO re-audits, score history, and a white-label PDF | next developer item
 - 2026-10-10 | cursor | cursor/tk-069-ai-studio-handoff → #167 | done (merged 130a118) | TK-069: send a saved AI draft into social approval and show that workspace's credit usage and estimated cost | next developer item
 - 2026-10-10 | cursor | cursor/tk-014-catalog-prices → #165 | done (merged) | TK-014: public prices read from ProductCatalog when a CAD plan exists, otherwise the current catalog | seed takatak_public plans when the owner is ready
