@@ -34,6 +34,8 @@ async function main() {
   assert("phone provider off", phoneAuthMessage("Unsupported phone provider", "phone_provider_disabled").includes("not enabled"));
   assert("Twilio failure", phoneAuthMessage("Error sending confirmation OTP to provider: Invalid From Number", "sms_send_failed").includes("SMS provider"));
   assert("rate limit", phoneAuthMessage("For security purposes, you can only request this after 42 seconds.", "over_sms_send_rate_limit").includes("Too many"));
+  assert("Supabase E.164 formatting error is actionable", phoneAuthMessage("Invalid phone number format (E.164 required)").includes("country calling code"));
+  assert("Twilio country geo block is actionable", phoneAuthMessage("The number was blocked by Verify Geo Permissions 60605").includes("restricted"));
   assert("unknown error stays generic", phoneAuthMessage("boom") === "Unable to send the TAKATAK SMS code. Please try again.");
 
   console.log("[auth-frontend] OTP response parsing");
