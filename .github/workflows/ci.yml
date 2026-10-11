@@ -127,6 +127,9 @@ jobs:
       - name: Report export and delivery
         run: npm run qa:report-export
 
+      - name: QMAPS workspace link and review reply
+        run: npm run qa:qmaps-bridge
+
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
 
