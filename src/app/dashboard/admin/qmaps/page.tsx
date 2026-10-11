@@ -44,7 +44,7 @@ export default async function QmapsAdminPage() {
           {prisma ? (
             <QmapsLinkForm clients={clients} />
           ) : (
-            <p className="text-sm text-slate-500">La base TAKATAK n'est pas configurée. Aucun lien ne peut être enregistré.</p>
+            <p className="text-sm text-slate-500">La base TAKATAK n&apos;est pas configurée. Aucun lien ne peut être enregistré.</p>
           )}
         </CardBody>
       </Card>
@@ -78,7 +78,7 @@ export default async function QmapsAdminPage() {
           )}
           <p className="flex items-center gap-2 text-xs text-slate-400">
             <MapPinned className="h-3.5 w-3.5" />
-            Une fiche planifiée n'est pas une fiche publiée.
+            Une fiche planifiée n&apos;est pas une fiche publiée.
           </p>
         </CardBody>
       </Card>
