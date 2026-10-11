@@ -79,9 +79,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Package orders are priced from the TAKATAK catalog, never from the browser.
-  let pricedOrder = value.order
-    ? priceMarketplaceOrder(value.order, await loadPublicCatalogRows())
-    : null;
+  const catalogRows = await loadPublicCatalogRows();
+  let pricedOrder = value.order ? priceMarketplaceOrder(value.order, catalogRows) : null;
   if (value.kind === "package_order" && !pricedOrder) {
     return jsonResponse(
       { ok: false, code: "invalid_fields", fieldErrors: { package: "invalid" } },
@@ -118,7 +117,7 @@ export async function POST(request: NextRequest) {
     if (profile) {
       const status = await promoStatus(promoAuditStore(prisma), profile.id, pricedOrder.promoCode);
       if (status === "redeemed") {
-        pricedOrder = priceMarketplaceOrder({ ...value.order!, promoCode: null });
+        pricedOrder = priceMarketplaceOrder({ ...value.order!, promoCode: null }, catalogRows);
       } else if (pricedOrder.discountCents > 0) {
         redeemProfileId = profile.id;
       }

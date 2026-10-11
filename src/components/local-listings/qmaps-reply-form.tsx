@@ -13,7 +13,7 @@ export function QmapsReplyForm() {
   return (
     <form action={formAction} className="grid gap-3">
       <label className="space-y-1 text-xs font-medium text-slate-700">
-        Identifiant de l'avis QMAPS
+        Identifiant de l&apos;avis QMAPS
         <input name="qmapsReviewId" required placeholder="UUID de l'avis" className={inputClass} />
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
