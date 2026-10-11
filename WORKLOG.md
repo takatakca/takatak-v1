@@ -1,3 +1,4 @@
+- 2026-10-11 | ChatGPT/GitHub agent | fix/takatak-phone-country-otp-20261011 → PR pending | prepared (CI pending) | Nigerian +234 phone OTP selector and strict E.164; refuse unverified recovery email for email-session login; add regression tests | Run auth CI, owner review/merge and manually promote verified TAKATAK production artifact; confirm Twilio provider in Supabase Auth
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
 
