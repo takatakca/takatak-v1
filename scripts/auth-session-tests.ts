@@ -149,6 +149,14 @@ async function main() {
   {
     const result = await createSessionForEmail(EMAIL, AUTH_ID, [], {
       getEnv: () => env,
+      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: null } }),
+    });
+    assert('phone-only account cannot mint email session', !result.ok && result.stage === 'email_not_verified');
+  }
+
+  {
+    const result = await createSessionForEmail(EMAIL, AUTH_ID, [], {
+      getEnv: () => env,
       getAdmin: () =>
         mockAdmin({
           user: { id: AUTH_ID, email: 'other@takatak.ca' },
