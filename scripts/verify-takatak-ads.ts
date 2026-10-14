@@ -267,7 +267,7 @@ function verifyCampaignDraftUi(): void {
   assert.ok(editor.includes('scope === "single_site" ? [placementId] : []'));
   assert.ok(editor.includes('router.refresh()'));
   assert.ok(api.includes('requireWorkspaceApiPermission("manage_ads")'));
-  assert.ok(api.includes('status: 201'));
+  assert.ok(api.includes('      201,'));
   pass("ADS campaign drafts are permission-scoped and cannot bypass the server gate");
 }
 
