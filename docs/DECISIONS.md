@@ -1,0 +1,35 @@
+# TAKATAK V1 — Decisions and Invariants
+
+Updated 2026-10-14. Distinguish **owner decisions** from agent implementation choices. Source decisions in [WORKLOG.md](../WORKLOG.md), [DEV-TODO.md](DEV-TODO.md), [AGENTS.md](../AGENTS.md), and architecture runbooks; do not independently reverse them.
+
+| Date | Decision | Effect |
+| --- | --- | --- |
+| 2026-10-10 | **Owner release control:** one coordinating TAKATAK-V1 session merges and deploys until owner lifts the restriction | Other agents use feature branches + PRs; never push to main, run staging apply/release/production promote, mutate provider environments, or approve migrations |
+| 2026-10-09 | MIMT runtime integration **on hold** | Do not resume MIMT/VoIP work without explicit owner reopening |
+| 2026-10-09 | Food Hub PR #27 and Contabo/Coolify PR #104 frozen until core site is live | Do not merge or substitute hosting based on guesses |
+| 2026-10-09 | Growth Suite PR #117 merged; overlap with #135/#136/#137 needs sequential coordination | Prefer existing reputation/SEO/AI surfaces; no duplicate modules or unapproved schema updates |
+| 2026-10-08 onward | Database migrations follow staged reconciliation and owner approval | No direct production schema write, no unauthorized entries in approved migration list |
+| 2026-10-08 onward | Public identity uses TAKATAK Auth (Supabase) with server-side client memberships | Only scoped records/entitlements; never trust browser claims for workspace IDs or role grants |
+| Ongoing | GROUPE TAKATAK brand: electric blue on deep navy; old gold TK logo prohibited | Follow BRAND.md; replace assets only with approved official source files |
+| Ongoing | AHMV and other vertical apps are independent products | TAKATAK centralizes identity/entitlements/events, not every vertical's menus and data |
+
+## Technical constraints, not new owner decisions
+
+- `main` is GitHub source truth; require passing CI, documented release artifact, an actual deployed SHA, and environment readiness before asserting success.
+- The existing Next.js 16 project has version-specific conventions; follow installed Next docs before changing framework behavior.
+- MochaHost/Passenger cannot be treated as a build machine. Build on Linux with Node 22 and deploy complete, verified immutable artifacts.
+- Secrets are environment-managed; no private API tokens, secret values, phone numbers or customer records in PRs, docs or CI logs.
+- ADS and CRM must respect tenant scopes. Server-side permissions/entitlements prevail over front-end controls.
+- Provider statuses must distinguish not-configured, configured-but-untested and actually connected. Never label a stub as live.
+- Pricing and performance marketing claims require real measurements; don't hardcode unverified comparative claims.
+
+## Decisions pending, not assumed
+
+- Production environment configuration and first approved release window.
+- Separate staging and production migration backup/approval, including new schema items.
+- Facturations and integration PR merge sequencing.
+- Official GROUPE TAKATAK logo source files.
+- QMAPS/SEO/AI provider overlaps, consent/retention policy and external API credentials.
+- Whether and when to reopen frozen MIMT/Food Hub/Coolify tracks.
+
+A future owner decision should be appended here with an ISO date, exact scope and reference (issue/PR/WORKLOG), then reflected in the task queue. Do not infer approval merely from code reaching `main` or a successful branch CI.
