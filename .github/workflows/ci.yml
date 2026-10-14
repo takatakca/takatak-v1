@@ -145,6 +145,9 @@ jobs:
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
 
+      - name: TAKATAK ADS CPC atomic budget safeguards
+        run: npx tsx scripts/ads-cpc-budget-policy-tests.ts
+
       - name: GROUPE TAKATAK billing (Facturations) safeguards
         run: npm run qa:billing
 
