@@ -103,7 +103,7 @@
     "qa:ahmv-team-games": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-team-games-tests.ts",
     "qa:ahmv-control-plane": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-managed-association-control-tests.ts",
     "qa:content-contributions": "tsx --require ./scripts/register-server-only.cjs scripts/content-contributions-tests.ts",
-    "qa:ads": "tsx scripts/verify-takatak-ads.ts",
+    "qa:ads": "tsx scripts/verify-takatak-ads.ts && node --test scripts/takatak-ads-sdk.test.cjs",
     "qa:growth-suite": "tsx --require ./scripts/register-server-only.cjs scripts/verify-growth-suite.ts",
     "qa:growth-backend": "tsx --require ./scripts/register-server-only.cjs scripts/verify-growth-backend.ts",
     "ops:readiness": "node scripts/ops/live-readiness.mjs",
