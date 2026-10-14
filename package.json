@@ -33,6 +33,7 @@
     "qa:client-invoicing-db": "tsx --require ./scripts/register-server-only.cjs scripts/client-invoicing-db-tests.ts",
     "qa:secrets": "tsx scripts/check-secrets.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
+    "qa:handoff": "node --test scripts/verify-agent-handoff.test.cjs && node scripts/verify-agent-handoff.cjs",
     "qa:routes": "tsx scripts/list-routes.ts",
     "bootstrap:owner": "tsx scripts/bootstrap-owner.ts",
     "qa:access": "tsx --require ./scripts/register-server-only.cjs scripts/check-access-control.ts",
