@@ -8,13 +8,13 @@ Last update: **2026-10-14**. Read [AGENTS.md](../AGENTS.md), first 40 lines of [
 - Main branch and last confirmed main SHA: `main` at `dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`.
 - Last completed developer features: [#176](https://github.com/takatakca/takatak-v1/pull/176) and [#177](https://github.com/takatakca/takatak-v1/pull/177), **implemented on feature branches and passing CI, NOT merged**.
 - Latest observed PR CIs: #176 run [38608344700](https://github.com/takatakca/takatak-v1/actions/runs/38608344700) = success; #177 run [38608979371](https://github.com/takatakca/takatak-v1/actions/runs/38608979371) = success.
-- Additional independent API-hardening PR: [#179](https://github.com/takatakca/takatak-v1/pull/179), created 2026-10-14 for public ADS JSON streaming limits and privacy; CI pending at handoff. Do not duplicate that patch.
+- Additional independent API-hardening PRs: [#179](https://github.com/takatakca/takatak-v1/pull/179) adds bounded public ADS payloads, and [#180](https://github.com/takatakca/takatak-v1/pull/180) caps atomic CPC charges. Both open with CI pending at handoff. Do not duplicate those patches.
 - Current handoff/continuity documentation branch: `docs/agent-continuity-gates-20261014` → [PR #178](https://github.com/takatakca/takatak-v1/pull/178). Branch updates are recorded in its GitHub PR and branch head; **do not confuse feature-branch commits with `main`.**
 
 ## Last completed task and current task
 
 - Last feature task completed: ADS SDK hardening and campaign draft UI (PRs #176, #177; awaiting coordinated merge).
-- Current task: finish CI verification of [PR #178](https://github.com/takatakca/takatak-v1/pull/178), fix any failing assertions, and hand green PR to release coordinator.
+- Current task: finish CI verification of [PR #178](https://github.com/takatakca/takatak-v1/pull/178), plus #179 and #180; fix any failures on their respective branches and hand green PRs to release coordinator.
 - Next independent technical work after this PR: inspect green/failed CI and open PR conflicts before taking another *unclaimed* issue from [TASK_QUEUE.md](TASK_QUEUE.md). Do not duplicate #175, #173 or any open PR.
 
 ## Files modified on this branch
@@ -29,14 +29,14 @@ Last update: **2026-10-14**. Read [AGENTS.md](../AGENTS.md), first 40 lines of [
 - `AGENTS.md` — implemented resume-pointer update.
 - `WORKLOG.md` — implemented session claim / handoff log.
 
-GitHub history is authoritative for the exact final commit. At this file's last pre-PR handoff review, the branch head was `a48b7c5ad414278347ca04618675bd01f290ae52` (`docs/DECISIONS.md`); subsequent changes to this file and CI necessarily advance branch HEAD.
+GitHub history is authoritative for the exact final commit. At this file's most recent pre-update review, the branch head was `b881541a13c1d11ee0dce656a4fe6f0dbab7f4af` (`docs/DECISIONS.md`); subsequent changes to this file and CI necessarily advance branch HEAD.
 
 ## Verification performed / not performed
 
-- GitHub repository, default branch, main SHA, PR titles and owner restrictions read via GitHub connector.
+- GitHub repository, default branch, main SHA, PR titles and owner restrictions read via GitHub connector. PR #178 continuity guard step passed in GitHub CI; full run still in progress at last check.
 - Both earlier feature PRs had **completed successful GitHub CI** as of 2026-10-14.
 - Local terminal `git ls-remote` was attempted but failed: environment could not resolve `github.com`; all repository changes used the authorized GitHub connector.
-- PR #178 and PR #179 are open; both require green branch CI. Run `npm run qa:handoff` through GitHub CI and record its green/red outcome; do not assume success before the workflow finishes.
+- PRs #178, #179 and #180 are open; all require green branch CI. The new `Agent continuation documentation safeguards` step on #178 has already succeeded. Run `npm run qa:handoff` through GitHub CI and record its green/red outcome; do not assume success before the workflow finishes.
 - A live production deployment, production SMS test, applied migration, and operational secrets validation **were NOT executed**.
 
 ## Known blockers / access needed (never include values)
@@ -51,7 +51,7 @@ GitHub history is authoritative for the exact final commit. At this file's last 
 ## Exact next action for the next agent
 
 1. Read AGENTS.md and top 40 WORKLOG.md lines; fetch `main` HEAD and list open PRs, especially #176, #177 and this handoff PR. Compare with SHA above.
-2. Open PR #178 and #179 CI; if red, inspect failed GitHub Actions job steps and fix only this branch. If green, hand PR to release coordinator for reviewed merge **without dispatching production**.
+2. Open PR #178, #179 and #180 CI; if red, inspect failed GitHub Actions job steps and fix only this branch. If green, hand PR to release coordinator for reviewed merge **without dispatching production**.
 3. Update this file and WORKLOG entry with exact final branch SHA, commands/CI link, and accurate status. Verify `docs/PROJECT_STATUS.md` and queue reflect newer decisions.
 4. Select the next unclaimed and authorized development item. Do not apply migrations, call provider write APIs, deploy or force-push as a workaround.
 

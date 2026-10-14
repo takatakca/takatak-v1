@@ -30,7 +30,7 @@ These are implementation milestones, not an assertion that every integration is 
 | [#176](https://github.com/takatakca/takatak-v1/pull/176) | ADS publisher SDK privacy/viewability fixes and regression QA | [success, run 38608344700](https://github.com/takatakca/takatak-v1/actions/runs/38608344700) |
 | [#177](https://github.com/takatakca/takatak-v1/pull/177) | ADS client dashboard draft campaign creator and QA | [success, run 38608979371](https://github.com/takatakca/takatak-v1/actions/runs/38608979371) |
 
-A separate [PR #179](https://github.com/takatakca/takatak-v1/pull/179) now hardens public ADS request-body limits and privacy, with CI pending. It also does not live on main.
+Additional independent PRs: [#179](https://github.com/takatakca/takatak-v1/pull/179) hardens public ADS request-body limits and privacy, and [#180](https://github.com/takatakca/takatak-v1/pull/180) caps concurrent CPC charges. Both are open with CI pending; neither is merged into main.
 
 Both feature PRs #176 and #177 were still open at inspection; green branch CI is **not** proof of merge or deployment. Check current state on every handoff.
 

@@ -4,7 +4,7 @@ Updated 2026-10-14. **Do not merge, deploy or apply migrations contrary to WORKL
 
 | Priority | Task | State / owner | Acceptance evidence |
 | --- | --- | --- | --- |
-| P0 | Review and sequence [PR #176](https://github.com/takatakca/takatak-v1/pull/176) (ADS publisher SDK) and [PR #177](https://github.com/takatakca/takatak-v1/pull/177) (ADS draft editor) | **Coordinator merge only**; both branch CIs succeeded | Main includes each reviewed PR; main CI passes; deployment tracked separately |
+| P0 | Review and sequence ADS [PR #176](https://github.com/takatakca/takatak-v1/pull/176) (SDK), [#177](https://github.com/takatakca/takatak-v1/pull/177) (draft editor), [#179](https://github.com/takatakca/takatak-v1/pull/179) (public endpoints) and [#180](https://github.com/takatakca/takatak-v1/pull/180) (CPC budget cap) | **Coordinator merge only**; CI for #176/#177 succeeded; #179/#180 pending | Main includes each reviewed PR; main CI passes; deployment tracked separately |
 | P0 | TAKATAK Auth issue [#141](https://github.com/takatakca/takatak-v1/issues/141): real country-aware SMS, signup, recovery and cross-tenant identity | Code work/CI can continue; live provider access required | Staging SMS and server-side membership smoke with synthetic approved identities; sensitive details omitted |
 | P0 | Reconcile approved staging migrations | Blocked pending owner-approved backup/apply; release coordinator only | Backup recorded; approved migration history reconciled; staging readiness passes |
 | P0 | Production build promotion to `takatak.ca` | Blocked by operator prerequisites, reviewed main and 7 `TAKATAK_PRODUCTION_*` secrets | Same SHA as successful main CI, immutable artifact, correct runtime SHA/header, `/api/health/ready` and rollback evidence |
