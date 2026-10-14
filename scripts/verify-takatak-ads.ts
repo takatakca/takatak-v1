@@ -244,6 +244,33 @@ function verifyAhmvPublisherSeed(): void {
   pass("AHMV ADS publisher seed uses .ca canonical domain and canonical routes");
 }
 
+function verifyCampaignDraftUi(): void {
+  const root = process.cwd();
+  const page = fs.readFileSync(
+    path.join(root, "src", "app", "dashboard", "advertising", "page.tsx"),
+    "utf8",
+  );
+  const editor = fs.readFileSync(
+    path.join(root, "src", "components", "ads", "ads-campaign-creator.tsx"),
+    "utf8",
+  );
+  const api = fs.readFileSync(
+    path.join(root, "src", "app", "api", "ads", "campaigns", "route.ts"),
+    "utf8",
+  );
+
+  assert.ok(page.includes('hasEffectivePermission(access, "manage_ads")'));
+  assert.ok(page.includes('adsSubscriptionAllows(data.subscription, "single_site_campaigns")'));
+  assert.ok(page.includes('adsSubscriptionAllows(data.subscription, "network_campaigns")'));
+  assert.ok(page.includes('adsSubscriptionAllows(data.subscription, "max_lead_pro")'));
+  assert.ok(editor.includes('fetch("/api/ads/campaigns"'));
+  assert.ok(editor.includes('scope === "single_site" ? [placementId] : []'));
+  assert.ok(editor.includes('router.refresh()'));
+  assert.ok(api.includes('requireWorkspaceApiPermission("manage_ads")'));
+  assert.ok(api.includes('status: 201'));
+  pass("ADS campaign drafts are permission-scoped and cannot bypass the server gate");
+}
+
 console.log("TAKATAK ADS foundation verification");
 console.log("===================================");
 verifyCatalog();
@@ -251,5 +278,6 @@ verifyLifecycle();
 verifyTargeting();
 verifyPrivacyAndRoutes();
 verifyAhmvPublisherSeed();
+verifyCampaignDraftUi();
 console.log("===================================");
 console.log("PASS  TAKATAK ADS foundation verified");
