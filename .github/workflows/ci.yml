@@ -142,6 +142,9 @@ jobs:
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
 
+      - name: Public ADS endpoint limits and privacy checks
+        run: npx tsx scripts/ads-public-request-tests.ts
+
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
 
