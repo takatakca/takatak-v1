@@ -46,6 +46,9 @@ jobs:
       - name: Required source files are tracked
         run: npm run check:sources
 
+      - name: Agent continuation documentation safeguards
+        run: npm run qa:handoff
+
       - name: Static RLS checks
         run: npm run qa:rls:static
 
