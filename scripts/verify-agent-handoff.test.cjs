@@ -7,26 +7,22 @@ const path = require("node:path");
 const test = require("node:test");
 const { DOCUMENTS, verifyAgentContinuity } = require("./verify-agent-handoff.cjs");
 
+const FIXTURE_HEADINGS = Object.freeze({
+  "PROJECT_STATUS.md": ["# TAKATAK V1 — Project Status", "## Source of truth", "## Release / live status"],
+  "TASK_QUEUE.md": ["# TAKATAK V1 — Executable Task Queue", "## Safe work cycle"],
+  "AGENT_HANDOFF.md": ["## Repository and immutable baseline", "## Last completed task and current task", "## Files modified", "## Verification performed", "## Known blockers", "## Exact next action", "## Restart model"],
+  "DEPLOYMENT.md": ["## Verified architecture and constraints", "## Operator prerequisites", "## Authorized promotion procedure"],
+  "DECISIONS.md": ["## Technical constraints", "## Decisions pending"],
+});
+
 function makeFixture() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "takatak-handoff-"));
   const docs = path.join(root, "docs");
   fs.mkdirSync(docs);
-  for (const [name, headings] of Object.entries(DOCUMENTS)) {
+  for (const name of Object.keys(DOCUMENTS)) {
     fs.writeFileSync(
       path.join(docs, name),
-      headings.map((pattern) => {
-        // Supply a known valid section title, independent of regex formatting.
-        const key = name === "PROJECT_STATUS.md"
-          ? ["# TAKATAK V1 — Project Status", "## Source of truth", "## Release / live status"]
-          : name === "TASK_QUEUE.md"
-            ? ["# TAKATAK V1 — Executable Task Queue", "## Safe work cycle"]
-            : name === "AGENT_HANDOFF.md"
-              ? ["## Repository and immutable baseline", "## Last completed task and current task", "## Files modified", "## Verification performed", "## Known blockers", "## Exact next action", "## Restart model"]
-              : name === "DEPLOYMENT.md"
-                ? ["## Verified architecture and constraints", "## Operator prerequisites", "## Authorized promotion procedure"]
-                : ["## Technical constraints", "## Decisions pending"];
-        return key;
-      })[0].join("\n") + "\n" + "Continuity notes. ".repeat(25),
+      FIXTURE_HEADINGS[name].join("\n") + "\n" + "Continuity notes. ".repeat(25),
     );
   }
   return root;
