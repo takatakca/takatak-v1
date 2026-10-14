@@ -186,6 +186,65 @@ Reference implementation prompt for the FLEXS-side caller:
 
 > Build Local Lab creative generation for TAKATAK ADS. Input: advertiser brand, offer, approved assets, publisher category, placement dimensions, locale and geographic market. Output only placement-compatible creative variants with headline, body, CTA, destination URL and asset references. Never invent discounts, testimonials, addresses, prices or performance claims. Prefer real advertiser assets. Mark generated variants as draft until approved. Produce French and English variants when required by the campaign.
 
+## Publisher SDK (implemented on the TAKATAK host)
+
+The dependency-free browser SDK is served at `/takatak-ads.js` on the TAKATAK app.
+This is a publisher-side integration, **not** permission to sell ads on a
+publisher site before the owner approves the inventory, placements and plan.
+
+For a publisher with its exact HTTPS origin registered in `AdPublisher.allowedOrigins`:
+
+```html
+<div id="takatak-ad-home"></div>
+<script src="https://takatak.ca/takatak-ads.js" defer></script>
+<script>
+  window.addEventListener("DOMContentLoaded", function () {
+    window.TAKATAKAds.render({
+      element: "#takatak-ad-home",
+      apiOrigin: "https://takatak.ca",
+      publisherCode: "ahmv",
+      placementCode: "home-hero-01",
+      context: {
+        country: "Canada",
+        region: "Quebec",
+        city: "Verdun",
+        postalPrefix: "H4G",
+        category: "hockey",
+        locale: "fr",
+        device: "desktop"
+      }
+    });
+  });
+</script>
+```
+
+Only the allowlisted, non-personal contextual fields `country`, `region`,
+`city`, `postalPrefix` (first three alphanumeric characters), `category`,
+`locale`, and `device` (mobile/desktop/tablet) are sent. Never pass
+names, emails, phone numbers, raw IP addresses, precise coordinates or
+fingerprinting data. The SDK drops unrecognized context fields before
+network requests. It sends no cookies.
+
+An impression is counted only after at least 50% of the placement has been
+visible for at least one uninterrupted second in a visible browser tab.
+If the browser does not support `IntersectionObserver`, the SDK does not
+claim viewability or send an impression. Calling `TAKATAKAds.clear(element)`
+on navigation/unmount cancels observation and collapses the placement.
+Concurrent render calls for the same element keep only the latest response.
+Unfilled placements collapse and unsupported destination schemes are rejected.
+
+Cross-site publishers must permit `https://takatak.ca` in their
+`connect-src` Content Security Policy and the SDK origin in
+`script-src`; image sources must also be permitted if creatives use images.
+The server's `allowedOrigins` check is still required; public CORS headers
+do **not** grant publisher authorization.
+
+SDK regression suite (safe to run without a database):
+
+```bash
+node --test scripts/takatak-ads-sdk.test.cjs
+```
+
 ## Publisher SDK prompt
 
 > Build the TAKATAK ADS web SDK as a tiny dependency-free browser client. It receives publisherCode and placementCode from immutable site configuration, sends only contextual/local fields approved by the publisher, renders a clearly labeled ad, emits one impression after viewability criteria are met, emits one click beacon before navigation, never stores third-party tracking cookies, never sends raw IP/fingerprint information, and collapses cleanly on no-fill or API failure. It must work on Next.js, Vite and plain HTML sites.
