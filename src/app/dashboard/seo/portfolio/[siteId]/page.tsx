@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
-import { listSeoManagedSites, getSeoEvidenceSummary, getSeoOpportunities, getSeoProspects, getSeoDomainVerification } from "@/lib/seo/seotakatak-bridge";
-import { createBacklinkProspect, changeBacklinkProspectStatus, changeSeoDomainVerification } from "./actions";
+import { listSeoManagedSites, getSeoEvidenceSummary, getSeoOpportunities, getSeoProspects, getSeoDomainVerification, getSeoContentBriefs } from "@/lib/seo/seotakatak-bridge";
+import { createBacklinkProspect, changeBacklinkProspectStatus, changeSeoDomainVerification, createSeoContentBrief } from "./actions";
 export const dynamic="force-dynamic";
 export const metadata={title:"SEO Evidence — TAKATAK",robots:{index:false,follow:false}};
 
-export default async function SeoEvidencePage({params,searchParams}:{params:Promise<{siteId:string}>;searchParams:Promise<{prospect?:string;verification?:string}>}){
+export default async function SeoEvidencePage({params,searchParams}:{params:Promise<{siteId:string}>;searchParams:Promise<{prospect?:string;verification?:string;brief?:string}>}){
  const {access}=await requireGrowthAccess("/dashboard/seo/portfolio");
  if(access.mode!=="client_scoped")redirect("/dashboard/select-client?next=%2Fdashboard%2Fseo%2Fportfolio");
  if(!hasEffectivePermission(access,"view_reports"))redirect("/dashboard/seo/portfolio");
@@ -17,13 +17,14 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
  const site=portfolio.kind==="ready"?portfolio.sites.find(s=>s.id===siteId):null;
  if(!site)notFound();
  const canManage=hasEffectivePermission(access,"manage_integrations");
- const [report,opportunities,prospects,verification]=await Promise.all([
+ const [report,opportunities,prospects,verification,briefs]=await Promise.all([
   getSeoEvidenceSummary(siteId),getSeoOpportunities(siteId),getSeoProspects(siteId),
-  canManage?getSeoDomainVerification(siteId):Promise.resolve(null)
+  canManage?getSeoDomainVerification(siteId):Promise.resolve(null),getSeoContentBriefs(siteId)
  ]);
  const messages=await searchParams;
  const prospectResult=messages.prospect;
  const verificationResult=messages.verification;
+ const briefResult=messages.brief;
  return <main className="space-y-5">
   <Link href="/dashboard/seo/portfolio" className="text-sm font-semibold text-blue-700 hover:underline">← Managed SEO sites</Link>
   <header className="rounded-2xl bg-gradient-to-r from-[#060D1F] to-[#145CCB] p-6 text-white">
@@ -93,6 +94,36 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
    </section>:<p className="rounded-xl border bg-white p-4 text-sm text-slate-500">No imported queries available for this client site yet. Link an owned Search Console property and use the import button in the portfolio.</p>}
    <Link href={"/api/seo/sites/"+site.id+"/opportunities.csv"} className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">Download keyword sample (CSV) →</Link>
   </section>}
+
+  <section className="space-y-3 rounded-2xl border bg-white p-5">
+    <h2 className="text-lg font-bold text-slate-950">Original SEO content briefs</h2>
+    <p className="text-sm text-slate-600">Create editorial briefs for the site's actual niche and audience. Each brief remains a draft. This feature does not fabricate articles or publish to a CMS.</p>
+    {briefResult?<p role="status" className={"rounded-xl p-3 text-sm "+(briefResult==="created"?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>
+      {briefResult==="created"?"Content brief saved as a draft.":
+       briefResult==="invalid"?"Provide a valid keyword and a detailed editorial angle.":
+       briefResult==="unauthorized"?"You cannot create briefs in this workspace.":
+       "The SEO service has not confirmed your brief. Please retry later."}
+    </p>:null}
+    {briefs.kind==="ready"?<>
+      {briefs.rows.length===0?<p className="text-sm text-slate-500">No content briefs exist for this website yet.</p>:<div className="grid gap-3 md:grid-cols-2">
+        {briefs.rows.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
+          <p className="font-semibold text-slate-900">{item.keyword}</p>
+          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.angle}</p>
+          <p className="mt-2 text-xs font-medium text-slate-500">Draft only — not published</p>
+        </article>)}
+      </div>}
+      {canManage?<form action={createSeoContentBrief} className="grid gap-3 border-t pt-4 sm:grid-cols-2">
+        <input type="hidden" name="siteId" value={siteId}/>
+        <label className="text-xs font-semibold text-slate-700">Topic or target keyword
+          <input name="keyword" required minLength={2} maxLength={160} className="mt-1 w-full rounded-xl border p-3 text-sm" placeholder="Best local services in Montreal"/>
+        </label>
+        <label className="text-xs font-semibold text-slate-700 sm:col-span-2">Original editorial angle
+          <textarea name="angle" required minLength={10} maxLength={500} rows={3} className="mt-1 w-full rounded-xl border p-3 text-sm" placeholder="Who is the reader? What first-hand facts and independent sources should this article include?"/>
+        </label>
+        <button type="submit" className="rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white sm:col-span-2">Save content brief as draft</button>
+      </form>:null}
+    </>:<p className="text-sm text-amber-700">Content brief storage is not connected yet. No drafts are simulated.</p>}
+  </section>
 
   <section className="space-y-3 rounded-2xl border bg-white p-5">
     <div>
