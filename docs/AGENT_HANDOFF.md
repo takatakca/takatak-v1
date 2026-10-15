@@ -39,3 +39,10 @@
 - Earlier V1 PR CI at **b482173b** was green; latest full CI for the opportunity-table commit was still underway as this handoff was written. Check the live PR status, don't infer success from earlier green jobs.
 - No TAKATAK V1 main merge or production deployment was performed. The V1 designated coordinator retains control.
 - **Next exact action:** inspect the newest PR #182 CI, repair any actual failure on the PR branch, then ask the designated coordinator to review/merge/promote. Separately deploy the authorized SEO backend and verify the SHA/two-workspace smoke after issue #1 is cleared.
+
+## Most recent development and CI correction (2026-10-15)
+
+- V1 PR #182 source code (before this docs commit): `be53990e351a924458f849f51024f8c2a5000e1b`.
+- Added manually tracked, workspace-scoped editorial backlink prospects in `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts` and `page.tsx`. Creation and updates use the signed server API, and backend rejects unverified 'earned' status.
+- A prior commit introduced a duplicate `hasEffectivePermission` import; V1 CI reported TS2300 on run `38795240964`. The duplicate was removed at `be53990e`. **Next action: confirm latest V1 PR CI is green**; do not assume the previous failure is resolved without checking the new run.
+- External production constraints unchanged: `takatakca/SEOTAKATAK#1`, no live backend database, V1 coordinator-only merge/promotion.

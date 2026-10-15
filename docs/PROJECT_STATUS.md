@@ -9,3 +9,5 @@ This document records work on SEOTAKATAK integration only. For all other V1 modu
 Update 2026-10-15: the separate SEOTAKATAK API reached green CI at `c1be583a`; its Coolify infrastructure blocker is tracked at `takatakca/SEOTAKATAK#1`. On the V1 PR branch, the signed evidence-summary/CSV integration and SEO-specific access tests were also added. Latest complete V1 build validation remains pending.
 
 The SEO report now displays actual imported keyword rows with click/impression/position figures and a visibly labeled heuristic priority, besides the downloadable CSV. The backend Coolify deploy runner now compares the deployed commit to CI SHA, but no production SEO service is yet running to verify.
+
+2026-10-15 update: editorial backlink prospect CRUD-lite workflow is present within each authorized site's report (create/list/update status). Only identified, researching, contacted and declined statuses are offered; links are not marked earned without provider verification. TypeScript CI found a duplicate permission import at commit `5a392d98`, corrected at `be53990e` and awaiting latest CI confirmation.

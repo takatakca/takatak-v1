@@ -9,3 +9,5 @@ For the SEO work tracked in PR #182:
 - `view_dashboard` allows free scans, `view_reports` allows scoped reporting/export, `manage_integrations` controls site registration, and both `view_reports` plus `manage_integrations` govern verified GSC ingest.
 - Never claim Google indexing or AI search citations without verifiable provider results; the dashboard must show honest connection-required states.
 - V1 `main` and production are controlled by its designated coordinator per `WORKLOG.md`; SEO agent work stays on PR #182 until approved.
+
+- Editable backlink prospect states are limited to identified/researching/contacted/declined. The frontend cannot set 'earned': verifying a backlink needs independent publisher/crawler evidence not available in this deployment.
