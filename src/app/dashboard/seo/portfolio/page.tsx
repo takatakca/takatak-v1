@@ -31,6 +31,7 @@ export default async function SeoPortfolioPage({searchParams}:{searchParams:Prom
      <h2 className="text-lg font-bold text-slate-950">Registered websites ({portfolio.sites.length})</h2>
      {!portfolio.sites.length?<p className="rounded-xl border bg-white p-4 text-sm text-slate-600">No websites registered in this client workspace.</p>:null}
      <div className="grid gap-3 md:grid-cols-2">{portfolio.sites.map(site=><div key={site.id} className="rounded-2xl border bg-white p-5 shadow-sm"><p className="font-semibold text-slate-950">{site.domain}</p><p className="mt-1 text-sm text-slate-600">{site.niche} · {site.market} · {site.locale}</p>
+     {hasEffectivePermission(access,"view_reports")?<Link href={"/dashboard/seo/portfolio/"+site.id} className="mt-2 inline-block text-xs font-semibold text-blue-700 hover:underline">View evidence summary & CSV →</Link>:null}
       {canImport?<form action={importSeoSearchConsoleQueries} className="mt-3">
         <input type="hidden" name="siteId" value={site.id}/>
         <button type="submit" className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-50">Import real Google Search Console queries</button>
