@@ -1,0 +1,38 @@
+# Validates the actual Coolify Docker build without deploying or using real secrets.
+name: Coolify image build
+
+on:
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - scripts/container-healthcheck.cjs
+      - .github/workflows/coolify-image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout exact PR source
+        uses: actions/checkout@v4
+
+      - name: Prepare Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build production container (no push, no secrets)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          build-args: |
+            NEXT_PUBLIC_APP_URL=https://takatak.ca
+            NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=ci-anon-key-not-a-secret
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
