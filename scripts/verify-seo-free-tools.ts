@@ -44,4 +44,11 @@ assert.match(portfolioPage,/importSeoSearchConsoleQueries/,"Portfolio exposes re
 assert.match(evidencePage,/view_reports/,"Evidence requires report permission");
 assert.match(csvRoute,/downloadSeoOpportunities/,"CSV route uses signed secure server adapter");
 assert.match(csvRoute,/Cache-Control.*private, no-store/,"CSV is never publicly cached");
+const backlinkActions=source("src/app/dashboard/seo/portfolio/[siteId]/actions.ts");
+const backlinkPage=source("src/app/dashboard/seo/portfolio/[siteId]/page.tsx");
+assert.match(portfolio,/getSeoProspects/,"Backlink prospects are sourced from scoped SEO backend");
+assert.match(portfolio,/updateSeoProspectStatus/,"Backlink status changes pass through signed server bridge");
+assert.match(backlinkActions,/addSeoProspect/,"Editorial prospects have a real create action");
+assert.match(backlinkPage,/changeBacklinkProspectStatus/,"Editorial status updates are live");
+assert.doesNotMatch(backlinkPage,/<option value="earned">/,"Unverified backlinks must not be marked earned");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");
