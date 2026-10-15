@@ -2,12 +2,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
-import { listSeoManagedSites, getSeoEvidenceSummary, getSeoOpportunities, getSeoProspects } from "@/lib/seo/seotakatak-bridge";
-import { createBacklinkProspect, changeBacklinkProspectStatus } from "./actions";
+import { listSeoManagedSites, getSeoEvidenceSummary, getSeoOpportunities, getSeoProspects, getSeoDomainVerification } from "@/lib/seo/seotakatak-bridge";
+import { createBacklinkProspect, changeBacklinkProspectStatus, changeSeoDomainVerification } from "./actions";
 export const dynamic="force-dynamic";
 export const metadata={title:"SEO Evidence — TAKATAK",robots:{index:false,follow:false}};
 
-export default async function SeoEvidencePage({params,searchParams}:{params:Promise<{siteId:string}>;searchParams:Promise<{prospect?:string}>}){
+export default async function SeoEvidencePage({params,searchParams}:{params:Promise<{siteId:string}>;searchParams:Promise<{prospect?:string;verification?:string}>}){
  const {access}=await requireGrowthAccess("/dashboard/seo/portfolio");
  if(access.mode!=="client_scoped")redirect("/dashboard/select-client?next=%2Fdashboard%2Fseo%2Fportfolio");
  if(!hasEffectivePermission(access,"view_reports"))redirect("/dashboard/seo/portfolio");
@@ -16,11 +16,14 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
  const portfolio=await listSeoManagedSites();
  const site=portfolio.kind==="ready"?portfolio.sites.find(s=>s.id===siteId):null;
  if(!site)notFound();
- const [report,opportunities,prospects]=await Promise.all([
-  getSeoEvidenceSummary(siteId),getSeoOpportunities(siteId),getSeoProspects(siteId)
- ]);
  const canManage=hasEffectivePermission(access,"manage_integrations");
- const prospectResult=(await searchParams).prospect;
+ const [report,opportunities,prospects,verification]=await Promise.all([
+  getSeoEvidenceSummary(siteId),getSeoOpportunities(siteId),getSeoProspects(siteId),
+  canManage?getSeoDomainVerification(siteId):Promise.resolve(null)
+ ]);
+ const messages=await searchParams;
+ const prospectResult=messages.prospect;
+ const verificationResult=messages.verification;
  return <main className="space-y-5">
   <Link href="/dashboard/seo/portfolio" className="text-sm font-semibold text-blue-700 hover:underline">← Managed SEO sites</Link>
   <header className="rounded-2xl bg-gradient-to-r from-[#060D1F] to-[#145CCB] p-6 text-white">
@@ -28,6 +31,43 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
    <h1 className="mt-2 text-2xl font-bold">{site.domain}</h1>
    <p className="mt-1 text-sm text-blue-100">{site.niche} · {site.market}</p>
   </header>
+  {canManage?<section className="space-y-3 rounded-2xl border bg-white p-5">
+    <h2 className="text-lg font-bold text-slate-950">Verify domain ownership (DNS TXT)</h2>
+    <p className="text-sm text-slate-600">Registration alone is not proof of ownership. Only a TAKATAK client manager may start or complete this independent verification. No publishing or site changes occur automatically.</p>
+    {verificationResult?<p role="status" className={"rounded-xl p-3 text-sm "+(["verified","challenge_created"].includes(verificationResult)?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>
+      {verificationResult==="verified"?"Domain ownership confirmed from live DNS.":
+       verificationResult==="challenge_created"?"A new TXT challenge has been generated. Publish it at your DNS provider before checking.":
+       verificationResult==="unauthorized"?"This workspace cannot manage domain verification.":
+       verificationResult==="unconfigured"?"SEOTAKATAK is not configured for DNS ownership verification.":
+       "Ownership is not verified yet. Confirm the TXT record has propagated, or try again later."}
+    </p>:null}
+    {verification?.kind==="ready"?<>
+      <p className={"text-sm font-semibold "+(verification.verification.verified?"text-emerald-700":"text-amber-700")}>
+        {verification.verification.verified?"Verified domain":"Unverified domain"}
+        {verification.verification.verifiedAt?" · "+verification.verification.verifiedAt:""}
+      </p>
+      {verification.verification.challenge&&!verification.verification.verified?<div className="space-y-2 rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <p className="text-xs font-semibold uppercase text-blue-900">Create this DNS TXT record</p>
+        <dl className="space-y-2 text-sm">
+          <div><dt className="text-xs text-blue-800">Host / name</dt><dd className="break-all font-mono text-blue-950">{verification.verification.challenge.recordName}</dd></div>
+          <div><dt className="text-xs text-blue-800">TXT record value</dt><dd className="break-all font-mono text-blue-950">{verification.verification.challenge.recordValue}</dd></div>
+        </dl>
+        <p className="text-xs text-blue-900">Challenges expire after seven days. Creating another challenge invalidates the previous one. DNS propagation may take time.</p>
+      </div>:null}
+      <div className="flex flex-wrap gap-2">
+        <form action={changeSeoDomainVerification}>
+          <input type="hidden" name="siteId" value={site.id}/>
+          <input type="hidden" name="action" value="start"/>
+          <button type="submit" className="rounded-xl border border-blue-200 px-4 py-2.5 text-sm font-semibold text-blue-800 hover:bg-blue-50">{verification.verification.challenge?"Replace TXT challenge":"Generate DNS TXT challenge"}</button>
+        </form>
+        {verification.verification.challenge&&!verification.verification.verified?<form action={changeSeoDomainVerification}>
+          <input type="hidden" name="siteId" value={site.id}/>
+          <input type="hidden" name="action" value="check"/>
+          <button type="submit" className="rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Verify published DNS record</button>
+        </form>:null}
+      </div>
+    </>:<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Domain ownership checks are unavailable until the SEO service and approved database migration are deployed.</p>}
+  </section>:null}
   {report.kind!=="ready"?<p role="status" className="rounded-xl border bg-amber-50 p-4 text-sm text-amber-900">The SEOTAKATAK reporting service is not available for this workspace. No metrics have been invented.</p>:<section className="space-y-4">
    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
     {[
