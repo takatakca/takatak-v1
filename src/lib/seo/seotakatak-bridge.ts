@@ -27,11 +27,12 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
 async function callSeo(path:string,method:"GET"|"POST"|"PATCH",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status)$/.test(path))return {kind:"unavailable" as const,sites:[]};
+ if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status|verification|verification\/(start|check))$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
- const manage=method!=="GET"&&!ingest;
+ const verificationRoute=path.includes("/verification");
+ const manage=(method!=="GET"&&!ingest)||verificationRoute;
  if(ingest&&(!hasEffectivePermission(access,"view_reports")||!hasEffectivePermission(access,"manage_integrations")))return {kind:"unauthorized" as const,sites:[]};
  if(manage&&!hasEffectivePermission(access,"manage_integrations"))return {kind:"unauthorized" as const,sites:[]};
  const config=configuredEndpoint();
@@ -193,4 +194,36 @@ export async function updateSeoProspectStatus(input:{
  const response=await callSeo("/v1/sites/"+input.siteId+"/prospects/"+input.prospectId+"/status",
   "PATCH",{status:input.status});
  return response.kind==="ready"?"updated":response.kind;
+}
+
+export interface SeoVerificationStatus {
+ verified:boolean;
+ verifiedAt:string|null;
+ challenge:{recordName:string;recordValue:string;issuedAt?:string}|null;
+}
+export async function getSeoDomainVerification(siteId:string):Promise<
+ {kind:"ready";verification:SeoVerificationStatus}|{kind:"unavailable"|"unconfigured"|"unauthorized";verification:null}
+>{
+ if(!UUID_PATTERN.test(siteId))return {kind:"unavailable",verification:null};
+ const result=await callSeo("/v1/sites/"+siteId+"/verification","GET");
+ if(result.kind!=="ready")return {kind:result.kind,verification:null};
+ const data=result.data as {verified?:unknown;verifiedAt?:unknown;challenge?:unknown};
+ if(typeof data.verified!=="boolean")return {kind:"unavailable",verification:null};
+ const challenge=data.challenge&&typeof data.challenge==="object"&&
+  "recordName" in data.challenge&&"recordValue" in data.challenge&&
+  typeof data.challenge.recordName==="string"&&typeof data.challenge.recordValue==="string"?
+    {recordName:data.challenge.recordName,recordValue:data.challenge.recordValue,
+      ...("issuedAt" in data.challenge&&typeof data.challenge.issuedAt==="string"?{issuedAt:data.challenge.issuedAt}:{})}:null;
+ return {kind:"ready",verification:{verified:data.verified,
+  verifiedAt:typeof data.verifiedAt==="string"?data.verifiedAt:null,challenge}};
+}
+export async function manageSeoDomainVerification(
+ siteId:string,action:"start"|"check"
+):Promise<"verified"|"challenge_created"|"unavailable"|"unconfigured"|"unauthorized">{
+ if(!UUID_PATTERN.test(siteId))return "unavailable";
+ const result=await callSeo("/v1/sites/"+siteId+"/verification/"+action,"POST");
+ if(result.kind!=="ready")return result.kind;
+ const data=result.data as {verified?:unknown;challenge?:unknown};
+ if(action==="check")return data.verified===true?"verified":"unavailable";
+ return data.challenge?"challenge_created":"unavailable";
 }
