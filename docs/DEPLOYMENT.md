@@ -65,3 +65,7 @@ Run on a suitable Linux/Node 22 workstation or GitHub CI. These commands are **e
 On 2026-10-14, PR #176 and PR #177 each had **successful branch CI**, but both were open. Their changes are not on `main` and there is **no proof of live deployment**. See [PROJECT_STATUS.md](PROJECT_STATUS.md) and [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for precise state.
 
 Do not replace the existing controlled workflow with a broad `push main → deploy` shortcut: it would bypass database approval, user-facing auth checks and rollback protections.
+
+
+## 2026-10-15 hosting status
+PR #181 proposes direct Coolify deployment and its branch CI passed, but it remained unmerged. This does not establish that Coolify/Contabo is the active production host. Respect existing owner release lock and require operator-confirmed deployment target/credentials before changing pipeline activation.

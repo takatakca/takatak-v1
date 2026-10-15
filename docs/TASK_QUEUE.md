@@ -28,3 +28,10 @@ Updated 2026-10-14. **Do not merge, deploy or apply migrations contrary to WORKL
 7. Repeat the next **non-overlapping, unblocked** item.
 
 Original backlog is [DEV-TODO.md](DEV-TODO.md), [WORKLOG.md](../WORKLOG.md), open GitHub issues and knowledgeAI `docs/11-DEV-BACKLOG.md` on its documented branch. This queue is a concise live index, not a replacement.
+
+
+## 2026-10-15 execution delta
+- Coordinator: review and sequence green PR #176–#183, noting the Coolify #181 proposal is not approved/merged; do not skip production change control.
+- Developer: watch #184 1LV streaming-body hardening and #185 CUBAFOOD master contract CI; repair failures, hand off passing PRs.
+- After CUBAFOOD contract owner approval: implement dedicated server receiver with durable nonce/replay ledger, idempotency by event_id, explicit tenant-client mapping, entitlement, and verified user identity-link consent; run staging cross-tenant tests before any activation.
+- Production promotion remains restricted by WORKLOG.md and requires actually verified runtime SHA, not branch CI.

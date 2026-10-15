@@ -48,3 +48,9 @@ Other open PRs at inspection: #175, #173, #166, #163, #156, #155, #149, #137, #1
 ## Completion definition
 
 The project is **not 100% complete**. Completion requires all approved capabilities, tenant isolation, live authorization/provider integration, verified DB migrations, green build/security checks, a confirmed production release SHA, documented rollback and no unresolved critical blockers. See [TASK_QUEUE.md](TASK_QUEUE.md).
+
+
+## 2026-10-15 verified GitHub update
+Main stayed at dcd454e42e95f08c407c53ab1af73ee2b36e0e4f. PRs #176–#183 have successful branch CI but remain unmerged, including Coolify deployment proposal #181, Academy #183 and SEO tools #182.
+PR #184 adds bounded streaming input on 1LV master API, targeted CI passed, full CI pending. PR #185 adds a CUBAFOOD *offline* source contract and HMAC proof, full CI pending. Neither PR enables a live connector, deploys code, or modifies database schema.
+No verified new production SHA, staging apply or provider activation. Do not equate skipped staging/release workflows with deployed artifacts.

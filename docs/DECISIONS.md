@@ -33,3 +33,7 @@ Updated 2026-10-14. Distinguish **owner decisions** from agent implementation ch
 - Whether and when to reopen frozen MIMT/Food Hub/Coolify tracks.
 
 A future owner decision should be appended here with an ISO date, exact scope and reference (issue/PR/WORKLOG), then reflected in the task queue. Do not infer approval merely from code reaching `main` or a successful branch CI.
+
+
+## 2026-10-15 pending proposal (not an owner decision)
+PR #181 for direct Coolify and PR #185 for the CUBAFOOD contract are proposals with no production activation. Neither overrides the 2026-10-10 coordinator-only merge/deploy instruction, the paused Coolify track, or the 1LV-only master API. Owner must explicitly approve source registration and environment change.

@@ -58,3 +58,14 @@ GitHub history is authoritative for the exact final commit. At this file's most 
 ## Restart model
 
 This file makes manual or orchestrator-driven resumption deterministic. **A prompt does not keep an agent running after a session terminates**. External orchestration requires a separately configured, authorized runner; none was created or assumed here.
+
+
+## 2026-10-15 resumption — overrides stale CI entries above
+Verified main SHA: dcd454e42e95f08c407c53ab1af73ee2b36e0e4f; no PR #176–#185 merged at inspection.
+Full GitHub CI succeeded on feature PRs #176–#183 (their current heads). New PR #184 (1LV master JSON streaming cap) has a passing targeted QA step, with full CI pending. New PR #185 (CUBAFOOD event contract/HMAC) is pending full CI.
+Related work branches: fix/master-api-bounded-json-20261015 (last pushed bb3ddca882c94aa3734680a9c0bdfe86409099de) and feat/cubafood-master-contract-20261015 (last pushed 592f3048d170f6d596041f4480102f925c10874a).
+Files changed in PR #184: src/lib/integrations/master-api/http.ts, scripts/master-api-request-body-tests.ts, .github/workflows/ci.yml, WORKLOG.md. Files changed in #185: src/lib/integrations/cubafood/contract.ts, scripts/cubafood-master-contract-tests.ts, docs/CUBAFOOD_MASTER_API_CONTRACT.md, package.json, .github/workflows/ci.yml, WORKLOG.md.
+Verification: GitHub Actions runs https://github.com/takatakca/takatak-v1/actions/runs/38774944793 and https://github.com/takatakca/takatak-v1/actions/runs/38775405051; no local full-build claim, no production deploy, no staging SQL, no secret changes.
+Open PR #181 proposes direct Coolify and passed CI, but the owner release lock and hosting decision in WORKLOG.md were not lifted. Do not treat it as live.
+Next exact action: check #184/#185 latest SHA-specific CI; patch failed tests on their own branches, then coordinate the ordered PR merges and authorized release. The CUBAFOOD live receiver is NOT implemented: require tenant mapping, product entitlement, persisted nonce+idempotency and verified identity linking before it is enabled. Continue other unclaimed items when provider/secrets block this.
+No autonomous orchestrator has been configured; a future runner must read this handoff and verify latest GitHub state.
