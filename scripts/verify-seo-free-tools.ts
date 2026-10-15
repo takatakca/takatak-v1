@@ -56,4 +56,9 @@ assert.match(portfolio,/getSeoDomainVerification/,"DNS challenges are requested 
 assert.match(portfolio,/manageSeoDomainVerification/,"Domain verification action uses the server-only bridge");
 assert.match(backlinkPage,/Verify domain ownership \(DNS TXT\)/,"Client dashboard offers real DNS verification instructions");
 assert.match(domainActions,/changeSeoDomainVerification/,"DNS verification uses authenticated server action");
+const contentActions=source("src/app/dashboard/seo/portfolio/[siteId]/actions.ts");
+assert.match(portfolio,/getSeoContentBriefs/,"Draft briefs are read from the tenant-scoped backend");
+assert.match(portfolio,/addSeoContentBrief/,"Draft briefs are saved through signed TAKATAK service");
+assert.match(contentActions,/createSeoContentBrief/,"Client can submit a brief through a real server action");
+assert.match(backlinkPage,/Draft only — not published/,"Content brief UI does not claim automated publishing");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");
