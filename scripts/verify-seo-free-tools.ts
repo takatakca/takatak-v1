@@ -30,4 +30,18 @@ assert.match(action,/fetchPublicPage\(/,"Live scanning reuses pinned-address fet
 assert.match(action,/listGoogleLinkedSites\(access.activeClientId\)/,"Google inspection uses scoped verified properties");
 assert.match(portfolio,/tenant_id:input.tenantId/,"SEO API token derives tenant from trusted access");
 assert.match(portfolio,/manage_integrations/,"Portfolio writes require authorization");
+const portfolioActions=source("src/app/dashboard/seo/portfolio/actions.ts");
+const portfolioPage=source("src/app/dashboard/seo/portfolio/page.tsx");
+const evidencePage=source("src/app/dashboard/seo/portfolio/[siteId]/page.tsx");
+const csvRoute=source("src/app/api/seo/sites/[siteId]/opportunities.csv/route.ts");
+assert.match(portfolio,/permissions:input.ingest\?\["seo:import"\]/,"Ingest-only scope is separate from a manager token");
+assert.match(portfolio,/getSeoEvidenceSummary/,"Evidence is requested from server-side backend");
+assert.match(portfolio,/downloadSeoOpportunities/,"CSV download stays server side");
+assert.match(portfolioActions,/listGoogleLinkedSites\(access.activeClientId\)/,"Google queries scoped to active client");
+assert.match(portfolioActions,/fetchSearchQueries\(/,"Importer reads actual Google Search Console");
+assert.match(portfolioActions,/hostname\(s.domain\)===hostname\(site.domain\)/,"Imported property must match managed site domain");
+assert.match(portfolioPage,/importSeoSearchConsoleQueries/,"Portfolio exposes real import action");
+assert.match(evidencePage,/view_reports/,"Evidence requires report permission");
+assert.match(csvRoute,/downloadSeoOpportunities/,"CSV route uses signed secure server adapter");
+assert.match(csvRoute,/Cache-Control.*private, no-store/,"CSV is never publicly cached");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");
