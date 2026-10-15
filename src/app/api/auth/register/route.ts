@@ -156,10 +156,13 @@ async function handleRegister(request: NextRequest) {
     );
   }
 
-  const contentType =
-    request.headers.get("content-type")?.toLowerCase() ?? "";
+  const contentType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
 
-  if (!contentType.startsWith("application/json")) {
+  if (contentType !== "application/json") {
     return errorResponse("Invalid request format.", 415);
   }
 
