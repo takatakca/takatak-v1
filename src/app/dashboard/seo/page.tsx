@@ -68,6 +68,11 @@ export default async function SeoOverviewPage({
         </CardBody>
       </Card>
 
+      <Link href="/dashboard/seo/portfolio" className="block rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm transition hover:border-blue-400">
+        <p className="text-sm font-bold">Managed SEO sites →</p>
+        <p className="mt-1 text-xs text-slate-600">See portfolio sites for the active TAKATAK workspace, powered by the SEOTAKATAK service when connected.</p>
+      </Link>
+
       <Link href="/dashboard/seo/free-tools" className="block rounded-2xl border border-blue-200 bg-gradient-to-r from-[#0B1B3D] to-[#1565D8] p-5 text-white shadow-lg transition hover:shadow-xl">
         <p className="text-xs font-bold uppercase tracking-wider text-blue-200">SEOTAKATAK · Client tools</p>
         <p className="mt-1 text-lg font-bold">23 free SEO & AI visibility tools →</p>
