@@ -2,7 +2,7 @@
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
 
-- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI IN PROGRESS / NOT DEPLOYED | Public 23-tool SEO catalog, active workspace permissions, verified Search Console import, signed backend API, scoped report page and CSV download, required handoff docs | check latest PR CI; only V1 coordinator merges/promotes; separate SEO Coolify configuration blocked in takatakca/SEOTAKATAK#1
+- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI IN PROGRESS / NOT DEPLOYED | Public 23-tool catalog, active workspace permissions, verified Search Console import, signed backend API, scoped report + genuine keyword table, private CSV and handoff docs | check latest PR CI; only V1 coordinator merges/promotes; separate SEO Coolify configuration blocked in takatakca/SEOTAKATAK#1
 
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`

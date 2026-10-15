@@ -31,3 +31,11 @@
 4. Continue with `docs/TASK_QUEUE.md` independently; do not wait idly on external secrets.
 
 **No autonomous coding-agent restart orchestrator has been verified.** GitHub workflows cover tests/deploy only.
+
+## Latest resumed work checkpoint (2026-10-15)
+
+- Current substantive branch code revision before this handoff change: **8cd20b5ef03797a328bbe7083f012ba69d605d49**, adding a visible table of real Search Console queries in the client-owned evidence report.
+- Backend SEOTAKATAK passed CI at **bde41fb788b7e239a1baf699469501d925d5edc3**; final backend HEAD includes handoff documentation. Production job still blocked on settings and approved database, tracked at `takatakca/SEOTAKATAK#1`.
+- Earlier V1 PR CI at **b482173b** was green; latest full CI for the opportunity-table commit was still underway as this handoff was written. Check the live PR status, don't infer success from earlier green jobs.
+- No TAKATAK V1 main merge or production deployment was performed. The V1 designated coordinator retains control.
+- **Next exact action:** inspect the newest PR #182 CI, repair any actual failure on the PR branch, then ask the designated coordinator to review/merge/promote. Separately deploy the authorized SEO backend and verify the SHA/two-workspace smoke after issue #1 is cleared.
