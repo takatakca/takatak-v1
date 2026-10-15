@@ -3,7 +3,7 @@
 ## Scope, latest task and branches
 - Work belongs to SEOTAKATAK and **V1 PR #182**, `feat/seotakatak-free-tools-20261015` targeting `main`.
 - Last implemented SEO task: real Search Console import from an already verified client-owned Google property and a client-scoped SEO evidence report/CSV export.
-- Last code commit before this documentation: `b482173b057774fb6d326a9f846daa48d051e07e`. Check GitHub branch head for the documentation commit and new CI run before continuing.
+- Last checked SEO integration code commit before handoff edits: `7a3aa013aa1d3ae25a10fb711f8237b2a1281a87` (added access contract QA). Check GitHub branch head for the documentation commit and new CI run before continuing.
 
 ## Files updated
 - `src/lib/seo/seotakatak-bridge.ts`
@@ -20,7 +20,7 @@
 
 ## Blockers and real deployment
 - PR #182 is **open and not merged**. V1 designated coordinator alone merges/deploys.
-- SEOTAKATAK Coolify deployment and live DB not verified; GitHub production config reported absent `COOLIFY_API_URL` on previous deploy attempt.
+- SEOTAKATAK production blocker is tracked in `takatakca/SEOTAKATAK#1`; Coolify deployment and live DB not verified; GitHub production config reported absent `COOLIFY_API_URL` on previous deploy attempt.
 - No live provider-backed AI ranking/citation metrics are claimed.
 - No user secrets were collected/exposed and no V1 production migrations were run.
 
