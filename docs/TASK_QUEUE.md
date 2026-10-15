@@ -8,6 +8,8 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [x] Signed server-to-server portfolio bridge; server-only signing secret; `seo:import` scope separate from `seo:manage`.
 - [x] Domain-matched, current-workspace-verified Search Console import button and error handling.
 - [x] Summary and CSV download under V1's dashboard and tenant session.
+- [x] Build manager-scoped domain ownership UI with real challenge issuance, TXT display and DNS verification action; add CI contract coverage.
+- [ ] Verify live DNS ownership after owner-approved SEO backend migration 0002 and production configuration.
 - [ ] Check latest CI run for PR #182 and repair any regression.
 - [ ] Coordinator reviews and merges PR #182; no non-coordinator direct main push/production deploy.
 - [ ] Configure SEOTAKATAK separate approved database and Coolify HTTPS service; verify real server-to-server calls and two separate customer workspaces.

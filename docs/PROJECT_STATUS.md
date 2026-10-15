@@ -11,3 +11,7 @@ Update 2026-10-15: the separate SEOTAKATAK API reached green CI at `c1be583a`; i
 The SEO report now displays actual imported keyword rows with click/impression/position figures and a visibly labeled heuristic priority, besides the downloadable CSV. The backend Coolify deploy runner now compares the deployed commit to CI SHA, but no production SEO service is yet running to verify.
 
 2026-10-15 update: editorial backlink prospect CRUD-lite workflow is present within each authorized site's report (create/list/update status). Only identified, researching, contacted and declined statuses are offered; links are not marked earned without provider verification. TypeScript CI found a duplicate permission import at commit `5a392d98`, corrected at `be53990e` and awaiting latest CI confirmation.
+
+### Ownership verification (2026-10-15)
+
+The approved PR branch now includes a manager-only DNS TXT verification card on each SEO site report. The backend issues a random 7-day TXT challenge and only confirms ownership when the exact live DNS record matches. This is a **pending integration**, not live proof: the separate backend needs approved `sql/0001_seo_core.sql` and `sql/0002_domain_verification.sql`, HTTPS Coolify and V1 runtime secrets before the card can work in production. No automatic CMS publishing is enabled.

@@ -46,3 +46,13 @@
 - Added manually tracked, workspace-scoped editorial backlink prospects in `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts` and `page.tsx`. Creation and updates use the signed server API, and backend rejects unverified 'earned' status.
 - A prior commit introduced a duplicate `hasEffectivePermission` import; V1 CI reported TS2300 on run `38795240964`. The duplicate was removed at `be53990e`. **Next action: confirm latest V1 PR CI is green**; do not assume the previous failure is resolved without checking the new run.
 - External production constraints unchanged: `takatakca/SEOTAKATAK#1`, no live backend database, V1 coordinator-only merge/promotion.
+
+## Latest 2026-10-15: DNS ownership verification UI
+
+- **Last completed code before docs**: `aec20c1ac8f4cc54923c0b793c17f675f52db8c7`, which adds domain verification server-only bridge, manager-scoped server actions, explanatory DNS TXT challenge UI and SEO contract tests to V1 PR #182. Full CI for that commit was running in `38799035110`; earlier V1 `774d723a` CI passed. Query current run, never infer latest from earlier green runs.
+- **Modified files**: `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts`, `src/app/dashboard/seo/portfolio/[siteId]/page.tsx`, `scripts/verify-seo-free-tools.ts`, plus docs in this commit.
+- **Backend dependency**: SEOTAKATAK code SHA `4bcdc57c769ba92228e8c98090180a85c904d2bf` CI `38798985084` green; live service unverified, schema `sql/0002_domain_verification.sql` requires approved DB migration. Backend newest documentation commit may have a different SHA; check branch HEAD.
+- **Deployment**: V1 PR #182 remains **unmerged** and no V1 production deployment was performed by this agent. Only designated coordinator may merge/promote. SEOTAKATAK production fails without Coolify and DB setup (SEOTAKATAK issue #1).
+- **Required accesses**: designated V1 coordinator review/release, owner-approved existing DB schema 0001+0002, Coolify credentials/app/HTTPS, matching V1 server-only signing secret; do not expose secrets.
+- **Next exact action**: inspect most recent V1 CI job and fix if red; then hand green PR #182 to authorized coordinator and, once owner authorizes DB, perform a real DNS TXT ownership smoke including negative cross-tenant tests and verify deployed SHA.
+- **No external agent-restart orchestrator has been installed or verified.**

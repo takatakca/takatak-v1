@@ -10,3 +10,7 @@ This is a **SEO-scope supplement**. The general release runbooks remain `docs/TA
 6. Confirm actual V1 and SEO service running SHAs from release records. Until both have been checked, the integration is NOT live.
 
 External requirements (no guessed values): Coolify application/token, approved DB/migration and V1 coordinator authority.
+
+### New domain-ownership schema gate
+
+Backend `sql/0002_domain_verification.sql` must be reviewed and applied in the authorized SEOTAKATAK DB **after** `sql/0001_seo_core.sql`. Test /v1/sites/:id/verification, /start and /check through the V1 workspace. The DNS host is `_seotakatak.<registered-domain>`, the TXT value is `seotakatak-verify=<random-token>`. Pending/incorrect/expired TXT must never appear as verified. The V1 forms must remain visible only to managers and must report unavailability truthfully before schema/runtime readiness. No V1 database migration is introduced by this feature.

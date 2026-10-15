@@ -11,3 +11,5 @@ For the SEO work tracked in PR #182:
 - V1 `main` and production are controlled by its designated coordinator per `WORKLOG.md`; SEO agent work stays on PR #182 until approved.
 
 - Editable backlink prospect states are limited to identified/researching/contacted/declined. The frontend cannot set 'earned': verifying a backlink needs independent publisher/crawler evidence not available in this deployment.
+
+- Registering a site is not equivalent to owning it. The SEO backend issues unique cryptographic DNS TXT challenges, and the domain can only be marked verified after a live TXT match. Only V1 client managers can view/reissue/check challenges, and general site reads redact challenge tokens.
