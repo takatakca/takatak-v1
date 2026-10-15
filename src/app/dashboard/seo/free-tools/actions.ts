@@ -1,7 +1,7 @@
 "use server";
 import { fetchPublicPage, runSiteAudit } from "@/lib/seo/site-audit";
 import { listGoogleLinkedSites } from "@/lib/analytics/service";
-import { fetchGoogleIndexInspection } from "@/lib/integrations/google/client";
+import { fetchGoogleIndexInspection, type GoogleIndexInspection } from "@/lib/integrations/google/client";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
@@ -99,7 +99,7 @@ export async function scanFreeSeoTool(input:{url:string;toolId:string}):Promise<
 }
 
 
-export type GoogleIndexToolResult={ok:false;error:string}|{ok:true;property:string;facts:Record<string,string>};
+export type GoogleIndexToolResult={ok:false;error:string}|{ok:true;property:string;facts:GoogleIndexInspection};
 /** Inspect only a URL whose domain belongs to a linked, verified TAKATAK client workspace. */
 export async function inspectGoogleIndexForWorkspace(rawUrl:string):Promise<GoogleIndexToolResult>{
  const {access}=await getServerAccessContext();
