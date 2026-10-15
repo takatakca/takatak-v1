@@ -8,7 +8,7 @@ import { createBacklinkProspect, changeBacklinkProspectStatus } from "./actions"
 export const dynamic="force-dynamic";
 export const metadata={title:"SEO Evidence — TAKATAK",robots:{index:false,follow:false}};
 
-export default async function SeoEvidencePage({params}:{params:Promise<{siteId:string}>}){
+export default async function SeoEvidencePage({params,searchParams}:{params:Promise<{siteId:string}>;searchParams:Promise<{prospect?:string}>}){
  const {access}=await requireGrowthAccess("/dashboard/seo/portfolio");
  if(access.mode!=="client_scoped")redirect("/dashboard/select-client?next=%2Fdashboard%2Fseo%2Fportfolio");
  if(!hasEffectivePermission(access,"view_reports"))redirect("/dashboard/seo/portfolio");
@@ -21,6 +21,7 @@ export default async function SeoEvidencePage({params}:{params:Promise<{siteId:s
   getSeoEvidenceSummary(siteId),getSeoOpportunities(siteId),getSeoProspects(siteId)
  ]);
  const canManage=hasEffectivePermission(access,"manage_integrations");
+ const prospectResult=(await searchParams).prospect;
  return <main className="space-y-5">
   <Link href="/dashboard/seo/portfolio" className="text-sm font-semibold text-blue-700 hover:underline">← Managed SEO sites</Link>
   <header className="rounded-2xl bg-gradient-to-r from-[#060D1F] to-[#145CCB] p-6 text-white">
@@ -57,6 +58,7 @@ export default async function SeoEvidencePage({params}:{params:Promise<{siteId:s
   <section className="space-y-3 rounded-2xl border bg-white p-5">
     <div>
       <h2 className="text-lg font-bold text-slate-950">Editorial backlink prospects</h2>
+      {prospectResult?<p role="status" className={"mt-2 rounded-xl p-3 text-sm "+(["created","updated"].includes(prospectResult)?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>{prospectResult==="created"?"Editorial opportunity recorded.":prospectResult==="updated"?"Prospect status saved.":prospectResult==="invalid"?"Check the publication URL, description and selected status.":prospectResult==="unauthorized"?"Your workspace role cannot modify these prospects.":"The backlink service did not confirm your change. Retry later."}</p>:null}
       <p className="mt-1 text-sm text-slate-600">Track relevant external publications and editorial outreach. A prospect is not a verified earned backlink; no emails are sent automatically.</p>
     </div>
     {prospects.kind==="ready"?<div className="space-y-3">
