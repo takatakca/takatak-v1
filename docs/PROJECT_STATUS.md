@@ -54,3 +54,7 @@ The project is **not 100% complete**. Completion requires all approved capabilit
 Main stayed at dcd454e42e95f08c407c53ab1af73ee2b36e0e4f. PRs #176–#183 have successful branch CI but remain unmerged, including Coolify deployment proposal #181, Academy #183 and SEO tools #182.
 PR #184 adds bounded streaming input on 1LV master API, targeted CI passed, full CI pending. PR #185 adds a CUBAFOOD *offline* source contract and HMAC proof, full CI pending. Neither PR enables a live connector, deploys code, or modifies database schema.
 No verified new production SHA, staging apply or provider activation. Do not equate skipped staging/release workflows with deployed artifacts.
+
+## 2026-10-15 additional security and continuity update
+
+[PR #186](https://github.com/takatakca/takatak-v1/pull/186) hardens the shared authenticated dashboard JSON reader against forged/omitted Content-Length and memory exhaustion; full CI pending. [PR #184](https://github.com/takatakca/takatak-v1/pull/184) achieved successful full CI. No production promotion has been verified. An hourly ChatGPT task to request repository resumption was enabled; this is not a GitHub deployment runner.

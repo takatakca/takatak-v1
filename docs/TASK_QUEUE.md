@@ -35,3 +35,9 @@ Original backlog is [DEV-TODO.md](DEV-TODO.md), [WORKLOG.md](../WORKLOG.md), ope
 - Developer: watch #184 1LV streaming-body hardening and #185 CUBAFOOD master contract CI; repair failures, hand off passing PRs.
 - After CUBAFOOD contract owner approval: implement dedicated server receiver with durable nonce/replay ledger, idempotency by event_id, explicit tenant-client mapping, entitlement, and verified user identity-link consent; run staging cross-tenant tests before any activation.
 - Production promotion remains restricted by WORKLOG.md and requires actually verified runtime SHA, not branch CI.
+
+## Additional immediate follow-up — 2026-10-15
+
+- Review [PR #186](https://github.com/takatakca/takatak-v1/pull/186) shared workspace JSON reader; verify targeted CI, TypeScript, lint and application-flow tests on its exact head.
+- #184 completed full green CI. #185 targeted CUBAFOOD contract QA passed while full CI remained running at last inspection. Coordinate reviews without unauthorized merge.
+- Hourly agent reactivation is configured via ChatGPT task, but progress and publication still require connector privileges and the repository's owner authorization.

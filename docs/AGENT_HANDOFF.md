@@ -69,3 +69,11 @@ Verification: GitHub Actions runs https://github.com/takatakca/takatak-v1/action
 Open PR #181 proposes direct Coolify and passed CI, but the owner release lock and hosting decision in WORKLOG.md were not lifted. Do not treat it as live.
 Next exact action: check #184/#185 latest SHA-specific CI; patch failed tests on their own branches, then coordinate the ordered PR merges and authorized release. The CUBAFOOD live receiver is NOT implemented: require tenant mapping, product entitlement, persisted nonce+idempotency and verified identity linking before it is enabled. Continue other unclaimed items when provider/secrets block this.
 No autonomous orchestrator has been configured; a future runner must read this handoff and verify latest GitHub state.
+
+## 2026-10-15 later update — continuous resume configuration
+
+- New [PR #186](https://github.com/takatakca/takatak-v1/pull/186): shared authenticated dashboard JSON reader now enforces a streaming byte ceiling, retains CSRF/origin checks, and adds CI regression test. Branch last pushed SHA `e566972c761949cece05e5858e7e239e2a20512a`; full CI was running at this update.
+- [PR #184](https://github.com/takatakca/takatak-v1/pull/184) completed full green CI in run [38774944793](https://github.com/takatakca/takatak-v1/actions/runs/38774944793). [PR #185](https://github.com/takatakca/takatak-v1/pull/185) passed targeted CUBAFOOD contract safeguards; full CI continued.
+- A ChatGPT scheduled resume task named **TAKATAK V1 — Reprise GitHub** was created and enabled on 2026-10-15 for hourly execution. It will request a new authorized review/development run, subject to connected tool permissions. This is periodic, not a continuous unattended process, and cannot bypass the coordinator release gate.
+- Earlier notes saying no orchestrator existed were true at their timestamp but are now superseded by the enabled hourly task. Its first actual successful run is not yet verified.
+- Exact next action: inspect the latest SHA-specific CI for #185, #186 and the handoff PR #178, correct any failed step, update SHA/CI evidence, and hand off green PRs. Do not assume any deployed revision on takatak.ca.
