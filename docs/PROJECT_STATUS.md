@@ -67,3 +67,6 @@ No verified new production SHA, staging apply or provider activation. Do not equ
 - [PR #187](https://github.com/takatakca/takatak-v1/pull/187) now protects authenticated JSON parsing and invited-account password update against untrusted origin and oversized payloads. Its GitHub [CI run 38791407973](https://github.com/takatakca/takatak-v1/actions/runs/38791407973) was in progress at this inspection.
 - [PR #181](https://github.com/takatakca/takatak-v1/pull/181) suggests direct Coolify hosting but is **not merged** and not live by virtue of its green CI. Existing release authority and migration decisions remain in WORKLOG.md.
 - No stage/production SQL was applied, no provider secret changed, no real phone SMS flow tested, and no successful new runtime SHA observed. Project remains incomplete.
+
+## 2026-10-15 migration verification
+Read-only TAKATAK STAGING project status: ACTIVE_HEALTHY. Supabase history includes phone-only profile email migration; exact phone-only/website-attachment names did not appear in the separate Prisma history search, though the latter contains 87 completed migrations. This does not prove whether SQL is applied. Live SMS provider remains unverified; no schema mutations or deployment occurred.
