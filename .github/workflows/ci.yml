@@ -97,6 +97,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: TAKATAK master API bounded JSON safeguards
+        run: npx tsx --require ./scripts/register-server-only.cjs scripts/master-api-request-body-tests.ts
+
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
