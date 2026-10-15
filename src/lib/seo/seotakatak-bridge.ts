@@ -175,6 +175,11 @@ export async function addSeoProspect(input:{
 }):Promise<"created"|"invalid"|"unconfigured"|"unavailable"|"unauthorized">{
  if(!UUID_PATTERN.test(input.siteId)||input.publication.length<2||input.publication.length>150||
     input.url.length>512||input.relevance.length<10||input.relevance.length>500)return "invalid";
+ try {
+  const publicationUrl=new URL(input.url);
+  if(publicationUrl.protocol!=="https:"||publicationUrl.username||publicationUrl.password||publicationUrl.port)
+   return "invalid";
+ }catch{return "invalid";}
  const response=await callSeo("/v1/sites/"+input.siteId+"/prospects","POST",{
   publication:input.publication,url:input.url,relevance:input.relevance
  });
