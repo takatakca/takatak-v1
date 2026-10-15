@@ -50,3 +50,6 @@ Original backlog is [DEV-TODO.md](DEV-TODO.md), [WORKLOG.md](../WORKLOG.md), ope
 3. **Auth P0 [#141](https://github.com/takatakca/takatak-v1/issues/141):** real staging Supabase/Twilio Canadian phone OTP proof, strict identity mapping and two-tenant isolation remain required. Do not treat synthetic CI as a real SMS receipt.
 4. **CUBAFOOD [#161](https://github.com/takatakca/takatak-v1/issues/161):** #185 defines only the offline contract; do not enable API without verified tenant mapping, entitlements, replay storage, and user-consented identity linking.
 5. **Go live:** await current owner-approved host, staging/production migrations and secrets; verify real `/api/health/ready` and deployed SHA.
+
+## Staging next audit (2026-10-15)
+Compare Supabase and Prisma migration histories for the phone-only profile email and lead attachments in audit-only mode, then obtain backup and coordinator/owner authorization before applying or resolving any migration. Do not replay SQL based only on differing history names. Verify real Supabase Twilio Phone Auth SMS separately under issue #141.
