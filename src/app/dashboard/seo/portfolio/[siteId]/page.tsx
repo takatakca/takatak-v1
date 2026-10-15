@@ -3,7 +3,6 @@ import { notFound, redirect } from "next/navigation";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { listSeoManagedSites, getSeoEvidenceSummary, getSeoOpportunities, getSeoProspects } from "@/lib/seo/seotakatak-bridge";
-import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { createBacklinkProspect, changeBacklinkProspectStatus } from "./actions";
 export const dynamic="force-dynamic";
 export const metadata={title:"SEO Evidence — TAKATAK",robots:{index:false,follow:false}};
