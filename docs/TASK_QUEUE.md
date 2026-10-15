@@ -41,3 +41,12 @@ Original backlog is [DEV-TODO.md](DEV-TODO.md), [WORKLOG.md](../WORKLOG.md), ope
 - Review [PR #186](https://github.com/takatakca/takatak-v1/pull/186) shared workspace JSON reader; verify targeted CI, TypeScript, lint and application-flow tests on its exact head.
 - #184 completed full green CI. #185 targeted CUBAFOOD contract QA passed while full CI remained running at last inspection. Coordinate reviews without unauthorized merge.
 - Hourly agent reactivation is configured via ChatGPT task, but progress and publication still require connector privileges and the repository's owner authorization.
+
+
+## 2026-10-15 newest actionable follow-up
+
+1. **CI:** inspect SHA `3d993f2b00e07335c7f9c375902ad33f56a123c0` and latest branch head for [PR #187](https://github.com/takatakca/takatak-v1/pull/187), fix any test/typecheck/build failures, and update the branch WORKLOG. It contains Auth JSON streaming, MIME and invited-password CSRF fixes and a regression test in `npm run test:auth`.
+2. **Review:** owner/coordinator to merge accepted green PRs one at a time in compatible order; full CI is green on #176–#186 but merge/deploy remains withheld. Revalidate main after every merge and reconcile common CI/WORKLOG edits.
+3. **Auth P0 [#141](https://github.com/takatakca/takatak-v1/issues/141):** real staging Supabase/Twilio Canadian phone OTP proof, strict identity mapping and two-tenant isolation remain required. Do not treat synthetic CI as a real SMS receipt.
+4. **CUBAFOOD [#161](https://github.com/takatakca/takatak-v1/issues/161):** #185 defines only the offline contract; do not enable API without verified tenant mapping, entitlements, replay storage, and user-consented identity linking.
+5. **Go live:** await current owner-approved host, staging/production migrations and secrets; verify real `/api/health/ready` and deployed SHA.

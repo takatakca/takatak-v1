@@ -37,3 +37,8 @@ A future owner decision should be appended here with an ISO date, exact scope an
 
 ## 2026-10-15 pending proposal (not an owner decision)
 PR #181 for direct Coolify and PR #185 for the CUBAFOOD contract are proposals with no production activation. Neither overrides the 2026-10-10 coordinator-only merge/deploy instruction, the paused Coolify track, or the 1LV-only master API. Owner must explicitly approve source registration and environment change.
+
+
+## 2026-10-15 implementation note (not a new owner authorization)
+
+Security PR #187 proposes a strict same-origin/bounded-JSON check before invited-user password changes; it does not change provider configuration. PR #185 defines but does not activate the CUBAFOOD source; PR #181 does not by itself authorize direct Coolify production. The operator/coordinator release-control decision from WORKLOG.md remains in effect.

@@ -69,3 +69,8 @@ Do not replace the existing controlled workflow with a broad `push main → depl
 
 ## 2026-10-15 hosting status
 PR #181 proposes direct Coolify deployment and its branch CI passed, but it remained unmerged. This does not establish that Coolify/Contabo is the active production host. Respect existing owner release lock and require operator-confirmed deployment target/credentials before changing pipeline activation.
+
+
+## 2026-10-15 live-status cross-check
+
+At inspection, `main=dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`, release/staging runs were frequently **skipped**, and no later deploy-to-`takatak.ca` was verified. Owner gate still limits deployment to its designated coordinator. The direct Coolify proposal #181 is an unmerged branch, not proof the production host switched. Reconcile this with the operator before promotion.

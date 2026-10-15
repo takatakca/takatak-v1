@@ -58,3 +58,12 @@ No verified new production SHA, staging apply or provider activation. Do not equ
 ## 2026-10-15 additional security and continuity update
 
 [PR #186](https://github.com/takatakca/takatak-v1/pull/186) hardens the shared authenticated dashboard JSON reader against forged/omitted Content-Length and memory exhaustion; full CI pending. [PR #184](https://github.com/takatakca/takatak-v1/pull/184) achieved successful full CI. No production promotion has been verified. An hourly ChatGPT task to request repository resumption was enabled; this is not a GitHub deployment runner.
+
+
+## 2026-10-15 15:04 America/Toronto — verified continuation
+
+- Main remained at `dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`. No observed merge of PR #176–#187.
+- On current PR heads, GitHub CI passed for #176–#186, including #178 agent continuity, #184 bounded 1LV API, #185 offline CUBAFOOD contract and #186 shared workspace input validation.
+- [PR #187](https://github.com/takatakca/takatak-v1/pull/187) now protects authenticated JSON parsing and invited-account password update against untrusted origin and oversized payloads. Its GitHub [CI run 38791407973](https://github.com/takatakca/takatak-v1/actions/runs/38791407973) was in progress at this inspection.
+- [PR #181](https://github.com/takatakca/takatak-v1/pull/181) suggests direct Coolify hosting but is **not merged** and not live by virtue of its green CI. Existing release authority and migration decisions remain in WORKLOG.md.
+- No stage/production SQL was applied, no provider secret changed, no real phone SMS flow tested, and no successful new runtime SHA observed. Project remains incomplete.

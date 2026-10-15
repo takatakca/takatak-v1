@@ -77,3 +77,22 @@ No autonomous orchestrator has been configured; a future runner must read this h
 - A ChatGPT scheduled resume task named **TAKATAK V1 — Reprise GitHub** was created and enabled on 2026-10-15 for hourly execution. It will request a new authorized review/development run, subject to connected tool permissions. This is periodic, not a continuous unattended process, and cannot bypass the coordinator release gate.
 - Earlier notes saying no orchestrator existed were true at their timestamp but are now superseded by the enabled hourly task. Its first actual successful run is not yet verified.
 - Exact next action: inspect the latest SHA-specific CI for #185, #186 and the handoff PR #178, correct any failed step, update SHA/CI evidence, and hand off green PRs. Do not assume any deployed revision on takatak.ca.
+
+
+## 2026-10-15 15:04 America/Toronto — latest canonical resume checkpoint
+
+**Last task completed:** security corrections committed and pushed as [PR #187](https://github.com/takatakca/takatak-v1/pull/187), branch `fix/auth-origin-json-bounds-20261015`, head `3d993f2b00e07335c7f9c375902ad33f56a123c0`. Its full CI was **in progress**, not claimed green. PRs #176–#186 had green full CI on their latest heads.
+
+**Current task:** inspect and resolve PR #187 CI (run `38791407973`), then hand off coordinator-reviewed sequential merges. If green, select the next unclaimed, unblocked code task from TASK_QUEUE and original DEV-TODO; do not duplicate currently open PRs.
+
+**Files changed on PR #187:** `src/lib/auth/trusted-origin.ts`, `src/lib/auth/auth-json.ts`, `src/app/api/auth/register/route.ts`, `src/app/api/auth/complete-invitation/route.ts`, `scripts/auth-json-origin-tests.ts`, `package.json`, `WORKLOG.md`. Auth assertions are included in the existing `npm run test:auth` run; no new migrations.
+
+**Verification evidence:** confirmed repository and open PR list through GitHub, inspected AGENTS.md, top WORKLOG.md and prior handoff; current main SHA `dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`. Green CI on #176–#186 including [#184](https://github.com/takatakca/takatak-v1/actions/runs/38774944793), [#185](https://github.com/takatakca/takatak-v1/actions/runs/38775479258), [#186](https://github.com/takatakca/takatak-v1/actions/runs/38776174356). New #187 CI: https://github.com/takatakca/takatak-v1/actions/runs/38791407973. No local full Next.js build, production SMS, live deployment or production secrets verification performed.
+
+**Known blockers:** WORKLOG.md coordinator-only merge/deploy lock; unresolved production hosting decision (new Coolify PR #181 unmerged), 7 environment deployment credentials for documented MochaHost path, staging database backup/migration approval, actual Supabase/Twilio tests and app/provider entitlements. Keep all credential values out of git.
+
+**Deployment status:** `main` unchanged as above, staging/release workflow runs observed skipped, live site revision not verified. A green feature PR is not proof of public release.
+
+**Exact next action:** fetch PR #187 head and run result, repair its own branch if red; update WORKLOG and this handoff; then execute next **authorized** task. Preserve the existing hourly scheduled continuation task; it cannot independently lift coordinator approval or access requirements.
+
+This documentation branch is PR #178. This handoff commit itself advances its branch head; confirm new SHA via GitHub after the update.
