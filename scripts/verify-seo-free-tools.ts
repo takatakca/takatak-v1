@@ -51,4 +51,9 @@ assert.match(portfolio,/updateSeoProspectStatus/,"Backlink status changes pass t
 assert.match(backlinkActions,/addSeoProspect/,"Editorial prospects have a real create action");
 assert.match(backlinkPage,/changeBacklinkProspectStatus/,"Editorial status updates are live");
 assert.doesNotMatch(backlinkPage,/<option value="earned">/,"Unverified backlinks must not be marked earned");
+const domainActions=source("src/app/dashboard/seo/portfolio/[siteId]/actions.ts");
+assert.match(portfolio,/getSeoDomainVerification/,"DNS challenges are requested via TAKATAK signed backend");
+assert.match(portfolio,/manageSeoDomainVerification/,"Domain verification action uses the server-only bridge");
+assert.match(backlinkPage,/Verify domain ownership \(DNS TXT\)/,"Client dashboard offers real DNS verification instructions");
+assert.match(domainActions,/changeSeoDomainVerification/,"DNS verification uses authenticated server action");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");
