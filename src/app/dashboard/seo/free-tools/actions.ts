@@ -1,5 +1,5 @@
 "use server";
-import { fetchPublicPage } from "@/lib/seo/site-audit";
+import { fetchPublicPage, runSiteAudit } from "@/lib/seo/site-audit";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
@@ -30,7 +30,7 @@ function pageFacts(html:string,finalUrl:string):Record<string,string|number|bool
     catch{canonicalStatus="Invalid canonical URL";}
   }
   return {
-    title,description:meta("description"),h1,h1Count:h1.length,canonical,canonicalStatus,
+    title,titleLength:title.length,description:meta("description"),descriptionLength:meta("description").length,h1,h1Count:h1.length,canonical,canonicalStatus,
     robotsMeta:meta("robots"),ogTitle:meta("og:title"),ogDescription:meta("og:description"),
     ogImage:meta("og:image"),twitterCard:meta("twitter:card"),
     jsonLdBlocks:(html.match(/<script\b[^>]*type\s*=\s*["']?application\/ld\+json/gi)||[]).length,
@@ -66,6 +66,22 @@ export async function scanFreeSeoTool(input:{url:string;toolId:string}):Promise<
   if(!allowed.has(input.toolId))return {ok:false,error:"This tool does not support live scanning."};
   if(typeof input.url!=="string"||input.url.length>1800)return {ok:false,error:"Enter a valid public website URL."};
   try{
+    if(input.toolId==="geo-audit"||input.toolId==="ai-seo-audit"){
+      const result=await runSiteAudit(input.url);
+      if(!result.ok)return {ok:false,error:result.error};
+      const audit=result.report;
+      const priorityFixes=audit.checks.filter(check=>check.status!=="pass").sort((a,b)=>b.weight-a.weight).slice(0,10).map(check=>check.label+": "+check.detail);
+      return {ok:true,finalUrl:audit.finalUrl,status:audit.statusCode,inspectedAt:audit.auditedAt,type:"page",data:{
+        technicalSeoScore:audit.score,
+        title:audit.facts.title??"",description:audit.facts.description??"",
+        h1Count:audit.facts.h1.length,h1:audit.facts.h1,
+        totalWords:audit.facts.wordCount,
+        checksPassed:audit.checks.filter(check=>check.status==="pass").length,
+        checksNeedingAttention:audit.checks.filter(check=>check.status!=="pass").length,
+        priorityFixes,
+        note:"Technical readiness only; AI assistant indexing and citation ranking are not measured.",
+      }};
+    }
     const supplied=/^https?:\/\//i.test(input.url.trim())?input.url.trim():"https://"+input.url.trim();
     const url=new URL(supplied);
     if(!["https:","http:"].includes(url.protocol)||url.username||url.password)return {ok:false,error:"Enter a public http/https URL."};
