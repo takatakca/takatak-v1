@@ -19,24 +19,65 @@ export function authorizeMasterRequest(request: Request) {
   );
 }
 
+/**
+ * Streaming bound on incoming API bodies. Never call request.text() before
+ * enforcing a size ceiling: a forged Content-Length can otherwise allocate
+ * arbitrarily large user-supplied data.
+ */
+async function readBoundedMasterBody(request: Request): Promise<string> {
+  const lengthHeader = request.headers.get("content-length");
+  if (lengthHeader !== null) {
+    const length = Number(lengthHeader);
+    if (!Number.isSafeInteger(length) || length < 0) {
+      throw new MasterApiInputError("Invalid Content-Length.");
+    }
+    if (length > MASTER_API_MAX_BODY_BYTES) {
+      throw new MasterApiInputError("Payload too large.");
+    }
+  }
+
+  if (!request.body) {
+    throw new MasterApiInputError("JSON object required.");
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Buffer[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MASTER_API_MAX_BODY_BYTES) {
+        await reader.cancel().catch(() => undefined);
+        throw new MasterApiInputError("Payload too large.");
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } catch (error) {
+    if (error instanceof MasterApiInputError) throw error;
+    throw new MasterApiInputError("Request body could not be read.");
+  } finally {
+    reader.releaseLock();
+  }
+
+  return Buffer.concat(chunks, total).toString("utf8");
+}
+
 export async function readMasterJson(request: Request): Promise<{
   rawBody: string;
   body: Record<string, unknown>;
 }> {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) {
+  const mediaType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  if (mediaType !== "application/json") {
     throw new MasterApiInputError("Content-Type must be application/json.");
   }
 
-  const declared = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declared) && declared > MASTER_API_MAX_BODY_BYTES) {
-    throw new MasterApiInputError("Payload too large.");
-  }
-
-  const rawBody = await request.text();
-  if (Buffer.byteLength(rawBody, "utf8") > MASTER_API_MAX_BODY_BYTES) {
-    throw new MasterApiInputError("Payload too large.");
-  }
+  const rawBody = await readBoundedMasterBody(request);
 
   let body: unknown;
   try {
