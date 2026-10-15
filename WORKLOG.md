@@ -2,6 +2,8 @@
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
 
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI pending | Added client-scoped real SEO content briefs, draft-only editor/queue, validated domain-ownership UI, scoped server bridge and QA; fixed JSX lint regression `4f70342c` | Check latest CI; only coordinator merges/promotes; backend Coolify/db remain blocked in SEOTAKATAK issue #1
+
 - 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | DNS ownership flow implemented; CI ongoing | Client manager-only TXT record challenge and verification, server-only signed bridge, SQL migration 0002 pending owner approval | Check newest V1 CI; coordinator-only merge/promotion; configure separate backend per SEOTAKATAK issue #1
 
 - 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI IN PROGRESS / NOT DEPLOYED | Public 23-tool catalog, active workspace permissions, verified Search Console import, signed backend API, scoped SEO report + real query table, private CSV, editorial backlink prospect forms/status and handoff docs | check latest PR CI; only V1 coordinator merges/promotes; separate SEO Coolify configuration blocked in takatakca/SEOTAKATAK#1

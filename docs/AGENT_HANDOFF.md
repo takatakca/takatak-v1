@@ -56,3 +56,14 @@
 - **Required accesses**: designated V1 coordinator review/release, owner-approved existing DB schema 0001+0002, Coolify credentials/app/HTTPS, matching V1 server-only signing secret; do not expose secrets.
 - **Next exact action**: inspect most recent V1 CI job and fix if red; then hand green PR #182 to authorized coordinator and, once owner authorizes DB, perform a real DNS TXT ownership smoke including negative cross-tenant tests and verify deployed SHA.
 - **No external agent-restart orchestrator has been installed or verified.**
+
+## Latest code checkpoint and active work — 2026-10-15
+
+- **Last completed frontend implementation**: `4f70342cb30efd5316a054e93c17cd3c76204b98` (V1 PR #182 branch). New content-brief creation/listing UI is wired to the real SEOTAKATAK draft-only API, with TAKATAK client-scoped server authorization; fixed the React JSX apostrophe lint error detected on CI run `38799718081`.
+- **Files**: `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts`, `src/app/dashboard/seo/portfolio/[siteId]/page.tsx`, `scripts/verify-seo-free-tools.ts`, docs files in this commit.
+- **Backend latest green code SHA**: `c1d7861fe731d0fd7b14ac6cddcea8e8c3e5ab6d` — CI run `38799814574` passed; database readiness now requires DNS verification columns, per-tenant rate limits tested. Backend deploy remains unsuccessful due incomplete Coolify config; issue `takatakca/SEOTAKATAK#1`.
+- **Current unfinished task**: inspect the full V1 CI for this branch after lint correction. All other V1 deploy/merge operations remain reserved for the designated coordinator. Do not claim production after an unmerged PR.
+- **Commands/QA**: V1 CI runs Typecheck, Lint, SEO free-tools contracts, website SEO, security tests, ephemeral DB tests and production webpack build. The latest complete run result must be verified from GitHub Actions.
+- **Human prerequisites**: V1 coordinator authorization, SEOTAKATAK existing owner-approved PostgreSQL project and migrations 0001+0002, Coolify app URL/UUID/token/HTTPS, runtime server-only signing key and Google credentials for verified GSC. Do not expose values in any GitHub file.
+- **Exact next action**: read newest GitHub Actions failure/success for V1 PR #182, fix only actual failing files, then hand off green PR to designated coordinator. Independently complete approved database/Coolify configuration (issue #1) and smoke-test two clients, verified DNS and Search Console import on deployed SHA.
+- **Agent restart**: no external autonomous coding-agent orchestrator has been connected or verified.

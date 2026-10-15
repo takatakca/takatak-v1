@@ -8,6 +8,8 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [x] Signed server-to-server portfolio bridge; server-only signing secret; `seo:import` scope separate from `seo:manage`.
 - [x] Domain-matched, current-workspace-verified Search Console import button and error handling.
 - [x] Summary and CSV download under V1's dashboard and tenant session.
+- [x] Add actual client-scoped content brief creation and draft-only listing in site report.
+- [ ] Add content editorial review / approval and approved CMS publishing only after verified ownership, product rights, audit trail and owner approval.
 - [x] Build manager-scoped domain ownership UI with real challenge issuance, TXT display and DNS verification action; add CI contract coverage.
 - [ ] Verify live DNS ownership after owner-approved SEO backend migration 0002 and production configuration.
 - [ ] Check latest CI run for PR #182 and repair any regression.

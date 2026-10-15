@@ -14,3 +14,7 @@ External requirements (no guessed values): Coolify application/token, approved D
 ### New domain-ownership schema gate
 
 Backend `sql/0002_domain_verification.sql` must be reviewed and applied in the authorized SEOTAKATAK DB **after** `sql/0001_seo_core.sql`. Test /v1/sites/:id/verification, /start and /check through the V1 workspace. The DNS host is `_seotakatak.<registered-domain>`, the TXT value is `seotakatak-verify=<random-token>`. Pending/incorrect/expired TXT must never appear as verified. The V1 forms must remain visible only to managers and must report unavailability truthfully before schema/runtime readiness. No V1 database migration is introduced by this feature.
+
+### Additional V1 QA before coordinator promotion
+
+Test content briefs for authorized client A (create + list, draft-only). Ensure client B cannot read/write A's site by changing siteId and read-only users cannot submit content briefs. The form must never claim that a draft was published. Recheck latest full V1 CI run after the `4f70342c` lint fix. SEO backend production `/ready` now checks migrations 0001 and 0002; Coolify still requires operator-provided environment settings.
