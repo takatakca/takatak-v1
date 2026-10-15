@@ -99,3 +99,6 @@ This documentation branch is PR #178. This handoff commit itself advances its br
 
 ## 2026-10-15 staging check (read-only)
 TAKATAK STAGING reports ACTIVE_HEALTHY. The Supabase migration ledger contains the phone-only profile email change. The separate Prisma history shows 87 completed entries, but neither the exact phone-only migration name nor the website attachment migration name appeared in a targeted read-only lookup. This difference needs reconciliation before any approved database release; do not infer that SQL is missing. No staging write or SMS delivery test was performed. The Twilio provider remains unverified. Next action: check PR #187 full CI and use the existing migration audit-only workflow under release-coordinator control.
+
+### 2026-10-15 staging schema confirmation
+A further read-only SQL inspection confirmed `public.profiles.email` is nullable `text` (matching the approved phone-only schema target despite a differing history name). `to_regclass('public.lead_attachments')` returned NULL: the attachments table does not exist in staging. Do not reapply phone-only SQL; the coordinator must use the documented audit/reconcile history-alias path. Attachment migration remains pending owner approval, database backup, and authorized staging apply. No SQL write occurred.
