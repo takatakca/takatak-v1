@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { addSeoProspect, updateSeoProspectStatus, manageSeoDomainVerification } from "@/lib/seo/seotakatak-bridge";
+import { addSeoProspect, updateSeoProspectStatus, manageSeoDomainVerification, addSeoContentBrief } from "@/lib/seo/seotakatak-bridge";
 const SITE_ID=/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i;
 function destination(siteId:string,result:string){
  if(!SITE_ID.test(siteId))return "/dashboard/seo/portfolio?result=invalid";
@@ -36,4 +36,15 @@ export async function changeSeoDomainVerification(formData:FormData){
  if(result==="verified"||result==="challenge_created")
   revalidatePath("/dashboard/seo/portfolio/"+siteId);
  redirect("/dashboard/seo/portfolio/"+siteId+"?verification="+encodeURIComponent(result));
+}
+
+export async function createSeoContentBrief(formData:FormData){
+ const siteId=String(formData.get("siteId")??"");
+ if(!SITE_ID.test(siteId))redirect("/dashboard/seo/portfolio?result=invalid");
+ const result=await addSeoContentBrief({
+  siteId,keyword:String(formData.get("keyword")??"").trim(),
+  angle:String(formData.get("angle")??"").trim()
+ });
+ if(result==="created")revalidatePath("/dashboard/seo/portfolio/"+siteId);
+ redirect("/dashboard/seo/portfolio/"+siteId+"?brief="+encodeURIComponent(result));
 }
