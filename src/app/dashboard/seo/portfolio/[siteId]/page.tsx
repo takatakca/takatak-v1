@@ -97,7 +97,7 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
 
   <section className="space-y-3 rounded-2xl border bg-white p-5">
     <h2 className="text-lg font-bold text-slate-950">Original SEO content briefs</h2>
-    <p className="text-sm text-slate-600">Create editorial briefs for the site's actual niche and audience. Each brief remains a draft. This feature does not fabricate articles or publish to a CMS.</p>
+    <p className="text-sm text-slate-600">Create editorial briefs for the site’s actual niche and audience. Each brief remains a draft. This feature does not fabricate articles or publish to a CMS.</p>
     {briefResult?<p role="status" className={"rounded-xl p-3 text-sm "+(briefResult==="created"?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>
       {briefResult==="created"?"Content brief saved as a draft.":
        briefResult==="invalid"?"Provide a valid keyword and a detailed editorial angle.":
