@@ -139,6 +139,9 @@ jobs:
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
+      - name: Workspace JSON request body bounds
+        run: npx tsx scripts/verify-write-request-stream.ts
+
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
 
