@@ -27,7 +27,7 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
 async function callSeo(path:string,method:"GET"|"POST",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|summary)$/.test(path))return {kind:"unavailable" as const,sites:[]};
+ if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|opportunities|summary)$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
@@ -126,4 +126,26 @@ export async function downloadSeoOpportunities(siteId:string):Promise<
   if(csv.length>200_000)return {kind:"unavailable",csv:null};
   return {kind:"ready",csv};
  }catch{return {kind:"unavailable",csv:null};}
+}
+
+export interface SeoOpportunityRow {
+ keyword:string;source:string;clicks:number;impressions:number;position:number;priority:number;updated_at?:string;
+}
+export async function getSeoOpportunities(siteId:string):Promise<
+ {kind:"ready";rows:SeoOpportunityRow[]}|{kind:"unavailable"|"unconfigured"|"unauthorized";rows:[]}
+>{
+ if(!UUID_PATTERN.test(siteId))return {kind:"unavailable",rows:[]};
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_reports"))
+  return {kind:"unauthorized",rows:[]};
+ const result=await callSeo("/v1/sites/"+siteId+"/opportunities","GET");
+ if(result.kind!=="ready")return {kind:result.kind,rows:[]};
+ const items=(result.data as {opportunities?:unknown}).opportunities;
+ if(!Array.isArray(items))return {kind:"unavailable",rows:[]};
+ const rows:SeoOpportunityRow[]=items.filter((x):x is SeoOpportunityRow=>
+  !!x&&typeof x==="object"&&typeof x.keyword==="string"&&
+  typeof x.clicks==="number"&&typeof x.impressions==="number"&&
+  (typeof x.position==="number"||typeof x.position==="string")&&typeof x.priority==="number"
+ ).slice(0,50).map(x=>({...x,position:Number(x.position)}));
+ return {kind:"ready",rows};
 }
