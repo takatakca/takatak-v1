@@ -73,8 +73,24 @@ build-time values (see `.env.example`). Keep unused providers disabled.
    login and cross-tenant isolation. Keep a rollback to the previous IP and
    immutable release. Do not automatically change `dashboard`, `api`,
    MX or other DNS.
-7. Configure GitHub → Coolify redeploy only after a green `main` CI gate
-   is enforced and the first production deployment has passed.
+7. After first manual production acceptance, enable automatic deployment from
+   green current-`main` CI only:
+   * In Coolify, enable API access (`Settings → Advanced`) and create an
+     API token with **Deploy** permission. Copy the application's authenticated
+     webhook from `Application → Webhooks`.
+   * In GitHub, set production environment **secrets**
+     `COOLIFY_TAKATAK_DEPLOY_WEBHOOK` (e.g.,
+     `https://coolify.takatak.ca/api/v1/deploy?uuid=<application-uuid>`) and
+     `COOLIFY_TAKATAK_API_TOKEN`. Never include token in a URL or commit it.
+   * Set repository **variable**
+     `COOLIFY_TAKATAK_AUTODEPLOY_ENABLED=true` after the owner/release
+     coordinator authorizes recurring production deploys. Leave unset otherwise.
+   * `.github/workflows/coolify-production-deploy.yml` then triggers only
+     on a successful `main` **push** CI and checks that the attested SHA is
+     still current `main` before POSTing to Coolify.
+   * Check Coolify's deployment state and health after each run. A queued
+     deploy does not prove a successful rollout. Avoid a second competing
+     Coolify Auto Deploy on push.
 
 **No public keys, tokens, database credentials, SSH keys, or secrets are
 committed to this repository.** The release is not live merely because the
