@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { SEO_CATEGORIES, SEO_FREE_TOOLS, type SeoTool, type SeoToolCategory } from "@/lib/seo/free-tools-catalog";
-import { scanFreeSeoTool, type LiveSeoResult } from "./actions";
+import { scanFreeSeoTool, inspectGoogleIndexForWorkspace, type LiveSeoResult, type GoogleIndexToolResult } from "./actions";
 
 type Group = SeoToolCategory | "All";
 function origin(input:string) {
@@ -35,13 +35,14 @@ export function SeoFreeToolsClient(){
  const [blockAi,setBlockAi]=useState(false);
  const [kind,setKind]=useState("Organization");
  const [report,setReport]=useState<LiveSeoResult|null>(null);
+ const [googleReport,setGoogleReport]=useState<GoogleIndexToolResult|null>(null);
  const [busy,setBusy]=useState(false);
  const [copyLabel,setCopyLabel]=useState("Copy");
  const tool=SEO_FREE_TOOLS.find(t=>t.id===id)??SEO_FREE_TOOLS[0];
  const matches=SEO_FREE_TOOLS.filter(t=>group==="All"||t.category===group);
  const draft=useMemo(()=>generate(id,url,title,description,blockAi,kind),[id,url,title,description,blockAi,kind]);
  const frequencies=useMemo(()=>density(content),[content]);
- const choose=(selected:SeoTool)=>{setId(selected.id);setReport(null);setCopyLabel("Copy");};
+ const choose=(selected:SeoTool)=>{setId(selected.id);setReport(null);setGoogleReport(null);setCopyLabel("Copy");};
  const scan=async()=>{
    if(busy||!url.trim())return;setBusy(true);setReport(null);
    try{setReport(await scanFreeSeoTool({url,toolId:id}));}
@@ -62,7 +63,20 @@ export function SeoFreeToolsClient(){
    <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg" aria-label="Selected SEO checker">
     <header className="border-b bg-slate-50 px-6 py-5"><p className="text-xs font-bold uppercase tracking-wider text-blue-700">{tool.category}</p><h2 className="mt-1 text-xl font-bold text-slate-950">{tool.title}</h2><p className="mt-2 text-sm text-slate-600">{tool.description}</p></header>
     <div className="space-y-4 p-5 sm:p-6">
-     {tool.mode==="provider"?<div className="space-y-4"><p className="text-sm text-slate-700">This feature needs a verified provider or recorded AI-search evidence. We never invent Google indexing, AI citations, backlink counts or competitor rankings.</p><Link href={["google-index-checker","missing-keywords","ai-overview-checker"].includes(id)?"/dashboard/seo/keywords":"/dashboard/seo/backlinks"} className="inline-flex rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">View TAKATAK SEO connectors →</Link></div>:null}
+     {tool.mode==="provider"?<div className="space-y-4">
+       <p className="text-sm text-slate-700">This feature needs a verified provider or recorded AI-search evidence. We never invent Google indexing, AI citations, backlink counts or competitor rankings.</p>
+       {id==="google-index-checker"?<div className="space-y-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+         <p className="text-xs text-blue-950">If your workspace has a verified website connected to Google Search Console, use the official Google URL Inspection API to check its current indexing signals.</p>
+         <form onSubmit={e=>{e.preventDefault();if(busy)return;setBusy(true);setGoogleReport(null);void inspectGoogleIndexForWorkspace(url).then(setGoogleReport).catch(()=>setGoogleReport({ok:false,error:"Google inspection failed."})).finally(()=>setBusy(false));}} className="flex flex-col gap-2 sm:flex-row">
+          <label htmlFor="google-index-url" className="sr-only">URL to inspect in Google</label>
+          <input id="google-index-url" type="text" inputMode="url" required maxLength={1800} value={url} onChange={e=>setUrl(e.target.value)} className="min-w-0 flex-1 rounded-lg border bg-white p-3 text-sm" placeholder="https://your-verified-domain.ca/page"/>
+          <button type="submit" disabled={busy} className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{busy?"Inspecting…":"Inspect URL"}</button>
+         </form>
+         {googleReport?.ok===false?<p role="alert" className="text-sm text-rose-700">{googleReport.error}</p>:null}
+         {googleReport?.ok===true?<div aria-live="polite"><p className="mb-2 break-words text-xs font-semibold text-blue-900">Search Console property: {googleReport.property}</p><dl className="grid gap-2 sm:grid-cols-2">{Object.entries(googleReport.facts).map(([key,value])=><div className="rounded-lg bg-white p-3" key={key}><dt className="text-xs font-semibold text-slate-600">{pretty(key)}</dt><dd className="mt-1 break-words text-sm text-slate-900">{value||"Not supplied by Google"}</dd></div>)}</dl></div>:null}
+       </div>:null}
+       <Link href={["google-index-checker","missing-keywords","ai-overview-checker"].includes(id)?"/dashboard/seo/keywords":"/dashboard/seo/backlinks"} className="inline-flex rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">View TAKATAK SEO connectors →</Link>
+      </div>:null}
      {tool.mode==="live"?<div className="space-y-4">
       <form className="flex flex-col gap-2 sm:flex-row" onSubmit={e=>{e.preventDefault();void scan();}}>
        <label htmlFor="seo-free-url" className="sr-only">Public website URL</label><input id="seo-free-url" type="text" inputMode="url" value={url} maxLength={1800} onChange={e=>setUrl(e.target.value)} required placeholder="https://example.com" className="min-w-0 flex-1 rounded-xl border border-slate-300 p-3 text-sm text-slate-900 focus:ring-2 focus:ring-blue-200"/>
