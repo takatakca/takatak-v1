@@ -27,9 +27,10 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
 async function callSeo(path:string,method:"GET"|"POST",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/opportunities\/import$/.test(path))return {kind:"unavailable" as const,sites:[]};
+ if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|summary)$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
+ if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
  const manage=method!=="GET"&&!ingest;
  if(ingest&&(!hasEffectivePermission(access,"view_reports")||!hasEffectivePermission(access,"manage_integrations")))return {kind:"unauthorized" as const,sites:[]};
  if(manage&&!hasEffectivePermission(access,"manage_integrations"))return {kind:"unauthorized" as const,sites:[]};
@@ -82,4 +83,47 @@ export async function importVerifiedSeoQueries(
  const count=(response.data as {imported?:unknown}).imported;
  if(typeof count!=="number"||!Number.isInteger(count)||count<0||count>100)return {kind:"unavailable",count:0};
  return {kind:"imported",count};
+}
+
+export interface SeoEvidenceSummary {
+ source:string;provenance:string;period:string;scope:string;countsAreComplete:boolean;
+ opportunitiesSampled:number;prospectsSampled:number;briefsSampled:number;clicksInSample:number;
+ earnedBacklinksVerified:number;verifiedLinkProviderConfigured:boolean;note:string;
+}
+const UUID_PATTERN=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+export async function getSeoEvidenceSummary(siteId:string):Promise<
+  {kind:"ready";summary:SeoEvidenceSummary}|{kind:"unavailable"|"unconfigured"|"unauthorized";summary:null}
+>{
+ if(!UUID_PATTERN.test(siteId))return {kind:"unavailable",summary:null};
+ const response=await callSeo("/v1/sites/"+siteId+"/summary","GET");
+ if(response.kind!=="ready")return {kind:response.kind,summary:null};
+ const value=response.data as {summary?:unknown};
+ const summary=value.summary;
+ if(!summary||typeof summary!=="object"||!('opportunitiesSampled' in summary)||
+   typeof summary.opportunitiesSampled!=="number")return {kind:"unavailable",summary:null};
+ return {kind:"ready",summary:summary as SeoEvidenceSummary};
+}
+/** Download through this trusted server bridge; the browser never sees the signing key. */
+export async function downloadSeoOpportunities(siteId:string):Promise<
+  {kind:"ready";csv:string}|{kind:"unavailable"|"unconfigured"|"unauthorized";csv:null}
+>{
+ if(!UUID_PATTERN.test(siteId))return {kind:"unavailable",csv:null};
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard")||
+    !hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized",csv:null};
+ const config=configuredEndpoint();
+ if(!config)return {kind:"unconfigured",csv:null};
+ try {
+  const response=await fetch(config.origin+"/v1/sites/"+siteId+"/opportunities.csv",{
+   headers:{Authorization:"Bearer "+signWorkspace({
+     tenantId:access.activeClientId,profileId:access.profileId,manage:false,ingest:false
+   },config.key),Accept:"text/csv"},
+   cache:"no-store",redirect:"error",signal:AbortSignal.timeout(7000)
+  });
+  if(!response.ok||!response.headers.get("content-type")?.includes("text/csv"))
+   return {kind:response.status===403||response.status===401?"unauthorized":"unavailable",csv:null};
+  const csv=await response.text();
+  if(csv.length>200_000)return {kind:"unavailable",csv:null};
+  return {kind:"ready",csv};
+ }catch{return {kind:"unavailable",csv:null};}
 }
