@@ -97,6 +97,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: CUBAFOOD master contract safeguards (offline, no live route)
+        run: npm run qa:cubafood-contract
+
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
