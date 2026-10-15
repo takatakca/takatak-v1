@@ -26,8 +26,8 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  const msg=encoded({alg:"HS256",typ:"JWT"})+"."+encoded({iss:"takatak-v1",aud:"seotakatak",sub:input.profileId,tenant_id:input.tenantId,permissions:input.ingest?["seo:import"]:input.manage?["seo:view","seo:manage"]:["seo:view"],iat:now,exp:now+60});
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
-async function callSeo(path:string,method:"GET"|"POST",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|opportunities|summary)$/.test(path))return {kind:"unavailable" as const,sites:[]};
+async function callSeo(path:string,method:"GET"|"POST"|"PATCH",payload?:Record<string,unknown>,ingest=false) {
+ if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status)$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
@@ -148,4 +148,44 @@ export async function getSeoOpportunities(siteId:string):Promise<
   (typeof x.position==="number"||typeof x.position==="string")&&typeof x.priority==="number"
  ).slice(0,50).map(x=>({...x,position:Number(x.position)}));
  return {kind:"ready",rows};
+}
+
+export interface SeoProspect {
+ id:string;publication:string;url:string;relevance:string;status:string;
+ created_at?:string;updated_at?:string;
+}
+export async function getSeoProspects(siteId:string):Promise<
+ {kind:"ready";rows:SeoProspect[]}|{kind:"unavailable"|"unconfigured"|"unauthorized";rows:[]}
+>{
+ if(!UUID_PATTERN.test(siteId))return {kind:"unavailable",rows:[]};
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_reports"))
+  return {kind:"unauthorized",rows:[]};
+ const response=await callSeo("/v1/sites/"+siteId+"/prospects","GET");
+ if(response.kind!=="ready")return {kind:response.kind,rows:[]};
+ const rows=(response.data as {prospects?:unknown}).prospects;
+ if(!Array.isArray(rows))return {kind:"unavailable",rows:[]};
+ return {kind:"ready",rows:rows.filter((x):x is SeoProspect=>
+  !!x&&typeof x==="object"&&typeof x.id==="string"&&
+  typeof x.publication==="string"&&typeof x.status==="string"&&typeof x.url==="string"
+ ).slice(0,200)};
+}
+export async function addSeoProspect(input:{
+ siteId:string;publication:string;url:string;relevance:string
+}):Promise<"created"|"invalid"|"unconfigured"|"unavailable"|"unauthorized">{
+ if(!UUID_PATTERN.test(input.siteId)||input.publication.length<2||input.publication.length>150||
+    input.url.length>512||input.relevance.length<10||input.relevance.length>500)return "invalid";
+ const response=await callSeo("/v1/sites/"+input.siteId+"/prospects","POST",{
+  publication:input.publication,url:input.url,relevance:input.relevance
+ });
+ return response.kind==="ready"?"created":response.kind;
+}
+export async function updateSeoProspectStatus(input:{
+ siteId:string;prospectId:string;status:string
+}):Promise<"updated"|"invalid"|"unconfigured"|"unavailable"|"unauthorized">{
+ if(!UUID_PATTERN.test(input.siteId)||!UUID_PATTERN.test(input.prospectId)||
+  !["identified","researching","contacted","declined"].includes(input.status))return "invalid";
+ const response=await callSeo("/v1/sites/"+input.siteId+"/prospects/"+input.prospectId+"/status",
+  "PATCH",{status:input.status});
+ return response.kind==="ready"?"updated":response.kind;
 }
