@@ -5,7 +5,7 @@ import { SEO_CATEGORIES, SEO_FREE_TOOLS } from "@/lib/seo/free-tools-catalog";
 export const metadata: Metadata={
  title:"Free SEO & AI Search Tools",
  description:"Free technical SEO scanners, AI discovery readiness checks, structured data generators and keyword analysis from TAKATAK. A free TAKATAK client account is required.",
- alternates:{canonical:"/free-tools"},
+ alternates:{canonical: "/free-tools"},
 };
 
 export default function PublicSeoToolsPage(){
