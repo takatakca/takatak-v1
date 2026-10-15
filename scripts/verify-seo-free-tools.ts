@@ -1,0 +1,33 @@
+// Static contract checks for account-gated TAKATAK SEO free tools.
+// Run with: npm run qa:seo-free-tools
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { SEO_CATEGORIES, SEO_FREE_TOOLS } from "../src/lib/seo/free-tools-catalog";
+
+const source = (path:string)=>readFileSync(path,"utf8");
+assert.equal(SEO_CATEGORIES.length,4,"All required groups should be present.");
+assert.equal(SEO_FREE_TOOLS.length,23,"All 23 requested free tools should be represented.");
+assert.equal(new Set(SEO_FREE_TOOLS.map(t=>t.id)).size,23,"Tool ids are unique.");
+for(const tool of SEO_FREE_TOOLS){
+ assert.ok(tool.title.length>4&&tool.description.length>15,tool.id+" has clear copy");
+ assert.ok(SEO_CATEGORIES.includes(tool.category),tool.id+" is in a valid category");
+ assert.ok(["live","generator","text","provider"].includes(tool.mode),tool.id+" has an honest execution mode");
+}
+assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="live").length,9);
+assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="generator").length,4);
+assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="text").length,2);
+assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="provider").length,8);
+
+const privatePage=source("src/app/dashboard/seo/free-tools/page.tsx");
+const publicPage=source("src/app/(website)/free-tools/page.tsx");
+const action=source("src/app/dashboard/seo/free-tools/actions.ts");
+const portfolio=source("src/lib/seo/seotakatak-bridge.ts");
+assert.match(privatePage,/requireGrowthAccess\(/,"Dashboard route uses existing TAKATAK Auth");
+assert.match(privatePage,/access.mode!=="client_scoped"/,"Dashboard requires a selected tenant");
+assert.match(publicPage,/href="\/register"/,"Public directory links to TAKATAK registration");
+assert.match(action,/access.mode!=="client_scoped"/,"Server action rechecks tenant");
+assert.match(action,/fetchPublicPage\(/,"Live scanning reuses pinned-address fetch");
+assert.match(action,/listGoogleLinkedSites\(access.activeClientId\)/,"Google inspection uses scoped verified properties");
+assert.match(portfolio,/tenant_id:input.tenantId/,"SEO API token derives tenant from trusted access");
+assert.match(portfolio,/manage_integrations/,"Portfolio writes require authorization");
+console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");

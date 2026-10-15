@@ -92,6 +92,7 @@
     "qa:lead-actions": "tsx --require ./scripts/register-server-only.cjs scripts/verify-lead-actions.ts",
     "qa:website-theme": "tsx scripts/verify-website-theme.ts",
     "qa:website-seo": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-seo.ts",
+    "qa:seo-free-tools": "tsx scripts/verify-seo-free-tools.ts",
     "qa:seo-history": "tsx --require ./scripts/register-server-only.cjs scripts/verify-seo-history.ts",
     "qa:report-export": "tsx --require ./scripts/register-server-only.cjs scripts/verify-report-export.ts",
     "qa:qmaps-bridge": "tsx --require ./scripts/register-server-only.cjs scripts/verify-qmaps-bridge.ts",

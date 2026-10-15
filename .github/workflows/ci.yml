@@ -127,6 +127,9 @@ jobs:
       - name: SEO score history
         run: npm run qa:seo-history
 
+      - name: SEOTAKATAK free-tools and access contracts
+        run: npm run qa:seo-free-tools
+
       - name: Report export and delivery
         run: npm run qa:report-export
 
