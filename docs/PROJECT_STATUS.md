@@ -70,3 +70,6 @@ No verified new production SHA, staging apply or provider activation. Do not equ
 
 ## 2026-10-15 migration verification
 Read-only TAKATAK STAGING project status: ACTIVE_HEALTHY. Supabase history includes phone-only profile email migration; exact phone-only/website-attachment names did not appear in the separate Prisma history search, though the latter contains 87 completed migrations. This does not prove whether SQL is applied. Live SMS provider remains unverified; no schema mutations or deployment occurred.
+
+### Confirmed staging schema (2026-10-15)
+Read-only `information_schema.columns`: `public.profiles.email` is `text` with `is_nullable=YES`. Read-only `to_regclass` indicates `public.lead_attachments` is absent. Thus the phone-only column change is already present at the schema level, while lead attachment support is not. The migration-ledger discrepancy must be reconciled, not used as a reason to replay SQL. No database changes performed.
