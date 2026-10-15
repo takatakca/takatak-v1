@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
-import { listSeoManagedSites, getSeoEvidenceSummary } from "@/lib/seo/seotakatak-bridge";
+import { listSeoManagedSites, getSeoEvidenceSummary, getSeoOpportunities } from "@/lib/seo/seotakatak-bridge";
 export const dynamic="force-dynamic";
 export const metadata={title:"SEO Evidence — TAKATAK",robots:{index:false,follow:false}};
 
@@ -15,7 +15,7 @@ export default async function SeoEvidencePage({params}:{params:Promise<{siteId:s
  const portfolio=await listSeoManagedSites();
  const site=portfolio.kind==="ready"?portfolio.sites.find(s=>s.id===siteId):null;
  if(!site)notFound();
- const report=await getSeoEvidenceSummary(siteId);
+ const [report,opportunities]=await Promise.all([getSeoEvidenceSummary(siteId),getSeoOpportunities(siteId)]);
  return <main className="space-y-5">
   <Link href="/dashboard/seo/portfolio" className="text-sm font-semibold text-blue-700 hover:underline">← Managed SEO sites</Link>
   <header className="rounded-2xl bg-gradient-to-r from-[#060D1F] to-[#145CCB] p-6 text-white">
@@ -37,6 +37,15 @@ export default async function SeoEvidencePage({params}:{params:Promise<{siteId:s
     <p className="mt-1">{report.summary.note}</p>
     <p className="mt-1">Source: {report.summary.source}. No current search rankings, complete totals or AI citations are claimed. Verified backlinks: provider not connected.</p>
    </div>
+   {opportunities.kind==="ready"&&opportunities.rows.length>0?<section className="overflow-hidden rounded-2xl border bg-white">
+    <header className="border-b bg-slate-50 p-4"><h2 className="font-semibold text-slate-900">Top query opportunities — current import</h2><p className="mt-1 text-xs text-slate-600">Up to 50 imported Search Console queries. Priority is a TAKATAK heuristic; positions and clicks come from the import.</p></header>
+    <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-left text-xs">
+      <thead className="bg-slate-50 text-slate-600"><tr><th className="p-3">Query</th><th className="p-3 text-right">Clicks</th><th className="p-3 text-right">Impressions</th><th className="p-3 text-right">Position</th><th className="p-3 text-right">Priority</th></tr></thead>
+      <tbody className="divide-y divide-slate-100">{opportunities.rows.map((item,index)=><tr key={item.keyword+"-"+index}>
+        <td className="p-3 font-medium text-slate-900">{item.keyword}</td><td className="p-3 text-right">{item.clicks.toLocaleString("en-CA")}</td><td className="p-3 text-right">{item.impressions.toLocaleString("en-CA")}</td><td className="p-3 text-right">{Number.isFinite(item.position)?item.position.toFixed(1):"—"}</td><td className="p-3 text-right">{item.priority}/100</td>
+      </tr>)}</tbody>
+    </table></div>
+   </section>:<p className="rounded-xl border bg-white p-4 text-sm text-slate-500">No imported queries available for this client site yet. Link an owned Search Console property and use the import button in the portfolio.</p>}
    <Link href={"/api/seo/sites/"+site.id+"/opportunities.csv"} className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">Download keyword sample (CSV) →</Link>
   </section>}
  </main>;
