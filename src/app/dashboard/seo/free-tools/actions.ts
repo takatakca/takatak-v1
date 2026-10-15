@@ -1,5 +1,7 @@
 "use server";
 import { fetchPublicPage, runSiteAudit } from "@/lib/seo/site-audit";
+import { listGoogleLinkedSites } from "@/lib/analytics/service";
+import { fetchGoogleIndexInspection } from "@/lib/integrations/google/client";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
@@ -94,4 +96,36 @@ export async function scanFreeSeoTool(input:{url:string;toolId:string}):Promise<
     return {ok:true,finalUrl:page.finalUrl.toString(),status:page.status,inspectedAt:new Date().toISOString(),type,
       data:type==="robots"?robotsFacts(page.body):type==="sitemap"?sitemapFacts(page.body,page.finalUrl.toString()):pageFacts(page.body,page.finalUrl.toString())};
   }catch{return {ok:false,error:"Enter a valid public website URL."};}
+}
+
+
+export type GoogleIndexToolResult={ok:false;error:string}|{ok:true;property:string;facts:Record<string,string>};
+/** Inspect only a URL whose domain belongs to a linked, verified TAKATAK client workspace. */
+export async function inspectGoogleIndexForWorkspace(rawUrl:string):Promise<GoogleIndexToolResult>{
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_reports"))return {ok:false,error:"An authorized TAKATAK client workspace with reporting access is required."};
+ if(typeof rawUrl!=="string"||rawUrl.length>1800)return {ok:false,error:"Enter a valid public website URL."};
+ let url:URL;
+ try{url=new URL(/^https?:\/\//i.test(rawUrl.trim())?rawUrl.trim():"https://"+rawUrl.trim());}
+ catch{return {ok:false,error:"Enter a valid URL."};}
+ if(!["https:","http:"].includes(url.protocol)||url.username||url.password||url.port||!url.hostname.includes("."))return {ok:false,error:"Enter a public http/https URL."};
+ try{
+  const sites=(await listGoogleLinkedSites(access.activeClientId)).filter(site=>!!site.searchConsoleProperty);
+  const linked=sites.find(site=>{
+    const base=site.domain.toLowerCase().replace(/^www\./,"");
+    const hostname=url.hostname.toLowerCase().replace(/^www\./,"");
+    if(base!==hostname||!site.searchConsoleProperty)return false;
+    if(site.searchConsoleProperty.startsWith("http")){
+      try{
+        const prefix=new URL(site.searchConsoleProperty);
+        return prefix.origin===url.origin&&url.pathname.startsWith(prefix.pathname);
+      }catch{return false;}
+    }
+    return site.searchConsoleProperty.startsWith("sc-domain:");
+  });
+  if(!linked?.searchConsoleProperty)return {ok:false,error:"This URL is not linked to a verified Search Console property in your current TAKATAK workspace."};
+  const inspection=await fetchGoogleIndexInspection(linked.searchConsoleProperty,url.toString());
+  if(!inspection.ok)return {ok:false,error:"Google inspection is unavailable: "+inspection.reason.replace(/_/g," ")};
+  return {ok:true,property:linked.searchConsoleProperty,facts:inspection.data};
+ }catch{return {ok:false,error:"Search Console could not be reached for this workspace."};}
 }
