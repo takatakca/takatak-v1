@@ -53,3 +53,6 @@ Original backlog is [DEV-TODO.md](DEV-TODO.md), [WORKLOG.md](../WORKLOG.md), ope
 
 ## Staging next audit (2026-10-15)
 Compare Supabase and Prisma migration histories for the phone-only profile email and lead attachments in audit-only mode, then obtain backup and coordinator/owner authorization before applying or resolving any migration. Do not replay SQL based only on differing history names. Verify real Supabase Twilio Phone Auth SMS separately under issue #141.
+
+### Staging exact next gate
+The phone-only email nullable column was verified present in staging. `lead_attachments` was verified absent. Coordinator: first audit/reconcile the already-applied phone-only SQL under `docs/staging-migration-reconciliation.md`, then obtain backup and owner-approved staging apply for the missing attachments migration and any other pending migrations. Production approval is separate.
