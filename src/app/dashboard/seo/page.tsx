@@ -68,6 +68,12 @@ export default async function SeoOverviewPage({
         </CardBody>
       </Card>
 
+      <Link href="/dashboard/seo/free-tools" className="block rounded-2xl border border-blue-200 bg-gradient-to-r from-[#0B1B3D] to-[#1565D8] p-5 text-white shadow-lg transition hover:shadow-xl">
+        <p className="text-xs font-bold uppercase tracking-wider text-blue-200">SEOTAKATAK · Client tools</p>
+        <p className="mt-1 text-lg font-bold">23 free SEO & AI visibility tools →</p>
+        <p className="mt-1 text-sm text-blue-100">Use scanners, markup generators, keyword analysis and evidence-based search visibility—all inside your TAKATAK account.</p>
+      </Link>
+
       <div className="grid gap-3 sm:grid-cols-2">
         <Link href="/dashboard/seo/keywords" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-indigo-300">
           <p className="text-sm font-semibold text-slate-900">Keywords →</p>
