@@ -49,5 +49,11 @@ export async function GET() {
     { status: ok ? 200 : 503 },
   );
   response.headers.set("Cache-Control", "no-store");
+  // Coolify supplies SOURCE_COMMIT at runtime; expose only a full Git SHA.
+  // Absence of a valid SHA is explicitly *not* proof of a deployed revision.
+  const sourceCommit = process.env.SOURCE_COMMIT?.trim().toLowerCase();
+  if (sourceCommit && /^[0-9a-f]{40}$/.test(sourceCommit)) {
+    response.headers.set("X-TAKATAK-Release", sourceCommit);
+  }
   return response;
 }
