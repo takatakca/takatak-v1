@@ -26,3 +26,7 @@ A draft brief can be approved or rejected exactly once by a client-scoped `manag
 ### SEO data portability boundary
 
 Only users with an active `client_scoped` TAKATAK workspace plus both `view_dashboard` and `view_reports` may request per-site JSON export. The server-only Next route obtains a new short-lived signed JWT for the SEO service and verifies the requested site belongs to that workspace. The SEO backend itself checks the tenant and emits allowlisted, privacy-minimized columns. The snapshot explicitly says `guaranteedComplete:false` and is capped at 200 rows per collection; do not market it as a complete history, cross-product export, or proof of regulatory access-fulfillment. Download response is private/no-store.
+
+### Whole workspace SEO data portability
+
+Only current client-scoped TAKATAK users with `view_dashboard` and `view_reports` may request paged SEO exports. Data is fetched from `/v1/workspace/export` over the signed V1 server bridge. Four collections are individually navigable and downloads are `private, no-store`. Pagination is fixed at 200 records, ordered by database ID and carries `hasMore`/`nextOffset`. SQL SELECT allowlists omit DNS ownership challenge secrets and reviewer profile IDs. Changes during pagination can alter coverage; this is a user-readable export capability, not an immutable or regulatory-complete backup and not a modification to TAKATAK master identity.

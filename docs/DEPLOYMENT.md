@@ -30,3 +30,7 @@ Backend schema now proposes SQL `0003_brief_editorial_review.sql` (after 0001 an
 ### SEO site JSON snapshot smoke
 
 After an approved backend database/HTTPS deployment and coordinator-approved V1 PR merge, sign in as client A with `view_reports`. In `/dashboard/seo/portfolio/{siteId}` download the JSON snapshot. Validate `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`, `format:seotakatak-site-snapshot`, `coverage.guaranteedComplete:false`, up-to-200 collection caps, and no `verification_token` or `reviewed_by`. A read-only import token, anonymous browser or client B must not retrieve client A data. The snapshot does not include TAKATAK master account records or all SEO history. No live data was exported during development.
+
+### Paginated workspace SEO JSON export smoke
+
+On an approved staging-only SEO backend with migrations and current client A/B accounts, visit `/dashboard/seo/exports` under client A and `view_reports` permission. Download every page of sites, opportunities, prospects and briefs from `/api/seo/workspace/export/[collection]?offset=N`, following `nextOffset` only while `hasMore=true`; verify private/no-store headers, no reviewer IDs/DNS secrets and no rows belonging to B. A viewer lacking `view_reports` must not access export UI or route; an import-only backend token must be forbidden. When there are more than 200 rows, verify the second page continues correctly and no response exceeds its fixed page limit. No live export, migration or deployment is claimed.
