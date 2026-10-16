@@ -113,3 +113,40 @@ export async function fetchGa4WebStreamHosts(propertyId: string): Promise<Google
     return { ok: false, reason: error instanceof Error && error.message.startsWith("google_token") ? "auth_failed" : "unreachable" };
   }
 }
+
+
+/** Google URL Inspection API — only for properties already verified and linked by the caller.
+ * Returns Google's own inspection facts, never an inferred site: result.
+ */
+export interface GoogleIndexInspection {
+ verdict:string;
+ coverageState:string;
+ indexingState:string;
+ robotsTxtState:string;
+ pageFetchState:string;
+ lastCrawlTime:string;
+ googleCanonical:string;
+ userCanonical:string;
+}
+export async function fetchGoogleIndexInspection(property:string,inspectionUrl:string):Promise<GoogleResult<GoogleIndexInspection>>{
+ if(!googleServiceAccountConfigured())return {ok:false,reason:"not_configured"};
+ let page:URL;
+ try{page=new URL(inspectionUrl);if(!["http:","https:"].includes(page.protocol)||page.username||page.password||page.port)return {ok:false,reason:"invalid_url"};}
+ catch{return {ok:false,reason:"invalid_url"};}
+ if(!property||property.length>300)return {ok:false,reason:"invalid_property"};
+ try{
+  const response=await googlePost("https://searchconsole.googleapis.com/v1/urlInspection/index:inspect",{
+    inspectionUrl:page.toString(),siteUrl:property,languageCode:"en-US"
+  });
+  if(!response.ok)return {ok:false,reason:reasonFor(response.status)};
+  const parsed=await response.json() as {inspectionResult?:{indexStatusResult?:Record<string,unknown>}};
+  const state=parsed?.inspectionResult?.indexStatusResult;
+  if(!state||typeof state!=="object")return {ok:false,reason:"unexpected_response"};
+  const safe=(key:string)=>typeof state[key]==="string"?(state[key] as string).slice(0,512):"";
+  return {ok:true,data:{
+   verdict:safe("verdict"),coverageState:safe("coverageState"),indexingState:safe("indexingState"),
+   robotsTxtState:safe("robotsTxtState"),pageFetchState:safe("pageFetchState"),lastCrawlTime:safe("lastCrawlTime"),
+   googleCanonical:safe("googleCanonical"),userCanonical:safe("userCanonical")
+  }};
+ }catch(error){return {ok:false,reason:error instanceof Error&&error.message.startsWith("google_token")?"auth_failed":"unreachable"};}
+}
