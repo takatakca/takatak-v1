@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
 
 import {
-  getApplicationOrigin,
-  originFromRequest,
+  PRODUCTION_APP_ORIGIN,
+  isProductionAppRuntime,
+  resolvePublicUrl,
 } from "@/lib/config/app-origin";
 
 export function normalizeOrigin(value: string | null): string | null {
@@ -17,18 +18,44 @@ export function normalizeOrigin(value: string | null): string | null {
   }
 }
 
+/**
+ * Authorize credential-changing browser writes against a server-configured
+ * origin, never a Host or X-Forwarded-Host supplied by the request itself.
+ * Forwarded headers are useful for redirects but cannot establish CSRF trust.
+ */
 export function isTrustedRequestOrigin(request: NextRequest): boolean {
-  const requestOrigin = normalizeOrigin(request.headers.get("origin"));
+  const received = normalizeOrigin(request.headers.get("origin"));
+  if (!received) return false;
 
-  if (!requestOrigin) {
-    return false;
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) {
+    try {
+      const expected = resolvePublicUrl(configured);
+      if (
+        !["https:", "http:"].includes(expected.protocol) ||
+        expected.username ||
+        expected.password
+      ) {
+        return false;
+      }
+      return received === expected.origin;
+    } catch {
+      // Invalid configuration must not fall back to client-controlled headers.
+      return false;
+    }
   }
 
-  const allowedOrigins = new Set<string>();
-  allowedOrigins.add(originFromRequest(request));
-  allowedOrigins.add(getApplicationOrigin(new URL(request.url).origin));
+  if (isProductionAppRuntime()) {
+    return received === PRODUCTION_APP_ORIGIN;
+  }
 
-  return allowedOrigins.has(requestOrigin);
+  // Local previews without an explicit app URL may use their own exact
+  // request URL origin; do not accept any forwarded hostname overrides.
+  try {
+    return received === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
 }
 
 export function jsonAuthHeaders(): Headers {
