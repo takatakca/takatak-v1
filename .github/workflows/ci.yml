@@ -52,6 +52,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Strict runtime health readiness safeguards
+        run: npx tsx scripts/verify-runtime-readiness.ts
+
       - name: Lint
         run: npm run lint
 
@@ -130,6 +133,9 @@ jobs:
       - name: SEO score history
         run: npm run qa:seo-history
 
+      - name: SEOTAKATAK free-tools and access contracts
+        run: npm run qa:seo-free-tools
+
       - name: Report export and delivery
         run: npm run qa:report-export
 
@@ -138,6 +144,9 @@ jobs:
 
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
+
+      - name: AI Studio generation safeguards
+        run: npm run qa:ai-studio-generation
 
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access

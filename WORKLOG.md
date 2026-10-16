@@ -1,7 +1,26 @@
 - 2026-10-15 | ChatGPT/GitHub agent | feat/cubafood-master-contract-20261015 → PR #185 | PR open / CI pending | Define issue #161 CUBAFOOD master event contract and HMAC primitives with strict opaque payload schemas, CI tests and an activation runbook; no live endpoint or secret | verify PR CI; coordinator review, then implement entitlement and replay ledger only after owner contract approval
+- 2026-10-15 | ChatGPT/GitHub Academy agent | feat/academy-dashboard-bridge-20261015 → PR pending | ready for PR / not deployed | Academy dashboard nav + free-only one-time launch/exchange SSO bridge, no V1 migration, no billing activations | coordinator reviews PR; owner configures Academy HTTPS callback and dedicated service token, then tests actual launch/exchange
+- 2026-10-15 | ChatGPT/GitHub agent | fix/strict-runtime-readiness-20261015 → PR #188 | PR open / CI pending | Reject /api/health/ready as not-ready when DB or Supabase config is missing; preserve diagnostic checks, add CI regression and Docker health contract | verify strict readiness CI on final SHA; release coordinator reviews then merges, no direct deployment
+- 2026-10-14 | ChatGPT/GitHub agent | deploy/coolify-direct-takatakca-20261014 → PR #181 | PR open; CI pending | Direct-production Coolify Node22 Dockerfile, strict DB/Auth health, deployment guide for takatak.ca; no staging, migration, main merge or DNS changes | release coordinator reviews/merges after green CI; Coolify admin login/config and production safety gates remain before deploy
 - 2026-10-11 | ChatGPT/GitHub agent | fix/takatak-phone-country-otp-20261011 → PR #174 | PR / auth QA passed; full CI in progress | Nigerian +234 phone OTP selector and strict E.164; refuse unverified recovery email for email-session login; regression tests | Owner review/merge after full CI; manual TAKATAK production promotion; verify Supabase Twilio provider and geo permissions without sharing secrets
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
+
+- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015, PR #182 | CI in verification | Added workspace-wide SEO export dashboard, 4 pageable collections, signed server-only JSON download, bounded 200-row pages and per-tenant access control; export is not transactional | Confirm CI and coordinator merge; SEO Coolify/approved DB remains external blocker
+
+
+- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015, PR #182 | CI verification running | Added tenant-scoped SEO site JSON snapshot download via signed server-only bridge, client report link and private no-store route; API redacts DNS/reviewer secrets and marks 200-row limits honestly | Check latest V1 CI then coordinator review; SEO production blocked by missing Coolify settings
+
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | V1 CI PENDING | Real human-reviewed SEO brief workflow (one-time approve/reject), explicit rejection notes; backend pending SQL 0003; no CMS publication | CI review, then V1 coordinator-only merge/deploy after approved Coolify and database readiness
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | Backend CI green / V1 CI rerunning | Added tenant-scoped SEO-site deletion with typed hostname and confirmation, backend HTTP tests, corrected JSX lint at 417edac2 | Check latest V1 CI, coordinator-only PR review/merge; Coolify issue SEOTAKATAK#1 remains
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI pending | Added client-scoped real SEO content briefs, draft-only editor/queue, validated domain-ownership UI, scoped server bridge and QA; fixed JSX lint regression `4f70342c` | Check latest CI; only coordinator merges/promotes; backend Coolify/db remain blocked in SEOTAKATAK issue #1
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | DNS ownership flow implemented; CI ongoing | Client manager-only TXT record challenge and verification, server-only signed bridge, SQL migration 0002 pending owner approval | Check newest V1 CI; coordinator-only merge/promotion; configure separate backend per SEOTAKATAK issue #1
+
+- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI IN PROGRESS / NOT DEPLOYED | Public 23-tool catalog, active workspace permissions, verified Search Console import, signed backend API, scoped SEO report + real query table, private CSV, editorial backlink prospect forms/status and handoff docs | check latest PR CI; only V1 coordinator merges/promotes; separate SEO Coolify configuration blocked in takatakca/SEOTAKATAK#1
 
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
