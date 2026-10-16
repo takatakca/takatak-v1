@@ -34,7 +34,7 @@ export default async function SeoPortfolioPage({searchParams}:{searchParams:Prom
      {hasEffectivePermission(access,"view_reports")?<Link href={"/dashboard/seo/portfolio/"+site.id} className="mt-2 inline-block text-xs font-semibold text-blue-700 hover:underline">View evidence summary & CSV →</Link>:null}
       {canManage?<details className="mt-4 rounded-xl border border-red-200 p-3 text-xs">
        <summary className="cursor-pointer font-semibold text-red-800">Remove this SEO site</summary>
-       <p className="mt-2 text-red-900">Permanently deletes this site's SEO opportunities, editorial prospects and drafts. Your TAKATAK account and customer record are not deleted.</p>
+       <p className="mt-2 text-red-900">Permanently deletes this site&apos;s SEO opportunities, editorial prospects and drafts. Your TAKATAK account and customer record are not deleted.</p>
        <form action={deleteSeoManagedSite} className="mt-3 space-y-3">
         <input type="hidden" name="siteId" value={site.id}/>
         <label className="block font-medium text-slate-700">Type the exact domain to confirm:
