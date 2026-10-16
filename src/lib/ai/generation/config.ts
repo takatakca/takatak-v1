@@ -37,6 +37,6 @@ export function readAiStudioConfig(env: Record<string, string | undefined> = pro
 export const DISABLED_REASON_LABELS: Record<Extract<AiStudioConfig, { enabled: false }>["reason"], string> = {
   disabled: "Live generation is off (AI_STUDIO_GENERATION_ENABLED is not true).",
   invalid_provider: "AI_STUDIO_PROVIDER must be openai or anthropic.",
-  missing_key: "The provider API key is missing (OPENAI_API_KEY or ANTHROPIC_API_KEY).",
+  missing_key: "No provider API key: save one in Admin › AI provider keys, or set OPENAI_API_KEY / ANTHROPIC_API_KEY on the server.",
   missing_model: "No model is set (AI_STUDIO_OPENAI_MODEL is required for OpenAI).",
 };

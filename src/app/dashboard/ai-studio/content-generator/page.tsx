@@ -3,7 +3,8 @@ import { ContentGeneratorForm } from "@/components/ai-studio/content-generator-f
 import { PlannedGeneratorForm } from "@/components/ai-studio/planned-generator-form";
 import { ProviderStatusCard } from "@/components/ai-studio/provider-status-card";
 import { getBrandVoicesData } from "@/lib/ai/ai-data";
-import { DISABLED_REASON_LABELS, readAiStudioConfig } from "@/lib/ai/generation/config";
+import { DISABLED_REASON_LABELS } from "@/lib/ai/generation/config";
+import { loadAiStudioConfig } from "@/lib/ai/generation/load-config";
 import { getAiProviderStatuses } from "@/lib/ai/providers";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
@@ -14,7 +15,7 @@ const PROVIDER_LABELS = { openai: "OpenAI", anthropic: "Anthropic (Claude)" } as
 
 export default async function ContentGeneratorPage() {
   const providers = getAiProviderStatuses();
-  const config = readAiStudioConfig();
+  const config = await loadAiStudioConfig();
   const { access } = await getServerAccessContext();
   const canGenerate =
     config.enabled && access.mode === "client_scoped" && hasEffectivePermission(access, "create_content");
