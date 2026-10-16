@@ -118,3 +118,13 @@ Repository `takatakca/takatak-v1`; observed **main HEAD `b59ca994a73c5ed0e19e3d0
 
 **Exact next action:** check latest commits' GitHub Actions for PR #187, #188 and this documentation PR #178. If red, inspect exact failed jobs and fix only the relevant PR branch. If green, give coordinator PRs for reviewed sequential merges, re-run main CI, do separately approved migration/release steps and verify runtime SHA. No automatic merge or deploy from this session. Hourly ChatGPT task already exists; do not create a duplicate.
 
+
+
+## 2026-10-15 final verification delta (newer than preceding sections)
+
+- PR #187 **full GitHub CI succeeded** for HEAD `4f34f264d528cfceb0d4c597487a283f9c72be98`: [run 38848123656](https://github.com/takatakca/takatak-v1/actions/runs/38848123656). It remains open/unmerged; the changes are not proven in production.
+- PR #188 HEAD `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f`: `Strict runtime health readiness safeguards` test step succeeded; full [run 38848366850](https://github.com/takatakca/takatak-v1/actions/runs/38848366850) continued at last check. Do not mark entire CI green until completion.
+- This documentation branch was reconciled with Coolify main via merge HEAD `aa8e31ba165960fdac3e9afa8cecffa3fcf838ab`; each later handoff edit advances its SHA. Review the latest CI after this note.
+- A progress report was posted to existing Auth issue #141 with accurate work and outstanding provider tests (no passwords, access tokens or customer PII).
+- No production deploy, schema modification, provider SMS or live runtime health proof occurred. Most recent deployment workflows were skipped; live takatak.ca health could not be checked due external-access limitations.
+- Next action: watch PR #188 current-head full CI and this documentation PR #178; repair any failures on their own branches; then hand reviewed green PRs to the designated main/release coordinator and only publish after allowed go-live gates.
