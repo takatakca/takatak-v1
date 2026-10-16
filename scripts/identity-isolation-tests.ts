@@ -36,6 +36,19 @@ import { computeTenantAccess, type TenantAccessInput } from "../src/lib/security
 import { reportWorkspaceSelection } from "../src/lib/security/workspace-selection";
 import { applyWorkspaceCookieClear } from "../src/lib/security/workspace-cookie-mutation";
 
+// Private KnowledgeAI access cannot use a five-minute cached browser
+// identity. Every proxy request must verify the user with Supabase Auth.
+if (!isHighRiskPath("/api/integrations/knowledgeai/search") ||
+    !isHighRiskPath("/api/integrations/knowledgeai/search/anything") ||
+    isHighRiskPath("/api/integrations/knowledgeai/jwks") ||
+    mayUseCachedLocalSession({
+      pathname:"/api/integrations/knowledgeai/search",
+      hasLocalUser:true,sessionUserId:"user-1",identityCookie:"user-1",
+      verifiedAtMs:Date.now(),tokenIsFresh:true,
+    })) {
+  throw new Error("KnowledgeAI private search must always bypass cached auth");
+}
+
 let failed = 0;
 
 function assert(name: string, ok: boolean, detail = "") {

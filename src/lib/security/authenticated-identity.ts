@@ -216,6 +216,7 @@ export const HIGH_RISK_PATH_PREFIXES = [
   "/api/billing",
   "/api/account",
   "/api/team",
+  "/api/integrations/knowledgeai/search",
   "/api/admin",
   "/dashboard/admin",
   "/dashboard/billing",
