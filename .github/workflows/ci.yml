@@ -194,6 +194,9 @@ jobs:
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
 
+      - name: Passive live readiness safety regression
+        run: node --test scripts/ops/live-readiness.test.mjs
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
         with:
