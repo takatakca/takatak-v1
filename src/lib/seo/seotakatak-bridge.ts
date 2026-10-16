@@ -356,7 +356,7 @@ export async function getSeoWorkspaceExportPage(collection:SeoExportCollection,o
     page.collection!==collection||page.offset!==offset||
     !Array.isArray(page.records)||page.records.length>200||
     typeof page.hasMore!=="boolean"||page.coverage?.transactionallyConsistent!==false||
-    (page.hasMore?(!Number.isSafeInteger(page.nextOffset)||page.nextOffset!<=offset):page.nextOffset!==null))
+    (page.hasMore?(page.nextOffset===null||!Number.isSafeInteger(page.nextOffset)||page.nextOffset<=offset):page.nextOffset!==null))
    return {kind:"unavailable",page:null,json:null};
  const json=JSON.stringify(page,null,2);
  if(Buffer.byteLength(json,"utf8")>1_500_000)return {kind:"unavailable",page:null,json:null};
