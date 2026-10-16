@@ -5,6 +5,7 @@
 - 2026-10-11 | ChatGPT/GitHub agent | fix/takatak-phone-country-otp-20261011 → PR #174 | PR / auth QA passed; full CI in progress | Nigerian +234 phone OTP selector and strict E.164; refuse unverified recovery email for email-session login; regression tests | Owner review/merge after full CI; manual TAKATAK production promotion; verify Supabase Twilio provider and geo permissions without sharing secrets
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
+- 2026-10-14 | ChatGPT/GitHub agent | feat/ads-dashboard-draft-creator-20261014 → PR #177 | PR open / CI pending | Enable permission-aware TAKATAK ADS campaign draft creation from /dashboard/advertising using existing API and plan entitlements; add ADS QA guard | open PR; coordinator review and merge after CI
 
 - 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015, PR #182 | CI in verification | Added workspace-wide SEO export dashboard, 4 pageable collections, signed server-only JSON download, bounded 200-row pages and per-tenant access control; export is not transactional | Confirm CI and coordinator merge; SEO Coolify/approved DB remains external blocker
 
