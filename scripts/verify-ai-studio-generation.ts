@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { DEFAULT_ANTHROPIC_MODEL, readAiStudioConfig } from "../src/lib/ai/generation/config";
+import { loadAiStudioConfig } from "../src/lib/ai/generation/load-config";
 import { buildPrompt, parseGenerateRequest, type GenerateRequest } from "../src/lib/ai/generation/prompt";
 import { callProvider, MAX_OUTPUT_TOKENS } from "../src/lib/ai/generation/provider-call";
 import { dbProvider, generateForWorkspace, GENERATION_SOURCE, type GenerationDb } from "../src/lib/ai/generation/service";
@@ -201,6 +202,7 @@ async function main() {
   await check("route and page keep generation gated and workspace-scoped; no migration", () => {
     const route = readFileSync("src/app/api/ai-studio/generate/route.ts", "utf8");
     assert.ok(route.indexOf("readAiStudioConfig()") < route.indexOf("requireWorkspaceApiPermission(\"create_content\")"));
+    assert.ok(route.indexOf("loadAiStudioConfig()") > route.indexOf("requireWorkspaceApiPermission(\"create_content\")"), "the saved key is read only after the permission check");
     assert.match(route, /requireWorkspaceApiPermission\("create_content"\)/);
     assert.match(route, /readJsonBody\(request/);
     assert.match(route, /clientId: gate\.access\.activeClientId/);
@@ -213,6 +215,27 @@ async function main() {
     for (const list of ["scripts/reconcile-production-migrations.mjs", "scripts/reconcile-staging-migrations.mjs"]) {
       assert.doesNotMatch(readFileSync(list, "utf8"), /ai_provider_anthropic/, `${list} approves no AI Studio migration`);
     }
+  });
+
+  await check("a key saved in Admin › AI provider keys wins; the server variable stays the fallback", async () => {
+    const env = { AI_STUDIO_GENERATION_ENABLED: "true", AI_STUDIO_PROVIDER: "anthropic" };
+    const saved = "saved-key-from-admin-0123456789";
+    const asked: string[] = [];
+    const fromStore = await loadAiStudioConfig(env, async (p) => { asked.push(p); return saved; });
+    assert.deepEqual(asked, ["anthropic"]);
+    assert.ok(fromStore.enabled && fromStore.apiKey === saved && fromStore.model === DEFAULT_ANTHROPIC_MODEL);
+
+    const withEnv = { ...env, ANTHROPIC_API_KEY: KEY };
+    const fallback = await loadAiStudioConfig(withEnv, async () => null);
+    assert.ok(fallback.enabled && fallback.apiKey === KEY);
+    const storeDown = await loadAiStudioConfig(withEnv, async () => { throw new Error("no database"); });
+    assert.ok(storeDown.enabled && storeDown.apiKey === KEY, "an unavailable key store keeps the server variable");
+
+    assert.deepEqual(await loadAiStudioConfig(env, async () => null), { enabled: false, reason: "missing_key" });
+    let called = false;
+    const off = await loadAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "false" }, async () => { called = true; return saved; });
+    assert.deepEqual(off, { enabled: false, reason: "disabled" });
+    assert.equal(called, false, "the store is not read while generation is off");
   });
 
   console.log(`\n${passed} AI Studio generation checks passed.`);
