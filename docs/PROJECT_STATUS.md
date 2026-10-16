@@ -27,3 +27,7 @@ PR #182 now provides a functional, server-validated "Remove this SEO site" actio
 ### Human editorial decision workflow (2026-10-15)
 
 V1 PR #182 now displays real SEO brief review forms in each client-owned site portfolio, with manager-only action and backend `PATCH /v1/sites/:siteId/briefs/:briefId/review`. Managers may approve for further editorial planning or reject with a meaningful review note. The API records authenticated actor and timestamp but not in public list JSON. No approved brief is a published article. SQL 0003 must be approved/applied after 0001 and 0002 before production readiness passes; this is **not deployed**. V1 code SHA `3c891263` and CI need verification.
+
+## SEO customer data portability (2026-10-15)
+
+PR #182 now offers `Export site SEO data (JSON)` in an authenticated client's site report. A server-only TAKATAK bridge checks active client membership, `view_dashboard` and `view_reports`, verifies the site belongs to the current workspace, then obtains a signed, tenant-scoped SEO API snapshot. The Next route `/api/seo/sites/[siteId]/snapshot.json` sends a private/no-store attachment without exposing the signed backend JWT or secret. The backend allowlists fields to exclude DNS challenge tokens, reviewer internal actor IDs and future unrecognized columns. Explicit 200-row-per-category caps mean this is a **bounded snapshot**, not a complete workspace or regulatory data export. Backend feature SHA `24b2c1b4` CI `38843705978` passed. Newest V1 CI still requires final verification, and nothing has been deployed.

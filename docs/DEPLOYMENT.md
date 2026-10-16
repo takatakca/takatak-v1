@@ -26,3 +26,7 @@ After backend Coolify and database approval, test the new portfolio's "Remove th
 ### SEO editorial review release gate
 
 Backend schema now proposes SQL `0003_brief_editorial_review.sql` (after 0001 and 0002). Apply solely to owner-approved existing/non-billable staging database first. Verify `/ready` rejects missing review columns, one draft can be approved/rejected only once, another tenant's manager receives no write access, and reviewed_by profile ID stays server-only. V1 PR #182 remains coordinator-only merge/release. Human approval does not automatically publish content.
+
+### SEO site JSON snapshot smoke
+
+After an approved backend database/HTTPS deployment and coordinator-approved V1 PR merge, sign in as client A with `view_reports`. In `/dashboard/seo/portfolio/{siteId}` download the JSON snapshot. Validate `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`, `format:seotakatak-site-snapshot`, `coverage.guaranteedComplete:false`, up-to-200 collection caps, and no `verification_token` or `reviewed_by`. A read-only import token, anonymous browser or client B must not retrieve client A data. The snapshot does not include TAKATAK master account records or all SEO history. No live data was exported during development.

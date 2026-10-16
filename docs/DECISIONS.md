@@ -22,3 +22,7 @@ A TAKATAK `manage_integrations` client manager may remove a **single SEO product
 
 ### Editorial governance
 A draft brief can be approved or rejected exactly once by a client-scoped `manage_integrations` actor. Backend persists decision, authenticated profile and timestamp through a tenant-filtered PATCH constrained to `draft`; rejection requires meaningful explanation. Approval is not article generation, publishing or website mutation. Only a future separately authorized CMS workflow may publish after site ownership and content approval.
+
+### SEO data portability boundary
+
+Only users with an active `client_scoped` TAKATAK workspace plus both `view_dashboard` and `view_reports` may request per-site JSON export. The server-only Next route obtains a new short-lived signed JWT for the SEO service and verifies the requested site belongs to that workspace. The SEO backend itself checks the tenant and emits allowlisted, privacy-minimized columns. The snapshot explicitly says `guaranteedComplete:false` and is capped at 200 rows per collection; do not market it as a complete history, cross-product export, or proof of regulatory access-fulfillment. Download response is private/no-store.
