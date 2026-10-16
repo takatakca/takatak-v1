@@ -4,7 +4,10 @@
 FROM node:22.23.2-bookworm-slim AS build
 
 WORKDIR /app
-ENV NEXT_TELEMETRY_DISABLED=1 \
+# Build-time only: Next.js/TypeScript exceeds Node's default ~2 GiB heap on Coolify.
+# Keep this out of the runtime image to avoid increasing web memory use.
+ENV NODE_OPTIONS="--max-old-space-size=4096" \
+    NEXT_TELEMETRY_DISABLED=1 \
     NPM_CONFIG_IGNORE_SCRIPTS=false \
     NPM_CONFIG_AUDIT=false \
     NPM_CONFIG_FUND=false
@@ -52,9 +55,8 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
     NEXT_PUBLIC_HUBSPOT_PORTAL_ID=${NEXT_PUBLIC_HUBSPOT_PORTAL_ID} \
     NEXT_PUBLIC_LIVE_CHAT_PROVIDER=${NEXT_PUBLIC_LIVE_CHAT_PROVIDER}
 
-RUN test -n "$NEXT_PUBLIC_APP_URL" \
- && test -n "$NEXT_PUBLIC_SUPABASE_URL" \
- && test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+# Validate required public build args without printing their values into Docker logs.
+RUN node -e 'const keys = ["NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]; const missing = keys.filter(key => !process.env[key]); if (missing.length) { console.error("Missing required public build configuration: " + missing.join(", ")); process.exit(1); }' \
  && npm run db:generate \
  && npm run build
 
