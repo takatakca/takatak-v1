@@ -19,3 +19,7 @@ The approved PR branch now includes a manager-only DNS TXT verification card on 
 ### 2026-10-15 content briefs and latest CI correction
 
 Client site reports now include an editorial content brief queue with an actual TAKATAK-signed server action that saves drafts into the existing SEOTAKATAK `seo_briefs` table. A brief cannot auto-publish or claim a live article; status is draft-only. The reviewer/approver and CMS publisher remain future deliverables. The first V1 CI pass after this feature hit a JSX unescaped-entity lint error; corrected at `4f70342cb30efd5316a054e93c17cd3c76204b98`. Final full CI must be rechecked. Backend rate limiting and schema-aware readiness pass on backend SHA `c1d7861f` (run `38799814574`); production not deployed.
+
+## Latest SEO data-lifecycle update — 2026-10-15
+
+PR #182 now provides a functional, server-validated "Remove this SEO site" action in the portfolio. It requires the manager permission, an active tenant, the exact hostname typed by the operator and a separate checkbox, then calls the signed SEOTAKATAK API DELETE route. The SEO API enforces tenant ownership and cascade-deletes its own keywords, backlink prospects and content drafts through migration 0001's foreign-key rules. TAKATAK master client/company records are **not** deleted. Backend code commit `6308c81f` passed CI `38841219269`. The V1 PR's initial CI discovered a JSX punctuation lint error, repaired in `417edac2`; final updated CI outcome must be verified separately. Nothing is deployed in production yet.

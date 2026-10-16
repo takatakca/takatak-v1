@@ -15,3 +15,7 @@ For the SEO work tracked in PR #182:
 - Registering a site is not equivalent to owning it. The SEO backend issues unique cryptographic DNS TXT challenges, and the domain can only be marked verified after a live TXT match. Only V1 client managers can view/reissue/check challenges, and general site reads redact challenge tokens.
 
 - SEO original content briefs in PR #182 are deliberate draft-only records; a keyword and editorial angle do **not** authorize publishing. The user must verify site ownership, the product must add editorial review/approval and CMS integration, and every release must use server-side workspace permission checks before publishing.
+
+## SEO portfolio site deletion
+
+A TAKATAK `manage_integrations` client manager may remove a **single SEO product site**, not the TAKATAK master customer. The V1 UI asks for the domain and a separate consent checkbox, and its server action revalidates the current workspace. The backend also demands a signed `seo:manage` token, `confirmDomain` matching its own stored hostname and `confirmDelete:true`; a second tenant's UUID never grants deletion. SQL 0001 already cascades child SEO records. No global ecosystem data erasure is implied. Use only disposable staging records in destructive smoke tests.

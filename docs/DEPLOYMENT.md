@@ -18,3 +18,7 @@ Backend `sql/0002_domain_verification.sql` must be reviewed and applied in the a
 ### Additional V1 QA before coordinator promotion
 
 Test content briefs for authorized client A (create + list, draft-only). Ensure client B cannot read/write A's site by changing siteId and read-only users cannot submit content briefs. The form must never claim that a draft was published. Recheck latest full V1 CI run after the `4f70342c` lint fix. SEO backend production `/ready` now checks migrations 0001 and 0002; Coolify still requires operator-provided environment settings.
+
+### SEO site deletion smoke (approved staging only)
+
+After backend Coolify and database approval, test the new portfolio's "Remove this SEO site" form on a disposable owned test site. Wrong domain and unchecked consent must fail; manager from another workspace must not see or delete it; authorized deletion must remove that site's SEO opportunities, prospects and briefs while leaving the TAKATAK identity intact. The `SEOTAKATAK` backend has mock/HTTP tests but **no approved production DB migration or deployed proof** yet. V1 PR #182 remains coordinator-only release.

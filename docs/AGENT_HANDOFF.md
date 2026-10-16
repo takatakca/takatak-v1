@@ -67,3 +67,15 @@
 - **Human prerequisites**: V1 coordinator authorization, SEOTAKATAK existing owner-approved PostgreSQL project and migrations 0001+0002, Coolify app URL/UUID/token/HTTPS, runtime server-only signing key and Google credentials for verified GSC. Do not expose values in any GitHub file.
 - **Exact next action**: read newest GitHub Actions failure/success for V1 PR #182, fix only actual failing files, then hand off green PR to designated coordinator. Independently complete approved database/Coolify configuration (issue #1) and smoke-test two clients, verified DNS and Search Console import on deployed SHA.
 - **Agent restart**: no external autonomous coding-agent orchestrator has been connected or verified.
+
+## 2026-10-15 resumed session: scoped SEO-site deletion
+
+- **Last task completed:** Created full UI → signed server action → SEOTAKATAK API → tenant-filtered PostgREST site DELETE, with SQL 0001 cascading SEO child rows. No TAKATAK identity deletion. Dual confirmation requires typed exact registered hostname and separate positive acknowledgement.
+- **Files modified this session:** SEOTAKATAK `src/app.mjs`, `src/store.mjs`, `src/server.mjs`, `tests/engine.test.mjs`, `tests/store.test.mjs`, `tests/http.test.mjs` and its five docs; V1 `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/actions.ts`, `page.tsx`, `scripts/verify-seo-free-tools.ts` plus all five V1 handoff docs and `WORKLOG.md`.
+- **Last verified backend implementation SHA:** `6308c81fd97156dab620690bd5fbb629875299c0`; backend CI **PASSED** `38841219269`. Later docs-only commit `8e3bca13c5d0ba99203bfe78b8ecb67c40645950`. V1 code SHA `417edac2860adae2958dd6716488fa012865b379` fixes a lint error from CI `38841109038`.
+- **Tests/checks executed:** GitHub backend `npm run check`, Node HTTP integration tests, `bash -n scripts/deploy-coolify.sh`, Docker build passed. V1 Typecheck passed before eslint found one JSX apostrophe; update fixes it, rerun full CI and inspect further errors if any. Frontend QA contract asserts approved delete form fields and server bridge.
+- **Current task:** verify final V1 PR #182 CI on latest commit and resolve any failure on this branch without bypassing coordinator controls.
+- **Known blockers/deployment:** SEO backend deploy job `38841246305` failed because GitHub production `COOLIFY_API_URL` is missing. Database/migrations 0001 and 0002 not approved for live application; no live service verification. V1 PR #182 still open. Infrastructure actions in `takatakca/SEOTAKATAK#1`.
+- **Required access:** authorized Coolify app, UUID, token and HTTPS domain; approved existing/no-billable Supabase DB with migrations; V1 coordinator approval and release. No secrets documented.
+- **Exact next action:** Check V1 PR latest SHA and CI; fix failures until green. Hand reviewed PR to the designated V1 coordinator for approval/merge. Once infrastructure is configured, deploy signed SEOTAKATAK backend with exact SHA and verify /ready, cross-tenant isolation, DNS ownership and disposable-site deletion. Do not call production live before proof.
+- No external coding-agent relaunch orchestrator has been created or verified.
