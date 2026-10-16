@@ -43,6 +43,52 @@ async function check(): Promise<void> {
     assert.equal(invalidOrigin.response.status, 403);
   }
 
+  // An attacker must not be able to turn a forged proxy forwarding header
+  // into a trusted CSRF origin for login, registration or password updates.
+  const forwardedSpoof = await readTrustedJsonBody(
+    request("{}", {
+      Origin: "https://attacker.invalid",
+      "X-Forwarded-Host": "attacker.invalid",
+      "X-Forwarded-Proto": "https",
+      Host: "attacker.invalid",
+    }),
+    64,
+  );
+  assert.equal(forwardedSpoof.ok, false);
+  if (!forwardedSpoof.ok) {
+    assert.equal(forwardedSpoof.response.status, 403);
+  }
+
+  const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL;
+  const vercelEnv = process.env.VERCEL_ENV;
+  try {
+    process.env.NEXT_PUBLIC_APP_URL = "not a URL";
+    const misconfigured = await readTrustedJsonBody(request("{}"), 64);
+    assert.equal(misconfigured.ok, false);
+    if (!misconfigured.ok) assert.equal(misconfigured.response.status, 403);
+
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    process.env.VERCEL_ENV = "production";
+
+    // In production without an explicit app URL, accept only the canonical
+    // TAKATAK domain, not a Host or NextRequest-derived origin.
+    const fallbackSpoof = await readTrustedJsonBody(
+      request("{}", {
+        Origin: "https://attacker.invalid",
+        "X-Forwarded-Host": "attacker.invalid",
+        "X-Forwarded-Proto": "https",
+      }),
+      64,
+    );
+    assert.equal(fallbackSpoof.ok, false);
+    if (!fallbackSpoof.ok) assert.equal(fallbackSpoof.response.status, 403);
+  } finally {
+    if (configuredOrigin === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
+    else process.env.NEXT_PUBLIC_APP_URL = configuredOrigin;
+    if (vercelEnv === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = vercelEnv;
+  }
+
   const missingOrigin = await readTrustedJsonBody(
     request("{}", { Origin: "" }),
     64,
