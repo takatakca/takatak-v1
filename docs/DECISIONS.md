@@ -19,3 +19,6 @@ For the SEO work tracked in PR #182:
 ## SEO portfolio site deletion
 
 A TAKATAK `manage_integrations` client manager may remove a **single SEO product site**, not the TAKATAK master customer. The V1 UI asks for the domain and a separate consent checkbox, and its server action revalidates the current workspace. The backend also demands a signed `seo:manage` token, `confirmDomain` matching its own stored hostname and `confirmDelete:true`; a second tenant's UUID never grants deletion. SQL 0001 already cascades child SEO records. No global ecosystem data erasure is implied. Use only disposable staging records in destructive smoke tests.
+
+### Editorial governance
+A draft brief can be approved or rejected exactly once by a client-scoped `manage_integrations` actor. Backend persists decision, authenticated profile and timestamp through a tenant-filtered PATCH constrained to `draft`; rejection requires meaningful explanation. Approval is not article generation, publishing or website mutation. Only a future separately authorized CMS workflow may publish after site ownership and content approval.

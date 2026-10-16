@@ -23,3 +23,7 @@ Client site reports now include an editorial content brief queue with an actual 
 ## Latest SEO data-lifecycle update — 2026-10-15
 
 PR #182 now provides a functional, server-validated "Remove this SEO site" action in the portfolio. It requires the manager permission, an active tenant, the exact hostname typed by the operator and a separate checkbox, then calls the signed SEOTAKATAK API DELETE route. The SEO API enforces tenant ownership and cascade-deletes its own keywords, backlink prospects and content drafts through migration 0001's foreign-key rules. TAKATAK master client/company records are **not** deleted. Backend code commit `6308c81f` passed CI `38841219269`. The V1 PR's initial CI discovered a JSX punctuation lint error, repaired in `417edac2`; final updated CI outcome must be verified separately. Nothing is deployed in production yet.
+
+### Human editorial decision workflow (2026-10-15)
+
+V1 PR #182 now displays real SEO brief review forms in each client-owned site portfolio, with manager-only action and backend `PATCH /v1/sites/:siteId/briefs/:briefId/review`. Managers may approve for further editorial planning or reject with a meaningful review note. The API records authenticated actor and timestamp but not in public list JSON. No approved brief is a published article. SQL 0003 must be approved/applied after 0001 and 0002 before production readiness passes; this is **not deployed**. V1 code SHA `3c891263` and CI need verification.

@@ -79,3 +79,13 @@
 - **Required access:** authorized Coolify app, UUID, token and HTTPS domain; approved existing/no-billable Supabase DB with migrations; V1 coordinator approval and release. No secrets documented.
 - **Exact next action:** Check V1 PR latest SHA and CI; fix failures until green. Hand reviewed PR to the designated V1 coordinator for approval/merge. Once infrastructure is configured, deploy signed SEOTAKATAK backend with exact SHA and verify /ready, cross-tenant isolation, DNS ownership and disposable-site deletion. Do not call production live before proof.
 - No external coding-agent relaunch orchestrator has been created or verified.
+
+## Resumed editorial workflow checkpoint (2026-10-15)
+
+- **Last completed task:** connected human review of SEO content briefs via `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts`, `page.tsx`, and `scripts/verify-seo-free-tools.ts` to a real scoped backend PATCH. No CMS publishing is implemented or claimed.
+- **Last V1 feature SHA:** `3c8912637fd4f827d443fe48f6c7a9a34f99d6a7`. Full V1 CI is still running at handoff; preceding PR branch SHA `18e846fd` passed complete CI `38841472062`. Verify the newest CI run, not the previous one. The current branch head also includes this docs commit.
+- **Backend state:** SEOTAKATAK feature `3fc053d3` passed CI `38842223371`; immutable review-state tests follow at `fc612091`, with docs at a newer SHA. A new **unapplied** `sql/0003_brief_editorial_review.sql` must be approved and applied after 0001 and 0002.
+- **Permissions:** `manage_integrations` in V1 controls review UI/server action; SEOTAKATAK verifies a signed `seo:manage` token with active tenant ownership. A rejection requires a 10+ character reason. PostgREST filters status=draft to prevent repeat decisions. Reviewer profile ID is persisted server-only and hidden from general brief list.
+- **Checks:** Typecheck/lint/contracts pass in prior V1 CI; new review UI must pass `npm run qa:seo-free-tools`, typecheck, lint, full build, and client isolation smoke when deployed.
+- **Deployment reality:** neither SEO service nor integration is verified live. Coolify and approved Supabase project still absent, GitHub issue `takatakca/SEOTAKATAK#1` tracks human actions. No V1 main merge allowed except designated coordinator.
+- **Next exact action:** inspect newest PR #182 CI; correct any failure on this branch. Obtain coordinator review/approval, approve DB migrations 0001→0002→0003, configure Coolify/V1 signed backend connection and smoke both clients before claiming production ready.

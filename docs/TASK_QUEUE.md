@@ -17,5 +17,7 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [ ] Configure SEOTAKATAK separate approved database and Coolify HTTPS service; verify real server-to-server calls and two separate customer workspaces.
 - [ ] Enable Google service account and verify Search Console property/domain evidence and quota failure paths end-to-end.
 - [x] Implement tenant-safe editorial backlink prospect creation/list/status UI; never mark earned until independent verification.
-- [ ] Extend true backlink-provider evidence, content approval/CMS publish and observed LLM citation integrations; don't label placeholders as live.
+- [x] Add signed manager-only brief approval/rejection with review reason and explicit not-published state.
+- [ ] Obtain database approval for migration 0003 after 0001+0002 and test real draft-review transitions.
+- [ ] Extend true backlink-provider evidence, original CMS publishing with verified ownership/consent and observed LLM citation integrations; don't label placeholders as live.
 - [ ] Schedule imports with quota/rate limiting, per-site logs and approvals once V1 auth/go-live is stable.
