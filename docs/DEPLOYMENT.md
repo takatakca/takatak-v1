@@ -38,3 +38,7 @@ On an approved staging-only SEO backend with migrations and current client A/B a
 ### SEO deletion receipts release gate — PR #196
 
 V1 only supplies the authorized UI/bridge; the SEO API is a separately deployed Docker service. The owner must first approve an existing/non-billable Supabase project and migrations 0001→0002→0003→0004, configure a Coolify HTTPS app and GitHub production vars/secrets, and verify the backend `/ready` on the exact commit. The PR #196 manager dashboard at `/dashboard/seo/deletions` may merge/deploy only via TAKATAK V1's designated coordinator after complete CI. In approved staging: confirm viewer denied, another client B sees no A receipts, fake/invalid offsets rejected, and an authorized manager sees actual receipt counts after deleting a disposable test site. It is an operational log, not an erasure compliance certificate. Do not run SQL against TAKATAK's master identity database or publish a fake receipt.
+
+### Latest release status (2026-10-16)
+
+PR #196 full branch CI passed: SHA `90f8fdeef6ea499e99f796c3563cefa4f6c8a6e9`, run `38884438610`; the PR is open and ready for V1 coordinator review, not merged. The SEOTAKATAK backend main SHA `b41eae7f4981f325668065ce4fc4e7e3a5860710` passed CI `38885243320`, but Coolify deploy `38885295728` failed. Owner-approved SQL 0004 and live /ready plus two-tenant staging deletion audit are still mandatory.
