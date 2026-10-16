@@ -73,3 +73,11 @@ The phone-only email nullable column was verified present in staging. `lead_atta
 - Coordinator: review and merge green #187 Auth CSRF; review other open PRs individually. #188 readiness is already in `main`, do not duplicate.
 - Release control: main `c53ed4529e03b15a0241f5b96e4ed37d3f50f56e` passed main CI, but Coolify runs were skipped; no production SHA or actual phone SMS has been verified. Require authorized env, approved migration plan, backup and provider staging E2E.
 - Future R2F: no live FLEXS or QMAPS adapter until source tenant mapping, scoped entitlement, consent, durable idempotency/outbox and cross-tenant tests.
+
+
+## 2026-10-16 afternoon — precise next executable actions
+1. Observe PR #199 HEAD `f4791d23a5c66d0fcda1e7beecf035fc2d8a3186` and CI [38942971983](https://github.com/takatakca/takatak-v1/actions/runs/38942971983). Repair on feature branch if failed; rerun exact targeted passive-probe tests under CI.
+2. Reconcile documentation PR #178 onto latest main; it adds required five files/qa:handoff without overwriting #192 provider packages or #197/#198 hosting changes.
+3. Forward already-green #187 Auth/CSRF and #193 R2F Phase 2 to coordinator for sequential merge/review. Both are **code only** until their rollout is verified.
+4. Obtain actual main CI and Coolify serving SHA/healthy Supabase/DB before any go-live claim. Skip live mutating checks by default; never infer healthy from HTTP 200 alone.
+5. Await staging migration backup/owner approval, actual phone OTP delivery and multi-tenant isolation tests before release closure. Keep all credentials off branches and logs.
