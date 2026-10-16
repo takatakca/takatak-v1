@@ -28,7 +28,7 @@ function validatedKey(config:KnowledgeAiIssuerConfig) {
   return key;
 }
 export function readKnowledgeAiIssuerConfig(
-  env:NodeJS.ProcessEnv=process.env
+  env:Record<string,string|undefined>=process.env
 ):KnowledgeAiIssuerConfig|null {
   // Enable only after the product has an approved operator, signer and private
   // backend. No auto-generated development/production fallback secret.
