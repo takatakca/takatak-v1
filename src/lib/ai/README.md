@@ -22,3 +22,11 @@ Provenance rules (the heart of Phase 9 honesty):
 Provider boundary: real OpenAI/TryHolo adapters arrive in their own phases,
 following the Metricool/Upmind ladder (env validation → safe client →
 adapter → test connection → connected only after a real success).
+
+## Live generation (TK-023)
+
+`generation/` adds opt-in draft generation (OpenAI or Anthropic) used by
+`/dashboard/ai-studio/content-generator` and `POST /api/ai-studio/generate`.
+It writes `ai_generated` outputs with status `draft` only after a real
+provider call succeeds, and never publishes. See
+`docs/AI_STUDIO_GENERATION.md`. `providers.ts` stays presence-only.

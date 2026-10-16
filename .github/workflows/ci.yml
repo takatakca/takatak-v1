@@ -52,6 +52,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Strict runtime health readiness safeguards
+        run: npx tsx scripts/verify-runtime-readiness.ts
+
       - name: Lint
         run: npm run lint
 
@@ -100,6 +103,9 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: CUBAFOOD master contract safeguards (offline, no live route)
+        run: npm run qa:cubafood-contract
+
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
@@ -130,6 +136,9 @@ jobs:
       - name: SEO score history
         run: npm run qa:seo-history
 
+      - name: SEOTAKATAK free-tools and access contracts
+        run: npm run qa:seo-free-tools
+
       - name: Report export and delivery
         run: npm run qa:report-export
 
@@ -139,6 +148,12 @@ jobs:
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
 
+      - name: AI Studio generation safeguards
+        run: npm run qa:ai-studio-generation
+
+      - name: QMAPS listings and reviews sync safeguards
+        run: npm run qa:qmaps-sync
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
@@ -147,6 +162,9 @@ jobs:
 
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
+
+      - name: AI provider keys safeguards
+        run: npm run qa:ai-provider-keys
 
       - name: GROUPE TAKATAK billing (Facturations) safeguards
         run: npm run qa:billing
@@ -384,6 +402,11 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:lead-order-billing-db
+
+      - name: AI provider keys against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:ai-provider-keys-db
 
       - name: Build (webpack)
         env:

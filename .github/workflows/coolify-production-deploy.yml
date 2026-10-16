@@ -1,0 +1,64 @@
+# Direct production only. Deliberately disabled until the owner configures
+# COOLIFY_TAKATAK_AUTODEPLOY_ENABLED=true and production environment secrets.
+name: TAKATAK Coolify production deploy
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-coolify-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      ${{ vars.COOLIFY_TAKATAK_AUTODEPLOY_ENABLED == 'true' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      COOLIFY_DEPLOY_URL: ${{ secrets.COOLIFY_TAKATAK_DEPLOY_WEBHOOK }}
+      COOLIFY_DEPLOY_TOKEN: ${{ secrets.COOLIFY_TAKATAK_API_TOKEN }}
+    steps:
+      - name: Verify this successful CI checked current main
+        uses: actions/github-script@v7
+        env:
+          VERIFIED_CI_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          script: |
+            const {owner, repo} = context.repo;
+            const branch = await github.rest.repos.getBranch({owner, repo, branch: "main"});
+            const ciSha = process.env.VERIFIED_CI_SHA;
+            if (branch.data.commit.sha !== ciSha) {
+              core.setFailed("Main has moved since CI: refusing stale production deploy.");
+            }
+
+      - name: Request Coolify deploy from exact main source
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${COOLIFY_DEPLOY_URL:-}" ] || [ -z "${COOLIFY_DEPLOY_TOKEN:-}" ]; then
+            echo "::error::Configure COOLIFY_TAKATAK_DEPLOY_WEBHOOK and COOLIFY_TAKATAK_API_TOKEN in GitHub production environment"
+            exit 1
+          fi
+          case "$COOLIFY_DEPLOY_URL" in
+            https://coolify.takatak.ca/api/v1/deploy*|https://coolify.takatak.ca/api/v1/deploy/*) ;;
+            *)
+              echo "::error::Deploy URL must target the approved Coolify instance API"
+              exit 1
+              ;;
+          esac
+          curl --fail-with-body --silent --show-error --retry 2 \
+            --max-time 30 \
+            -X POST \
+            -H "Authorization: Bearer ${COOLIFY_DEPLOY_TOKEN}" \
+            "$COOLIFY_DEPLOY_URL" >/dev/null
+          echo "Coolify deploy queued for CI-verified current main. Confirm deployment health in Coolify."

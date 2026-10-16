@@ -17,6 +17,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/hosting",
     "/deals",
     "/pricing",
+    "/free-tools",
     "/services",
     "/privacy-manager",
     "/search",

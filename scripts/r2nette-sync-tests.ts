@@ -23,6 +23,10 @@ const route = readProjectFile(
   "src/lib/integrations/r2nette/events/route.ts",
 );
 
+const publicRoute = readProjectFile(
+  "src/app/api/integrations/r2nette/events/route.ts",
+);
+
 assert.match(
   schema,
   /model SourceSynchronizationEvent[\s\S]*responsePayload\s+Json\?/,
@@ -63,6 +67,12 @@ assert.match(
   route,
   /"Retry-After":\s*"30"/,
   "Temporary TAKATAK failures must provide Retry-After.",
+);
+
+assert.match(
+  publicRoute,
+  /@\/lib\/integrations\/r2nette\/events\/route/,
+  "The tested R2NETTE receiver must be exposed under the Next.js API route.",
 );
 
 console.log(
