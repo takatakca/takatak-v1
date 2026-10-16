@@ -26,6 +26,8 @@
 
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
+
+- 2026-10-16 | GPT-6 KnowledgeAI bridge | feature/knowledgeai-issuer-20261016 → draft PR | active | Implement gated central KnowledgeAI access grants + RS256/JWKS issuer endpoints with tests; no production activation | next: CI and secure private infrastructure
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR pending | active | Add the TAKATAK experience-launch bridge and signed event intake for REVERS CANADA | run bridge QA, review PR, configure production secrets/callback, then verify exchange
 
