@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/auth/env";
 import { isSupabaseAdminConfigured } from "@/lib/auth/supabase-admin";
 import { getPrisma } from "@/lib/db/prisma";
+import { isRuntimeReady } from "@/lib/ops/runtime-readiness";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,7 +35,7 @@ export async function GET() {
       ? "ok"
       : "unavailable"
     : "not_configured";
-  const ok = database !== "unavailable" && supabase !== "unavailable";
+  const ok = isRuntimeReady({ database, supabase });
 
   const response = NextResponse.json(
     {
