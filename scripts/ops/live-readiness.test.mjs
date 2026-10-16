@@ -51,7 +51,15 @@ globalThis.fetch = async (input, init = {}) => {
     return new Response(JSON.stringify({
       ok: true,
       checks: { process: "ok", database: "ok", supabase: "ok" },
-    }), { status: failStatus, headers: { "Content-Type": "application/json" } });
+    }), {
+      status: failStatus,
+      headers: {
+        "Content-Type": "application/json",
+        ...(process.env.READINESS_TEST_RELEASE_SHA
+          ? { "X-TAKATAK-Release": process.env.READINESS_TEST_RELEASE_SHA }
+          : {}),
+      },
+    });
   }
   if (path === "/api/auth/login")
     return new Response(JSON.stringify({ code: "email_not_found" }), { status: 404 });
@@ -105,12 +113,41 @@ try {
     assert.match(run.stdout, /MOCK_FETCH POST \/api\/billing\/growth\/webhook/);
   });
 
+  test("expect-sha fails closed on absent or mismatched attestation", () => {
+    const sha = "a".repeat(40);
+    const match = probe(["--expect-sha", sha], {
+      READINESS_TEST_RELEASE_SHA: sha,
+    });
+    assert.equal(match.status, 0, match.stdout + match.stderr);
+    assert.match(match.stdout, /OK\\s+release SHA.*exact/);
+    assert.doesNotMatch(match.stdout, /MOCK_FETCH POST /);
+
+    const mismatch = probe(["--expect-sha", sha], {
+      READINESS_TEST_RELEASE_SHA: "b".repeat(40),
+    });
+    assert.equal(mismatch.status, 1, mismatch.stdout + mismatch.stderr);
+    assert.match(mismatch.stdout, /FAIL\\s+release SHA/);
+
+    const missing = probe(["--expect-sha", sha]);
+    assert.equal(missing.status, 1, missing.stdout + missing.stderr);
+    assert.match(missing.stdout, /release header missing/);
+
+    const malformed = probe(["--expect-sha", "bad"]);
+    assert.equal(malformed.status, 2, malformed.stdout + malformed.stderr);
+    assert.doesNotMatch(malformed.stdout, /MOCK_FETCH/);
+  });
+
   test("script must not silently enable active mode", () => {
     const code = readFileSync(
       resolve(process.cwd(), "scripts/ops/live-readiness.mjs"), "utf8",
     );
     assert.match(code, /process\.argv\.includes\("--active-probes"\)/);
     assert.match(code, /assessLiveReadiness\(ready\)/);
+    const route = readFileSync(
+      resolve(process.cwd(), "src/app/api/health/ready/route.ts"), "utf8",
+    );
+    assert.ok(route.includes("process.env.SOURCE_COMMIT"));
+    assert.ok(route.includes('"X-TAKATAK-Release"'));
   });
 } finally {
   process.on("exit", () => rmSync(dir, { recursive: true, force: true }));
