@@ -122,5 +122,21 @@ as evidence that an SMS was delivered. This command **does not** attest the
 serving Git SHA, verify customer login, or prove tenant isolation: obtain
 those separately under the release coordinator's acceptance checklist.
 
+For an **exact runtime revision check** after an authorized deployment, provide
+the full 40-character CI-reviewed commit SHA:
+
+```sh
+node scripts/ops/live-readiness.mjs --origin https://takatak.ca --expect-sha FULL_40_CHARACTER_COMMIT_SHA
+```
+
+Coolify [predefines `SOURCE_COMMIT` at runtime](https://coolify.io/docs/applications/configuration/environment-variables).
+The `/api/health/ready` route sends `X-TAKATAK-Release` **only if** that
+runtime variable is a valid full Git SHA. The passive probe refuses missing
+or mismatched attestations when `--expect-sha` is supplied. If Coolify did
+not inject `SOURCE_COMMIT`, do **not** synthesize one or claim success:
+inspect the live resource settings with the release coordinator. This check
+is a public server assertion over verified HTTPS, not a cryptographic supply
+chain attestation or a substitute for an authenticated two-tenant smoke test.
+
 The offline regression suite `node --test scripts/ops/live-readiness.test.mjs`
 is exercised in the normal pull-request CI with a fully mocked HTTP layer.
