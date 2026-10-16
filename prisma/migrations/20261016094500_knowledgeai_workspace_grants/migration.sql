@@ -15,4 +15,16 @@ CREATE TABLE IF NOT EXISTS "knowledgeai_workspace_grants" (
 );
 CREATE INDEX IF NOT EXISTS "knowledgeai_workspace_grants_expires_at_idx"
   ON "knowledgeai_workspace_grants"("expires_at");
+-- Never expose these grants through the browser-facing PostgREST roles.
+ALTER TABLE "knowledgeai_workspace_grants" ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE "knowledgeai_workspace_grants" FROM PUBLIC;
+DO $permissions$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN
+    REVOKE ALL ON TABLE "knowledgeai_workspace_grants" FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN
+    REVOKE ALL ON TABLE "knowledgeai_workspace_grants" FROM authenticated;
+  END IF;
+END;
+$permissions$;
