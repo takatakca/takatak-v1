@@ -24,8 +24,8 @@ export default async function SavedOutputsPage({
     <div className="space-y-5">
       <AiHeader
         title="Saved Outputs"
-        subtitle="Brouillons enregistrés. Un envoi crée une publication en attente d'approbation. Rien n'est publié tout seul."
-        badges={[{ label: "Foundation" }, { label: "Templates — not AI", status: "foundation_template" }]}
+        subtitle="Brouillons enregistrés, avec leur origine indiquée : modèle TAKATAK, texte manuel ou brouillon généré par IA. Un envoi crée une publication en attente d'approbation. Rien n'est publié tout seul."
+        badges={[{ label: "Origine indiquée" }, { label: "Jamais publié tout seul" }]}
         actions={
           <Link href="/dashboard/ai-studio/usage" className="text-sm font-medium text-indigo-700 hover:text-indigo-500">
             Utilisation et coût
