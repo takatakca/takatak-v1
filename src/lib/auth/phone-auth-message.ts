@@ -13,6 +13,12 @@ export function phoneAuthMessage(message: string, code?: string | null) {
   if (value.includes("otp_disabled") || value.includes("signups not allowed")) {
     return "No TAKATAK identity uses this mobile number yet. Create your identity first, or sign in with email.";
   }
+  if (value.includes("invalid phone number format") || value.includes("e.164")) {
+    return "Use a valid mobile number with your country calling code (for Nigeria select +234).";
+  }
+  if (value.includes("60605") || value.includes("21408") || value.includes("geo permission")) {
+    return "SMS delivery is restricted to this country. Contact TAKATAK support.";
+  }
   if (value.includes("phone_provider_disabled") || value.includes("unsupported phone provider")) {
     return "SMS sign-in is not enabled on this TAKATAK environment yet. Use email for now.";
   }

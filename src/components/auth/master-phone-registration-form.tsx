@@ -9,7 +9,8 @@ import {
   validateFirstName,
   validateLastName,
 } from "@/lib/auth/registration-validation";
-import { normalizePhone, validatePhone } from "@/lib/auth/otp/phone";
+import { normalizePhone, validatePhone, type PhoneCountry } from "@/lib/auth/otp/phone";
+import { phoneAuthMessage } from "@/lib/auth/phone-auth-message";
 
 type Values = {
   firstName: string;
@@ -25,24 +26,11 @@ const INITIAL: Values = {
   acceptedTerms: false,
 };
 
-function authMessage(message: string) {
-  const value = message.toLowerCase();
-  if (value.includes("rate") || value.includes("too many")) {
-    return "Too many verification requests. Please wait and try again.";
-  }
-  if (value.includes("phone") && value.includes("disabled")) {
-    return "TAKATAK SMS verification is not enabled yet.";
-  }
-  if (value.includes("provider")) {
-    return "TAKATAK SMS verification provider is not configured.";
-  }
-  return "Unable to send the TAKATAK verification code. Please try again.";
-}
-
 export function MasterPhoneRegistrationForm() {
   const router = useRouter();
   const inFlight = useRef(false);
   const [values, setValues] = useState<Values>(INITIAL);
+  const [phoneCountry, setPhoneCountry] = useState<PhoneCountry>("CA");
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -64,12 +52,12 @@ export function MasterPhoneRegistrationForm() {
 
     const firstName = normalizePersonName(values.firstName);
     const lastName = normalizePersonName(values.lastName);
-    const phone = normalizePhone(values.phone);
+    const phone = normalizePhone(values.phone, phoneCountry);
 
     const errors: Record<string, string> = {};
     const firstNameError = validateFirstName(firstName);
     const lastNameError = validateLastName(lastName);
-    const phoneError = validatePhone(values.phone);
+    const phoneError = validatePhone(values.phone, phoneCountry);
     if (firstNameError) errors.firstName = firstNameError;
     if (lastNameError) errors.lastName = lastNameError;
     if (phoneError || !phone) errors.phone = phoneError ?? "Enter a valid phone number.";
@@ -115,7 +103,7 @@ export function MasterPhoneRegistrationForm() {
     inFlight.current = false;
 
     if (otpError) {
-      setError(authMessage(otpError.message));
+      setError(phoneAuthMessage(otpError.message, (otpError as { code?: string }).code));
       return;
     }
 
@@ -159,9 +147,17 @@ export function MasterPhoneRegistrationForm() {
 
       <div>
         <label htmlFor="phone" className="mb-1.5 block text-xs font-semibold text-foreground">Mobile number</label>
+        <label htmlFor="registration-phone-country" className="mb-1 block text-xs font-semibold text-foreground">Country calling code</label>
+        <select id="registration-phone-country" value={phoneCountry} disabled={loading}
+          onChange={(event) => { setPhoneCountry(event.target.value as PhoneCountry); setFieldErrors((current) => ({ ...current, phone: "" })); setError(null); }}
+          className="mb-2 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground">
+          <option value="CA">Canada / US (+1)</option>
+          <option value="NG">Nigeria (+234)</option>
+          <option value="INTL">Other country (enter +code)</option>
+        </select>
         <div className="relative">
           <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-          <input id="phone" type="tel" autoComplete="tel" inputMode="tel" value={values.phone} disabled={loading} onChange={(event) => update("phone", event.target.value)} className={inputClass} placeholder="+1 514 555 0123" />
+          <input id="phone" type="tel" autoComplete="tel" inputMode="tel" value={values.phone} disabled={loading} onChange={(event) => update("phone", event.target.value)} className={inputClass} placeholder={phoneCountry === "NG" ? "070 1234 5678" : phoneCountry === "INTL" ? "+44 7700 900123" : "+1 514 555 0123"} />
         </div>
         {fieldErrors.phone ? <p className="mt-1 text-xs text-rose-600">{fieldErrors.phone}</p> : null}
       </div>

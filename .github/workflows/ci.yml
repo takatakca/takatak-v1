@@ -52,6 +52,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Strict runtime health readiness safeguards
+        run: npx tsx scripts/verify-runtime-readiness.ts
+
       - name: Lint
         run: npm run lint
 
@@ -97,8 +100,23 @@ jobs:
       - name: 1LV master API safeguards
         run: npm run qa:1lv-master-api
 
+      - name: CUBAFOOD master contract safeguards (offline, no live route)
+        run: npm run qa:cubafood-contract
+
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
+
+      - name: Promotion code safeguards
+        run: npm run qa:promotions
+
+      - name: Lead attachment malware scan
+        run: npm run qa:attachment-scan
+
+      - name: Public catalog price safeguards
+        run: npm run qa:catalog-prices
+
+      - name: AI Studio approval handoff
+        run: npm run qa:ai-handoff
 
       - name: Lead detail actions
         run: npm run qa:lead-actions
@@ -112,8 +130,23 @@ jobs:
       - name: Website SEO and HTTPS redirect
         run: npm run qa:website-seo
 
+      - name: SEO score history
+        run: npm run qa:seo-history
+
+      - name: SEOTAKATAK free-tools and access contracts
+        run: npm run qa:seo-free-tools
+
+      - name: Report export and delivery
+        run: npm run qa:report-export
+
+      - name: QMAPS workspace link and review reply
+        run: npm run qa:qmaps-bridge
+
       - name: Business phone (VoIP) dashboard safeguards
         run: npm run qa:voip-dashboard
+
+      - name: AI Studio generation safeguards
+        run: npm run qa:ai-studio-generation
 
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access

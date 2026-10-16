@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { CategoryResults } from "@/components/website/marketplace/category-results";
+import { pricePackagesFromCatalog } from "@/lib/website/catalog-prices";
+import { loadPublicCatalogRows } from "@/lib/website/load-public-catalog";
 import {
   getMarketplaceCategory,
   getMarketplacePackages,
@@ -57,8 +59,10 @@ export default async function MarketplaceCategoryPage({
     notFound();
   }
 
-  const packages =
-    getMarketplacePackages(slug);
+  const packages = pricePackagesFromCatalog(
+    getMarketplacePackages(slug),
+    await loadPublicCatalogRows(),
+  );
 
   return (
     <CategoryResults

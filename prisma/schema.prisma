@@ -125,6 +125,13 @@ enum HockeyMembershipStatus {
   suspended
 }
 
+enum ReversMembershipStatus {
+  active
+  suspended
+  canceled
+  expired
+}
+
 enum BrandStatus {
   draft
   active
@@ -3200,6 +3207,7 @@ model MasterIdentity {
   events              SourceSynchronizationEvent[]
   hockeyMemberships   HockeyMembership[]
   hockeyStripeEvents  HockeyStripeWebhookEvent[]
+  reversMemberships   ReversMembership[]
 
   experienceLaunchCodes ExperienceLaunchCode[]
   billingInvoiceRequests BillingInvoiceRequest[]
@@ -3248,6 +3256,27 @@ model HockeyMembership {
   @@index([externalCustomerId])
   @@index([externalSubscriptionId])
   @@map("hockey_memberships")
+}
+
+/// Product access for the independent REVERS CANADA experience.
+/// This is a product entitlement record on the TAKATAK master identity;
+/// it is not a second REVERS authentication or customer database.
+model ReversMembership {
+  id                 String                 @id @default(uuid()) @db.Uuid
+  identityId         String                 @db.Uuid
+  sourceApplication  String                 @default("revers")
+  status             ReversMembershipStatus @default(active)
+  planCode           String                 @default("revers_community")
+  planName           String                 @default("REVERS CANADA Community")
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, sourceApplication])
+  @@index([status])
+  @@index([planCode])
+  @@map("revers_memberships")
 }
 
 /// Idempotency ledger for hockey Stripe events. Raw webhook payloads are never
@@ -3377,6 +3406,20 @@ model SourceSynchronizationEvent {
   @@index([sourceApplication, createdAt])
   @@index([status])
   @@map("source_synchronization_events")
+}
+
+/// Short-lived nonce ledger for signed server-to-server integration requests.
+/// Nonces are integration-scoped and prevent replay of a valid HMAC request.
+model IntegrationRequestNonce {
+  id            String   @id @default(uuid()) @db.Uuid
+  integrationId String
+  nonce         String
+  expiresAt     DateTime
+  createdAt     DateTime @default(now())
+
+  @@unique([integrationId, nonce])
+  @@index([expiresAt])
+  @@map("integration_request_nonces")
 }
 
 model MasterMerchant {

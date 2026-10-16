@@ -162,7 +162,7 @@ export function onPromoStateChange(cb: (s: PromoState) => void) {
 // Backend-first API (with local fallback)
 // ---------------------------------------------------------------------------
 
-import { apiGet, apiPost } from "./api-client";
+import { ApiError, apiGet, apiPost } from "./api-client";
 
 export interface BackendPromotion {
   id: string;
@@ -191,28 +191,46 @@ export async function fetchMyPromotions(): Promise<{ promotions: BackendPromotio
   }
 }
 
-/** Backend-first claim. Falls back to local state when the API is unavailable. */
+/** Backend-first claim. A signed-out visitor keeps a local reservation. A server rejection is kept. */
 export async function claimPromoBackend(code = PROMO_CODE): Promise<{ promotion: BackendPromotion } | { fallback: true; state: PromoState }> {
   try {
     const r = await apiPost<{ promotion: BackendPromotion }>("/promotions/claim", { code });
-    // Mirror to local state so existing UI keeps working.
-    write(KEY, { code, percentOff: PROMO_PERCENT, status: "claimed", claimedAt: new Date().toISOString() } satisfies PromoState);
+    const status: PromoStatus = r.promotion.status === "redeemed" ? "used" : "claimed";
+    write(KEY, {
+      code: r.promotion.code,
+      percentOff: r.promotion.percentOff,
+      status,
+      claimedAt: r.promotion.claimedAt ?? new Date().toISOString(),
+      usedAt: r.promotion.redeemedAt ?? undefined,
+    } satisfies PromoState);
     return r;
-  } catch {
+  } catch (error) {
+    if (error instanceof ApiError && error.code === "already_redeemed") {
+      return { fallback: true, state: markPromoUsed() };
+    }
+    if (error instanceof ApiError && (error.code === "invalid_code" || error.status === 400)) {
+      return { fallback: true, state: getPromoState() };
+    }
     return { fallback: true, state: claimPromo() };
   }
 }
 
-/** Preview discount for a given subtotal and/or order. Returns null when backend is unreachable. */
+/** Preview discount for a given subtotal. Returns null when the server cannot be reached. */
 export async function previewPromoBackend(input: { code?: string; subtotalCents?: number; orderId?: string }): Promise<PromoApplyPreview | null> {
   const code = (input.code ?? PROMO_CODE).toUpperCase();
   try {
-    return await apiPost<PromoApplyPreview>("/promotions/apply", {
+    const preview = await apiPost<PromoApplyPreview & { accepted?: boolean }>("/promotions/apply", {
       code,
       orderId: input.orderId,
       subtotalCents: input.subtotalCents,
     });
-  } catch {
+    if (preview.accepted === false) return { ...preview, discountCents: 0, totalCents: preview.subtotalCents };
+    return preview;
+  } catch (error) {
+    if (error instanceof ApiError && (error.code === "invalid_code" || error.code === "invalid_amount")) {
+      const subtotalCents = input.subtotalCents ?? 0;
+      return { code, promotionId: "", subtotalCents, discountCents: 0, totalCents: subtotalCents };
+    }
     return null;
   }
 }

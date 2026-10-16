@@ -220,21 +220,31 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <CardHeader title={`Attachments (${lead.attachments.length})`} />
             <CardBody className="space-y-2">
               {lead.attachments.length ? (
-                lead.attachments.map((file) => (
-                  <a
-                    key={file.id}
-                    href={`/api/leads/attachments/${file.id}`}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs hover:bg-slate-50"
-                  >
-                    <span className="inline-flex min-w-0 items-center gap-2 text-slate-700">
-                      <Paperclip size={13} className="shrink-0" />
-                      <span className="truncate">{file.originalName}</span>
-                    </span>
-                    <span className="inline-flex shrink-0 items-center gap-1 text-slate-400">
-                      {size(file.sizeBytes)} <Download size={13} />
-                    </span>
-                  </a>
-                ))
+                lead.attachments.map((file) =>
+                  file.status === "quarantined" ? (
+                    <a
+                      key={file.id}
+                      href={`/api/leads/attachments/${file.id}`}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs hover:bg-slate-50"
+                    >
+                      <span className="inline-flex min-w-0 items-center gap-2 text-slate-700">
+                        <Paperclip size={13} className="shrink-0" />
+                        <span className="truncate">{file.originalName}</span>
+                      </span>
+                      <span className="inline-flex shrink-0 items-center gap-1 text-slate-400">
+                        {size(file.sizeBytes)} <Download size={13} />
+                      </span>
+                    </a>
+                  ) : (
+                    <div
+                      key={file.id}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs"
+                    >
+                      <span className="truncate text-rose-900">{file.originalName}</span>
+                      <span className="shrink-0 text-rose-700">Bloqué</span>
+                    </div>
+                  ),
+                )
               ) : (
                 <p className="text-sm text-slate-500">No files.</p>
               )}

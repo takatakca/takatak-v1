@@ -24,7 +24,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   const attachment = await prisma.leadAttachment.findFirst({
     where: {
       id,
-      status: { not: "deleted" },
+      status: "quarantined",
       ...(scope.clientIds ? { clientId: { in: scope.clientIds } } : {}),
     },
     select: { storageBucket: true, storagePath: true, originalName: true },

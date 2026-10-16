@@ -2,6 +2,9 @@
 // identifiers (package, tier, add-on labels, promo code); prices always come
 // from the TAKATAK catalog, never from client-supplied totals.
 
+import { normalizePromoCode, quotePromo } from "@/lib/promotions/catalog";
+import type { CatalogPriceRow } from "@/lib/website/catalog-prices";
+import { pricePackageFromCatalog } from "@/lib/website/catalog-prices";
 import { getMarketplacePackage } from "@/lib/website/marketplace-catalog";
 
 export type PackageOrderSelection = {
@@ -25,11 +28,12 @@ export type PricedPackageOrder = {
   totalCents: number;
 };
 
-/** Promotions honoured at checkout (mirrors the marketplace UI). */
-const PROMOTIONS: Record<string, number> = { FIRST10: 0.1 };
-
-export function priceMarketplaceOrder(selection: PackageOrderSelection): PricedPackageOrder | null {
-  const pkg = getMarketplacePackage(selection.packageId);
+export function priceMarketplaceOrder(
+  selection: PackageOrderSelection,
+  catalogRows: readonly CatalogPriceRow[] = [],
+): PricedPackageOrder | null {
+  const stored = getMarketplacePackage(selection.packageId);
+  const pkg = stored ? pricePackageFromCatalog(stored, catalogRows) : null;
   if (!pkg) return null;
   const tier = pkg.tiers.find((item) => item.name === selection.tierName);
   if (!tier) return null;
@@ -43,9 +47,7 @@ export function priceMarketplaceOrder(selection: PackageOrderSelection): PricedP
   }
 
   const subtotalCents = tier.priceCents + addons.reduce((sum, item) => sum + item.priceCents, 0);
-  const promoCode = selection.promoCode ? selection.promoCode.toUpperCase() : null;
-  const rate = promoCode ? PROMOTIONS[promoCode] ?? 0 : 0;
-  const discountCents = Math.round(subtotalCents * rate);
+  const quoted = quotePromo(subtotalCents, normalizePromoCode(selection.promoCode));
 
   return {
     packageId: pkg.id,
@@ -56,8 +58,8 @@ export function priceMarketplaceOrder(selection: PackageOrderSelection): PricedP
     tierPriceCents: tier.priceCents,
     addons,
     subtotalCents,
-    promoCode: rate > 0 ? promoCode : null,
-    discountCents,
-    totalCents: subtotalCents - discountCents,
+    promoCode: quoted.discountCents > 0 ? quoted.code : null,
+    discountCents: quoted.discountCents,
+    totalCents: quoted.totalCents,
   };
 }

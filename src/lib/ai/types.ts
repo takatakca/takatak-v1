@@ -14,7 +14,7 @@ export type AiProviderState =
   | "disabled";
 
 export interface AiProviderStatus {
-  provider: "openai" | "tryholo";
+  provider: "openai" | "anthropic" | "tryholo";
   state: AiProviderState;
   configured: boolean;
   enabled: boolean; // TryHolo flag; OpenAI always "enabled" conceptually
@@ -56,6 +56,8 @@ export interface SavedOutputSummary {
   brandName: string | null;
   voiceName: string | null;
   createdAt: string;
+  /** Set after the draft is handed to the social approval queue. */
+  socialPostId?: string | null;
 }
 
 export interface AiStudioKpis {

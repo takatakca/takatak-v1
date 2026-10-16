@@ -2,6 +2,7 @@
 // This file NEVER calls QMAPS, Google Business, or any provider API.
 
 import { getPrisma } from "@/lib/db/prisma";
+import { readLinkState, readReplyState } from "@/lib/qmaps/bridge";
 import { clientWhere, resolveDataScope } from "@/lib/security/data-scope";
 import type { TenantAccess } from "@/lib/security/tenant-access";
 import type {
@@ -77,6 +78,7 @@ export async function getLocalListingsData(access?: TenantAccess): Promise<Sourc
           category: l.category, brandName: l.businessBrand?.name ?? null,
           city: l.city, region: l.region, country: l.country,
           status: l.status, napStatus: l.napStatus, lastCheckedAt: day(l.lastCheckedAt),
+          qmapsLinkState: readLinkState(l.metadata),
         })),
       };
     } catch (error) {
@@ -142,6 +144,7 @@ export async function getListingReviewsData(access?: TenantAccess): Promise<Sour
           title: r.title, bodyPreview: preview(r.body),
           status: r.status, replyStatus: r.replyStatus, sentiment: r.sentiment,
           listingName: r.localListing?.name ?? null, reviewedAt: day(r.reviewedAt),
+          qmapsReplyState: readReplyState(r.metadata),
         })),
       };
     } catch (error) {

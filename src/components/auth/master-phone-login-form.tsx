@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Mail, Phone } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
-import { normalizePhone } from "@/lib/auth/otp/phone";
+import { normalizePhone, type PhoneCountry } from "@/lib/auth/otp/phone";
 import { normalizeEmail, validateEmail } from "@/lib/auth/registration-validation";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { formatAuthErrorMessage, parseAuthResponse } from "@/lib/auth/parse-auth-response";
@@ -19,6 +19,7 @@ export function MasterPhoneLoginForm() {
   const inFlight = useRef(false);
   const [mode, setMode] = useState<Mode>("phone");
   const [phoneInput, setPhoneInput] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState<PhoneCountry>("CA");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,9 +28,9 @@ export function MasterPhoneLoginForm() {
   async function handlePhone(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (loading || inFlight.current) return;
-    const phone = normalizePhone(phoneInput);
+    const phone = normalizePhone(phoneInput, phoneCountry);
     if (!phone) {
-      setError("Enter a valid mobile number.");
+      setError("Enter a valid number for your country. For Nigerian local numbers, select Nigeria (+234).");
       return;
     }
 
@@ -117,9 +118,17 @@ export function MasterPhoneLoginForm() {
         <form onSubmit={handlePhone} className="space-y-4">
           <div>
             <label htmlFor="login-phone" className="mb-1.5 block text-xs font-semibold text-foreground">TAKATAK mobile number</label>
+            <label htmlFor="login-phone-country" className="mb-1 block text-xs font-semibold text-foreground">Country calling code</label>
+            <select id="login-phone-country" value={phoneCountry} disabled={loading}
+              onChange={(event) => { setPhoneCountry(event.target.value as PhoneCountry); setError(null); }}
+              className="mb-2 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground">
+              <option value="CA">Canada / US (+1)</option>
+              <option value="NG">Nigeria (+234)</option>
+              <option value="INTL">Other country (enter +code)</option>
+            </select>
             <div className="relative">
               <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-              <input id="login-phone" type="tel" autoComplete="tel" inputMode="tel" value={phoneInput} disabled={loading} onChange={(event) => { setPhoneInput(event.target.value); setError(null); }} className={inputClass} placeholder="+1 514 555 0123" />
+              <input id="login-phone" type="tel" autoComplete="tel" inputMode="tel" value={phoneInput} disabled={loading} onChange={(event) => { setPhoneInput(event.target.value); setError(null); }} className={inputClass} placeholder={phoneCountry === "NG" ? "070 1234 5678" : phoneCountry === "INTL" ? "+44 7700 900123" : "+1 514 555 0123"} />
             </div>
           </div>
           <button type="submit" disabled={loading} className="flex w-full items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90 disabled:opacity-60" style={{ backgroundImage: "var(--gradient-hero)" }}>

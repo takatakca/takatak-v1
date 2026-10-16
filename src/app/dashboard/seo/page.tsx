@@ -2,17 +2,38 @@ import Link from "next/link";
 import { ConnectorGrid } from "@/components/growth/connector-card";
 import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
 import { PageSpeedForm } from "@/components/growth/pagespeed-form";
+import { SeoScoreHistory } from "@/components/growth/seo-score-history";
 import { SiteAuditForm } from "@/components/growth/site-audit-form";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { getPrisma } from "@/lib/db/prisma";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { getConnectorStatuses } from "@/lib/growth/status";
 import { pageSpeedConfigured } from "@/lib/seo/pagespeed";
+import { listSeoScores } from "@/lib/seo/score-store";
 
 export const dynamic = "force-dynamic";
 
-export default async function SeoOverviewPage() {
-  const { showSetupDetails } = await requireGrowthAccess("/dashboard/seo");
+export default async function SeoOverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ reaudit?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const rawCount = Array.isArray(params.reaudit) ? params.reaudit[0] : params.reaudit;
+  const reauditCount = rawCount !== undefined && /^[0-3]$/.test(rawCount) ? Number(rawCount) : null;
+  const { access, showSetupDetails } = await requireGrowthAccess("/dashboard/seo");
   const seoConnectors = getConnectorStatuses().filter((c) => c.category === "seo" || c.key === "search_console" || c.key === "brightlocal");
+  let history: Awaited<ReturnType<typeof listSeoScores>> = [];
+  if (access.mode === "client_scoped") {
+    const prisma = getPrisma();
+    if (prisma) {
+      try {
+        history = await listSeoScores(prisma, access.activeClientId);
+      } catch {
+        history = [];
+      }
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -25,12 +46,20 @@ export default async function SeoOverviewPage() {
       <Card>
         <CardHeader
           title="Site audit"
-          subtitle="Checks the live page, robots.txt and sitemap right now. Nothing is stored; no third-party API is called."
+          subtitle="Contrôle la page, robots.txt et le sitemap. Le résumé du score est conservé pour cet espace. Le HTML n'est pas enregistré."
         />
         <CardBody>
           <SiteAuditForm />
         </CardBody>
       </Card>
+
+      {access.mode === "client_scoped" ? (
+        <SeoScoreHistory rows={history} reauditCount={reauditCount} />
+      ) : (
+        <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+          Sélectionnez un espace client pour conserver l&apos;historique des scores et télécharger le PDF.
+        </p>
+      )}
 
       <Card>
         <CardHeader title="Speed & Core Web Vitals" subtitle="Google PageSpeed Insights: the same speed scores Google uses for ranking." />
@@ -38,6 +67,17 @@ export default async function SeoOverviewPage() {
           <PageSpeedForm configured={pageSpeedConfigured()} />
         </CardBody>
       </Card>
+
+      <Link href="/dashboard/seo/portfolio" className="block rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm transition hover:border-blue-400">
+        <p className="text-sm font-bold">Managed SEO sites →</p>
+        <p className="mt-1 text-xs text-slate-600">See portfolio sites for the active TAKATAK workspace, powered by the SEOTAKATAK service when connected.</p>
+      </Link>
+
+      <Link href="/dashboard/seo/free-tools" className="block rounded-2xl border border-blue-200 bg-gradient-to-r from-[#0B1B3D] to-[#1565D8] p-5 text-white shadow-lg transition hover:shadow-xl">
+        <p className="text-xs font-bold uppercase tracking-wider text-blue-200">SEOTAKATAK · Client tools</p>
+        <p className="mt-1 text-lg font-bold">23 free SEO & AI visibility tools →</p>
+        <p className="mt-1 text-sm text-blue-100">Use scanners, markup generators, keyword analysis and evidence-based search visibility—all inside your TAKATAK account.</p>
+      </Link>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Link href="/dashboard/seo/keywords" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-indigo-300">
