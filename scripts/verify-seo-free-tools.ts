@@ -74,4 +74,12 @@ assert.match(portfolio,/view_reports/,"Data export requires active report access
 assert.match(evidencePage,/snapshot\.json/,"Client report offers honest, capped SEO JSON export");
 assert.match(seoJsonExport,/Cache-Control.*private, no-store/,"Client SEO export is never cached publicly");
 assert.match(seoJsonExport,/downloadSeoSiteSnapshot/,"JSON export route verifies tenant-scoped backend access");
+const exportsPage=source("src/app/dashboard/seo/exports/page.tsx");
+const exportsRoute=source("src/app/api/seo/workspace/export/[collection]/route.ts");
+assert.match(portfolio,/getSeoWorkspaceExportPage/,"Workspace export stays server-side and signed");
+assert.match(portfolioPage,/\/dashboard\/seo\/exports/,"Portfolio links to paginated client export");
+assert.match(exportsPage,/requireGrowthAccess/,"Workspace export dashboard requires TAKATAK session");
+assert.match(exportsPage,/view_reports/,"Workspace export dashboard requires report permission");
+assert.match(exportsRoute,/getSeoWorkspaceExportPage/,"JSON download route uses authorized backend");
+assert.match(exportsRoute,/Cache-Control.*private, no-store/,"Workspace exports must not be cached");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");

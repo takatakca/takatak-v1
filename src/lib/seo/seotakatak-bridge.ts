@@ -27,9 +27,11 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
 async function callSeo(path:string,method:"GET"|"POST"|"PATCH"|"DELETE",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|export|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)|briefs\/[0-9a-f-]{36}\/review))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
+ const workspaceExportPath=/^\/v1\/workspace\/export\?collection=(sites|opportunities|prospects|briefs)&offset=(0|[1-9][0-9]{0,6})$/.test(path);
+ if(path!=="/v1/sites"&&!workspaceExportPath&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|export|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)|briefs\/[0-9a-f-]{36}\/review))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
+ if(workspaceExportPath&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
  const verificationRoute=path.includes("/verification");
  const manage=(method!=="GET"&&!ingest)||verificationRoute;
@@ -326,4 +328,37 @@ export async function downloadSeoSiteSnapshot(siteId:string):Promise<
  const json=JSON.stringify(snapshot,null,2);
  if(Buffer.byteLength(json,"utf8")>1_500_000)return {kind:"unavailable",json:null};
  return {kind:"ready",json};
+}
+
+export type SeoExportCollection="sites"|"opportunities"|"prospects"|"briefs";
+export interface SeoWorkspaceExportPage {
+ format:"seotakatak-workspace-page";version:1;collection:SeoExportCollection;
+ offset:number;pageSize:number;generatedAt:string;records:unknown[];
+ hasMore:boolean;nextOffset:number|null;
+ coverage:{scope:string;orderedBy:string;transactionallyConsistent:false;note:string};
+}
+/** All requests are signed by the current TAKATAK client workspace, not by the browser. */
+export async function getSeoWorkspaceExportPage(collection:SeoExportCollection,offset:number):Promise<
+ {kind:"ready";page:SeoWorkspaceExportPage;json:string}|
+ {kind:"unauthorized"|"unavailable"|"unconfigured";page:null;json:null}
+>{
+ if(!["sites","opportunities","prospects","briefs"].includes(collection)||
+    !Number.isSafeInteger(offset)||offset<0||offset>1_000_000)
+  return {kind:"unavailable",page:null,json:null};
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard")||
+    !hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized",page:null,json:null};
+ const path="/v1/workspace/export?collection="+collection+"&offset="+offset;
+ const result=await callSeo(path,"GET");
+ if(result.kind!=="ready")return {kind:result.kind,page:null,json:null};
+ const page=(result.data as {export?:unknown}).export as SeoWorkspaceExportPage|undefined;
+ if(!page||page.format!=="seotakatak-workspace-page"||page.version!==1||
+    page.collection!==collection||page.offset!==offset||
+    !Array.isArray(page.records)||page.records.length>200||
+    typeof page.hasMore!=="boolean"||page.coverage?.transactionallyConsistent!==false||
+    (page.hasMore?(!Number.isSafeInteger(page.nextOffset)||page.nextOffset!<=offset):page.nextOffset!==null))
+   return {kind:"unavailable",page:null,json:null};
+ const json=JSON.stringify(page,null,2);
+ if(Buffer.byteLength(json,"utf8")>1_500_000)return {kind:"unavailable",page:null,json:null};
+ return {kind:"ready",page,json};
 }
