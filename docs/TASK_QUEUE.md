@@ -56,3 +56,13 @@ Compare Supabase and Prisma migration histories for the phone-only profile email
 
 ### Staging exact next gate
 The phone-only email nullable column was verified present in staging. `lead_attachments` was verified absent. Coordinator: first audit/reconcile the already-applied phone-only SQL under `docs/staging-migration-reconciliation.md`, then obtain backup and owner-approved staging apply for the missing attachments migration and any other pending migrations. Production approval is separate.
+
+
+## 2026-10-15 late-night actionable queue
+
+1. Validate **updated PR #187** `4f34f264d528cfceb0d4c597487a283f9c72be98` (host-spoof CSRF tests, main merge resolution). Latest CI run #38848123656; do not cite older green CI as proof for this SHA.
+2. Validate **new PR #188** `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f` (strict runtime readiness on missing DB/Auth), latest CI #38848366850.
+3. Reconcile this handoff PR #178 with merged Coolify #181; updated handoff must preserve all Coolify and prior-PR work.
+4. Under **release coordinator authorization only**, review sequential merges and verify main CI. Coolify workflow exists on main but most recently skipped (auto deploy not enabled or release prerequisites missing); proof of a real deployed SHA and full staging/production health remains necessary.
+5. Staging migrations: no direct apply without approved backup and reconciliation; Supabase phone OTP/Twilio and live two-tenant E2E remain a separate owner/provider requirement.
+

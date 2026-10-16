@@ -74,3 +74,9 @@ PR #181 proposes direct Coolify deployment and its branch CI passed, but it rema
 ## 2026-10-15 live-status cross-check
 
 At inspection, `main=dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`, release/staging runs were frequently **skipped**, and no later deploy-to-`takatak.ca` was verified. Owner gate still limits deployment to its designated coordinator. The direct Coolify proposal #181 is an unmerged branch, not proof the production host switched. Reconcile this with the operator before promotion.
+
+
+## Coolify status superseding older plan — 2026-10-15
+
+PR #181 **was merged into main** at `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24`. `.github/workflows/coolify-production-deploy.yml`, `Dockerfile`, container health check and runbook now exist on main, but automatic production jobs were skipped at inspection; the host's actual serving revision and health could not be confirmed. No deployment is claimed. PR #188 proposes fail-closed HTTP 503 for `not_configured` DB/Supabase dependencies at `/api/health/ready`; wait for CI and reviewed merge. Maintain all previous owner release controls and request explicit environment go-live verification.
+

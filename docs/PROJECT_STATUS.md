@@ -73,3 +73,13 @@ Read-only TAKATAK STAGING project status: ACTIVE_HEALTHY. Supabase history inclu
 
 ### Confirmed staging schema (2026-10-15)
 Read-only `information_schema.columns`: `public.profiles.email` is `text` with `is_nullable=YES`. Read-only `to_regclass` indicates `public.lead_attachments` is absent. Thus the phone-only column change is already present at the schema level, while lead attachment support is not. The migration-ledger discrepancy must be reconciled, not used as a reason to replay SQL. No database changes performed.
+
+
+## 2026-10-15 late-night verification update
+
+- **Main SHA:** `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24` — #181 direct Coolify Docker runtime merged by coordinator, but no new live release verified. Automatic Coolify, staging and release GitHub Actions in the most recent main runs show **skipped**, not deployed.
+- **Auth security:** #187 initial full CI green; new forwarding-origin CSRF hardening merged latest main into PR head `4f34f264d528cfceb0d4c597487a283f9c72be98`, latest CI pending.
+- **Health contract:** #188 fixes ready endpoint false-positive HTTP 200 on missing mandatory services; HEAD `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f`, CI pending.
+- Previously completed ADS/security and CUBAFOOD contract PRs remain open unless separately merged by coordinator. No live SMS or production identity and tenant-isolation proof.
+- Direct health checks of `takatak.ca` failed due tool/network access restrictions, not necessarily site outage. Do not assert production failure or success from these attempts.
+
