@@ -58,7 +58,12 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
 # Validate required public build args without printing their values into Docker logs.
 RUN node -e 'const keys = ["NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]; const missing = keys.filter(key => !process.env[key]); if (missing.length) { console.error("Missing required public build configuration: " + missing.join(", ")); process.exit(1); }' \
  && npm run db:generate \
- && npm run build
+ && npm run build \
+ # Drop the webpack build cache before this layer is committed: it is not needed by next start.
+ && rm -rf .next/cache /root/.npm \
+ # Next production server only needs production dependencies, not TypeScript/ESLint tooling.
+ && npm prune --omit=dev --ignore-scripts --no-audit --no-fund \
+ && rm -rf /root/.npm
 
 FROM node:22.23.2-bookworm-slim AS runner
 WORKDIR /app
@@ -71,8 +76,9 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates openssl \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /app /app
-RUN chown -R node:node /app
+# COPY --chown assigns ownership while copying; do NOT add another recursive
+# chown layer (it duplicated GBs of files and exhausted the VPS overlay storage).
+COPY --from=build --chown=node:node /app /app
 USER node
 EXPOSE 3000
 
