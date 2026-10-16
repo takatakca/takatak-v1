@@ -80,3 +80,6 @@ At inspection, `main=dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`, release/staging 
 
 PR #181 **was merged into main** at `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24`. `.github/workflows/coolify-production-deploy.yml`, `Dockerfile`, container health check and runbook now exist on main, but automatic production jobs were skipped at inspection; the host's actual serving revision and health could not be confirmed. No deployment is claimed. PR #188 proposes fail-closed HTTP 503 for `not_configured` DB/Supabase dependencies at `/api/health/ready`; wait for CI and reviewed merge. Maintain all previous owner release controls and request explicit environment go-live verification.
 
+
+## 2026-10-16 current release proof
+GitHub `main=c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`; successful CI run 38858131646. Recent Coolify production jobs at this SHA were skipped, not completed deployments. Public `/api/health` and `/api/health/ready` were inaccessible through the available read-only web checker; production release SHA remains unknown. Coolify support #181 and fail-closed readiness #188 are merged into main, but configuration and live authenticated acceptance require designated release coordinator. Branch-only R2F PR #193 is offline and not deployed. Do not apply staging migrations without approved backup/reconciliation.
