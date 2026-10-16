@@ -25,6 +25,7 @@ export type AuthFailureCode =
   | "disabled_account"
   | "otp_not_requested"
   | "email_not_found"
+  | "email_not_verified"
   | "phone_not_found"
   | "configuration_unavailable"
   | "session_unavailable"

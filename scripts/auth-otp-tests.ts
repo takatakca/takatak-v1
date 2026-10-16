@@ -388,6 +388,7 @@ async function main() {
     process.env.EMAIL_PASSWORD = "test-app-password";
     const result = await sendEmailOtp(baseProfile.email, {
       getPrisma: () => db as never,
+      checkEmailEligible: async () => "allowed",
       sendEmail: async () => {
         throw new Error("smtp down");
       },
@@ -397,6 +398,25 @@ async function main() {
     assert("infrastructure send failure does not rotate OTP", result.code === "verification_unavailable");
     assert("infrastructure send failure does not extend OTP validity", db.row.otpHash === previousHash);
     assert("infrastructure send failure keeps original expiry", db.row.otpExpiresAt?.getTime() === expiresAt);
+  }
+
+  {
+    const db = createFakePrisma({ ...baseProfile, lastOtpRequestedAt: null });
+    const beforeHash = db.row.otpHash;
+    let emailsSent = 0;
+    const previous = process.env.EMAIL_USER;
+    const previousPassword = process.env.EMAIL_PASSWORD;
+    process.env.EMAIL_USER = "otp-diagnostic-do-not-use@takatak.ca";
+    process.env.EMAIL_PASSWORD = "test-app-password";
+    const result = await sendEmailOtp(baseProfile.email, {
+      getPrisma: () => db as never,
+      checkEmailEligible: async () => "unverified",
+      sendEmail: async () => { emailsSent += 1; },
+    });
+    process.env.EMAIL_USER = previous;
+    process.env.EMAIL_PASSWORD = previousPassword;
+    assert("unverified recovery email cannot start OTP sign-in", result.code === "email_not_verified" && result.status === 409);
+    assert("no email sent to unverified recovery address", emailsSent === 0 && db.row.otpHash === beforeHash);
   }
 
   {

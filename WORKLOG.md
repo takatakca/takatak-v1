@@ -1,10 +1,39 @@
+- 2026-10-15 | ChatGPT/GitHub Academy agent | feat/academy-dashboard-bridge-20261015 → PR pending | ready for PR / not deployed | Academy dashboard nav + free-only one-time launch/exchange SSO bridge, no V1 migration, no billing activations | coordinator reviews PR; owner configures Academy HTTPS callback and dedicated service token, then tests actual launch/exchange
+- 2026-10-15 | ChatGPT/GitHub agent | fix/strict-runtime-readiness-20261015 → PR #188 | PR open / CI pending | Reject /api/health/ready as not-ready when DB or Supabase config is missing; preserve diagnostic checks, add CI regression and Docker health contract | verify strict readiness CI on final SHA; release coordinator reviews then merges, no direct deployment
+- 2026-10-14 | ChatGPT/GitHub agent | deploy/coolify-direct-takatakca-20261014 → PR #181 | PR open; CI pending | Direct-production Coolify Node22 Dockerfile, strict DB/Auth health, deployment guide for takatak.ca; no staging, migration, main merge or DNS changes | release coordinator reviews/merges after green CI; Coolify admin login/config and production safety gates remain before deploy
+- 2026-10-11 | ChatGPT/GitHub agent | fix/takatak-phone-country-otp-20261011 → PR #174 | PR / auth QA passed; full CI in progress | Nigerian +234 phone OTP selector and strict E.164; refuse unverified recovery email for email-session login; regression tests | Owner review/merge after full CI; manual TAKATAK production promotion; verify Supabase Twilio provider and geo permissions without sharing secrets
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
+
+- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015, PR #182 | CI in verification | Added workspace-wide SEO export dashboard, 4 pageable collections, signed server-only JSON download, bounded 200-row pages and per-tenant access control; export is not transactional | Confirm CI and coordinator merge; SEO Coolify/approved DB remains external blocker
+
+
+- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015, PR #182 | CI verification running | Added tenant-scoped SEO site JSON snapshot download via signed server-only bridge, client report link and private no-store route; API redacts DNS/reviewer secrets and marks 200-row limits honestly | Check latest V1 CI then coordinator review; SEO production blocked by missing Coolify settings
+
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | V1 CI PENDING | Real human-reviewed SEO brief workflow (one-time approve/reject), explicit rejection notes; backend pending SQL 0003; no CMS publication | CI review, then V1 coordinator-only merge/deploy after approved Coolify and database readiness
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | Backend CI green / V1 CI rerunning | Added tenant-scoped SEO-site deletion with typed hostname and confirmation, backend HTTP tests, corrected JSX lint at 417edac2 | Check latest V1 CI, coordinator-only PR review/merge; Coolify issue SEOTAKATAK#1 remains
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI pending | Added client-scoped real SEO content briefs, draft-only editor/queue, validated domain-ownership UI, scoped server bridge and QA; fixed JSX lint regression `4f70342c` | Check latest CI; only coordinator merges/promotes; backend Coolify/db remain blocked in SEOTAKATAK issue #1
+
+- 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | DNS ownership flow implemented; CI ongoing | Client manager-only TXT record challenge and verification, server-only signed bridge, SQL migration 0002 pending owner approval | Check newest V1 CI; coordinator-only merge/promotion; configure separate backend per SEOTAKATAK issue #1
+
+- 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI IN PROGRESS / NOT DEPLOYED | Public 23-tool catalog, active workspace permissions, verified Search Console import, signed backend API, scoped SEO report + real query table, private CSV, editorial backlink prospect forms/status and handoff docs | check latest PR CI; only V1 coordinator merges/promotes; separate SEO Coolify configuration blocked in takatakca/SEOTAKATAK#1
 
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
 Full backlog with priorities: knowledgeAI `docs/11-DEV-BACKLOG.md` (branch `claude/ecosystem-integration-map`).
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR pending | active | Add the TAKATAK experience-launch bridge and signed event intake for REVERS CANADA | run bridge QA, review PR, configure production secrets/callback, then verify exchange
+
+## 🔒 Release control (owner, 2026-10-10)
+Until the owner lifts it, **one coordinator merges and deploys**: the TAKATAK-V1 session (01W1ntbf). Every other agent (Claude, Codex, Cursor, ChatGPT) and every person-run bot:
+- does **not** merge into `main` or push to `main` (WORKLOG and docs included): open a PR and hand its number to the coordinator;
+- does **not** dispatch staging apply, staging release or production promote, and does not re-run deploying workflows;
+- does **not** deploy, restart or change env on Coolify, MochaHost, Supabase, Stripe, Twilio or DNS;
+- does **not** add migrations to `APPROVED_DEPLOY_MIGRATIONS`. A new migration on `main` blocks the staging apply until it is approved.
+
+Own branches, PRs and CI fixes are fine. The coordinator merges one PR at a time after the owner's OK.
 
 ## 🔴 Needs a human (post-its)
 Each item is something only a person can do: a secret, an approval, a merge, an account. Done? Delete the line and add a log line `cleared: <item>`. Secret values never go in this file.
@@ -30,6 +59,7 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - **Developers: work from `docs/DEV-TODO.md`** (everything left, in order).
 
 ## Open work
+- 2026-10-11 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #159 | PR open (#157, #158 merged) | Staging migration gate: audit passes; owner approved the 15 Social connector migrations for staging (the last unapproved pending ones), so apply can create all 25 | merge; owner confirms staging backup and OKs the apply; then staging deploy Two new unapproved migrations landed on main on 2026-10-10 (integration_request_nonces, revers_product_access): owner decides.
 - 2026-10-11 | cursor | cursor/tk-013-server-promos → #164 | PR | TK-013: FIRST10 is claimed, priced and redeemed once per account on the server | CI, then the owner can merge
 - 2026-10-11 | cursor | cursor/tk-004-apostrophe-lint → #172 | done (merged 31bb3a8) | Fix the apostrophes that failed lint on the merged QMAPS workspace screen | none
 - 2026-10-11 | cursor | cursor/tk-004-qmaps-workspace → #171 | done (merged 39adab5) | TK-004 and TK-024: link a QMAPS business to a client workspace and reply to a QMAPS review only when QMAPS accepts it | apostrophes fixed on main by #172
@@ -39,7 +69,6 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - 2026-10-10 | cursor | cursor/tk-069-ai-studio-handoff → #167 | done (merged 130a118) | TK-069: send a saved AI draft into social approval and show that workspace's credit usage and estimated cost | next developer item
 - 2026-10-10 | cursor | cursor/tk-014-catalog-prices → #165 | done (merged) | TK-014: public prices read from ProductCatalog when a CAD plan exists, otherwise the current catalog | seed takatak_public plans when the owner is ready
 - 2026-10-10 | claude (session 01KBGh1v) | claude/ai-studio-generation → #137 | PR open, CI running | AI Studio live drafts (OpenAI/Claude) rebuilt on #117; no migration (vendor in job metadata); test key fixed for the secret scan | merge when green; wire #155 resolveProviderKey into readAiStudioConfig once #155 merges
-- 2026-10-09 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #158 | PR open (#157 merged 28d92ba) | Staging migration gate: phone-only verified by live schema; apply deploys pending only when all are approved. Staging audit now PASSES (19 recorded, 10 approved pending) but 15 unapproved repo migrations are unrecorded on staging, so apply would refuse; #158 prints their names | merge #158, re-run staging audit, owner decides on the 15; then backup + apply + staging deploy
 - 2026-10-09 | claude (session 01W1ntbf) | claude/festive-newton-5i9rv7 → #117 | done (merged 04bf3fc) | Growth Suite (reputation, analytics, chat, AI agents, Google, plans). Merged main (incl. #151–#154); 9 Growth migrations renamed to 20261009010000–20261009090000 so they sort after the billing migrations (never applied anywhere); rollback script still exact; homepage and Social untouched | owner approved the 9 Growth migrations for staging (2026-10-09): back up staging, run the staging reconciler apply, deploy; production DB approval later; close or merge #135/#136/#137 (overlaps)
 - 2026-10-09 | claude (session 01W1ntbf) | fix/phone-first-master-auth → #148 | done (merged d4b0bfa) | Took over at the owner's request: merged main (#147–#154), kept the staging reconciler's history-name map on top of main's migrationHistorySlug; no migration applied, nothing deployed | staging apply (resolve only) and a real SMS test on staging
 - 2026-10-08 | cursor | fix/phone-first-master-auth → #148 | PR open | CI run 37788446918 is green on ea8a9bc. Registration profile sync restored. Isolated preview host, Prisma history record, and real SMS are still blocked. | Owner: preview URL plus app root, Supabase Auth provider login, and one Canadian test number. Do not merge or deploy production.

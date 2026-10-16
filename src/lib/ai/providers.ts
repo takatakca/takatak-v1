@@ -1,6 +1,6 @@
-// Phase 9 — AI provider readiness checks. Presence metadata only.
-// NO API calls to OpenAI or TryHolo exist anywhere in this phase.
-// "connected" is reserved for future phases after a real tested call.
+// AI provider readiness checks. Presence metadata only: this file makes no
+// calls. Live generation (lib/ai/generation) is a separate, opt-in path;
+// "connected" stays reserved until a real tested call is recorded.
 
 import type { AiProviderStatus } from "./types";
 
@@ -15,6 +15,20 @@ export function getOpenAiStatus(): AiProviderStatus {
     message: configured
       ? "OpenAI key detected — no call has been made and no connection is verified."
       : "OpenAI is not configured (OPENAI_API_KEY missing).",
+  };
+}
+
+export function getAnthropicStatus(): AiProviderStatus {
+  const configured = Boolean(process.env.ANTHROPIC_API_KEY);
+  return {
+    provider: "anthropic",
+    state: configured ? "configured_untested" : "not_configured",
+    configured,
+    enabled: true,
+    missing: configured ? [] : ["ANTHROPIC_API_KEY"],
+    message: configured
+      ? "Anthropic (Claude) key detected — no connection is verified by this check."
+      : "Anthropic (Claude) is not configured (ANTHROPIC_API_KEY missing).",
   };
 }
 
@@ -52,5 +66,5 @@ export function getTryHoloStatus(): AiProviderStatus {
 }
 
 export function getAiProviderStatuses(): AiProviderStatus[] {
-  return [getOpenAiStatus(), getTryHoloStatus()];
+  return [getOpenAiStatus(), getAnthropicStatus(), getTryHoloStatus()];
 }

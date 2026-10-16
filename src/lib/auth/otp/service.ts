@@ -5,6 +5,7 @@ import { normalizeEmail } from "@/lib/auth/registration-validation";
 import { isEmailOtpConfigured, isPhoneOtpConfigured } from "./env";
 import { generateOtp, hashOtp, otpMatches } from "./hash";
 import { normalizePhone } from "./phone";
+import { getSupabaseAdminClient } from "@/lib/auth/supabase-admin";
 import { sendOtpToEmail } from "./send-email";
 import { checkOtpFromPhone, sendOtpToPhone } from "./send-phone";
 import { createSessionForEmail } from "./session";
@@ -40,6 +41,7 @@ type VerifyContext = {
   scheduleUpmind?: typeof scheduleUpmindCustomerLink;
   checkPhone?: typeof checkOtpFromPhone;
   sendEmail?: typeof sendOtpToEmail;
+  checkEmailEligible?: typeof emailOtpEligibility;
 };
 
 function prismaUnavailable(): OtpActionResult {
@@ -58,6 +60,26 @@ function disabledAccount(): OtpActionResult {
     message: "This account has been disabled.",
     code: "disabled_account",
   };
+}
+
+/**
+ * Legacy email OTP may only mint a session for the SAME Supabase Auth email.
+ * Profile.email is not proof of ownership: phone-only identities can have an
+ * unverified recovery address in the profile. Never elevate that address.
+ */
+async function emailOtpEligibility(email: string, authUserId: string): Promise<"allowed" | "unverified" | "unavailable"> {
+  const admin = getSupabaseAdminClient();
+  if (!admin) return "unavailable";
+  try {
+    const { data, error } = await admin.auth.admin.getUserById(authUserId);
+    if (error || !data.user) return "unavailable";
+    const authEmail = normalizeEmail(data.user.email ?? "");
+    if (!authEmail || authEmail !== email) return "unverified";
+    if (data.user.phone_confirmed_at && !data.user.email_confirmed_at) return "unverified";
+    return "allowed";
+  } catch {
+    return "unavailable";
+  }
 }
 
 export async function sendEmailOtp(
@@ -85,6 +107,7 @@ export async function sendEmailOtp(
     select: {
       id: true,
       email: true,
+      authUserId: true,
       status: true,
       lastOtpRequestedAt: true,
       otpHash: true,
@@ -131,6 +154,20 @@ export async function sendEmailOtp(
       ok: false,
       status: 429,
       message: "Please wait before requesting another code.",
+    };
+  }
+
+  const eligible = await (context.checkEmailEligible ?? emailOtpEligibility)(profile.email, profile.authUserId);
+  if (eligible === "unverified") {
+    return {
+      ok: false, status: 409, code: "email_not_verified",
+      message: "This email is not confirmed for sign-in. Sign in with your verified mobile number, then confirm your recovery email in Account settings.",
+    };
+  }
+  if (eligible === "unavailable") {
+    return {
+      ok: false, status: 503, code: "configuration_unavailable",
+      message: "Email sign-in is temporarily unavailable. Try your verified mobile number.",
     };
   }
 
@@ -503,9 +540,11 @@ export async function verifyEmailOtp(
     );
     return {
       ok: false,
-      status: 503,
-      message: session.message,
-      code: "session_unavailable",
+      status: session.stage === "email_not_verified" ? 409 : 503,
+      message: session.stage === "email_not_verified"
+        ? "This email is not confirmed for sign-in. Sign in with your verified mobile number and confirm it in Account settings."
+        : session.message,
+      code: session.stage === "email_not_verified" ? "email_not_verified" : "session_unavailable",
     };
   }
 

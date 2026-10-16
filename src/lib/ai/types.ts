@@ -14,7 +14,7 @@ export type AiProviderState =
   | "disabled";
 
 export interface AiProviderStatus {
-  provider: "openai" | "tryholo";
+  provider: "openai" | "anthropic" | "tryholo";
   state: AiProviderState;
   configured: boolean;
   enabled: boolean; // TryHolo flag; OpenAI always "enabled" conceptually

@@ -24,6 +24,7 @@ export const SESSION_UNAVAILABLE_MESSAGE =
 export type SessionStage =
   | 'configuration'
   | 'auth_user_validation'
+  | 'email_not_verified'
   | 'confirm_email'
   | 'generate_link'
   | 'cookie_preparation'
@@ -164,9 +165,8 @@ export async function createSessionForEmail(
     }
 
     const authEmail = normalizeEmail(authUser.email ?? '');
-    if (!authEmail || authEmail !== normalizedEmail) {
-      return fail('auth_user_validation');
-    }
+    if (!authEmail) return fail('email_not_verified');
+    if (authEmail !== normalizedEmail) return fail('auth_user_validation');
 
     try {
       const { error: confirmError } = await admin.auth.admin.updateUserById(
