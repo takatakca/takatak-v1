@@ -92,3 +92,9 @@ Main HEAD `c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`, latest observed [main CI 3
 Owner/coordinator has merged #188 readiness, #185 CUBAFOOD offline contract, #177 ADS draft, #175 R2NETTE signed receiver, #155 AI provider keys, #136 QMAPS integration bridge, and #189 admin/staging approval fix. Green CI is not provider delivery or production promotion. PR #187 Auth CSRF remains open with green CI.
 
 Fresh [PR #193](https://github.com/takatakca/takatak-v1/pull/193) takes over an unmerged existing R2F Phase 2 branch and adds the deterministic contract QA to modern main CI. It does not expose or sell customer leads and adds no schema. CI was in progress at handoff. Handoff/continuity PR #178 has been reconciled with current main and awaits its own exact-head CI and coordinator merge.
+
+
+## 2026-10-16 afternoon factual status
+Main currently `efe4db915d487822441502cc8d036819d31ab51b` after Coolify build improvements #197/#198 and provider-key integration #192. Prior-main full CI `38922550660` succeeded on `c6bdb9d17f00f18a341b6f787d1040444c0508bb`; current-main build and live SHA not confirmed. Latest Coolify auto-deploy was skipped. Public health GET was inaccessible to this execution environment because DNS resolution failed: public site status unknown.
+
+Open PR #199 (passive live readiness) pushes a strict validator and tests; CI run `38942971983` ongoing at handoff. #178/#187/#193 most recent exact-head CI all succeeded, but remain open/unreleased. No evidence of live SMS, customer/tenant E2E or authorized staging migration apply.
