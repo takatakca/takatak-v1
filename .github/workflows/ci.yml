@@ -148,6 +148,9 @@ jobs:
       - name: AI Studio generation safeguards
         run: npm run qa:ai-studio-generation
 
+      - name: QMAPS listings and reviews sync safeguards
+        run: npm run qa:qmaps-sync
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
