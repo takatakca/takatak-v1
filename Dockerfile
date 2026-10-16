@@ -56,12 +56,12 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
     NEXT_PUBLIC_LIVE_CHAT_PROVIDER=${NEXT_PUBLIC_LIVE_CHAT_PROVIDER}
 
 # Validate required public build args without printing their values into Docker logs.
+# Remove webpack cache and developer tools within the *same build layer* to keep
+# them out of the final build-stage snapshot and the production runner image.
 RUN node -e 'const keys = ["NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]; const missing = keys.filter(key => !process.env[key]); if (missing.length) { console.error("Missing required public build configuration: " + missing.join(", ")); process.exit(1); }' \
  && npm run db:generate \
  && npm run build \
- # Drop the webpack build cache before this layer is committed: it is not needed by next start.
  && rm -rf .next/cache /root/.npm \
- # Next production server only needs production dependencies, not TypeScript/ESLint tooling.
  && npm prune --omit=dev --ignore-scripts --no-audit --no-fund \
  && rm -rf /root/.npm
 
