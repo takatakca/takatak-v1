@@ -66,3 +66,10 @@ The phone-only email nullable column was verified present in staging. `lead_atta
 4. Under **release coordinator authorization only**, review sequential merges and verify main CI. Coolify workflow exists on main but most recently skipped (auto deploy not enabled or release prerequisites missing); proof of a real deployed SHA and full staging/production health remains necessary.
 5. Staging migrations: no direct apply without approved backup and reconciliation; Supabase phone OTP/Twilio and live two-tenant E2E remain a separate owner/provider requirement.
 
+
+## 2026-10-16 latest verified next steps
+- CI: finish #193 R2F Phase 2 on current head `3a457fda6092701fba3ce3f1910b04ad9811c920`; targeted R2F QA step succeeded in run 38882991101; entire CI pending. Phase 1 remains #163.
+- CI: finish #178 continuity documentation on latest branch; current-main reconciliation commit `2cbecd96486ff019b154b21da492b909839aaa9c` preceded newer handoff edits.
+- Coordinator: review and merge green #187 Auth CSRF; review other open PRs individually. #188 readiness is already in `main`, do not duplicate.
+- Release control: main `c53ed4529e03b15a0241f5b96e4ed37d3f50f56e` passed main CI, but Coolify runs were skipped; no production SHA or actual phone SMS has been verified. Require authorized env, approved migration plan, backup and provider staging E2E.
+- Future R2F: no live FLEXS or QMAPS adapter until source tenant mapping, scoped entitlement, consent, durable idempotency/outbox and cross-tenant tests.
