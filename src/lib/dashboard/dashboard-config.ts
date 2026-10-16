@@ -19,6 +19,7 @@ import {
   FileText,
   Filter,
   FolderOpen,
+  GraduationCap,
   Globe,
   Hash,
   History,
@@ -122,6 +123,10 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Connectors", href: "/dashboard/growth/connectors", icon: PlugZap },
       { label: "Plans & Pricing", href: "/dashboard/growth/pricing", icon: Tags },
     ],
+  },
+  {
+    title: "Learning",
+    items: [{ label: "TAKATAK Academy", href: "/dashboard/academy", icon: GraduationCap }],
   },
   {
     title: "Services",

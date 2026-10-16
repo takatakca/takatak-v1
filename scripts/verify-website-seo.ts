@@ -25,6 +25,7 @@ const STATIC_PAGES: Record<string, string> = {
   "/hosting": "hosting/page.tsx",
   "/deals": "deals/page.tsx",
   "/pricing": "pricing/page.tsx",
+  "/free-tools": "free-tools/page.tsx",
   "/services": "services/page.tsx",
   "/privacy-manager": "privacy-manager/page.tsx",
   "/search": "search/page.tsx",

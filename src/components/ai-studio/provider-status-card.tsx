@@ -4,12 +4,13 @@ import { AI_PROVIDER_STATE_LABELS, aiToneForStatus } from "@/lib/ai/status";
 import type { AiProviderStatus } from "@/lib/ai/types";
 
 const PROVIDER_META: Record<string, { name: string; purpose: string }> = {
-  openai: { name: "OpenAI", purpose: "Internal AI assistant + content generation (future)" },
+  openai: { name: "OpenAI", purpose: "Content generation in AI Studio (when selected by the administrator)" },
+  anthropic: { name: "Anthropic (Claude)", purpose: "Content generation in AI Studio (when selected by the administrator)" },
   tryholo: { name: "TryHolo", purpose: "Optional creative AI provider — the platform never depends on it" },
 };
 
 export function ProviderStatusCard({ status }: { status: AiProviderStatus }) {
-  const meta = PROVIDER_META[status.provider];
+  const meta = PROVIDER_META[status.provider] ?? { name: status.provider, purpose: "AI provider" };
   return (
     <Card>
       <CardBody className="space-y-2">

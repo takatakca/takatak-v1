@@ -1,3 +1,6 @@
+import { AdsCampaignCreator } from "@/components/ads/ads-campaign-creator";
+import { adsSubscriptionAllows } from "@/lib/ads/subscription-policy";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getAdsWorkspaceSnapshot } from "@/lib/ads/management-service";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
@@ -17,6 +20,19 @@ export default async function AdvertisingPage() {
     "/dashboard/advertising",
   );
   const data = await getAdsWorkspaceSnapshot(access.activeClientId);
+  const canCreateAds = hasEffectivePermission(access, "manage_ads");
+  const allowedScopes: Array<"single_site" | "local_network" | "max_lead_pro"> = [];
+  if (data.subscription) {
+    if (adsSubscriptionAllows(data.subscription, "single_site_campaigns")) {
+      allowedScopes.push("single_site");
+    }
+    if (adsSubscriptionAllows(data.subscription, "network_campaigns")) {
+      allowedScopes.push("local_network");
+    }
+    if (adsSubscriptionAllows(data.subscription, "max_lead_pro")) {
+      allowedScopes.push("max_lead_pro");
+    }
+  }
 
   const plan =
     data.subscription?.planName ??
@@ -68,6 +84,29 @@ export default async function AdvertisingPage() {
           </Card>
         ))}
       </section>
+
+      {canCreateAds ? (
+        <Card>
+          <CardHeader
+            title="Nouvelle campagne"
+            subtitle="Créez un brouillon dans votre espace client, sans activer de diffusion ni prélever de paiement."
+          />
+          <CardBody>
+            <AdsCampaignCreator
+              scopes={allowedScopes}
+              publishers={data.publishers.map((publisher) => ({
+                id: publisher.id,
+                name: publisher.name,
+                placements: publisher.placements.map((placement) => ({
+                  id: placement.id,
+                  code: placement.code,
+                  name: placement.name,
+                })),
+              }))}
+            />
+          </CardBody>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader
