@@ -119,14 +119,14 @@ try {
       READINESS_TEST_RELEASE_SHA: sha,
     });
     assert.equal(match.status, 0, match.stdout + match.stderr);
-    assert.match(match.stdout, /OK\\s+release SHA.*exact/);
+    assert.match(match.stdout, /OK\s+release SHA.*exact/);
     assert.doesNotMatch(match.stdout, /MOCK_FETCH POST /);
 
     const mismatch = probe(["--expect-sha", sha], {
       READINESS_TEST_RELEASE_SHA: "b".repeat(40),
     });
     assert.equal(mismatch.status, 1, mismatch.stdout + mismatch.stderr);
-    assert.match(mismatch.stdout, /FAIL\\s+release SHA/);
+    assert.match(mismatch.stdout, /FAIL\s+release SHA/);
 
     const missing = probe(["--expect-sha", sha]);
     assert.equal(missing.status, 1, missing.stdout + missing.stderr);
