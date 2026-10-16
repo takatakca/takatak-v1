@@ -88,6 +88,25 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   "20261003194500_takatak_ads_foundation",
   "20261004190000_community_content_moderation",
   "20261005043500_ahmv_smart_departure_entitlement",
+  // Owner-approved for production on 2026-10-16 (direct takatak.ca release);
+  // all 17 were applied and verified on staging first.
+  "20261006120000_takatak_billing_invoice_requests",
+  "20261006140000_client_stripe_connect_accounts",
+  "20261006150000_billing_invoice_checkout_sessions",
+  "20261008090000_website_lead_attachments",
+  "20261008153000_phone_only_profile_email",
+  "20261009010000_growth_reputation_and_ai_credits",
+  "20261009020000_growth_analytics_and_conversations",
+  "20261009030000_growth_agents_and_delivery",
+  "20261009040000_growth_agent_schedules",
+  "20261009050000_growth_review_showcase",
+  "20261009060000_growth_google_data_sources",
+  "20261009070000_growth_google_business_profile",
+  "20261009080000_growth_plan_subscriptions",
+  "20261009090000_growth_site_domain_verification",
+  "20261009100000_ai_provider_key_store",
+  "20261010051000_integration_request_nonces",
+  "20261010100000_revers_product_access",
 ];
 
 function fail(message) {
