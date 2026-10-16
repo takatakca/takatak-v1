@@ -4841,3 +4841,26 @@ model AiProviderCredential {
 
   @@map("ai_provider_credentials")
 }
+
+
+// Explicit, centrally administered KnowledgeAI rights for one verified
+// TAKATAK member in one client workspace. No browser can self-grant access.
+// A missing/disabled record denies issuance. Independent product activation
+// is also required in product_catalog (code = knowledgeai).
+model KnowledgeAiGrant {
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @db.Uuid
+  profileId String   @db.Uuid
+  enabled   Boolean  @default(false)
+  allowRead   Boolean @default(false)
+  allowWrite  Boolean @default(false)
+  allowDelete Boolean @default(false)
+  allowExport Boolean @default(false)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([clientId, profileId])
+  @@index([clientId, enabled])
+  @@map("knowledgeai_grants")
+}
