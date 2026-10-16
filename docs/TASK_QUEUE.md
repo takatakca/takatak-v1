@@ -21,3 +21,9 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [ ] Obtain database approval for migration 0003 after 0001+0002 and test real draft-review transitions.
 - [ ] Extend true backlink-provider evidence, original CMS publishing with verified ownership/consent and observed LLM citation integrations; don't label placeholders as live.
 - [ ] Schedule imports with quota/rate limiting, per-site logs and approvals once V1 auth/go-live is stable.
+
+
+- [x] Add a separate PR #196 with signed, tenant-scoped deletion receipt viewer for managers; preserve existing SEO portfolio and TAKATAK Auth.
+- [ ] Verify PR #196 latest full CI; coordinator then reviews/merges and handles its production release, never this agent.
+- [ ] Owner approves existing/non-billable SEO PostgreSQL and `sql/0004_site_deletion_receipts.sql` after 0001→0003; run manager/viewer/client B negative tests and disposable staging site deletion.
+- [ ] Agree a written retention policy for SEO deletion receipts, backup purge/subject access and cross-product erasure boundaries before regulated use.
