@@ -12,13 +12,20 @@ export const DEFAULT_DAILY_LIMIT = 50;
 
 const MODEL_RE = /^[A-Za-z0-9._:-]{2,100}$/;
 
-export function readAiStudioConfig(env: Record<string, string | undefined> = process.env): AiStudioConfig {
+/**
+ * Pure. `savedKeys` are keys entered in Admin › AI provider keys (resolved on
+ * the server by load-config.ts); a saved key wins over the environment one.
+ */
+export function readAiStudioConfig(
+  env: Record<string, string | undefined> = process.env,
+  savedKeys: Partial<Record<AiStudioProvider, string | null>> = {},
+): AiStudioConfig {
   if (env.AI_STUDIO_GENERATION_ENABLED?.trim() !== "true") return { enabled: false, reason: "disabled" };
 
   const provider = (env.AI_STUDIO_PROVIDER?.trim() || "openai") as AiStudioProvider;
   if (provider !== "openai" && provider !== "anthropic") return { enabled: false, reason: "invalid_provider" };
 
-  const apiKey = (provider === "openai" ? env.OPENAI_API_KEY : env.ANTHROPIC_API_KEY)?.trim() ?? "";
+  const apiKey = savedKeys[provider]?.trim() || ((provider === "openai" ? env.OPENAI_API_KEY : env.ANTHROPIC_API_KEY)?.trim() ?? "");
   if (apiKey.length < 20) return { enabled: false, reason: "missing_key" };
 
   // OpenAI model names change often: the model must be chosen explicitly.
@@ -37,6 +44,6 @@ export function readAiStudioConfig(env: Record<string, string | undefined> = pro
 export const DISABLED_REASON_LABELS: Record<Extract<AiStudioConfig, { enabled: false }>["reason"], string> = {
   disabled: "Live generation is off (AI_STUDIO_GENERATION_ENABLED is not true).",
   invalid_provider: "AI_STUDIO_PROVIDER must be openai or anthropic.",
-  missing_key: "The provider API key is missing (OPENAI_API_KEY or ANTHROPIC_API_KEY).",
+  missing_key: "The provider API key is missing. Add it in Admin › AI provider keys (or set OPENAI_API_KEY / ANTHROPIC_API_KEY on the server).",
   missing_model: "No model is set (AI_STUDIO_OPENAI_MODEL is required for OpenAI).",
 };

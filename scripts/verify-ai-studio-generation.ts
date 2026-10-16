@@ -47,6 +47,27 @@ async function main() {
     assert.deepEqual(readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", AI_STUDIO_PROVIDER: "anthropic", ANTHROPIC_API_KEY: KEY, AI_STUDIO_ANTHROPIC_MODEL: "bad model!" }), { enabled: false, reason: "missing_model" });
   });
 
+  await check("a key saved in Admin › AI provider keys wins over the environment key, only for its provider", () => {
+    const savedKey = "fake-saved-panel-key-0123456789";
+    const env = { AI_STUDIO_GENERATION_ENABLED: "true", AI_STUDIO_PROVIDER: "anthropic" };
+    const fromPanel = readAiStudioConfig(env, { anthropic: savedKey });
+    assert.ok(fromPanel.enabled && fromPanel.apiKey === savedKey, "a saved key enables generation with no env key");
+    const both = readAiStudioConfig({ ...env, ANTHROPIC_API_KEY: KEY }, { anthropic: savedKey });
+    assert.ok(both.enabled && both.apiKey === savedKey, "the saved key wins");
+    const other = readAiStudioConfig({ ...env, ANTHROPIC_API_KEY: KEY }, { openai: savedKey });
+    assert.ok(other.enabled && other.apiKey === KEY, "another provider's saved key is not used");
+    assert.deepEqual(readAiStudioConfig(env, { anthropic: "  " }), { enabled: false, reason: "missing_key" });
+    assert.deepEqual(readAiStudioConfig({}, { anthropic: savedKey }), { enabled: false, reason: "disabled" }, "a saved key never switches generation on");
+    const loader = readFileSync("src/lib/ai/generation/load-config.ts", "utf8");
+    assert.ok(loader.startsWith('import "server-only";'));
+    assert.match(loader, /resolveProviderKey\(provider\)/);
+    const route = readFileSync("src/app/api/ai-studio/generate/route.ts", "utf8");
+    assert.ok(
+      route.indexOf('requireWorkspaceApiPermission("create_content")') < route.indexOf("loadAiStudioConfig()"),
+      "the saved key is read only after the caller is authorized",
+    );
+  });
+
   await check("requests are whitelisted and bounded", () => {
     assert.ok(parseGenerateRequest({ kind: "caption", platform: "Instagram", goal: "Lunch special", language: "fr" }));
     assert.equal(parseGenerateRequest({ kind: "caption", platform: "Instagram", goal: "x" })?.language, "en");

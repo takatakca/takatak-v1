@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 
 import { readAiStudioConfig } from "@/lib/ai/generation/config";
+import { loadAiStudioConfig } from "@/lib/ai/generation/load-config";
 import { parseGenerateRequest } from "@/lib/ai/generation/prompt";
 import { callProvider } from "@/lib/ai/generation/provider-call";
 import { generateForWorkspace, type GenerationOutcome } from "@/lib/ai/generation/service";
@@ -26,11 +27,17 @@ const REFUSALS: Record<Extract<GenerationOutcome, { ok: false }>["reason"], { st
 
 /** Generates one draft in AI Studio for the active workspace. Never publishes. */
 export async function POST(request: NextRequest) {
-  const config = readAiStudioConfig();
-  if (!config.enabled) return jsonResponse({ ok: false, message: "Live AI generation is not enabled." }, 503);
+  // Cheap environment gate first; the saved key (a database read) only after auth.
+  const switchedOn = readAiStudioConfig();
+  if (!switchedOn.enabled && switchedOn.reason !== "missing_key") {
+    return jsonResponse({ ok: false, message: "Live AI generation is not enabled." }, 503);
+  }
 
   const gate = await requireWorkspaceApiPermission("create_content");
   if (!gate.ok) return gate.response;
+
+  const config = await loadAiStudioConfig();
+  if (!config.enabled) return jsonResponse({ ok: false, message: "Live AI generation is not enabled." }, 503);
 
   const body = await readJsonBody(request, 16_384);
   if (!body.ok) return jsonResponse({ ok: false, message: body.message }, body.status);

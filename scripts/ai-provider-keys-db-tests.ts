@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 
 process.env.GROWTH_TOKEN_ENCRYPTION_KEY_V1 = Buffer.alloc(32, 11).toString("base64");
 
+import { loadAiStudioConfig } from "@/lib/ai/generation/load-config";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import {
@@ -144,6 +145,19 @@ async function main() {
   assert.equal(views.find((v) => v.key === "openai")!.state, "env_only");
   delete process.env.OPENAI_API_KEY;
   console.log("PASS removing a key is audited; without a saved key the server variable is the fallback");
+
+  // AI Studio uses the saved Claude key; with none saved it falls back to the environment.
+  await prisma.aiProviderCredential.deleteMany({});
+  const studioEnv = { AI_STUDIO_GENERATION_ENABLED: "true", AI_STUDIO_PROVIDER: "anthropic" };
+  assert.deepEqual(await loadAiStudioConfig(studioEnv), { enabled: false, reason: "missing_key" });
+  const studioKey = `fake-claude-key-${randomUUID()}`;
+  await saveProviderKey({ provider: "anthropic", apiKey: studioKey, actorProfileId: actor.id });
+  const studio = await loadAiStudioConfig({ ...studioEnv, ANTHROPIC_API_KEY: "fake-env-claude-key-000000000" });
+  assert.ok(studio.enabled && studio.apiKey === studioKey, "the panel key is used, over the environment key");
+  assert.deepEqual(await loadAiStudioConfig({}), { enabled: false, reason: "disabled" }, "a saved key never switches generation on");
+  const openaiStudio = await loadAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", AI_STUDIO_OPENAI_MODEL: "gpt-test" });
+  assert.deepEqual(openaiStudio, { enabled: false, reason: "missing_key" }, "the Claude key is never used for OpenAI");
+  console.log("PASS AI Studio generation uses the key saved in the panel, only for its provider, and only once generation is switched on");
 
   await prisma.aiProviderCredential.deleteMany({});
 }
