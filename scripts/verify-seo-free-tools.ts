@@ -82,4 +82,11 @@ assert.match(exportsPage,/requireGrowthAccess/,"Workspace export dashboard requi
 assert.match(exportsPage,/view_reports/,"Workspace export dashboard requires report permission");
 assert.match(exportsRoute,/getSeoWorkspaceExportPage/,"JSON download route uses authorized backend");
 assert.match(exportsRoute,/Cache-Control.*private, no-store/,"Workspace exports must not be cached");
+const deletionPage=source("src/app/dashboard/seo/deletions/page.tsx");
+assert.match(portfolio,/getSeoDeletionReceipts/,"Server-only bridge reads scoped deletion receipts");
+assert.match(portfolio,/deletionReceiptsPath/,"Audit API paths must be strictly allowlisted");
+assert.match(portfolio,/manage_integrations/,"Audit requires client-scoped manage permission");
+assert.match(portfolioPage,/\/dashboard\/seo\/deletions/,"Portfolio links to deletion receipts");
+assert.match(deletionPage,/requireGrowthAccess/,"Deletion receipts require TAKATAK Auth");
+assert.match(deletionPage,/operational database receipts/,"Audit UI does not claim regulatory erasure certification");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");
