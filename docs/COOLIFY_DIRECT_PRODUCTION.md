@@ -99,3 +99,28 @@ build-time values (see `.env.example`). Keep unused providers disabled.
 **No public keys, tokens, database credentials, SSH keys, or secrets are
 committed to this repository.** The release is not live merely because the
 Dockerfile or this runbook lands in `main`.
+
+## Passive post-deployment inspection (safe default)
+
+From an authorized operator environment, run:
+
+```sh
+node scripts/ops/live-readiness.mjs --origin https://takatak.ca
+```
+
+Without `--active-probes`, this executes GET-based checks only; it does **not**
+submit a synthetic login request, invoke cron, or POST to billing webhooks.
+The mandatory `/api/health/ready` probe succeeds **only** for HTTP 200 with
+`ok: true` and `checks.process`, `checks.database`, and `checks.supabase`
+all explicitly equal to `ok`. Redirects, 503 responses and malformed or
+incomplete JSON fail even when an upstream server claims `ok: true`.
+
+An operator may explicitly opt into synthetic, state-changing POST probes with
+`--active-probes` after examining their effects. Never enable active probes
+inside unattended monitoring, and do not treat public phone-provider settings
+as evidence that an SMS was delivered. This command **does not** attest the
+serving Git SHA, verify customer login, or prove tenant isolation: obtain
+those separately under the release coordinator's acceptance checklist.
+
+The offline regression suite `node --test scripts/ops/live-readiness.test.mjs`
+is exercised in the normal pull-request CI with a fully mocked HTTP layer.
