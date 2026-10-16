@@ -1,7 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { addSeoManagedSite, importVerifiedSeoQueries, listSeoManagedSites } from "@/lib/seo/seotakatak-bridge";
+import { addSeoManagedSite, importVerifiedSeoQueries, listSeoManagedSites, removeSeoManagedSite } from "@/lib/seo/seotakatak-bridge";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { listGoogleLinkedSites } from "@/lib/analytics/service";
@@ -48,4 +48,16 @@ export async function importSeoSearchConsoleQueries(formData:FormData){
  }catch{status="google_unavailable";}
  if(status==="keywords_imported")revalidatePath(base);
  redirect(base+"?result="+encodeURIComponent(status));
+}
+
+/** Removing a site destroys its SEO rows, never the TAKATAK master customer. */
+export async function deleteSeoManagedSite(formData:FormData){
+ const siteId=String(formData.get("siteId")??"").trim();
+ const confirmDomain=String(formData.get("confirmDomain")??"").trim();
+ const approved=formData.get("approveDeletion")==="yes";
+ const result=approved?
+  await removeSeoManagedSite(siteId,confirmDomain):
+  "invalid";
+ if(result==="deleted")revalidatePath("/dashboard/seo/portfolio");
+ redirect("/dashboard/seo/portfolio?result="+encodeURIComponent(result));
 }

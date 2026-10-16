@@ -61,4 +61,8 @@ assert.match(portfolio,/getSeoContentBriefs/,"Draft briefs are read from the ten
 assert.match(portfolio,/addSeoContentBrief/,"Draft briefs are saved through signed TAKATAK service");
 assert.match(contentActions,/createSeoContentBrief/,"Client can submit a brief through a real server action");
 assert.match(backlinkPage,/Draft only — not published/,"Content brief UI does not claim automated publishing");
+assert.match(portfolio,/removeSeoManagedSite/,"Domain-confirmed deletion uses only the signed tenant-scoped SEO backend");
+assert.match(portfolioActions,/deleteSeoManagedSite/,"SEO site deletion is a real server action");
+assert.match(portfolioPage,/approveDeletion/,"Destructive action requires separate affirmative confirmation");
+assert.match(portfolioPage,/confirmDomain/,"Destructive action requires the exact site domain");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");

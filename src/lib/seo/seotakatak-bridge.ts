@@ -26,8 +26,8 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  const msg=encoded({alg:"HS256",typ:"JWT"})+"."+encoded({iss:"takatak-v1",aud:"seotakatak",sub:input.profileId,tenant_id:input.tenantId,permissions:input.ingest?["seo:import"]:input.manage?["seo:view","seo:manage"]:["seo:view"],iat:now,exp:now+60});
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
-async function callSeo(path:string,method:"GET"|"POST"|"PATCH",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}\/(opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(start|check))$/.test(path))return {kind:"unavailable" as const,sites:[]};
+async function callSeo(path:string,method:"GET"|"POST"|"PATCH"|"DELETE",payload?:Record<string,unknown>,ingest=false) {
+ if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
@@ -256,4 +256,26 @@ export async function addSeoContentBrief(input:{
   keyword:input.keyword,angle:input.angle
  });
  return response.kind==="ready"?"created":response.kind;
+}
+
+/** Destructive removal is only exposed to a selected authorized TAKATAK tenant manager.
+ * The SEO backend verifies the same tenant and requires a separate domain confirmation.
+ */
+export async function removeSeoManagedSite(siteId:string,confirmedDomain:string):Promise<
+ "deleted"|"invalid"|"unauthorized"|"unconfigured"|"unavailable"
+>{
+ if(!UUID_PATTERN.test(siteId)||!confirmedDomain||confirmedDomain.length>253)return "invalid";
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"manage_integrations"))return "unauthorized";
+ const result=await listSeoManagedSites();
+ if(result.kind!=="ready")return result.kind;
+ const site=result.sites.find(item=>item.id===siteId);
+ if(!site)return "unauthorized";
+ if(site.domain!==confirmedDomain.trim().toLowerCase())return "invalid";
+ const response=await callSeo("/v1/sites/"+siteId,"DELETE",{
+  confirmDelete:true,confirmDomain:site.domain
+ });
+ if(response.kind!=="ready")return response.kind;
+ const data=response.data as {deleted?:unknown;siteId?:unknown};
+ return data.deleted===true&&data.siteId===siteId?"deleted":"unavailable";
 }
