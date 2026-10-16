@@ -30,3 +30,11 @@ Only users with an active `client_scoped` TAKATAK workspace plus both `view_dash
 ### Whole workspace SEO data portability
 
 Only current client-scoped TAKATAK users with `view_dashboard` and `view_reports` may request paged SEO exports. Data is fetched from `/v1/workspace/export` over the signed V1 server bridge. Four collections are individually navigable and downloads are `private, no-store`. Pagination is fixed at 200 records, ordered by database ID and carries `hasMore`/`nextOffset`. SQL SELECT allowlists omit DNS ownership challenge secrets and reviewer profile IDs. Changes during pagination can alter coverage; this is a user-readable export capability, not an immutable or regulatory-complete backup and not a modification to TAKATAK master identity.
+
+## 2026-10-16 — SEO operational deletion audit within V1
+
+TAKATAK V1 remains the identity/client/permission master. A new independent site-deletion receipt view is restricted by current client workspace and `manage_integrations` on the server. The SEO API separately requires signed `seo:manage`, which cannot be granted by a browser. The receipt list does not expose authenticated reviewer subjects, deleted hostname plaintext, secrets or other clients' records. Backend `seo_delete_site_with_receipt` is a single-transaction SECURITY INVOKER RPC (proposed SQL 0004) that records an operational receipt and FK cascade; PostgreSQL direct RPC access is limited to `service_role`. The UI does not assert regulator-certified erasure or completion of backup retention. A new V1 PR is required and coordinator approval/merge remains mandatory.
+
+### PR #196 review readiness (2026-10-16)
+
+A passing V1 full CI allows the feature PR to be marked ready for designated-coordinator review only. It does not authorize an automatic merge, alteration of TAKATAK V1 production environments or backend SQL migration. PR #196 SHA `90f8fdeef6ea499e99f796c3563cefa4f6c8a6e9` passed CI `38884438610`; production SEO remains blocked by Coolify and database owner approval.
