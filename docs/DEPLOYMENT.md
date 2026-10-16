@@ -83,3 +83,7 @@ PR #181 **was merged into main** at `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24`. 
 
 ## 2026-10-16 current release proof
 GitHub `main=c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`; successful CI run 38858131646. Recent Coolify production jobs at this SHA were skipped, not completed deployments. Public `/api/health` and `/api/health/ready` were inaccessible through the available read-only web checker; production release SHA remains unknown. Coolify support #181 and fail-closed readiness #188 are merged into main, but configuration and live authenticated acceptance require designated release coordinator. Branch-only R2F PR #193 is offline and not deployed. Do not apply staging migrations without approved backup/reconciliation.
+
+
+## 2026-10-16 Coolify deployment acceptance update
+Coolify build fixes #197 (heap sizing) and #198 (image disk layout) reached main. New #199 proposes a safer production inspection operator command, `node scripts/ops/live-readiness.mjs --origin https://takatak.ca`; it is GET-only by default and strictly requires HTTP 200 and all required health checks equal to `ok`. Only explicit `--active-probes` enables login/webhook POST and cron probes; do not enable active probes in unattended monitoring. PR #199 has not been merged or released. Main currently `efe4db915d487822441502cc8d036819d31ab51b`, actual running public SHA unverified. A recent Coolify workflow was **skipped**. DNS lookup for the public health endpoint failed in the checker environment, so no health/outage claim can be made from this tool session.
