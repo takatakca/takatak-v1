@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createPublicKey, generateKeyPairSync, verify, constants } from "node:crypto";
 import {
   getKnowledgeAIConfig, knowledgeAIJwks, signKnowledgeAIJWT,
-  clientCanRequestKnowledgeAI,
+  clientCanRequestKnowledgeAI, knowledgeAIGrantAllows,
 } from "../src/lib/integrations/knowledgeai/issuer";
 import type { TenantAccess } from "../src/lib/security/tenant-access";
 
@@ -40,6 +40,24 @@ assert.equal(clientCanRequestKnowledgeAI({
   mode:"platform_admin",profileId,role:"owner",allowedClientIds:"all",
   customPermissions:[],deniedPermissions:[]
 },"knowledge:read"),false);
+const sample={
+  productStatus:"active",membershipStatus:"active",profileStatus:"active",
+  clientStatus:"active",grant:{
+    enabled:true,expiresAt:new Date(Date.now()+60000),allowRead:true,
+    allowWrite:false,allowDelete:false,allowExport:false
+  }
+};
+assert.equal(knowledgeAIGrantAllows(sample,"knowledge:read"),true);
+assert.equal(knowledgeAIGrantAllows(sample,"knowledge:write"),false);
+for(const bad of [
+  {...sample,productStatus:"planned"},
+  {...sample,membershipStatus:"suspended"},
+  {...sample,profileStatus:"disabled"},
+  {...sample,clientStatus:"paused"},
+  {...sample,grant:null},
+  {...sample,grant:{...sample.grant,enabled:false}},
+  {...sample,grant:{...sample.grant,expiresAt:new Date(Date.now()-60000)}}
+]) assert.equal(knowledgeAIGrantAllows(bad,"knowledge:read"),false);
 const jwt=signKnowledgeAIJWT(config,{workspaceId,profileId,scope:"knowledge:read"});
 const parts=jwt.split(".");
 assert.equal(parts.length,3);

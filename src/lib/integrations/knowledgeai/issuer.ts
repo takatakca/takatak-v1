@@ -55,6 +55,34 @@ export function clientCanRequestKnowledgeAI(
     UUID.test(access.profileId) && UUID.test(access.activeClientId) &&
     access.allowedClientIds.includes(access.activeClientId);
 }
+/** One pure decision table makes every fail-closed condition regression-testable. */
+export function knowledgeAIGrantAllows(input: {
+  productStatus?: string | null;
+  membershipStatus?: string | null;
+  profileStatus?: string | null;
+  clientStatus?: string | null;
+  grant?: {
+    enabled: boolean; expiresAt: Date;
+    allowRead: boolean; allowWrite: boolean;
+    allowDelete: boolean; allowExport: boolean;
+  } | null;
+}, scope: KnowledgeAIScope, now:Date = new Date()): boolean {
+  const g=input.grant;
+  if (!KNOWLEDGEAI_SCOPES.includes(scope) || !g ||
+      input.productStatus !== "active" ||
+      input.membershipStatus !== "active" ||
+      input.profileStatus !== "active" ||
+      input.clientStatus !== "active" ||
+      g.enabled !== true || !Number.isFinite(g.expiresAt.getTime()) ||
+      g.expiresAt <= now) return false;
+  return ({
+    "knowledge:read": g.allowRead,
+    "knowledge:write": g.allowWrite,
+    "knowledge:delete": g.allowDelete,
+    "knowledge:export": g.allowExport,
+  })[scope] === true;
+}
+
 /** An explicit current product row, active membership and per-user grant
  * must all exist. DB failures or absent migrations are DENIALS.
  */
@@ -78,15 +106,13 @@ export async function hasLiveKnowledgeAIGrant(
         where:{clientId_profileId:{clientId:workspaceId,profileId}}
       }),
     ]);
-    if (product?.status !== "active" || member?.status !== "active" ||
-        member.profile.status !== "active" || member.client.status !== "active" ||
-        grant?.enabled !== true || grant.expiresAt <= new Date()) return false;
-    return ({
-      "knowledge:read": grant.allowRead,
-      "knowledge:write": grant.allowWrite,
-      "knowledge:delete": grant.allowDelete,
-      "knowledge:export": grant.allowExport,
-    })[scope] === true;
+    return knowledgeAIGrantAllows({
+      productStatus:product?.status,
+      membershipStatus:member?.status,
+      profileStatus:member?.profile.status,
+      clientStatus:member?.client.status,
+      grant,
+    },scope);
   } catch { return false; }
 }
 const enc = (value: object) =>
