@@ -5,7 +5,7 @@ import {
   import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
   import { validateInvitationCompletion } from "@/lib/auth/invitation-completion-validation";
   import { getPrisma } from "@/lib/db/prisma";
-  import { wrapAuthRoute } from "@/lib/auth/auth-json";
+  import { readTrustedJsonBody, wrapAuthRoute } from "@/lib/auth/auth-json";
   
   export const runtime = "nodejs";
   export const dynamic = "force-dynamic";
@@ -29,6 +29,12 @@ import {
   async function handleCompleteInvitation(
     request: NextRequest,
   ): Promise<NextResponse> {
+    // Password completion mutates the signed-in user's credentials.
+    // Verify CSRF origin, JSON MIME and a strict request-size limit
+    // before querying the account or updating its password.
+    const parsed = await readTrustedJsonBody(request, 8_192);
+    if (!parsed.ok) return parsed.response;
+
     const supabase =
       await createSupabaseServerClient();
   
@@ -94,21 +100,8 @@ import {
         );
     }
   
-    let body: unknown;
-  
-    try {
-      body = await request.json();
-    } catch {
-      return jsonResponse(
-        {
-          ok: false,
-          message:
-            "The account completion request is invalid.",
-        },
-        400,
-      );
-    }
-  
+    const body = parsed.body;
+
     const validation =
       validateInvitationCompletion(body);
   
