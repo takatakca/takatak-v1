@@ -25,6 +25,10 @@ DNS/traffic. The work here is safely reviewable without touching production.
 * **Health:** Docker HEALTHCHECK `scripts/container-healthcheck.cjs`
   checks `/api/health/ready` AND asserts database and Supabase are `ok`.
   A superficial HTTP 200 is insufficient.
+  `/api/health/ready` now returns HTTP **503** whenever either required
+  service is `unavailable` **or** `not_configured`; only both `ok` return
+  HTTP 200. This is a configuration/database readiness gate, not evidence of
+  a delivered Twilio SMS, working Stripe payment, or full two-tenant E2E.
 
 ### Environment variables (values only in Coolify)
 
