@@ -52,6 +52,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: KnowledgeAI issuer denies without product grants and signing configuration
+        run: npm run qa:knowledgeai-issuer
+
       - name: Strict runtime health readiness safeguards
         run: npx tsx scripts/verify-runtime-readiness.ts
 

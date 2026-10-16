@@ -323,6 +323,7 @@ model Profile {
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
+  knowledgeAIGrants        KnowledgeAIWorkspaceGrant[]
   memberships              ClientMembership[]
   sentInvitations          UserInvitation[]               @relation("InvitedByProfile")
   assignedClients          Client[]                       @relation("AssignedAdmin")
@@ -385,6 +386,7 @@ model Client {
   updatedAt         DateTime     @updatedAt
 
   assignedProfile           Profile?                          @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
+  knowledgeAIGrants         KnowledgeAIWorkspaceGrant[]
   memberships               ClientMembership[]
   subscription              ClientSubscription?
   stripeConnectAccount      ClientStripeConnectAccount?
@@ -4840,4 +4842,27 @@ model AiProviderCredential {
   updatedAt          DateTime  @updatedAt
 
   @@map("ai_provider_credentials")
+}
+
+ 
+/// Explicit, per-user-per-company KnowledgeAI permission, solely owned by
+/// TAKATAK. No default grant; not derived from AI Studio or a platform role.
+model KnowledgeAIWorkspaceGrant {
+  clientId    String   @map("client_id") @db.Uuid
+  profileId   String   @map("profile_id") @db.Uuid
+  enabled     Boolean  @default(false)
+  allowRead   Boolean  @default(false) @map("allow_read")
+  allowWrite  Boolean  @default(false) @map("allow_write")
+  allowDelete Boolean  @default(false) @map("allow_delete")
+  allowExport Boolean  @default(false) @map("allow_export")
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz
+  approvedBy  String?  @map("approved_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@id([clientId, profileId])
+  @@index([expiresAt])
+  @@map("knowledgeai_workspace_grants")
 }

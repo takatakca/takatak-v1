@@ -34,6 +34,7 @@
     "qa:secrets": "tsx scripts/check-secrets.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
     "qa:routes": "tsx scripts/list-routes.ts",
+    "qa:knowledgeai-issuer": "tsx --require ./scripts/register-server-only.cjs scripts/verify-knowledgeai-issuer.ts",
     "bootstrap:owner": "tsx scripts/bootstrap-owner.ts",
     "qa:access": "tsx --require ./scripts/register-server-only.cjs scripts/check-access-control.ts",
     "qa:tenant-isolation": "tsx --require ./scripts/register-server-only.cjs scripts/check-tenant-isolation.ts",
