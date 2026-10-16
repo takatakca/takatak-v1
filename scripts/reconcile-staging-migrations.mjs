@@ -70,6 +70,9 @@ const APPROVED_DEPLOY_MIGRATIONS = [
   // the owner on 2026-10-11. Additive: new tables with RLS and REVERS catalog rows.
   "20261010051000_integration_request_nonces",
   "20261010100000_revers_product_access",
+  // #155 AI provider keys, merged 2026-10-16. Approved for staging by the owner
+  // on 2026-10-16. Additive: one table with RLS.
+  "20261009100000_ai_provider_key_store",
 ];
 
 const SUPABASE_HISTORY_NAMES = {

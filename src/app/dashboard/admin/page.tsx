@@ -1,5 +1,4 @@
-import { Activity, Bell, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, KeyRound, PackageOpen, PlugZap, Receipt, Settings, ShoppingBag, Users } from "lucide-react";
-import { Activity, Bell, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, MapPinned, PackageOpen, PlugZap, Receipt, Settings, ShoppingBag, Users } from "lucide-react";
+import { Activity, Bell, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, KeyRound, MapPinned, PackageOpen, PlugZap, Receipt, Settings, ShoppingBag, Users } from "lucide-react";
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminBoundaryWarning } from "@/components/admin/admin-boundary-warning";
 import { AdminHeader } from "@/components/admin/admin-header";
