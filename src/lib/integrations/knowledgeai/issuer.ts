@@ -25,7 +25,7 @@ function exactOrigin(value: string): string | null {
   } catch { return null; }
 }
 export function getKnowledgeAIConfig(
-  env: NodeJS.ProcessEnv = process.env,
+  env: Partial<NodeJS.ProcessEnv> = process.env,
 ): KnowledgeAIConfig | null {
   if (env.TAKATAK_KNOWLEDGEAI_ENABLED !== "1") return null;
   const issuer = exactOrigin(env.TAKATAK_KNOWLEDGEAI_ISSUER ?? "");
