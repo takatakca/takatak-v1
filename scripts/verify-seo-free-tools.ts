@@ -65,4 +65,7 @@ assert.match(portfolio,/removeSeoManagedSite/,"Domain-confirmed deletion uses on
 assert.match(portfolioActions,/deleteSeoManagedSite/,"SEO site deletion is a real server action");
 assert.match(portfolioPage,/approveDeletion/,"Destructive action requires separate affirmative confirmation");
 assert.match(portfolioPage,/confirmDomain/,"Destructive action requires the exact site domain");
+assert.match(portfolio,/decideSeoContentBrief/,"Human review decision goes through signed backend");
+assert.match(contentActions,/reviewSeoContentBrief/,"Human review submission has a real server action");
+assert.match(backlinkPage,/Approved for editorial planning — not published/,"Approval never misrepresents CMS publication");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");

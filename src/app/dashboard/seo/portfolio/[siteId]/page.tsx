@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { requireGrowthAccess } from "@/lib/growth/access";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import { listSeoManagedSites, getSeoEvidenceSummary, getSeoOpportunities, getSeoProspects, getSeoDomainVerification, getSeoContentBriefs } from "@/lib/seo/seotakatak-bridge";
-import { createBacklinkProspect, changeBacklinkProspectStatus, changeSeoDomainVerification, createSeoContentBrief } from "./actions";
+import { createBacklinkProspect, changeBacklinkProspectStatus, changeSeoDomainVerification, createSeoContentBrief, reviewSeoContentBrief } from "./actions";
 export const dynamic="force-dynamic";
 export const metadata={title:"SEO Evidence — TAKATAK",robots:{index:false,follow:false}};
 
@@ -97,9 +97,9 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
 
   <section className="space-y-3 rounded-2xl border bg-white p-5">
     <h2 className="text-lg font-bold text-slate-950">Original SEO content briefs</h2>
-    <p className="text-sm text-slate-600">Create editorial briefs for the site’s actual niche and audience. Each brief remains a draft. This feature does not fabricate articles or publish to a CMS.</p>
-    {briefResult?<p role="status" className={"rounded-xl p-3 text-sm "+(briefResult==="created"?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>
-      {briefResult==="created"?"Content brief saved as a draft.":
+    <p className="text-sm text-slate-600">Create editorial briefs for the site’s actual niche and audience. A client manager can approve or reject a draft after human review. Approval never publishes an article or creates a CMS record.</p>
+    {briefResult?<p role="status" className={"rounded-xl p-3 text-sm "+(["created","reviewed"].includes(briefResult)?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>
+      {briefResult==="created"?"Content brief saved as a draft.":briefResult==="reviewed"?"Editorial decision saved. No content was published.":
        briefResult==="invalid"?"Provide a valid keyword and a detailed editorial angle.":
        briefResult==="unauthorized"?"You cannot create briefs in this workspace.":
        "The SEO service has not confirmed your brief. Please retry later."}
@@ -109,7 +109,23 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
         {briefs.rows.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
           <p className="font-semibold text-slate-900">{item.keyword}</p>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.angle}</p>
-          <p className="mt-2 text-xs font-medium text-slate-500">Draft only — not published</p>
+          <p className="mt-2 text-xs font-medium text-slate-500">{item.status==="draft"?"Draft only — not published":item.status==="approved"?"Approved for editorial planning — not published":"Rejected — not published"}</p>
+          {item.review_note?<p className="mt-1 whitespace-pre-wrap text-xs text-slate-600">Review: {item.review_note}</p>:null}
+          {canManage&&item.status==="draft"?<form action={reviewSeoContentBrief} className="mt-3 space-y-2 border-t pt-3">
+            <input type="hidden" name="siteId" value={siteId}/>
+            <input type="hidden" name="briefId" value={item.id}/>
+            <label className="block text-xs font-semibold text-slate-700">Human review decision
+              <select name="status" defaultValue="approved" className="mt-1 w-full rounded-lg border p-2 text-xs">
+                <option value="approved">Approve editorial plan</option>
+                <option value="rejected">Reject and request changes</option>
+              </select>
+            </label>
+            <label className="block text-xs font-semibold text-slate-700">Review note (at least 10 characters if rejecting)
+              <textarea name="note" maxLength={500} rows={2} className="mt-1 w-full rounded-lg border p-2 text-xs"/>
+            </label>
+            <p className="text-xs text-amber-800">The decision is final. It will not publish or distribute any article.</p>
+            <button type="submit" className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white">Save review decision</button>
+          </form>:null}
         </article>)}
       </div>}
       {canManage?<form action={createSeoContentBrief} className="grid gap-3 border-t pt-4 sm:grid-cols-2">

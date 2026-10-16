@@ -27,7 +27,7 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
 async function callSeo(path:string,method:"GET"|"POST"|"PATCH"|"DELETE",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
+ if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)|briefs\/[0-9a-f-]{36}\/review))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
@@ -229,7 +229,7 @@ export async function manageSeoDomainVerification(
 }
 
 export interface SeoContentBrief {
- id:string;keyword:string;angle:string;status:"draft";created_at?:string;
+ id:string;keyword:string;angle:string;status:"draft"|"approved"|"rejected";created_at?:string;reviewed_at?:string|null;review_note?:string|null;
 }
 export async function getSeoContentBriefs(siteId:string):Promise<
  {kind:"ready";rows:SeoContentBrief[]}|{kind:"unavailable"|"unconfigured"|"unauthorized";rows:[]}
@@ -244,7 +244,7 @@ export async function getSeoContentBriefs(siteId:string):Promise<
  if(!Array.isArray(rows))return {kind:"unavailable",rows:[]};
  return {kind:"ready",rows:rows.filter((x):x is SeoContentBrief=>
   !!x&&typeof x==="object"&&typeof x.id==="string"&&typeof x.keyword==="string"&&
-  typeof x.angle==="string"&&x.status==="draft"
+  typeof x.angle==="string"&&["draft","approved","rejected"].includes(String(x.status))
  ).slice(0,200)};
 }
 export async function addSeoContentBrief(input:{
@@ -278,4 +278,18 @@ export async function removeSeoManagedSite(siteId:string,confirmedDomain:string)
  if(response.kind!=="ready")return response.kind;
  const data=response.data as {deleted?:unknown;siteId?:unknown};
  return data.deleted===true&&data.siteId===siteId?"deleted":"unavailable";
+}
+
+/** Approval is a one-time editorial decision, never automated CMS publication. */
+export async function decideSeoContentBrief(input:{
+ siteId:string;briefId:string;status:"approved"|"rejected";note:string
+}):Promise<"reviewed"|"invalid"|"unavailable"|"unconfigured"|"unauthorized">{
+ if(!UUID_PATTERN.test(input.siteId)||!UUID_PATTERN.test(input.briefId)||
+  !["approved","rejected"].includes(input.status)||input.note.length>500||
+  (input.status==="rejected"&&input.note.trim().length<10))return "invalid";
+ const response=await callSeo("/v1/sites/"+input.siteId+"/briefs/"+input.briefId+"/review",
+  "PATCH",{status:input.status,note:input.note.trim()});
+ if(response.kind!=="ready")return response.kind;
+ const data=response.data as {brief?:{status?:unknown}};
+ return data.brief?.status===input.status?"reviewed":"unavailable";
 }
