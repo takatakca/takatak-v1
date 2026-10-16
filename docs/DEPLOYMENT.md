@@ -1,36 +1,89 @@
-# SEO integration release — TAKATAK V1
+# TAKATAK V1 — Deployment and Recovery
 
-This is a **SEO-scope supplement**. The general release runbooks remain `docs/TAKATAK_PRODUCTION_PROMOTION.md`, `docs/TAKATAK_V1_ENVIRONMENT_MATRIX.md` and `WORKLOG.md`.
+Updated 2026-10-14. This document is an index of **existing supported** release mechanisms, not a new deployment mechanism. Detailed authoritative runbooks:
 
-1. Review PR #182 after its CI completes. **Do not merge or deploy V1** from another agent: the coordinator owns approval, migration gates and production promotion.
-2. Deploy and verify the separate `takatakca/SEOTAKATAK` Node/Coolify service under its own approved database/release gate. Its `/ready` must prove DB connectivity.
-3. Configure only in the V1 server runtime `SEOTAKATAK_API_URL` (trusted HTTPS origin) and `SEOTAKATAK_SIGNING_KEY` (same secret as SEO service, >=32 chars). Never put these in `NEXT_PUBLIC_*`, source or browser.
-4. Existing Google integration needs `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` and client verified domain-linked Search Console property grants. No new OAuth user authority.
-5. Coordinator promotes the validated V1 release. Smoke: unauthenticated tool redirects to TAKATAK login; client A sees only its sites and CSV; client B cannot read A by URL guessing; viewer cannot manage; linked verified GSC import works; unlinked GSC import fails safely; V1 other SEO pages remain functional.
-6. Confirm actual V1 and SEO service running SHAs from release records. Until both have been checked, the integration is NOT live.
+- [TAKATAK_PRODUCTION_PROMOTION.md](TAKATAK_PRODUCTION_PROMOTION.md)
+- [TAKATAK_MOCHAHOST_DEPLOYMENT.md](TAKATAK_MOCHAHOST_DEPLOYMENT.md)
+- [staging-migration-reconciliation.md](staging-migration-reconciliation.md)
+- [TAKATAK_V1_PRODUCTION_CUTOVER.md](TAKATAK_V1_PRODUCTION_CUTOVER.md)
+- [TAKATAK_V1_ROLLBACK_PLAN.md](TAKATAK_V1_ROLLBACK_PLAN.md)
+- [WORKLOG.md](../WORKLOG.md) (release authority / post-its)
 
-External requirements (no guessed values): Coolify application/token, approved DB/migration and V1 coordinator authority.
+## Verified architecture and constraints
 
-### New domain-ownership schema gate
+Current documented production target: `https://takatak.ca`, Node 22 on MochaHost/cPanel Passenger, app entry `server.js` and a Linux webpack build with generated Prisma client. Do **not** build on the constrained MochaHost host; CI builds the Linux artifact. Hosting migration to Contabo/Coolify is separate and was frozen in the work log; never assume it occurred.
 
-Backend `sql/0002_domain_verification.sql` must be reviewed and applied in the authorized SEOTAKATAK DB **after** `sql/0001_seo_core.sql`. Test /v1/sites/:id/verification, /start and /check through the V1 workspace. The DNS host is `_seotakatak.<registered-domain>`, the TXT value is `seotakatak-verify=<random-token>`. Pending/incorrect/expired TXT must never appear as verified. The V1 forms must remain visible only to managers and must report unavailability truthfully before schema/runtime readiness. No V1 database migration is introduced by this feature.
+`main` GitHub Actions pipelines include:
 
-### Additional V1 QA before coordinator promotion
+- `.github/workflows/ci.yml`: install `package-lock.json`, generate Prisma, QA/security checks, database-isolated tests, `next build --webpack`, immutable artifact tarball, checksums and startup smoke.
+- `.github/workflows/reconcile-staging-migrations.yml`: staging migration audit/apply with explicit gate. Do not apply unapproved SQL.
+- `.github/workflows/release-staging.yml`: staging release with migration readiness gates.
+- `.github/workflows/validate-production-artifact.yml`: validation-only checks.
+- `.github/workflows/release-production.yml`: manual artifact promotion, exact green `main` SHA + CI run ID, `validate` then `promote`.
 
-Test content briefs for authorized client A (create + list, draft-only). Ensure client B cannot read/write A's site by changing siteId and read-only users cannot submit content briefs. The form must never claim that a draft was published. Recheck latest full V1 CI run after the `4f70342c` lint fix. SEO backend production `/ready` now checks migrations 0001 and 0002; Coolify still requires operator-provided environment settings.
+## Operator prerequisites before any release
 
-### SEO site deletion smoke (approved staging only)
+1. Read `AGENTS.md`, WORKLOG.md's **Release control**, release runbooks and latest merged `main` SHA. Current worklog reserves **all merges and deployments to a single coordinator** until the owner lifts this rule. This does not authorize this agent to dispatch workflows.
+2. Staging database snapshot and approved migrations must be documented before any apply. Required migration history must be reconciled.
+3. Production uses the GitHub `production` environment with seven `TAKATAK_PRODUCTION_*` values:
+   - `TAKATAK_PRODUCTION_HOST`
+   - `TAKATAK_PRODUCTION_SSH_PORT`
+   - `TAKATAK_PRODUCTION_USER`
+   - `TAKATAK_PRODUCTION_APP_ROOT`
+   - `TAKATAK_PRODUCTION_SSH_PRIVATE_KEY`
+   - `TAKATAK_PRODUCTION_KNOWN_HOSTS`
+   - `TAKATAK_PRODUCTION_RESTART_COMMAND`
+4. Release wrapper has an existing `current` symlink, releases directory, server-held `.env`, verified SSH host key and rollback target. The production flow does not create these or migrate an old direct app root.
+5. Supabase Auth, database, SMS provider and server-only credentials are configured and tested separately. Never store secret values in GitHub source or in this document.
 
-After backend Coolify and database approval, test the new portfolio's "Remove this SEO site" form on a disposable owned test site. Wrong domain and unchecked consent must fail; manager from another workspace must not see or delete it; authorized deletion must remove that site's SEO opportunities, prospects and briefs while leaving the TAKATAK identity intact. The `SEOTAKATAK` backend has mock/HTTP tests but **no approved production DB migration or deployed proof** yet. V1 PR #182 remains coordinator-only release.
+## Authorized promotion procedure (coordinator only)
 
-### SEO editorial review release gate
+1. Merge reviewed feature PRs **one at a time** after approval. Observe a **successful `main` CI** run and its immutable `takatak-ci-<sha>` artifact (the same `main` SHA currently at HEAD).
+2. GitHub → Actions → **Promote verified TAKATAK production artifact**, on `main`; supply exact `release_sha`, successful `ci_run_id`, `confirm_production_origin=https://takatak.ca` and `mode=validate`.
+3. Check validation evidence, SHA, archive hashes and app metadata. Nothing is installed by `validate`.
+4. After confirming operator prerequisites and owner/coordinator approval, re-run the exact values with `mode=promote`. Workflow refuses `main` drift; upload/activation uses a saved previous release for rollback.
+5. Confirm `GET https://takatak.ca/api/health` returns a **matching `X-TAKATAK-Release` SHA**, and `GET /api/health/ready` explicitly reports database/Supabase `ok`; check user/API smoke gates and application logs. Record the exact live version and time in [AGENT_HANDOFF.md](AGENT_HANDOFF.md).
+6. When readiness fails, follow the documented rollback path, verify previous runtime and inspect logs. Do not claim success from CI or from switching a symlink.
 
-Backend schema now proposes SQL `0003_brief_editorial_review.sql` (after 0001 and 0002). Apply solely to owner-approved existing/non-billable staging database first. Verify `/ready` rejects missing review columns, one draft can be approved/rejected only once, another tenant's manager receives no write access, and reviewed_by profile ID stays server-only. V1 PR #182 remains coordinator-only merge/release. Human approval does not automatically publish content.
+## Safe developer validation (without deployment)
 
-### SEO site JSON snapshot smoke
+```bash
+npm ci --ignore-scripts=false
+npm run db:generate
+npm run typecheck
+npm run lint
+npm run qa:ads
+npm run qa:access
+npm run qa:production-release
+npm run build
+```
 
-After an approved backend database/HTTPS deployment and coordinator-approved V1 PR merge, sign in as client A with `view_reports`. In `/dashboard/seo/portfolio/{siteId}` download the JSON snapshot. Validate `Cache-Control: private, no-store`, `X-Content-Type-Options: nosniff`, `format:seotakatak-site-snapshot`, `coverage.guaranteedComplete:false`, up-to-200 collection caps, and no `verification_token` or `reviewed_by`. A read-only import token, anonymous browser or client B must not retrieve client A data. The snapshot does not include TAKATAK master account records or all SEO history. No live data was exported during development.
+Run on a suitable Linux/Node 22 workstation or GitHub CI. These commands are **examples** of required verification and are not asserted to have run in the documentation-only session. No local build access or external production environment credentials are assumed.
 
-### Paginated workspace SEO JSON export smoke
+## Last observed delivery
 
-On an approved staging-only SEO backend with migrations and current client A/B accounts, visit `/dashboard/seo/exports` under client A and `view_reports` permission. Download every page of sites, opportunities, prospects and briefs from `/api/seo/workspace/export/[collection]?offset=N`, following `nextOffset` only while `hasMore=true`; verify private/no-store headers, no reviewer IDs/DNS secrets and no rows belonging to B. A viewer lacking `view_reports` must not access export UI or route; an import-only backend token must be forbidden. When there are more than 200 rows, verify the second page continues correctly and no response exceeds its fixed page limit. No live export, migration or deployment is claimed.
+On 2026-10-14, PR #176 and PR #177 each had **successful branch CI**, but both were open. Their changes are not on `main` and there is **no proof of live deployment**. See [PROJECT_STATUS.md](PROJECT_STATUS.md) and [AGENT_HANDOFF.md](AGENT_HANDOFF.md) for precise state.
+
+Do not replace the existing controlled workflow with a broad `push main → deploy` shortcut: it would bypass database approval, user-facing auth checks and rollback protections.
+
+
+## 2026-10-15 hosting status
+PR #181 proposes direct Coolify deployment and its branch CI passed, but it remained unmerged. This does not establish that Coolify/Contabo is the active production host. Respect existing owner release lock and require operator-confirmed deployment target/credentials before changing pipeline activation.
+
+
+## 2026-10-15 live-status cross-check
+
+At inspection, `main=dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`, release/staging runs were frequently **skipped**, and no later deploy-to-`takatak.ca` was verified. Owner gate still limits deployment to its designated coordinator. The direct Coolify proposal #181 is an unmerged branch, not proof the production host switched. Reconcile this with the operator before promotion.
+
+
+## Coolify status superseding older plan — 2026-10-15
+
+PR #181 **was merged into main** at `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24`. `.github/workflows/coolify-production-deploy.yml`, `Dockerfile`, container health check and runbook now exist on main, but automatic production jobs were skipped at inspection; the host's actual serving revision and health could not be confirmed. No deployment is claimed. PR #188 proposes fail-closed HTTP 503 for `not_configured` DB/Supabase dependencies at `/api/health/ready`; wait for CI and reviewed merge. Maintain all previous owner release controls and request explicit environment go-live verification.
+
+
+## 2026-10-16 current release proof
+GitHub `main=c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`; successful CI run 38858131646. Recent Coolify production jobs at this SHA were skipped, not completed deployments. Public `/api/health` and `/api/health/ready` were inaccessible through the available read-only web checker; production release SHA remains unknown. Coolify support #181 and fail-closed readiness #188 are merged into main, but configuration and live authenticated acceptance require designated release coordinator. Branch-only R2F PR #193 is offline and not deployed. Do not apply staging migrations without approved backup/reconciliation.
+
+
+## 2026-10-16 Coolify deployment acceptance update
+Coolify build fixes #197 (heap sizing) and #198 (image disk layout) reached main. New #199 proposes a safer production inspection operator command, `node scripts/ops/live-readiness.mjs --origin https://takatak.ca`; it is GET-only by default and strictly requires HTTP 200 and all required health checks equal to `ok`. Only explicit `--active-probes` enables login/webhook POST and cron probes; do not enable active probes in unattended monitoring. PR #199 has not been merged or released. Main currently `efe4db915d487822441502cc8d036819d31ab51b`, actual running public SHA unverified. A recent Coolify workflow was **skipped**. DNS lookup for the public health endpoint failed in the checker environment, so no health/outage claim can be made from this tool session.

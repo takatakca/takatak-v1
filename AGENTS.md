@@ -4,6 +4,19 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+## Agent continuity (read before claiming new work)
+
+After checking current `main` and open PR titles, read
+[`docs/AGENT_HANDOFF.md`](docs/AGENT_HANDOFF.md),
+[`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md),
+[`docs/TASK_QUEUE.md`](docs/TASK_QUEUE.md) and
+[`docs/DECISIONS.md`](docs/DECISIONS.md). Deployment is
+[`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md), subordinate to the explicit
+owner release-control gate in WORKLOG.md. Update status, handoff and worklog
+when a claimed task is handed over. `npm run qa:handoff` checks continuity
+documents in CI. A future session must revalidate SHA and PR statuses rather
+than trusting dated snapshots.
+
 ## Work log rule (every agent: Claude, Codex, Cursor, people)
 
 Cheap to follow: read only what is listed here.

@@ -1,110 +1,193 @@
-# SEO integration / TAKATAK V1 — agent handoff, 2026-10-15
+# TAKATAK V1 — Agent Handoff (read immediately)
 
-## Scope, latest task and branches
-- Work belongs to SEOTAKATAK and **V1 PR #182**, `feat/seotakatak-free-tools-20261015` targeting `main`.
-- Last implemented SEO task: real Search Console import from an already verified client-owned Google property and a client-scoped SEO evidence report/CSV export.
-- Last checked SEO integration code commit before handoff edits: `7a3aa013aa1d3ae25a10fb711f8237b2a1281a87` (added access contract QA). Check GitHub branch head for the documentation commit and new CI run before continuing.
+Last update: **2026-10-14**. Read [AGENTS.md](../AGENTS.md), first 40 lines of [WORKLOG.md](../WORKLOG.md) and open PR titles **before coding**. Follow the current owner release-control rule. This document captures one agent's observed state, not a perpetual claim about GitHub or production.
 
-## Files updated
-- `src/lib/seo/seotakatak-bridge.ts`
-- `src/app/dashboard/seo/portfolio/actions.ts`
-- `src/app/dashboard/seo/portfolio/page.tsx`
-- `src/app/dashboard/seo/portfolio/[siteId]/page.tsx`
-- `src/app/api/seo/sites/[siteId]/opportunities.csv/route.ts`
-- plus the existing free-tools catalog, actions, frontend, public landing, website sitemap and CI checks on PR #182.
+## Repository and immutable baseline
 
-## Checks executed / current tasks
-- Earlier PR head `7829963d`: full V1 CI **passed**, run `38732237723`.
-- Later GSC import head `0a776fdc`: CI run `38792612248` was still in progress at the time of first review; re-query and record its final status.
-- New SEO summary/CSV page must pass `npm run typecheck`, `npm run lint`, `npm run qa:seo-free-tools`, `npm run qa:website-seo`, and the full CI build before coordinator review.
+- Repo: https://github.com/takatakca/takatak-v1
+- Main branch and last confirmed main SHA: `main` at `dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`.
+- Last completed developer features: [#176](https://github.com/takatakca/takatak-v1/pull/176) and [#177](https://github.com/takatakca/takatak-v1/pull/177), **implemented on feature branches and passing CI, NOT merged**.
+- Latest observed PR CIs: #176 run [38608344700](https://github.com/takatakca/takatak-v1/actions/runs/38608344700) = success; #177 run [38608979371](https://github.com/takatakca/takatak-v1/actions/runs/38608979371) = success.
+- Additional independent API-hardening PRs: [#179](https://github.com/takatakca/takatak-v1/pull/179) adds bounded public ADS payloads, and [#180](https://github.com/takatakca/takatak-v1/pull/180) caps atomic CPC charges. Both open with CI pending at handoff. Do not duplicate those patches.
+- Current handoff/continuity documentation branch: `docs/agent-continuity-gates-20261014` → [PR #178](https://github.com/takatakca/takatak-v1/pull/178). Branch updates are recorded in its GitHub PR and branch head; **do not confuse feature-branch commits with `main`.**
 
-## Blockers and real deployment
-- PR #182 is **open and not merged**. V1 designated coordinator alone merges/deploys.
-- SEOTAKATAK production blocker is tracked in `takatakca/SEOTAKATAK#1`; Coolify deployment and live DB not verified; GitHub production config reported absent `COOLIFY_API_URL` on previous deploy attempt.
-- No live provider-backed AI ranking/citation metrics are claimed.
-- No user secrets were collected/exposed and no V1 production migrations were run.
+## Last completed task and current task
 
-## Exact next action
-1. Check newest PR #182 head and CI jobs. Fix any typecheck/CI failure on this branch.
-2. Hand the green PR to V1 coordinator for authorized merge/promotion.
-3. Once the SEO runtime and DB are provisioned with owner approval, perform a live two-client tenant isolation smoke test and verify deployed SHA.
-4. Continue with `docs/TASK_QUEUE.md` independently; do not wait idly on external secrets.
+- Last feature task completed: ADS SDK hardening and campaign draft UI (PRs #176, #177; awaiting coordinated merge).
+- Current task: finish CI verification of [PR #178](https://github.com/takatakca/takatak-v1/pull/178), plus #179 and #180; fix any failures on their respective branches and hand green PRs to release coordinator.
+- Next independent technical work after this PR: inspect green/failed CI and open PR conflicts before taking another *unclaimed* issue from [TASK_QUEUE.md](TASK_QUEUE.md). Do not duplicate #175, #173 or any open PR.
 
-**No autonomous coding-agent restart orchestrator has been verified.** GitHub workflows cover tests/deploy only.
+## Files modified on this branch
 
-## Latest resumed work checkpoint (2026-10-15)
+- `docs/PROJECT_STATUS.md` — verified implementation/live status and current open work.
+- `docs/TASK_QUEUE.md` — prioritized backlog, permission/owner gates and acceptance evidence.
+- `docs/AGENT_HANDOFF.md` — this exact resume point and verification evidence.
+- `docs/DEPLOYMENT.md` — production/staging runbook index and release proof.
+- `docs/DECISIONS.md` — preserved owner decisions and platform invariants.
+- `scripts/verify-agent-handoff.cjs` — implemented continuity guard.
+- `package.json` and `.github/workflows/ci.yml` — implemented QA wiring.
+- `AGENTS.md` — implemented resume-pointer update.
+- `WORKLOG.md` — implemented session claim / handoff log.
 
-- Current substantive branch code revision before this handoff change: **8cd20b5ef03797a328bbe7083f012ba69d605d49**, adding a visible table of real Search Console queries in the client-owned evidence report.
-- Backend SEOTAKATAK passed CI at **bde41fb788b7e239a1baf699469501d925d5edc3**; final backend HEAD includes handoff documentation. Production job still blocked on settings and approved database, tracked at `takatakca/SEOTAKATAK#1`.
-- Earlier V1 PR CI at **b482173b** was green; latest full CI for the opportunity-table commit was still underway as this handoff was written. Check the live PR status, don't infer success from earlier green jobs.
-- No TAKATAK V1 main merge or production deployment was performed. The V1 designated coordinator retains control.
-- **Next exact action:** inspect the newest PR #182 CI, repair any actual failure on the PR branch, then ask the designated coordinator to review/merge/promote. Separately deploy the authorized SEO backend and verify the SHA/two-workspace smoke after issue #1 is cleared.
+GitHub history is authoritative for the exact final commit. At this file's most recent pre-update review, the branch head was `b881541a13c1d11ee0dce656a4fe6f0dbab7f4af` (`docs/DECISIONS.md`); subsequent changes to this file and CI necessarily advance branch HEAD.
 
-## Most recent development and CI correction (2026-10-15)
+## Verification performed / not performed
 
-- V1 PR #182 source code (before this docs commit): `be53990e351a924458f849f51024f8c2a5000e1b`.
-- Added manually tracked, workspace-scoped editorial backlink prospects in `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts` and `page.tsx`. Creation and updates use the signed server API, and backend rejects unverified 'earned' status.
-- A prior commit introduced a duplicate `hasEffectivePermission` import; V1 CI reported TS2300 on run `38795240964`. The duplicate was removed at `be53990e`. **Next action: confirm latest V1 PR CI is green**; do not assume the previous failure is resolved without checking the new run.
-- External production constraints unchanged: `takatakca/SEOTAKATAK#1`, no live backend database, V1 coordinator-only merge/promotion.
+- GitHub repository, default branch, main SHA, PR titles and owner restrictions read via GitHub connector. PR #178 continuity guard step passed in GitHub CI; full run still in progress at last check.
+- Both earlier feature PRs had **completed successful GitHub CI** as of 2026-10-14.
+- Local terminal `git ls-remote` was attempted but failed: environment could not resolve `github.com`; all repository changes used the authorized GitHub connector.
+- PRs #178, #179 and #180 are open; all require green branch CI. The new `Agent continuation documentation safeguards` step on #178 has already succeeded. Run `npm run qa:handoff` through GitHub CI and record its green/red outcome; do not assume success before the workflow finishes.
+- A live production deployment, production SMS test, applied migration, and operational secrets validation **were NOT executed**.
 
-## Latest 2026-10-15: DNS ownership verification UI
+## Known blockers / access needed (never include values)
 
-- **Last completed code before docs**: `aec20c1ac8f4cc54923c0b793c17f675f52db8c7`, which adds domain verification server-only bridge, manager-scoped server actions, explanatory DNS TXT challenge UI and SEO contract tests to V1 PR #182. Full CI for that commit was running in `38799035110`; earlier V1 `774d723a` CI passed. Query current run, never infer latest from earlier green runs.
-- **Modified files**: `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts`, `src/app/dashboard/seo/portfolio/[siteId]/page.tsx`, `scripts/verify-seo-free-tools.ts`, plus docs in this commit.
-- **Backend dependency**: SEOTAKATAK code SHA `4bcdc57c769ba92228e8c98090180a85c904d2bf` CI `38798985084` green; live service unverified, schema `sql/0002_domain_verification.sql` requires approved DB migration. Backend newest documentation commit may have a different SHA; check branch HEAD.
-- **Deployment**: V1 PR #182 remains **unmerged** and no V1 production deployment was performed by this agent. Only designated coordinator may merge/promote. SEOTAKATAK production fails without Coolify and DB setup (SEOTAKATAK issue #1).
-- **Required accesses**: designated V1 coordinator review/release, owner-approved existing DB schema 0001+0002, Coolify credentials/app/HTTPS, matching V1 server-only signing secret; do not expose secrets.
-- **Next exact action**: inspect most recent V1 CI job and fix if red; then hand green PR #182 to authorized coordinator and, once owner authorizes DB, perform a real DNS TXT ownership smoke including negative cross-tenant tests and verify deployed SHA.
-- **No external agent-restart orchestrator has been installed or verified.**
+1. Owner/coordinator lock from `WORKLOG.md`: this agent cannot merge into `main` or dispatch staging/production workflows.
+2. Production `TAKATAK_PRODUCTION_*` GitHub Environment secrets and an approved existing Passenger release wrapper must be confirmed by authorized operator.
+3. Staging backup + authorized migration reconciliation, then separate production migration approval; automation skips are not a success.
+4. Live Supabase Phone Auth/Twilio provider and suitable synthetic test number/permissions are needed to close #141.
+5. Provider APIs, Facturations integration and other external services need actual credentialed tests, separate privacy approval for #128.
+6. MIMT, Food Hub and Coolify remain owner-paused according to WORKLOG.md.
 
-## Latest code checkpoint and active work — 2026-10-15
+## Exact next action for the next agent
 
-- **Last completed frontend implementation**: `4f70342cb30efd5316a054e93c17cd3c76204b98` (V1 PR #182 branch). New content-brief creation/listing UI is wired to the real SEOTAKATAK draft-only API, with TAKATAK client-scoped server authorization; fixed the React JSX apostrophe lint error detected on CI run `38799718081`.
-- **Files**: `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts`, `src/app/dashboard/seo/portfolio/[siteId]/page.tsx`, `scripts/verify-seo-free-tools.ts`, docs files in this commit.
-- **Backend latest green code SHA**: `c1d7861fe731d0fd7b14ac6cddcea8e8c3e5ab6d` — CI run `38799814574` passed; database readiness now requires DNS verification columns, per-tenant rate limits tested. Backend deploy remains unsuccessful due incomplete Coolify config; issue `takatakca/SEOTAKATAK#1`.
-- **Current unfinished task**: inspect the full V1 CI for this branch after lint correction. All other V1 deploy/merge operations remain reserved for the designated coordinator. Do not claim production after an unmerged PR.
-- **Commands/QA**: V1 CI runs Typecheck, Lint, SEO free-tools contracts, website SEO, security tests, ephemeral DB tests and production webpack build. The latest complete run result must be verified from GitHub Actions.
-- **Human prerequisites**: V1 coordinator authorization, SEOTAKATAK existing owner-approved PostgreSQL project and migrations 0001+0002, Coolify app URL/UUID/token/HTTPS, runtime server-only signing key and Google credentials for verified GSC. Do not expose values in any GitHub file.
-- **Exact next action**: read newest GitHub Actions failure/success for V1 PR #182, fix only actual failing files, then hand off green PR to designated coordinator. Independently complete approved database/Coolify configuration (issue #1) and smoke-test two clients, verified DNS and Search Console import on deployed SHA.
-- **Agent restart**: no external autonomous coding-agent orchestrator has been connected or verified.
+1. Read AGENTS.md and top 40 WORKLOG.md lines; fetch `main` HEAD and list open PRs, especially #176, #177 and this handoff PR. Compare with SHA above.
+2. Open PR #178, #179 and #180 CI; if red, inspect failed GitHub Actions job steps and fix only this branch. If green, hand PR to release coordinator for reviewed merge **without dispatching production**.
+3. Update this file and WORKLOG entry with exact final branch SHA, commands/CI link, and accurate status. Verify `docs/PROJECT_STATUS.md` and queue reflect newer decisions.
+4. Select the next unclaimed and authorized development item. Do not apply migrations, call provider write APIs, deploy or force-push as a workaround.
 
-## 2026-10-15 resumed session: scoped SEO-site deletion
+## Restart model
 
-- **Last task completed:** Created full UI → signed server action → SEOTAKATAK API → tenant-filtered PostgREST site DELETE, with SQL 0001 cascading SEO child rows. No TAKATAK identity deletion. Dual confirmation requires typed exact registered hostname and separate positive acknowledgement.
-- **Files modified this session:** SEOTAKATAK `src/app.mjs`, `src/store.mjs`, `src/server.mjs`, `tests/engine.test.mjs`, `tests/store.test.mjs`, `tests/http.test.mjs` and its five docs; V1 `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/actions.ts`, `page.tsx`, `scripts/verify-seo-free-tools.ts` plus all five V1 handoff docs and `WORKLOG.md`.
-- **Last verified backend implementation SHA:** `6308c81fd97156dab620690bd5fbb629875299c0`; backend CI **PASSED** `38841219269`. Later docs-only commit `8e3bca13c5d0ba99203bfe78b8ecb67c40645950`. V1 code SHA `417edac2860adae2958dd6716488fa012865b379` fixes a lint error from CI `38841109038`.
-- **Tests/checks executed:** GitHub backend `npm run check`, Node HTTP integration tests, `bash -n scripts/deploy-coolify.sh`, Docker build passed. V1 Typecheck passed before eslint found one JSX apostrophe; update fixes it, rerun full CI and inspect further errors if any. Frontend QA contract asserts approved delete form fields and server bridge.
-- **Current task:** verify final V1 PR #182 CI on latest commit and resolve any failure on this branch without bypassing coordinator controls.
-- **Known blockers/deployment:** SEO backend deploy job `38841246305` failed because GitHub production `COOLIFY_API_URL` is missing. Database/migrations 0001 and 0002 not approved for live application; no live service verification. V1 PR #182 still open. Infrastructure actions in `takatakca/SEOTAKATAK#1`.
-- **Required access:** authorized Coolify app, UUID, token and HTTPS domain; approved existing/no-billable Supabase DB with migrations; V1 coordinator approval and release. No secrets documented.
-- **Exact next action:** Check V1 PR latest SHA and CI; fix failures until green. Hand reviewed PR to the designated V1 coordinator for approval/merge. Once infrastructure is configured, deploy signed SEOTAKATAK backend with exact SHA and verify /ready, cross-tenant isolation, DNS ownership and disposable-site deletion. Do not call production live before proof.
-- No external coding-agent relaunch orchestrator has been created or verified.
+This file makes manual or orchestrator-driven resumption deterministic. **A prompt does not keep an agent running after a session terminates**. External orchestration requires a separately configured, authorized runner; none was created or assumed here.
 
-## Resumed editorial workflow checkpoint (2026-10-15)
 
-- **Last completed task:** connected human review of SEO content briefs via `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/[siteId]/actions.ts`, `page.tsx`, and `scripts/verify-seo-free-tools.ts` to a real scoped backend PATCH. No CMS publishing is implemented or claimed.
-- **Last V1 feature SHA:** `3c8912637fd4f827d443fe48f6c7a9a34f99d6a7`. Full V1 CI is still running at handoff; preceding PR branch SHA `18e846fd` passed complete CI `38841472062`. Verify the newest CI run, not the previous one. The current branch head also includes this docs commit.
-- **Backend state:** SEOTAKATAK feature `3fc053d3` passed CI `38842223371`; immutable review-state tests follow at `fc612091`, with docs at a newer SHA. A new **unapplied** `sql/0003_brief_editorial_review.sql` must be approved and applied after 0001 and 0002.
-- **Permissions:** `manage_integrations` in V1 controls review UI/server action; SEOTAKATAK verifies a signed `seo:manage` token with active tenant ownership. A rejection requires a 10+ character reason. PostgREST filters status=draft to prevent repeat decisions. Reviewer profile ID is persisted server-only and hidden from general brief list.
-- **Checks:** Typecheck/lint/contracts pass in prior V1 CI; new review UI must pass `npm run qa:seo-free-tools`, typecheck, lint, full build, and client isolation smoke when deployed.
-- **Deployment reality:** neither SEO service nor integration is verified live. Coolify and approved Supabase project still absent, GitHub issue `takatakca/SEOTAKATAK#1` tracks human actions. No V1 main merge allowed except designated coordinator.
-- **Next exact action:** inspect newest PR #182 CI; correct any failure on this branch. Obtain coordinator review/approval, approve DB migrations 0001→0002→0003, configure Coolify/V1 signed backend connection and smoke both clients before claiming production ready.
+## 2026-10-15 resumption — overrides stale CI entries above
+Verified main SHA: dcd454e42e95f08c407c53ab1af73ee2b36e0e4f; no PR #176–#185 merged at inspection.
+Full GitHub CI succeeded on feature PRs #176–#183 (their current heads). New PR #184 (1LV master JSON streaming cap) has a passing targeted QA step, with full CI pending. New PR #185 (CUBAFOOD event contract/HMAC) is pending full CI.
+Related work branches: fix/master-api-bounded-json-20261015 (last pushed bb3ddca882c94aa3734680a9c0bdfe86409099de) and feat/cubafood-master-contract-20261015 (last pushed 592f3048d170f6d596041f4480102f925c10874a).
+Files changed in PR #184: src/lib/integrations/master-api/http.ts, scripts/master-api-request-body-tests.ts, .github/workflows/ci.yml, WORKLOG.md. Files changed in #185: src/lib/integrations/cubafood/contract.ts, scripts/cubafood-master-contract-tests.ts, docs/CUBAFOOD_MASTER_API_CONTRACT.md, package.json, .github/workflows/ci.yml, WORKLOG.md.
+Verification: GitHub Actions runs https://github.com/takatakca/takatak-v1/actions/runs/38774944793 and https://github.com/takatakca/takatak-v1/actions/runs/38775405051; no local full-build claim, no production deploy, no staging SQL, no secret changes.
+Open PR #181 proposes direct Coolify and passed CI, but the owner release lock and hosting decision in WORKLOG.md were not lifted. Do not treat it as live.
+Next exact action: check #184/#185 latest SHA-specific CI; patch failed tests on their own branches, then coordinate the ordered PR merges and authorized release. The CUBAFOOD live receiver is NOT implemented: require tenant mapping, product entitlement, persisted nonce+idempotency and verified identity linking before it is enabled. Continue other unclaimed items when provider/secrets block this.
+No autonomous orchestrator has been configured; a future runner must read this handoff and verify latest GitHub state.
 
-## 2026-10-15 resumed work: private site export
+## 2026-10-15 later update — continuous resume configuration
 
-- **Last implemented feature:** from client-owned SEO report, a new signed server-only JSON export endpoint and link. Code: `src/lib/seo/seotakatak-bridge.ts` (`downloadSeoSiteSnapshot`), `src/app/api/seo/sites/[siteId]/snapshot.json/route.ts`, `src/app/dashboard/seo/portfolio/[siteId]/page.tsx`, `scripts/verify-seo-free-tools.ts`; this WORKLOG and all five handoff docs.
-- **Latest feature SHA before docs:** `e22a94d8292bb14a9f7a502c756976d52e51e653` on PR #182. V1 CI run `38843798359` was in progress after successful Typecheck and lint at initial checkpoint. Last fully green PR SHA `446053baff88534277f1e317d3e4fa74a18d3683`, run `38842529407`. Verify newest run instead of assuming success.
-- **Backend:** `takatakca/SEOTAKATAK` SHA `24b2c1b4a214f806cd6707529ed690455420f6bd` passed CI `38843705978`, with tenant isolation, field-redaction and incomplete 200-row export tests; latest backend documentation SHA will be newer.
-- **Security:** API enforces signed tenant/site ownership; V1 additionally checks `view_reports`, `view_dashboard` and portfolio membership, then returns a `private, no-store` attachment. No DNS tokens/reviewer profile IDs, no TAKATAK account export and no full history guarantee.
-- **Deployment:** NOT LIVE. SEOTAKATAK GitHub production deploy `38843743637` failed with `Missing production setting: COOLIFY_API_URL`. Database owner must approve non-billable/existing database with SQL 0001→0002→0003; V1 coordinator alone may merge PR #182 and promote. See `takatakca/SEOTAKATAK#1`.
-- **Checks and action:** after V1 full CI is green (Typecheck, lint, `qa:seo-free-tools`, build, security tests), obtain coordinator review. Continue independent complete paginated workspace export or evidence retention work; after infra approvals smoke two-client isolation, JSON export privacy, DNS ownership, keyword imports and exact deployed SHA. No autonomous restart orchestrator configured.
+- New [PR #186](https://github.com/takatakca/takatak-v1/pull/186): shared authenticated dashboard JSON reader now enforces a streaming byte ceiling, retains CSRF/origin checks, and adds CI regression test. Branch last pushed SHA `e566972c761949cece05e5858e7e239e2a20512a`; full CI was running at this update.
+- [PR #184](https://github.com/takatakca/takatak-v1/pull/184) completed full green CI in run [38774944793](https://github.com/takatakca/takatak-v1/actions/runs/38774944793). [PR #185](https://github.com/takatakca/takatak-v1/pull/185) passed targeted CUBAFOOD contract safeguards; full CI continued.
+- A ChatGPT scheduled resume task named **TAKATAK V1 — Reprise GitHub** was created and enabled on 2026-10-15 for hourly execution. It will request a new authorized review/development run, subject to connected tool permissions. This is periodic, not a continuous unattended process, and cannot bypass the coordinator release gate.
+- Earlier notes saying no orchestrator existed were true at their timestamp but are now superseded by the enabled hourly task. Its first actual successful run is not yet verified.
+- Exact next action: inspect the latest SHA-specific CI for #185, #186 and the handoff PR #178, correct any failed step, update SHA/CI evidence, and hand off green PRs. Do not assume any deployed revision on takatak.ca.
 
-## 2026-10-15 handoff: workspace SEO export
 
-- **Most recent completed work:** full client-scoped paged SEO export UI/API across four collections. V1 files: `src/lib/seo/seotakatak-bridge.ts` (`getSeoWorkspaceExportPage`), `src/app/dashboard/seo/exports/page.tsx`, `src/app/api/seo/workspace/export/[collection]/route.ts`, `src/app/dashboard/seo/portfolio/page.tsx`, `scripts/verify-seo-free-tools.ts`, plus five handoff docs and `WORKLOG.md`.
-- **Feature SHAs:** `a80f193e35b85f9ab0b8d59a949a329e0559f795` for export UI, `d7fe6506cde934959dbc516a94198a4c5cf139fe` for null-safe cursor validation. Current branch after handoff docs will have newer SHA. V1 Typecheck and lint passed on the export branch; its full CI was still in progress at initial handoff. Prior completed V1 PR `446053baff88534277f1e317d3e4fa74a18d3683` passed run `38842529407`.
-- **Backend dependency:** SEOTAKATAK backend SHA `fd0ff79f82fd29277a0c3c968c67ea0f50f5a498` passed CI `38844277527`; later documentation commit moves main. Backend uses signed JWT tenant ID, PostgREST-safe field selections, up to 200 results/page and `hasMore`/`nextOffset`.
-- **Security and limitations:** selected TAKATAK workspace + `view_dashboard` + `view_reports`; no secrets in HTML/JSON, cross-tenant restrictions enforced again by backend. Files are nontransactional and require collecting all pages and categories. No regulator-certified backup, data erasure receipt or TAKATAK master identity export.
-- **Actual deployment:** SEO Coolify deployment fails, most recently due the missing GitHub environment `COOLIFY_API_URL`. Existing/non-billable DB with owner-approved SQL 0001→0002→0003, Coolify app+token+UUID+HTTPS and designated V1 coordinator merge remain necessary. Issue `takatakca/SEOTAKATAK#1`. No secrets, production migrations, or external orchestrator configured.
-- **Verifications:** backend `npm run check`, isolated Postgres 16 schema smoke, shell syntax and Docker build passed via CI. V1 CI tests Typecheck, lint, `qa:seo-free-tools`, ephemeral DB and webpack; check latest result for export UI. No real provider-backed queries/production data inspected.
-- **Next exact action:** inspect newest PR #182 CI run for export dashboard; correct any regression on its feature branch, then present green PR for coordinator review. Once infrastructure owner sets Coolify/database, validate real /ready, two-client paginated exports, DNS proof, GSC ingestion and exact deployed SHA. Independent backlog: formal retention rules and auditable erasure receipts.
+## 2026-10-15 15:04 America/Toronto — latest canonical resume checkpoint
+
+**Last task completed:** security corrections committed and pushed as [PR #187](https://github.com/takatakca/takatak-v1/pull/187), branch `fix/auth-origin-json-bounds-20261015`, head `3d993f2b00e07335c7f9c375902ad33f56a123c0`. Its full CI was **in progress**, not claimed green. PRs #176–#186 had green full CI on their latest heads.
+
+**Current task:** inspect and resolve PR #187 CI (run `38791407973`), then hand off coordinator-reviewed sequential merges. If green, select the next unclaimed, unblocked code task from TASK_QUEUE and original DEV-TODO; do not duplicate currently open PRs.
+
+**Files changed on PR #187:** `src/lib/auth/trusted-origin.ts`, `src/lib/auth/auth-json.ts`, `src/app/api/auth/register/route.ts`, `src/app/api/auth/complete-invitation/route.ts`, `scripts/auth-json-origin-tests.ts`, `package.json`, `WORKLOG.md`. Auth assertions are included in the existing `npm run test:auth` run; no new migrations.
+
+**Verification evidence:** confirmed repository and open PR list through GitHub, inspected AGENTS.md, top WORKLOG.md and prior handoff; current main SHA `dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`. Green CI on #176–#186 including [#184](https://github.com/takatakca/takatak-v1/actions/runs/38774944793), [#185](https://github.com/takatakca/takatak-v1/actions/runs/38775479258), [#186](https://github.com/takatakca/takatak-v1/actions/runs/38776174356). New #187 CI: https://github.com/takatakca/takatak-v1/actions/runs/38791407973. No local full Next.js build, production SMS, live deployment or production secrets verification performed.
+
+**Known blockers:** WORKLOG.md coordinator-only merge/deploy lock; unresolved production hosting decision (new Coolify PR #181 unmerged), 7 environment deployment credentials for documented MochaHost path, staging database backup/migration approval, actual Supabase/Twilio tests and app/provider entitlements. Keep all credential values out of git.
+
+**Deployment status:** `main` unchanged as above, staging/release workflow runs observed skipped, live site revision not verified. A green feature PR is not proof of public release.
+
+**Exact next action:** fetch PR #187 head and run result, repair its own branch if red; update WORKLOG and this handoff; then execute next **authorized** task. Preserve the existing hourly scheduled continuation task; it cannot independently lift coordinator approval or access requirements.
+
+This documentation branch is PR #178. This handoff commit itself advances its branch head; confirm new SHA via GitHub after the update.
+
+## 2026-10-15 staging check (read-only)
+TAKATAK STAGING reports ACTIVE_HEALTHY. The Supabase migration ledger contains the phone-only profile email change. The separate Prisma history shows 87 completed entries, but neither the exact phone-only migration name nor the website attachment migration name appeared in a targeted read-only lookup. This difference needs reconciliation before any approved database release; do not infer that SQL is missing. No staging write or SMS delivery test was performed. The Twilio provider remains unverified. Next action: check PR #187 full CI and use the existing migration audit-only workflow under release-coordinator control.
+
+### 2026-10-15 staging schema confirmation
+A further read-only SQL inspection confirmed `public.profiles.email` is nullable `text` (matching the approved phone-only schema target despite a differing history name). `to_regclass('public.lead_attachments')` returned NULL: the attachments table does not exist in staging. Do not reapply phone-only SQL; the coordinator must use the documented audit/reconcile history-alias path. Attachment migration remains pending owner approval, database backup, and authorized staging apply. No SQL write occurred.
+
+
+## 2026-10-15 23:53–00:00 America/Toronto — latest resumption, authoritative over historical snapshots
+
+Repository `takatakca/takatak-v1`; observed **main HEAD `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24`**, one new commit beyond earlier `dcd454...`. The release coordinator merged Coolify Docker/CI PR #181 into main. Auto production deploy and staging workflows observed skipped; this merge does **not** prove the production site is deployed or healthy. WORKLOG's coordinator-only release control was still present and is not lifted by this agent.
+
+**Last tasks completed and pushed:** PR [#187](https://github.com/takatakca/takatak-v1/pull/187) now also refuses CSRF Origin spoofing using Host/X-Forwarded-Host. Merged the new main **into its feature branch only**, preserving the Coolify WORKLOG entry. Branch HEAD `4f34f264d528cfceb0d4c597487a283f9c72be98`, no conflicts; full CI run [38848123656](https://github.com/takatakca/takatak-v1/actions/runs/38848123656) was in progress. Previous exact head `3d993f...` passed full CI before new origin hardening. Modified `src/lib/auth/trusted-origin.ts`, `scripts/auth-json-origin-tests.ts`, `WORKLOG.md`, merged new main.
+
+**New independent functionality:** PR [#188](https://github.com/takatakca/takatak-v1/pull/188) fixes `/api/health/ready` returning 200 when DB or Supabase was `not_configured`, by making both required states strictly `ok`; otherwise 503. Branch `fix/strict-runtime-readiness-20261015`, last pushed `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f`. Changed `src/lib/ops/runtime-readiness.ts`, `src/app/api/health/ready/route.ts`, `scripts/verify-runtime-readiness.ts`, `.github/workflows/ci.yml`, `docs/COOLIFY_DIRECT_PRODUCTION.md`, and `WORKLOG.md`. Nine pure readiness combinations and Docker/route invariants are executed in full GitHub CI run [38848366850](https://github.com/takatakca/takatak-v1/actions/runs/38848366850), pending at this handoff.
+
+**Checks run/evidence:** GitHub branch HEADs/commits, open PR list, AGENTS.md, first WORKLOG entries, feature source, Coolify Dockerfile/workflow, CI runs and deployment workflow status inspected using connected GitHub API. Prior #187 original CI passed. Full tests/build for #187 updated and #188 are still to be confirmed at latest SHAs. Read-only health checks of `https://takatak.ca/api/health` and `/ready` were attempted via web and local requests but were inaccessible/DNS resolution failed; no runtime SHA/health was verified. No DB write, schema change, provider activation, secret use, migration apply, main push or deploy.
+
+**Access/blocks:** production host and credentials/approved environment, coordinator-only release lock, unapproved staging backup+remaining migrations, real Twilio Phone Auth E2E, tenant isolation on a live staging server. The Supabase staging profile email nullable text field was confirmed earlier but `lead_attachments` missing; no new staging changes this session.
+
+**Exact next action:** check latest commits' GitHub Actions for PR #187, #188 and this documentation PR #178. If red, inspect exact failed jobs and fix only the relevant PR branch. If green, give coordinator PRs for reviewed sequential merges, re-run main CI, do separately approved migration/release steps and verify runtime SHA. No automatic merge or deploy from this session. Hourly ChatGPT task already exists; do not create a duplicate.
+
+
+
+## 2026-10-15 final verification delta (newer than preceding sections)
+
+- PR #187 **full GitHub CI succeeded** for HEAD `4f34f264d528cfceb0d4c597487a283f9c72be98`: [run 38848123656](https://github.com/takatakca/takatak-v1/actions/runs/38848123656). It remains open/unmerged; the changes are not proven in production.
+- PR #188 HEAD `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f`: `Strict runtime health readiness safeguards` test step succeeded; full [run 38848366850](https://github.com/takatakca/takatak-v1/actions/runs/38848366850) continued at last check. Do not mark entire CI green until completion.
+- This documentation branch was reconciled with Coolify main via merge HEAD `aa8e31ba165960fdac3e9afa8cecffa3fcf838ab`; each later handoff edit advances its SHA. Review the latest CI after this note.
+- A progress report was posted to existing Auth issue #141 with accurate work and outstanding provider tests (no passwords, access tokens or customer PII).
+- No production deploy, schema modification, provider SMS or live runtime health proof occurred. Most recent deployment workflows were skipped; live takatak.ca health could not be checked due external-access limitations.
+- Next action: watch PR #188 current-head full CI and this documentation PR #178; repair any failures on their own branches; then hand reviewed green PRs to the designated main/release coordinator and only publish after allowed go-live gates.
+
+
+## 2026-10-16 00:21 America/New_York — CI and release gate verification
+
+- `main` remains `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24` (merged Coolify foundation #181; live deployment **not verified**).
+- PR #187 at `4f34f264d528cfceb0d4c597487a283f9c72be98`: full CI run [38848123656](https://github.com/takatakca/takatak-v1/actions/runs/38848123656) completed **success**.
+- PR #188 at `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f`: full CI run [38848366850](https://github.com/takatakca/takatak-v1/actions/runs/38848366850) completed **success**.
+- PR #178 at `79c0059235299d4df6ab984cf634502ee79e0443`: full CI run [38848823266](https://github.com/takatakca/takatak-v1/actions/runs/38848823266) completed **success** before this proposed handoff edit.
+- Existing unmerged branch `feat/r2f-opportunity-contract-20261015` at `e6b16bfa99affde383362af9e2bcb96ac1b6c0c4` contains an offline Phase 2 R2F state/projection contract and deterministic tests, but has no PR and no commit-specific CI run. Its proposed `.github/workflows/ci.yml` wiring was **blocked by the connected tool's safety checks**, so no claim of completed code verification or PR creation. Do not duplicate; resume that branch if write access is authorized.
+- The latest main staging, migration and Coolify deployment workflow runs were **skipped**; no production SHA, SMS delivery, Supabase Auth live E2E, database apply or release verified.
+- Owner/coordinator WORKLOG lock remains in force. Supabase staging `profiles.email` nullable text is already present; `lead_attachments` absent; Prisma/Supabase migration histories differ. Require audit, backup and explicit approval before any apply.
+
+
+## 2026-10-16 05:44 America/Toronto — current verified resumption (supersedes older snapshots)
+
+**Repository/main:** `takatakca/takatak-v1`, current `main=c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`. Main includes owner/coordinator merges #181 (Coolify Docker), #188 (strict runtime readiness), #185 (offline CUBAFOOD contract), #177 (ADS drafts), #175 (R2NETTE receiver), #155 (AI keys), #136 (QMAPS event bridge), and #189 (admin import fix/staging migration approval). `main` GitHub CI [38858131646](https://github.com/takatakca/takatak-v1/actions/runs/38858131646) completed success. The visible Coolify production workflows were **skipped**, not evidence of release.
+
+**Last engineering task:** continued existing `feat/r2f-opportunity-contract-20261015` rather than rebuilding. R2F #160 Phase 2 adds ten typed internal states, allowed transition matrix, minimal four-field public projection, synthetic QA and an offline design document. [PR #193](https://github.com/takatakca/takatak-v1/pull/193) open, current code head at last inspection `3a457fda6092701fba3ce3f1910b04ad9811c920`. Merge of newer main into R2F branch preserved other agents' files. `scripts/r2f-opportunity-contract-tests.ts` is now wired into `.github/workflows/ci.yml` via `qa:r2f-opportunity-contract`. [CI 38882991101](https://github.com/takatakca/takatak-v1/actions/runs/38882991101) was **running**, not yet claimed successful at this checkpoint. No live R2F route, FLEXS/QMAPS activation or schema change was made.
+
+**Documentation task:** reconciled [PR #178](https://github.com/takatakca/takatak-v1/pull/178) against new main with two-parent commit `2cbecd96486ff019b154b21da492b909839aaa9c`, preserving all newly merged GitHub workflows/dependencies, five continuity files, `AGENTS.md`, `scripts/verify-agent-handoff.cjs`, `scripts/verify-agent-handoff.test.cjs`, and current WORKLOG. Added `qa:handoff` and the corresponding CI guard to current main's package/workflow on the documentation branch. The subsequent documentation edits advance this head. [CI 38883195355](https://github.com/takatakca/takatak-v1/actions/runs/38883195355) was queued at initial check.
+
+**Other CI:** PR #187 `4f34f264d528cfceb0d4c597487a283f9c72be98` full [CI 38848123656](https://github.com/takatakca/takatak-v1/actions/runs/38848123656) passed but is still open, not deployed. #188 [CI 38848366850](https://github.com/takatakca/takatak-v1/actions/runs/38848366850) passed and the PR was merged to main. Do not confuse branch tests with runtime acceptance.
+
+**Files changed this session:** R2F branch: `src/lib/integrations/r2f/opportunity-contract.ts` (preserved existing), `scripts/r2f-opportunity-contract-tests.ts` (preserved existing), `docs/R2F_OPPORTUNITY_CONTRACT.md` (preserved existing), `package.json`, `.github/workflows/ci.yml`, `WORKLOG.md`. Continuity PR: five `docs/*` files listed in AGENTS plus `AGENTS.md`, `WORKLOG.md`, `package.json`, `.github/workflows/ci.yml` and two verification scripts (preserved and rebased, not rewritten from scratch).
+
+**Commands and verification:** GitHub API read of branches, PRs, commit history, docs and Actions; source inspection and JSON parsing for modified package; targeted CI launched automatically by PR pushes. Public `https://takatak.ca/api/health` and `/api/health/ready` were **not accessible from web retrieval**; the serving production SHA is unverified. No local full Next.js build, SQL write, real Supabase/Twilio SMS or deployed-site E2E test was performed.
+
+**Blockers / access:** WORKLOG coordinator-only merge/deploy gate; live Coolify admin/production secret setup, approved database migration audits/backups, real SMS provider and authorized test accounts/tenant smoke. Prior staging schema evidence: `profiles.email` nullable, `lead_attachments` absent. Keep credentials out of GitHub comments.
+
+**Current task and exact next action:** check final exact-head CI of #193 and #178, inspect any failed step, fix only corresponding feature branch, update WORKLOG and this handoff; then select next independently executable approved item from `docs/DEV-TODO.md` and open a non-overlapping PR. Coordinator alone merges or releases; prove real runtime SHA and health after authorized deployment.
+
+### 2026-10-16 — branch reconciliation after initial handoff
+- Auth PR #187 was rebased/reconciled with current main on its feature branch only; latest pushed head `d0d1f88a2231afb7743b0a48694fd761ed72958a`, full CI run [38883687337](https://github.com/takatakca/takatak-v1/actions/runs/38883687337) still underway when checked. The previous head `4f34f264...` passed CI, but that does not substitute for final-head CI. Source files: `trusted-origin.ts`, `auth-json.ts`, register and invited-account routes, `scripts/auth-json-origin-tests.ts`, `package.json`, WORKLOG.
+- R2F PR #193 on head `3a457fda6092701fba3ce3f1910b04ad9811c920`: targeted lifecycle contract and Authentication tests succeeded, full CI run [38882991101](https://github.com/takatakca/takatak-v1/actions/runs/38882991101) was building. The existing R2F issue #160 received a factual update; no live adapter was activated.
+- This handoff PR #178 on earlier head `c541bb343bfb287d503868af245798a415653250`: `Agent continuation documentation safeguards` step passed and full [CI 38883435630](https://github.com/takatakca/takatak-v1/actions/runs/38883435630) was running. This edit advances its HEAD and triggers further CI.
+- Latest verified main is `c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`, main CI success but Coolify deployment jobs skipped; production SHA, SMS provider and real tenant workflows are still unverified. No main write, live provider call or SQL apply in this session.
+- **Next exact action:** verify full run conclusion for latest commit of each PR (#187, #193, #178), fix any failure on its existing branch, hand green PRs to WORKLOG-designated merge coordinator. For next unclaimed item inspect current `docs/DEV-TODO.md` and PR titles before taking it; never duplicate active integrations.
+
+
+## 2026-10-16 13:45 America/Toronto — latest live GitHub checkpoint
+
+**Repo/main:** `takatakca/takatak-v1`, current verified `main=efe4db915d487822441502cc8d036819d31ab51b`. It includes #197 (Next.js build-heap sizing), #198 (smaller Coolify image) and #192 (AI Studio using administrator provider keys). The most recently **verified green main CI** was [38922550660](https://github.com/takatakca/takatak-v1/actions/runs/38922550660) on the prior main `c6bdb9d17f00f18a341b6f787d1040444c0508bb`; **do not infer latest SHA CI**. The Coolify automatic deploy run [38923747787](https://github.com/takatakca/takatak-v1/actions/runs/38923747787) was `skipped`; a release is not proven. Safe public HTTPS GETs to `/api/health/ready` and `/login` could not resolve `takatak.ca` in this tool runtime, so the serving SHA remains unverified (not evidence of site outage).
+
+**Prior PR gates:** #178 full CI success on `5ff089a9f3ade91b5f00e63171de40100da1fcad`; #187 full CI success on `d0d1f88a2231afb7743b0a48694fd761ed72958a`; #193 full CI success on `3a457fda6092701fba3ce3f1910b04ad9811c920`. These remain open and not deployed. New #194/#195 Knowledge AI work is owned by other agents; do not duplicate.
+
+**Last work completed:** new [PR #199](https://github.com/takatakca/takatak-v1/pull/199), `fix/read-only-live-readiness-20261016`, code last pushed `f4791d23a5c66d0fcda1e7beecf035fc2d8a3186`. Changed `scripts/ops/live-readiness.mjs` to avoid login/webhook `POST` and cron GET by default (only `--active-probes` enables these), added `scripts/ops/readiness-contract.mjs` strict HTTP 200 + JSON service checks, `scripts/ops/live-readiness.test.mjs` using local mock fetch, CI step in `.github/workflows/ci.yml`, `docs/COOLIFY_DIRECT_PRODUCTION.md` and `WORKLOG.md`. This closes a false-positive readiness scenario and makes default probes passive; **no live network or secrets were used to test customer journeys**.
+
+**Verification:** GitHub API read of main HEAD, commits, open PRs, WORKLOG/AGENTS, past handoff and workflow source. New PR [CI 38942971983](https://github.com/takatakca/takatak-v1/actions/runs/38942971983) was in progress at the last check. No full CI success is claimed for PR #199 yet. The GitHub-scheduled hourly continuation already exists; keep it grounded in latest Github state.
+
+**Release restrictions & access:** `WORKLOG.md` still reserves all merges/main writes, staging/production deploys, SQL applies and provider changes to the named coordinator. Staging nullable `profiles.email` exists but `lead_attachments` is missing; DB history, backup and owner migration gate remain unresolved. No proof of real Twilio SMS/Phone Auth or live tenant isolation. Never expose any credential.
+
+**Current task / exact next action:** check #199 full CI on final branch SHA. If failing, inspect failed job and correct only this feature branch, updating its WORKLOG and this handoff. If green, coordinator reviews merges #187/#193/#178/#199 one at a time; verify current main CI and separately authorized Coolify live SHA/health before marking production done. Select another non-overlapping code task from DEV-TODO when possible. This PR #178 documentation branch advances its SHA with every append.
+
+
+### 2026-10-16 later update — runtime release attestation included in PR #199
+
+On its existing feature branch, [PR #199](https://github.com/takatakca/takatak-v1/pull/199) now additionally exposes a validated 40-character Coolify runtime `SOURCE_COMMIT` as `X-TAKATAK-Release` on `/api/health/ready`. Its passive CLI supports `--expect-sha FULL_SHA` and explicitly fails on missing/mismatched/invalid revisions. Mock-only regression coverage exercises these cases without hitting a real server. Official Coolify environment variable documentation: https://coolify.io/docs/applications/configuration/environment-variables. This is a public HTTPS server assertion, not a cryptographic provenance attestation or confirmation of authorized customer flows.
+
+**Last PR #199 branch commit pushed:** `71e3abc229f57c02f91414030f76a9592183dc43` (`WORKLOG.md` final status update). Modified from earlier PR scope: `src/app/api/health/ready/route.ts`, `scripts/ops/live-readiness.mjs`, `scripts/ops/live-readiness.test.mjs`, `docs/COOLIFY_DIRECT_PRODUCTION.md`, `WORKLOG.md`, plus original `scripts/ops/readiness-contract.mjs` and `.github/workflows/ci.yml`. Initial targeted passive-probe CI step succeeded on older PR head `f4791d...`; **the expanded final SHA must be checked in new GitHub CI before claiming complete success**. The official release workflow is still disabled/skipped without operator approval.
+
+**Live verification attempts:** a container read-only `curl -4 https://takatak.ca/api/health/ready` returned DNS resolution failure; a separate read-only HTTPS attempt to the documented Coolify IP using `--resolve takatak.ca:443:31.220.96.134` returned unable to connect from this execution environment. Neither proves the site is down; public runtime commit and readiness remain unverified here. No release, DNS mutation, migration or provider write was executed.
+
+**Exact next action:** inspect GitHub CI for the latest #199 head (including added `--expect-sha` mock test), fix any failure on the branch, then ask WORKLOG-designated coordinator to review green #199, merge when authorized, release, and run passive HTTPS SHA match against approved CI SHA. Keep #178 documentation CI green after this append and independently review other feature PRs.

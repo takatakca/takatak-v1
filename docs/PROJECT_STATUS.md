@@ -1,37 +1,100 @@
-# TAKATAK V1 — SEO integration status (scoped report)
+# TAKATAK V1 — Project Status
 
-This document records work on SEOTAKATAK integration only. For all other V1 modules, consult `WORKLOG.md` and `docs/DEV-TODO.md`.
+Last verified against GitHub: **2026-10-14**. This is a factual status snapshot, not a claim that the public site runs this revision.
 
-2026-10-15 — PR **#182** open (`feat/seotakatak-free-tools-20261015`). TAKATAK V1 retains exclusive identity / client authority. Public `/free-tools`, private `/dashboard/seo/free-tools`, portfolio, verified Google Search Console import, tenant-scoped site summary and CSV export have been implemented on the PR branch. The original V1 Growth Suite SEO audit and Social UI are unchanged.
+## Source of truth
 
-**Not deployed**: this PR must be merged by the designated coordinator after CI, then promoted using V1's existing protected release procedure. The SEOTAKATAK API/database/HTTPS Coolify runtime is also not yet confirmed live. Provider-backed LLM citations and competitor/backlink metrics remain gated, not invented.
+- Repository: [takatakca/takatak-v1](https://github.com/takatakca/takatak-v1)
+- Default branch: `main`
+- Inspected main SHA: `dcd454e42e95f08c407c53ab1af73ee2b36e0e4f` (2026-10-13 UTC)
+- Read in order: [AGENTS.md](../AGENTS.md), [WORKLOG.md](../WORKLOG.md), [DEV-TODO.md](DEV-TODO.md), this status and [AGENT_HANDOFF.md](AGENT_HANDOFF.md).
+- Architecture: [TAKATAK_DASHBOARD_V1_FULL_SCREEN_ARCHITECTURE.md](TAKATAK_DASHBOARD_V1_FULL_SCREEN_ARCHITECTURE.md).
+- These documents **do not supersede** the owner release-control decision in WORKLOG.md.
 
-Update 2026-10-15: the separate SEOTAKATAK API reached green CI at `c1be583a`; its Coolify infrastructure blocker is tracked at `takatakca/SEOTAKATAK#1`. On the V1 PR branch, the signed evidence-summary/CSV integration and SEO-specific access tests were also added. Latest complete V1 build validation remains pending.
+## Implemented in `main` (repository code, not proof of production activation)
 
-The SEO report now displays actual imported keyword rows with click/impression/position figures and a visibly labeled heuristic priority, besides the downloadable CSV. The backend Coolify deploy runner now compares the deployed commit to CI SHA, but no production SEO service is yet running to verify.
+- Modular Next.js/React dashboard, shared client-workspace access, brand/navigation and premium public website.
+- Supabase Auth phone-first foundation, client memberships, server-side tenant scoping and guardrails; see issue [#141](https://github.com/takatakca/takatak-v1/issues/141) for remaining live validation.
+- Social, Growth Suite, CRM/leads, local listings and QMAPS client linking foundations; many external providers require credentials, approval or runtime verification.
+- TAKATAK ADS campaign-management APIs, entitlement logic, serving and signed tracking; publisher seed script and read-only dashboard.
+- Billing/Facturations and website lead capture foundations; several database/provider activation gates remain.
+- PDF report export, SEO history, website pricing catalog integration and server-side promotions (merged code).
+- Staging migration approval/reconciliation, reproducible Linux Node 22 build and immutable-artifact production promotion with rollback.
 
-2026-10-15 update: editorial backlink prospect CRUD-lite workflow is present within each authorized site's report (create/list/update status). Only identified, researching, contacted and declined statuses are offered; links are not marked earned without provider verification. TypeScript CI found a duplicate permission import at commit `5a392d98`, corrected at `be53990e` and awaiting latest CI confirmation.
+These are implementation milestones, not an assertion that every integration is connected. In particular, public-facing features requiring secrets, migrations or external APIs stay unverified until evidence is recorded.
 
-### Ownership verification (2026-10-15)
+## In-flight work (do not duplicate)
 
-The approved PR branch now includes a manager-only DNS TXT verification card on each SEO site report. The backend issues a random 7-day TXT challenge and only confirms ownership when the exact live DNS record matches. This is a **pending integration**, not live proof: the separate backend needs approved `sql/0001_seo_core.sql` and `sql/0002_domain_verification.sql`, HTTPS Coolify and V1 runtime secrets before the card can work in production. No automatic CMS publishing is enabled.
+| PR | Scope | Last verified CI |
+| --- | --- | --- |
+| [#176](https://github.com/takatakca/takatak-v1/pull/176) | ADS publisher SDK privacy/viewability fixes and regression QA | [success, run 38608344700](https://github.com/takatakca/takatak-v1/actions/runs/38608344700) |
+| [#177](https://github.com/takatakca/takatak-v1/pull/177) | ADS client dashboard draft campaign creator and QA | [success, run 38608979371](https://github.com/takatakca/takatak-v1/actions/runs/38608979371) |
 
-### 2026-10-15 content briefs and latest CI correction
+Additional independent PRs: [#179](https://github.com/takatakca/takatak-v1/pull/179) hardens public ADS request-body limits and privacy, and [#180](https://github.com/takatakca/takatak-v1/pull/180) caps concurrent CPC charges. Both are open with CI pending; neither is merged into main.
 
-Client site reports now include an editorial content brief queue with an actual TAKATAK-signed server action that saves drafts into the existing SEOTAKATAK `seo_briefs` table. A brief cannot auto-publish or claim a live article; status is draft-only. The reviewer/approver and CMS publisher remain future deliverables. The first V1 CI pass after this feature hit a JSX unescaped-entity lint error; corrected at `4f70342cb30efd5316a054e93c17cd3c76204b98`. Final full CI must be rechecked. Backend rate limiting and schema-aware readiness pass on backend SHA `c1d7861f` (run `38799814574`); production not deployed.
+Both feature PRs #176 and #177 were still open at inspection; green branch CI is **not** proof of merge or deployment. Check current state on every handoff.
 
-## Latest SEO data-lifecycle update — 2026-10-15
+Other open PRs at inspection: #175, #173, #166, #163, #156, #155, #149, #137, #136, #135, #128, #104, #27. Respect reserved scopes/owner decisions in WORKLOG.md and DEV-TODO.md.
 
-PR #182 now provides a functional, server-validated "Remove this SEO site" action in the portfolio. It requires the manager permission, an active tenant, the exact hostname typed by the operator and a separate checkbox, then calls the signed SEOTAKATAK API DELETE route. The SEO API enforces tenant ownership and cascade-deletes its own keywords, backlink prospects and content drafts through migration 0001's foreign-key rules. TAKATAK master client/company records are **not** deleted. Backend code commit `6308c81f` passed CI `38841219269`. The V1 PR's initial CI discovered a JSX punctuation lint error, repaired in `417edac2`; final updated CI outcome must be verified separately. Nothing is deployed in production yet.
+## Release / live status
 
-### Human editorial decision workflow (2026-10-15)
+- Latest inspected `main` SHA is above; it **does not include** PR #176 or #177.
+- No new production release was deployed by this agent. No staging/production SQL was applied or secrets changed.
+- The verified production artifact workflow requires a green `main` CI run with the exact SHA and published tarball; see [DEPLOYMENT.md](DEPLOYMENT.md).
+- WORKLOG.md reports missing/awaited `production` environment SSH secrets and prerequisite staging/production migration approvals. Re-verify these before any authorized release; never assume they were filled.
+- Some automatic staging/reconciliation workflow runs were **skipped**, which is not deployment success.
+- No claim of production availability, authentication end-to-end, or provider connectivity without live evidence.
 
-V1 PR #182 now displays real SEO brief review forms in each client-owned site portfolio, with manager-only action and backend `PATCH /v1/sites/:siteId/briefs/:briefId/review`. Managers may approve for further editorial planning or reject with a meaningful review note. The API records authenticated actor and timestamp but not in public list JSON. No approved brief is a published article. SQL 0003 must be approved/applied after 0001 and 0002 before production readiness passes; this is **not deployed**. V1 code SHA `3c891263` and CI need verification.
+## Completion definition
 
-## SEO customer data portability (2026-10-15)
+The project is **not 100% complete**. Completion requires all approved capabilities, tenant isolation, live authorization/provider integration, verified DB migrations, green build/security checks, a confirmed production release SHA, documented rollback and no unresolved critical blockers. See [TASK_QUEUE.md](TASK_QUEUE.md).
 
-PR #182 now offers `Export site SEO data (JSON)` in an authenticated client's site report. A server-only TAKATAK bridge checks active client membership, `view_dashboard` and `view_reports`, verifies the site belongs to the current workspace, then obtains a signed, tenant-scoped SEO API snapshot. The Next route `/api/seo/sites/[siteId]/snapshot.json` sends a private/no-store attachment without exposing the signed backend JWT or secret. The backend allowlists fields to exclude DNS challenge tokens, reviewer internal actor IDs and future unrecognized columns. Explicit 200-row-per-category caps mean this is a **bounded snapshot**, not a complete workspace or regulatory data export. Backend feature SHA `24b2c1b4` CI `38843705978` passed. Newest V1 CI still requires final verification, and nothing has been deployed.
 
-## Paged workspace SEO export — 2026-10-15
+## 2026-10-15 verified GitHub update
+Main stayed at dcd454e42e95f08c407c53ab1af73ee2b36e0e4f. PRs #176–#183 have successful branch CI but remain unmerged, including Coolify deployment proposal #181, Academy #183 and SEO tools #182.
+PR #184 adds bounded streaming input on 1LV master API, targeted CI passed, full CI pending. PR #185 adds a CUBAFOOD *offline* source contract and HMAC proof, full CI pending. Neither PR enables a live connector, deploys code, or modifies database schema.
+No verified new production SHA, staging apply or provider activation. Do not equate skipped staging/release workflows with deployed artifacts.
 
-PR #182 now includes `/dashboard/seo/exports` and `/api/seo/workspace/export/[collection]`. An authenticated user with active TAKATAK `client_scoped` workspace and `view_reports` can select sites, Search Console opportunities, editorial backlink prospects or content briefs, then download successive private JSON pages of up to 200 records. Backend returns `hasMore` and `nextOffset`, validates collection and offset, filters tenant based on the signed server JWT, and requests an allowlist of safe database fields. The browser never receives the signing secret. Users must collect all pages; changes between pages can cause inconsistent coverage and **this is not a transactionally consistent account backup or a full TAKATAK cross-product export**. Backend SHA `fd0ff79f` CI `38844277527` passed; newest V1 CI status needs final confirmation. No production data exported during development.
+## 2026-10-15 additional security and continuity update
+
+[PR #186](https://github.com/takatakca/takatak-v1/pull/186) hardens the shared authenticated dashboard JSON reader against forged/omitted Content-Length and memory exhaustion; full CI pending. [PR #184](https://github.com/takatakca/takatak-v1/pull/184) achieved successful full CI. No production promotion has been verified. An hourly ChatGPT task to request repository resumption was enabled; this is not a GitHub deployment runner.
+
+
+## 2026-10-15 15:04 America/Toronto — verified continuation
+
+- Main remained at `dcd454e42e95f08c407c53ab1af73ee2b36e0e4f`. No observed merge of PR #176–#187.
+- On current PR heads, GitHub CI passed for #176–#186, including #178 agent continuity, #184 bounded 1LV API, #185 offline CUBAFOOD contract and #186 shared workspace input validation.
+- [PR #187](https://github.com/takatakca/takatak-v1/pull/187) now protects authenticated JSON parsing and invited-account password update against untrusted origin and oversized payloads. Its GitHub [CI run 38791407973](https://github.com/takatakca/takatak-v1/actions/runs/38791407973) was in progress at this inspection.
+- [PR #181](https://github.com/takatakca/takatak-v1/pull/181) suggests direct Coolify hosting but is **not merged** and not live by virtue of its green CI. Existing release authority and migration decisions remain in WORKLOG.md.
+- No stage/production SQL was applied, no provider secret changed, no real phone SMS flow tested, and no successful new runtime SHA observed. Project remains incomplete.
+
+## 2026-10-15 migration verification
+Read-only TAKATAK STAGING project status: ACTIVE_HEALTHY. Supabase history includes phone-only profile email migration; exact phone-only/website-attachment names did not appear in the separate Prisma history search, though the latter contains 87 completed migrations. This does not prove whether SQL is applied. Live SMS provider remains unverified; no schema mutations or deployment occurred.
+
+### Confirmed staging schema (2026-10-15)
+Read-only `information_schema.columns`: `public.profiles.email` is `text` with `is_nullable=YES`. Read-only `to_regclass` indicates `public.lead_attachments` is absent. Thus the phone-only column change is already present at the schema level, while lead attachment support is not. The migration-ledger discrepancy must be reconciled, not used as a reason to replay SQL. No database changes performed.
+
+
+## 2026-10-15 late-night verification update
+
+- **Main SHA:** `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24` — #181 direct Coolify Docker runtime merged by coordinator, but no new live release verified. Automatic Coolify, staging and release GitHub Actions in the most recent main runs show **skipped**, not deployed.
+- **Auth security:** #187 initial full CI green; new forwarding-origin CSRF hardening merged latest main into PR head `4f34f264d528cfceb0d4c597487a283f9c72be98`, latest CI pending.
+- **Health contract:** #188 fixes ready endpoint false-positive HTTP 200 on missing mandatory services; HEAD `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f`, CI pending.
+- Previously completed ADS/security and CUBAFOOD contract PRs remain open unless separately merged by coordinator. No live SMS or production identity and tenant-isolation proof.
+- Direct health checks of `takatak.ca` failed due tool/network access restrictions, not necessarily site outage. Do not assert production failure or success from these attempts.
+
+
+
+## 2026-10-16 05:44 America/Toronto latest main/PR evidence
+
+Main HEAD `c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`, latest observed [main CI 38858131646](https://github.com/takatakca/takatak-v1/actions/runs/38858131646) succeeded. Coolify production deploy workflow outputs at this SHA were skipped. Runtime SHA on `takatak.ca` could not be read through web health checks.
+
+Owner/coordinator has merged #188 readiness, #185 CUBAFOOD offline contract, #177 ADS draft, #175 R2NETTE signed receiver, #155 AI provider keys, #136 QMAPS integration bridge, and #189 admin/staging approval fix. Green CI is not provider delivery or production promotion. PR #187 Auth CSRF remains open with green CI.
+
+Fresh [PR #193](https://github.com/takatakca/takatak-v1/pull/193) takes over an unmerged existing R2F Phase 2 branch and adds the deterministic contract QA to modern main CI. It does not expose or sell customer leads and adds no schema. CI was in progress at handoff. Handoff/continuity PR #178 has been reconciled with current main and awaits its own exact-head CI and coordinator merge.
+
+
+## 2026-10-16 afternoon factual status
+Main currently `efe4db915d487822441502cc8d036819d31ab51b` after Coolify build improvements #197/#198 and provider-key integration #192. Prior-main full CI `38922550660` succeeded on `c6bdb9d17f00f18a341b6f787d1040444c0508bb`; current-main build and live SHA not confirmed. Latest Coolify auto-deploy was skipped. Public health GET was inaccessible to this execution environment because DNS resolution failed: public site status unknown.
+
+Open PR #199 (passive live readiness) pushes a strict validator and tests; CI run `38942971983` ongoing at handoff. #178/#187/#193 most recent exact-head CI all succeeded, but remain open/unreleased. No evidence of live SMS, customer/tenant E2E or authorized staging migration apply.

@@ -1,32 +1,57 @@
-# TAKATAK V1 / SEOTAKATAK integration decisions
+# TAKATAK V1 — Decisions and Invariants
 
-For the SEO work tracked in PR #182:
+Updated 2026-10-14. Distinguish **owner decisions** from agent implementation choices. Source decisions in [WORKLOG.md](../WORKLOG.md), [DEV-TODO.md](DEV-TODO.md), [AGENTS.md](../AGENTS.md), and architecture runbooks; do not independently reverse them.
 
-- TAKATAK V1 retains Supabase identity, client membership, selected workspace, permission checks and dashboard. The standalone SEOTAKATAK repo is a tenant-scoped backend only.
-- A client signs in at `takatak.ca`; there is no independent SEOTAKATAK signup or cookie.
-- `/free-tools` is public for SEO/registration discovery; running free tools is inside `/dashboard/seo/free-tools` and demands an authorized workspace.
-- The signed bridge takes the tenant UUID exclusively from `getServerAccessContext()`, never from submitted body or query.
-- `view_dashboard` allows free scans, `view_reports` allows scoped reporting/export, `manage_integrations` controls site registration, and both `view_reports` plus `manage_integrations` govern verified GSC ingest.
-- Never claim Google indexing or AI search citations without verifiable provider results; the dashboard must show honest connection-required states.
-- V1 `main` and production are controlled by its designated coordinator per `WORKLOG.md`; SEO agent work stays on PR #182 until approved.
+| Date | Decision | Effect |
+| --- | --- | --- |
+| 2026-10-10 | **Owner release control:** one coordinating TAKATAK-V1 session merges and deploys until owner lifts the restriction | Other agents use feature branches + PRs; never push to main, run staging apply/release/production promote, mutate provider environments, or approve migrations |
+| 2026-10-09 | MIMT runtime integration **on hold** | Do not resume MIMT/VoIP work without explicit owner reopening |
+| 2026-10-09 | Food Hub PR #27 and Contabo/Coolify PR #104 frozen until core site is live | Do not merge or substitute hosting based on guesses |
+| 2026-10-09 | Growth Suite PR #117 merged; overlap with #135/#136/#137 needs sequential coordination | Prefer existing reputation/SEO/AI surfaces; no duplicate modules or unapproved schema updates |
+| 2026-10-08 onward | Database migrations follow staged reconciliation and owner approval | No direct production schema write, no unauthorized entries in approved migration list |
+| 2026-10-08 onward | Public identity uses TAKATAK Auth (Supabase) with server-side client memberships | Only scoped records/entitlements; never trust browser claims for workspace IDs or role grants |
+| Ongoing | GROUPE TAKATAK brand: electric blue on deep navy; old gold TK logo prohibited | Follow BRAND.md; replace assets only with approved official source files |
+| Ongoing | AHMV and other vertical apps are independent products | TAKATAK centralizes identity/entitlements/events, not every vertical's menus and data |
 
-- Editable backlink prospect states are limited to identified/researching/contacted/declined. The frontend cannot set 'earned': verifying a backlink needs independent publisher/crawler evidence not available in this deployment.
+## Technical constraints, not new owner decisions
 
-- Registering a site is not equivalent to owning it. The SEO backend issues unique cryptographic DNS TXT challenges, and the domain can only be marked verified after a live TXT match. Only V1 client managers can view/reissue/check challenges, and general site reads redact challenge tokens.
+- `main` is GitHub source truth; require passing CI, documented release artifact, an actual deployed SHA, and environment readiness before asserting success.
+- The existing Next.js 16 project has version-specific conventions; follow installed Next docs before changing framework behavior.
+- MochaHost/Passenger cannot be treated as a build machine. Build on Linux with Node 22 and deploy complete, verified immutable artifacts.
+- Secrets are environment-managed; no private API tokens, secret values, phone numbers or customer records in PRs, docs or CI logs.
+- ADS and CRM must respect tenant scopes. Server-side permissions/entitlements prevail over front-end controls.
+- Provider statuses must distinguish not-configured, configured-but-untested and actually connected. Never label a stub as live.
+- Pricing and performance marketing claims require real measurements; don't hardcode unverified comparative claims.
 
-- SEO original content briefs in PR #182 are deliberate draft-only records; a keyword and editorial angle do **not** authorize publishing. The user must verify site ownership, the product must add editorial review/approval and CMS integration, and every release must use server-side workspace permission checks before publishing.
+## Decisions pending, not assumed
 
-## SEO portfolio site deletion
+- Production environment configuration and first approved release window.
+- Separate staging and production migration backup/approval, including new schema items.
+- Facturations and integration PR merge sequencing.
+- Official GROUPE TAKATAK logo source files.
+- QMAPS/SEO/AI provider overlaps, consent/retention policy and external API credentials.
+- Whether and when to reopen frozen MIMT/Food Hub/Coolify tracks.
 
-A TAKATAK `manage_integrations` client manager may remove a **single SEO product site**, not the TAKATAK master customer. The V1 UI asks for the domain and a separate consent checkbox, and its server action revalidates the current workspace. The backend also demands a signed `seo:manage` token, `confirmDomain` matching its own stored hostname and `confirmDelete:true`; a second tenant's UUID never grants deletion. SQL 0001 already cascades child SEO records. No global ecosystem data erasure is implied. Use only disposable staging records in destructive smoke tests.
+A future owner decision should be appended here with an ISO date, exact scope and reference (issue/PR/WORKLOG), then reflected in the task queue. Do not infer approval merely from code reaching `main` or a successful branch CI.
 
-### Editorial governance
-A draft brief can be approved or rejected exactly once by a client-scoped `manage_integrations` actor. Backend persists decision, authenticated profile and timestamp through a tenant-filtered PATCH constrained to `draft`; rejection requires meaningful explanation. Approval is not article generation, publishing or website mutation. Only a future separately authorized CMS workflow may publish after site ownership and content approval.
 
-### SEO data portability boundary
+## 2026-10-15 pending proposal (not an owner decision)
+PR #181 for direct Coolify and PR #185 for the CUBAFOOD contract are proposals with no production activation. Neither overrides the 2026-10-10 coordinator-only merge/deploy instruction, the paused Coolify track, or the 1LV-only master API. Owner must explicitly approve source registration and environment change.
 
-Only users with an active `client_scoped` TAKATAK workspace plus both `view_dashboard` and `view_reports` may request per-site JSON export. The server-only Next route obtains a new short-lived signed JWT for the SEO service and verifies the requested site belongs to that workspace. The SEO backend itself checks the tenant and emits allowlisted, privacy-minimized columns. The snapshot explicitly says `guaranteedComplete:false` and is capped at 200 rows per collection; do not market it as a complete history, cross-product export, or proof of regulatory access-fulfillment. Download response is private/no-store.
 
-### Whole workspace SEO data portability
+## 2026-10-15 implementation note (not a new owner authorization)
 
-Only current client-scoped TAKATAK users with `view_dashboard` and `view_reports` may request paged SEO exports. Data is fetched from `/v1/workspace/export` over the signed V1 server bridge. Four collections are individually navigable and downloads are `private, no-store`. Pagination is fixed at 200 records, ordered by database ID and carries `hasMore`/`nextOffset`. SQL SELECT allowlists omit DNS ownership challenge secrets and reviewer profile IDs. Changes during pagination can alter coverage; this is a user-readable export capability, not an immutable or regulatory-complete backup and not a modification to TAKATAK master identity.
+Security PR #187 proposes a strict same-origin/bounded-JSON check before invited-user password changes; it does not change provider configuration. PR #185 defines but does not activate the CUBAFOOD source; PR #181 does not by itself authorize direct Coolify production. The operator/coordinator release-control decision from WORKLOG.md remains in effect.
+
+
+## 2026-10-15 reconciliation of infrastructure state
+
+Implementation fact, **not** a blanket release authorization: coordinating agents merged Coolify PR #181 into `main` at `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24`. Previous text saying the PR is still open is now superseded. The owner lock in WORKLOG.md still governs who may deploy or modify environment settings. CI for #187 and #188 addresses authentication and readiness integrity but neither commits nor runs a production release.
+
+
+## 2026-10-16 implementation state — no release authorization
+The owner/coordinator has merged Coolify #181, runtime readiness #188, and selected integration/security PRs into main. This does not lift the WORKLOG coordinator-only deploy rule. R2F Phase 2 PR #193 is an offline TAKATAK-owned state/public-projection contract only; FLEXS and QMAPS remain independent applications and require scoped, consented, verified adapters before real activation. No production SMS, SQL apply, tenant import or deployment authorization is inferred from passing CI.
+
+
+## 2026-10-16 operational guard confirmation
+Decision remains **no automatic changes to production from non-coordinator agents**. PR #199 improves the passive probe rather than enabling any provider, deployment or secret. HTTP 200 with `ok:true` alone is insufficient: the probe also requires process, database and Supabase to be `ok`. Actual Supabase Twilio SMS delivery, OAuth access, customer consent and tenant isolation require separate authorized tests. Latest main SHA `efe4db915d487822441502cc8d036819d31ab51b` includes #192, #197 and #198, but a production serving SHA has not been measured. No migrations or DNS changes in this agent session.
