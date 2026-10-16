@@ -128,3 +128,14 @@ Repository `takatakca/takatak-v1`; observed **main HEAD `b59ca994a73c5ed0e19e3d0
 - A progress report was posted to existing Auth issue #141 with accurate work and outstanding provider tests (no passwords, access tokens or customer PII).
 - No production deploy, schema modification, provider SMS or live runtime health proof occurred. Most recent deployment workflows were skipped; live takatak.ca health could not be checked due external-access limitations.
 - Next action: watch PR #188 current-head full CI and this documentation PR #178; repair any failures on their own branches; then hand reviewed green PRs to the designated main/release coordinator and only publish after allowed go-live gates.
+
+
+## 2026-10-16 00:21 America/New_York — CI and release gate verification
+
+- `main` remains `b59ca994a73c5ed0e19e3d0f8d0540feddeb5e24` (merged Coolify foundation #181; live deployment **not verified**).
+- PR #187 at `4f34f264d528cfceb0d4c597487a283f9c72be98`: full CI run [38848123656](https://github.com/takatakca/takatak-v1/actions/runs/38848123656) completed **success**.
+- PR #188 at `f9c6f3cdcdd584f2cb08af04af1175cac09daa1f`: full CI run [38848366850](https://github.com/takatakca/takatak-v1/actions/runs/38848366850) completed **success**.
+- PR #178 at `79c0059235299d4df6ab984cf634502ee79e0443`: full CI run [38848823266](https://github.com/takatakca/takatak-v1/actions/runs/38848823266) completed **success** before this proposed handoff edit.
+- Existing unmerged branch `feat/r2f-opportunity-contract-20261015` at `e6b16bfa99affde383362af9e2bcb96ac1b6c0c4` contains an offline Phase 2 R2F state/projection contract and deterministic tests, but has no PR and no commit-specific CI run. Its proposed `.github/workflows/ci.yml` wiring was **blocked by the connected tool's safety checks**, so no claim of completed code verification or PR creation. Do not duplicate; resume that branch if write access is authorized.
+- The latest main staging, migration and Coolify deployment workflow runs were **skipped**; no production SHA, SMS delivery, Supabase Auth live E2E, database apply or release verified.
+- Owner/coordinator WORKLOG lock remains in force. Supabase staging `profiles.email` nullable text is already present; `lead_attachments` absent; Prisma/Supabase migration histories differ. Require audit, backup and explicit approval before any apply.
