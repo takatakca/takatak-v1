@@ -27,7 +27,7 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
  return msg+"."+createHmac("sha256",key).update(msg).digest("base64url");
 }
 async function callSeo(path:string,method:"GET"|"POST"|"PATCH"|"DELETE",payload?:Record<string,unknown>,ingest=false) {
- if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)|briefs\/[0-9a-f-]{36}\/review))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
+ if(path!=="/v1/sites"&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|export|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)|briefs\/[0-9a-f-]{36}\/review))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
@@ -292,4 +292,38 @@ export async function decideSeoContentBrief(input:{
  if(response.kind!=="ready")return response.kind;
  const data=response.data as {brief?:{status?:unknown}};
  return data.brief?.status===input.status?"reviewed":"unavailable";
+}
+
+/** Server-only private snapshot of *one* tenant-owned SEO site.
+ * Snapshot lists are bounded and may omit older records. Never present as full history.
+ */
+export interface SeoSiteSnapshot {
+ format:"seotakatak-site-snapshot";version:1;generatedAt:string;
+ site:{id:string;domain:string;verified_at:string|null;[key:string]:unknown};
+ opportunities:unknown[];prospects:unknown[];briefs:unknown[];
+ coverage:{maxRowsPerCollection:number;guaranteedComplete:false;
+  limitReached:{opportunities:boolean;prospects:boolean;briefs:boolean};note:string};
+}
+export async function downloadSeoSiteSnapshot(siteId:string):Promise<
+ {kind:"ready";json:string}|{kind:"unavailable"|"unconfigured"|"unauthorized";json:null}
+>{
+ if(!UUID_PATTERN.test(siteId))return {kind:"unavailable",json:null};
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard")||
+    !hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized",json:null};
+ const sites=await listSeoManagedSites();
+ if(sites.kind!=="ready")return {kind:sites.kind,json:null};
+ if(!sites.sites.some(item=>item.id===siteId))return {kind:"unauthorized",json:null};
+ const result=await callSeo("/v1/sites/"+siteId+"/export","GET");
+ if(result.kind!=="ready")return {kind:result.kind,json:null};
+ const value=(result.data as {export?:unknown}).export;
+ if(!value||typeof value!=="object")return {kind:"unavailable",json:null};
+ const snapshot=value as SeoSiteSnapshot;
+ if(snapshot.format!=="seotakatak-site-snapshot"||snapshot.version!==1||
+    snapshot.site?.id!==siteId||!Array.isArray(snapshot.opportunities)||
+    !Array.isArray(snapshot.prospects)||!Array.isArray(snapshot.briefs)||
+    snapshot.coverage?.guaranteedComplete!==false)return {kind:"unavailable",json:null};
+ const json=JSON.stringify(snapshot,null,2);
+ if(Buffer.byteLength(json,"utf8")>1_500_000)return {kind:"unavailable",json:null};
+ return {kind:"ready",json};
 }

@@ -68,4 +68,10 @@ assert.match(portfolioPage,/confirmDomain/,"Destructive action requires the exac
 assert.match(portfolio,/decideSeoContentBrief/,"Human review decision goes through signed backend");
 assert.match(contentActions,/reviewSeoContentBrief/,"Human review submission has a real server action");
 assert.match(backlinkPage,/Approved for editorial planning — not published/,"Approval never misrepresents CMS publication");
+const seoJsonExport=source("src/app/api/seo/sites/[siteId]/snapshot.json/route.ts");
+assert.match(portfolio,/downloadSeoSiteSnapshot/,"SEO snapshot is requested from server-only signed bridge");
+assert.match(portfolio,/view_reports/,"Data export requires active report access");
+assert.match(evidencePage,/snapshot\.json/,"Client report offers honest, capped SEO JSON export");
+assert.match(seoJsonExport,/Cache-Control.*private, no-store/,"Client SEO export is never cached publicly");
+assert.match(seoJsonExport,/downloadSeoSiteSnapshot/,"JSON export route verifies tenant-scoped backend access");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");

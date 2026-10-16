@@ -92,7 +92,12 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
       </tr>)}</tbody>
     </table></div>
    </section>:<p className="rounded-xl border bg-white p-4 text-sm text-slate-500">No imported queries available for this client site yet. Link an owned Search Console property and use the import button in the portfolio.</p>}
-   <Link href={"/api/seo/sites/"+site.id+"/opportunities.csv"} className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">Download keyword sample (CSV) →</Link>
+
+   <div className="flex flex-wrap items-center gap-3">
+    <Link href={"/api/seo/sites/"+site.id+"/opportunities.csv"} className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">Download keyword sample (CSV) →</Link>
+    <Link href={"/api/seo/sites/"+site.id+"/snapshot.json"} className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">Export site SEO data (JSON) →</Link>
+   </div>
+   <p className="text-xs text-slate-500">JSON snapshots cover up to 200 records per collection and indicate when the limit may omit data. They exclude DNS secrets and reviewer profile IDs. This does not export TAKATAK account data.</p>
   </section>}
 
   <section className="space-y-3 rounded-2xl border bg-white p-5">
