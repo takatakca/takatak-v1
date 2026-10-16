@@ -29,6 +29,12 @@ try {
 }
 
 const activeProbes = process.argv.includes("--active-probes");
+const expectReleaseSha = process.argv.includes("--expect-sha");
+const expectedSha = arg("--expect-sha");
+if (expectReleaseSha && !/^[0-9a-f]{40}$/.test(expectedSha ?? "")) {
+  console.error("--expect-sha requires an exact 40-character lowercase Git commit SHA");
+  process.exit(2);
+}
 const results = [];
 function line(state, label, detail) {
   results.push(state);
@@ -45,9 +51,12 @@ async function request(path, init = {}) {
     } catch {
       json = null;
     }
-    return { status: response.status, json, text };
+    return {
+      status: response.status, json, text,
+      releaseSha: response.headers.get("X-TAKATAK-Release"),
+    };
   } catch (error) {
-    return { status: 0, json: null, text: String(error) };
+    return { status: 0, json: null, text: String(error), releaseSha: null };
   }
 }
 
@@ -56,6 +65,16 @@ console.log(`TAKATAK readiness: ${origin}\n`);
 const ready = await request("/api/health/ready");
 const readiness = assessLiveReadiness(ready);
 line(readiness.ok ? "OK" : "FAIL", "health", readiness.reason);
+const observedSha = ready.releaseSha;
+if (expectReleaseSha) {
+  line(observedSha === expectedSha ? "OK" : "FAIL", "release SHA",
+    observedSha === expectedSha ? `exact ${expectedSha}` :
+      observedSha ? "release header does not match expected commit" : "release header missing");
+} else if (observedSha && /^[0-9a-f]{40}$/.test(observedSha)) {
+  line("INFO", "release SHA", `reported ${observedSha}; no expected SHA supplied`);
+} else {
+  line("INFO", "release SHA", "not attested; use --expect-sha after an authorized deploy");
+}
 
 // Email sign-in: an address that cannot exist never receives anything.
 if (activeProbes) {
