@@ -82,17 +82,26 @@ type Row = Record<string, unknown> & { id: string };
 
 function fakeDb(linked: boolean) {
   const listings: Row[] = linked
-    ? [{ id: "listing-1", clientId: CLIENT, businessBrandId: null, provider: "qmaps", externalId: BUSINESS, metadata: { note: "linked" } }]
+    ? [{ id: "listing-1", clientId: CLIENT, businessBrandId: null, provider: "qmaps", metadata: { note: "linked", qmapsBusinessId: BUSINESS } }]
     : [];
   const reviews: Row[] = [];
   const events: Row[] = [];
   let seq = 0;
 
+  // Mirrors Prisma's where: plain fields match exactly; metadata matches { path: [key], equals }.
+  const matches = (row: Row, where: Record<string, unknown>) =>
+    Object.entries(where).every(([k, v]) => {
+      if (k === "metadata" && v && typeof v === "object" && "path" in v) {
+        const filter = v as { path: string[]; equals: unknown };
+        return (row.metadata as Record<string, unknown> | undefined)?.[filter.path[0]] === filter.equals;
+      }
+      return row[k] === v;
+    });
+
   const tx = {
     localListing: {
-      async findUnique({ where }: { where: { provider_externalId: { provider: string; externalId: string } } }) {
-        const key = where.provider_externalId;
-        return listings.find((l) => l.provider === key.provider && l.externalId === key.externalId) ?? null;
+      async findMany({ where, take }: { where: Record<string, unknown>; take?: number }) {
+        return listings.filter((l) => matches(l, where)).slice(0, take ?? Infinity);
       },
       async update({ where, data }: { where: { id: string }; data: Record<string, unknown> }) {
         const row = listings.find((l) => l.id === where.id)!;
@@ -101,21 +110,23 @@ function fakeDb(linked: boolean) {
       },
     },
     listingReview: {
-      async upsert({ where, create, update }: { where: { provider_externalId: { provider: string; externalId: string } }; create: Record<string, unknown>; update: Record<string, unknown> }) {
-        const key = where.provider_externalId;
-        const existing = reviews.find((r) => r.provider === key.provider && r.externalId === key.externalId);
-        if (existing) {
-          Object.assign(existing, update);
-          return { id: existing.id, clientId: existing.clientId };
-        }
-        const row = { ...create, id: `review-${++seq}` } as Row;
+      async findFirst({ where }: { where: Record<string, unknown> }) {
+        return reviews.find((r) => matches(r, where)) ?? null;
+      },
+      async create({ data }: { data: Record<string, unknown> }) {
+        const row = { ...data, id: `review-${++seq}` } as Row;
         reviews.push(row);
-        return { id: row.id, clientId: row.clientId };
+        return { id: row.id };
+      },
+      async update({ where, data }: { where: { id: string }; data: Record<string, unknown> }) {
+        const row = reviews.find((r) => r.id === where.id)!;
+        Object.assign(row, data);
+        return row;
       },
       async updateMany({ where, data }: { where: Record<string, unknown>; data: Record<string, unknown> }) {
         let count = 0;
         for (const r of reviews) {
-          if (Object.entries(where).every(([k, v]) => r[k] === v)) {
+          if (matches(r, where)) {
             Object.assign(r, data);
             count += 1;
           }
@@ -266,12 +277,17 @@ async function main() {
     assert.equal(review.sentiment, "negative");
     assert.equal(review.status, "needs_review");
     assert.equal(review.reviewerName, "Marie T.");
+    assert.equal((review.metadata as Record<string, unknown>).qmapsReviewId, (first.event as { review: { id: string } }).review.id, "the key #171's reply form uses");
+
+    // A reply sent from the dashboard (#171) survives a later QMAPS update.
+    Object.assign(review.metadata as Record<string, unknown>, { replyText: "Merci!", replyState: "sent_to_qmaps" });
 
     const edited = parsed(reviewEvent("REVIEW_UPSERTED", { rating: 5, body: "Finalement excellent." }));
     await applyQmapsEvent(fake.db, edited.event, edited.raw);
     assert.equal(fake.reviews.length, 1);
     assert.equal(review.rating, 5);
     assert.equal(review.sentiment, "positive");
+    assert.equal((review.metadata as Record<string, unknown>).replyState, "sent_to_qmaps");
 
     const deleted = parsed(reviewEvent("REVIEW_DELETED"));
     await applyQmapsEvent(fake.db, deleted.event, deleted.raw);
@@ -284,6 +300,16 @@ async function main() {
     const result = await applyQmapsEvent(fake.db, other.event, other.raw);
     assert.equal(result.status, "UNLINKED");
     assert.equal(fake.reviews.length, 0);
+  });
+
+  await check("a business linked to two workspaces is refused, never guessed", async () => {
+    const fake = fakeDb(true);
+    fake.listings.push({ id: "listing-2", clientId: "99999999-9999-4999-8999-999999999999", businessBrandId: null, provider: "qmaps", metadata: { qmapsBusinessId: BUSINESS } });
+    const { event, raw } = parsed(reviewEvent());
+    const result = await applyQmapsEvent(fake.db, event, raw);
+    assert.equal(result.status, "UNLINKED");
+    assert.equal(fake.reviews.length, 0);
+    assert.equal((fake.events[0].responsePayload as Record<string, unknown>).reason, "business_linked_twice");
   });
 
   await check("replays are idempotent; reused ids with new payloads conflict", async () => {

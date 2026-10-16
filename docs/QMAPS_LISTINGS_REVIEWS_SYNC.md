@@ -76,15 +76,11 @@ Payloads that contain them are rejected with 400.
 
 ## Tenant linking
 
-A QMAPS business affects TAKATAK data only after a TAKATAK administrator links it to a client workspace:
+A QMAPS business affects TAKATAK data only after a TAKATAK administrator links it to a client workspace in **Admin › QMAPS** (#171). That page stores the QMAPS business id in the listing's `metadata.qmapsBusinessId`.
 
-```
-npm run qmaps:link -- --client <takatak-client-uuid> --business <qmaps-business-uuid> --name "Business name"
-```
-
-- Linking is idempotent and audited (`qmaps_business_linked`).
-- A business already linked to another workspace is refused.
-- Reviews always land in the workspace of the linked listing, and a review id can never move between workspaces.
+- A business linked to no workspace, or to more than one, is logged as `UNLINKED` and changes nothing. TAKATAK never guesses which workspace it belongs to.
+- Reviews always land in the workspace of the linked listing. A review is matched within that workspace by `metadata.qmapsReviewId`, the same key the QMAPS reply form uses, so a reply can be sent from a synced review.
+- A later QMAPS update keeps what TAKATAK added to the review, for example a reply sent from the dashboard.
 
 ## V1 configuration
 
@@ -94,11 +90,11 @@ QMAPS_SYNC_CLIENT_ID=<shared integration id>
 QMAPS_SYNC_WEBHOOK_SECRET=<32+ char secret, also set on the QMAPS sender>
 ```
 
-The database migration `20261010070000_qmaps_listing_review_external_ids` adds nullable `externalId` columns, unique per provider. It is additive only. It is **not** on the staging or production approved list: the owner approves it before it is applied anywhere (renamed on 2026-10-10 so it sorts after the Growth Suite migrations; the old date collided with `20261006120000_takatak_billing_invoice_requests`).
+**No database change.** The QMAPS ids live in existing `metadata` columns (rebuilt on 2026-10-16 on top of #171; the earlier `externalId` migration is gone).
 
 ## Verification
 
-- `npm run qa:qmaps-sync` (runs in CI): 12 checks covering:
+- `npm run qa:qmaps-sync` (runs in CI): 13 checks covering:
   - signatures (valid, disabled, forged, stale, tampered)
   - the parser, including identity-leak rejection
   - sentiment
@@ -106,10 +102,11 @@ The database migration `20261010070000_qmaps_listing_review_external_ids` adds n
   - listing refresh
   - review upsert and delete
   - cross-business isolation
+  - a business linked to two workspaces (refused)
+  - a dashboard reply kept across a QMAPS update
   - replay and conflict
   - log minimization
-- Manual, on a throwaway PostgreSQL 16:
-  - the migration applied on top of the current `main` schema, re-ran safely, and `prisma migrate diff` reported no difference from the new schema
+- Manual, on a throwaway PostgreSQL 16 (2026-10-06, before the rebuild on #171):
   - With `next start` in production mode, these were exercised over HTTP:
     - a linked business update
     - 2-star and 5-star reviews (sentiment negative/positive, correct workspace)

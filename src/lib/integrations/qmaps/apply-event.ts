@@ -1,9 +1,11 @@
 // Applies a verified QMAPS event to TAKATAK local listings and reviews.
 //
 // Tenant safety: a QMAPS business only affects TAKATAK data once a TAKATAK
-// admin has linked it to a workspace (a LocalListing with provider "qmaps"
-// and externalId = QMAPS business id). Unlinked events are recorded as
-// UNLINKED and change nothing. Every event id is processed at most once.
+// admin has linked it to exactly one workspace in Admin › QMAPS (#171: a
+// LocalListing with provider "qmaps" and metadata.qmapsBusinessId). Unlinked
+// or ambiguous businesses are recorded as UNLINKED and change nothing. Every
+// event id is processed at most once. No database change: QMAPS review ids
+// live in ListingReview.metadata.qmapsReviewId, the key the reply form uses.
 
 import { createHash } from "node:crypto";
 import type { Prisma, ReviewSentiment } from "@prisma/client";
@@ -54,6 +56,10 @@ function storedPayload(event: QmapsEvent): Prisma.InputJsonObject {
   return { eventType: event.eventType, reviewId: event.review.id, businessId: event.review.businessId };
 }
 
+function objectOf(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
 export async function applyQmapsEvent(
   db: QmapsApplyDb,
   event: QmapsEvent,
@@ -78,10 +84,13 @@ export async function applyQmapsEvent(
   }
 
   return db.$transaction(async (tx) => {
-    const listing = await tx.localListing.findUnique({
-      where: { provider_externalId: { provider: "qmaps", externalId: businessIdOf(event) } },
+    // take: 2 so a business linked to two workspaces is refused, never guessed.
+    const linked = await tx.localListing.findMany({
+      where: { provider: "qmaps", metadata: { path: ["qmapsBusinessId"], equals: businessIdOf(event) } },
       select: { id: true, clientId: true, businessBrandId: true, metadata: true },
+      take: 2,
     });
+    const listing = linked.length === 1 ? linked[0] : null;
 
     const record = async (
       status: "PROCESSED" | "UNLINKED",
@@ -102,16 +111,13 @@ export async function applyQmapsEvent(
     };
 
     if (!listing) {
-      await record("UNLINKED", { reason: "business_not_linked" });
+      await record("UNLINKED", { reason: linked.length > 1 ? "business_linked_twice" : "business_not_linked" });
       return { eventId: event.eventId, duplicate: false, status: "UNLINKED" as const };
     }
 
     if (event.eventType === "BUSINESS_UPSERTED") {
       const b = event.business;
-      const previousMetadata =
-        listing.metadata && typeof listing.metadata === "object" && !Array.isArray(listing.metadata)
-          ? (listing.metadata as Record<string, unknown>)
-          : {};
+      const previousMetadata = objectOf(listing.metadata);
       await tx.localListing.update({
         where: { id: listing.id },
         data: {
@@ -145,51 +151,62 @@ export async function applyQmapsEvent(
 
     if (event.eventType === "REVIEW_UPSERTED") {
       const r = event.review;
-      const review = await tx.listingReview.upsert({
-        where: { provider_externalId: { provider: "qmaps", externalId: r.id } },
-        create: {
-          clientId: listing.clientId,
-          businessBrandId: listing.businessBrandId,
-          localListingId: listing.id,
+      const fields = {
+        reviewerName: r.reviewerDisplayName,
+        rating: r.rating,
+        body: r.body,
+        status: "needs_review" as const,
+        sentiment: sentimentForRating(r.rating),
+        reviewedAt: new Date(r.createdAt),
+      };
+      const existing = await tx.listingReview.findFirst({
+        where: {
           provider: "qmaps",
-          externalId: r.id,
-          reviewerName: r.reviewerDisplayName,
-          rating: r.rating,
-          body: r.body,
-          status: "needs_review",
-          sentiment: sentimentForRating(r.rating),
-          reviewedAt: new Date(r.createdAt),
-          metadata: { source: "qmaps" },
+          clientId: listing.clientId,
+          metadata: { path: ["qmapsReviewId"], equals: r.id },
         },
-        update: {
-          reviewerName: r.reviewerDisplayName,
-          rating: r.rating,
-          body: r.body,
-          status: "needs_review",
-          sentiment: sentimentForRating(r.rating),
-          reviewedAt: new Date(r.createdAt),
-        },
-        select: { id: true, clientId: true },
+        select: { id: true, metadata: true },
       });
-      if (review.clientId !== listing.clientId) {
-        // A review id can never move between workspaces.
-        throw new Error("qmaps_review_workspace_mismatch");
+      let reviewId: string;
+      if (existing) {
+        // Keep what TAKATAK added (for example a reply sent from the dashboard).
+        await tx.listingReview.update({
+          where: { id: existing.id },
+          data: {
+            ...fields,
+            metadata: { ...objectOf(existing.metadata), source: "qmaps", qmapsReviewId: r.id } as Prisma.InputJsonObject,
+          },
+        });
+        reviewId = existing.id;
+      } else {
+        const created = await tx.listingReview.create({
+          data: {
+            ...fields,
+            clientId: listing.clientId,
+            businessBrandId: listing.businessBrandId,
+            localListingId: listing.id,
+            provider: "qmaps",
+            metadata: { source: "qmaps", qmapsReviewId: r.id },
+          },
+          select: { id: true },
+        });
+        reviewId = created.id;
       }
-      await record("PROCESSED", { listingId: listing.id, reviewId: review.id });
+      await record("PROCESSED", { listingId: listing.id, reviewId });
       return {
         eventId: event.eventId,
         duplicate: false,
         status: "PROCESSED" as const,
         listingId: listing.id,
-        reviewId: review.id,
+        reviewId,
       };
     }
 
     await tx.listingReview.updateMany({
       where: {
         provider: "qmaps",
-        externalId: event.review.id,
         clientId: listing.clientId,
+        metadata: { path: ["qmapsReviewId"], equals: event.review.id },
       },
       data: { status: "archived" },
     });
