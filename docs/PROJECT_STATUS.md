@@ -83,3 +83,12 @@ Read-only `information_schema.columns`: `public.profiles.email` is `text` with `
 - Previously completed ADS/security and CUBAFOOD contract PRs remain open unless separately merged by coordinator. No live SMS or production identity and tenant-isolation proof.
 - Direct health checks of `takatak.ca` failed due tool/network access restrictions, not necessarily site outage. Do not assert production failure or success from these attempts.
 
+
+
+## 2026-10-16 05:44 America/Toronto latest main/PR evidence
+
+Main HEAD `c53ed4529e03b15a0241f5b96e4ed37d3f50f56e`, latest observed [main CI 38858131646](https://github.com/takatakca/takatak-v1/actions/runs/38858131646) succeeded. Coolify production deploy workflow outputs at this SHA were skipped. Runtime SHA on `takatak.ca` could not be read through web health checks.
+
+Owner/coordinator has merged #188 readiness, #185 CUBAFOOD offline contract, #177 ADS draft, #175 R2NETTE signed receiver, #155 AI provider keys, #136 QMAPS integration bridge, and #189 admin/staging approval fix. Green CI is not provider delivery or production promotion. PR #187 Auth CSRF remains open with green CI.
+
+Fresh [PR #193](https://github.com/takatakca/takatak-v1/pull/193) takes over an unmerged existing R2F Phase 2 branch and adds the deterministic contract QA to modern main CI. It does not expose or sell customer leads and adds no schema. CI was in progress at handoff. Handoff/continuity PR #178 has been reconciled with current main and awaits its own exact-head CI and coordinator merge.
