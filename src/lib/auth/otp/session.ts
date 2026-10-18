@@ -44,13 +44,9 @@ type AdminAuth = {
   auth: {
     admin: {
       getUserById: (id: string) => Promise<{
-        data: { user: { id: string; email?: string | null } | null };
+        data: { user: { id: string; email?: string | null; email_confirmed_at?: string | null } | null };
         error: { message?: string } | null;
       }>;
-      updateUserById: (
-        id: string,
-        attributes: { email_confirm: boolean },
-      ) => Promise<{ error: { message?: string } | null }>;
       generateLink: (args: { type: 'magiclink'; email: string }) => Promise<{
         data: { properties?: { hashed_token?: string | null } | null };
         error: { message?: string } | null;
@@ -149,7 +145,7 @@ export async function createSessionForEmail(
       return fail('auth_user_validation');
     }
 
-    let authUser: { id: string; email?: string | null } | null = null;
+    let authUser: { id: string; email?: string | null; email_confirmed_at?: string | null } | null = null;
     try {
       const lookup = await admin.auth.admin.getUserById(authUserId);
       if (lookup.error || !lookup.data.user) {
@@ -168,17 +164,9 @@ export async function createSessionForEmail(
     if (!authEmail) return fail('email_not_verified');
     if (authEmail !== normalizedEmail) return fail('auth_user_validation');
 
-    try {
-      const { error: confirmError } = await admin.auth.admin.updateUserById(
-        authUserId,
-        { email_confirm: true },
-      );
-      if (confirmError) {
-        return fail('confirm_email', confirmError.message);
-      }
-    } catch (error) {
-      return fail('confirm_email', error);
-    }
+    // Email-code possession is checked by OTP verification, but never auto-confirm
+    // a Supabase Auth email or elevate an unverified recovery address.
+    if (!authUser.email_confirmed_at) return fail('email_not_verified');
 
     let hashedToken = '';
     try {
