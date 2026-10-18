@@ -9,7 +9,7 @@ import {
   validateFirstName,
   validateLastName,
 } from '@/lib/auth/registration-validation';
-import { getSessionUser } from '@/lib/auth/supabase-server';
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server';
 import { normalizePhone } from '@/lib/auth/otp/phone';
 
 export type ProfileSyncOutcome =
@@ -734,11 +734,21 @@ export async function ensureProfileForSupabaseUser(
 }
 
 export async function ensureProfileForAuthenticatedUser(): Promise<ProfileSyncOutcome> {
-  const user = await getSessionUser();
+  // The cached local JWT user omits phone_confirmed_at. Using it for profile
+  // creation falsely rejects confirmed phone-only users. This identity-write
+  // operation must use the current, Auth-verified Supabase user record.
+  const supabase = await createSupabaseServerClient({
+    persistSessionCookies: false,
+  });
+  if (!supabase) return { outcome: 'unavailable' };
 
-  if (!user) {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    console.error('[profile-sync] Auth user lookup failed', {
+      errorCode: error?.code ?? 'missing_user',
+    });
     return { outcome: 'denied' };
   }
 
-  return ensureProfileForSupabaseUser(user);
+  return ensureProfileForSupabaseUser(data.user);
 }
