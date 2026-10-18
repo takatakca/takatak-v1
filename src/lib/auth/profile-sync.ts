@@ -440,7 +440,7 @@ export async function ensureProfileForSupabaseUser(
   const identity = resolveSupabaseProfileIdentity(user);
 
   if (!identity) {
-    console.error('[profile-sync] No verified phone or usable email in authenticated session');
+    console.error('[profile-sync] No usable authenticated identity');
     return { outcome: 'error' };
   }
 
@@ -503,9 +503,7 @@ export async function ensureProfileForSupabaseUser(
           !hasWorkspace
         ) {
           stage = 'create_personal_workspace';
-          stage = 'create_personal_workspace';
-        stage = 'create_personal_workspace';
-      await ensurePersonalClientWorkspace(
+          await ensurePersonalClientWorkspace(
             existingProfile.id,
             identity.email,
             displayName,
@@ -513,8 +511,7 @@ export async function ensureProfileForSupabaseUser(
         }
 
         stage = 'link_master_identity';
-      stage = 'link_master_identity';
-    const masterIdentityLinked =
+        const masterIdentityLinked =
           await ensureMasterIdentityForVerifiedProfile(prisma, {
             profileId: existingProfile.id,
             authUserId: user.id,
@@ -563,8 +560,7 @@ export async function ensureProfileForSupabaseUser(
         !hasWorkspace
       ) {
         stage = 'create_personal_workspace';
-        stage = 'create_personal_workspace';
-      await ensurePersonalClientWorkspace(
+        await ensurePersonalClientWorkspace(
           updatedProfile.id,
           identity.email,
           displayName,
@@ -626,6 +622,7 @@ export async function ensureProfileForSupabaseUser(
       );
     }
 
+    stage = 'link_master_identity';
     const masterIdentityLinked =
       await ensureMasterIdentityForVerifiedProfile(prisma, {
         profileId: createdProfile.id,
