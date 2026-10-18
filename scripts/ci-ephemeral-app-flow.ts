@@ -161,8 +161,8 @@ async function main() {
   if (registerOtp) {
     const verified = await verifyEmailOtp(registerEmail, registerOtp);
     assert(
-      "OTP verification creates a Supabase session",
-      verified.ok === true && Array.isArray(verified.cookies) && verified.cookies.length > 0,
+      "unconfirmed registration email cannot create a Supabase session",
+      verified.ok === false && verified.code === "email_not_verified" && !verified.cookies?.length,
       verified.message,
     );
   }

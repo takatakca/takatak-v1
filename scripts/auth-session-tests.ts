@@ -15,7 +15,7 @@ function assert(name: string, ok: boolean, detail = '') {
 const AUTH_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const EMAIL = 'owner@takatak.ca';
 
-type AdminUser = { id: string; email?: string | null };
+type AdminUser = { id: string; email?: string | null; email_confirmed_at?: string | null };
 
 function mockAdmin(options: {
   user?: AdminUser | null;
@@ -171,16 +171,10 @@ async function main() {
   {
     const result = await createSessionForEmail(EMAIL, AUTH_ID, [], {
       getEnv: () => env,
-      getAdmin: () =>
-        mockAdmin({
-          user: { id: AUTH_ID, email: EMAIL },
-          confirmError: 'cannot confirm',
-        }),
+      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL } }),
     });
-    assert(
-      'updateUserById API error controlled',
-      !result.ok && result.stage === 'confirm_email',
-    );
+    assert('unconfirmed Auth email cannot mint a session',
+      !result.ok && result.stage === 'email_not_verified');
   }
 
   {
@@ -188,22 +182,7 @@ async function main() {
       getEnv: () => env,
       getAdmin: () =>
         mockAdmin({
-          user: { id: AUTH_ID, email: EMAIL },
-          confirmThrow: true,
-        }),
-    });
-    assert(
-      'updateUserById throw controlled',
-      !result.ok && result.stage === 'confirm_email',
-    );
-  }
-
-  {
-    const result = await createSessionForEmail(EMAIL, AUTH_ID, [], {
-      getEnv: () => env,
-      getAdmin: () =>
-        mockAdmin({
-          user: { id: AUTH_ID, email: EMAIL },
+          user: { id: AUTH_ID, email: EMAIL, email_confirmed_at: '2026-10-18T00:00:00Z' },
           linkError: 'cannot link',
         }),
     });
@@ -218,7 +197,7 @@ async function main() {
       getEnv: () => env,
       getAdmin: () =>
         mockAdmin({
-          user: { id: AUTH_ID, email: EMAIL },
+          user: { id: AUTH_ID, email: EMAIL, email_confirmed_at: '2026-10-18T00:00:00Z' },
           linkThrow: true,
         }),
     });
@@ -231,7 +210,7 @@ async function main() {
   {
     const result = await createSessionForEmail(EMAIL, AUTH_ID, [], {
       getEnv: () => env,
-      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL } }),
+      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL, email_confirmed_at: '2026-10-18T00:00:00Z' } }),
       createBrowserClient: mockBrowser({ verifyError: 'bad token' }) as never,
     });
     assert(
@@ -243,7 +222,7 @@ async function main() {
   {
     const result = await createSessionForEmail(EMAIL, AUTH_ID, [], {
       getEnv: () => env,
-      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL } }),
+      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL, email_confirmed_at: '2026-10-18T00:00:00Z' } }),
       createBrowserClient: mockBrowser({ verifyThrow: true }) as never,
     });
     assert(
@@ -255,7 +234,7 @@ async function main() {
   {
     const result = await createSessionForEmail(EMAIL, AUTH_ID, [], {
       getEnv: () => env,
-      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL } }),
+      getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL, email_confirmed_at: '2026-10-18T00:00:00Z' } }),
       createBrowserClient: mockBrowser({
         user: { id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', email: EMAIL },
         session: {
@@ -279,7 +258,7 @@ async function main() {
       [{ name: 'sb-takatak-auth-token.0', value: 'stale' }],
       {
         getEnv: () => env,
-        getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL } }),
+        getAdmin: () => mockAdmin({ user: { id: AUTH_ID, email: EMAIL, email_confirmed_at: '2026-10-18T00:00:00Z' } }),
         createBrowserClient: (url, anon, cookieWrites, existingCookies) => {
           browserCookieNames.push(
             ...existingCookies.map((cookie) => cookie.name),
