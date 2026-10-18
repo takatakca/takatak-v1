@@ -97,8 +97,8 @@ export function OtpForm() {
         return;
       }
       const { data, error: userError } = await supabase.auth.getUser();
-      const authPhone = data.user?.phone?.replace(/\\D/g, "") ?? "";
-      const expectedPhone = phone.replace(/\\D/g, "");
+      const authPhone = data.user?.phone?.replace(/\D/g, "") ?? "";
+      const expectedPhone = phone.replace(/\D/g, "");
       if (userError || !data.user?.phone_confirmed_at ||
           !authPhone || authPhone !== expectedPhone) {
         setError("No verified session for this phone is active. Sign in using your registered number.");
