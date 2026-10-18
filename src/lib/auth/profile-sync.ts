@@ -433,15 +433,18 @@ export async function ensureProfileForSupabaseUser(
   const prisma = getPrisma();
 
   if (!prisma) {
+    console.error('[profile-sync] Database client unavailable');
     return { outcome: 'unavailable' };
   }
 
   const identity = resolveSupabaseProfileIdentity(user);
 
   if (!identity) {
+    console.error('[profile-sync] No verified phone or usable email in authenticated session');
     return { outcome: 'error' };
   }
 
+  let stage = 'lookup_profile';
   try {
     const existingProfile = await prisma.profile.findUnique({
       where: {
@@ -499,14 +502,19 @@ export async function ensureProfileForSupabaseUser(
           existingProfile.status !== 'disabled' &&
           !hasWorkspace
         ) {
-          await ensurePersonalClientWorkspace(
+          stage = 'create_personal_workspace';
+          stage = 'create_personal_workspace';
+        stage = 'create_personal_workspace';
+      await ensurePersonalClientWorkspace(
             existingProfile.id,
             identity.email,
             displayName,
           );
         }
 
-        const masterIdentityLinked =
+        stage = 'link_master_identity';
+      stage = 'link_master_identity';
+    const masterIdentityLinked =
           await ensureMasterIdentityForVerifiedProfile(prisma, {
             profileId: existingProfile.id,
             authUserId: user.id,
@@ -533,6 +541,7 @@ export async function ensureProfileForSupabaseUser(
         };
       }
 
+      stage = 'update_profile';
       const updatedProfile = await prisma.profile.update({
         where: {
           id: existingProfile.id,
@@ -553,13 +562,16 @@ export async function ensureProfileForSupabaseUser(
         updatedProfile.status !== 'disabled' &&
         !hasWorkspace
       ) {
-        await ensurePersonalClientWorkspace(
+        stage = 'create_personal_workspace';
+        stage = 'create_personal_workspace';
+      await ensurePersonalClientWorkspace(
           updatedProfile.id,
           identity.email,
           displayName,
         );
       }
 
+      stage = 'link_master_identity';
       const masterIdentityLinked =
         await ensureMasterIdentityForVerifiedProfile(prisma, {
           profileId: updatedProfile.id,
@@ -587,6 +599,7 @@ export async function ensureProfileForSupabaseUser(
       };
     }
 
+    stage = 'create_profile';
     const createdProfile = await prisma.profile.create({
       data: {
         authUserId: user.id,
@@ -605,6 +618,7 @@ export async function ensureProfileForSupabaseUser(
       identity.verified &&
       createdProfile.status !== 'disabled'
     ) {
+      stage = 'create_personal_workspace';
       await ensurePersonalClientWorkspace(
         createdProfile.id,
         identity.email,
@@ -638,6 +652,13 @@ export async function ensureProfileForSupabaseUser(
       profileId: createdProfile.id,
     };
   } catch (error) {
+    const prismaCode = typeof error === 'object' && error !== null && 'code' in error
+      && typeof error.code === 'string' ? error.code : 'unknown';
+    console.error('[profile-sync] Database operation failed', {
+      stage,
+      prismaCode,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+    });
     if (isUniqueConstraintError(error)) {
       try {
         const concurrentProfile = await prisma.profile.findUnique({
