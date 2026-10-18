@@ -192,9 +192,12 @@ export function ClickPendingProvider({ children }: { children: ReactNode }) {
         if (generationRef.current !== generation) return result;
         if (isPrefetchRequest(input, init)) return result;
         tracked.add(result);
-        void result.finally(() => {
-          tracked.delete(result);
-        });
+        // A rejected fetch must never spawn a second, unhandled rejection.
+        // Keep the original promise outcome untouched for its caller.
+        void result.then(
+          () => { tracked.delete(result); },
+          () => { tracked.delete(result); },
+        );
         return result;
       }) as typeof fetch;
       restoreFetchRef.current = () => {
