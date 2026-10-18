@@ -386,7 +386,7 @@ export function OtpForm() {
             htmlFor="otp-email"
             className="mb-1.5 block text-xs font-semibold text-foreground"
           >
-            Email
+            Previously verified recovery email
           </label>
           <div className="relative">
             <Mail
@@ -425,7 +425,7 @@ export function OtpForm() {
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : null}
-          {loading ? "Sending code…" : "Send Code"}
+          {loading ? "Sending code…" : "Send sign-in code"}
         </button>
 
         <button
@@ -531,7 +531,7 @@ export function OtpForm() {
           }}
           className="block w-full text-xs font-semibold text-muted-foreground hover:text-foreground"
         >
-          Receive code with mail
+          Sign in using an already verified recovery email
         </button>
         <Link
           href="/login"
