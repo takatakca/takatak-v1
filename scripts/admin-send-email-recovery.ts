@@ -83,7 +83,7 @@ async function main() {
   }
   const generated = await admin.auth.admin.generateLink({
     type: "magiclink", email,
-    options: { redirectTo: `${confirmationOrigin}/auth/callback?next=/dashboard/account` },
+    options: { redirectTo: `${confirmationOrigin}/auth/callback?next=/dashboard/profile` },
   });
   const tokenHash = generated.data?.properties?.hashed_token;
   if (generated.error || !tokenHash || generated.data.user?.id !== userId) {
@@ -92,7 +92,7 @@ async function main() {
   const verify = new URL("/auth/callback", confirmationOrigin);
   verify.searchParams.set("token_hash", tokenHash);
   verify.searchParams.set("type", "magiclink");
-  verify.searchParams.set("next", "/dashboard/account");
+  verify.searchParams.set("next", "/dashboard/profile");
   await sendEmail(email, verify.toString());
   console.log("Recovery email sent to the supplied inbox for the existing Auth user.");
   console.log("Open the link from that inbox. Callback will sync the verified email into TAKATAK.");
