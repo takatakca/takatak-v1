@@ -523,8 +523,6 @@ function AccessPanel({
 }) {
   const router = useRouter();
   const [email, setEmail] = useState(data.email ?? "");
-  const [newPassword, setNewPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mfaBusy, setMfaBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -537,9 +535,7 @@ function AccessPanel({
   } | null>(null);
   const [verifyCode, setVerifyCode] = useState("");
 
-  const dirty =
-    email.trim().toLowerCase() !== (data.email ?? "").toLowerCase() ||
-    newPassword.length > 0;
+  const dirty = email.trim().toLowerCase() !== (data.email ?? "").toLowerCase();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -562,7 +558,6 @@ function AccessPanel({
         },
         body: JSON.stringify({
           email,
-          newPassword,
         }),
       });
 
@@ -578,7 +573,6 @@ function AccessPanel({
         return;
       }
 
-      setNewPassword("");
       setSuccess(true);
       setMessage(result.message ?? "Access settings were saved.");
       router.refresh();
@@ -754,8 +748,7 @@ function AccessPanel({
           Access information
         </h2>
         <p className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          This is your access information. You&apos;ll need to introduce your
-          password to perform any change.
+          TAKATAK uses passwordless sign-in. Add an email address and confirm the link sent to your inbox to enable email login.
         </p>
 
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
@@ -776,39 +769,7 @@ function AccessPanel({
             ) : null}
           </label>
 
-          <label className="block text-sm font-medium text-slate-600">
-            New password
-            <span className="relative mt-1.5 block">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={newPassword}
-                onChange={(event) => setNewPassword(event.target.value)}
-                autoComplete="new-password"
-                placeholder="Enter new password"
-                className={`${inputClassName} mt-0 pr-11`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((current) => !current)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </span>
-            <span className="mt-1.5 block text-sm font-normal text-slate-500">
-              Enter a new password to change the current one
-            </span>
-            {fieldErrors.newPassword ? (
-              <span className="mt-1 block text-xs text-rose-600">
-                {fieldErrors.newPassword}
-              </span>
-            ) : null}
-          </label>
+
         </div>
 
         <div className="mt-6 flex justify-end">
