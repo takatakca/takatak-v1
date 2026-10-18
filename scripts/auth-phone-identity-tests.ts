@@ -46,6 +46,28 @@ function main() {
   assert("name comes from registration", phoneOnly?.displayName === "Mia Tremblay");
   assert("consent is kept", phoneOnly?.consent?.termsAcceptedAt === "2026-10-08T00:00:00.000Z");
 
+  const nigerianSupabasePhone = resolveSupabaseProfileIdentity(
+    user({
+      phone: "2347041717579",
+      phone_confirmed_at: "2026-10-18T00:18:15.000Z",
+      user_metadata: { phone: "+2347041717579" },
+    }),
+  );
+  assert(
+    "Supabase verified international phone without plus is accepted",
+    nigerianSupabasePhone?.phone === "+2347041717579" &&
+      nigerianSupabasePhone?.phoneVerified === true &&
+      nigerianSupabasePhone?.verified === true,
+  );
+
+  const unverifiedNigerianPhone = resolveSupabaseProfileIdentity(
+    user({ phone: "2347041717579" }),
+  );
+  assert(
+    "unverified international phone without plus is rejected",
+    unverifiedNigerianPhone === null,
+  );
+
   const unconfirmed = resolveSupabaseProfileIdentity(
     user({
       phone: "+15145550123",
