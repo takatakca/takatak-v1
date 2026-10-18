@@ -104,8 +104,14 @@ export function resolveSupabaseProfileIdentity(
   const email = authEmail;
   const emailVerified = Boolean(email && user.email_confirmed_at);
 
-  const authPhone =
-    typeof user.phone === 'string' ? normalizePhone(user.phone) : null;
+  // Supabase Auth may return verified international numbers without a leading
+  // '+' (for example 2347041717579). Only trust the Auth user phone, never
+  // user_metadata; normalize an already-verified number as international.
+  const rawAuthPhone = typeof user.phone === 'string' ? user.phone.trim() : '';
+  const authPhone = normalizePhone(rawAuthPhone) ||
+    (/^[1-9]\d{7,14}$/.test(rawAuthPhone)
+      ? normalizePhone(`+${rawAuthPhone}`, 'INTL')
+      : null);
   const phone =
     authPhone && user.phone_confirmed_at ? authPhone : null;
   const phoneVerified = phone !== null;
