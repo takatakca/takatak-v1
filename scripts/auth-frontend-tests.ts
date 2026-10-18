@@ -73,6 +73,18 @@ async function main() {
     resolve(process.cwd(), "src/components/auth/master-phone-login-form.tsx"),
     "utf8",
   );
+  const smsLoginRoute = readFileSync(
+    resolve(process.cwd(), "src/app/api/auth/sms-login/route.ts"),
+    "utf8",
+  );
+  assert(
+    "SMS login uses a same-origin backend and never replays the request",
+    loginForm.includes('fetch("/api/auth/sms-login"') &&
+      !loginForm.includes("signInWithOtp(") &&
+      smsLoginRoute.includes("shouldCreateUser: false") &&
+      smsLoginRoute.includes("readTrustedJsonBody(") &&
+      !smsLoginRoute.includes("setTimeout("),
+  );
   const registrationForm = readFileSync(
     resolve(process.cwd(), "src/components/auth/master-phone-registration-form.tsx"),
     "utf8",
