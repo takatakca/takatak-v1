@@ -1,7 +1,6 @@
 import {
   normalizeEmail,
   validateEmail,
-  validatePassword,
 } from "@/lib/auth/registration-validation";
 import {
   invalidRequest,
@@ -11,11 +10,10 @@ import {
 
 export interface AccountAccessInput {
   email: string | null;
-  newPassword: string | null;
 }
 
 export type AccountAccessFieldErrors = Partial<
-  Record<"email" | "newPassword", string>
+  Record<"email", string>
 >;
 
 export function validateAccountAccessInput(
@@ -40,30 +38,12 @@ export function validateAccountAccessInput(
     }
   }
 
-  let newPassword: string | null = null;
-  if (
-    value.newPassword !== undefined &&
-    value.newPassword !== null &&
-    value.newPassword !== ""
-  ) {
-    if (typeof value.newPassword !== "string") {
-      fieldErrors.newPassword = "Enter a valid password.";
-    } else {
-      const passwordError = validatePassword(value.newPassword);
-      if (passwordError) {
-        fieldErrors.newPassword = passwordError;
-      } else {
-        newPassword = value.newPassword;
-      }
-    }
-  }
-
   if (Object.keys(fieldErrors).length > 0) {
     return invalidRequest(fieldErrors, "Correct the highlighted access fields.");
   }
 
   return {
     success: true,
-    data: { email, newPassword },
+    data: { email },
   };
 }
