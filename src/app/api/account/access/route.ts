@@ -105,13 +105,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const emailChanged = email !== null && email !== profile.email;
-    if (!emailChanged && !newPassword) {
-      return jsonResponse(
-        { ok: false, message: "There are no access changes to save." },
-        400,
-      );
-    }
-
     if (email && emailChanged) {
       const [takenProfile, takenIdentity] = await Promise.all([
         prisma.profile.findFirst({
@@ -155,13 +148,26 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (emailChanged || newPassword) {
+    // A recovery address can already exist in Prisma without being attached
+    // to the Supabase Auth user. In that case, request confirmation even when
+    // the profile's email string did not change.
+    const authEmail = (user.email ?? "").trim().toLowerCase();
+    const authEmailChangeNeeded = Boolean(email && email !== authEmail);
+    const emailVerificationRequested = emailChanged || authEmailChangeNeeded;
+    if (!emailVerificationRequested && !newPassword) {
+      return jsonResponse(
+        { ok: false, message: "There are no access changes to save." },
+        400,
+      );
+    }
+
+    if (emailVerificationRequested || newPassword) {
       const { error: authError } = await supabase.auth.updateUser(
         {
-          ...(emailChanged && email ? { email } : {}),
+          ...(emailVerificationRequested && email ? { email } : {}),
           ...(newPassword ? { password: newPassword } : {}),
         },
-        emailChanged
+        emailVerificationRequested
           ? {
               emailRedirectTo: `${originFromRequest(request)}/auth/callback?next=/dashboard/account`,
             }
@@ -192,13 +198,13 @@ export async function PATCH(request: NextRequest) {
         profileId: access.profileId,
         clientId:
           access.mode === "client_scoped" ? access.activeClientId : null,
-        action: emailChanged
+        action: emailVerificationRequested
           ? "account_email_verification_requested"
           : "account_password_updated",
         entityType: "Profile",
         entityId: profile.id,
         metadata: {
-          emailChangeRequested: emailChanged,
+          emailChangeRequested: emailVerificationRequested,
           passwordChanged: Boolean(newPassword),
         },
       },
@@ -207,13 +213,13 @@ export async function PATCH(request: NextRequest) {
     return jsonResponse(
       {
         ok: true,
-        message: emailChanged
+        message: emailVerificationRequested
           ? newPassword
             ? "Your password was updated. Confirm the new email from the message we sent before it can be used."
             : "Check the new email and confirm it before it can be used."
           : "Your password was updated.",
         email: profile.email,
-        verificationPending: emailChanged,
+        verificationPending: emailVerificationRequested,
       },
       200,
     );
