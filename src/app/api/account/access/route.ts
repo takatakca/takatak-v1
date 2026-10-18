@@ -169,7 +169,7 @@ export async function PATCH(request: NextRequest) {
         },
         emailVerificationRequested
           ? {
-              emailRedirectTo: `${originFromRequest(request)}/auth/callback?next=/dashboard/account`,
+              emailRedirectTo: `${originFromRequest(request)}/auth/callback?next=/dashboard/profile`,
             }
           : undefined,
       );
