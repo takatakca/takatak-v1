@@ -83,6 +83,49 @@ export function OtpForm() {
     return () => window.clearInterval(timer);
   }, [canResend]);
 
+  // Retry profile creation using the already verified Supabase session.
+  // No OTP is sent or verified here, so this does not incur SMS charges.
+  async function finishVerifiedRegistration() {
+    if (submissionInProgressReference.current || loading || !phone) return;
+    submissionInProgressReference.current = true;
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      if (!supabase) {
+        setError("TAKATAK authentication is not configured.");
+        return;
+      }
+      const { data, error: userError } = await supabase.auth.getUser();
+      const authPhone = data.user?.phone?.replace(/\\D/g, "") ?? "";
+      const expectedPhone = phone.replace(/\\D/g, "");
+      if (userError || !data.user?.phone_confirmed_at ||
+          !authPhone || authPhone !== expectedPhone) {
+        setError("No verified session for this phone is active. Sign in using your registered number.");
+        return;
+      }
+      const response = await fetch("/api/auth/sync-profile", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+      });
+      const result = await parseAuthResponse(response);
+      if (!result.ok) {
+        setError(formatAuthErrorMessage(result) || "Profile synchronization failed. No additional SMS was sent.");
+        return;
+      }
+      sessionStorage.removeItem("verifyEmail");
+      sessionStorage.removeItem("verifyPhone");
+      sessionStorage.removeItem("otpAttempts");
+      window.location.assign(next);
+    } catch {
+      setError("Profile sync could not be completed. No additional SMS was sent.");
+    } finally {
+      setLoading(false);
+      submissionInProgressReference.current = false;
+    }
+  }
+
   async function verifyCode(digits: string[]) {
     if (submissionInProgressReference.current || loading) {
       return;
@@ -459,6 +502,22 @@ export function OtpForm() {
           No contact info found. Please return to the login page.
         </p>
       )}
+
+      {provider === "supabase-phone" && phone ? (
+        <div className="rounded-lg border border-border p-3 text-sm">
+          <p className="mb-2 text-muted-foreground">
+            Already verified your SMS? Finish creating your TAKATAK profile without requesting another code.
+          </p>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => void finishVerifiedRegistration()}
+            className="font-semibold text-primary underline disabled:opacity-60"
+          >
+            Complete registration without another SMS
+          </button>
+        </div>
+      ) : null}
 
       <div className="flex justify-center gap-2">
         {otp.map((digit, index) => (
