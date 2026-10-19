@@ -34,7 +34,7 @@ function testBrandAllowance(clientId: string): number | null {
   if (!ids.includes(clientId.toLowerCase())) return null;
 
   const raw = (process.env.SOCIAL_BRAND_TEST_ALLOWANCE ?? "").trim();
-  if (!/^[1-9]\\d*$/.test(raw)) return null;
+  if (!/^[1-9][0-9]*$/.test(raw)) return null;
   const allowance = Number(raw);
   if (!Number.isSafeInteger(allowance) || allowance > 100) return null;
   return allowance;
