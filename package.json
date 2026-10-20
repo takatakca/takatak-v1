@@ -146,7 +146,10 @@
     "qa:ahmv-operational-readiness": "tsx scripts/verify-ahmv-operational-readiness.ts",
     "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts",
     "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs",
-    "qa:revers-experience": "tsx scripts/revers-experience-bridge-tests.ts"
+    "qa:revers-experience": "tsx scripts/revers-experience-bridge-tests.ts",
+    "qa:inventory": "tsx scripts/inventory-tests.ts",
+    "qa:inventory-db": "tsx --require ./scripts/register-server-only.cjs scripts/inventory-db-tests.ts",
+    "qa:inventory-labels": "tsx scripts/inventory-label-tests.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
@@ -157,6 +160,7 @@
     "@supabase/supabase-js": "^2.110.2",
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
+    "pdf-lib": "1.17.1",
     "pg": "^8.23.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
