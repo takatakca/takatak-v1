@@ -105,6 +105,25 @@ export default async function InventoryRetailSetupPage() {
                 <td className="p-3">
                   <a
                     className="text-blue-700 underline"
+                    href="https://www.walmart.ca/en/ip/Aofa-Wireless-Code-Scanner-Rechargeable-Long-Scanning-Distance-Automatic-Induction-Labor-saving-Grip-Comfortable-High-Precise-ABS-Wired-High-sensitiv/11V8A9KG86GR"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Aofa USB plug-and-play scanner variant
+                  </a>
+                </td>
+                <td className="whitespace-nowrap p-3">$24.99</td>
+                <td className="p-3">Lowest new scanner price verified</td>
+                <td className="p-3">
+                  Select the USB variant; the default Bluetooth version costs
+                  more. Marketplace shipment from China; verify keyboard mode,
+                  barcode support, returns and Québec delivery.
+                </td>
+              </tr>
+              <tr>
+                <td className="p-3">
+                  <a
+                    className="text-blue-700 underline"
                     href="https://www.walmart.ca/en/ip/Barcode-Scanner-U20-2D-USB-Wired-Handheld-Reader-Image-Sensor-Supports-Paper-Screen-Codes-80-Meters-Connection-Easy-Set-Up-Supermarket-Inventory-Mana/3EU5LXKQFA3N"
                     target="_blank"
                     rel="noreferrer"
@@ -181,10 +200,10 @@ export default async function InventoryRetailSetupPage() {
         </div>
         <p className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900">
           Lowest additional cost: reuse a suitable printer you already own. The
-          listed scanner plus Canon costs $116.31 before tax and supplies;
-          scanner plus Brother costs $156.31. A roll printer feeds a long wrap
-          lengthwise—the label height must fit across its printhead. Measure
-          before ordering media.
+          Aofa USB scanner plus Canon costs $104.98 before tax and supplies;
+          Aofa USB scanner plus Brother costs $144.98. A roll printer feeds a
+          long wrap lengthwise—the label height must fit across its printhead.
+          Measure before ordering media.
         </p>
       </section>
       <section className="rounded-xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600">
