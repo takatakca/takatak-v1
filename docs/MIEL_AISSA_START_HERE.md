@@ -37,20 +37,27 @@ Prices checked October 20, 2026; CAD before tax, labels, shipping and consumable
 | Item | Observed price | Use |
 | --- | ---: | --- |
 | Reuse your existing suitable printer | C$0 extra printer cost | Lowest upfront route; use label stock compatible with that printer |
+| Aofa **USB plug-and-play variant**, Walmart Marketplace | C$24.99 | Lowest new scanner price verified; select the USB variant, not the default Bluetooth version; confirm UPC/EAN/Code 39, returns and Québec delivery |
+| Used CHI TENG C981W-EEA1, Comptant Illimité Sherbrooke | C$16.99 | Lower-cost used candidate; verify condition, USB receiver/cable, supported codes and delivery cost before buying |
 | U20 USB/2.4 GHz 2D scanner, Walmart Marketplace | C$36.32 | Paper/screen codes; confirm USB keyboard mode, UPC-A/EAN-13/Code 39 support and seller returns |
 | Canon PIXMA TR4720, Staples Canada | C$79.99 | Low upfront colour sheet printing; allow for ink refills, suitable stock and water-resistance tests |
 | Brother HL-L2405W, Staples Canada | C$119.99 | Black-and-white sheet batches; use laser-compatible adhesive stock |
 | MUNBYN RW403B, manufacturer Canada store | C$99.99 | 203 DPI black-and-white roll trials; direct-thermal labels can fade in heat/light; confirm your label length is supported |
 
-- Scanner + Canon: **C$116.31** before tax and supplies.
-- Scanner + Brother: **C$156.31** before tax and supplies.
+- Aofa USB scanner + Canon: **C$104.98** before tax and supplies.
+- Aofa USB scanner + Brother: **C$144.98** before tax and supplies.
 - Reusing your printer avoids buying a printer before you know the real label dimensions and volume.
 
-A cheaper C$35.09 scanner search result was excluded because its live page showed out of stock. One Best Buy marketplace option was also excluded because the seller’s page excluded Québec shipping. The Canon’s live page showed C$79.99 even though an older search result showed C$59.99; the live price is used here.
+An additional printer search showed C$47.98 for the TS3720 but Canon’s live page showed C$109.99; a C$39.99 MG2525 result led to a sold-out C$59.99 listing. These were not treated as available cheap printers.
+
+A C$35.09 scanner search result was excluded because its live page showed out of stock. One Best Buy marketplace option was also excluded because the seller’s page excluded Québec shipping. The Canon’s live page showed C$79.99 even though an older search result showed C$59.99; the live price is used here.
 
 For long shelf-life packaging, durability matters: use tested ink/toner and label material, or a suitable thermal-transfer printer/ribbon/media combination. A direct-thermal shipping-label printer is not automatically the right printer for honey jars that stay on shelves a long time. The printer produces an adhesive wrap label; it does not print directly onto the curved glass or apply the label for you.
 
 Equipment links:
+
+- Lowest new scanner (choose USB variant): https://www.walmart.ca/en/ip/Aofa-Wireless-Code-Scanner-Rechargeable-Long-Scanning-Distance-Automatic-Induction-Labor-saving-Grip-Comfortable-High-Precise-ABS-Wired-High-sensitiv/11V8A9KG86GR
+- Used scanner candidate: https://www.comptantillimite.com/promotion-details-produit?id=255645-lecteur-de-code-barre-barcode-scanner-chi-teng-C981w-eea1
 
 - Scanner: https://www.walmart.ca/en/ip/Barcode-Scanner-U20-2D-USB-Wired-Handheld-Reader-Image-Sensor-Supports-Paper-Screen-Codes-80-Meters-Connection-Easy-Set-Up-Supermarket-Inventory-Mana/3EU5LXKQFA3N
 - Colour printer: https://www.staples.ca/products/24501714-en-canon-pixma-tr4720-wireless-all-in-one-printer-black
