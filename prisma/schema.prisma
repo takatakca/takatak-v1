@@ -86,6 +86,8 @@ enum PermissionKey {
   manage_reputation
   view_conversations
   manage_conversations
+  view_inventory
+  manage_inventory
 }
 
 enum ClientStatus {
@@ -671,6 +673,8 @@ model BusinessBrand {
   contentContributions       ContentContribution[]
   contentPublications        ContentPublication[]
   contributionAssets          ContributionAsset[]
+
+  inventoryProducts          InventoryProduct[]
 
   @@unique([id, clientId])
   @@index([clientId])
@@ -4840,4 +4844,45 @@ model AiProviderCredential {
   updatedAt          DateTime  @updatedAt
 
   @@map("ai_provider_credentials")
+}
+
+/// Products belong to a brand AND its workspace. Never query by id alone.
+model InventoryProduct {
+  id              String              @id @default(uuid()) @db.Uuid
+  clientId        String              @db.Uuid
+  businessBrandId String              @db.Uuid
+  name            String
+  sku             String
+  category        String
+  size            String
+  ingredients     String
+  gtin            String?
+  priceCents      Int                 @default(0)
+  quantity        Int                 @default(0)
+  threshold       Int                 @default(10)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  businessBrand   BusinessBrand       @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Restrict)
+  movements       InventoryMovement[]
+  @@unique([id, clientId])
+  @@unique([businessBrandId, sku])
+  @@unique([clientId, gtin])
+  @@index([clientId, businessBrandId])
+  @@map("inventory_products")
+}
+
+/// Append-only stock ledger. Actor IDs are retained even if a profile is removed.
+model InventoryMovement {
+  id              String              @id @default(uuid()) @db.Uuid
+  clientId        String              @db.Uuid
+  productId       String              @db.Uuid
+  actorProfileId  String              @db.Uuid
+  requestId       String              @unique @db.Uuid
+  delta           Int
+  reason          String
+  lot             String?
+  createdAt       DateTime            @default(now())
+  product         InventoryProduct    @relation(fields: [productId, clientId], references: [id, clientId], onDelete: Restrict)
+  @@index([clientId, createdAt])
+  @@map("inventory_movements")
 }
