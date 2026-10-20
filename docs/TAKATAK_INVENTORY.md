@@ -61,6 +61,10 @@ npm run build
 
 Browser checks were also run on the actual React component with a temporary fixture transport: product creation/editing, stock adjustment, scanner search, label popup, CSV download, activity, mobile layout and read-only controls. This is component verification, not a live Supabase sign-in E2E or a physical scanner test. CI now runs both inventory scripts alongside the existing access and database suites.
 
+## Retail EDI reference
+
+The owner-provided Orderful reference is assessed in [Retail EDI for TAKATAK Inventory](TAKATAK_INVENTORY_RETAIL_EDI.md). It maps purchase orders, shipments, invoices, packaging and traceability gaps for future work. No provider has been selected or connected.
+
 ## Remaining scope
 
 No expiry tracking, per-lot balances, recalls, recipe depletion, purchasing, warehouse/location allocation, retailer connectors, fractional units or inventory billing entitlement are implemented. Existing workspace permission grants determine module access; it is not activated as a separately billed service. New inventory models restrict parent deletion to preserve ledger history; archive businesses instead of deleting them while inventory exists. No inventory-specific delete endpoint exists.
