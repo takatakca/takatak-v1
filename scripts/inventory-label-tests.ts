@@ -7,6 +7,7 @@ import {
   labelReadiness,
   barcodeMatchesScan,
   mielAissaLabelConfig,
+  readLabelConfig,
   type LabelProduct,
 } from "../src/lib/inventory/label-config";
 import {
@@ -62,6 +63,10 @@ async function main() {
     { brand: "x".repeat(161) },
     { nutritionImage: "data:image/svg+xml;base64,PHN2Zz4=" },
     { nutritionRatio: Infinity },
+    { jarShape: "octagonal" },
+    { flatFaceWidthMm: -1 },
+    { flatFaceWidthMm: Infinity },
+    { flatFaceWidthMm: "40" },
   ])
     assert.throws(() => labelConfigInput({ ...config, ...invalid }));
   const finalConfig = {
@@ -72,6 +77,13 @@ async function main() {
     nutritionExemption: "Synthetic test only - not an actual exemption",
   };
   assert.equal(labelReadiness(product, finalConfig).length, 0);
+  const legacyConfig: Record<string, unknown> = { ...config };
+  delete legacyConfig.jarShape;
+  delete legacyConfig.flatFaceWidthMm;
+  const legacy = readLabelConfig(legacyConfig);
+  assert.equal(legacy.jarShape, "round");
+  assert.equal(legacy.flatFaceWidthMm, 0);
+  assert.equal(legacy.brand, "MIEL AISSA");
   for (const dpi of [203, 300, 600] as const) {
     for (const orientation of ["ladder", "fence"] as const) {
       const scene = await buildLabelScene(product, {
@@ -152,6 +164,68 @@ async function main() {
   );
   assert.throws(() => planLabelPages(scene, "letter", 1.5));
   const internalProduct = { ...product, sku: "AISSA-500", gtin: null };
+  const hexConfig = {
+    ...config,
+    heightMm: 100,
+    jarShape: "hexagonal" as const,
+  };
+  await assert.rejects(
+    buildLabelScene(product, hexConfig),
+    /Measure the width of one completely flat glass face/,
+  );
+  for (const dpi of [203, 300, 600] as const) {
+    for (const orientation of ["ladder", "fence"] as const) {
+      for (const item of [product, internalProduct]) {
+        const fittingConfig = {
+          ...hexConfig,
+          flatFaceWidthMm: 90,
+          dpi,
+          orientation,
+        };
+        const fitted = await buildLabelScene(item, fittingConfig);
+        const barcode = fitted.elements.find((e) => e.kind === "barcode");
+        assert.ok(barcode && barcode.kind === "barcode");
+        assert.equal(barcode.rotated, orientation === "ladder");
+        assert.equal(
+          fitted.flatFaceFit?.requiredWidthMm,
+          (barcode.rotated ? barcode.height : barcode.width) + 4,
+        );
+        const required = fitted.flatFaceFit!.requiredWidthMm;
+        // A 0.1 mm boundary distinguishes a fitting face from one too narrow.
+        const roundedUp = Math.ceil(required * 10) / 10;
+        await buildLabelScene(item, {
+          ...fittingConfig,
+          flatFaceWidthMm: roundedUp,
+        });
+        await assert.rejects(
+          buildLabelScene(item, {
+            ...fittingConfig,
+            flatFaceWidthMm: roundedUp - 0.1,
+          }),
+          /was not reduced or allowed across a corner/,
+        );
+        const hexPdf = await PDFDocument.load(
+          await labelPdf(fitted, "roll", 1),
+        );
+        assertPdfReferences(hexPdf);
+        if (process.env.INVENTORY_LABEL_ARTIFACTS)
+          await writeFile(
+            `${process.env.INVENTORY_LABEL_ARTIFACTS}/hex-test-${item.gtin ? "retail" : "internal"}-${dpi}-${orientation}.pdf`,
+            await labelPdf(fitted, "roll", 1),
+          );
+      }
+    }
+  }
+  await assert.rejects(
+    buildLabelScene(internalProduct, {
+      ...hexConfig,
+      heightMm: 65,
+      flatFaceWidthMm: 35,
+      dpi: 203,
+      orientation: "ladder",
+    }),
+    /does not fit at a readable barcode size/,
+  );
   const proof = await buildLabelScene(internalProduct, {
     ...config,
     notes: "Proof only: recipe and 500 g size not confirmed.",
@@ -169,7 +243,7 @@ async function main() {
   }
   assert.equal(defaultLabelConfig().gs1Confirmed, false);
   console.log(
-    "Label checks passed: dimensions, protected barcode geometry, exact PDF pages, copies, text overflow, scan matching and draft/export rules.",
+    "Label checks passed: dimensions, hexagonal face fit, protected barcode geometry, exact PDF pages, copies, text overflow, scan matching and draft/export rules.",
   );
 }
 main().catch((e) => {

@@ -63,6 +63,8 @@ Browser checks were also run on the actual React component with a temporary fixt
 
 ## Owned wraparound label studio
 
+Hexagonal jars are supported through saved jar-shape and flat-face measurements. The renderer refuses an unmeasured hexagonal face or a complete barcode that cannot fit the entered flat width, including white space and an extra 2 mm application allowance on each side. Ladder orientation also rotates internal Code 39 labels in this mode. The user centres the symbol on the actual flat face during application; this does not map all folds or certify optical quality. Existing saved layouts without these fields retain their round-jar behaviour. See [the MIEL AISSA hexagonal jar guide](MIEL_AISSA_HEX_JAR.md) for the owner’s 288 mL screenshot reference and measurements still needed.
+
 Open `/dashboard/inventory/labels` or choose **Label studio** on a product. The owner-supplied MIEL AISSA preset includes its name, website, address and “Produit du Québec” wording. Product-specific layouts persist in the workspace database, behind existing inventory permissions. General inventory listings omit artwork; the studio fetches one scoped product/layout at a time. Editing product metadata resets the saved GS1/text review attestations.
 
 The studio generates vector PDFs locally in the browser with pdf-lib; no hosted label service or recurring EDI account is required. Letter/A4 sheets include crop marks; roll output rotates a long wrap along the feed direction and enforces a 104 mm cross-feed limit. Actual driver/media length support still must be confirmed for the chosen printer. Dimensions are in millimetres, print quantity is 1–100, and the output must be printed at 100% / Actual size.

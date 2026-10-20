@@ -407,6 +407,65 @@ export function LabelStudio({
                 × 65 mm is an example. The blank seam strip is white space on
                 the label itself.
               </p>
+              <label className="block text-sm text-slate-700">
+                Jar shape
+                <select
+                  aria-label="Jar shape"
+                  className={input}
+                  value={config.jarShape}
+                  onChange={(e) =>
+                    change(
+                      "jarShape",
+                      e.target.value as LabelConfig["jarShape"],
+                    )
+                  }
+                >
+                  <option value="round">Round jar</option>
+                  <option value="hexagonal">
+                    Hexagonal jar — six flat faces
+                  </option>
+                </select>
+              </label>
+              {config.jarShape === "hexagonal" ? (
+                <div className="space-y-2 rounded-lg bg-blue-50 p-3">
+                  <label className="block text-sm text-slate-700">
+                    Flat-face width mm
+                    <input
+                      className={input}
+                      type="number"
+                      min="0"
+                      max="150"
+                      step="0.1"
+                      placeholder="Measure the flat glass face"
+                      value={config.flatFaceWidthMm || ""}
+                      onChange={(e) =>
+                        change("flatFaceWidthMm", Number(e.target.value))
+                      }
+                    />
+                  </label>
+                  <p className="text-xs leading-5 text-blue-900">
+                    Measure only the flat glass, excluding rounded corners. When
+                    applying the wrap, centre the complete barcode on one flat
+                    face and keep it off corners and seams. The studio checks
+                    the symbol plus 2 mm application allowance on each side.
+                    Paper fitting and a scan on the finished jar are still
+                    required. A 288 mL capacity does not establish honey weight
+                    or label dimensions.
+                  </p>
+                  {scene?.flatFaceFit ? (
+                    <p
+                      className="text-xs font-medium text-blue-900"
+                      role="status"
+                    >
+                      Barcode requires{" "}
+                      {scene.flatFaceFit.requiredWidthMm.toFixed(1)} mm;
+                      measured flat face:{" "}
+                      {scene.flatFaceFit.measuredWidthMm.toFixed(1)} mm. Centre
+                      it on that face during application.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="grid grid-cols-3 gap-2">
                 {(
                   [
@@ -432,6 +491,7 @@ export function LabelStudio({
               <label className="block text-sm text-slate-700">
                 Printer resolution
                 <select
+                  aria-label="Printer resolution"
                   className={input}
                   value={config.dpi}
                   onChange={(e) =>
@@ -446,6 +506,7 @@ export function LabelStudio({
               <label className="block text-sm text-slate-700">
                 Barcode orientation
                 <select
+                  aria-label="Barcode orientation"
                   className={input}
                   value={config.orientation}
                   onChange={(e) =>
@@ -455,7 +516,9 @@ export function LabelStudio({
                     )
                   }
                 >
-                  <option value="ladder">Rotated ladder — round jars</option>
+                  <option value="ladder">
+                    Rotated ladder — narrow or round panels
+                  </option>
                   <option value="fence">
                     Horizontal fence — flatter panels
                   </option>
@@ -672,10 +735,15 @@ export function LabelStudio({
                       <li key={issue}>{issue}</li>
                     ))}
                   </ul>
-                ) : (
+                ) : scene ? (
                   <p className="text-xs text-blue-800">
                     Owner checklist complete. This is not retailer approval or
                     barcode quality certification.
+                  </p>
+                ) : (
+                  <p className="text-xs text-amber-800">
+                    Resolve the label fit before reviewing the packaging
+                    checklist.
                   </p>
                 )}
                 <p className="text-xs leading-5 text-slate-500">
@@ -748,7 +816,8 @@ export function LabelStudio({
                   full-sheet adhesive stock and trim at the crop marks, or use a
                   matching custom roll size. A printer does not apply the label
                   to the jar. Wrap it smoothly, keep the barcode off the seam,
-                  then scan it.
+                  and on hexagonal jars keep it entirely on one flat face, then
+                  scan it.
                 </p>
               </section>
               <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">

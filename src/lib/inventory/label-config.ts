@@ -4,6 +4,8 @@ export type LabelConfig = {
   widthMm: number;
   heightMm: number;
   seamMm: number;
+  jarShape: "round" | "hexagonal";
+  flatFaceWidthMm: number;
   dpi: 203 | 300 | 600;
   orientation: "ladder" | "fence";
   theme: "mono" | "blue";
@@ -43,6 +45,8 @@ export function defaultLabelConfig(brand = ""): LabelConfig {
     widthMm: 180,
     heightMm: 65,
     seamMm: 4,
+    jarShape: "round",
+    flatFaceWidthMm: 0,
     dpi: 300,
     orientation: "ladder",
     theme: "mono",
@@ -74,6 +78,22 @@ export function labelConfigInput(value: unknown): LabelConfig {
     );
   const b = value as Record<string, unknown>;
   const result = defaultLabelConfig();
+  const shape = b.jarShape ?? "round";
+  if (shape !== "round" && shape !== "hexagonal")
+    throw new ServiceError("invalid_input", "Choose a round or hexagonal jar.");
+  result.jarShape = shape;
+  const faceWidth = b.flatFaceWidthMm ?? 0;
+  if (
+    typeof faceWidth !== "number" ||
+    !Number.isFinite(faceWidth) ||
+    faceWidth < 0 ||
+    faceWidth > 150
+  )
+    throw new ServiceError(
+      "invalid_input",
+      "Flat-face width must be between 0 and 150 mm; 0 means not measured.",
+    );
+  result.flatFaceWidthMm = Math.round(faceWidth * 10) / 10;
   for (const [key, min, max] of [
     ["widthMm", 90, 350],
     ["heightMm", 40, 150],

@@ -56,6 +56,43 @@ export default async function InventoryRetailSetupPage() {
           </section>
         ))}
       </div>
+      <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
+        <h2 className="font-bold text-[#0B1B3D]">
+          MIEL AISSA hexagonal jar reference
+        </h2>
+        <p className="text-sm leading-6 text-slate-600">
+          The supplied Alibaba screenshot shows a clear hexagonal jar advertised
+          as 288 mL with a gold-coloured lid. It gives no usable label
+          dimensions. Measure around all six sides at label height, the width of
+          one flat glass face excluding rounded corners, and the straight-sided
+          label height between shoulder and base. Capacity is not the honey’s
+          net weight; weigh the actual fill before entering the retail quantity.
+        </p>
+        <p className="text-sm leading-6 text-slate-600">
+          Choose Hexagonal jar in the label studio and enter the measured flat
+          face. The studio rejects a barcode wider than that face, including its
+          white space and application allowance. Centre it on a flat face when
+          applying; keep all bars and white space off corners and seams. First
+          test a paper wrap at 100% size, then test the printed adhesive label
+          on the finished jar. Do not derive the perimeter from six flat widths:
+          the rounded corners also take space.
+        </p>
+        <p className="text-sm leading-6 text-slate-600">
+          Ask the supplier for a dimensioned drawing, usable flat-face width and
+          label height, whether 288 mL is brimful or working capacity, and a
+          quote for jars plus lids delivered to H1S 1M4. The screenshot’s small
+          displayed price is not a verified delivered quote. Select label stock
+          and any applicator after the jar measurements are confirmed.
+        </p>
+        <a
+          className="inline-block text-sm text-blue-700 underline"
+          href="https://gs1.se/en/guides/how-to-guides/position-the-barcode-correctly/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          GS1 guidance: keep barcodes off corners and seams
+        </a>
+      </section>
       <div className="flex flex-wrap gap-4 text-sm text-blue-700 underline">
         <a
           href="https://gs1ca.org/small-business/"

@@ -53,6 +53,7 @@ export type LabelScene = {
   draft: boolean;
   elements: LabelElement[];
   issues: string[];
+  flatFaceFit?: { requiredWidthMm: number; measuredWidthMm: number };
 };
 let fonts: Promise<{ normal: PDFFont; bold: PDFFont }> | null = null;
 function metrics() {
@@ -111,9 +112,29 @@ export async function buildLabelScene(
   const barHeight = product.gtin ? moduleMm * (22.85 / 0.33) : 20;
   const symbolWidth = code.width * moduleMm;
   const symbolHeight = barHeight + 6;
-  const rotated = !!product.gtin && config.orientation === "ladder";
+  const rotated =
+    config.orientation === "ladder" &&
+    (!!product.gtin || config.jarShape === "hexagonal");
   const occupiedWidth = rotated ? symbolHeight : symbolWidth,
     occupiedHeight = rotated ? symbolWidth : symbolHeight;
+  if (config.jarShape === "hexagonal") {
+    if (!config.flatFaceWidthMm)
+      throw new Error(
+        "Measure the width of one completely flat glass face, excluding the rounded corners, and enter it before printing a hexagonal-jar label. Capacity in mL does not determine this measurement.",
+      );
+    // Include the complete symbol, quiet zones and human-readable text, plus
+    // 2 mm of application tolerance on each side. This is a fit allowance,
+    // not a substitute for GS1 verification on the applied label.
+    const requiredWidthMm = occupiedWidth + 4;
+    if (requiredWidthMm > config.flatFaceWidthMm)
+      throw new Error(
+        `This barcode needs a flat face at least ${requiredWidthMm.toFixed(1)} mm wide, including white space and application allowance; the measured face is ${config.flatFaceWidthMm.toFixed(1)} mm. Try ladder orientation, another resolution, a shorter internal SKU or a wider flat panel. The barcode was not reduced or allowed across a corner.`,
+      );
+    scene.flatFaceFit = {
+      requiredWidthMm,
+      measuredWidthMm: config.flatFaceWidthMm,
+    };
+  }
   const barcodePanelWidth = Math.max(40, occupiedWidth + 4);
   const edge = 4,
     top = draft ? 8 : 5,

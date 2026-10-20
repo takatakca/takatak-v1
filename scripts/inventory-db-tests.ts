@@ -59,6 +59,8 @@ async function main() {
     assert.equal(product.quantity, 0);
     const layout = {
       ...mielAissaLabelConfig(),
+      jarShape: "hexagonal" as const,
+      flatFaceWidthMm: 36,
       gs1Confirmed: true,
       textReviewed: true,
     };
@@ -74,6 +76,14 @@ async function main() {
         }
       ).brand,
       "MIEL AISSA",
+    );
+    assert.equal(
+      (
+        (await getInventoryLabel(a, product.id)).labelConfig as {
+          flatFaceWidthMm: number;
+        }
+      ).flatFaceWidthMm,
+      36,
     );
     await assert.rejects(getInventoryLabel(b, product.id), /not found/);
     assert.equal(
