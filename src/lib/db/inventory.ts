@@ -2,6 +2,7 @@ import "server-only";
 import { getPrisma } from "@/lib/db/prisma";
 import { isPrismaKnownRequestError } from "@/lib/db/prisma-errors";
 import { ServiceError } from "@/lib/services/service-error";
+import { invalidateQuebecReview } from "@/lib/inventory/quebec-requirements";
 import {
   MAX_QUANTITY,
   type ProductInput,
@@ -88,6 +89,9 @@ export async function saveInventoryProduct(
                     ...layout,
                     gs1Confirmed: false,
                     textReviewed: false,
+                    ...(layout.quebec
+                      ? { quebec: invalidateQuebecReview(layout.quebec) }
+                      : {}),
                   },
                 }
               : {}),

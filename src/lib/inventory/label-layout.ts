@@ -8,6 +8,14 @@ import {
   type LabelProduct,
 } from "@/lib/inventory/label-config";
 export const POINTS_PER_MM = 72 / 25.4;
+/** RSAC schedule 6. The packaging reviewer determines the applicable PSE. */
+export function minimumDeclarationHeightMm(areaCm2: number): number {
+  if (areaCm2 <= 32) return 1.6;
+  if (areaCm2 <= 258) return 3.2;
+  if (areaCm2 <= 645) return 6.4;
+  if (areaCm2 <= 2580) return 9.5;
+  return 12.7;
+}
 export type LabelElement =
   | {
       kind: "image";
@@ -54,6 +62,7 @@ export type LabelScene = {
   elements: LabelElement[];
   issues: string[];
   flatFaceFit?: { requiredWidthMm: number; measuredWidthMm: number };
+  minimumDeclarationHeightMm: number;
 };
 let fonts: Promise<{ normal: PDFFont; bold: PDFFont }> | null = null;
 function metrics() {
@@ -101,9 +110,26 @@ export async function buildLabelScene(
     draft,
     issues,
     elements: [],
+    minimumDeclarationHeightMm: minimumDeclarationHeightMm(
+      config.principalDisplayAreaCm2,
+    ),
   };
   const black = "#111111",
-    blue = config.theme === "blue" ? "#1565D8" : black;
+    accent =
+      config.theme === "blue"
+        ? "#1565D8"
+        : config.theme === "honey"
+          ? "#95661B"
+          : black;
+  if (config.theme === "honey")
+    scene.elements.push({
+      kind: "rect",
+      x: 0,
+      y: 0,
+      width: scene.width,
+      height: scene.height,
+      colour: "#FFFCF4",
+    });
   if (product.gtin) normalizeGtin(product.gtin);
   const code = product.gtin ? ean13(product.gtin) : code39(product.sku);
   const moduleMm =
@@ -142,6 +168,14 @@ export async function buildLabelScene(
   const nutritionImage =
     config.nutritionStatus === "provided" ? config.nutritionImage : "";
   const nutritionWidth = nutritionImage ? config.nutritionWidthMm : 0;
+  if (
+    nutritionImage &&
+    config.jarShape === "hexagonal" &&
+    nutritionWidth + 4 > config.flatFaceWidthMm
+  )
+    throw new Error(
+      "Le tableau de la valeur nutritive approuvé doit tenir sur une surface continue. Sa largeur, avec 2 mm de marge d’application de chaque côté, dépasse la face plane mesurée. Revoir le panneau approuvé ou l’emballage; ne pas le plier sur un coin ni réduire ses caractères pour le faire tenir.",
+    );
   const infoX = edge + (nutritionWidth ? nutritionWidth + 4 : 0);
   const available =
     config.widthMm -
@@ -159,6 +193,19 @@ export async function buildLabelScene(
   const contentRight = config.widthMm - config.seamMm - edge;
   const barcodePanelX = contentRight - barcodePanelWidth;
   const frontX = infoX + infoWidth + 5;
+  // Helvetica regular/bold have an x-height above half the em. Using half
+  // the em here conservatively sizes both letters and digits; the applied
+  // print still needs actual-size measurement and the reviewed PSE.
+  const declarationSize = Math.max(3.2, scene.minimumDeclarationHeightMm / 0.5);
+  if (config.theme === "honey")
+    scene.elements.push({
+      kind: "rect",
+      x: barcodePanelX - 1,
+      y: top,
+      width: barcodePanelWidth + 2,
+      height: bottom - top,
+      colour: "#FFFFFF",
+    });
   function addText(
     text: string,
     x: number,
@@ -207,7 +254,7 @@ export async function buildLabelScene(
       kind: "text",
       x: edge,
       y: 3.7,
-      text: "DRAFT / EPREUVE - Complete GS1 and packaging review",
+      text: "ÉPREUVE / DRAFT - Informations et vérifications à compléter",
       size: 2.2,
       bold: true,
       colour: black,
@@ -219,6 +266,14 @@ export async function buildLabelScene(
         "Nutrition artwork does not fit. Increase label height; the panel was not reduced to unreadable text.",
       );
     scene.elements.push({
+      kind: "rect",
+      x: edge,
+      y: top,
+      width: nutritionWidth,
+      height: imageHeight,
+      colour: "#FFFFFF",
+    });
+    scene.elements.push({
       kind: "image",
       x: edge,
       y: top,
@@ -228,10 +283,19 @@ export async function buildLabelScene(
     });
   }
   let iy = top;
-  iy = addText("Ingredients / Ingrédients", infoX, iy, infoWidth, 2.8, true);
-  iy = addText(product.ingredients, infoX, iy + 1, infoWidth);
+  iy = addText("Ingrédients / Ingredients", infoX, iy, infoWidth, 3.1, true);
   if (config.ingredientsFr)
-    iy = addText(config.ingredientsFr, infoX, iy + 0.5, infoWidth);
+    iy = addText(config.ingredientsFr, infoX, iy + 1, infoWidth);
+  if (
+    product.ingredients.toLocaleLowerCase() !==
+    config.ingredientsFr.toLocaleLowerCase()
+  )
+    iy = addText(
+      product.ingredients,
+      infoX,
+      iy + (config.ingredientsFr ? 0.5 : 1),
+      infoWidth,
+    );
   if (config.storage)
     iy = addText(config.storage, infoX, iy + 2, infoWidth, 2.8);
   iy = addText(
@@ -239,9 +303,9 @@ export async function buildLabelScene(
     infoX,
     iy + 3,
     infoWidth,
-    2.8,
+    3.1,
   );
-  if (config.origin) iy = addText(config.origin, infoX, iy + 1, infoWidth, 2.8);
+  if (config.origin) iy = addText(config.origin, infoX, iy + 1, infoWidth, 3.1);
   if (config.notes) addText(config.notes, infoX, iy + 1, infoWidth, 2.8);
   let fy = top + 1;
   fy = addText(
@@ -251,11 +315,22 @@ export async function buildLabelScene(
     frontWidth,
     4.2,
     true,
-    blue,
+    accent,
     true,
   );
+  if (config.theme === "honey") {
+    const ruleWidth = Math.min(26, frontWidth * 0.65);
+    scene.elements.push({
+      kind: "rect",
+      x: frontX + (frontWidth - ruleWidth) / 2,
+      y: fy + 1.5,
+      width: ruleWidth,
+      height: 0.25,
+      colour: accent,
+    });
+  }
   fy = addText(
-    product.name,
+    config.nameFr || product.name,
     frontX,
     fy + 3,
     frontWidth,
@@ -264,14 +339,17 @@ export async function buildLabelScene(
     black,
     true,
   );
-  if (config.nameFr)
+  if (
+    config.nameFr &&
+    config.nameFr.toLocaleLowerCase() !== product.name.toLocaleLowerCase()
+  )
     fy = addText(
-      config.nameFr,
+      product.name,
       frontX,
       fy + 1,
       frontWidth,
-      4.1,
-      true,
+      3.6,
+      false,
       black,
       true,
     );
@@ -281,7 +359,7 @@ export async function buildLabelScene(
       frontX,
       fy + 2,
       frontWidth,
-      2.8,
+      declarationSize,
       false,
       black,
       true,
@@ -292,12 +370,21 @@ export async function buildLabelScene(
       frontX,
       fy + 0.5,
       frontWidth,
-      2.8,
+      declarationSize,
       false,
       black,
       true,
     );
-  addText(product.size, frontX, fy + 3, frontWidth, 5.3, true, black, true);
+  addText(
+    product.size,
+    frontX,
+    fy + 3,
+    frontWidth,
+    Math.max(5.3, declarationSize),
+    true,
+    black,
+    true,
+  );
   const symbolY = top + 1;
   const symbolX = barcodePanelX + (barcodePanelWidth - occupiedWidth) / 2;
   scene.elements.push({

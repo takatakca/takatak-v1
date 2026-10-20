@@ -2,6 +2,8 @@
 
 Packaging reference supplied by the owner on October 20, 2026: an Alibaba screenshot of a clear hexagonal glass jar, gold-coloured lid, advertised capacity **288 mL**. The screenshot does not identify the exact listing or provide measured dimensions. No purchase or supplier contact has been made.
 
+For Québec sale requirements, use [the French preparation dossier](MIEL_AISSA_REQUIS_QUEBEC.md). An approved Nutrition Facts panel also needs a suitable continuous surface; the studio checks its full physical width against a flat face, with an application allowance. This does not replace reviewing all panel positions on the actual wrap.
+
 ## Measurements to obtain
 
 | Measurement | How to obtain it | Used for |

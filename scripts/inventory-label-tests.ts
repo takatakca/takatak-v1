@@ -11,11 +11,20 @@ import {
   type LabelProduct,
 } from "../src/lib/inventory/label-config";
 import {
+  minimumDeclarationHeightMm,
   buildLabelScene,
   planLabelPages,
   POINTS_PER_MM,
 } from "../src/lib/inventory/label-layout";
 import { labelPdf } from "../src/lib/inventory/label-pdf";
+import {
+  defaultQuebecReview,
+  hasMetricHoneyMass,
+  invalidateQuebecReview,
+  quebecRequirements,
+  quebecReviewInput,
+  quebecReviewIssues,
+} from "../src/lib/inventory/quebec-requirements";
 function assertPdfReferences(pdf: PDFDocument) {
   const checked = new Set<string>();
   function walk(value: unknown) {
@@ -69,14 +78,99 @@ async function main() {
     { flatFaceWidthMm: "40" },
   ])
     assert.throws(() => labelConfigInput({ ...config, ...invalid }));
+  for (const [area, height] of [
+    [32, 1.6],
+    [32.1, 3.2],
+    [258, 3.2],
+    [258.1, 6.4],
+    [645, 6.4],
+    [645.1, 9.5],
+    [2580, 9.5],
+    [2580.1, 12.7],
+  ])
+    assert.equal(minimumDeclarationHeightMm(area), height);
+  for (const area of [-1, NaN, Infinity, 10001])
+    assert.throws(() =>
+      labelConfigInput({ ...config, principalDisplayAreaCm2: area }),
+    );
   const finalConfig = {
     ...config,
+    quebec: structuredClone(config.quebec),
+    principalDisplayAreaCm2: 22,
     gs1Confirmed: true,
     textReviewed: true,
     nutritionStatus: "exempt" as const,
     nutritionExemption: "Synthetic test only - not an actual exemption",
   };
+  for (const row of Object.values(finalConfig.quebec.items)) {
+    row.status = "recorded";
+    row.reference = "Synthetic QA evidence only; no real business approval.";
+  }
   assert.equal(labelReadiness(product, finalConfig).length, 0);
+  assert.equal(
+    quebecReviewIssues(defaultQuebecReview(true)).length,
+    quebecRequirements.length,
+  );
+  assert.equal(quebecReviewIssues(defaultQuebecReview(false)).length, 0);
+  const noReferences = defaultQuebecReview(true);
+  for (const row of Object.values(noReferences.items)) row.status = "recorded";
+  assert.equal(
+    quebecReviewIssues(noReferences).length,
+    quebecRequirements.length,
+  );
+  for (const mass of ["500 g", "375g", "1,5 kg", "0.5 kg"])
+    assert.equal(hasMetricHoneyMass(mass), true);
+  for (const mass of ["288 mL", "500", "-1 kg", "0 g", "1e3 g", "500 g extra"])
+    assert.equal(hasMetricHoneyMass(mass), false);
+  assert.ok(
+    labelReadiness({ ...product, size: "288 mL" }, finalConfig).some((s) =>
+      s.includes("poids net confirmé"),
+    ),
+  );
+  assert.ok(
+    labelReadiness(product, { ...finalConfig, lot: "" }).some((s) =>
+      s.includes("lot de conditionnement"),
+    ),
+  );
+  const exemptPermit = structuredClone(finalConfig.quebec);
+  exemptPermit.items.permits.status = "not_applicable";
+  assert.equal(quebecReviewIssues(quebecReviewInput(exemptPermit)).length, 0);
+  exemptPermit.items.permits.reference = "";
+  assert.equal(quebecReviewIssues(quebecReviewInput(exemptPermit)).length, 1);
+  for (const invalid of [
+    null,
+    { enabled: "true", items: {} },
+    { enabled: true, items: [] },
+    {
+      enabled: true,
+      items: { label: { status: "not_applicable", reference: "not allowed" } },
+    },
+    {
+      enabled: true,
+      items: {
+        permits: { status: "approved", reference: "not a valid status" },
+      },
+    },
+    {
+      enabled: true,
+      items: { permits: { status: "pending", reference: "x".repeat(601) } },
+    },
+  ])
+    assert.throws(() => quebecReviewInput(invalid));
+  const reset = invalidateQuebecReview(finalConfig.quebec);
+  assert.equal(reset.items.quantity.status, "pending");
+  assert.equal(
+    reset.items.quantity.reference,
+    finalConfig.quebec.items.quantity.reference,
+  );
+  const oldQuebecConfig = { ...finalConfig } as Record<string, unknown>;
+  delete oldQuebecConfig.quebec;
+  assert.equal(readLabelConfig(oldQuebecConfig).quebec.enabled, true);
+  assert.equal(
+    quebecReviewIssues(readLabelConfig(oldQuebecConfig).quebec).length,
+    quebecRequirements.length,
+  );
+  assert.equal(defaultLabelConfig("Another business").quebec.enabled, false);
   const legacyConfig: Record<string, unknown> = { ...config };
   delete legacyConfig.jarShape;
   delete legacyConfig.flatFaceWidthMm;
@@ -131,6 +225,24 @@ async function main() {
     nutritionRatio: 1,
   };
   const imageScene = await buildLabelScene(product, imageConfig);
+  await assert.rejects(
+    buildLabelScene(product, {
+      ...imageConfig,
+      jarShape: "hexagonal",
+      flatFaceWidthMm: 40,
+    }),
+    /surface continue/,
+  );
+  const hexNutrition = await buildLabelScene(product, {
+    ...imageConfig,
+    jarShape: "hexagonal",
+    flatFaceWidthMm: 44,
+  });
+  assert.ok(
+    hexNutrition.elements.some(
+      (e) => e.kind === "image" && e.width === imageConfig.nutritionWidthMm,
+    ),
+  );
   assert.ok(
     imageScene.elements.some(
       (e) => e.kind === "image" && e.width === imageConfig.nutritionWidthMm,
@@ -243,7 +355,7 @@ async function main() {
   }
   assert.equal(defaultLabelConfig().gs1Confirmed, false);
   console.log(
-    "Label checks passed: dimensions, hexagonal face fit, protected barcode geometry, exact PDF pages, copies, text overflow, scan matching and draft/export rules.",
+    "Label checks passed: Québec evidence/draft controls, mass/lot requirements, nutrition face fit, dimensions, protected barcode geometry, PDF pages, text overflow and scan matching.",
   );
 }
 main().catch((e) => {

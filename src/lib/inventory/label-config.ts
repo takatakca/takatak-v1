@@ -1,4 +1,11 @@
 import { ServiceError } from "@/lib/services/service-error";
+import {
+  defaultQuebecReview,
+  hasMetricHoneyMass,
+  quebecReviewInput,
+  quebecReviewIssues,
+  type QuebecReview,
+} from "@/lib/inventory/quebec-requirements";
 export type LabelConfig = {
   version: 1;
   widthMm: number;
@@ -6,9 +13,10 @@ export type LabelConfig = {
   seamMm: number;
   jarShape: "round" | "hexagonal";
   flatFaceWidthMm: number;
+  principalDisplayAreaCm2: number;
   dpi: 203 | 300 | 600;
   orientation: "ladder" | "fence";
-  theme: "mono" | "blue";
+  theme: "mono" | "blue" | "honey";
   brand: string;
   nameFr: string;
   ingredientsFr: string;
@@ -27,6 +35,7 @@ export type LabelConfig = {
   nutritionExemption: string;
   gs1Confirmed: boolean;
   textReviewed: boolean;
+  quebec: QuebecReview;
 };
 export type LabelProduct = {
   id: string;
@@ -47,6 +56,7 @@ export function defaultLabelConfig(brand = ""): LabelConfig {
     seamMm: 4,
     jarShape: "round",
     flatFaceWidthMm: 0,
+    principalDisplayAreaCm2: 0,
     dpi: 300,
     orientation: "ladder",
     theme: "mono",
@@ -68,6 +78,7 @@ export function defaultLabelConfig(brand = ""): LabelConfig {
     nutritionExemption: "",
     gs1Confirmed: false,
     textReviewed: false,
+    quebec: defaultQuebecReview(/miel\s*aissa/i.test(brand)),
   };
 }
 export function labelConfigInput(value: unknown): LabelConfig {
@@ -94,6 +105,18 @@ export function labelConfigInput(value: unknown): LabelConfig {
       "Flat-face width must be between 0 and 150 mm; 0 means not measured.",
     );
   result.flatFaceWidthMm = Math.round(faceWidth * 10) / 10;
+  const displayArea = b.principalDisplayAreaCm2 ?? 0;
+  if (
+    typeof displayArea !== "number" ||
+    !Number.isFinite(displayArea) ||
+    displayArea < 0 ||
+    displayArea > 10000
+  )
+    throw new ServiceError(
+      "invalid_input",
+      "La principale surface exposée doit être comprise entre 0 et 10 000 cm²; 0 signifie non vérifiée.",
+    );
+  result.principalDisplayAreaCm2 = displayArea;
   for (const [key, min, max] of [
     ["widthMm", 90, 350],
     ["heightMm", 40, 150],
@@ -115,7 +138,7 @@ export function labelConfigInput(value: unknown): LabelConfig {
       "invalid_input",
       "Choose ladder or fence barcode orientation.",
     );
-  if (b.theme !== "mono" && b.theme !== "blue")
+  if (b.theme !== "mono" && b.theme !== "blue" && b.theme !== "honey")
     throw new ServiceError("invalid_input", "Choose a label colour style.");
   result.orientation = b.orientation;
   result.theme = b.theme;
@@ -203,6 +226,10 @@ export function labelConfigInput(value: unknown): LabelConfig {
   result.nutritionExemption = String(b.nutritionExemption ?? "").trim();
   result.gs1Confirmed = b.gs1Confirmed === true;
   result.textReviewed = b.textReviewed === true;
+  result.quebec = quebecReviewInput(
+    b.quebec,
+    /miel\s*aissa/i.test(result.brand),
+  );
   return result;
 }
 export function readLabelConfig(value: unknown, brand = ""): LabelConfig {
@@ -252,6 +279,25 @@ export function labelReadiness(
     result.push(
       "Review the required food-label information before producing final packaging.",
     );
+  result.push(...quebecReviewIssues(config.quebec));
+  if (config.quebec.enabled) {
+    if (!config.principalDisplayAreaCm2)
+      result.push(
+        "Confirmer la principale surface exposée (PSE) pour dimensionner les déclarations réglementaires.",
+      );
+    if (!config.ingredientsFr)
+      result.push(
+        "Renseigner la composition française imprimée sur cette maquette.",
+      );
+    if (!hasMetricHoneyMass(product.size))
+      result.push(
+        "Miel au Québec : saisir le poids net confirmé en g ou kg; la capacité du pot en mL ne le remplace pas.",
+      );
+    if (!config.lot)
+      result.push(
+        "Ajouter le lot de conditionnement pour la distribution prévue et son registre de traçabilité.",
+      );
+  }
   return result;
 }
 
@@ -259,6 +305,7 @@ export function labelReadiness(
 export function mielAissaLabelConfig(): LabelConfig {
   return {
     ...defaultLabelConfig("MIEL AISSA"),
+    theme: "honey",
     nameFr: "Miel",
     business: "MIEL AISSA\n5837 Rue Jean-Talon E\nH1S 1M4\nMIELAISSA.CA",
     origin: "Produit du Québec",

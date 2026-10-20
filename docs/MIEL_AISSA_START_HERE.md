@@ -2,6 +2,8 @@
 
 The software is yours: TAKATAK Inventory inside TakaTak Dash V1. It manages the products, quantities, barcode artwork and wraparound labels. No Orderful subscription is needed to generate and scan product barcodes.
 
+**Pour vendre au Québec :** lire d’abord le [dossier français des exigences et pièces à réunir](MIEL_AISSA_REQUIS_QUEBEC.md). Les permis dépendent des activités réelles; le miel est exempté du symbole nutritionnel frontal, mais pas automatiquement du tableau de la valeur nutritive. Le studio comprend un suivi des pièces par produit; les points non documentés maintiennent l’épreuve DRAFT.
+
 ## What I prepared
 
 - A saved, editable label studio with the business details you supplied:

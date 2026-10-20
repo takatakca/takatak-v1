@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Download, Printer, Save, ScanLine } from "lucide-react";
 import { LabelPreview } from "@/components/inventory/label-preview";
+import { QuebecReviewEditor } from "@/components/inventory/quebec-review";
 import {
   barcodeMatchesScan,
   defaultLabelConfig,
@@ -368,6 +369,9 @@ export function LabelStudio({
         <Link href="/dashboard/inventory/labels/setup" className={button}>
           Retail setup & equipment
         </Link>
+        <Link href="/dashboard/inventory/quebec" className={button}>
+          Exigences de vente au Québec
+        </Link>
       </div>
       {error ? (
         <p role="alert" className="rounded-lg bg-amber-50 p-4 text-amber-900">
@@ -489,6 +493,27 @@ export function LabelStudio({
                 ))}
               </div>
               <label className="block text-sm text-slate-700">
+                PSE vérifiée (cm²)
+                <input
+                  aria-label="PSE vérifiée (cm²)"
+                  className={input}
+                  type="number"
+                  min="0"
+                  max="10000"
+                  step="0.1"
+                  value={config.principalDisplayAreaCm2 || ""}
+                  onChange={(e) =>
+                    change("principalDisplayAreaCm2", Number(e.target.value))
+                  }
+                />
+                <span className="text-xs">
+                  Surface principale d’exposition déterminée selon les règles du
+                  contenant; elle ne correspond pas automatiquement à toute la
+                  surface de l’étiquette. Une valeur inconnue conserve le statut
+                  d’épreuve.
+                </span>
+              </label>
+              <label className="block text-sm text-slate-700">
                 Printer resolution
                 <select
                   aria-label="Printer resolution"
@@ -535,6 +560,9 @@ export function LabelStudio({
                 >
                   <option value="mono">Black and white — lowest cost</option>
                   <option value="blue">Blue accent — colour printer</option>
+                  <option value="honey">
+                    Signature miel — ivoire, noir et or
+                  </option>
                 </select>
               </label>
               <h2 className="pt-2 font-bold text-slate-900">
@@ -547,9 +575,11 @@ export function LabelStudio({
                   setConfig((c) => ({
                     ...c,
                     brand: mielAissaLabelConfig().brand,
+                    theme: mielAissaLabelConfig().theme,
                     nameFr: mielAissaLabelConfig().nameFr,
                     business: mielAissaLabelConfig().business,
                     origin: mielAissaLabelConfig().origin,
+                    quebec: mielAissaLabelConfig().quebec,
                     textReviewed: false,
                   }))
                 }
@@ -753,6 +783,10 @@ export function LabelStudio({
                   panel with free text.
                 </p>
               </section>
+              <QuebecReviewEditor
+                value={config.quebec}
+                onChange={(next) => change("quebec", next)}
+              />
               <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
                 <h2 className="font-bold">5. Print your labels</h2>
                 <div className="grid gap-3 sm:grid-cols-2">

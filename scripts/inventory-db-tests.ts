@@ -11,6 +11,7 @@ import {
 } from "../src/lib/db/inventory";
 import { mielAissaLabelConfig } from "../src/lib/inventory/label-config";
 import { productInput } from "../src/lib/inventory/validation";
+import type { QuebecReview } from "../src/lib/inventory/quebec-requirements";
 async function main() {
   const url = new URL(process.env.DATABASE_URL ?? "http://missing");
   assert.ok(
@@ -64,6 +65,10 @@ async function main() {
       gs1Confirmed: true,
       textReviewed: true,
     };
+    layout.quebec.items.quantity = {
+      status: "recorded",
+      reference: "Synthetic QA weight-control fixture, not an actual record.",
+    };
     await assert.rejects(
       saveInventoryLabel(b, actor, product.id, layout),
       /not found/,
@@ -84,6 +89,14 @@ async function main() {
         }
       ).flatFaceWidthMm,
       36,
+    );
+    assert.equal(
+      (
+        (await getInventoryLabel(a, product.id)).labelConfig as {
+          quebec: QuebecReview;
+        }
+      ).quebec.items.quantity.status,
+      "recorded",
     );
     await assert.rejects(getInventoryLabel(b, product.id), /not found/);
     assert.equal(
@@ -201,9 +214,18 @@ async function main() {
       /not found/,
     );
     const editedLabel = (await getInventoryLabel(a, product.id))
-      .labelConfig as { gs1Confirmed: boolean; textReviewed: boolean };
+      .labelConfig as {
+      gs1Confirmed: boolean;
+      textReviewed: boolean;
+      quebec: QuebecReview;
+    };
     assert.equal(editedLabel.gs1Confirmed, false);
     assert.equal(editedLabel.textReviewed, false);
+    assert.equal(editedLabel.quebec.items.quantity.status, "pending");
+    assert.equal(
+      editedLabel.quebec.items.quantity.reference,
+      layout.quebec.items.quantity.reference,
+    );
     // DB constraints and composite FK protect direct writes, not just route validation.
     await assert.rejects(
       db.inventoryProduct.update({

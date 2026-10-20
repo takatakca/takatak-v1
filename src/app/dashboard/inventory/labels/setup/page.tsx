@@ -45,6 +45,24 @@ export default async function InventoryRetailSetupPage() {
       >
         Back to label studio
       </Link>
+      <section className="space-y-2 rounded-xl border border-blue-200 bg-blue-50 p-5">
+        <h2 className="font-bold text-[#0B1B3D]">
+          Vendre au Québec : dossier des exigences
+        </h2>
+        <p className="text-sm leading-6 text-slate-700">
+          Permis selon les activités, salubrité, étiquette en français, poids
+          net, nutrition et traçabilité doivent être examinés avec les pièces de
+          l’entreprise. Le code-barres et l’admission en magasin ont leur propre
+          processus. Le studio permet de référencer ces vérifications par
+          produit.
+        </p>
+        <Link
+          href="/dashboard/inventory/quebec"
+          className="inline-block text-sm text-blue-700 underline"
+        >
+          Ouvrir le dossier Québec et ses sources officielles
+        </Link>
+      </section>
       <div className="grid gap-4 lg:grid-cols-2">
         {steps.map(([title, text]) => (
           <section
