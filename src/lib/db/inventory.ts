@@ -33,6 +33,7 @@ export async function inventoryDirectory(clientId: string) {
           "This workspace exceeds the 5,000-product pilot limit. Contact support before adding more products.",
         );
       const products = await tx.inventoryProduct.findMany({
+        omit: { labelConfig: true },
         where: { clientId },
         orderBy: { createdAt: "asc" },
         take: 5000,
@@ -72,9 +73,25 @@ export async function saveInventoryProduct(
         );
       let product;
       if (id) {
+        const previous = await tx.inventoryProduct.findFirst({
+          where: { id, clientId, businessBrandId: input.businessBrandId },
+          select: { labelConfig: true },
+        });
+        const layout = previous?.labelConfig;
         const changed = await tx.inventoryProduct.updateMany({
           where: { id, clientId, businessBrandId: input.businessBrandId },
-          data: input,
+          data: {
+            ...input,
+            ...(layout && typeof layout === "object" && !Array.isArray(layout)
+              ? {
+                  labelConfig: {
+                    ...layout,
+                    gs1Confirmed: false,
+                    textReviewed: false,
+                  },
+                }
+              : {}),
+          },
         });
         if (!changed.count)
           throw new ServiceError(
@@ -179,4 +196,46 @@ export async function adjustInventoryStock(
       );
     throw e;
   }
+}
+
+export async function saveInventoryLabel(
+  clientId: string,
+  actorProfileId: string,
+  productId: string,
+  config: import("@/lib/inventory/label-config").LabelConfig,
+) {
+  return database().$transaction(async (tx) => {
+    const changed = await tx.inventoryProduct.updateMany({
+      where: {
+        id: productId,
+        clientId,
+        businessBrand: { status: { not: "archived" } },
+      },
+      data: { labelConfig: { ...config } },
+    });
+    if (!changed.count)
+      throw new ServiceError(
+        "not_found",
+        "Product not found in this workspace.",
+      );
+    await tx.auditLog.create({
+      data: {
+        clientId,
+        profileId: actorProfileId,
+        action: "inventory_label_saved",
+        entityType: "InventoryProduct",
+        entityId: productId,
+      },
+    });
+    return { ok: true };
+  });
+}
+
+export async function getInventoryLabel(clientId: string, productId: string) {
+  const product = await database().inventoryProduct.findFirst({
+    where: { id: productId, clientId },
+  });
+  if (!product)
+    throw new ServiceError("not_found", "Product not found in this workspace.");
+  return product;
 }

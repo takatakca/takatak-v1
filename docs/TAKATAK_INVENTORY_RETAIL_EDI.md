@@ -1,5 +1,7 @@
 # Retail EDI for TAKATAK Inventory — Orderful assessment
 
+Reference only: the owner subsequently clarified the priority is an owned TakaTak product, barcode and wraparound-label solution. No Orderful service is selected or required for the implemented workflow.
+
 Reviewed 2026-10-20 from the Orderful link supplied by the owner. This document records research and proposed product work. It does not implement EDI transport, establish a supplier relationship, certify retailer compliance or select a paid provider.
 
 ## Fit with the honey business

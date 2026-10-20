@@ -16,7 +16,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import { code39, csvCell, ean13 } from "@/lib/inventory/barcodes";
+import { csvCell } from "@/lib/inventory/barcodes";
 
 type Product = {
   id: string;
@@ -69,50 +69,6 @@ async function request(path: string, method = "GET", body?: unknown) {
   const data = await response.json();
   if (!response.ok) throw new Error(data.message || "The request failed.");
   return data;
-}
-function printLabel(product: Product) {
-  const popup = window.open("", "_blank", "width=700,height=550");
-  if (!popup) return false;
-  const doc = popup.document;
-  doc.title = `${product.sku} label`;
-  const style = doc.createElement("style");
-  style.textContent =
-    "body{font:14px Arial;color:#000;background:#fff}article{margin:20px auto;width:100mm;text-align:center;padding:5mm;box-sizing:border-box}svg{display:block;margin:auto;max-width:100%;height:auto}p{font-size:11px} @media print{button{display:none}article{margin:0}}";
-  doc.head.append(style);
-  const button = doc.createElement("button");
-  button.textContent = "Print label";
-  button.onclick = () => popup.print();
-  doc.body.append(button);
-  const article = doc.createElement("article");
-  doc.body.append(article);
-  const title = doc.createElement("h3");
-  title.textContent = `${product.name} · ${product.size}`;
-  article.append(title);
-  const code = product.gtin ? ean13(product.gtin) : code39(product.sku);
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = doc.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", `0 0 ${code.width} 80`);
-  // EAN at nominal 0.33mm per module. Code39 at 0.25mm narrow element.
-  svg.setAttribute("width", `${code.width * (product.gtin ? 0.33 : 0.25)}mm`);
-  for (const bar of code.bars) {
-    const rect = doc.createElementNS(ns, "rect");
-    rect.setAttribute("x", String(bar.x));
-    rect.setAttribute("y", "0");
-    rect.setAttribute("width", String(bar.width));
-    rect.setAttribute("height", "70");
-    svg.append(rect);
-  }
-  article.style.width = `${Math.max(100, code.width * (product.gtin ? 0.33 : 0.25) + 10)}mm`;
-  article.append(svg);
-  const text = doc.createElement("div");
-  text.textContent = code.text;
-  article.append(text);
-  const note = doc.createElement("p");
-  note.textContent = product.gtin
-    ? "UPC / EAN · GS1 ownership and retailer approval must be verified"
-    : "Code 39 · Internal inventory label";
-  article.append(note);
-  return true;
 }
 export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
   const [data, setData] = useState<Directory | null>(null),
@@ -323,6 +279,9 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
         >
           <Download size={15} /> Export CSV
         </button>
+        <Link className={button} href="/dashboard/inventory/labels">
+          <Barcode size={16} /> Wraparound labels
+        </Link>
       </div>
       {error ? (
         <div
@@ -509,17 +468,12 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                             >
                               ± Stock
                             </button>
-                            <button
+                            <Link
                               className={button}
-                              onClick={() => {
-                                if (!printLabel(p))
-                                  setMessage(
-                                    "Allow pop-ups to print barcode labels.",
-                                  );
-                              }}
+                              href={`/dashboard/inventory/labels?product=${p.id}`}
                             >
-                              <Barcode size={16} /> Label
-                            </button>
+                              <Barcode size={16} /> Label studio
+                            </Link>
                           </div>
                         </td>
                       </tr>

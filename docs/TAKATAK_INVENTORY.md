@@ -61,9 +61,23 @@ npm run build
 
 Browser checks were also run on the actual React component with a temporary fixture transport: product creation/editing, stock adjustment, scanner search, label popup, CSV download, activity, mobile layout and read-only controls. This is component verification, not a live Supabase sign-in E2E or a physical scanner test. CI now runs both inventory scripts alongside the existing access and database suites.
 
+## Owned wraparound label studio
+
+Open `/dashboard/inventory/labels` or choose **Label studio** on a product. The owner-supplied MIEL AISSA preset includes its name, website, address and “Produit du Québec” wording. Product-specific layouts persist in the workspace database, behind existing inventory permissions. General inventory listings omit artwork; the studio fetches one scoped product/layout at a time. Editing product metadata resets the saved GS1/text review attestations.
+
+The studio generates vector PDFs locally in the browser with pdf-lib; no hosted label service or recurring EDI account is required. Letter/A4 sheets include crop marks; roll output rotates a long wrap along the feed direction and enforces a 104 mm cross-feed limit. Actual driver/media length support still must be confirmed for the chosen printer. Dimensions are in millimetres, print quantity is 1–100, and the output must be printed at 100% / Actual size.
+
+Barcode modules align to whole dots for the selected 203/300/600 DPI profile. Retail EAN/UPC artwork retains quiet zones and proportional bar height, and offers ladder orientation for round jars. Text overflow and undersized layouts block export rather than clipping text or compressing bars. An exact-match scanner test recognizes equivalent UPC-A/EAN-13 input and internal SKUs.
+
+A draft banner remains until the owner checklist is complete. The app checks a GTIN check digit, not GS1 ownership, food-label compliance, retailer acceptance or physical barcode quality. It can embed an approved PNG/JPEG Nutrition Facts panel at an explicit physical width or record a reviewed exemption; it does not calculate nutrition facts or determine exemptions. Optional grade/colour/origin wording is supplied and reviewed by the business. No retailer GTIN was assigned to MIEL AISSA from this session.
+
+Additional migration: `20261020154310_inventory_label_layout` adds the product JSON layout field; existing inventory RLS/grants apply to it. It was applied only to the disposable local database. Tests cover persisted tenant-scoped layouts, metadata review invalidation, PDF dimensions/rotation/copies, overflow, and scan matching. Generated barcode test PDFs were rasterized and decoded in software at 203/300/600 DPI profiles in both orientations; physical jar/scanner testing remains outstanding.
+
+See [MIEL AISSA’s practical start guide](MIEL_AISSA_START_HERE.md) for registration, measured-label setup, equipment prices and retailer starting points. `npm run qa:inventory-labels` runs PDF/geometry tests; optional `INVENTORY_LABEL_ARTIFACTS` writes local fixtures. Test GTINs in generated QA files are never assigned to the business. The shared public proof uses an internal SKU and clearly marks its example size as draft.
+
 ## Retail EDI reference
 
-The owner-provided Orderful reference is assessed in [Retail EDI for TAKATAK Inventory](TAKATAK_INVENTORY_RETAIL_EDI.md). It maps purchase orders, shipments, invoices, packaging and traceability gaps for future work. No provider has been selected or connected.
+The owner-provided Orderful reference is assessed in [Retail EDI for TAKATAK Inventory](TAKATAK_INVENTORY_RETAIL_EDI.md). It maps purchase orders, shipments, invoices, packaging and traceability gaps for future work. The owner clarified that this must be an owned solution. Orderful is background research only; the implementation has no Orderful dependency or account. EDI is a separate future requirement only when a buyer requests it.
 
 ## Remaining scope
 

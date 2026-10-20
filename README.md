@@ -8,7 +8,7 @@ Modular SaaS platform and control tower for client digital services. AI is one p
 
 ## Inventory module
 
-TAKATAK Inventory lives at `/dashboard/inventory` and uses the existing workspace, business, authentication and database layers. See [the inventory guide](docs/TAKATAK_INVENTORY.md) for barcode requirements, permissions, migration review and tests. No inventory database migration or deployment has been applied to a hosted environment from this branch.
+TAKATAK Inventory lives at `/dashboard/inventory` and uses the existing workspace, business, authentication and database layers. Its owned wraparound label studio exports exact-size sheet/roll PDFs and tests scanner input. [MIEL AISSA setup and equipment](docs/MIEL_AISSA_START_HERE.md) covers the retailer path. See [the inventory guide](docs/TAKATAK_INVENTORY.md) for barcode requirements, permissions, migration review and tests. No inventory database migration or deployment has been applied to a hosted environment from this branch.
 
 ## Purpose
 

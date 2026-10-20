@@ -152,7 +152,7 @@ jobs:
         run: npm run qa:qmaps-sync
 
       - name: Inventory validation, barcode encoding and permissions
-        run: npm run qa:inventory
+        run: npm run qa:inventory && npm run qa:inventory-labels
 
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access

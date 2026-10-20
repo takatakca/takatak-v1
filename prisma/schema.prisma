@@ -4860,6 +4860,7 @@ model InventoryProduct {
   priceCents      Int                 @default(0)
   quantity        Int                 @default(0)
   threshold       Int                 @default(10)
+  labelConfig     Json?
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   businessBrand   BusinessBrand       @relation(fields: [businessBrandId, clientId], references: [id, clientId], onDelete: Restrict)

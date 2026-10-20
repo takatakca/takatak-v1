@@ -6,7 +6,10 @@ import {
   saveInventoryProduct,
   adjustInventoryStock,
   inventoryDirectory,
+  getInventoryLabel,
+  saveInventoryLabel,
 } from "../src/lib/db/inventory";
+import { mielAissaLabelConfig } from "../src/lib/inventory/label-config";
 import { productInput } from "../src/lib/inventory/validation";
 async function main() {
   const url = new URL(process.env.DATABASE_URL ?? "http://missing");
@@ -54,6 +57,30 @@ async function main() {
     );
     const product = await saveInventoryProduct(a, actor, input);
     assert.equal(product.quantity, 0);
+    const layout = {
+      ...mielAissaLabelConfig(),
+      gs1Confirmed: true,
+      textReviewed: true,
+    };
+    await assert.rejects(
+      saveInventoryLabel(b, actor, product.id, layout),
+      /not found/,
+    );
+    await saveInventoryLabel(a, actor, product.id, layout);
+    assert.equal(
+      (
+        (await getInventoryLabel(a, product.id)).labelConfig as {
+          brand: string;
+        }
+      ).brand,
+      "MIEL AISSA",
+    );
+    await assert.rejects(getInventoryLabel(b, product.id), /not found/);
+    assert.equal(
+      "labelConfig" in (await inventoryDirectory(a)).products[0],
+      false,
+    );
+
     await assert.rejects(
       saveInventoryProduct(a, actor, input),
       /already exists/,
@@ -163,6 +190,10 @@ async function main() {
       ),
       /not found/,
     );
+    const editedLabel = (await getInventoryLabel(a, product.id))
+      .labelConfig as { gs1Confirmed: boolean; textReviewed: boolean };
+    assert.equal(editedLabel.gs1Confirmed, false);
+    assert.equal(editedLabel.textReviewed, false);
     // DB constraints and composite FK protect direct writes, not just route validation.
     await assert.rejects(
       db.inventoryProduct.update({
