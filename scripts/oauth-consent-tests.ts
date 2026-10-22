@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { NextRequest } from "next/server";
 
 import {
   consentAccountLabel,
@@ -7,10 +8,12 @@ import {
   consentPagePath,
   consentScopeLines,
   escapeConsentHtml,
+  isConsentPostAllowed,
   parseAuthorizationId,
   readAuthorizationResult,
   safeOAuthRedirectTarget,
 } from "../src/lib/auth/oauth-consent";
+import { isTrustedRequestOrigin } from "../src/lib/auth/trusted-origin";
 import { isHighRiskPath } from "../src/lib/security/authenticated-identity";
 import { sanitizeNextPath } from "../src/lib/security/safe-redirect";
 
@@ -26,6 +29,24 @@ function assert(name: string, ok: boolean, detail = "") {
   }
   failed += 1;
   console.error(`  FAIL ${name}${detail ? ` ${detail}` : ""}`);
+}
+
+function consentPost(
+  headers: Record<string, string>,
+  url = "https://takatak.ca/api/oauth/consent",
+): NextRequest {
+  return new NextRequest(url, { method: "POST", headers });
+}
+
+function withAppOrigin(url: string, run: () => void) {
+  const previous = process.env.NEXT_PUBLIC_APP_URL;
+  process.env.NEXT_PUBLIC_APP_URL = url;
+  try {
+    run();
+  } finally {
+    if (previous === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
+    else process.env.NEXT_PUBLIC_APP_URL = previous;
+  }
 }
 
 function main() {
@@ -179,7 +200,204 @@ function main() {
       route.includes("denyAuthorization(authorizationId, { skipBrowserRedirect: true })") &&
       route.includes("safeOAuthRedirectTarget"),
   );
-  assert("decision route checks the TAKATAK origin", route.includes("isTrustedRequestOrigin"));
+  assert("decision route uses the consent post check", route.includes("isConsentPostAllowed(request)"));
+  assert("oauth pages keep Referrer-Policy no-referrer", headers.includes('source: "/oauth"') && headers.includes('value: "no-referrer"'));
+  const helper = readFileSync(resolve(process.cwd(), "src/lib/auth/oauth-consent.ts"), "utf8");
+  const trusted = readFileSync(resolve(process.cwd(), "src/lib/auth/trusted-origin.ts"), "utf8");
+  const register = readFileSync(resolve(process.cwd(), "src/app/api/auth/register/route.ts"), "utf8");
+  const syncProfile = readFileSync(resolve(process.cwd(), "src/app/api/auth/sync-profile/route.ts"), "utf8");
+  assert("consent helper still consults the strict origin check", helper.includes("isTrustedRequestOrigin(request)"));
+  assert("strict origin check still rejects a missing origin", trusted.includes("if (!received) return false"));
+  assert(
+    "other auth routes keep the strict origin check",
+    register.includes("isTrustedRequestOrigin(request)") &&
+      syncProfile.includes("isTrustedRequestOrigin(request)") &&
+      !register.includes("isConsentPostAllowed") &&
+      !syncProfile.includes("isConsentPostAllowed"),
+  );
+
+  console.log("[oauth-consent] decision post origin");
+  withAppOrigin("https://takatak.ca", () => {
+    const chrome = {
+      origin: "null",
+      "sec-fetch-site": "same-origin",
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-dest": "document",
+    };
+    assert(
+      "no-referrer form post with Origin null is allowed",
+      isConsentPostAllowed(consentPost(chrome)) &&
+        !isTrustedRequestOrigin(consentPost(chrome)),
+    );
+    assert(
+      "missing Origin with same-origin navigation is allowed",
+      isConsentPostAllowed(consentPost({
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-dest": "document",
+      })),
+    );
+    assert(
+      "blank Origin with same-origin navigation is allowed",
+      isConsentPostAllowed(consentPost({
+        ...chrome,
+        origin: "   ",
+      })),
+    );
+    assert(
+      "same-origin navigation may omit mode and dest",
+      isConsentPostAllowed(consentPost({
+        origin: "null",
+        "sec-fetch-site": "same-origin",
+      })),
+    );
+    assert(
+      "a Referer from the configured app origin is allowed",
+      isConsentPostAllowed(consentPost({
+        ...chrome,
+        referer: "https://takatak.ca/oauth/consent?authorization_id=abc",
+      })),
+    );
+    assert(
+      "a trusted Origin with same-origin fetch metadata is allowed",
+      isConsentPostAllowed(consentPost({
+        origin: "https://takatak.ca",
+        "sec-fetch-site": "same-origin",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+      })),
+    );
+    assert(
+      "a trusted Origin may omit Sec-Fetch-Site",
+      isConsentPostAllowed(consentPost({ origin: "https://takatak.ca" })),
+    );
+
+    assert(
+      "a foreign Origin is rejected",
+      !isConsentPostAllowed(consentPost({
+        ...chrome,
+        origin: "https://evil.example",
+      })),
+    );
+    assert(
+      "a lookalike Origin is rejected",
+      !isConsentPostAllowed(consentPost({
+        ...chrome,
+        origin: "https://takatak.ca.evil.example",
+      })),
+    );
+    assert(
+      "Origin null from a cross-site navigation is rejected",
+      !isConsentPostAllowed(consentPost({ ...chrome, "sec-fetch-site": "cross-site" })),
+    );
+    assert(
+      "Origin null from a same-site navigation is rejected",
+      !isConsentPostAllowed(consentPost({ ...chrome, "sec-fetch-site": "same-site" })),
+    );
+    assert(
+      "Origin null with Sec-Fetch-Site none is rejected",
+      !isConsentPostAllowed(consentPost({ ...chrome, "sec-fetch-site": "none" })),
+    );
+    assert(
+      "Origin null without Sec-Fetch-Site is rejected",
+      !isConsentPostAllowed(consentPost({
+        origin: "null",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-dest": "document",
+      })),
+    );
+    assert(
+      "Origin null with a non-navigate mode is rejected",
+      !isConsentPostAllowed(consentPost({ ...chrome, "sec-fetch-mode": "cors" })),
+    );
+    assert(
+      "Origin null with a non-document dest is rejected",
+      !isConsentPostAllowed(consentPost({ ...chrome, "sec-fetch-dest": "empty" })),
+    );
+    assert(
+      "a foreign Referer is rejected",
+      !isConsentPostAllowed(consentPost({
+        ...chrome,
+        referer: "https://evil.example/oauth/consent",
+      })),
+    );
+    assert(
+      "a Referer that is not an origin is rejected",
+      !isConsentPostAllowed(consentPost({
+        ...chrome,
+        referer: "not-a-url",
+      })),
+    );
+    assert(
+      "only the literal null Origin is the opaque token",
+      !isConsentPostAllowed(consentPost({ ...chrome, origin: "NULL" })),
+    );
+    assert(
+      "an http Referer on the https app is rejected",
+      !isConsentPostAllowed(consentPost({
+        ...chrome,
+        referer: "http://takatak.ca/oauth/consent",
+      })),
+    );
+    assert(
+      "a trusted Origin from another site is rejected",
+      !isConsentPostAllowed(consentPost({
+        origin: "https://takatak.ca",
+        "sec-fetch-site": "cross-site",
+      })) &&
+        !isConsentPostAllowed(consentPost({
+          origin: "https://takatak.ca",
+          "sec-fetch-site": "same-site",
+        })),
+    );
+    assert(
+      "a request Host cannot replace the configured origin",
+      !isConsentPostAllowed(consentPost(
+        { ...chrome, origin: "https://evil.example" },
+        "https://evil.example/api/oauth/consent",
+      )) &&
+        !isTrustedRequestOrigin(consentPost(
+          { origin: "https://evil.example" },
+          "https://evil.example/api/oauth/consent",
+        )),
+    );
+  });
+
+  const previousUrl = process.env.NEXT_PUBLIC_APP_URL;
+  const previousVercel = process.env.VERCEL_ENV;
+  try {
+    delete process.env.NEXT_PUBLIC_APP_URL;
+    process.env.VERCEL_ENV = "production";
+    const chrome = {
+      origin: "null",
+      "sec-fetch-site": "same-origin",
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-dest": "document",
+    };
+    assert(
+      "production without an app URL still accepts a takatak.ca Referer",
+      isConsentPostAllowed(consentPost({
+        ...chrome,
+        referer: "https://takatak.ca/oauth/consent",
+      })),
+    );
+    assert(
+      "production without an app URL rejects another Referer",
+      !isConsentPostAllowed(consentPost({
+        ...chrome,
+        referer: "https://preview.takatak.ca/oauth/consent",
+      })),
+    );
+    assert(
+      "production still rejects Origin null on the strict check",
+      !isTrustedRequestOrigin(consentPost(chrome)),
+    );
+  } finally {
+    if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_APP_URL;
+    else process.env.NEXT_PUBLIC_APP_URL = previousUrl;
+    if (previousVercel === undefined) delete process.env.VERCEL_ENV;
+    else process.env.VERCEL_ENV = previousVercel;
+  }
   assert("decision redirect is See Other", route.includes("status: 303"));
   assert("robots.txt blocks the consent path", robots.includes('"/oauth"') && robots.includes('"/oauth/"'));
   assert("consent responses send a noindex header", headers.includes('source: "/oauth/:path*"') && headers.includes("noindex, nofollow, noarchive"));
