@@ -115,6 +115,8 @@ export async function POST(
                     ? "Continue to Google to authorize YouTube for this brand."
                     : authorization.provider === "x"
                     ? "Continue to X to authorize this brand."
+                    : authorization.provider === "pinterest"
+                      ? "Continue to Pinterest to authorize this brand."
                     : authorization.provider === "twitch"
                       ? "Continue to Twitch to authorize this brand."
                       : authorization.provider === "meta_ads"

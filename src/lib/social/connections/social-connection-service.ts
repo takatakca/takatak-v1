@@ -40,6 +40,7 @@ import {
 } from "@/lib/social/providers/google-oauth";
 import { buildXAuthorizationUrl } from "@/lib/social/providers/x-oauth";
 import { buildTwitchAuthorizationUrl } from "@/lib/social/providers/twitch-oauth";
+import { buildPinterestAuthorizationUrl } from "@/lib/social/providers/pinterest-oauth";
 import { buildMetaAdsAuthorizationUrl } from "@/lib/social/providers/meta-ads-oauth";
 import { buildGoogleAdsAuthorizationUrl } from "@/lib/social/providers/google-ads-oauth";
 import { buildLookerStudioAuthorizationUrl } from "@/lib/social/providers/looker-studio-oauth";
@@ -144,6 +145,10 @@ function buildAuthorizationUrl(options: {
       state: options.state,
       codeChallenge: options.codeChallenge,
     });
+  }
+
+  if (options.provider === "pinterest") {
+    return buildPinterestAuthorizationUrl({ state: options.state });
   }
 
   if (options.provider === "twitch") {

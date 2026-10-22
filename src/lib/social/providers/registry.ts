@@ -140,8 +140,8 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
       "PINTEREST_APP_ID",
       "PINTEREST_APP_SECRET",
     ],
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
   },
 
