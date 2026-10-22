@@ -59,6 +59,22 @@ const nextConfig: NextConfig = {
         source: "/auth/:path*",
         headers: privateNoStore,
       },
+      {
+        source: "/oauth",
+        headers: [
+          ...privateNoStore,
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/oauth/:path*",
+        headers: [
+          ...privateNoStore,
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
     ];
   },
 };
