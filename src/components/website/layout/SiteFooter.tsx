@@ -59,6 +59,8 @@ const cols = [
       { to: "/login", label: "Sign in" },
       { to: "/register", label: "Get started" },
       { to: "/privacy-manager", label: "Privacy manager" },
+      { to: "/terms", label: "Terms of Service" },
+      { to: "/privacy", label: "Privacy Policy" },
     ],
   },
 ] as const;
