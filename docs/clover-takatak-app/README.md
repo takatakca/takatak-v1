@@ -41,8 +41,13 @@ d'autres. L'IA rédige les brouillons, en français d'abord. Clover facture (ess
    approuver la publication Instagram. Pas de soumission Clover avant qu'au moins un canal marche vraiment.
 4. **Publication sans approbation** : refus probable chez Clover et Google. Approbation par défaut.
 5. **Le slogan « le premier backend IA »** : impossible à prouver (des concurrents existent). À remplacer.
-6. **Données hors Québec** : la base takatak-v1 est en Irlande. EFVP, ententes écrites, ou déménagement au Canada.
+6. **Données hors Québec** : la base takatak-v1 est en Irlande; le serveur, la passerelle IA et ses fournisseurs (qui
+   reçoivent le texte des avis clients), Google et Meta sont aussi hors Québec. EFVP et ententes écrites dans tous les
+   cas; déménager la base aide, mais ne remplace pas l'EFVP.
 7. **Délais** : Clover, Google et Meta n'ont pas de délai garanti.
+8. **Textes IA dès P1** : les brouillons IA font partie de P1, donc les vérifications (mots interdits, prix Clover,
+   mention IA, français par défaut) aussi; les menus Clover en anglais doivent recevoir un nom français avant d'aller
+   sur Google pour un restaurant du Québec.
 
 ### Vos décisions (détails dans [OWNER_DECISIONS.md](OWNER_DECISIONS.md))
 
@@ -56,8 +61,8 @@ d'autres. L'IA rédige les brouillons, en français d'abord. Clover facture (ess
 | D6 | Canaux d'abord | Google + Facebook, puis Instagram |
 | D7 | Slogan | « Votre resto, partout où on vous cherche. » |
 | D8 | Responsable des renseignements personnels | Matthieu, avec une adresse de rôle |
-| D9 | Entité légale | Celle du compte développeur Clover (à confirmer) |
-| D10 | Région des données | EFVP maintenant; données Clover au Canada avant la soumission |
+| D9 | Entité légale | Garder le compte développeur individuel; question 16 à l'avocat (montage Matthieu ↔ société); aucun concédant nommé avant / Keep the individual developer account; lawyer Q16; no licensor named until then |
+| D10 | Région des données | EFVP maintenant (base, serveur, IA, Google, Meta); données Clover à `ca-central-1` (Montréal) avant la soumission / PIA now; Clover data to `ca-central-1` before submission |
 | D11–D19 | Publication auto, images IA, limite « entreprises des autres », clients Stripe, moment de soumission, marque de commerce, pilotes, avocat, question sur les apps existantes | Voir le fichier |
 
 ### Prochaines étapes
@@ -101,8 +106,12 @@ first. Clover bills (14-day trial, then a monthly subscription).
    Instagram publishing. No Clover submission before one channel really works.
 4. **Publishing without approval:** likely rejection by Clover and Google. Approval by default.
 5. **"The first AI backend":** cannot be proven (competitors exist). Replace it.
-6. **Data outside Québec:** takatak-v1's database is in Ireland. PIA, written agreements, or move to Canada.
+6. **Data outside Québec:** takatak-v1's database is in Ireland; the app server, the AI gateway and its providers (which
+   receive customer review text), Google and Meta are also outside Québec. PIA and written agreements in every case;
+   moving the database helps but does not replace the PIA.
 7. **Delays:** Clover, Google and Meta publish no deadlines.
+8. **AI text from P1:** AI drafts are part of P1, so the checks are too (banned words, Clover prices, AI label, French by
+   default); English Clover menus need French names before going to Google for a Québec restaurant.
 
 ### Decisions
 

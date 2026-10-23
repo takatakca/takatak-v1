@@ -65,8 +65,9 @@ reading for TAKATAK. **UNVERIFIED** = seen only in secondary sources; check befo
   the business uses other businesses' data. Decision "within approximately 5 days". "Access verification is independent
   of App Review and permission access levels."
   Source: https://developers.facebook.com/docs/development/release/access-verification (read 2026-10-23).
-- **INFERENCE.** Two separate Meta steps: (1) Business Verification of Quadro Holdings / Groupe TAKATAK in Meta Business
-  Manager (owner uploads company documents), then Access Verification as Tech Provider; (2) App Review per permission.
+- **INFERENCE.** Two separate Meta steps: (1) Business Verification of the business chosen under decision D9 (lawyer
+  question 16; for example Quadro Holdings Ltée) in Meta Business Manager (owner uploads company documents), then
+  Access Verification as Tech Provider; (2) App Review per permission.
   Both before any Clover merchant can publish to Facebook.
 
 ## Instagram
@@ -122,9 +123,24 @@ reading for TAKATAK. **UNVERIFIED** = seen only in secondary sources; check befo
     and app secrets; report incidents "as soon as practicable".
   - s.7: Meta may audit once a year (more if a "Necessary Condition"), with at least 10 business days' notice; you pay if
     non-compliant; Meta may suspend or terminate.
-- **INFERENCE.** TAKATAK's sub-processors (database host, AI model provider) need written agreements that flow these
+- **INFERENCE.** TAKATAK's sub-processors (database host, app server, the AI gateway and each AI provider it uses) need
+  written agreements that flow these
   terms down. No use of Meta data across clients (no "industry benchmarks" made from clients' Page data). The existing
   competitor sync (`src/lib/social/sync/*`) must be checked against s.3 before it is offered to Clover merchants.
+
+## Data Protection Assessment and Data Use Checkup (yearly)
+
+- **FACT.** "The Data Protection Assessment is a questionnaire that is an annual requirement for apps accessing certain
+  types of data." An app admin has 60 days to complete it; "Providing incomplete or vague answers may result in loss of
+  platform access." Notices arrive by email, in the Alert Inbox and on the App Dashboard. The questionnaire covers how
+  Platform Data is used, shared and protected. The **Data Use Checkup** is separate: an annual process in which
+  developers certify how each permission is used.
+  Source: https://developers.facebook.com/docs/development/maintaining-data-access/data-protection-assessment (no date
+  shown; read 2026-10-23).
+- **INFERENCE.** Without these, Facebook and Instagram publishing could be cut off for every Clover merchant after
+  launch. A named app admin watches the Alert Inbox; answers must match the privacy policy, the sub-processor list and
+  agreements (including the AI providers, ARCHITECTURE §11) and Platform Terms s.5.b. See ROADMAP "Post-launch
+  operations checklist".
 
 ## Data deletion callback
 
@@ -198,12 +214,16 @@ the merchant's own Clover online ordering. Each delivery platform hears only abo
 4. Per-client data separation; client list; written sub-processor agreements.
 5. Publishing code per channel driven by the approved post; per-account caps far below platform limits.
 6. Pinterest Standard access before listing Pinterest; TikTok audit before listing TikTok.
+7. Meta Data Protection Assessment: completed within 60 days each time Meta requests it (annual); answers consistent with
+   the privacy policy, sub-processor agreements and Platform Terms s.5.b.
+8. Meta Data Use Checkup: each permission's use certified every year; an app admin watches the Alert Inbox.
 
 ## Risks
 
 | Risk | Severity | Mitigation |
 |---|---|---|
-| Meta business or access verification refused or slow | High | Start now; documents in the legal entity's exact name; same name as the Clover developer account |
+| Meta business or access verification refused or slow | High | Start now; documents in the legal entity's exact name. The Clover developer account is an Individual Developer account (kept by the owner), so "same name as the Clover developer account" cannot be met by a company: which entity is verified is lawyer question 16 / decision D9 |
+| Data Protection Assessment or Data Use Checkup missed or answered vaguely; platform access lost for all merchants | High | Named app admin, Alert Inbox watched, answers kept consistent with the privacy policy and sub-processor list (ROADMAP post-launch checklist) |
 | App Review rejects a permission (screencast unclear) | Medium | One clear screencast per permission, French UI with English captions, test user for the reviewer |
 | Instagram publish fails on non-JPEG or private image URLs | Medium | Convert to JPEG; public, signed-and-expiring URLs; poll container status |
 | Publishing to the wrong Page or account (multi-brand) | High | Brand → account mapping shown in the preview; approval step names the destination |
@@ -212,8 +232,9 @@ the merchant's own Clover online ordering. Each delivery platform hears only abo
 
 ## Open questions
 
-1. Which legal entity is (or will be) the verified business in Meta Business Manager? It should match the Clover
-   developer account and the EULA licensor.
+1. Which legal entity is (or will be) the verified business in Meta Business Manager? Meta needs a business with
+   documents in its exact legal name, while the Clover developer account is an Individual Developer account. How the
+   Meta business, the EULA licensor and the Clover developer line up is lawyer question 16 (decision D9).
 2. Is `hours` writable on a Facebook Page by API today, and in what format?
 3. Should Instagram use Instagram Login (current code) or Facebook Login for Business (one Meta login for both Page and
    Instagram)? One login is simpler for merchants; the current code uses separate logins.

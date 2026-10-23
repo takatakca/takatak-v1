@@ -54,8 +54,8 @@ posting for Québec. This is a gap we observed in search results, **not** proof 
 | Claim (FR) | Claim (EN) | Condition |
 |---|---|---|
 | Votre menu Clover publié sur votre fiche Google | Your Clover menu published to your Google profile | Google API access granted; menu push tested |
-| Vos heures d'ouverture à jour, tirées de Clover | Your opening hours kept up to date from Clover | Hours sync tested |
-| Publications Facebook et Instagram rédigées avec l'IA, approuvées par vous | Facebook and Instagram posts drafted with AI, approved by you | Meta App Review passed |
+| Heures mises à jour automatiquement depuis Clover sur Google | Hours sent from Clover to Google automatically | Hours sync tested on that channel; name only channels where hours sync works (Google yes; Facebook UNVERIFIED; Instagram has no hours API); say changes can take up to 48 h to appear |
+| Publications Facebook et Instagram rédigées avec l'IA, approuvées par vous | Facebook and Instagram posts drafted with AI, approved by you | Meta App Review passed **and** ROADMAP P1.17 AI guardrails pass (claim and word checks, AI disclosure, French by default); otherwise drop "drafted with AI" |
 | Un bouton « Commander » vers votre commande en ligne Clover | An "Order" button to your Clover online ordering | Place Action link tested |
 | En français d'abord, en anglais aussi | French first, English too | All screens translated |
 | Un seul tableau de bord pour votre présence en ligne | One dashboard for your online presence | Always true of the product |
@@ -84,17 +84,22 @@ dashboard, French first. You approve everything before it goes live.
 
 **Benefits (FR).**
 1. Votre menu Clover à jour sur Google, sans retaper un seul prix
-2. Heures d'ouverture tirées de Clover, toujours à jour
+2. Heures mises à jour automatiquement depuis Clover sur Google (jusqu’à 48 h de délai)
 3. Publications Facebook et Instagram rédigées avec l'IA, approuvées par vous
 4. Un bouton « Commander » vers votre commande en ligne Clover
 5. En français d'abord, en anglais aussi
 
 **Benefits (EN).**
 1. Your Clover menu kept up to date on Google, no retyping prices
-2. Opening hours taken from Clover, always current
+2. Hours sent from Clover to Google automatically (changes can take up to 48 h to appear)
 3. Facebook and Instagram posts drafted with AI, approved by you
 4. An "Order" button that leads to your Clover online ordering
 5. French first, English too
+
+Benefit 2 names only channels where hours sync really works (Google today; Facebook hours writes are UNVERIFIED;
+Instagram has no hours API). Google can take 24–48 h to show a change, pushes are batched, and sync stops when Clover
+billing is lapsed or inactive (ARCHITECTURE §5.1, §7), so never write "always current" / « toujours à jour ».
+Benefit 3 stays only if the ROADMAP P1.17 AI guardrails pass at submission; otherwise replace it.
 
 **Setup requirements to state in the description.** A Google Business Profile you own or manage; a Facebook Page and an
 Instagram professional account linked to it (for those channels); menu items in Clover Inventory; photos uploaded in

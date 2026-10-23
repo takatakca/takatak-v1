@@ -131,9 +131,9 @@ consents, a publish queue, Clover billing.
 |---|---|---|
 | `CloverInstallation` | `appId`, `cloverMerchantId`, `clientId`, `status` (active, uninstalled, pending_deletion), encrypted token payload, `accessExpiresAt`, `refreshExpiresAt`, `billingStatus`, `inTrial`, `billingCheckedAt`, `installedAt`, `uninstalledAt`, `deleteAfter` | Unique (`appId`, `cloverMerchantId`) |
 | `CloverSnapshot` | `installationId`, `kind` (merchant, hours, inventory), `payload`, `hash`, `fetchedAt` | Cache only; deleted on uninstall |
-| `MenuSection`, `MenuItem` | `clientId`, `locationId`, `source` (clover, manual), `cloverItemId`, `nameFr`, `nameEn`, `descriptionFr`, `descriptionEn`, `priceCents`, `currency`, `available`, `photoAssetId`, `dietaryTags` (merchant-entered only) | The normalized menu |
+| `MenuSection`, `MenuItem` | `clientId`, `locationId`, `source` (clover, manual), `cloverItemId`, `sourceName` (raw Clover name), `sourceNameLanguage` (detected), `nameFr`, `nameEn`, `nameFrStatus` (merchant, ai_approved, missing), `descriptionFr`, `descriptionEn`, `priceCents`, `currency`, `available`, `photoAssetId`, `dietaryTags` (merchant-entered only) | The normalized menu; `nameFr` is never just a copy of an English Clover name |
 | `LocationHours` | `locationId`, `weekly`, `special`, `source`, `updatedAt` | From Clover opening hours |
-| `ChannelConsent` | `clientId`, `locationId`, `channel`, `dataTypes` (menu, prices, hours, info, photos, posts, review_replies), `mode` (sync, approve_each), `textVersion`, `language`, `grantedByProfileId`, `grantedAt`, `revokedAt`, `ipAddress`, `userAgent` | Proof of consent for Clover, Google and Meta |
+| `ChannelConsent` | `clientId`, `locationId`, `channel`, `dataTypes` (menu, prices, hours, info, photos, posts, review_replies, ai_review_replies), `mode` (sync, approve_each), `textVersion`, `language`, `grantedByProfileId`, `signerName`, `signerTitle`, `authorityAttestedAt`, `grantedAt`, `revokedAt`, `ipAddress`, `userAgent`, `retainUntil` | Proof of consent and of mandate for Clover, Google and Meta; kept after uninstall until `retainUntil` (section 8) |
 | `PublishJob` | `clientId`, `channel`, `targetId`, `kind` (menu, hours, info, photo, post), `payloadHash`, `idempotencyKey`, `status` (queued, sending, done, failed, blocked), `attempts`, `externalId`, `error`, `approvalId` | One row per outbound change |
 
 `SourceMerchant` rows with `sourceApplication = "clover"` stay **isolated**: they are not merged into a cross-app
@@ -144,11 +144,19 @@ consents, a publish queue, Clover billing.
 1. **Install.** Merchant clicks Install / Open in Clover → `/clover/launch` → OAuth v2 → tokens saved in
    `CloverInstallation` (encrypted) → TAKATAK reads merchant, hours and inventory → `CloverSnapshot`.
 2. **Account.** Onboarding pre-filled from `/v3/merchants` (name, address, phone, email). The person verifies an email
-   or phone (existing OTP) and becomes the workspace owner. One Clover merchant ID = one workspace by default.
+   or phone (existing OTP) and becomes the workspace owner. One Clover merchant ID = one workspace by default. The app
+   has no Employees permission, so it cannot tell the owner from staff: before any channel consent, the person gives
+   name and title and confirms they may bind the business (the publishing mandate, Civil Code art. 2130). Stored on
+   `ChannelConsent`.
 3. **Normalize.**
    - Categories → sections; items → items; price in cents, currency CAD; hidden or deleted items left out; modifier
      groups → item options (Google `options`) or a note.
-   - Names in French by default; English added by the merchant or drafted by AI and approved.
+   - Names: the raw Clover name goes to `sourceName` with a detected language (Clover names are whatever the merchant
+     typed, often English or mixed in Montréal). For a Québec location, every item needs a French name (`nameFr`,
+     typed by the merchant, or drafted by AI and approved) before the first menu push and before a new item syncs
+     (Charter s.51: "This rule applies also to menus"; s.52). Missing French = the item is held and the merchant is
+     asked. English is optional. Google gets French through `MenuLabel` with `languageCode` `fr` (Google: "If the
+     language is not available, it will default to English").
    - Photos: uploaded or chosen in TAKATAK and attached by Clover item ID (Clover's API does not appear to expose item
      photos).
    - Dietary or allergen tags only from merchant input; never from AI.
@@ -158,10 +166,13 @@ consents, a publish queue, Clover billing.
    approves → `PublishJob` rows → adapters.
 6. **Stay in sync.** Webhooks `I`, `IC`, `IG`, `IM` (menu), `M` (info), `SH` (hours) → re-read the changed objects → diff
    against the last published state → for consents in `sync` mode, queue only what changed; otherwise ask for approval.
-   An item going out of stock never creates a post.
+   An item going out of stock never creates a post. In `sync` mode too, a Québec item without an approved French name
+   is never pushed (step 3).
 7. **Posts.** AI Studio drafts (French first, prices only from the normalized menu, Clover ordering link as the button)
-   → `SocialPost` draft → `pending_approval` → merchant approves (or edits) → `scheduled` → adapter → `published` or
-   `failed`. No auto-publish unless the merchant turned on a recorded, revocable opt-in (P3).
+   → guardrails (ROADMAP P1.17: claim and word checks, Clover price match, French by default, "Texte proposé par l'IA —
+   à valider" label) → `SocialPost` draft → `pending_approval` → merchant approves (or edits) → `scheduled` → adapter →
+   `published` or `failed`. These guardrails are part of P1 because AI drafts are part of the P1 flow. No auto-publish
+   unless the merchant turned on a recorded, revocable opt-in (P3).
 
 ### 5.1 Channel adapters (`src/lib/publishing/<channel>.ts`, proposed)
 
@@ -210,8 +221,12 @@ Instagram and Facebook a low daily cap per account; no menu push more than once 
 2. Email and dashboard notice (FR first): what stays on the merchant's own Google, Facebook and Instagram accounts (it is
    theirs), how to remove TAKATAK as Google manager, how to export.
 3. Export window (proposal: 30 days, to confirm with the lawyer and Clover's "reasonable window").
-4. Then delete: tokens, snapshots, normalized menu and hours from Clover, photos uploaded for Clover items, consents'
-   content. Keep only what law requires (billing records, a minimal audit trail without content).
+4. Then delete: tokens, snapshots, normalized menu and hours from Clover, photos uploaded for Clover items. Keep what law
+   or proof requires: billing records, a minimal audit trail without content, and the `ChannelConsent` rows (signer,
+   title, time, text version, scope, revocation) until `retainUntil`, a fixed period the lawyer sets. Reason: Google's
+   third-party policy asks for written or digital proof of express consent if disputed, and Meta Platform Terms s.5.b
+   asks us to act only at each client's direction; disputes come after termination. The purpose (proof of mandate) and
+   the period are stated in the governance policy (P-39.1 s.3.2) and the privacy policy.
 5. Channel connections: disconnected and their tokens deleted, unless the merchant chose to keep a separate,
    non-Clover TAKATAK account (a new relationship, new consent, no Clover data).
 
@@ -236,11 +251,24 @@ tokens.
 
 - Least privilege everywhere: two Clover permissions; only the Google and Meta scopes the feature needs.
 - Privacy by default (P-39.1 s.9.1): no auto-publish, no review auto-reply, no sharing beyond chosen channels.
-- AI provider receives business data only (menu, hours, brand voice, the merchant's prompt), never customer or staff
-  personal information.
+- AI and personal information. Post and menu drafts send business data (menu, hours, brand voice, the merchant's
+  prompt). AI review replies do **not** stay business-only: in takatak-v1 origin/main `4c308b4`,
+  `src/lib/integrations/google-business/service.ts` (lines 266-272) passes the Google review comment and
+  `src/lib/reputation/service.ts` (line 382) the customer's feedback to `triggerLowRatingResponder`, which queues the
+  `review_responder` agent with that text (`src/lib/ai-agents/service.ts` lines 340-360). Review text is personal
+  information and can contain names. The current payload has no reviewer name or contact fields; keep it that way.
+- AI providers. Every AI task routes through the TAKATAK AI Gateway, whose roster has 13 providers in several countries
+  (`src/lib/growth/ai-engine.ts` lines 24-38, incl. DeepSeek, xAI, Groq, Mistral, Cohere, Perplexity). For Clover-sourced
+  workspaces: an allowlist of one or two named, contracted providers (DPA, no training on our data, retention limit,
+  known region), listed in the privacy policy's sub-processor list and covered one by one in the PIA (ROADMAP P0.4,
+  P1.18); reviewer names and contact data stripped before sending; a separate consent (`ai_review_replies`) for AI
+  review replies.
 - Google content stored ≤30 days (purge job), no aggregation across clients.
 - Meta data deletion callback; vulnerability contact; incident runbook.
-- Data region: see decision D10 (keep `eu-west-1` with a PIA, or put Clover-sourced data in `ca-central-1`).
+- Data region: see decision D10. Law 25 s.17 asks whether personal information leaves **Québec**, not Canada. Moving
+  Clover-sourced data from `eu-west-1` to `ca-central-1` (AWS Canada Central, Montréal; INFERENCE, to confirm with
+  Supabase) helps for the database only. The app server (Coolify host, region not documented here), the AI gateway and
+  providers, Google and Meta stay in the PIA scope either way, so the move does not replace the PIA.
 
 ## 12. Not in scope of this app
 

@@ -48,9 +48,9 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
 | Expiring tokens | https://docs.clover.com/dev/docs/expiring-tokens-required-in-all-regions | — |
 | High-trust auth flow | https://docs.clover.com/docs/high-trust-app-auth-flow | — |
 | OAuth | https://docs.clover.com/dev/docs/use-oauth | — |
-| App settings (GDP) | https://docs.clover.com/dev/docs/gdp-manage-app-settings | — |
+| App settings (GDP) | https://docs.clover.com/dev/docs/gdp-manage-app-settings | updated 2026-03-24 |
 | Create a new app (GDP) | https://docs.clover.com/dev/docs/gdp-create-new-app | — |
-| Revising approved apps | https://docs.clover.com/dev/docs/draft_revising-and-reviewing-approved-or-published-apps | — |
+| Revising approved apps | https://docs.clover.com/dev/docs/draft_revising-and-reviewing-approved-or-published-apps | updated 2026-03-24 (re-read 2026-10-23) |
 | Permissions | https://docs.clover.com/docs/permissions | — |
 | Opening hours API | https://docs.clover.com/dev/reference/merchantgetallmerchantopeninghours.md | — |
 | Item API | https://docs.clover.com/dev/reference/inventorygetitem.md | — |
@@ -59,10 +59,10 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
 | Pricing tiers (GDP) | https://docs.clover.com/dev/docs/gdp-set-up-pricing-tiers | — |
 | Monetizing apps | https://docs.clover.com/docs/monetizing-your-apps | — |
 | Billing for apps | https://docs.clover.com/docs/billing-for-apps | — |
-| Multiple markets | https://docs.clover.com/dev/docs/multiple-markets | — |
+| Multiple markets | https://docs.clover.com/dev/docs/multiple-markets | updated 2026-07-08 (re-read 2026-10-23) |
 | International readiness | https://docs.clover.com/docs/international-app-market-readiness | — |
 | Canadian merchants | https://docs.clover.com/dev/docs/canadian-merchants | — |
-| Listing (GDP) | https://docs.clover.com/dev/docs/gdp-set-clover-app-market-listing | — |
+| Listing (GDP) | https://docs.clover.com/dev/docs/gdp-set-clover-app-market-listing | updated 2026-05-08 (re-read 2026-10-23) |
 | Managing app details | https://docs.clover.com/dev/docs/managing-app-details | — |
 | Admin checklist | https://docs.clover.com/dev/docs/app-administration-checklist | updated 2026-07-08 |
 | Private apps | https://docs.clover.com/dev/docs/gdp-work-with-private-apps | updated 2026-07-08 |
@@ -228,10 +228,18 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
   a metered price after approval needs a DevRel request. Price changes do not apply to existing installs (s.4.1).
   Developer gets 70%. `billing_info` returns status (Active, Lapsed, Inactive, Suppressed) and `isInTrial`; features may
   be limited for lapsed merchants but must come back when payment resumes.
-- **FACT (conflict).** The international page says "App prices are set in US dollars (USD)"; the pricing page shows
-  per-country prices in local currency.
+- **FACT (conflict, price currency).** The Multiple markets page (https://docs.clover.com/dev/docs/multiple-markets,
+  updated 2026-07-08, step 6) says "App prices are set in US dollars (USD)"; the pricing page shows per-country prices in
+  local currency. (The International readiness page does not contain this sentence: re-checked 2026-10-23.)
+- **FACT (conflict, payout currency).** The same Multiple markets step goes on: "The revenue is issued to your US-based
+  bank in dollars. In the United Kingdom and Ireland, the payment is issued to your bank account in your local
+  currency." Developer Terms Part IV (Canada) s.3.3 says the amount "will be remitted to you in the currency(s) that the
+  Gross Revenue is collected" (read 2026-10-23). The two do not match for a Canadian developer paid by Canadian
+  merchants.
+- **FACT (owner notes, 2026-10-16/17).** The Food Hub and Phone AI tiers were entered in the dashboard as CAD $50/month.
 - **INFERENCE.** Mirror the owner's pattern: 14-day trial, then CAD $50/month base tier. Optional metered events (for
-  example an extra brand profile). Settle metered prices before approval. Confirm CAD with DevRel.
+  example an extra brand profile). Settle metered prices before approval. Ask DevRel both the price currency and the
+  payout currency and bank account (open question 5).
 
 ### 15. Canada and Québec requirements (Clover)
 
@@ -256,7 +264,10 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
 ### 17. Listing assets and naming
 
 - **FACT.** Name unique, editable, no "Clover" (also not in the website name or support email domain). Icon 1:1 PNG,
-  distinctive, no Clover or Fiserv marks; once uploaded it can be replaced, not deleted. Optional cover 1080×216 PNG.
+  distinctive, no Clover or Fiserv marks; once uploaded it can be replaced, not deleted. Name and icon are edited in the
+  same "Edit App Name and Icon" window; on an approved app, an icon change goes to DevRel review (Revising approved apps,
+  updated 2026-03-24, review table row 1). The table does not name the app name itself; treat a name change as reviewed
+  too, so D1 is final before submission. Optional cover 1080×216 PNG.
   3–5 benefits of up to 100 characters; tagline up to 255; description. Web screenshots min 320 px, up to 1920×1080.
   Optional listing video (YouTube or Vimeo); a separate functional review video and description at submission. EULA and
   privacy URLs; support phone, hours, email, website with FAQ; at least one functional and one vertical category; one
@@ -276,12 +287,23 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
 
 ### 19. Reuse the draft "on2go" (`N4NYCJCZ17FF4`) or create a new app
 
-- **FACT.** On the Global Developer Platform the name, app type and permissions are editable; countries, languages and
-  category are set at creation; re-review rules apply only to approved or published apps. foodhubca
-  `docs/CLOVER_MULTI_APP.md` chose earlier not to reuse this "Android & Web" draft.
-- **INFERENCE.** Reuse brings no benefit and adds risk (Android flag may add APK tasks; wrong country or category; legacy
-  vs global platform unknown). Create a new **Web, App Market, Canada, FR-CA + EN-CA** app. Leave the draft for a future
-  ON2GO device app.
+- **FACT.** On the Global Developer Platform nothing listed below is fixed at creation (sources re-read 2026-10-23):
+  - name and icon: Market Listing > Edit App Name and Icon (Listing, updated 2026-05-08);
+  - app type and permissions: App Settings (App settings, updated 2026-03-24);
+  - category: "You can always change app categories later. Revisions are automatically approved." (Listing). The
+    create-app page (https://docs.clover.com/dev/docs/gdp-create-new-app) does not ask for a category at all;
+  - languages: added later under Market Listing > Manage Languages, which lists "the countries for which you've created
+    subscriptions on the Pricing & Distribution page" (Listing). At creation, if only one country is chosen, its
+    language and default locale are pre-selected and cannot be changed on that screen (create-app page);
+  - subscription countries: added later under Pricing & Distribution.
+  On an approved or published app, a language added or removed and a subscription country added for the first time go
+  back to DevRel review (Revising approved apps, updated 2026-03-24); category changes do not. Re-review rules apply only
+  to approved or published apps. foodhubca `docs/CLOVER_MULTI_APP.md` chose earlier not to reuse this "Android & Web"
+  draft.
+- **INFERENCE.** Reuse brings no benefit and adds some risk: the draft is "Android & Web" (the type can be edited, but
+  an Android flag left on may add APK tasks), and nobody has checked whether it sits on the legacy or the global
+  platform (open question 6). Wrong country or category is **not** a reason: both can be fixed later. Create a new
+  **Web, App Market, Canada, FR-CA + EN-CA** app. Leave the draft for a future ON2GO device app.
 
 ### 20. The slogan "the first AI backend, all connected"
 
@@ -313,9 +335,9 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
 11. Every screen, email, error and the EULA in French and English, French first; the generator defaults to French for
     Québec merchants.
 12. App-specific privacy policy (PIPEDA, Québec Law 25, recipients "as the merchant directs" naming Google, Meta,
-    Pinterest; sub-processors incl. AI provider and database region; retention and deletion on uninstall; effective
-    date) and EULA (TAKATAK as licensor, Clover not a party, Clover-billing-only fees, Canadian law). Later changes go to
-    Clover first.
+    Pinterest; sub-processors incl. each named AI provider, the app server and database regions; retention and deletion
+    on uninstall; effective date) and EULA (licensor named only after lawyer question 16 / decision D9, Clover not a
+    party, Clover-billing-only fees, Canadian law). Later changes go to Clover first.
 13. Listing package: tagline ≤255, 3–5 benefits ≤100, description with setup requirements, screenshots, categories,
     support site, quick reference guide, functional review video.
 14. Posts and links never promote non-Clover payment or ordering tools; Clover online ordering link first.
@@ -331,7 +353,7 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
 | 4 | AI posts published without confirmation fail the functional review. | High | Approval workflow by default, shown in the review video; auto-publish only as a recorded opt-in. |
 | 5 | Channels not yet working: Google Business Profile API access pending; Instagram publish scope and Pinterest Pin creation not built. A listing that promises what does not work is a rejection cause. | High | Submit only when at least one channel works end to end in production. List only working channels; add others as reviewed updates. |
 | 6 | Québec French: English-first EULA, untranslated screens, English-only posts. | Medium | French-first UI, legal pages, listing; French EULA shown first; generator defaults to French; lawyer review. |
-| 7 | Changing Site URL, permissions, languages, legal links or countries after approval sends the app back to review. | Medium | Freeze domain, permissions, languages, countries and legal URLs before first submission. |
+| 7 | After approval, these go back to DevRel review: Site URL, permissions, a language added or removed, EULA and privacy URLs, adding a first subscription country, and the app icon (edited with the name in "Edit App Name and Icon"; treat a name change as reviewed too). | Medium | Freeze domain, permissions, languages, subscription countries, legal URLs, app name (D1 final) and icon before first submission. |
 | 8 | Review delays; legal mistakes repeated across three apps. | Medium | Sandbox now; submit after first feedback on the two pending apps; answer Clover fast. |
 | 9 | Promoting Stripe invoicing, non-Clover ordering or other TAKATAK services inside the app (s.2.4, ad ban). | Medium | No cross-promotion; Clover online ordering in posts; ask DevRel about links to our other listings. |
 | 10 | Item photos may not be available from the Clover API. | Low | Upload or pick photos in TAKATAK, mapped by Clover item ID; ask DevRel. |
@@ -347,14 +369,18 @@ app. The slogan "the first AI backend" is an unproven superlative: keep it out o
 3. May the TAKATAK app mention or link to our other App Market apps, or does the Advertisement Policy forbid it? Any
    bundle or cross-app discount mechanism?
 4. Does Revenu Québec SRM certification apply to a marketing and listings app that records no sales?
-5. Can Canadian prices be set in CAD on the Global Developer Platform?
+5. Currency, two parts. (a) Can Canadian prices be set in CAD on the Global Developer Platform (Multiple markets says
+   "App prices are set in US dollars (USD)"; our two pending apps show CAD $50 tiers)? (b) Payout: Multiple markets says
+   revenue goes "to your US-based bank in dollars", but Developer Terms Part IV s.3.3 says remittance is in the currency
+   collected. For a Canadian developer, is the payout in CAD to a Canadian bank account, and which account details are
+   needed?
 6. Owner to check in the dashboard: is draft `N4NYCJCZ17FF4` on the legacy or the global platform, and where do the two
    pending apps sit?
 7. Is there a current API to read item photos beyond `menuItem.imageFilename`?
 8. What does s.3.7 (capture and transfer user IP addresses) require for a non-payment web app?
 9. (Google, Meta) Which channel will work end to end at submission time? See the Google and Meta files.
-10. (Lawyer) Law 25 transfers outside Québec: takatak-v1's database is in `eu-west-1` (Ireland). PIA and privacy officer
-    needed.
+10. (Lawyer) Law 25 transfers outside Québec: takatak-v1's database is in `eu-west-1` (Ireland); the app server, the
+    TAKATAK AI Gateway and its AI providers, Google and Meta are also outside Québec. PIA and privacy officer needed.
 11. (Owner) Final Site URL: `takatak.ca/...` path or a subdomain such as `app.takatak.ca`? Must be final before
     submission.
 12. (Existing apps) Is the Phone AI app's fallback to Food Hub's token acceptable under s.18.2 when a merchant has both

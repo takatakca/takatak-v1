@@ -64,7 +64,8 @@ rule.
   Google recommends one organization for all profile groups.
   Sources: https://support.google.com/business/answer/7663063 ; https://support.google.com/business/answer/9199701 ;
   https://support.google.com/business/answer/7655842 (read 2026-10-23).
-- **INFERENCE.** Create one Quadro Holdings / TAKATAK organization with a Google account on the takatak.ca domain, not
+- **INFERENCE.** Create one TAKATAK organization (entity per decision D9, lawyer question 16) with a Google account on
+  the takatak.ca domain, not
   the account that owns TAKATAK's own restaurant profiles. Each Clover merchant invites TAKATAK as Manager.
 
 ### 4. Third-party (agency) policies
@@ -128,9 +129,15 @@ rule.
   cuisines, spiciness, allergens, dietary restrictions, options, photos (by `mediaKey`; not cover or profile photos).
   Sources: https://developers.google.com/my-business/content/update-food-menus (updated 2026-10-09) ;
   https://developers.google.com/my-business/reference/rest/v4/accounts.locations/updateFoodMenus (read 2026-10-23).
+- **FACT.** Menus, sections and items carry `labels` of type `MenuLabel` (`displayName`, `description`,
+  `languageCode`). `languageCode`: "The BCP 47 code of language. If the language is not available, it will default to
+  English." Source: https://developers.google.com/my-business/reference/rest/v4/FoodMenus (updated 2026-10-09; read
+  2026-10-23).
 - **INFERENCE.** Clover maps cleanly: categories → sections, items → items (price in cents → Money in CAD), modifier
   groups → options or notes. Always read first and send an `updateMask`. Allergen and dietary fields only from data the
-  merchant entered, never invented by AI. takatak-v1 `BusinessLocation` has no menu, hours or photo fields yet.
+  merchant entered, never invented by AI. Send a French label (`languageCode` `fr`) for every Québec item, English
+  optional; never push the raw Clover name as the French label without a language check (ARCHITECTURE §5 step 3).
+  takatak-v1 `BusinessLocation` has no menu, hours or photo fields yet.
 
 ### 8. Menu editor after an API push
 
@@ -191,7 +198,9 @@ rule.
   Sources: https://developers.google.com/my-business/content/review-data (updated 2026-08-28) ;
   https://developers.google.com/my-business/content/policies (read 2026-10-23).
 - **INFERENCE.** The Growth Suite reply flow is already approval-gated: keep it. The AI low-rating responder stays
-  draft-only unless the merchant opts in to auto-replies, recorded.
+  draft-only unless the merchant opts in to auto-replies, recorded. It sends the review text to the AI gateway (personal
+  information): for Clover workspaces, only to allowlisted providers, with a separate consent (ARCHITECTURE §11,
+  ROADMAP P1.18).
 
 ### 14. Asking customers for reviews (no gating)
 
@@ -200,10 +209,24 @@ rule.
   reviews on site or set staff quotas. Source: https://support.google.com/contributionpolicy/answer/7400114 (read
   2026-10-23).
 - **FACT (code, takatak-v1 origin/main `4c308b4`).** `src/components/reputation/public-rating-form.tsx` asks for a 1–5
-  rating first, then shows "A public review would really help a local business." only when the rating is 4 or more; lower
-  ratings see "The team will read your message personally." The Google button is shown for every rating.
-- **INFERENCE.** The different wording is a soft form of review gating. Fix before any Clover merchant uses it: the same
-  invitation for every customer, with the Google link offered before or independent of the private rating.
+  rating first, then:
+  - shows "A public review would really help a local business." only when the rating is 4 or more; lower ratings see
+    "The team will read your message personally." The Google button is shown for every rating;
+  - uses a different free-text prompt by rating (line 101: "Anything to add? (optional)" at 4–5★, "What could we do
+    better?" below);
+  - renders the `publishConsent` checkbox ("I agree my comment and first name may be shown on the business's website")
+    **only when the rating is 4 or more** (lines 110-112).
+  `src/lib/reputation/service.ts` `getReviewShowcase` (line 514) lists only `publishConsent: true, hiddenFromShowcase:
+  false, rating: { gte: 4 }` ("only 4–5★ comments with explicit publish consent ... are listed"), and `setShowcaseHidden`
+  (line 534) lets the owner hide any comment. Mitigation already there: the average and count shown cover every rating.
+- **INFERENCE.** Three layers of gating, not one: the invitation wording, the prompt, and a showcase that can only ever
+  show positive comments, curated by the owner. The showcase risks a misleading general impression (Competition Act
+  s.74.01(1)(a); P-40.1 s.219 for the restaurant's consumer advertising). ICPEN's 2016 guidelines for traders
+  (secondary summary, see [LEGAL_QUEBEC_CANADA.md](LEGAL_QUEBEC_CANADA.md) sources) say not to stop consumers seeing the
+  full range of genuine reviews. Fix before any Clover merchant uses it (ROADMAP P0.11(b)): the same invitation, prompt
+  and publish consent at every rating, with the Google link offered independent of the private rating; a showcase of all
+  consented comments at any rating (newest first, with average and count), or none; hiding only for unlawful, abusive or
+  off-topic content, with the reason logged.
 
 ### 15. Stored Google reviews vs the 30-day cap
 
@@ -216,9 +239,17 @@ rule.
 
 ### 16. Ordering inside Google
 
-- **FACT (research summary, 2026-10-23).** Google's checkout inside Search has been replaced by redirect links. Becoming
-  an Actions Center ordering partner is a separate path for ordering platforms (about 6–8 weeks) and is not needed to
-  start. Place Actions reference: https://developers.google.com/my-business/reference/placeactions/rest/v1/locations.placeActionLinks
+- **FACT (secondary for the dates).** Google's checkout inside Search (Ordering End-to-End) was shut down on
+  2024-07-01 and replaced by Ordering Redirect, "currently live in the US, CA, AU, DE and UK". Source: Google Actions
+  Center, "Ordering E2E is migrating to Ordering Redirect" and its FAQ
+  (https://developers.google.com/actions-center/verticals/ordering/e2e/transitioning-to-redirect/overview-and-timelines).
+  On 2026-10-23 that URL redirects to the Actions Center index (pages retired); the wording above was seen only in
+  search-result copies of the page.
+- **FACT.** Ordering Redirect is a separate partner path for ordering platforms: "Integration typically takes 6–8 weeks
+  with dedicated technical resources." Merchants need a physical location in Google Maps; links go to merchant-specific
+  ordering pages. Source: https://developers.google.com/actions-center/verticals/ordering/redirect/overview (last
+  updated 2026-04-01; read 2026-10-23). It is not needed to start.
+- Place Actions reference: https://developers.google.com/my-business/reference/placeactions/rest/v1/locations.placeActionLinks
   (localized copies read 2026-10-23; the English page was not loaded).
 - **INFERENCE.** P1 uses a `MERCHANT` "Order online" link to Clover online ordering. No Actions Center work.
 
@@ -237,9 +268,11 @@ rule.
    7-business-day disconnect.
 5. Per-location queue (≤10 edits/min), read-before-write, `updateMask` everywhere.
 6. 30-day expiry for stored Google content; no cross-client aggregation.
-7. No review gating; no auto-replies without opt-in.
-8. Never claim Google partnership or guaranteed ranking; do not copy the Business Profile UI.
-9. Brand profiles match real signage and pick-up; real hours only.
+7. No review gating (same invitation, prompt and publish consent at every rating; showcase of all consented comments or
+   none); no auto-replies without opt-in.
+8. French `MenuLabel` (`languageCode` `fr`) for every Québec menu item.
+9. Never claim Google partnership or guaranteed ranking; do not copy the Business Profile UI.
+10. Brand profiles match real signage and pick-up; real hours only.
 
 ## Risks
 
@@ -250,7 +283,7 @@ rule.
 | Merchant loses Google's menu editor after first push and is surprised | Medium | Explain in the consent step; show how to regain control on disconnect |
 | Suspension for multi-brand profiles that do not match Google's rules | High | Brand-by-brand check of signage and pick-up before connecting; never publish "virtual" or combined names |
 | Stored reviews beyond 30 days | Medium | Purge job before production access |
-| Review gating in the public rating form | Medium | Same invitation for every rating |
+| Review gating in the public rating form and showcase (wording, prompt, 4–5★-only publish consent and showcase, owner hide switch) | Medium | ROADMAP P0.11(b): same invitation, prompt and consent at every rating; showcase of all consented comments or none; logged reason to hide |
 | Auto-actions without consent (posts, replies, hours) | High | Per-merchant opt-in, recorded in the consent table |
 | Implying Google partnership in the Clover listing | Medium | Wording rules in [MARKET_AND_CLAIMS.md](MARKET_AND_CLAIMS.md) |
 

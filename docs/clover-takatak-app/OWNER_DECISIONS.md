@@ -13,21 +13,25 @@ Les décisions D1 à D10 bloquent le démarrage. / D1–D10 block the start.
 ## D1 — Nom de l'application / App name
 
 **FR.** Le nom ne peut pas contenir « Clover », ni « Google », « Facebook » ou « Instagram » (règles de marque). Il doit
-être différent de « TAKATAK Food Hub » et « TAKATAK Phone AI ».
+être différent de « TAKATAK Food Hub » et « TAKATAK Phone AI ». Il doit être final avant la soumission : après
+approbation, un changement d'icône (modifiée dans la même fenêtre que le nom) repasse en révision chez Clover.
 - A. « TAKATAK » tout court (simple, mais trop proche des deux autres apps et peu clair pour Clover).
 - ★ B. **« TAKATAK Présence »** (dit ce que fait l'app : votre présence en ligne; se lit en français et en anglais).
 - C. « TAKATAK Marketing ».
 
 **EN.** The name cannot contain "Clover", "Google", "Facebook" or "Instagram" (brand rules) and must differ from the two
-other apps. A: "TAKATAK" alone; ★ B: **"TAKATAK Présence"**; C: "TAKATAK Marketing".
+other apps. It must be final before submission: after approval, an icon change (edited in the same window as the name)
+goes back to Clover review. A: "TAKATAK" alone; ★ B: **"TAKATAK Présence"**; C: "TAKATAK Marketing".
 
 ## D2 — Nouvelle app ou réutiliser le brouillon « on2go » / New app or reuse the "on2go" draft
 
 **FR.** ★ A. **Créer une nouvelle app** (Web, App Market, Canada, FR-CA + EN-CA) et laisser le brouillon
-`N4NYCJCZ17FF4` intact. B. Réutiliser le brouillon (type Android & Web, pays et catégorie inconnus : plus de risques).
+`N4NYCJCZ17FF4` intact. B. Réutiliser le brouillon (type Android & Web, plateforme ancienne ou globale inconnue : plus de
+risques). Le pays, les langues et la catégorie ne sont pas une raison : ils se changent après la création.
 
 **EN.** ★ A. **Create a new app** (Web, App Market, Canada, FR-CA + EN-CA); leave draft `N4NYCJCZ17FF4` untouched.
-B. Reuse the draft (Android & Web type, unknown country and category: more risk).
+B. Reuse the draft (Android & Web type, legacy or global platform unknown: more risk). Country, languages and category
+are not a reason: they can be changed after creation.
 
 ## D3 — Où tourne l'app / Where the app runs
 
@@ -52,10 +56,14 @@ server.
 Facebook + Instagram inclus), **+ 15 $ CA/mois par marque supplémentaire** (événement mesuré Clover), comme Food Hub.
 Pas de crédits IA payants au début. B. 50 $/mois tout compris, sans extra. C. Gratuit au début pour gagner des avis.
 Le prix d'un événement mesuré ne change ensuite qu'avec l'accord de Clover; un changement de prix ne touche pas les
-clients déjà installés. Devise CAD à confirmer avec Clover.
+clients déjà installés. À confirmer avec Clover : la devise du prix (CAD) **et** la devise du versement et le compte
+bancaire (une page Clover parle d'un versement en dollars US vers une banque américaine; le contrat canadien dit « dans la
+devise encaissée »).
 
 **EN.** ★ A. **14-day trial, then CAD $50/month** per Clover merchant (Google + Facebook + Instagram), **+ CAD $15/month
-per extra brand** (Clover metered event); no paid AI credits at first. B. $50 all-in. C. Free at first.
+per extra brand** (Clover metered event); no paid AI credits at first. B. $50 all-in. C. Free at first. To confirm with
+Clover: the price currency (CAD) **and** the payout currency and bank account (one Clover page says US dollars to a
+US-based bank; the Canadian terms say "in the currency collected").
 
 ## D6 — Quels canaux d'abord / Which channels first
 
@@ -87,24 +95,41 @@ personnelle) sur takatak.ca/privacy. B. Déléguer par écrit à une autre perso
 
 ## D9 — Entité légale / Legal entity
 
-**FR.** La même entité doit être : le développeur du compte Clover, le concédant de la licence (EULA), l'entreprise
-vérifiée chez Meta, l'organisation agence chez Google. ★ A. **L'entité qui détient déjà le compte développeur Clover**
-(à confirmer : Quadro Holdings Ltée ou une société d'exploitation TAKATAK). B. Créer d'abord une société d'exploitation
-TAKATAK (plus long). À valider avec l'avocat.
+**FR.** Le compte développeur Clover est un compte **« Individual Developer »** (Matthieu), et vous avez choisi de le
+garder : on ne propose pas de le changer. Mais Meta exige une entreprise vérifiée (documents au nom exact de l'entité),
+et le concédant de la licence (EULA) et le sous-traitant des données (contrat Clover, art. 18.1) devraient être une
+société, pas une personne. La question devient une question précise pour l'avocat (question 16) : un développeur
+individuel peut-il publier une app dont le concédant et le sous-traitant est Quadro Holdings Ltée (ou une société
+d'exploitation TAKATAK), par exemple avec une licence ou un mandat écrit entre Matthieu et la société ? Quelle entité
+fait la vérification Meta et l'organisation Google ?
+- ★ A. **Garder le compte individuel; demander à l'avocat (Q16) le montage écrit Matthieu ↔ société; ne nommer aucun
+  concédant dans les brouillons d'EULA et de politique de confidentialité avant sa réponse.**
+- B. Créer d'abord une société d'exploitation TAKATAK (plus long), puis la même question à l'avocat.
 
-**EN.** One entity for Clover developer, EULA licensor, Meta verified business, Google agency organization. ★ A. **The
-entity that already holds the Clover developer account.** B. Create an operating company first.
+**EN.** The Clover developer account is an **Individual Developer** account (Matthieu), and you chose to keep it: we do
+not suggest switching it. But Meta needs a verified business (documents in the entity's exact name), and the EULA
+licensor and the data processor (Clover Developer Terms s.18.1) should be a company, not a person. This becomes a
+precise lawyer question (question 16): can an individual Clover developer list an app whose licensor and processor is
+Quadro Holdings Ltée (or a TAKATAK operating company), for example under a written licence or mandate between Matthieu
+and the company? Which entity does Meta verification and the Google organization?
+- ★ A. **Keep the individual account; ask the lawyer (Q16) for the written Matthieu ↔ company set-up; name no licensor
+  in the draft EULA or privacy policy until answered.**
+- B. Create a TAKATAK operating company first (longer), then the same lawyer question.
 
 ## D10 — Où sont les données / Data region
 
-**FR.** La base takatak-v1 est en Irlande (`eu-west-1`); Food Hub est au Canada (`ca-central-1`). La Loi 25 (art. 17)
-demande une évaluation (EFVP) et une entente écrite avant d'envoyer des renseignements personnels hors Québec. ★ A.
-**Faire l'EFVP maintenant et prévoir le déménagement des données venant de Clover au Canada (`ca-central-1`) avant la
-soumission.** B. Rester en Irlande avec EFVP et ententes (possible, mais à défendre à chaque client). C. Déménager toute la
-base takatak-v1 tout de suite (gros chantier).
+**FR.** La base takatak-v1 est en Irlande (`eu-west-1`); Food Hub est à `ca-central-1` (Montréal). La Loi 25 (art. 17)
+demande une évaluation (EFVP) et une entente écrite avant d'envoyer des renseignements personnels **hors Québec** (pas
+seulement hors Canada). Déménager la base ne remplace pas l'EFVP : le serveur de l'app, la passerelle IA et ses
+fournisseurs, Google et Meta restent hors Québec et restent dans l'EFVP. ★ A. **Faire l'EFVP maintenant (base, serveur,
+passerelle IA, chaque fournisseur IA, Google, Meta) et prévoir le déménagement des données venant de Clover à
+`ca-central-1` (Montréal) avant la soumission.** B. Rester en Irlande avec EFVP et ententes (possible, mais à défendre à
+chaque client). C. Déménager toute la base takatak-v1 tout de suite (gros chantier).
 
-**EN.** ★ A. **PIA now; move Clover-sourced data to Canada (`ca-central-1`) before submission.** B. Stay in Ireland with a
-PIA and agreements. C. Move the whole takatak-v1 database now.
+**EN.** Law 25 s.17 is about leaving **Québec**, not Canada. Moving the database does not replace the PIA: the app
+server, the AI gateway and its providers, Google and Meta stay outside Québec and stay in the PIA. ★ A. **PIA now
+(database, app server, AI gateway, each AI provider, Google, Meta); move Clover-sourced data to `ca-central-1`
+(Montréal) before submission.** B. Stay in Ireland with a PIA and agreements. C. Move the whole takatak-v1 database now.
 
 ---
 
@@ -120,10 +145,12 @@ auto-posting in P3. B. Auto-post from day one (rejection risk).
 ## D12 — Images IA / AI images
 
 **FR.** ★ A. **L'IA écrit le texte; les photos sont de vraies photos du restaurant.** Aucune image IA présentée comme un
-vrai plat. B. Images IA permises avec étiquette « IA » (plus tard, après avis de l'avocat).
+vrai plat. B. Images IA permises avec étiquette « IA » (plus tard, après avis de l'avocat). Dans les deux cas, dès P1 :
+vérifications des mots et des prix, mention « Texte proposé par l'IA — à valider », français par défaut (ROADMAP P1.17).
 
 **EN.** ★ A. **AI writes text; photos are the restaurant's real photos.** B. AI images allowed with an "AI" label (later,
-after legal advice).
+after legal advice). Either way, from P1: word and price checks, "Texte proposé par l'IA — à valider" label, French by
+default (ROADMAP P1.17).
 
 ## D13 — « Prendre les entreprises des autres » : la limite / "Take other businesses": the boundary
 
