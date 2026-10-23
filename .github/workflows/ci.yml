@@ -62,7 +62,7 @@ jobs:
         run: npm run qa:social-step8-content
 
       - name: X connection and paid API cost safeguards
-        run: npm run qa:social-x
+        run: npm run qa:social-x-cost
 
       - name: Authentication tests
         run: npm run test:auth
