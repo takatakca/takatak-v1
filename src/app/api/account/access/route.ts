@@ -71,7 +71,7 @@ export async function PATCH(request: NextRequest) {
     );
   }
 
-  const { email, newPassword } = validation.data;
+  const { email } = validation.data;
 
   try {
     const profile = await prisma.profile.findUnique({
@@ -105,13 +105,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const emailChanged = email !== null && email !== profile.email;
-    if (!emailChanged && !newPassword) {
-      return jsonResponse(
-        { ok: false, message: "There are no access changes to save." },
-        400,
-      );
-    }
-
     if (email && emailChanged) {
       const [takenProfile, takenIdentity] = await Promise.all([
         prisma.profile.findFirst({
@@ -155,36 +148,31 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    if (emailChanged || newPassword) {
-      const { error: authError } = await supabase.auth.updateUser(
-        {
-          ...(emailChanged && email ? { email } : {}),
-          ...(newPassword ? { password: newPassword } : {}),
-        },
-        emailChanged
-          ? {
-              emailRedirectTo: `${originFromRequest(request)}/auth/callback?next=/dashboard/account`,
-            }
-          : undefined,
+    // A recovery address can already exist in Prisma without being attached
+    // to the Supabase Auth user. In that case, request confirmation even when
+    // the profile's email string did not change.
+    const authEmail = (user.email ?? "").trim().toLowerCase();
+    const authEmailChangeNeeded = Boolean(email && email !== authEmail);
+    const emailVerificationRequested = emailChanged || authEmailChangeNeeded;
+    if (!emailVerificationRequested) {
+      return jsonResponse(
+        { ok: false, message: "There are no access changes to save." },
+        400,
       );
+    }
 
-      if (authError) {
-        console.error(
-          "[account-access] Auth identity update failed:",
-          authError.message,
-        );
-
-        return jsonResponse(
-          {
-            ok: false,
-            message:
-              authError.message.toLowerCase().includes("password")
-                ? "The new password could not be saved."
-                : "The confirmation message could not be sent.",
-          },
-          502,
-        );
-      }
+    const { error: authError } = await supabase.auth.updateUser(
+      { email: email! },
+      {
+        emailRedirectTo: `${originFromRequest(request)}/auth/callback?next=/dashboard/profile`,
+      },
+    );
+    if (authError) {
+      console.error("[account-access] Email confirmation request failed:", authError.message);
+      return jsonResponse(
+        { ok: false, message: "The confirmation message could not be sent." },
+        502,
+      );
     }
 
     await prisma.auditLog.create({
@@ -192,14 +180,11 @@ export async function PATCH(request: NextRequest) {
         profileId: access.profileId,
         clientId:
           access.mode === "client_scoped" ? access.activeClientId : null,
-        action: emailChanged
-          ? "account_email_verification_requested"
-          : "account_password_updated",
+        action: "account_email_verification_requested",
         entityType: "Profile",
         entityId: profile.id,
         metadata: {
-          emailChangeRequested: emailChanged,
-          passwordChanged: Boolean(newPassword),
+          emailChangeRequested: emailVerificationRequested,
         },
       },
     });
@@ -207,13 +192,9 @@ export async function PATCH(request: NextRequest) {
     return jsonResponse(
       {
         ok: true,
-        message: emailChanged
-          ? newPassword
-            ? "Your password was updated. Confirm the new email from the message we sent before it can be used."
-            : "Check the new email and confirm it before it can be used."
-          : "Your password was updated.",
+        message: "Check your email and confirm the link before using it to sign in.",
         email: profile.email,
-        verificationPending: emailChanged,
+        verificationPending: emailVerificationRequested,
       },
       200,
     );

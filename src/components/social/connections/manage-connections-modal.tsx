@@ -2340,7 +2340,7 @@ export function ManageConnectionsModal({
                           }
 
                           if (card.accountPlatform === 'instagram') {
-                            if (!facebookPageSelected) {
+                            if (!metaFacebookSelected) {
                               setNotice({
                                 tone: 'info',
                                 message:

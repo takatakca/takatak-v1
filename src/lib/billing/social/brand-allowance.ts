@@ -21,6 +21,25 @@ type DbClient =
       auditLog: Prisma.TransactionClient['auditLog'];
     };
 
+/**
+ * Temporary live-testing capacity for explicitly allowlisted workspaces.
+ * Does not modify subscriptions, Stripe, or a workspace's persisted plan.
+ * Remove the environment variables to restore normal brand allowances.
+ */
+function testBrandAllowance(clientId: string): number | null {
+  const ids = (process.env.SOCIAL_BRAND_TEST_CLIENT_IDS ?? "")
+    .split(",")
+    .map((id) => id.trim().toLowerCase())
+    .filter(Boolean);
+  if (!ids.includes(clientId.toLowerCase())) return null;
+
+  const raw = (process.env.SOCIAL_BRAND_TEST_ALLOWANCE ?? "").trim();
+  if (!/^[1-9][0-9]*$/.test(raw)) return null;
+  const allowance = Number(raw);
+  if (!Number.isSafeInteger(allowance) || allowance > 100) return null;
+  return allowance;
+}
+
 async function loadAllowanceContext(db: DbClient, clientId: string) {
   const [subscription, brands] = await Promise.all([
     db.clientSubscription.findUnique({
@@ -57,11 +76,13 @@ async function loadAllowanceContext(db: DbClient, clientId: string) {
     },
   });
 
-  const allowance = effectiveBrandAllowance(
+  const normalAllowance = effectiveBrandAllowance(
     lifecycle.access,
     entitlements.brandAllowance,
     lifecycle.displayKey,
   );
+  const override = testBrandAllowance(clientId);
+  const allowance = override === null ? normalAllowance : Math.max(normalAllowance, override);
 
   return {
     brands,

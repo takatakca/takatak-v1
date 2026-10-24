@@ -60,6 +60,7 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL} \
 # them out of the final build-stage snapshot and the production runner image.
 RUN node -e 'const keys = ["NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_ANON_KEY"]; const missing = keys.filter(key => !process.env[key]); if (missing.length) { console.error("Missing required public build configuration: " + missing.join(", ")); process.exit(1); }' \
  && npm run db:generate \
+ && ./node_modules/.bin/esbuild scripts/admin-send-email-recovery.ts --bundle --platform=node --format=cjs --packages=external --outfile=scripts/admin-send-email-recovery.cjs \
  && npm run build \
  && rm -rf .next/cache /root/.npm \
  && npm prune --omit=dev --ignore-scripts --no-audit --no-fund \

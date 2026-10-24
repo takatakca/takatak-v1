@@ -47,7 +47,9 @@ function applyPrivateCache(response: NextResponse, path: string): NextResponse {
   if (
     path.startsWith("/dashboard") ||
     path.startsWith("/api/") ||
-    path.startsWith("/auth/")
+    path.startsWith("/auth/") ||
+    path === "/oauth" ||
+    path.startsWith("/oauth/")
   ) {
     response.headers.set("Cache-Control", PRIVATE_NO_STORE);
     response.headers.set("Pragma", "no-cache");

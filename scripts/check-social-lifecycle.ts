@@ -74,10 +74,10 @@ const PROVIDERS: ProviderFixture[] = [
   },
   {
     provider: "pinterest",
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
-    providerState: "planned",
+    providerState: "ready_for_authorization",
   },
   {
     provider: "x",

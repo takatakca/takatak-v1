@@ -133,9 +133,12 @@ export async function readTrustedJsonBody(
     };
   }
 
-  const contentType =
-    request.headers.get("content-type")?.toLowerCase() ?? "";
-  if (!contentType.startsWith("application/json")) {
+  const contentType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  if (contentType !== "application/json") {
     return {
       ok: false,
       response: authErrorResponse("Invalid request format.", 415, {

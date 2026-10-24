@@ -3,14 +3,13 @@
 import { useRouter } from "next/navigation";
 import { Loader2, Phone, UserRound } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
+import { formatAuthErrorMessage, parseAuthResponse } from "@/lib/auth/parse-auth-response";
 import {
   normalizePersonName,
   validateFirstName,
   validateLastName,
 } from "@/lib/auth/registration-validation";
 import { normalizePhone, validatePhone, type PhoneCountry } from "@/lib/auth/otp/phone";
-import { phoneAuthMessage } from "@/lib/auth/phone-auth-message";
 
 type Values = {
   firstName: string;
@@ -70,41 +69,28 @@ export function MasterPhoneRegistrationForm() {
       return;
     }
 
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) {
-      setError("TAKATAK authentication is not configured.");
-      return;
-    }
-
     inFlight.current = true;
     setLoading(true);
     setError(null);
-
-    const capturedAt = new Date().toISOString();
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      phone,
-      options: {
-        shouldCreateUser: true,
-        data: {
-          first_name: firstName,
-          last_name: lastName,
-          full_name: `${firstName} ${lastName}`.trim(),
-          display_name: `${firstName} ${lastName}`.trim(),
-          phone,
-          source_application: "TAKATAK",
-          takatak_terms_accepted_at: capturedAt,
-          takatak_privacy_accepted_at: capturedAt,
-          takatak_consent_captured_at: capturedAt,
-        },
-      },
-    });
-
-    setLoading(false);
-    inFlight.current = false;
-
-    if (otpError) {
-      setError(phoneAuthMessage(otpError.message, (otpError as { code?: string }).code));
+    try {
+      // One request only: do not repeat an uncertain paid SMS operation.
+      const response = await fetch("/api/auth/sms-register", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName, phone, acceptedTerms: values.acceptedTerms }),
+      });
+      const result = await parseAuthResponse(response);
+      if (!result.ok) {
+        setError(formatAuthErrorMessage(result));
+        return;
+      }
+    } catch {
+      setError("The verification request may have been processed. Do not repeatedly request another SMS code.");
       return;
+    } finally {
+      setLoading(false);
+      inFlight.current = false;
     }
 
     sessionStorage.setItem("verifyPhone", phone);

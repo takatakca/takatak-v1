@@ -9,7 +9,7 @@ import {
   validateFirstName,
   validateLastName,
 } from '@/lib/auth/registration-validation';
-import { getSessionUser } from '@/lib/auth/supabase-server';
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server';
 import { normalizePhone } from '@/lib/auth/otp/phone';
 
 export type ProfileSyncOutcome =
@@ -104,8 +104,14 @@ export function resolveSupabaseProfileIdentity(
   const email = authEmail;
   const emailVerified = Boolean(email && user.email_confirmed_at);
 
-  const authPhone =
-    typeof user.phone === 'string' ? normalizePhone(user.phone) : null;
+  // Supabase Auth may return verified international numbers without a leading
+  // '+' (for example 2347041717579). Only trust the Auth user phone, never
+  // user_metadata; normalize an already-verified number as international.
+  const rawAuthPhone = typeof user.phone === 'string' ? user.phone.trim() : '';
+  const authPhone = normalizePhone(rawAuthPhone) ||
+    (/^[1-9]\d{7,14}$/.test(rawAuthPhone)
+      ? normalizePhone(`+${rawAuthPhone}`, 'INTL')
+      : null);
   const phone =
     authPhone && user.phone_confirmed_at ? authPhone : null;
   const phoneVerified = phone !== null;
@@ -433,15 +439,18 @@ export async function ensureProfileForSupabaseUser(
   const prisma = getPrisma();
 
   if (!prisma) {
+    console.error('[profile-sync] Database client unavailable');
     return { outcome: 'unavailable' };
   }
 
   const identity = resolveSupabaseProfileIdentity(user);
 
   if (!identity) {
+    console.error('[profile-sync] No usable authenticated identity');
     return { outcome: 'error' };
   }
 
+  let stage = 'lookup_profile';
   try {
     const existingProfile = await prisma.profile.findUnique({
       where: {
@@ -499,6 +508,7 @@ export async function ensureProfileForSupabaseUser(
           existingProfile.status !== 'disabled' &&
           !hasWorkspace
         ) {
+          stage = 'create_personal_workspace';
           await ensurePersonalClientWorkspace(
             existingProfile.id,
             identity.email,
@@ -506,6 +516,7 @@ export async function ensureProfileForSupabaseUser(
           );
         }
 
+        stage = 'link_master_identity';
         const masterIdentityLinked =
           await ensureMasterIdentityForVerifiedProfile(prisma, {
             profileId: existingProfile.id,
@@ -533,6 +544,7 @@ export async function ensureProfileForSupabaseUser(
         };
       }
 
+      stage = 'update_profile';
       const updatedProfile = await prisma.profile.update({
         where: {
           id: existingProfile.id,
@@ -553,6 +565,7 @@ export async function ensureProfileForSupabaseUser(
         updatedProfile.status !== 'disabled' &&
         !hasWorkspace
       ) {
+        stage = 'create_personal_workspace';
         await ensurePersonalClientWorkspace(
           updatedProfile.id,
           identity.email,
@@ -560,6 +573,7 @@ export async function ensureProfileForSupabaseUser(
         );
       }
 
+      stage = 'link_master_identity';
       const masterIdentityLinked =
         await ensureMasterIdentityForVerifiedProfile(prisma, {
           profileId: updatedProfile.id,
@@ -587,6 +601,7 @@ export async function ensureProfileForSupabaseUser(
       };
     }
 
+    stage = 'create_profile';
     const createdProfile = await prisma.profile.create({
       data: {
         authUserId: user.id,
@@ -605,6 +620,7 @@ export async function ensureProfileForSupabaseUser(
       identity.verified &&
       createdProfile.status !== 'disabled'
     ) {
+      stage = 'create_personal_workspace';
       await ensurePersonalClientWorkspace(
         createdProfile.id,
         identity.email,
@@ -612,6 +628,7 @@ export async function ensureProfileForSupabaseUser(
       );
     }
 
+    stage = 'link_master_identity';
     const masterIdentityLinked =
       await ensureMasterIdentityForVerifiedProfile(prisma, {
         profileId: createdProfile.id,
@@ -638,6 +655,13 @@ export async function ensureProfileForSupabaseUser(
       profileId: createdProfile.id,
     };
   } catch (error) {
+    const prismaCode = typeof error === 'object' && error !== null && 'code' in error
+      && typeof error.code === 'string' ? error.code : 'unknown';
+    console.error('[profile-sync] Database operation failed', {
+      stage,
+      prismaCode,
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+    });
     if (isUniqueConstraintError(error)) {
       try {
         const concurrentProfile = await prisma.profile.findUnique({
@@ -710,11 +734,21 @@ export async function ensureProfileForSupabaseUser(
 }
 
 export async function ensureProfileForAuthenticatedUser(): Promise<ProfileSyncOutcome> {
-  const user = await getSessionUser();
+  // The cached local JWT user omits phone_confirmed_at. Using it for profile
+  // creation falsely rejects confirmed phone-only users. This identity-write
+  // operation must use the current, Auth-verified Supabase user record.
+  const supabase = await createSupabaseServerClient({
+    persistSessionCookies: false,
+  });
+  if (!supabase) return { outcome: 'unavailable' };
 
-  if (!user) {
+  const { data, error } = await supabase.auth.getUser();
+  if (error || !data.user) {
+    console.error('[profile-sync] Auth user lookup failed', {
+      errorCode: error?.code ?? 'missing_user',
+    });
     return { outcome: 'denied' };
   }
 
-  return ensureProfileForSupabaseUser(user);
+  return ensureProfileForSupabaseUser(data.user);
 }

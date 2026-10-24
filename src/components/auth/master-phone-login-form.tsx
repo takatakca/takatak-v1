@@ -4,12 +4,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Mail, Phone } from "lucide-react";
 import { type FormEvent, useRef, useState } from "react";
-import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 import { normalizePhone, type PhoneCountry } from "@/lib/auth/otp/phone";
 import { normalizeEmail, validateEmail } from "@/lib/auth/registration-validation";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { formatAuthErrorMessage, parseAuthResponse } from "@/lib/auth/parse-auth-response";
-import { phoneAuthMessage } from "@/lib/auth/phone-auth-message";
 
 type Mode = "phone" | "email";
 
@@ -34,25 +32,28 @@ export function MasterPhoneLoginForm() {
       return;
     }
 
-    const supabase = createSupabaseBrowserClient();
-    if (!supabase) {
-      setError("TAKATAK authentication is not configured.");
-      return;
-    }
-
     inFlight.current = true;
     setLoading(true);
     setError(null);
-    const { error: otpError } = await supabase.auth.signInWithOtp({
-      phone,
-      options: { shouldCreateUser: false },
-    });
-    setLoading(false);
-    inFlight.current = false;
-
-    if (otpError) {
-      setError(phoneAuthMessage(otpError.message, (otpError as { code?: string }).code));
+    try {
+      // One request only. Never automatically retry an uncertain SMS send.
+      const response = await fetch("/api/auth/sms-login", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
+      const result = await parseAuthResponse(response);
+      if (!result.ok) {
+        setError(formatAuthErrorMessage(result));
+        return;
+      }
+    } catch {
+      setError("The SMS request could not be completed. It may already have been sent; do not repeatedly request another code.");
       return;
+    } finally {
+      setLoading(false);
+      inFlight.current = false;
     }
 
     sessionStorage.setItem("verifyPhone", phone);
