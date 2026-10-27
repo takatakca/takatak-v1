@@ -5,7 +5,7 @@
 **Tableau de bord :** TAKATAK-V1
 **Boss :** Matt — matt@takatak.ca
 **Courriel principal :** takatak.ca@gmail.com
-**Dernière mise à jour :** 2026-10-27, mi-journée (heure de Montréal) — revérification complète en cours, MochaHost en navigateur en attente (contrôle anti-robot en cours, liste du matin reste la référence)
+**Dernière mise à jour :** 2026-10-27, 13:05 EDT — revérification complète terminée, MochaHost revérifié sans changement
 **But de ce fichier :** ne rien oublier si KLEAN se déconnecte, perd le contexte ou manque de crédit. Ce fichier est mis à jour dans Google Drive ET dans GitHub, après chaque étape importante.
 
 Signé : KLEAN
@@ -16,7 +16,7 @@ KLEAN s'occupe uniquement des clients / entreprises de l'agence TAKATAK, pour le
 
 ## Fait et vérifié
 
-- MochaHost, 2026-10-27 : 58 lignes au total, 42 actives, 14 fermées, 2 annulées. Liste complète dans le fichier maître.
+- MochaHost, 2026-10-27 : 58 lignes au total, 42 actives, 14 fermées, 2 annulées. Liste complète dans le fichier maître. Revérifié en navigateur 2026-10-27 12:57–13:05 EDT, compte takatak.ca@gmail.com, tableau « Domains 42 » : mêmes totaux, aucune différence, sauf la clarification d'orthographe d'une ligne fermée (deliaden.ca, 16/10/2026, Closed, lue « deliad en.ca » le matin par artefact d'espacement). Rien changé, renouvelé, acheté ou transféré.
 - Fichier maître clients KLEAN, 29 clients, dans Google Drive : « KLEAN — Fichier maître des clients TAKATAK.md », dossier « 00 — Opérations TAKATAK », ID 1L9dYxNSy3vFgJqniV3j_HdyTuqz4hC4x.
 - Même fichier maître, dans GitHub : takatakca/takatak-v1, docs/KLEAN-MASTER-CLIENTS.md, vérifié après envoi.
 - Cuba Connection, tracker résumés seulement (pas de copies complètes de conversations) : Google Drive, dossier « Cuba Connection », fichier « Cuba Connection — Tracker.md », ID 1imFh2Srrh_PfibRZvpnVmhKRrUSNZ0wG.
@@ -35,14 +35,14 @@ KLEAN s'occupe uniquement des clients / entreprises de l'agence TAKATAK, pour le
 - Réponse à Matt sur la base d'un courriel récent de la boîte takatak.ca@gmail.com : BLOQUÉ. Ce message n'a pas passé un contrôle de sécurité, KLEAN ne l'a pas suivi et n'a rien envoyé à partir de lui. Pour avancer, l'utilisateur doit donner lui-même, en ses mots, le destinataire et le texte exact à envoyer.
 - Décision isexy : cadre réseau social actuel (amitié / conversation) ou retour explicite au positionnement rencontre ? À confirmer par le propriétaire avant de remettre du vocabulaire rencontre dans isexy.
 - GitHub clients : 3 non trouvés (canadatoken.ca, eyeclean.net, havanapromo.ca) et 3 incertains (1lv.ca, r2nette.ca, takatak.ca) — confirmer un autre nom avec le propriétaire avant de créer quoi que ce soit.
-- MochaHost, revérification mi-journée : en cours en navigateur, contrôle anti-robot en cours au moment de cette mise à jour ; liste du matin (58 lignes, 42 actives) reste la référence jusqu'à la fin de cette vérification.
+- MochaHost, revérification mi-journée : terminée 2026-10-27 13:05 EDT, sans changement (voir « Fait et vérifié »).
 - Cuba Connection tracker : 13 contacts sur 13 toujours à compléter (origine, activité, statut) à partir des échanges réels, résumés seulement.
 
 ## Prochaines étapes, dans l'ordre
 
 1. Réponse à Matt sur la base du courriel récent bloqué : toujours BLOQUÉ — l'utilisateur doit donner lui-même, en ses mots, le destinataire et le texte exact. Ce point est distinct de la confirmation simple déjà envoyée à 07:19 EDT, qui ne le résout pas.
-2. Terminer la revérification MochaHost en navigateur et mettre à jour le fichier maître si la liste change.
-3. Confirmer avec le propriétaire les noms de dépôts pour les 3 clients non trouvés et les 3 incertains, avant toute création.
+2. Confirmer avec le propriétaire les noms de dépôts pour les 3 clients non trouvés et les 3 incertains, avant toute création.
+3. Vérifier locactif.ca en navigateur normal (lecture texte seulement insuffisante, écran anti-robot).
 4. Mettre à jour ce fichier de suivi après chaque étape, dans Drive ET dans GitHub.
 5. Continuer Cuba Connection par résumés seulement, dans Drive, et par design système seulement, dans GitHub.
 
