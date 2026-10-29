@@ -4,6 +4,8 @@ on:
     paths:
       - "src/lib/web-migration/vip-transfer-policy.ts"
       - "scripts/verify-vip-transfer-policy.ts"
+      - "src/lib/web-migration/hosting-control-policy.ts"
+      - "scripts/verify-hosting-control-policy.ts"
       - ".github/workflows/vip-transfer-policy.yml"
   workflow_dispatch:
 
@@ -24,3 +26,5 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Test migration permissions and VIP pricing without external services
         run: npx --no-install tsx scripts/verify-vip-transfer-policy.ts
+      - name: Test tenant-scoped Hosting Control role restrictions
+        run: npx --no-install tsx scripts/verify-hosting-control-policy.ts
