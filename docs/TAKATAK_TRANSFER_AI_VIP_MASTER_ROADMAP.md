@@ -6,7 +6,9 @@
 **Release:** V1 coordinator reviews/merges and authorizes all live DB, billing, DNS and Coolify actions.
 **Brand:** `BRAND.md` — GROUPE TAKATAK, navy/electric blue, English and Canadian French.
 
-> **Customer Hosting Control addendum:** [Full client private control-panel specification](TAKATAK_HOSTING_CONTROL_CLIENT_PANEL.md). Default is TAKATAK-branded hosting panel over per-tenant Coolify API; genuine licensed cPanel/WHM is a separate optional server/engine. The client owns their site and scoped management tools; never expose host/root access.\n\n## 0. Executive product contract
+> **Customer Hosting Control — owner's final scope:** [Existing-services-only portal specification](TAKATAK_HOSTING_CONTROL_CLIENT_PANEL.md). Reuse exactly the currently offered TAKATAK hosting services, Upmind records and existing Coolify infrastructure. **No separate cPanel/WHM server, new licence, new hosting product or pricing change.** Customers get a TAKATAK-branded dashboard and a secure link to MochaHost's real domain portal while their legacy account remains there. Direct DNS writes, native source-file editor and SSO remain disabled until real scoped integrations are verified. Never request provider passwords in TAKATAK chat or a copied login form.
+
+## 0. Executive product contract
 
 Build a self-service, tenant-safe migration experience for existing MochaHost clients and new clients transferring from GoDaddy, Enom, cPanel/WHM, Plesk, WordPress, custom sites, and other technically supported sources.
 
