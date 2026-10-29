@@ -1,8 +1,10 @@
 # KLEAN — Journal erreurs Claude bot GitHub — par client
 
-**Agent :** KLEAN — **Agence :** TAKATAK (takatak.ca) — **Période :** depuis le 2026-10-27 — **Dernière mise à jour :** 2026-10-29 (collecte 17:29–17:36 EDT, synthèse coordinateur)
+**Agent :** KLEAN — **Agence :** TAKATAK (takatak.ca) — **Période :** depuis le 2026-10-27 — **Dernière mise à jour :** 2026-10-29 17:47 EDT (mise à jour continue, 1 seul fichier — collecte initiale 17:29–17:36 EDT, puis mise à jour 17:37–17:47 EDT, sans nouveau fichier ni nouvelle PR)
 
 **Règle du journal :** nom du client EN PREMIER, toujours, sections triées par nom de client alphabétique, puis par date décroissante dans chaque client. Aucune erreur connue n'est omise parce qu'elle est ancienne ou répétée : les répétitions sont regroupées avec leur nombre d'occurrences et leurs dates.
+
+**Règle 1 seul fichier, en continu (2026-10-29 17:45–17:46 EDT) :** Claude[bot], TOUS dans 1 fichier, dans GitHub et dans Google Drive en tout temps, l'information en continu, pour que les autres agents continuent le travail. Aucun nouveau fichier journal par mise à jour : on met à jour en place le même fichier Drive (ID 1McKz1u1Etw94a7hQZQrVmbxl1ixsMqbB) et la même branche GitHub (PR #230). Avant d'ajouter quoi que ce soit, on vérifie l'entrée existante dans le journal unique et dans le central ; on regroupe les notifications répétées sur le même client / même commit / même PR en UNE seule entrée groupée avec occurrences et dates ; on ne crée pas de PR, de fichier ou de note en double d'un travail déjà fait ; si un travail est déjà en cours ailleurs (coordinateur déploiement, reprise 10 min), on le note comme tel au lieu de le refaire. Signé KLEAN, avec date/heure et point d'arrêt exact.
 
 **Distinction essentielle, à ne pas effacer :** une notification `claude[bot]` n'est PAS automatiquement une erreur avérée. Beaucoup d'entrées ci-dessous sont des commentaires bot dont seul l'en-tête (expéditeur, objet, date) a été consigné, corps non lu — elles sont listées comme commentaires bot, pas comme des échecs CI/déploiement établis. Les seuls échecs établis comme « Run failed » / « Deploy failed » sont ceux dont le message le dit explicitement. Toute cause non lue est écrite exactement « diagnostic à établir », avec l'étape suivante. Aucune cause n'est inventée.
 
@@ -16,17 +18,17 @@
 |---|---|---|
 | ACTIONAVOCAT.CA | 0 | Aucune erreur Claude bot repérable |
 | ahmverdunca | 1 | 4 occurrences CI, 2026-10-27 |
-| Alkao | 4 | 3 commentaires bot + 1 échec Deploy main 535cd93 |
+| Alkao | 5 | 3 commentaires bot + 2 échecs Deploy main (535cd93, 9e2a838) + 1 notification docs PR #105 non comptée comme erreur dans le détail ci-dessous, mais l'échec 9e2a838 porte le total à 5 |
 | BESOINAVOCAT.CA | 1 | 2 occurrences Platform pilot checks, 429c0a6 — suite connue : PR #4 fusionnée ensuite (voir section) |
-| Co-work | 4 | Commentaire bot PR #8, run failed, aperçus statiques groupés, issue #7 / run 40740091800 |
+| Co-work | 5 | Commentaire bot PR #8, run failed, aperçus statiques groupés, issue #7 / run 40740091800, + 1 run failed aperçu statique docs b6d6e40 (2026-10-29 17:44) |
 | cubafoodca | 0 | Aucune erreur Claude bot repérable |
-| CUBARESORT.CA | 0 | Aucune erreur Claude bot repérable |
+| CUBARESORT.CA | 0 erreur | 1 notification vercel[bot] docs PR #9, non comptée comme erreur |
 | droneair | 3 | Commentaires bot PR #5, #6, #7 — aucun Run failed trouvé |
 | emploidirect | 3 | Échecs Deploy vers MochaHost (e124435, c3cc249, lot 13:52–13:56) |
-| flexsca | 0 | Aucune erreur Claude bot repérable |
+| flexsca | 0 erreur | 1 notification claude[bot] docs PR #5, non comptée comme erreur |
 | GLOBESECURE.CA | 0 | Aucune erreur Claude bot repérable |
 | isexy | 0 | Aucune erreur Claude bot repérable |
-| Locactif | 3 | 0 notification Claude bot proprement dite ; 2 erreurs site + 1 notification vercel[bot] PR #1 |
+| Locactif | 4 | 0 notification Claude bot proprement dite ; 2 erreurs site + 2 notifications vercel[bot] (PR #1, PR #2) |
 | MIELAISSA.CA | 0 | Aucune erreur Claude bot repérable |
 | mimtcaapp | 16 | 3 entrées d'échecs CI + 13 commentaires bot — version sous-ensemble A retenue, entrées D identiques dédupliquées, non comptées deux fois |
 | ocarinaspa | 0 erreur | 1 notification bot PR #3, non comptée comme erreur |
@@ -41,12 +43,70 @@
 | TAKATAK-V1 (tableau de bord) | 5 | Runs main 68cbc86, grappe PR #227, CI VIP 43702ee et rafale VIP |
 | taxichambly | 0 erreur | 1 notification docs bot PR #1, non comptée comme erreur |
 
-**Total sections détaillées : 65 entrées groupées uniques** (somme des lignes ci-dessus pour les clients avec entrées, hors clients à 0 et hors notifications docs bot non comptées).
+**Total sections détaillées : 68 entrées groupées uniques** (65 initiales + 1 échec Deploy Alkao 9e2a838 + 1 run failed Co-work b6d6e40 + 1 notification vercel[bot] Locactif PR #2 listée) (somme des lignes ci-dessus pour les clients avec entrées, hors clients à 0 et hors notifications docs bot non comptées).
 
 **Faits vérifiés GitHub par le sous-ensemble A (2026-10-29 au soir) :** mimtcaapp PR #83 MIMT Connect fermée avec merged_at 2026-10-29 04:54:56 EDT — le sort de #83, jusque-là non établi, est donc résolu (la cause CI 3581232 reste, elle, à établir par lecture du log) ; main mimtcaapp ffa2ac5, divergence avec 93d303d expliquée selon le corps de la PR #86 par la fusion de la PR #85 ; PR #77 et #81 toujours ouvertes mais en conflit (dirty) ; PR #86 (carte de déploiement) ouverte, commentaire claude[bot] 2026-10-29 17:29:04 EDT. on2goca PR #13 ouverte, tête c85a588 ; PR #12 ouverte, tête 56f1b96 ; PR #14 fermée 2026-10-29 16:54:13 EDT mais fusion non confirmée (merged_at présent, indicateur merged=false — incohérence constatée, état exact à établir). promohavanaca PR #13 ouverte, brouillon, tête ccb182c ; main 39099ad confirmé.
 
 **Alertes non attribuables, non comptées :** alertes « deploy failed » / « Backend CI » du 2026-10-29 16:06–16:09 EDT, repo/service non identifié dans les journaux — identifier le service avant toute attribution. Voir section en fin de journal.
 
+
+## Mise à jour continue — 2026-10-29 17:37–17:47 EDT — 1 seul fichier, regroupement anti-doublon
+
+**Agent :** KLEAN — **Principe :** ce journal n'est PAS refait de zéro et n'est PAS dupliqué. Les sections détaillées ci-dessous restent l'historique jusqu'à 17:36 EDT. Cette section ajoute uniquement ce qui est nouveau depuis 17:37 EDT, par client alphabétique, puis date décroissante, nom du client en premier. Chaque notification a été vérifiée contre l'entrée existante avant ajout : si elle était déjà présente, elle est notée « déjà présente, non dupliquée », pas réinscrite.
+
+### Nouvelles entrées groupées (comptées dans le total 68)
+
+- **Client : Alkao — 2026-10-29 17:29:48 EDT — échec déploiement, NOUVELLE entrée groupée**
+  - **Repo :** takatakca/Alkao.ca — **PR / issue :** aucune ; déploiement sur main — **Commit :** 9e2a838 — **Type :** déploiement — **Message tel que reçu :** « [takatakca/Alkao.ca] Run failed: Deploy - main (9e2a838) » — expéditeur TAKATAK MARKETING via notifications@github.com.
+  - **Diagnostic :** diagnostic à établir — étape suivante : lire le journal du run Deploy sur main 9e2a838 et vérifier le déploiement effectif sur Coolify. Ne pas conclure que alkao.ca est hors ligne : le courriel dit seulement que ce run a échoué, et la cause n'est pas lue.
+  - **Non-duplicata vérifié :** distinct de l'échec Deploy main 535cd93 (section Alkao 1.3) — commit main différent, après les fusions #103 et #104. Regroupé ici seul, 1 occurrence.
+- **Client : Co-work — 2026-10-29 17:44:24 EDT — échec CI, NOUVELLE entrée groupée**
+  - **Repo :** takatakca/co-work.ca-montreal-launch — **PR :** PR #9 (docs : note de déploiement KLEAN 4/10 co-work 2026-10-29) — **Commit :** b6d6e40 — **Type :** CI — **Message tel que reçu :** « [takatakca/co-work.ca-montreal-launch] PR run failed: CO WORK static preview verification - docs: note deploiement KLEAN 4/10 co-work 2026-10-29 (b6d6e40) » — expéditeur TAKATAK MARKETING.
+  - **Diagnostic :** diagnostic à établir — étape suivante : lire le journal de ce run, puis vérifier si la PR #9 docs est toujours ouverte. Lien avec l'issue #7 non vérifié, non affirmé.
+  - **Non-duplicata vérifié :** distinct des aperçus statiques groupés de la section Co-work 2.3 (commits c097ff1, b9985b8, 4a2b380, 2026-10-28) — commit et PR différents. Regroupé ici seul, 1 occurrence.
+- **Client : Locactif — 2026-10-29 17:29:05 EDT — notification bot voisine, NOUVELLE entrée listée**
+  - **Repo :** takatakca/LOCACTIF.CA — **PR :** PR #2 « docs(klean): carte de déploiement locactif 2026-10-29 » — **Type :** notification vercel[bot], pas claude[bot] — **Message tel que reçu :** « Re: [takatakca/LOCACTIF.CA] docs(klean): carte de déploiement locactif 2026-10-29 (PR #2) » — en-tête seulement, corps non lu.
+  - **Diagnostic :** diagnostic à établir — étape suivante : lire le corps de la notification Vercel de la PR #2 ; rappel : locactif.ca ne doit pas être routé vers Vercel avant un inventaire et un plan de migration.
+  - **Non-duplicata vérifié :** distinct de la notification vercel[bot] PR #1 (section Locactif 3.2) — PR différente. Regroupée ici seule, 1 occurrence.
+
+### Notifications nouvelles, NON comptées comme erreurs (comme les autres notifications docs bot)
+
+- **Client : Alkao — 2026-10-29 17:40:41 EDT — commentaire bot, notification docs seulement, pas une erreur**
+  - **Repo :** takatakca/Alkao.ca — **PR :** PR #105 « docs: note deploiement KLEAN 4/10 alkao + co-work 2026-10-29 » — **Message tel que reçu :** « Re: [takatakca/Alkao.ca] docs: note deploiement KLEAN 4/10 alkao + co-work 2026-10-29 (PR #105) » — expéditeur claude[bot], en-tête seulement, corps non lu. **Diagnostic :** diagnostic à établir — lire le corps du commentaire et vérifier l'état de la PR #105. Référence croisée Co-work : cette même note couvre co-work, comptée une seule fois ici, pas une deuxième fois sous Co-work.
+- **Client : Co-work — 2026-10-29 17:44:23 EDT — commentaire bot, notification docs seulement, pas une erreur**
+  - **Repo :** takatakca/co-work.ca-montreal-launch — **PR :** PR #9 « docs: note deploiement KLEAN 4/10 co-work 2026-10-29 » — **Message tel que reçu :** « Re: [takatakca/co-work.ca-montreal-launch] docs: note deploiement KLEAN 4/10 co-work 2026-10-29 (PR #9) » — expéditeur claude[bot], en-tête seulement, corps non lu. **Diagnostic :** diagnostic à établir — lire le corps et vérifier l'état de la PR #9. Attention : cette PR #9 co-work est distincte de la PR #9 revers-canada — le nom du client en premier évite la confusion.
+- **Client : CUBARESORT.CA — 2026-10-29 17:33:36 EDT — notification bot voisine, docs seulement, pas une erreur**
+  - **Repo :** takatakca/CUBARESORT.CA — **PR :** PR #9 « KLEAN — Carte de déploiement cubaresort.ca — 2026-10-29 (docs seulement) » — **Message tel que reçu :** « Re: [takatakca/CUBARESORT.CA] KLEAN — Carte de déploiement cubaresort.ca — 2026-10-29 (docs seulement) (PR #9) » — expéditeur vercel[bot], en-tête seulement, corps non lu.
+- **Client : flexsca — 2026-10-29 17:31:21 EDT — commentaire bot, notification docs seulement, pas une erreur**
+  - **Repo :** takatakca/flexsca — **PR :** PR #5 « docs: note de déploiement KLEAN flexs.ca 2026-10-29 » — **Message tel que reçu :** « Re: [takatakca/flexsca] docs: note de déploiement KLEAN flexs.ca 2026-10-29 (PR #5) » — expéditeur claude[bot], en-tête seulement, corps non lu.
+- **Client : revers-canada — 2026-10-29 17:44:53 EDT — commentaire bot, notification docs seulement, pas une erreur**
+  - **Repo :** takatakca/revers-canada-hope — **PR :** PR #10 « docs: KLEAN deployment note 2026-10-29 (reverscanada) » — **Message tel que reçu :** « Re: [takatakca/revers-canada-hope] docs: KLEAN deployment note 2026-10-29 (reverscanada) (PR #10) » — expéditeur claude[bot], en-tête seulement, corps non lu. **Diagnostic :** diagnostic à établir — lire le corps et vérifier l'état de la PR #10. Distincte de la PR #9 revers-canada (port hero), déjà listée dans la section revers-canada.
+- **Client : TAKATAK-V1 (tableau de bord) — 2026-10-29 17:39:47 EDT — commentaire bot, notification docs seulement, pas une erreur**
+  - **Repo :** takatakca/takatak-v1 — **PR :** PR #230, ce journal lui-même — **Message tel que reçu :** « Re: [takatakca/takatak-v1] docs: journal erreurs Claude bot GitHub par client (2026-10-29, KLEAN) (PR #230) » — expéditeur claude[bot], en-tête seulement. Auto-référence du journal, non comptée comme erreur, inscrite pour traçabilité seulement.
+
+### Mises à jour de statut, SANS nouvelle entrée (travail déjà fait / déjà en cours, noté au lieu d'être refait)
+
+- **Client : Alkao — fusions 17:23–17:25 EDT, constatées par la passe reprise 17:32 EDT**
+  - Main 535cd93 → 485faf9 (fusion PR #103, 17:23:21 EDT) → 9e2a838 (fusion PR #104, 17:25:21 EDT). Donc la section Alkao 1.1 (PR #104) et 1.2 (PR #103) ne sont plus « ouvertes, non fusionnées » : elles sont fusionnées. PR #53 n'est plus ouverte (heure exacte de fermeture non établie) — la recommandation « fermer sans fusionner » de la section 1.5 est donc réalisée dans les faits, sans que cette mise à jour ne refasse le travail de fermeture. Reste propriétaire : suite issue #84 et confirmation du déploiement effectif de 9e2a838 — voir l'échec Deploy 17:29:48 ci-dessus, diagnostic à établir.
+- **Client : revers-canada — fusions 17:28–17:31 EDT, constatées par la passe reprise 17:32 EDT**
+  - Main e7808f3 → 51f9c47 (fusion PR #7, 17:28:38 EDT) → 91c6618 (fusion PR #9, 17:31:18 EDT) ; PR #6 fermée comme remplacée ; seule la PR #8 reste ouverte. Donc les entrées revers-canada pour #7, #9 et #6 ne sont plus « ouvertes » : #7 et #9 fusionnées dans l'ordre proposé, #6 remplacée. Aucune nouvelle entrée bot créée pour ces fusions — ce sont des statuts, pas des notifications bot.
+- **Client : droneair — fusion 17:35:18 EDT, constatée par la passe reprise 17:42 EDT (travail du coordinateur déploiement, non refait ici)**
+  - Main 6c86b72 → e6779a0 (fusion PR #7) ; PR #5 fermée comme remplacée (sous-ensemble de #7) ; PR #6 (Resend) reste OUVERTE, tête cd3fc55. Les entrées droneair D-1/D-3 ne sont plus « ouvertes » pour #7/#5 : statut mis à jour ici seulement, aucun merge relancé par cette mise à jour du journal.
+- **Client : emploidirect — PR #7 créée par le coordinateur déploiement 17:34:32 EDT (travail déjà en cours, non refait ici)**
+  - PR #7 « docs: note de déploiement KLEAN emploidirect.ca 2026-10-29 », branche klean/deploy-emploidirect-2026-10-29, tête 827ed6c, base c3cc249, OUVERTE non mergée ; PR #5 (07847e1) et #6 (10e7405) toujours OUVERTES, inchangées. Inscrit ici pour éviter qu'un autre agent ne recrée la même note — aucun doublon créé.
+- **Client : mimtcaapp — déjà présent, non dupliqué**
+  - Commentaire claude[bot] PR #86 du 2026-10-29 17:29:04 EDT = entrée M1 existante, vérifiée identique. Aucune réinscription.
+- **Client : taxichambly, qmaps, rentautoca — déjà présents, non dupliqués**
+  - taxichambly PR #1 (17:23–17:25 EDT), qmaps PR #7, rentautoca PR #42 : notifications docs déjà groupées dans le journal initial, vérifiées identiques dans le tri Gmail 17:47 EDT. Aucune réinscription, aucun changement de total pour ces clients.
+
+### Point d'arrêt de cette mise à jour
+
+- **Dernière notification bot repérée :** revers-canada PR #10, claude[bot], 2026-10-29 17:44:53 EDT (tri Gmail ~17:47 EDT).
+- **Sources de cette mise à jour :** tri Gmail takatak.ca@gmail.com ~17:47 EDT (notifications@github.com, après 2026-10-29) + passes reprise 17:32 et 17:42 EDT lues dans le fichier central Drive actuel (modifié 17:46:36 EDT) — pas de relecture GitHub en rafale dans cette mise à jour, pour ne pas déclencher un 429 ni doubler le coordinateur déploiement.
+- **Diagnostics encore à établir ajoutés :** Deploy Alkao 9e2a838, run failed Co-work b6d6e40, corps des commentaires PR #105 Alkao, PR #9 Co-work, PR #10 revers-canada, notifications vercel[bot] Locactif PR #2 et CUBARESORT PR #9, commentaire flexsca PR #5.
+- **Total après cette mise à jour : 68 entrées groupées uniques** (voir récapitulatif mis à jour en tête).
+
+---
 ---
 
 ## Client : ACTIONAVOCAT.CA
@@ -906,3 +966,6 @@ TAKATAK-V1 n'est pas un site client ; il s'agit du tableau de bord et du repo ce
 Hors périmètre KLEAN (restaurants) : exclus du journal principal, sans détail.
 
 Signé : KLEAN
+
+— Mise à jour continue, 1 seul fichier : 2026-10-29 17:47 EDT — Signé : KLEAN
+Point d'arrêt exact : 2026-10-29 ~17:47 EDT, après le tri Gmail (dernière notification bot : revers-canada PR #10, 17:44:53 EDT) et avant les dépôts Drive / GitHub de cette mise à jour. Prochain agent : reprendre à partir de cette section « Mise à jour continue — 17:37–17:47 EDT », ne pas recréer de fichier ni de PR, regrouper toute nouvelle notification avec l'entrée existante du même client / commit / PR.
