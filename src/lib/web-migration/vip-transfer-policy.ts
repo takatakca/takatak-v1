@@ -66,7 +66,7 @@ export const MIGRATION_STATUS_NEXT: Readonly<Record<MigrationStatus, readonly Mi
   awaiting_cutover_approval: ["cutting_over", "blocked", "rolling_back"],
   cutting_over: ["monitoring", "blocked", "rolling_back"],
   monitoring: ["completed", "blocked", "rolling_back"],
-  blocked: ["auditing", "awaiting_payment", "awaiting_credentials", "backing_up", "ready", "copying", "validating", "awaiting_cutover_approval", "monitoring", "rolling_back", "canceled"],
+  blocked: ["auditing", "rolling_back"], // Re-inspect before resuming; never skip checks from a blocked state.
   rolling_back: ["rolled_back", "blocked"],
   rolled_back: [],
   completed: [],
@@ -161,10 +161,16 @@ export function mayTransitionMigration(input: {
   const { from, to, actor, evidence } = input;
   if (!MIGRATION_STATUS_NEXT[from].includes(to)) return { ok: false, reason: "unknown_transition" };
   if (actor === "ai_assistant") return { ok: false, reason: "actor_not_authorized" };
+  if (actor === "client" && !(
+    (from === "draft" && to === "awaiting_ownership") ||
+    (to === "canceled" && ["draft", "awaiting_ownership"].includes(from))
+  )) return { ok: false, reason: "actor_not_authorized" };
   if (["cutting_over", "completed", "rolled_back"].includes(to) && actor !== "operator" && actor !== "system") {
     return { ok: false, reason: "actor_not_authorized" };
   }
-  if (to === "auditing" && !evidence.ownerVerified) return { ok: false, reason: "ownership_unverified" };
+  if (!["awaiting_ownership", "canceled", "blocked", "rolling_back", "rolled_back"].includes(to) && !evidence.ownerVerified) {
+    return { ok: false, reason: "ownership_unverified" };
+  }
   if (["awaiting_credentials", "backing_up", "ready", "copying", "validating", "awaiting_cutover_approval", "cutting_over", "monitoring", "completed"].includes(to)
       && !evidence.stripePaymentVerified) return { ok: false, reason: "payment_not_verified" };
   if (["ready", "copying", "validating", "awaiting_cutover_approval", "cutting_over", "monitoring", "completed"].includes(to)
