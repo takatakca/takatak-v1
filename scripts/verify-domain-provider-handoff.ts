@@ -27,7 +27,7 @@ for (const unsafe of [
 const page = fs.readFileSync("src/app/dashboard/web-hosting/domain-portal/page.tsx", "utf8");
 assert.ok(page.includes("getDomainAssetsData()"), "Uses tenant-scoped domain data");
 assert.ok(page.includes("getDnsRecordsData()"), "DNS record display uses data scope");
-assert.ok(page.includes('domain.registrar !== "internal_demo"'), "Hides demonstration domains");
+assert.ok(page.includes('d.registrar !== "internal_demo"'), "Hides demonstration domains");
 assert.ok(page.includes("MOCHAHOST_CLIENT_AREA_URL"), "Uses audited exact destination");
 assert.ok(page.includes('rel="noopener noreferrer"'), "External tabs are isolated");
 assert.equal(/<input[^>]*(type="password"|name="password")/.test(page), false, "Never clone provider password input");
