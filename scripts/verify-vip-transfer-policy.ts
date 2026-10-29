@@ -49,6 +49,10 @@ assert.equal(authorizeMigrationAction({ action: "switch_dns", actor: "operator",
 
 // Explicit migration order; cutover needs review, no self-approval by AI or client.
 assert.equal(mayTransitionMigration({ from: "draft", to: "copying", actor: "operator", evidence: full }).reason, "unknown_transition");
+assert.equal(mayTransitionMigration({ from: "blocked", to: "copying", actor: "operator", evidence: full }).reason, "unknown_transition");
+assert.equal(mayTransitionMigration({ from: "auditing", to: "awaiting_payment", actor: "client", evidence: full }).reason, "actor_not_authorized");
+assert.equal(mayTransitionMigration({ from: "auditing", to: "awaiting_payment", actor: "operator", evidence: without("ownerVerified") }).reason, "ownership_unverified");
+assert.equal(mayTransitionMigration({ from: "draft", to: "awaiting_ownership", actor: "client", evidence: without("ownerVerified") }).ok, true);
 assert.equal(mayTransitionMigration({ from: "auditing", to: "awaiting_payment", actor: "operator", evidence: full }).ok, true);
 assert.equal(mayTransitionMigration({ from: "awaiting_cutover_approval", to: "cutting_over", actor: "operator", evidence: without("cutoverApprovedByHuman") }).reason, "cutover_not_approved");
 assert.equal(mayTransitionMigration({ from: "awaiting_cutover_approval", to: "cutting_over", actor: "ai_assistant", evidence: full }).reason, "actor_not_authorized");
