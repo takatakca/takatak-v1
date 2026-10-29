@@ -276,7 +276,7 @@ Pour chaque connecteur : vérifiez son statut par sa commande status, mettez « 
   - connectors-google-productivity-2026-10-29.md (8 396 octets)
   - connectors-commerce-social-dev-2026-10-29.md (16 268 octets)
   - google-tasks-calendar-2026-10-29.md (4 641 octets)
-- Ce rapport : déposé dans Google Drive, dossier « 00 — Opérations TAKATAK », signé KLEAN, ID Drive 1uH2HwZzpxSJHrelSepdRhPWd_l51GLQs, ET dans GitHub takatakca/takatak-v1 via PR seulement (numéro PR à compléter ci-dessous après création, jamais de push direct sur main).
+- Ce rapport : déposé dans Google Drive, dossier « 00 — Opérations TAKATAK », signé KLEAN, ID Drive 1uH2HwZzpxSJHrelSepdRhPWd_l51GLQs, ET dans GitHub takatakca/takatak-v1 via PR seulement, PR #231 OUVERTE, non mergée, branche klean/connectors-inventory-2026-10-29, commit 24d83c2e197ec3700b58827e6e4a602e0716cefa (premier commit ; un second commit ajoutant ce numéro PR suit sur la même branche), jamais de push direct sur main.
 - Fichier central Drive ID 1vTzXrkvfhmE-zp2iquvQByRE6LXETaWJ : mis à jour en place avec un résumé de ce rapport et son lien Drive.
 - Aucun merge/déploiement de site client dans cette mission ; aucun envoi à un autre agent ; la note aux autres agents est dans ce rapport seulement (§8).
 - Limites : inventaire statut/lecture seulement ; statuts vérifiés le 2026-10-29 après-midi EDT, susceptibles de changer à la prochaine reconnexion ; les références Drive citées dans GitHub n'ont pas été ouvertes dans la mission GitHub seulement ; les fichiers de code source n'ont pas été relus ligne par ligne ; les métriques non lues ne sont pas chiffrées ici.
