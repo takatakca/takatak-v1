@@ -6,6 +6,11 @@ on:
       - "scripts/verify-vip-transfer-policy.ts"
       - "src/lib/web-migration/hosting-control-policy.ts"
       - "scripts/verify-hosting-control-policy.ts"
+      - "src/lib/web-hosting/domain-provider-handoff.ts"
+      - "src/app/dashboard/web-hosting/domain-portal/page.tsx"
+      - "src/components/web-hosting/web-domain-shell.tsx"
+      - "src/components/web-hosting/hosting-accounts-overview.tsx"
+      - "scripts/verify-domain-provider-handoff.ts"
       - ".github/workflows/vip-transfer-policy.yml"
   workflow_dispatch:
 
@@ -28,3 +33,5 @@ jobs:
         run: npx --no-install tsx scripts/verify-vip-transfer-policy.ts
       - name: Test tenant-scoped Hosting Control role restrictions
         run: npx --no-install tsx scripts/verify-hosting-control-policy.ts
+      - name: Test authorized MochaHost handoff without credential collection
+        run: npx --no-install tsx scripts/verify-domain-provider-handoff.ts
