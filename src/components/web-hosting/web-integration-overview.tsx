@@ -101,7 +101,13 @@ export function WebIntegrationOverview({
             Manage your websites, domains, SSL, and performance all in one place.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/dashboard/web-hosting/domain-portal"
+            className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+          >
+            Domain Provider Portal
+          </Link>
           <Link
             href="/checkout"
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"

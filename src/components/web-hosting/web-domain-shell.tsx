@@ -27,6 +27,7 @@ export const WEB_DOMAIN_NAV: { label: string; href: string; icon: LucideIcon }[]
   { label: "Overview", href: "/dashboard/web-hosting", icon: LayoutDashboard },
   { label: "Websites", href: "/dashboard/web-hosting/websites", icon: Globe },
   { label: "Domains", href: "/dashboard/web-hosting/domains", icon: Link2 },
+  { label: "Domain Provider Portal", href: "/dashboard/web-hosting/domain-portal", icon: Globe },
   { label: "SSL Certificates", href: "/dashboard/web-hosting/ssl", icon: Lock },
   { label: "Hosting", href: "/dashboard/web-hosting/environments", icon: Server },
   { label: "Pages", href: "/dashboard/web-hosting/pages", icon: FileText },
@@ -41,6 +42,7 @@ export const WEB_DOMAIN_NAV: { label: string; href: string; icon: LucideIcon }[]
 ];
 
 const WEB_WORKSPACE_PREFIXES = [
+  "/dashboard/web-hosting/domain-portal",
   "/dashboard/web-hosting/environments",
   "/dashboard/web-hosting/pages",
   "/dashboard/web-hosting/blog",
