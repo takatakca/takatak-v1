@@ -1,7 +1,7 @@
 // Run: npx tsx scripts/verify-hosting-control-policy.ts
 import assert from "node:assert/strict";
 import {
-  authorizeHostingOperation, HOSTING_ENGINE_CONFIG,
+  authorizeHostingOperation, HOSTING_CONTROL_SCOPE,
   type HostingAccessEvidence,
   type HostingOperation,
   type HostingRole,
@@ -17,8 +17,10 @@ const evidence: HostingAccessEvidence = {
 const verdict = (role: HostingRole, operation: HostingOperation, patch: Partial<HostingAccessEvidence> = {}) =>
   authorizeHostingOperation({ role, operation, evidence: { ...evidence, ...patch } });
 
-assert.equal(HOSTING_ENGINE_CONFIG.coolify.customerFrontend, "takatak-hosting-control");
-assert.equal(HOSTING_ENGINE_CONFIG.cpanel_whm.licenseRequired, true);
+assert.equal(HOSTING_CONTROL_SCOPE.serviceCatalog, "existing-takatak-hosting-only");
+assert.equal(HOSTING_CONTROL_SCOPE.deploymentControlPlane, "existing-coolify");
+assert.equal(HOSTING_CONTROL_SCOPE.licenseOrExtraServerProvisioned, false);
+assert.equal(HOSTING_CONTROL_SCOPE.externalDnsEditingIsNotActive, true);
 assert.equal(verdict("owner", "site.read").ok, true);
 assert.equal(verdict("owner", "preview.deploy").ok, true);
 assert.equal(verdict("developer", "files.edit_scoped").ok, true);
