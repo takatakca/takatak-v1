@@ -6,8 +6,6 @@
  * The browser and AI must never supply trusted evidence or a Coolify token.
  * No command execution, cPanel API calls, SSH, DNS or database access here.
  */
-export type HostingEngine = "coolify" | "cpanel_whm";
-
 export type HostingRole = "owner" | "manager" | "developer" | "viewer" | "platform_operator" | "ai_assistant";
 
 export type HostingOperation =
@@ -124,12 +122,15 @@ export function authorizeHostingOperation(input: {
   return { ok: true, reason: "allowed" };
 }
 
-/** Only these engines are anticipated; cPanel requires separate licensed WHM host. */
-export const HOSTING_ENGINE_CONFIG = Object.freeze({
-  coolify: { customerFrontend: "takatak-hosting-control", rawAdminAccess: false, licenseRequired: false },
-  cpanel_whm: { customerFrontend: "native-cpanel-or-takatak-proxy", rawAdminAccess: false, licenseRequired: true },
-} satisfies Record<HostingEngine, {
-  customerFrontend: string;
-  rawAdminAccess: false;
-  licenseRequired: boolean;
-}>);
+/**
+ * Scope is deliberately locked to TAKATAK's EXISTING hosting services.
+ * Not a new hosting plan, licensed cPanel service, WHM server or new product.
+ */
+export const HOSTING_CONTROL_SCOPE = Object.freeze({
+  serviceCatalog: "existing-takatak-hosting-only",
+  deploymentControlPlane: "existing-coolify",
+  legacyDomainProvider: "mochahost-client-area-handoff",
+  licenseOrExtraServerProvisioned: false,
+  sourceFileEditingRequiresRealScopedAdapter: true,
+  externalDnsEditingIsNotActive: true,
+});
