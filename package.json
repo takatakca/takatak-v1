@@ -84,6 +84,7 @@
     "qa:rentauto-sync": "tsx --require ./scripts/register-server-only.cjs scripts/rentauto-sync-tests.ts",
     "qa:rentauto-service-access": "tsx scripts/rentauto-service-entitlement-tests.ts",
     "qa:rentauto-cutover-inventory": "tsx scripts/rentauto-cutover-inventory.ts",
+    "qa:on2go-master-api": "tsx --require ./scripts/register-server-only.cjs scripts/on2go-master-api-tests.ts",
     "qa:1lv-master-api": "tsx --require ./scripts/register-server-only.cjs scripts/one-lv-master-api-tests.ts",
     "qa:cubafood-contract": "tsx scripts/cubafood-master-contract-tests.ts",
     "qa:website-leads": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-lead-capture.ts",

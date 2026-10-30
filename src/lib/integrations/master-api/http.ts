@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { verifyMasterApiRequest } from "./auth";
+import type { MasterApiScope } from "./scope";
 import {
   MasterApiConflictError,
   MasterApiInputError,
@@ -9,6 +10,7 @@ import {
 
 export const MASTER_API_MAX_BODY_BYTES = 100_000;
 
+/** 1LV-only routes: null when authorized, else the error response. */
 export function authorizeMasterRequest(request: Request) {
   const verification = verifyMasterApiRequest(request.headers);
   if (verification.valid) return null;
@@ -17,6 +19,23 @@ export function authorizeMasterRequest(request: Request) {
     { ok: false, error: verification.error },
     { status: verification.status },
   );
+}
+
+/** Routes open to several scopes: the matched scope, or the error response. The scope then bounds the payload's source. */
+export function authorizeMasterScope(
+  request: Request,
+  allowed: readonly MasterApiScope[],
+): { scope: MasterApiScope; response: null } | { scope: null; response: NextResponse } {
+  const verification = verifyMasterApiRequest(request.headers, allowed);
+  if (verification.valid) return { scope: verification.scope, response: null };
+
+  return {
+    scope: null,
+    response: NextResponse.json(
+      { ok: false, error: verification.error },
+      { status: verification.status },
+    ),
+  };
 }
 
 export async function readMasterJson(request: Request): Promise<{

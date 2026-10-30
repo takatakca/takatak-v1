@@ -18,6 +18,7 @@ import {
   type MasterMerchantPayload,
 } from "./merchant";
 import { assertMasterPayloadSafe } from "./payload-safety";
+import { sourceForScope, type MasterApiScope } from "./scope";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -70,7 +71,7 @@ export type MasterEventInput = {
   payload?: Record<string, unknown>;
 };
 
-function parseInput(input: MasterEventInput) {
+function parseInput(input: MasterEventInput, scope: MasterApiScope) {
   const eventId = input.event_id?.trim() ?? "";
   const eventType = input.event_type?.trim() ?? "";
   const aggregateType = input.aggregate_type?.trim() ?? "";
@@ -89,8 +90,9 @@ function parseInput(input: MasterEventInput) {
   if (!aggregateId || aggregateId.length > 200) {
     throw new MasterApiInputError("Invalid aggregate id.");
   }
-  if (sourceApplication !== "1lv") {
-    throw new MasterApiInputError("Unsupported source application.");
+  const checkedSource = sourceForScope(sourceApplication, scope);
+  if (!checkedSource.ok) {
+    throw new MasterApiInputError(checkedSource.error);
   }
   if (
     !input.payload ||
@@ -146,13 +148,14 @@ export function sourceCustomerReference(
 export async function applyMasterEvent(
   rawBody: string,
   input: MasterEventInput,
+  scope: MasterApiScope = "1lv",
 ) {
   const prisma = getPrisma();
   if (!prisma) {
     throw new MasterApiUnavailableError("Database is unavailable.");
   }
 
-  const parsed = parseInput(input);
+  const parsed = parseInput(input, scope);
   const payloadHash = createHash("sha256")
     .update(rawBody, "utf8")
     .digest("hex");
@@ -189,12 +192,14 @@ export async function applyMasterEvent(
   if (parsed.aggregateType === "customer") {
     const person = await resolveMasterPerson(
       parsed.payload as MasterPersonPayload,
+      scope,
     );
     identityId = person.id;
     sourceProfileId = person.sourceProfileId;
   } else if (parsed.aggregateType === "merchant") {
     const merchant = await resolveMasterMerchant(
       parsed.payload as MasterMerchantPayload,
+      scope,
     );
     merchantId = merchant.id;
   } else {
@@ -204,7 +209,7 @@ export async function applyMasterEvent(
       const sourceProfile = await prisma.sourceProfile.findUnique({
         where: {
           sourceApplication_externalUserId: {
-            sourceApplication: "1lv",
+            sourceApplication: parsed.sourceApplication,
             externalUserId: customerReference,
           },
         },
