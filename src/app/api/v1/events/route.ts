@@ -6,17 +6,18 @@ import {
   type MasterEventInput,
 } from "@/lib/integrations/master-api/events";
 import {
-  authorizeMasterRequest,
+  authorizeMasterScope,
   masterApiError,
   readMasterJson,
 } from "@/lib/integrations/master-api/http";
+import { MASTER_API_ROUTE_SCOPES } from "@/lib/integrations/master-api/scope";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const unauthorized = authorizeMasterRequest(request);
-  if (unauthorized) return unauthorized;
+  const auth = authorizeMasterScope(request, MASTER_API_ROUTE_SCOPES.events);
+  if (auth.response) return auth.response;
 
   try {
     const { rawBody, body } = await readMasterJson(request);
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
     const result = await applyMasterEvent(
       rawBody,
       body as MasterEventInput,
+      auth.scope,
     );
 
     return NextResponse.json(

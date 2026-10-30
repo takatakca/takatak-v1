@@ -13,6 +13,7 @@ import {
   MasterApiUnavailableError,
 } from "./errors";
 import { assertMasterPayloadSafe } from "./payload-safety";
+import { sourceForScope, type MasterApiScope } from "./scope";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -57,12 +58,10 @@ function parseName(fullName: string | null | undefined) {
   };
 }
 
-function sourceApplication(payload: MasterPersonPayload): string {
-  const source = payload.source_application?.trim().toLowerCase() ?? "";
-  if (source !== "1lv") {
-    throw new MasterApiInputError("Unsupported source application.");
-  }
-  return source;
+function sourceApplication(payload: MasterPersonPayload, scope: MasterApiScope): string {
+  const checked = sourceForScope(payload.source_application, scope);
+  if (!checked.ok) throw new MasterApiInputError(checked.error);
+  return checked.source;
 }
 
 function externalUserId(payload: MasterPersonPayload): string {
@@ -127,6 +126,7 @@ async function resolveExplicitIdentity(
 
 export async function resolveMasterPerson(
   payload: MasterPersonPayload,
+  scope: MasterApiScope = "1lv",
 ): Promise<ResolvedMasterIdentity> {
   assertMasterPayloadSafe(payload);
   const prisma = getPrisma();
@@ -136,7 +136,7 @@ export async function resolveMasterPerson(
     );
   }
 
-  const source = sourceApplication(payload);
+  const source = sourceApplication(payload, scope);
   const externalId = externalUserId(payload);
   const email = normalizeEmail(payload.email);
   const phone = payload.phone ? normalizePhone(payload.phone) : null;
