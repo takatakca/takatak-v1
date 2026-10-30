@@ -3,6 +3,17 @@
 // base32 (a-z and 2-7), never a URL path. The decision route may send the
 // browser only to https, a loopback http host, or a mimt:// app link.
 
+import { NextRequest } from "next/server";
+
+import {
+  PRODUCTION_APP_ORIGIN,
+  isProductionAppRuntime,
+  resolvePublicUrl,
+} from "@/lib/config/app-origin";
+import {
+  isTrustedRequestOrigin,
+  normalizeOrigin,
+} from "@/lib/auth/trusted-origin";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 
 const AUTHORIZATION_ID = /^[a-z2-7]{32}$/;
@@ -67,6 +78,39 @@ const SCOPE_TEXT: Record<string, Record<ConsentLanguage, string>> = {
 
 export function consentLanguage(value: unknown): ConsentLanguage {
   return value === "en" ? "en" : "fr";
+}
+
+/**
+ * The consent form is a same-origin navigation. `/oauth` sends
+ * `Referrer-Policy: no-referrer`, so Fetch serializes that POST's Origin
+ * as the literal `null` and omits Referer. Accept that browser shape only
+ * when the fetch metadata says the navigation is same-origin. A real
+ * TAKATAK Origin is still accepted when Sec-Fetch-Site is absent or
+ * `same-origin`. Every other origin, including `cross-site` and
+ * `same-site`, is rejected. `isTrustedRequestOrigin` stays strict for
+ * the other auth routes.
+ */
+export function isConsentPostAllowed(request: NextRequest): boolean {
+  const site = request.headers.get("sec-fetch-site");
+  if (isTrustedRequestOrigin(request)) {
+    return site === null || site === "same-origin";
+  }
+
+  if (!isMissingBlankOrNullOrigin(request.headers.get("origin"))) return false;
+  if (site !== "same-origin") return false;
+
+  const mode = request.headers.get("sec-fetch-mode");
+  if (mode !== null && mode !== "navigate") return false;
+
+  const dest = request.headers.get("sec-fetch-dest");
+  if (dest !== null && dest !== "document") return false;
+
+  const referer = request.headers.get("referer");
+  if (referer === null || referer === "") return true;
+
+  const refererOrigin = normalizeOrigin(referer);
+  const expected = configuredAppOrigin(request);
+  return refererOrigin !== null && expected !== null && refererOrigin === expected;
 }
 
 export function parseAuthorizationId(value: unknown): string | null {
@@ -258,4 +302,42 @@ function isMimtAppLink(url: URL): boolean {
     return /^[a-z0-9][a-z0-9._-]{0,120}$/i.test(host);
   }
   return url.pathname.length > 1;
+}
+
+/** Origin missing, blank, or the Fetch opaque-origin token `null`. */
+function isMissingBlankOrNullOrigin(value: string | null): boolean {
+  if (value === null) return true;
+  const trimmed = value.trim();
+  return trimmed === "" || trimmed === "null";
+}
+
+/**
+ * The same server-configured origin `isTrustedRequestOrigin` compares
+ * against. A request Host cannot supply it.
+ */
+function configuredAppOrigin(request: NextRequest): string | null {
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (configured) {
+    try {
+      const expected = resolvePublicUrl(configured);
+      if (
+        !["https:", "http:"].includes(expected.protocol) ||
+        expected.username ||
+        expected.password
+      ) {
+        return null;
+      }
+      return expected.origin;
+    } catch {
+      return null;
+    }
+  }
+
+  if (isProductionAppRuntime()) return PRODUCTION_APP_ORIGIN;
+
+  try {
+    return new URL(request.url).origin;
+  } catch {
+    return null;
+  }
 }
