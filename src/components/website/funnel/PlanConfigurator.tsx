@@ -10,6 +10,7 @@ import { BUSINESS_TYPES, GOALS, fill, homeCopy, homeV2 } from "@/lib/website/hom
 import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
+import { WelcomeSaving } from "./Campaign";
 import { sectionId } from "./HomeSectionNav";
 import { Eyebrow, Rise, Section, Ticker, TwoTone } from "./primitives";
 
@@ -161,6 +162,11 @@ export function PlanConfigurator() {
                 )}
               </dl>
 
+              {plan.keys.length > 0 && (
+                <div className="mt-5">
+                  <WelcomeSaving keys={plan.keys} lang={lang} serviceName={(k) => tk(`cat.${k}.name`)} />
+                </div>
+              )}
               <div className="mt-7 grid gap-2">
                 <Link
                   to={plan.registerHref}

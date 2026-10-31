@@ -10,6 +10,7 @@ import { fill, homeCopy, homeV2 } from "@/lib/website/home-funnel";
 import { pricing, type Cadence } from "@/lib/website/pricing";
 import { TAKBOT_PACKS } from "@/lib/takbot/catalog";
 import { Link } from "@/lib/website/nav";
+import { CampaignCountdown, useActiveCampaign } from "./Campaign";
 import { sectionId } from "./HomeSectionNav";
 import { Eyebrow, Rise, Section, TwoTone } from "./primitives";
 
@@ -23,6 +24,8 @@ interface Card {
   suffix?: string;
   lines: readonly string[];
   featured?: boolean;
+  /** A true label: our recommendation, the fullest tier, or a computed best price. */
+  badge?: { en: string; fr: string };
   action: { kind: "checkout"; plan: string } | { kind: "link"; to: string };
   label: string;
 }
@@ -35,6 +38,9 @@ export function PricingTabs() {
   const t = homeCopy.pricing;
   const locale = lang === "fr" ? "fr-CA" : "en-CA";
 
+  const bestPerCredit = [...TAKBOT_PACKS].sort((a, b) => a.priceCad / a.credits - b.priceCad / b.credits)[0]?.key;
+  const campaign = useActiveCampaign();
+
   const cards: Card[] =
     tab === "hosting"
       ? pricing.hosting.map((h) => ({
@@ -44,6 +50,7 @@ export function PricingTabs() {
           cadence: h.cadence,
           lines: [h.description, ...h.features],
           featured: h.key === "silver",
+          badge: h.key === "silver" ? { en: "Recommended", fr: "Recommandé" } : h.key === "gold" ? { en: "Most complete", fr: "Le plus complet" } : undefined,
           action: { kind: "checkout", plan: h.key },
           label: fill(t.choose[lang], { name: h.name }),
         }))
@@ -55,6 +62,7 @@ export function PricingTabs() {
             cadence: w.cadence,
             lines: [w.description],
             featured: w.key === "business",
+            badge: w.key === "business" ? { en: "Recommended", fr: "Recommandé" } : w.key === "ecommerce" ? { en: "To sell online", fr: "Pour vendre en ligne" } : undefined,
             action: { kind: "link", to: "/register?plan=website" },
             label: fill(t.start[lang], { name: w.name }),
           }))
@@ -67,6 +75,7 @@ export function PricingTabs() {
               suffix: "suffix" in m ? m.suffix : undefined,
               lines: [],
               featured: m.key === "monthly",
+              badge: m.key === "monthly" ? { en: "Recommended", fr: "Recommandé" } : undefined,
               action: { kind: "link", to: "/register?plan=marketing" },
               label: fill(t.start[lang], { name: m.name }),
             }))
@@ -80,6 +89,7 @@ export function PricingTabs() {
                 fill(t.perCredit[lang], { price: money(lang, Math.round((p.priceCad / p.credits) * 1000) / 1000) }),
               ],
               featured: p.key === "growth",
+              badge: p.key === "growth" ? { en: "Recommended", fr: "Recommandé" } : p.key === bestPerCredit ? { en: "Best price per credit", fr: "Meilleur prix par crédit" } : undefined,
               action: { kind: "link", to: "/takbot#credits" },
               label: fill(t.start[lang], { name: p.label }),
             }));
@@ -99,6 +109,7 @@ export function PricingTabs() {
           <Rise className="max-w-2xl">
             <Eyebrow>{homeV2.pricing.eyebrow[lang]}</Eyebrow>
             <TwoTone id="home-pricing-title" lead={homeV2.pricing.lead[lang]} rest={homeV2.pricing.rest[lang]} />
+            {campaign && <CampaignCountdown campaign={campaign} lang={lang} className="mt-6" />}
           </Rise>
           <div role="tablist" aria-label={homeV2.pricing.eyebrow[lang]} className="inline-flex w-fit rounded-full bg-[var(--hp-line)] p-1">
             {tabs.map((k) => (
@@ -141,7 +152,9 @@ export function PricingTabs() {
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-[15px] font-semibold">{card.name}</p>
-                    {dark && <span className="rounded-full bg-[var(--hp-cta)] px-2.5 py-0.5 text-[11px] font-semibold text-white">{t.popular[lang]}</span>}
+                    {card.badge && (
+                      <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${dark ? "bg-[var(--hp-cta)] text-white" : "hp-btn"}`}>{card.badge[lang]}</span>
+                    )}
                   </div>
                   <p className="mt-6 flex items-baseline gap-1">
                     <span className="hp-display text-[44px] leading-none">{money(lang, card.amount)}</span>

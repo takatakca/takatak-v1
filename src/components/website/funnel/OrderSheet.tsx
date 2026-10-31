@@ -6,11 +6,13 @@ import Image from "next/image";
 import { ArrowRight, X } from "lucide-react";
 
 import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
-import type { CoreCategory } from "@/lib/website/core-categories";
+import { CORE_CATEGORIES, type CoreCategory } from "@/lib/website/core-categories";
 import { fill, homeCopy } from "@/lib/website/home-funnel";
 import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
+import { nextSuggestions } from "@/lib/website/home-upsell";
 import { Link } from "@/lib/website/nav";
+import { CampaignCountdown, WelcomeSaving, useActiveCampaign } from "./Campaign";
 import { sectionId } from "./HomeSectionNav";
 
 const COPY = {
@@ -42,6 +44,7 @@ export function OrderSheet() {
   const plan = useHomePlan();
   const closeRef = useRef<HTMLButtonElement>(null);
   const open = plan.orderOpen;
+  const campaign = useActiveCampaign();
 
   useEffect(() => {
     if (!open) return;
@@ -59,6 +62,7 @@ export function OrderSheet() {
   }, [open, plan]);
 
   if (!open) return null;
+  const suggestions = nextSuggestions(plan.keys);
   const t = plan.totals;
   const rows = [
     { label: homeCopy.plan.monthly[lang], value: t.monthly },
@@ -82,6 +86,7 @@ export function OrderSheet() {
         </header>
 
         <div className="flex-1 overflow-y-auto px-6 py-5">
+          {campaign && <CampaignCountdown campaign={campaign} lang={lang} className="mb-4" />}
           {plan.categories.length ? (
             <ul className="hp-divide">
               {plan.categories.map((c) => {
@@ -134,6 +139,34 @@ export function OrderSheet() {
                   </div>
                 )}
               </dl>
+              <div className="mt-4">
+                <WelcomeSaving keys={plan.keys} lang={lang} serviceName={(k) => tk(`cat.${k}.name`)} />
+              </div>
+              {suggestions.length > 0 && (
+                <div className="mt-6">
+                  <p className="hp-ink-3 text-[12.5px] font-semibold">{lang === "fr" ? "Complétez votre forfait" : "Complete your plan"}</p>
+                  <ul className="mt-2 grid gap-2">
+                    {suggestions.map((k) => {
+                      const c = CORE_CATEGORIES.find((x) => x.key === k)!;
+                      const m = SERVICE_MEDIA[k];
+                      return (
+                        <li key={k} className="hp-card flex items-center gap-3 rounded-2xl p-2.5">
+                          <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl">
+                            <Image src={m.photo} alt="" fill sizes="44px" className="object-cover" style={{ objectPosition: m.focus, transform: `scale(${m.zoom})` }} />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="hp-ink block text-[14px] font-semibold">{tk(`cat.${k}.name`)}</span>
+                            <span className="hp-ink-2 block text-[12.5px]">{linePrice(c, tk, lang)}</span>
+                          </span>
+                          <button type="button" onClick={() => plan.toggle(k)} className="hp-btn hp-focus rounded-full px-4 py-2 text-[13px] font-semibold">
+                            + {lang === "fr" ? "Ajouter" : "Add"}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
               <ol className="mt-6 grid gap-3">
                 {COPY.steps.map((s, i) => (
                   <li key={s.en} className="flex items-center gap-3">

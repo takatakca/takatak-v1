@@ -5,11 +5,26 @@
 export type KnownPromo = {
   code: string;
   percentOff: number;
+  /**
+   * Optional end of a time-limited campaign (ISO 8601 with offset). After it,
+   * the code stops existing everywhere (preview, claim, checkout), so the
+   * countdown shown on the site is always true.
+   */
+  endsAt?: string;
 };
 
+// To run a time-limited campaign, add it here with its end date, e.g.
+//   FALL5: { code: "FALL5", percentOff: 5, endsAt: "2026-11-15T23:59:59-05:00" },
+// The homepage shows a live countdown to `endsAt` (GET /api/promotions/active).
 const KNOWN: Record<string, KnownPromo> = {
   FIRST10: { code: "FIRST10", percentOff: 10 },
 };
+
+export function isPromoLive(promo: KnownPromo, now: Date = new Date()): boolean {
+  if (!promo.endsAt) return true;
+  const end = Date.parse(promo.endsAt);
+  return Number.isFinite(end) && now.getTime() < end;
+}
 
 export function normalizePromoCode(value: unknown): string | null {
   if (typeof value !== "string") return null;
@@ -18,13 +33,21 @@ export function normalizePromoCode(value: unknown): string | null {
   return code;
 }
 
-export function lookupPromo(code: string | null): KnownPromo | null {
+export function lookupPromo(code: string | null, now: Date = new Date()): KnownPromo | null {
   if (!code) return null;
-  return KNOWN[code] ?? null;
+  const promo = KNOWN[code];
+  return promo && isPromoLive(promo, now) ? promo : null;
 }
 
-export function listAvailablePromos(): KnownPromo[] {
-  return Object.values(KNOWN);
+export function listAvailablePromos(now: Date = new Date()): KnownPromo[] {
+  return Object.values(KNOWN).filter((promo) => isPromoLive(promo, now));
+}
+
+/** Time-limited campaigns still running, soonest end first (public: no account data). */
+export function listActiveCampaigns(now: Date = new Date()): Array<Required<KnownPromo>> {
+  return Object.values(KNOWN)
+    .filter((promo): promo is Required<KnownPromo> => Boolean(promo.endsAt) && isPromoLive(promo, now))
+    .sort((a, b) => Date.parse(a.endsAt) - Date.parse(b.endsAt));
 }
 
 /** Whole cents. Matches the marketplace preview (`Math.round(subtotal * 0.1)`). */

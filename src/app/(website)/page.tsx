@@ -11,6 +11,7 @@ import { StickyPlanDock } from "@/components/website/funnel/StickyPlanDock";
 import { PhotoStories, QuickActions } from "@/components/website/funnel/Stories";
 import { SuiteBento } from "@/components/website/funnel/SuiteBento";
 import { TakbotSection } from "@/components/website/funnel/TakbotSection";
+import { UpsellToast } from "@/components/website/funnel/UpsellToast";
 import { PremiumHero } from "@/components/website/premium/PremiumHero";
 import { brand } from "@/lib/website/brand";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
@@ -58,6 +59,7 @@ export default function HomePage() {
           <FinalChapter />
           <StickyPlanDock />
           <OrderSheet />
+          <UpsellToast />
         </HomeThemeRoot>
       </HomePlanProvider>
     </div>
