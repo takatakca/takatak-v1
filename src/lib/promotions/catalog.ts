@@ -11,11 +11,17 @@ export type KnownPromo = {
    * countdown shown on the site is always true.
    */
   endsAt?: string;
+  /** Landing-page headline for a campaign (/offres/<code>), e.g. { fr: "Black Friday", en: "Black Friday" }. */
+  title?: { fr: string; en: string };
 };
 
+export type LiveCampaign = KnownPromo & { endsAt: string };
+
 // To run a time-limited campaign, add it here with its end date, e.g.
-//   FALL5: { code: "FALL5", percentOff: 5, endsAt: "2026-11-15T23:59:59-05:00" },
-// The homepage shows a live countdown to `endsAt` (GET /api/promotions/active).
+//   BF2026: { code: "BF2026", percentOff: 15, endsAt: "2026-11-27T23:59:59-05:00",
+//             title: { fr: "Black Friday", en: "Black Friday" } },
+// The homepage shows a live countdown to `endsAt` (GET /api/promotions/active),
+// and /offres/<code> becomes the campaign's landing page until `endsAt`.
 const KNOWN: Record<string, KnownPromo> = {
   FIRST10: { code: "FIRST10", percentOff: 10 },
 };
@@ -44,9 +50,9 @@ export function listAvailablePromos(now: Date = new Date()): KnownPromo[] {
 }
 
 /** Time-limited campaigns still running, soonest end first (public: no account data). */
-export function listActiveCampaigns(now: Date = new Date()): Array<Required<KnownPromo>> {
+export function listActiveCampaigns(now: Date = new Date()): LiveCampaign[] {
   return Object.values(KNOWN)
-    .filter((promo): promo is Required<KnownPromo> => Boolean(promo.endsAt) && isPromoLive(promo, now))
+    .filter((promo): promo is LiveCampaign => Boolean(promo.endsAt) && isPromoLive(promo, now))
     .sort((a, b) => Date.parse(a.endsAt) - Date.parse(b.endsAt));
 }
 

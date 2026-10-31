@@ -17,15 +17,17 @@ Signed: Claude (cloud session upbeat-einstein).
 | F. Business type | Asked first (skippable), pre-picks tiers: "For a restaurant, we recommend…" | `BUSINESS_PICKS` |
 | G. Confirmation | Review page: edit/remove, FIRST10 saving, trust bar (true items only), Save this quote (shareable link), "Create my account and confirm" → `/register?plan=…` | same |
 | A. Real deadlines | Promo codes can carry `endsAt`; the server refuses them after it; live countdown on the homepage, order sheet and review | `src/lib/promotions/catalog.ts`, `GET /api/promotions/active` |
+| A. Campaign landing pages | `/offres/<code>`: big −% headline, real countdown, animated "Get the deal" → `/commander?promo=…`, terms; exists only while the campaign is live (unknown or ended codes show "not found", noindex) | `src/app/(website)/offres/[code]`, `CampaignLanding.tsx` |
 | Homepage | "Added → pairs well with" chain, order sheet, FIRST10 saving, true badges | `src/components/website/funnel/` |
 
 Tests: `npm run qa:order-funnel`, `npm run qa:promotions`.
 
 ## Not built yet (needs an owner decision or a key)
 
-1. **A. Holiday landing pages** (Black Friday 27 Nov, Cyber Monday 30 Nov, Boxing Day 26 Dec 2026): need
-   the % for each event, the services it covers, and the end time. Then one line per campaign in
-   `src/lib/promotions/catalog.ts`; the countdown and landing page read it.
+1. **A. Holiday campaigns** (Black Friday 27 Nov, Cyber Monday 30 Nov, Boxing Day 26 Dec 2026): the
+   landing page is built; it needs the % for each event, the services it covers and the end time. Then
+   one line per campaign in `src/lib/promotions/catalog.ts` (example in the file) and the page goes live
+   at `/offres/<CODE>` with its countdown.
 2. **B. Deal alerts + browser push**: needs VAPID keys (environment), a consent table, and the wording
    approved. Push permission is asked only after a "Yes" in our own pop-up, and it is never treated as
    email/SMS consent.

@@ -11,6 +11,7 @@ export interface Campaign {
   code: string;
   percentOff: number;
   endsAt: string;
+  title?: { en: string; fr: string };
 }
 
 /** The soonest-ending time-limited campaign from the server catalog, or null (the default). */
@@ -31,10 +32,12 @@ export function useActiveCampaign(): Campaign | null {
   return campaign;
 }
 
-function useNow(active: boolean): number {
-  const [now, setNow] = useState(() => Date.now());
+/** The current time, ticking each second; null until mounted, so server and browser render the same. */
+function useNow(active: boolean): number | null {
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     if (!active) return;
+    setNow(Date.now());
     const t = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(t);
   }, [active]);
@@ -48,14 +51,15 @@ function useNow(active: boolean): number {
 export function CampaignCountdown({ campaign, lang, className = "" }: { campaign: Campaign | null; lang: "en" | "fr"; className?: string }) {
   const now = useNow(Boolean(campaign));
   if (!campaign) return null;
-  const left = Math.max(0, Date.parse(campaign.endsAt) - now);
-  if (!left) return null;
-  const d = Math.floor(left / 86_400_000);
-  const h = Math.floor((left % 86_400_000) / 3_600_000);
-  const m = Math.floor((left % 3_600_000) / 60_000);
-  const s = Math.floor((left % 60_000) / 1000);
+  const left = now === null ? null : Math.max(0, Date.parse(campaign.endsAt) - now);
+  if (left === 0) return null;
+  const ms = left ?? 0;
+  const d = Math.floor(ms / 86_400_000);
+  const h = Math.floor((ms % 86_400_000) / 3_600_000);
+  const m = Math.floor((ms % 3_600_000) / 60_000);
+  const s = Math.floor((ms % 60_000) / 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
-  const clock = `${d ? `${d} ${lang === "fr" ? "j" : "d"} ` : ""}${pad(h)}:${pad(m)}:${pad(s)}`;
+  const clock = left === null ? "--:--:--" : `${d ? `${d} ${lang === "fr" ? "j" : "d"} ` : ""}${pad(h)}:${pad(m)}:${pad(s)}`;
   return (
     <p role="timer" aria-live="off" className={`inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full bg-[var(--hp-cta)] px-4 py-2 text-[13.5px] font-semibold text-white ${className}`}>
       <span>
