@@ -3,7 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
+import {
+  clientHasGrowthFeature,
+  FEATURE_UPSELL,
+} from "@/lib/billing/growth/entitlements";
 import { publicAppOrigin } from "@/lib/growth/public-origin";
 import {
   disconnectGoogleBusiness,
@@ -12,7 +15,12 @@ import {
   syncGoogleReviews,
 } from "@/lib/integrations/google-business/service";
 import { getPrisma } from "@/lib/db/prisma";
-import { growthSmsConfigured, growthWhatsAppConfigured, sendGrowthSms, sendWhatsAppReviewTemplate } from "@/lib/messaging/delivery";
+import {
+  growthSmsConfigured,
+  growthWhatsAppConfigured,
+  sendGrowthSms,
+  sendWhatsAppReviewTemplate,
+} from "@/lib/messaging/delivery";
 import { maskPhone, toE164 } from "@/lib/messaging/phone";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
@@ -26,30 +34,53 @@ import {
   setShowcaseHidden,
   updateFeedbackStatus,
 } from "@/lib/reputation/service";
-import { parseFeedbackStatus, parseReviewChannel, parseReviewProfileInput } from "@/lib/reputation/validation";
+import {
+  parseFeedbackStatus,
+  parseReviewChannel,
+  parseReviewProfileInput,
+} from "@/lib/reputation/validation";
 
 const REVIEWS_PATH = "/dashboard/growth/reviews";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function scopedAccess(permission: Permission) {
   const { access } = await getServerAccessContext();
-  if (access.mode !== "client_scoped" || !hasEffectivePermission(access, permission)) return null;
+  if (
+    access.mode !== "client_scoped" ||
+    !hasEffectivePermission(access, permission)
+  )
+    return null;
   return access;
 }
 
-export type ProfileFormState = { ok: null } | { ok: true; message: string } | { ok: false; error: string };
+export type ProfileFormState =
+  { ok: null } | { ok: true; message: string } | { ok: false; error: string };
 
-export async function createReviewProfileAction(_prev: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
+export async function createReviewProfileAction(
+  _prev: ProfileFormState,
+  formData: FormData,
+): Promise<ProfileFormState> {
   const access = await scopedAccess("manage_reputation");
-  if (!access) return { ok: false, error: "You do not have permission to manage reputation for this workspace." };
-  const parsed = parseReviewProfileInput(Object.fromEntries(formData.entries()));
+  if (!access)
+    return {
+      ok: false,
+      error:
+        "You do not have permission to manage reputation for this workspace.",
+    };
+  const parsed = parseReviewProfileInput(
+    Object.fromEntries(formData.entries()),
+  );
   if (!parsed.ok) return parsed;
   try {
     await createReviewProfile(access.activeClientId, parsed.value);
   } catch (error) {
-    if (error instanceof Error && error.message === "brand_not_in_workspace") return { ok: false, error: "That brand is not in this workspace." };
+    if (error instanceof Error && error.message === "brand_not_in_workspace")
+      return { ok: false, error: "That brand is not in this workspace." };
     console.error("[reputation] create profile failed");
-    return { ok: false, error: "The review page could not be created. Try again." };
+    return {
+      ok: false,
+      error: "The review page could not be created. Try again.",
+    };
   }
   revalidatePath(REVIEWS_PATH);
   return { ok: true, message: "Review page created." };
@@ -57,26 +88,61 @@ export async function createReviewProfileAction(_prev: ProfileFormState, formDat
 
 export type RequestLinkState =
   | { ok: null }
-  | { ok: true; url: string; recipientName: string | null; delivery: null | { sent: true; to: string } | { sent: false; reason: string } }
+  | {
+      ok: true;
+      url: string;
+      recipientName: string | null;
+      delivery:
+        null | { sent: true; to: string } | { sent: false; reason: string };
+    }
   | { ok: false; error: string };
 
-export async function createReviewRequestAction(_prev: RequestLinkState, formData: FormData): Promise<RequestLinkState> {
+export async function createReviewRequestAction(
+  _prev: RequestLinkState,
+  formData: FormData,
+): Promise<RequestLinkState> {
   const access = await scopedAccess("manage_reputation");
-  if (!access) return { ok: false, error: "You do not have permission to send review requests." };
-  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation"))) return { ok: false, error: FEATURE_UPSELL.reputation };
+  if (!access)
+    return {
+      ok: false,
+      error: "You do not have permission to send review requests.",
+    };
+  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation")))
+    return { ok: false, error: FEATURE_UPSELL.reputation };
   const profileId = String(formData.get("profileId") ?? "");
-  if (!UUID.test(profileId)) return { ok: false, error: "Choose a review page." };
-  const recipientRaw = String(formData.get("recipientName") ?? "").trim().replace(/\s+/g, " ");
+  if (!UUID.test(profileId))
+    return { ok: false, error: "Choose a review page." };
+  const recipientRaw = String(formData.get("recipientName") ?? "")
+    .trim()
+    .replace(/\s+/g, " ");
   const recipientName = recipientRaw ? recipientRaw.slice(0, 40) : null;
   const channel = parseReviewChannel(formData.get("channel"));
-  const sendNow = formData.get("sendNow") === "on" && (channel === "sms" || channel === "whatsapp");
+  const sendNow =
+    formData.get("sendNow") === "on" &&
+    (channel === "sms" || channel === "whatsapp");
   const phone = sendNow ? toE164(String(formData.get("phone") ?? "")) : null;
-  if (sendNow && !phone) return { ok: false, error: "Enter the customer's mobile number (10 digits, or with country code)." };
-  if (sendNow && channel === "sms" && !growthSmsConfigured()) return { ok: false, error: "Automatic SMS is not configured yet." };
-  if (sendNow && channel === "whatsapp" && !growthWhatsAppConfigured()) return { ok: false, error: "Automatic WhatsApp is not configured yet." };
+  if (sendNow && !phone)
+    return {
+      ok: false,
+      error:
+        "Enter the customer's mobile number (10 digits, or with country code).",
+    };
+  if (sendNow && channel === "sms" && !growthSmsConfigured())
+    return { ok: false, error: "Automatic SMS is not configured yet." };
+  if (sendNow && channel === "whatsapp" && !growthWhatsAppConfigured())
+    return { ok: false, error: "Automatic WhatsApp is not configured yet." };
   try {
-    const created = await createReviewRequest(access.activeClientId, profileId, { channel, recipientName }, access.profileId);
-    if (!created) return { ok: false, error: "That review page is paused or not in this workspace." };
+    const created = await createReviewRequest(
+      access.activeClientId,
+      profileId,
+      { channel, recipientName },
+      access.profileId,
+    );
+    if (!created)
+      return {
+        ok: false,
+        error: "That review page is paused or not in this workspace.",
+      };
     const url = `${await publicAppOrigin()}/r/${created.publicSlug}?t=${created.token}`;
     let delivery: Extract<RequestLinkState, { ok: true }>["delivery"] = null;
     if (sendNow && phone) {
@@ -87,42 +153,66 @@ export async function createReviewRequestAction(_prev: RequestLinkState, formDat
               phone,
               `${greeting}, merci d'avoir choisi ${created.profileName}! Votre avis compte (30 s) : ${url}\nRépondez STOP pour ne plus recevoir de messages.`,
             )
-          : await sendWhatsAppReviewTemplate(phone, { name: recipientName ?? "", business: created.profileName, link: url });
+          : await sendWhatsAppReviewTemplate(phone, {
+              name: recipientName ?? "",
+              business: created.profileName,
+              link: url,
+            });
       await recordRequestDelivery(access.activeClientId, created.requestId, {
         status: result.ok ? "sent" : "failed",
         providerMessageId: result.ok ? result.providerMessageId : null,
         recipientMasked: maskPhone(phone),
       });
-      delivery = result.ok ? { sent: true, to: maskPhone(phone) } : { sent: false, reason: result.reason };
+      delivery = result.ok
+        ? { sent: true, to: maskPhone(phone) }
+        : { sent: false, reason: result.reason };
     }
     revalidatePath(REVIEWS_PATH);
     return { ok: true, url, recipientName, delivery };
   } catch {
     console.error("[reputation] create request failed");
-    return { ok: false, error: "The request link could not be created. Try again." };
+    return {
+      ok: false,
+      error: "The request link could not be created. Try again.",
+    };
   }
 }
 
-export async function updateFeedbackStatusAction(formData: FormData): Promise<void> {
+export async function updateFeedbackStatusAction(
+  formData: FormData,
+): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   if (!access) return;
   const responseId = String(formData.get("responseId") ?? "");
   const status = parseFeedbackStatus(formData.get("status"));
   if (!UUID.test(responseId) || !status) return;
-  await updateFeedbackStatus(access.activeClientId, responseId, status, access.profileId);
+  await updateFeedbackStatus(
+    access.activeClientId,
+    responseId,
+    status,
+    access.profileId,
+  );
   revalidatePath(REVIEWS_PATH);
 }
 
-export async function toggleReviewProfileAction(formData: FormData): Promise<void> {
+export async function toggleReviewProfileAction(
+  formData: FormData,
+): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   if (!access) return;
   const profileId = String(formData.get("profileId") ?? "");
   if (!UUID.test(profileId)) return;
-  await setReviewProfileActive(access.activeClientId, profileId, formData.get("active") === "true");
+  await setReviewProfileActive(
+    access.activeClientId,
+    profileId,
+    formData.get("active") === "true",
+  );
   revalidatePath(REVIEWS_PATH);
 }
 
-export async function convertReviewToLeadAction(formData: FormData): Promise<void> {
+export async function convertReviewToLeadAction(
+  formData: FormData,
+): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   const responseId = String(formData.get("responseId") ?? "");
   if (!access || !UUID.test(responseId)) return;
@@ -134,7 +224,11 @@ export async function toggleShowcaseAction(formData: FormData): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   const responseId = String(formData.get("responseId") ?? "");
   if (!access || !UUID.test(responseId)) return;
-  await setShowcaseHidden(access.activeClientId, responseId, formData.get("hidden") === "true");
+  await setShowcaseHidden(
+    access.activeClientId,
+    responseId,
+    formData.get("hidden") === "true",
+  );
   revalidatePath(REVIEWS_PATH);
 }
 
@@ -143,10 +237,15 @@ export async function toggleShowcaseAction(formData: FormData): Promise<void> {
 export async function connectGoogleBusinessAction(): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   if (!access) redirect(`${REVIEWS_PATH}?google=forbidden`);
-  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation"))) redirect(`${REVIEWS_PATH}?google=plan_required`);
+  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation")))
+    redirect(`${REVIEWS_PATH}?google=plan_required`);
   let url: string;
   try {
-    url = await startGoogleBusinessConnect({ clientId: access.activeClientId, profileId: access.profileId, origin: await publicAppOrigin() });
+    url = await startGoogleBusinessConnect({
+      clientId: access.activeClientId,
+      profileId: access.profileId,
+      origin: await publicAppOrigin(),
+    });
   } catch {
     redirect(`${REVIEWS_PATH}?google=not_configured`);
   }
@@ -156,6 +255,8 @@ export async function connectGoogleBusinessAction(): Promise<void> {
 export async function syncGoogleReviewsAction(): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   if (!access) return;
+  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation")))
+    redirect(`${REVIEWS_PATH}?google=plan_required`);
   let status = "synced";
   try {
     const result = await syncGoogleReviews(access.activeClientId);
@@ -174,29 +275,164 @@ export async function disconnectGoogleBusinessAction(): Promise<void> {
   revalidatePath(REVIEWS_PATH);
 }
 
-export async function toggleGoogleLocationSyncAction(formData: FormData): Promise<void> {
+export async function toggleGoogleLocationSyncAction(
+  formData: FormData,
+): Promise<void> {
   const access = await scopedAccess("manage_reputation");
   const id = String(formData.get("locationId") ?? "");
   const prisma = getPrisma();
   if (!access || !UUID.test(id) || !prisma) return;
-  await prisma.googleBusinessLocation.updateMany({ where: { id, clientId: access.activeClientId }, data: { syncEnabled: formData.get("enabled") === "true" } });
+  await prisma.googleBusinessLocation.updateMany({
+    where: { id, clientId: access.activeClientId },
+    data: { syncEnabled: formData.get("enabled") === "true" },
+  });
   revalidatePath(REVIEWS_PATH);
 }
 
-export type GoogleReplyState = { ok: null } | { ok: true } | { ok: false; error: string };
+export type GoogleReplyState =
+  { ok: null } | { ok: true } | { ok: false; error: string };
 
-export async function replyGoogleReviewAction(_prev: GoogleReplyState, formData: FormData): Promise<GoogleReplyState> {
+export async function replyGoogleReviewAction(
+  _prev: GoogleReplyState,
+  formData: FormData,
+): Promise<GoogleReplyState> {
   const access = await scopedAccess("manage_reputation");
-  if (!access) return { ok: false, error: "You do not have permission to reply to reviews." };
+  if (!access)
+    return {
+      ok: false,
+      error: "You do not have permission to reply to reviews.",
+    };
+  if (!(await clientHasGrowthFeature(access.activeClientId, "reputation")))
+    return { ok: false, error: FEATURE_UPSELL.reputation };
   const id = String(formData.get("reviewId") ?? "");
   const comment = String(formData.get("comment") ?? "");
-  if (!UUID.test(id) || !comment.trim()) return { ok: false, error: "Write a reply first." };
+  if (!UUID.test(id) || !comment.trim())
+    return { ok: false, error: "Write a reply first." };
   try {
-    const result = await replyToGoogleReview(access.activeClientId, id, comment);
-    if (!result.ok) return { ok: false, error: `Google refused the reply (${result.reason}).` };
+    const result = await replyToGoogleReview(
+      access.activeClientId,
+      id,
+      comment,
+    );
+    if (!result.ok)
+      return {
+        ok: false,
+        error: `Google refused the reply (${result.reason}).`,
+      };
   } catch {
     return { ok: false, error: "The reply could not be posted. Try again." };
   }
   revalidatePath(REVIEWS_PATH);
   return { ok: true };
+}
+
+export type ReviewDraftState =
+  { ok: null } | { ok: true; runId: string } | { ok: false; error: string };
+
+/** Derive review content and workspace on the server; the browser supplies only a local record id. */
+export async function requestReviewDraftAction(
+  _previous: ReviewDraftState,
+  formData: FormData,
+): Promise<ReviewDraftState> {
+  const access = await scopedAccess("manage_reputation");
+  if (!access)
+    return {
+      ok: false,
+      error: "You do not have permission to request a review draft.",
+    };
+  const id = String(formData.get("reviewId") ?? "");
+  const origin = String(formData.get("origin") ?? "");
+  if (!UUID.test(id) || !["feedback", "external"].includes(origin))
+    return { ok: false, error: "Choose a review in this workspace." };
+  const db = getPrisma();
+  if (!db) return { ok: false, error: "The review database is unavailable." };
+  try {
+    const content =
+      origin === "external"
+        ? await db.externalReview
+            .findFirst({
+              where: {
+                id,
+                clientId: access.activeClientId,
+                source: "google",
+                location: { clientId: access.activeClientId },
+              },
+              select: {
+                rating: true,
+                comment: true,
+                location: { select: { title: true } },
+              },
+            })
+            .then((row) =>
+              row
+                ? {
+                    rating: row.rating,
+                    text: row.comment,
+                    business: row.location.title,
+                    source: "google",
+                  }
+                : null,
+            )
+        : await db.reviewResponse
+            .findFirst({
+              where: {
+                id,
+                clientId: access.activeClientId,
+                profile: { clientId: access.activeClientId },
+              },
+              select: {
+                rating: true,
+                feedback: true,
+                profile: { select: { name: true } },
+              },
+            })
+            .then((row) =>
+              row
+                ? {
+                    rating: row.rating,
+                    text: row.feedback,
+                    business: row.profile.name,
+                    source: "takatak",
+                  }
+                : null,
+            );
+    if (!content?.text)
+      return {
+        ok: false,
+        error: "This workspace review has no written feedback to draft from.",
+      };
+    const { requestAgentRun } = await import("@/lib/ai-agents/service");
+    const result = await requestAgentRun(
+      access.activeClientId,
+      "review_responder",
+      {
+        trigger: "review_cockpit",
+        context: {
+          reviewResponseId: id,
+          source: content.source,
+          rating: content.rating,
+          feedback: content.text.slice(0, 2000),
+          businessName: content.business.slice(0, 80),
+        },
+      },
+      access.profileId,
+    );
+    if (!result.ok)
+      return {
+        ok: false,
+        error:
+          result.error === "agent_disabled"
+            ? "Enable Review Responder in the existing AI workforce first."
+            : result.error === "plan_required"
+              ? FEATURE_UPSELL.ai_autopilot
+              : "A review draft is already queued or awaiting review.",
+      };
+    revalidatePath(REVIEWS_PATH);
+    return { ok: true, runId: result.runId };
+  } catch {
+    return {
+      ok: false,
+      error: "The draft could not be queued. Nothing was published.",
+    };
+  }
 }

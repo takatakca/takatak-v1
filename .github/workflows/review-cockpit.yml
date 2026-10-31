@@ -1,0 +1,47 @@
+name: REVEW cockpit checks
+on:
+  push:
+    branches: [codex/review-ecosystem]
+  pull_request:
+    paths:
+      - "src/lib/reputation/**"
+      - "src/components/reputation/**"
+      - "src/lib/qmaps/**"
+      - "src/app/api/reputation/**"
+      - "src/app/dashboard/growth/reviews/**"
+      - "src/app/dashboard/local-listings/reviews/**"
+      - "scripts/review-cockpit-tests.ts"
+      - ".github/workflows/review-cockpit.yml"
+permissions:
+  contents: read
+concurrency:
+  group: review-cockpit-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  review-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      CI: "true"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key-not-a-secret
+      DATABASE_URL: postgresql://127.0.0.1:1/ci
+      DIRECT_URL: postgresql://127.0.0.1:1/ci
+      SUPABASE_SECRET_KEY: ci-secret-key-not-a-secret
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --ignore-scripts=false
+      - run: npm run db:generate
+      - run: npm run qa:review-cockpit
+      - run: npm run qa:qmaps-bridge
+      - run: npm run qa:qmaps-sync
+      - run: npm run typecheck
+      - name: Lint changed review boundaries
+        run: npx eslint src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps scripts/review-cockpit-tests.ts
+      - run: npm run build

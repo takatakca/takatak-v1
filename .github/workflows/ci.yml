@@ -49,6 +49,9 @@ jobs:
       - name: Static RLS checks
         run: npm run qa:rls:static
 
+      - name: Review cockpit normalization, isolation boundaries and provider capabilities
+        run: npm run qa:review-cockpit
+
       - name: Typecheck
         run: npm run typecheck
 

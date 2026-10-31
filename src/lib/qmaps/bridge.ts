@@ -1,7 +1,8 @@
 // TAKATAK records a QMAPS link or reply locally first.
 // A remote call is confirmed only when QMAPS returns success.
 
-export const QMAPS_BUSINESS_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export const QMAPS_BUSINESS_ID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type QmapsLinkState = "saved_in_takatak" | "confirmed_on_qmaps";
 export type QmapsReplyState = "not_sent" | "sent_to_qmaps";
@@ -21,7 +22,9 @@ export function readQmapsBusinessId(metadata: unknown): string | null {
 
 export function readLinkState(metadata: unknown): QmapsLinkState | null {
   const state = record(metadata)?.linkState;
-  return state === "saved_in_takatak" || state === "confirmed_on_qmaps" ? state : null;
+  return state === "saved_in_takatak" || state === "confirmed_on_qmaps"
+    ? state
+    : null;
 }
 
 export function readReplyState(metadata: unknown): QmapsReplyState | null {
@@ -67,11 +70,30 @@ export function qmapsLinkMetadata(businessId: string, state: QmapsLinkState) {
   return { qmapsBusinessId: businessId, linkState: state };
 }
 
-export function qmapsReplyMetadata(reviewId: string, text: string, state: QmapsReplyState) {
+export function qmapsReplyMetadata(
+  reviewId: string,
+  text: string,
+  state: QmapsReplyState,
+) {
   return {
     qmapsReviewId: reviewId,
     replyText: text,
     replyState: state,
-    ...(state === "sent_to_qmaps" ? { repliedAt: new Date().toISOString() } : {}),
+    ...(state === "sent_to_qmaps"
+      ? { repliedAt: new Date().toISOString() }
+      : {}),
   };
+}
+
+/** A source review id must match the immutable mapping of a workspace-owned tracked record. */
+export function matchesTrackedQmapsReview(
+  metadata: unknown,
+  reviewId: string,
+): boolean {
+  const value = record(metadata);
+  return (
+    QMAPS_BUSINESS_ID.test(reviewId) &&
+    value?.source === "qmaps" &&
+    value.qmapsReviewId === reviewId
+  );
 }

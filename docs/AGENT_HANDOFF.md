@@ -1,3 +1,7 @@
+# REVEW review cockpit handoff — 2026-10-31
+
+Branch `codex/review-ecosystem`, based on main 35c62f0. Native V1 review cockpit, private unified feed, capability registry, existing AI queue action and tighter QMAPS reply ownership/acknowledgement. No migration or deployment. Main details and counterpart links: [REVEW_REVIEW_ECOSYSTEM.md](REVEW_REVIEW_ECOSYSTEM.md). Local 15 cockpit, 4 QMAPS bridge and 13 QMAPS sync checks passed; Prisma/Growth-wide checks blocked by engine-host 403. Gmail/Drive/scheduling tools unavailable; no 30-minute email task is active. Next: inspect focused CI on the exact branch SHA and give the release coordinator the review branch. — REVEW
+
 # SEO integration / TAKATAK V1 — agent handoff, 2026-10-15
 
 ## Scope, latest task and branches

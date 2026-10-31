@@ -1,3 +1,13 @@
+# REVEW review API follow-up — 2026-10-31
+
+- Verify focused CI for `codex/review-ecosystem`; coordinator review/merge only.
+- QMAPS agent: accept its signed [API handoff](https://github.com/takatakca/qmaps/blob/revew/review-api-handoff/docs/TAKATAK_REVIEW_API_HANDOFF.md), including scoped review/business reads and counterpart reply ownership checks.
+- FLEXS agent: accept its signed [API handoff](https://github.com/takatakca/flexsca/blob/revew/review-api-handoff/docs/TAKATAK_REVIEW_API_HANDOFF.md), complete authorized business/lead/review feeds and dedicated credentials.
+- Reverify blocked official API documentation, production approval, scopes and source content rights before unlocking Facebook/Yelp/Tripadvisor/other adapters.
+- Gmail/Drive/30-minute email task: tools unavailable; not read/uploaded/scheduled. Copies are Drive-ready only.
+
+— REVEW
+
 # TAKATAK V1 — SEO integration queue (PR #182)
 
 The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the additional SEO integration scope.

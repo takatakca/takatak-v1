@@ -1,3 +1,7 @@
+# REVEW reputation scope — 2026-10-31
+
+Implementation on `codex/review-ecosystem`: unified private first-party/Google/QMAPS view in the existing master dashboard; source-capability inventory covers 12 review/social platforms; scoped CSV and existing AI draft queue integration. QMAPS/FLEXS API request notes published on their `revew/review-api-handoff` branches. Code is not merged/deployed and external vendor APIs are not newly connected. Google Drive note upload and email coordination remain unavailable to this session. [Evidence and limits](REVEW_REVIEW_ECOSYSTEM.md). — REVEW
+
 # TAKATAK V1 — SEO integration status (scoped report)
 
 This document records work on SEOTAKATAK integration only. For all other V1 modules, consult `WORKLOG.md` and `docs/DEV-TODO.md`.
