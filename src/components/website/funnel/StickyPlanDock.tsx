@@ -57,13 +57,13 @@ export function StickyPlanDock() {
       <div
         role="region"
         aria-label={homeCopy.dock.label[lang]}
-        className="flex w-full max-w-xl items-center gap-2 rounded-full bg-[#F5F8FC] p-1.5 pl-5 text-[#060D1F] shadow-[0_24px_70px_-20px_rgb(0_0_0/0.85),0_0_0_1px_rgb(255_255_255/0.4)] sm:mr-36"
+        className="flex w-full max-w-xl items-center gap-2 rounded-full bg-[var(--hp-ink)] p-1.5 pl-5 text-[var(--hp-bg)] shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55)] sm:mr-36"
       >
         <button type="button" onClick={goPlan} tabIndex={tab} className="min-w-0 flex-1 text-left">
           {count ? (
             <span className="block truncate text-[13.5px]">
               <span className="font-semibold">{count === 1 ? homeCopy.dock.service[lang] : fill(homeCopy.dock.services[lang], { n: count })}</span>
-              {price && <span className="text-[#060D1F]/55"> · {price}</span>}
+              {price && <span className="opacity-60"> · {price}</span>}
             </span>
           ) : (
             <span className="block truncate text-[13.5px] font-semibold">{homeCopy.dock.empty[lang]}</span>
@@ -75,17 +75,17 @@ export function StickyPlanDock() {
             onClick={plan.clear}
             tabIndex={tab}
             aria-label={homeCopy.dock.clear[lang]}
-            className="hidden h-9 w-9 shrink-0 place-items-center rounded-full text-[#060D1F]/45 hover:bg-[#060D1F]/[0.06] hover:text-[#060D1F] sm:grid"
+            className="hidden h-9 w-9 shrink-0 place-items-center rounded-full opacity-50 hover:opacity-100 sm:grid"
           >
             <X size={15} aria-hidden />
           </button>
         )}
         {count ? (
-          <Link to={plan.registerHref} tabIndex={tab} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#1565D8] px-5 py-2.5 text-[13.5px] font-semibold text-white hover:bg-[#0F55BD]">
+          <Link to={plan.registerHref} tabIndex={tab} className="hp-cta inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13.5px] font-semibold">
             {homeCopy.dock.cta[lang]} <ArrowRight size={15} aria-hidden />
           </Link>
         ) : (
-          <button type="button" onClick={goPlan} tabIndex={tab} className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#060D1F] px-5 py-2.5 text-[13.5px] font-semibold text-white">
+          <button type="button" onClick={goPlan} tabIndex={tab} className="hp-cta inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13.5px] font-semibold">
             {homeCopy.dock.build[lang]} <ArrowRight size={15} aria-hidden />
           </button>
         )}

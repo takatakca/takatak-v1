@@ -17,7 +17,7 @@ const CLOVER_APPS = ALL.filter((p) => p.status === "clover" || p.key === "ch4t")
 const DOT: Record<SuiteStatus, string> = {
   live: "bg-emerald-400",
   early: "bg-sky-300",
-  clover: "bg-white/50",
+  clover: "bg-slate-400",
   soon: "bg-amber-300",
   planned: "bg-amber-300",
 };
@@ -25,7 +25,7 @@ const DOT: Record<SuiteStatus, string> = {
 function Status({ status }: { status: SuiteStatus }) {
   const { lang } = useLanguage();
   return (
-    <span className="inline-flex items-center gap-1.5 text-[12px] text-white/50">
+    <span className="inline-flex items-center gap-1.5 hp-ink-2 text-[12.5px]">
       <span className={`h-1.5 w-1.5 rounded-full ${DOT[status]}`} aria-hidden />
       {homeCopy.suite.status[status][lang]}
     </span>
@@ -50,10 +50,10 @@ function Tile({
     <>
       <div className="relative z-[2] flex items-start justify-between gap-3">
         <div>
-          <p className="font-[family-name:var(--font-website-display)] text-[22px] font-bold tracking-[-0.02em] text-white">{title ?? p?.name}</p>
-          {p && <p className="mt-1 max-w-sm text-[14px] leading-6 text-white/55">{p.desc[lang]}</p>}
+          <p className="hp-display hp-ink text-[24px]">{title ?? p?.name}</p>
+          {p && <p className="mt-1 max-w-sm text-[14px] leading-6 hp-ink-2">{p.desc[lang]}</p>}
         </div>
-        {p?.url && <ArrowUpRight size={20} className="shrink-0 text-white/35 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" aria-hidden />}
+        {p?.url && <ArrowUpRight size={20} className="hp-ink-3 shrink-0 transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--hp-ink)]" aria-hidden />}
       </div>
       {visual && <div className="relative z-[2] mt-6 flex-1">{visual}</div>}
       {children}
@@ -64,7 +64,7 @@ function Tile({
       )}
     </>
   );
-  const cls = `tk-card-shine group relative flex flex-col overflow-hidden rounded-[28px] border border-white/[0.08] bg-[linear-gradient(180deg,#0B1736,#070F24)] p-6 transition-colors duration-500 hover:border-white/20 sm:p-7 ${className}`;
+  const cls = `group hp-card relative flex flex-col overflow-hidden rounded-[28px] p-6 transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[var(--hp-shadow)] sm:p-7 ${className}`;
   return p?.url ? (
     <a href={p.url} {...externalLinkProps} className={cls}>
       {body}
@@ -142,11 +142,11 @@ function PipelineVisual() {
     <div className="grid gap-2.5">
       {cols.map((c) => (
         <div key={c.k} className="grid grid-cols-[76px_1fr_24px] items-center gap-3 text-[12px]">
-          <span className="text-white/55">{c.k}</span>
-          <span className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
+          <span className="hp-ink-2">{c.k}</span>
+          <span className="h-2 overflow-hidden rounded-full bg-[var(--hp-line)]">
             <span className="block h-full rounded-full bg-[linear-gradient(90deg,#1F8BFF,#29C3FF)]" style={{ width: c.w }} />
           </span>
-          <span className="text-right tabular-nums text-white/70">{c.n}</span>
+          <span className="text-right tabular-nums hp-ink">{c.n}</span>
         </div>
       ))}
     </div>
@@ -157,7 +157,7 @@ function PipelineVisual() {
 export function SuiteBento() {
   const { lang } = useLanguage();
   return (
-    <Section id={sectionId("suite")} labelledBy="home-suite-title" className="border-t border-white/[0.06] py-20 sm:py-28">
+    <Section id={sectionId("suite")} labelledBy="home-suite-title" className="hp-bg py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4">
         <Rise className="max-w-3xl">
           <Eyebrow>{homeV2.suite.eyebrow[lang]}</Eyebrow>
@@ -170,7 +170,7 @@ export function SuiteBento() {
               <button
                 type="button"
                 onClick={() => openLiveChat({ page: "/", intent: "suite_foodhub", lang })}
-                className="relative z-[2] mt-5 w-fit rounded-full bg-white px-5 py-2.5 text-[13.5px] font-semibold text-[#060D1F] hover:scale-[1.03]"
+                className="relative z-[2] mt-5 w-fit hp-cta rounded-full px-5 py-2.5 text-[13.5px] font-semibold"
               >
                 {homeCopy.suite.ask[lang]}
               </button>
@@ -179,14 +179,14 @@ export function SuiteBento() {
 
           <Rise delay={80} className="md:col-span-2">
             <Tile title={lang === "fr" ? "La suite Clover" : "The Clover suite"} className="h-full">
-              <p className="relative z-[2] mt-1 text-[14px] text-white/55">
+              <p className="relative z-[2] mt-1 text-[14px] hp-ink-2">
                 {lang === "fr" ? "Neuf applications pour votre caisse Clover." : "Nine apps for your Clover point of sale."}
               </p>
               <ul className="relative z-[2] mt-5 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
                 {CLOVER_APPS.map((a) => (
                   <li key={a.key}>
-                    <span className="block text-[13.5px] font-bold tracking-[0.06em] text-white">{a.name}</span>
-                    <span className="block truncate text-[12px] text-white/45">{a.desc[lang]}</span>
+                    <span className="block text-[13.5px] font-bold tracking-[0.06em] hp-ink">{a.name}</span>
+                    <span className="block truncate text-[12px] hp-ink-3">{a.desc[lang]}</span>
                   </li>
                 ))}
               </ul>
@@ -208,11 +208,11 @@ export function SuiteBento() {
               p={product("mimt")}
               className="h-full"
               visual={
-                <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <div className="flex items-center gap-3 rounded-2xl hp-raised p-3">
                   <span className="grid h-10 w-10 place-items-center rounded-full bg-emerald-400/15 text-emerald-300">
                     <Phone size={17} className="animate-pulse" aria-hidden />
                   </span>
-                  <span className="text-[13px] tabular-nums text-white/75">+1 514 · · · · · · ·</span>
+                  <span className="text-[13px] tabular-nums hp-ink">+1 514 · · · · · · ·</span>
                 </div>
               }
             />
@@ -224,8 +224,8 @@ export function SuiteBento() {
               visual={
                 <div className="grid gap-2">
                   {[86, 54, 22].map((w, i) => (
-                    <span key={w} className="h-1.5 overflow-hidden rounded-full bg-white/[0.07]">
-                      <span className="block h-full rounded-full bg-white/60" style={{ width: `${w}%`, opacity: 1 - i * 0.25 }} />
+                    <span key={w} className="h-1.5 overflow-hidden rounded-full bg-[var(--hp-line)]">
+                      <span className="block h-full rounded-full bg-[var(--hp-cta)]" style={{ width: `${w}%`, opacity: 1 - i * 0.25 }} />
                     </span>
                   ))}
                 </div>

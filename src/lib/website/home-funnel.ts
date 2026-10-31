@@ -254,8 +254,8 @@ export const HOME_FAQ: readonly { q: Bi; a: Bi }[] = [
   {
     q: { en: "How do I start?", fr: "Comment commencer ?" },
     a: {
-      en: "Build your plan above or pick one service, then create your account. Your dashboard opens right away and our team contacts you within one business day.",
-      fr: "Bâtissez votre forfait plus haut ou choisissez un service, puis créez votre compte. Votre tableau de bord s’ouvre tout de suite et notre équipe vous contacte en un jour ouvrable.",
+      en: "Build your plan above or pick one service, then create your account. Your dashboard opens right away, and our team follows up to set up your services.",
+      fr: "Bâtissez votre forfait plus haut ou choisissez un service, puis créez votre compte. Votre tableau de bord s’ouvre tout de suite, et notre équipe fait le suivi pour mettre vos services en place.",
     },
   },
   {
@@ -351,5 +351,78 @@ export const homeV2 = {
     eyebrow: { en: "Questions", fr: "Questions" },
     lead: { en: "Questions,", fr: "Vos questions," },
     rest: { en: "answered.", fr: "nos réponses." },
+  },
+} as const;
+
+/** Homepage v3 (Oct 31 2026, light first): quick actions and photo stories. */
+export const homeV3 = {
+  quick: {
+    title: { en: "What do you want to do today?", fr: "Qu’est-ce qu’on fait aujourd’hui ?" },
+    items: [
+      { key: "website", icon: "website", to: "/services/websites", label: { en: "Build my website", fr: "Créer mon site web" } },
+      { key: "domain", icon: "domain", to: "domain", label: { en: "Find my domain", fr: "Trouver mon domaine" } },
+      { key: "hosting", icon: "hosting", to: "/hosting", label: { en: "Host my site", fr: "Héberger mon site" } },
+      { key: "customers", icon: "customers", to: "/services/marketing", label: { en: "Get more customers", fr: "Avoir plus de clients" } },
+      { key: "reviews", icon: "reviews", to: "/services/reviews", label: { en: "Grow my Google reviews", fr: "Plus d’avis Google" } },
+      { key: "takbot", icon: "takbot", to: "/takbot", label: { en: "Ask TAK bot", fr: "Demander à TAK bot" } },
+    ],
+  },
+  stories: [
+    {
+      key: "online",
+      photo: "/photos/commerce-cafe.webp",
+      alt: { en: "A café owner on the phone behind the counter", fr: "Un propriétaire de café au téléphone derrière son comptoir" },
+      eyebrow: { en: "Get online", fr: "Être en ligne" },
+      title: { en: "Your business deserves a website that matches it.", fr: "Votre commerce mérite un site à sa hauteur." },
+      body: {
+        en: "Website, domain name, hosting and business email. We set it all up and look after it, you keep full control.",
+        fr: "Site web, nom de domaine, hébergement et courriel pro. On installe tout et on s’en occupe; vous gardez le plein contrôle.",
+      },
+      keys: ["website", "domains", "hosting"],
+      route: "/services/websites",
+      more: { en: "See websites", fr: "Voir les sites web" },
+    },
+    {
+      key: "found",
+      photo: "/photos/artisan-atelier.webp",
+      alt: { en: "A craftsman in his workshop looking at his phone", fr: "Un artisan dans son atelier qui regarde son téléphone" },
+      eyebrow: { en: "Get found", fr: "Être trouvé" },
+      title: { en: "When people search nearby, they find you.", fr: "Quand on cherche près d’ici, c’est vous qu’on trouve." },
+      body: {
+        en: "An up-to-date Google profile, maps, directories and reviews. Every local search leads to your door.",
+        fr: "Une fiche Google à jour, les cartes, les annuaires et vos avis. Chaque recherche locale mène à votre porte.",
+      },
+      keys: ["local", "reviews"],
+      route: "/services/local-listings",
+      more: { en: "See local listings", fr: "Voir les fiches locales" },
+    },
+    {
+      key: "grow",
+      photo: "/photos/studio-design.webp",
+      alt: { en: "A designer on the phone in her studio", fr: "Une designer au téléphone dans son atelier" },
+      eyebrow: { en: "Grow", fr: "Grandir" },
+      title: { en: "Customers who come back, week after week.", fr: "Des clients qui reviennent, semaine après semaine." },
+      body: {
+        en: "Meta and Google ads, social media and content made faster with AI, all measured in one dashboard.",
+        fr: "Publicités Meta et Google, réseaux sociaux et contenu accéléré par l’IA, le tout mesuré dans un seul tableau de bord.",
+      },
+      keys: ["marketing", "social", "ai"],
+      route: "/services/marketing",
+      more: { en: "See marketing", fr: "Voir le marketing" },
+    },
+  ],
+  addAll: { en: "Add to my plan", fr: "Ajouter à mon forfait" },
+  added: { en: "In my plan", fr: "Dans mon forfait" },
+  gallery: {
+    lead: { en: "Every service.", fr: "Tous nos services." },
+    rest: { en: "One account, one team.", fr: "Un seul compte, une seule équipe." },
+  },
+  final: {
+    title: { en: "Your business, at its best online.", fr: "Votre entreprise, à son meilleur en ligne." },
+    body: {
+      en: "Create your account, pick your services, and our bilingual team in Montréal sets everything up with you.",
+      fr: "Créez votre compte, choisissez vos services, et notre équipe bilingue de Montréal met tout en place avec vous.",
+    },
+    photoAlt: { en: "A customer smiling at her phone in a café", fr: "Une cliente sourit à son téléphone dans un café" },
   },
 } as const;

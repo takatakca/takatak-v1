@@ -93,14 +93,14 @@ export function PricingTabs() {
   const tabs = Object.keys(t.tabs) as TabKey[];
 
   return (
-    <Section id={sectionId("pricing")} labelledBy="home-pricing-title" className="tk-paper py-20 sm:py-28">
+    <Section id={sectionId("pricing")} labelledBy="home-pricing-title" className="hp-alt py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <Rise className="max-w-2xl">
-            <Eyebrow dark={false}>{homeV2.pricing.eyebrow[lang]}</Eyebrow>
-            <TwoTone id="home-pricing-title" dark={false} lead={homeV2.pricing.lead[lang]} rest={homeV2.pricing.rest[lang]} />
+            <Eyebrow>{homeV2.pricing.eyebrow[lang]}</Eyebrow>
+            <TwoTone id="home-pricing-title" lead={homeV2.pricing.lead[lang]} rest={homeV2.pricing.rest[lang]} />
           </Rise>
-          <div role="tablist" aria-label={homeV2.pricing.eyebrow[lang]} className="inline-flex w-fit rounded-full bg-[#060D1F]/[0.06] p-1">
+          <div role="tablist" aria-label={homeV2.pricing.eyebrow[lang]} className="inline-flex w-fit rounded-full bg-[var(--hp-line)] p-1">
             {tabs.map((k) => (
               <button
                 key={k}
@@ -111,7 +111,7 @@ export function PricingTabs() {
                 aria-controls="home-pricing-panel"
                 onClick={() => setTab(k)}
                 className={`rounded-full px-4 py-2 text-[13.5px] font-semibold transition-all ${
-                  tab === k ? "bg-white text-[#060D1F] shadow-[0_2px_10px_rgb(6_13_31/0.12)]" : "text-[#060D1F]/55 hover:text-[#060D1F]"
+                  tab === k ? "hp-raised hp-ink" : "hp-ink-2 hover:text-[var(--hp-ink)]"
                 }`}
               >
                 {t.tabs[k][lang]}
@@ -130,30 +130,28 @@ export function PricingTabs() {
           {cards.map((card, i) => {
             const dark = card.featured;
             const btn = `inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold transition-all ${
-              dark ? "bg-white text-[#060D1F] hover:scale-[1.02]" : "bg-[#060D1F] text-white hover:bg-[#1565D8]"
+              dark ? "hp-cta" : "hp-btn"
             }`;
             return (
               <li key={card.key} className="tk-stagger" style={{ animationDelay: `${i * 70}ms` }}>
                 <div
                   className={`relative flex h-full flex-col rounded-[26px] p-7 transition-all duration-500 hover:-translate-y-1 ${
-                    dark
-                      ? "bg-[#060D1F] text-white shadow-[0_40px_80px_-40px_#1565D8]"
-                      : "bg-white text-[#060D1F] shadow-[0_1px_0_rgb(6_13_31/0.04),0_20px_50px_-30px_rgb(6_13_31/0.25)] ring-1 ring-[#060D1F]/[0.06]"
+                    dark ? "hp-raised hp-ink ring-2 ring-[var(--hp-cta)]" : "hp-raised hp-ink"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <p className="text-[15px] font-semibold">{card.name}</p>
-                    {dark && <span className="rounded-full bg-[#1F8BFF] px-2.5 py-0.5 text-[11px] font-semibold">{t.popular[lang]}</span>}
+                    {dark && <span className="rounded-full bg-[var(--hp-cta)] px-2.5 py-0.5 text-[11px] font-semibold text-white">{t.popular[lang]}</span>}
                   </div>
                   <p className="mt-6 flex items-baseline gap-1">
-                    <span className="font-[family-name:var(--font-website-display)] text-[44px] font-bold leading-none tracking-[-0.04em]">{money(lang, card.amount)}</span>
-                    <span className={`text-[14px] ${dark ? "text-white/55" : "text-[#060D1F]/50"}`}>{cadenceSuffix(tk, card.cadence)}</span>
+                    <span className="hp-display text-[44px] leading-none">{money(lang, card.amount)}</span>
+                    <span className="hp-ink-2 text-[14px]">{cadenceSuffix(tk, card.cadence)}</span>
                   </p>
-                  {card.suffix && <p className={`mt-1 text-[12px] ${dark ? "text-white/50" : "text-[#060D1F]/45"}`}>{card.suffix}</p>}
-                  <ul className={`mt-6 grid gap-2.5 border-t pt-6 text-[14px] ${dark ? "border-white/10 text-white/75" : "border-[#060D1F]/[0.07] text-[#060D1F]/70"}`}>
+                  {card.suffix && <p className="hp-ink-3 mt-1 text-[12px]">{card.suffix}</p>}
+                  <ul className="hp-line hp-ink-2 mt-6 grid gap-2.5 border-t pt-6 text-[14px]">
                     {card.lines.map((line) => (
                       <li key={line} className="flex items-start gap-2.5">
-                        <Check size={15} className={`mt-0.5 shrink-0 ${dark ? "text-[#29C3FF]" : "text-[#1565D8]"}`} strokeWidth={2.5} aria-hidden /> {line}
+                        <Check size={15} className="hp-accent mt-0.5 shrink-0" strokeWidth={2.5} aria-hidden /> {line}
                       </li>
                     ))}
                   </ul>
@@ -173,9 +171,9 @@ export function PricingTabs() {
             );
           })}
         </ul>
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[#060D1F]/[0.08] pt-6 text-center sm:flex-row sm:text-left">
-          <p className="text-[13px] text-[#060D1F]/50">{tab === "credits" ? t.draftCredits[lang] : tk("cat.price.note")}</p>
-          <Link to="/pricing" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#1565D8] hover:text-[#060D1F]">
+        <div className="hp-line mt-10 flex flex-col items-center justify-between gap-3 border-t pt-6 text-center sm:flex-row sm:text-left">
+          <p className="hp-ink-3 text-[13px]">{tab === "credits" ? t.draftCredits[lang] : tk("cat.price.note")}</p>
+          <Link to="/pricing" className="hp-accent inline-flex items-center gap-1.5 text-[14px] font-semibold hover:underline">
             {t.all[lang]} <ArrowRight size={14} aria-hidden />
           </Link>
         </div>

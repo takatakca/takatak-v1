@@ -34,52 +34,56 @@ export function useSeen<T extends Element>(rootMargin = "0px 0px -12% 0px") {
 }
 
 /** Rises and unmasks once in view. */
-export function Rise({ children, delay = 0, className = "", style }: { children: ReactNode; delay?: number; className?: string; style?: CSSProperties }) {
-  const { ref, seen } = useSeen<HTMLDivElement>();
+export function Rise({
+  children,
+  delay = 0,
+  className = "",
+  style,
+  as = "div",
+}: {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+  style?: CSSProperties;
+  as?: "div" | "li";
+}) {
+  const { ref, seen } = useSeen<HTMLDivElement & HTMLLIElement>();
+  const Tag = as;
   return (
-    <div ref={ref} data-seen={seen} className={`tk-rise ${className}`} style={{ ...style, transitionDelay: `${delay}ms` }}>
+    <Tag ref={ref} data-seen={seen} className={`tk-rise ${className}`} style={{ ...style, transitionDelay: `${delay}ms` }}>
       {children}
-    </div>
+    </Tag>
   );
 }
 
-/** Section headline: a bright statement and a quiet continuation. */
+/** Section headline: a strong statement and a quieter continuation (theme aware). */
 export function TwoTone({
   id,
   lead,
   rest,
   className = "",
   as: Tag = "h2",
-  dark = true,
+  size = "lg",
 }: {
   id?: string;
   lead: string;
   rest?: string;
   className?: string;
   as?: "h1" | "h2" | "h3";
-  dark?: boolean;
+  size?: "lg" | "md";
 }) {
+  const sizes = size === "lg" ? "text-[36px] sm:text-[54px] lg:text-[64px]" : "text-[30px] sm:text-[40px] lg:text-[46px]";
   return (
-    <Tag
-      id={id}
-      className={`text-balance font-[family-name:var(--font-website-display)] text-[34px] font-bold leading-[1.04] tracking-[-0.035em] sm:text-[52px] lg:text-[60px] ${
-        dark ? "text-white" : "text-[#060D1F]"
-      } ${className}`}
-    >
+    <Tag id={id} className={`hp-display hp-ink text-balance ${sizes} ${className}`}>
       {lead}
-      {rest && <span className={dark ? "text-white/40" : "text-[#060D1F]/40"}> {rest}</span>}
+      {rest && <span className="hp-ink-3"> {rest}</span>}
     </Tag>
   );
 }
 
 /** Small label above a headline. */
-export function Eyebrow({ children, dark = true }: { children: ReactNode; dark?: boolean }) {
-  return (
-    <p className={`mb-5 flex items-center gap-2.5 text-[12px] font-semibold uppercase tracking-[0.22em] ${dark ? "text-[#7CC4FF]" : "text-[#1565D8]"}`}>
-      <span aria-hidden className={`h-px w-8 ${dark ? "bg-[#7CC4FF]/60" : "bg-[#1565D8]/60"}`} />
-      {children}
-    </p>
-  );
+export function Eyebrow({ children }: { children: ReactNode }) {
+  return <p className="hp-accent mb-4 text-[13px] font-semibold tracking-[0.02em]">{children}</p>;
 }
 
 /** Counts to a value when first seen. */

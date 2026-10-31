@@ -37,7 +37,7 @@ export function PlanConfigurator() {
   ];
 
   return (
-    <Section id={sectionId("plan")} labelledBy="home-plan-title" className="border-t border-white/[0.06] py-20 sm:py-28">
+    <Section id={sectionId("plan")} labelledBy="home-plan-title" className="hp-bg py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4">
         <Rise className="max-w-3xl">
           <Eyebrow>{homeV2.plan.eyebrow[lang]}</Eyebrow>
@@ -46,7 +46,7 @@ export function PlanConfigurator() {
 
         <div className="mt-12 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] lg:gap-14">
           <div className="min-w-0">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.2em] text-white/40">{homeV2.plan.presets[lang]}</p>
+            <p className="hp-ink-3 text-[13px] font-semibold">{homeV2.plan.presets[lang]}</p>
             <div className="mt-4 flex flex-wrap gap-2">
               {BUSINESS_TYPES.map((b) => (
                 <button
@@ -55,7 +55,7 @@ export function PlanConfigurator() {
                   aria-pressed={activePreset === b.key}
                   onClick={() => applyPreset(b.key)}
                   className={`rounded-full px-4 py-2 text-[14px] font-medium transition-all ${
-                    activePreset === b.key ? "bg-white text-[#060D1F]" : "text-white/75 ring-1 ring-white/15 hover:text-white hover:ring-white/35"
+                    activePreset === b.key ? "hp-btn" : "hp-card hp-ink hover:shadow-[var(--hp-shadow)]"
                   }`}
                 >
                   {b.label[lang]}
@@ -68,14 +68,14 @@ export function PlanConfigurator() {
                   key={g.key}
                   type="button"
                   onClick={() => plan.set(Array.from(new Set([...plan.keys, ...g.adds])))}
-                  className="text-[13px] text-[#7CC4FF] underline-offset-4 hover:text-white hover:underline"
+                  className="hp-accent text-[13.5px] font-medium underline-offset-4 hover:underline"
                 >
                   + {g.label[lang]}
                 </button>
               ))}
             </div>
 
-            <ul className="mt-8 divide-y divide-white/[0.07] border-y border-white/[0.07]">
+            <ul className="hp-divide hp-line mt-8 border-y">
               {CORE_CATEGORIES.map((c) => {
                 const on = plan.has(c.key);
                 const Icon = c.icon;
@@ -88,15 +88,15 @@ export function PlanConfigurator() {
                       onClick={() => plan.toggle(c.key)}
                       className="group flex w-full items-center gap-4 py-4 text-left"
                     >
-                      <Icon size={20} className={`shrink-0 transition-colors ${on ? "text-[#29C3FF]" : "text-white/35"}`} aria-hidden />
+                      <Icon size={20} className={`shrink-0 transition-colors ${on ? "hp-accent" : "hp-ink-3"}`} aria-hidden />
                       <span className="min-w-0 flex-1">
-                        <span className={`block text-[16px] font-semibold transition-colors ${on ? "text-white" : "text-white/70"}`}>{tk(`cat.${c.key}.name`)}</span>
-                        <span className="block truncate text-[13px] text-white/40">{tk(`cat.${c.key}.h1`)}</span>
+                        <span className={`block text-[16px] font-semibold transition-colors ${on ? "hp-ink" : "hp-ink-2"}`}>{tk(`cat.${c.key}.name`)}</span>
+                        <span className="hp-ink-3 block truncate text-[13px]">{tk(`cat.${c.key}.h1`)}</span>
                       </span>
-                      <span className="hidden text-[13.5px] tabular-nums text-white/55 sm:block">{linePrice(c, tk, lang)}</span>
+                      <span className="hp-ink-2 hidden text-[13.5px] tabular-nums sm:block">{linePrice(c, tk, lang)}</span>
                       <span
                         aria-hidden
-                        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300 ${on ? "bg-[#1F8BFF]" : "bg-white/12"}`}
+                        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300 ${on ? "bg-[var(--hp-cta)]" : "hp-switch-off"}`}
                       >
                         <span
                           className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all duration-300 ease-[cubic-bezier(.2,.8,.2,1)] ${on ? "left-6" : "left-1"}`}
@@ -111,48 +111,48 @@ export function PlanConfigurator() {
 
           {/* Receipt */}
           <div className="lg:sticky lg:top-[calc(var(--tk-header-h,64px)+76px)] lg:self-start">
-            <div className="relative overflow-hidden rounded-[28px] bg-[#F5F8FC] p-7 text-[#060D1F] shadow-[0_40px_100px_-40px_#1F8BFF]">
+            <div className="hp-card hp-ink relative overflow-hidden rounded-[28px] p-7">
               <div className="flex items-baseline justify-between">
-                <p className="font-[family-name:var(--font-website-display)] text-[22px] font-bold tracking-[-0.02em]">{homeV2.plan.receipt[lang]}</p>
-                <p className="text-[12px] font-medium text-[#060D1F]/45">TAKATAK · CAD</p>
+                <p className="hp-display text-[24px]">{homeV2.plan.receipt[lang]}</p>
+                <p className="text-[12px] font-medium hp-ink-3">TAKATAK · CAD</p>
               </div>
 
               {plan.categories.length ? (
-                <ul className="mt-5 grid gap-2.5 border-b border-dashed border-[#060D1F]/15 pb-5">
+                <ul className="hp-line mt-5 grid gap-2.5 border-b border-dashed pb-5">
                   {plan.categories.map((c) => (
                     <li key={c.key} className="tk-stagger flex items-center justify-between gap-3 text-[14px]">
                       <span className="flex items-center gap-2 font-medium">
-                        <Check size={14} className="text-[#1565D8]" strokeWidth={3} aria-hidden />
+                        <Check size={14} className="hp-accent" strokeWidth={3} aria-hidden />
                         {tk(`cat.${c.key}.name`)}
                       </span>
-                      <span className="tabular-nums text-[#060D1F]/60">{linePrice(c, tk, lang)}</span>
+                      <span className="tabular-nums hp-ink-2">{linePrice(c, tk, lang)}</span>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-5 border-b border-dashed border-[#060D1F]/15 pb-5 text-[14px] text-[#060D1F]/50">{homeV2.plan.empty[lang]}</p>
+                <p className="hp-line hp-ink-2 mt-5 border-b border-dashed pb-5 text-[14px]">{homeV2.plan.empty[lang]}</p>
               )}
 
-              <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#060D1F]/45">{homeV2.plan.lines[lang]}</p>
+              <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.2em] hp-ink-3">{homeV2.plan.lines[lang]}</p>
               <dl className="mt-3 grid gap-2">
                 {rows.filter((r) => r.value > 0).map((r) => (
                   <div key={r.label} className="tk-stagger flex items-baseline justify-between gap-4">
-                    <dt className="text-[14px] text-[#060D1F]/65">{r.label}</dt>
-                    <dd className="font-[family-name:var(--font-website-display)] text-[30px] font-bold tracking-[-0.03em]">
+                    <dt className="text-[14px] hp-ink-2">{r.label}</dt>
+                    <dd className="hp-display text-[32px]">
                       <Ticker value={r.value} format={fmt} />
                     </dd>
                   </div>
                 ))}
                 {!rows.some((r) => r.value > 0) && !totals.quoted && (
                   <div className="flex items-baseline justify-between gap-4 opacity-35">
-                    <dt className="text-[14px] text-[#060D1F]/65">{homeCopy.plan.monthly[lang]}</dt>
-                    <dd className="font-[family-name:var(--font-website-display)] text-[30px] font-bold tracking-[-0.03em]">{fmt(0)}</dd>
+                    <dt className="text-[14px] hp-ink-2">{homeCopy.plan.monthly[lang]}</dt>
+                    <dd className="hp-display text-[32px]">{fmt(0)}</dd>
                   </div>
                 )}
                 {totals.quoted > 0 && (
                   <div className="flex items-baseline justify-between gap-4">
-                    <dt className="text-[14px] text-[#060D1F]/65">{fill(homeCopy.plan.quoted[lang], { n: totals.quoted })}</dt>
-                    <dd className="text-[14px] font-medium text-[#060D1F]/55">{homeV2.plan.custom[lang]}</dd>
+                    <dt className="text-[14px] hp-ink-2">{fill(homeCopy.plan.quoted[lang], { n: totals.quoted })}</dt>
+                    <dd className="text-[14px] font-medium hp-ink-2">{homeV2.plan.custom[lang]}</dd>
                   </div>
                 )}
               </dl>
@@ -161,8 +161,8 @@ export function PlanConfigurator() {
                 <Link
                   to={plan.registerHref}
                   aria-disabled={!plan.keys.length}
-                  className={`inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-semibold text-white transition-all ${
-                    plan.keys.length ? "bg-[#1565D8] hover:bg-[#0F55BD] hover:shadow-[0_16px_40px_-14px_#1565D8]" : "pointer-events-none bg-[#060D1F]/25"
+                  className={`hp-focus inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-semibold ${
+                    plan.keys.length ? "hp-cta" : "hp-ink-3 pointer-events-none bg-[var(--hp-line)]"
                   }`}
                 >
                   {homeCopy.plan.cta[lang]} <ArrowRight size={16} aria-hidden />
@@ -170,13 +170,12 @@ export function PlanConfigurator() {
                 <button
                   type="button"
                   onClick={() => openLiveChat({ page: "/", intent: "plan_builder", lang })}
-                  className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold text-[#060D1F]/70 hover:text-[#060D1F]"
+                  className="inline-flex items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold hp-ink-2 hover:underline"
                 >
                   <Headset size={15} aria-hidden /> {homeCopy.plan.chat[lang]}
                 </button>
               </div>
-              <p className="mt-3 text-[11.5px] leading-5 text-[#060D1F]/45">{homeCopy.plan.note[lang]}</p>
-              <span aria-hidden className="pointer-events-none absolute -bottom-3 left-0 right-0 h-6 bg-[radial-gradient(circle_at_10px_0,transparent_9px,#F5F8FC_10px)] bg-[length:20px_20px]" />
+              <p className="mt-3 text-[11.5px] leading-5 hp-ink-3">{homeCopy.plan.note[lang]}</p>
             </div>
           </div>
         </div>

@@ -24,6 +24,8 @@ export const MODE_ICONS = {
 export function TakbotSection() {
   const { lang } = useLanguage();
   return (
+    // Always a dark chapter, in both themes: TAK bot is the night sky of the page.
+    <div className="hp" data-theme="dark">
     <Section id={sectionId("takbot")} labelledBy="home-takbot-title" className="tk-grain overflow-hidden bg-[#030812] py-20 sm:py-32">
       <div aria-hidden className="absolute inset-0 opacity-70">
         <Aurora />
@@ -63,5 +65,6 @@ export function TakbotSection() {
         </Rise>
       </div>
     </Section>
+    </div>
   );
 }
