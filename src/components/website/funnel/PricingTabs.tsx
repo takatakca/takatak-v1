@@ -2,15 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Check, Sparkles } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 
-import { Kicker, SegmentedTabs, cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
+import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
 import { writeSelection } from "@/lib/website/domain-hosting-selection";
-import { fill, homeCopy } from "@/lib/website/home-funnel";
+import { fill, homeCopy, homeV2 } from "@/lib/website/home-funnel";
 import { pricing, type Cadence } from "@/lib/website/pricing";
 import { TAKBOT_PACKS } from "@/lib/takbot/catalog";
 import { Link } from "@/lib/website/nav";
 import { sectionId } from "./HomeSectionNav";
+import { Eyebrow, Rise, Section, TwoTone } from "./primitives";
 
 type TabKey = "hosting" | "websites" | "marketing" | "credits";
 
@@ -26,12 +27,13 @@ interface Card {
   label: string;
 }
 
-/** Real catalog prices in tabs, each card one click from checkout or sign-up. */
+/** Real catalog prices on a light page, each card one click from checkout or sign-up. */
 export function PricingTabs() {
   const { tk, lang } = useCopy();
   const router = useRouter();
   const [tab, setTab] = useState<TabKey>("hosting");
   const t = homeCopy.pricing;
+  const locale = lang === "fr" ? "fr-CA" : "en-CA";
 
   const cards: Card[] =
     tab === "hosting"
@@ -53,7 +55,7 @@ export function PricingTabs() {
             cadence: w.cadence,
             lines: [w.description],
             featured: w.key === "business",
-            action: { kind: "link", to: `/register?plan=website` },
+            action: { kind: "link", to: "/register?plan=website" },
             label: fill(t.start[lang], { name: w.name }),
           }))
         : tab === "marketing"
@@ -65,7 +67,7 @@ export function PricingTabs() {
               suffix: "suffix" in m ? m.suffix : undefined,
               lines: [],
               featured: m.key === "monthly",
-              action: { kind: "link", to: `/register?plan=marketing` },
+              action: { kind: "link", to: "/register?plan=marketing" },
               label: fill(t.start[lang], { name: m.name }),
             }))
           : TAKBOT_PACKS.map((p) => ({
@@ -73,41 +75,49 @@ export function PricingTabs() {
               name: p.label,
               amount: p.priceCad,
               cadence: "one-time" as Cadence,
-              lines: [fill(t.credits[lang], { n: p.credits.toLocaleString(lang === "fr" ? "fr-CA" : "en-CA") }), fill(t.perCredit[lang], { price: money(lang, Math.round((p.priceCad / p.credits) * 1000) / 1000) })],
+              lines: [
+                fill(t.credits[lang], { n: p.credits.toLocaleString(locale) }),
+                fill(t.perCredit[lang], { price: money(lang, Math.round((p.priceCad / p.credits) * 1000) / 1000) }),
+              ],
               featured: p.key === "growth",
               action: { kind: "link", to: "/takbot#credits" },
               label: fill(t.start[lang], { name: p.label }),
             }));
 
   const choose = (card: Card) => {
-    if (card.action.kind === "checkout") {
-      writeSelection({ hostingPlan: card.action.plan });
-      router.push("/checkout");
-    }
+    if (card.action.kind !== "checkout") return;
+    writeSelection({ hostingPlan: card.action.plan });
+    router.push("/checkout");
   };
 
+  const tabs = Object.keys(t.tabs) as TabKey[];
+
   return (
-    <section
-      id={sectionId("pricing")}
-      aria-labelledby="home-pricing-title"
-      className="relative border-t border-white/[0.06] py-16 sm:py-24"
-      style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 60px)" }}
-    >
+    <Section id={sectionId("pricing")} labelledBy="home-pricing-title" className="tk-paper py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4">
-        <div className="mx-auto max-w-3xl text-center">
-          <Kicker>{t.kicker[lang]}</Kicker>
-          <h2 id="home-pricing-title" className="mt-4 text-balance text-3xl font-extrabold leading-[1.08] tracking-[-0.025em] text-white sm:text-[44px]">
-            {t.title[lang]}
-          </h2>
-          <p className="mt-4 text-base leading-7 text-white/68">{t.subtitle[lang]}</p>
-          <SegmentedTabs
-            className="mt-8"
-            items={(Object.keys(t.tabs) as TabKey[]).map((k) => ({ id: k, label: t.tabs[k][lang] }))}
-            value={tab}
-            onChange={(id) => setTab(id as TabKey)}
-            idBase="home-pricing"
-            label={t.kicker[lang]}
-          />
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+          <Rise className="max-w-2xl">
+            <Eyebrow dark={false}>{homeV2.pricing.eyebrow[lang]}</Eyebrow>
+            <TwoTone id="home-pricing-title" dark={false} lead={homeV2.pricing.lead[lang]} rest={homeV2.pricing.rest[lang]} />
+          </Rise>
+          <div role="tablist" aria-label={homeV2.pricing.eyebrow[lang]} className="inline-flex w-fit rounded-full bg-[#060D1F]/[0.06] p-1">
+            {tabs.map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="tab"
+                id={`home-pricing-tab-${k}`}
+                aria-selected={tab === k}
+                aria-controls="home-pricing-panel"
+                onClick={() => setTab(k)}
+                className={`rounded-full px-4 py-2 text-[13.5px] font-semibold transition-all ${
+                  tab === k ? "bg-white text-[#060D1F] shadow-[0_2px_10px_rgb(6_13_31/0.12)]" : "text-[#060D1F]/55 hover:text-[#060D1F]"
+                }`}
+              >
+                {t.tabs[k][lang]}
+              </button>
+            ))}
+          </div>
         </div>
 
         <ul
@@ -115,64 +125,61 @@ export function PricingTabs() {
           role="tabpanel"
           aria-labelledby={`home-pricing-tab-${tab}`}
           key={tab}
-          className={`mt-10 grid gap-4 sm:grid-cols-2 ${cards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
+          className={`mt-12 grid gap-4 sm:grid-cols-2 ${cards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
         >
-          {cards.map((card, i) => (
-            <li key={card.key} className="tk-stagger" style={{ animationDelay: `${i * 70}ms` }}>
-              <div
-                className={`relative flex h-full flex-col rounded-[24px] border p-6 transition-transform duration-300 hover:-translate-y-1 ${
-                  card.featured
-                    ? "border-[#1F8BFF]/70 bg-[linear-gradient(160deg,rgb(31_139_255/0.22),rgb(11_27_61/0.9)_55%)] shadow-[0_30px_60px_-30px_#1F8BFF]"
-                    : "border-white/10 bg-white/[0.035]"
-                }`}
-              >
-                {card.featured && (
-                  <span className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-[#1F8BFF] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
-                    <Sparkles size={11} aria-hidden /> {t.popular[lang]}
-                  </span>
-                )}
-                <p className="text-[15px] font-bold text-white">{card.name}</p>
-                <p className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight text-white">{money(lang, card.amount)}</span>
-                  <span className="text-sm text-white/55">{cadenceSuffix(tk, card.cadence)}</span>
-                </p>
-                {card.suffix && <p className="mt-1 text-xs text-white/50">{card.suffix}</p>}
-                <ul className="mt-5 grid gap-2 text-[13.5px] text-white/75">
-                  {card.lines.map((line) => (
-                    <li key={line} className="flex items-start gap-2">
-                      <Check size={14} className="mt-0.5 shrink-0 text-[#29C3FF]" aria-hidden /> {line}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-auto pt-6">
-                  {card.action.kind === "checkout" ? (
-                    <button
-                      type="button"
-                      onClick={() => choose(card)}
-                      className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold ${card.featured ? "tk-btn-primary" : "tk-btn-ghost"}`}
-                    >
-                      {card.label} <ArrowRight size={15} aria-hidden />
-                    </button>
-                  ) : (
-                    <Link
-                      to={card.action.to}
-                      className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold ${card.featured ? "tk-btn-primary" : "tk-btn-ghost"}`}
-                    >
-                      {card.label} <ArrowRight size={15} aria-hidden />
-                    </Link>
-                  )}
+          {cards.map((card, i) => {
+            const dark = card.featured;
+            const btn = `inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold transition-all ${
+              dark ? "bg-white text-[#060D1F] hover:scale-[1.02]" : "bg-[#060D1F] text-white hover:bg-[#1565D8]"
+            }`;
+            return (
+              <li key={card.key} className="tk-stagger" style={{ animationDelay: `${i * 70}ms` }}>
+                <div
+                  className={`relative flex h-full flex-col rounded-[26px] p-7 transition-all duration-500 hover:-translate-y-1 ${
+                    dark
+                      ? "bg-[#060D1F] text-white shadow-[0_40px_80px_-40px_#1565D8]"
+                      : "bg-white text-[#060D1F] shadow-[0_1px_0_rgb(6_13_31/0.04),0_20px_50px_-30px_rgb(6_13_31/0.25)] ring-1 ring-[#060D1F]/[0.06]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-[15px] font-semibold">{card.name}</p>
+                    {dark && <span className="rounded-full bg-[#1F8BFF] px-2.5 py-0.5 text-[11px] font-semibold">{t.popular[lang]}</span>}
+                  </div>
+                  <p className="mt-6 flex items-baseline gap-1">
+                    <span className="font-[family-name:var(--font-website-display)] text-[44px] font-bold leading-none tracking-[-0.04em]">{money(lang, card.amount)}</span>
+                    <span className={`text-[14px] ${dark ? "text-white/55" : "text-[#060D1F]/50"}`}>{cadenceSuffix(tk, card.cadence)}</span>
+                  </p>
+                  {card.suffix && <p className={`mt-1 text-[12px] ${dark ? "text-white/50" : "text-[#060D1F]/45"}`}>{card.suffix}</p>}
+                  <ul className={`mt-6 grid gap-2.5 border-t pt-6 text-[14px] ${dark ? "border-white/10 text-white/75" : "border-[#060D1F]/[0.07] text-[#060D1F]/70"}`}>
+                    {card.lines.map((line) => (
+                      <li key={line} className="flex items-start gap-2.5">
+                        <Check size={15} className={`mt-0.5 shrink-0 ${dark ? "text-[#29C3FF]" : "text-[#1565D8]"}`} strokeWidth={2.5} aria-hidden /> {line}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-auto pt-8">
+                    {card.action.kind === "checkout" ? (
+                      <button type="button" onClick={() => choose(card)} className={btn}>
+                        {card.label} <ArrowRight size={15} aria-hidden />
+                      </button>
+                    ) : (
+                      <Link to={card.action.to} className={btn}>
+                        {card.label} <ArrowRight size={15} aria-hidden />
+                      </Link>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
-        <div className="mt-8 flex flex-col items-center gap-3 text-center">
-          <p className="text-xs text-white/45">{tab === "credits" ? t.draftCredits[lang] : tk("cat.price.note")}</p>
-          <Link to="/pricing" className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#7CC4FF] hover:text-white">
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-[#060D1F]/[0.08] pt-6 text-center sm:flex-row sm:text-left">
+          <p className="text-[13px] text-[#060D1F]/50">{tab === "credits" ? t.draftCredits[lang] : tk("cat.price.note")}</p>
+          <Link to="/pricing" className="inline-flex items-center gap-1.5 text-[14px] font-semibold text-[#1565D8] hover:text-[#060D1F]">
             {t.all[lang]} <ArrowRight size={14} aria-hidden />
           </Link>
         </div>
       </div>
-    </section>
+    </Section>
   );
 }

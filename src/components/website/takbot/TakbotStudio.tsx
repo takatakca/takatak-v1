@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowRight, Bot, Check, ChevronDown, Coins, Headset, Loader2, Search, Send, ShieldCheck, Sparkles, User } from "lucide-react";
 
 import { MODE_ICONS } from "@/components/website/funnel/TakbotSection";
-import { TakbotOrbit } from "@/components/website/funnel/TakbotOrbit";
+import { Aurora } from "@/components/website/funnel/primitives";
 import { Kicker, money } from "@/components/website/premium/ui";
 import { TAKBOT_ACTIONS, TAKBOT_ENGINES, TAKBOT_MODES, TAKBOT_PACKS, MAX_PROMPT_CHARS, creditsFor, type TakbotMode } from "@/lib/takbot/catalog";
 import { takbotCopy, takbotModeCopy } from "@/lib/takbot/copy";
@@ -127,20 +127,21 @@ export function TakbotStudio() {
   return (
     <div className="tk-page tk-premium brand-dark">
       {/* Hero + composer */}
-      <section className="relative overflow-hidden">
-        <div aria-hidden className="tk-grid-lines pointer-events-none absolute inset-0 opacity-60" />
-        <div aria-hidden className="pointer-events-none absolute left-1/2 top-0 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgb(31_139_255/0.28),transparent)] blur-2xl" />
-        <div className="relative mx-auto grid max-w-7xl items-center gap-10 px-4 pb-12 pt-12 sm:pt-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+      <section className="tk-grain relative overflow-hidden bg-[#030812]">
+        <div aria-hidden className="absolute inset-0 opacity-80">
+          <Aurora />
+        </div>
+        <div className="relative mx-auto max-w-3xl px-4 pb-20 pt-16 text-center sm:pt-24">
           <div>
-            <p className="tk-glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/80">
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.26em] text-white/75 ring-1 ring-white/10">
               <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#29C3FF] shadow-[0_0_12px_#29C3FF]" />
               {c.hero.eyebrow[lang]}
             </p>
-            <h1 className="tk-gradient-text mt-5 text-balance text-[40px] font-extrabold leading-[1.03] tracking-[-0.035em] sm:text-6xl">{c.hero.title[lang]}</h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/72 sm:text-[17px]">{c.hero.subtitle[lang]}</p>
+            <h1 className="mt-6 text-balance font-[family-name:var(--font-website-display)] text-[42px] font-bold leading-[1.0] tracking-[-0.045em] text-white sm:text-[72px]">{c.hero.title[lang]}</h1>
+            <p className="mx-auto mt-6 max-w-xl text-[17px] leading-8 text-white/60">{c.hero.subtitle[lang]}</p>
 
             {/* Composer */}
-            <div className="tk-glass mt-8 rounded-[24px] p-3 shadow-[0_30px_80px_-40px_#1F8BFF]">
+            <div className="mt-10 rounded-[28px] bg-[#0A1530]/85 p-3 text-left shadow-[0_50px_120px_-40px_#1F8BFF] ring-1 ring-white/12 backdrop-blur-xl">
               <div role="tablist" aria-label="TAK bot" className="tk-no-scrollbar flex gap-1 overflow-x-auto pb-2">
                 {TAKBOT_MODES.map((m) => {
                   const Icon = MODE_ICONS[m.key];
@@ -247,7 +248,7 @@ export function TakbotStudio() {
                     type="button"
                     onClick={() => void run()}
                     disabled={!prompt.trim() || busy || !modeDef.inline || !session?.workspace}
-                    className="tk-btn-primary ml-auto inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13.5px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                    className="ml-auto inline-flex items-center gap-2 rounded-full bg-white px-5 py-2 text-[13.5px] font-semibold text-[#060D1F] transition-transform hover:scale-[1.03] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {busy ? <Loader2 size={15} className="animate-spin" aria-hidden /> : <Send size={15} aria-hidden />} {c.composer.send[lang]}
                   </button>
@@ -268,10 +269,10 @@ export function TakbotStudio() {
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#1F8BFF]/30 bg-[#1F8BFF]/[0.08] px-4 py-3 text-[13px] text-white/85">
                   <span>{c.composer.signIn[lang]}</span>
                   <span className="flex gap-2">
-                    <Link to="/login?next=/takbot" className="tk-btn-ghost rounded-lg px-3 py-1.5 font-semibold">
+                    <Link to="/login?next=/takbot" className="rounded-full px-4 py-1.5 font-semibold text-white ring-1 ring-white/20 hover:bg-white/[0.06]">
                       {c.composer.login[lang]}
                     </Link>
-                    <Link to="/register" className="tk-btn-primary rounded-lg px-3 py-1.5 font-semibold">
+                    <Link to="/register" className="rounded-full bg-white px-4 py-1.5 font-semibold text-[#060D1F]">
                       {c.composer.signInCta[lang]}
                     </Link>
                   </span>
@@ -283,7 +284,7 @@ export function TakbotStudio() {
 
             {/* Conversation */}
             {turns.length > 0 && (
-              <ol className="mt-6 grid gap-4" aria-live="polite">
+              <ol className="mt-8 grid gap-4 text-left" aria-live="polite">
                 {turns.map((t) => (
                   <li key={t.id} className="grid gap-2">
                     <p className="ml-auto flex max-w-[85%] items-start gap-2 rounded-2xl rounded-tr-sm bg-[#1F8BFF]/20 px-4 py-3 text-[14.5px] text-white">
@@ -317,9 +318,6 @@ export function TakbotStudio() {
             )}
           </div>
 
-          <div className="hidden overflow-hidden lg:block">
-            <TakbotOrbit size={480} connected={connected} />
-          </div>
         </div>
       </section>
 
@@ -330,8 +328,8 @@ export function TakbotStudio() {
           <h2 className="mt-3 text-3xl font-extrabold tracking-[-0.025em] text-white sm:text-[40px]">{c.how.title[lang]}</h2>
           <ol className="mt-10 grid gap-4 md:grid-cols-4">
             {c.how.steps.map((s, i) => (
-              <li key={s.t.en} className="tk-glass relative rounded-2xl p-5">
-                <span className="tk-gradient-text text-4xl font-extrabold">0{i + 1}</span>
+              <li key={s.t.en} className="relative border-t border-white/15 pt-6">
+                <span className="font-[family-name:var(--font-website-display)] text-4xl font-bold tracking-[-0.04em] text-white/30">0{i + 1}</span>
                 <p className="mt-3 text-[16px] font-bold text-white">{s.t[lang]}</p>
                 <p className="mt-2 text-[14px] leading-6 text-white/65">{s.d[lang]}</p>
                 {i === 3 && <ShieldCheck size={18} className="absolute right-5 top-5 text-emerald-300" aria-hidden />}
@@ -402,13 +400,13 @@ export function TakbotStudio() {
                       <p className="mt-1 text-sm text-[#9DD3FF]">{p.credits.toLocaleString(lang === "fr" ? "fr-CA" : "en-CA")} {lang === "fr" ? "crédits" : "credits"}</p>
                       <div className="mt-5">
                         {catalog?.checkoutEnabled && session?.workspace ? (
-                          <Link to="/dashboard/growth/ai-engine" className="tk-btn-primary inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold">
+                          <Link to="/dashboard/growth/ai-engine" className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-4 py-3 text-sm font-semibold text-[#060D1F]">
                             {fill(c.credits.buy[lang], { name: p.label })} <ArrowRight size={15} aria-hidden />
                           </Link>
                         ) : (
                           <Link
                             to={session?.signedIn ? "/dashboard/growth/ai-engine" : "/register"}
-                            className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold ${featured ? "tk-btn-primary" : "tk-btn-ghost"}`}
+                            className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-sm font-semibold ${featured ? "bg-white text-[#060D1F]" : "text-white ring-1 ring-white/20 hover:bg-white/[0.06]"}`}
                           >
                             {session?.signedIn ? fill(c.credits.buy[lang], { name: p.label }) : c.composer.signInCta[lang]} <ArrowRight size={15} aria-hidden />
                           </Link>
@@ -431,7 +429,7 @@ export function TakbotStudio() {
                 </p>
               )}
             </div>
-            <aside className="tk-glass rounded-2xl p-5">
+            <aside className="rounded-[24px] bg-white/[0.03] p-6 ring-1 ring-white/10">
               <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">{c.credits.costs[lang]}</p>
               <ul className="mt-4 grid gap-2">
                 {TAKBOT_ACTIONS.map((a) => (

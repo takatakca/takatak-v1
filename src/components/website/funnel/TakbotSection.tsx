@@ -1,15 +1,15 @@
 "use client";
 
-import { ArrowRight, AudioLines, Clapperboard, ImageIcon, MessageSquare, PenLine, Search, Sparkles } from "lucide-react";
+import { ArrowRight, AudioLines, Clapperboard, ImageIcon, MessageSquare, PenLine, Search } from "lucide-react";
 
-import { Kicker } from "@/components/website/premium/ui";
 import { TAKBOT_MODES, creditsFor } from "@/lib/takbot/catalog";
 import { takbotModeCopy } from "@/lib/takbot/copy";
-import { homeCopy } from "@/lib/website/home-funnel";
+import { homeCopy, homeV2 } from "@/lib/website/home-funnel";
 import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { sectionId } from "./HomeSectionNav";
-import { TakbotOrbit } from "./TakbotOrbit";
+import { Aurora, Eyebrow, Rise, Section, TwoTone } from "./primitives";
+import { TakbotDemo } from "./TakbotDemo";
 
 export const MODE_ICONS = {
   chat: MessageSquare,
@@ -20,59 +20,48 @@ export const MODE_ICONS = {
   video: Clapperboard,
 } as const;
 
-/** Homepage teaser for TAK bot, the master AI bot. */
+/** Homepage chapter for TAK bot, the master AI bot. */
 export function TakbotSection() {
   const { lang } = useLanguage();
   return (
-    <section
-      id={sectionId("takbot")}
-      aria-labelledby="home-takbot-title"
-      className="relative overflow-hidden border-t border-white/[0.06] bg-[#040916] py-16 sm:py-24"
-      style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 60px)" }}
-    >
-      <div aria-hidden className="tk-grid-lines pointer-events-none absolute inset-0 opacity-50" />
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-4 lg:grid-cols-2">
-        <div>
-          <Kicker>{homeCopy.takbot.kicker[lang]}</Kicker>
-          <h2 id="home-takbot-title" className="tk-gradient-text mt-4 text-balance text-3xl font-extrabold leading-[1.06] tracking-[-0.03em] sm:text-5xl">
-            {homeCopy.takbot.title[lang]}
-          </h2>
-          <p className="mt-5 max-w-xl text-base leading-7 text-white/70">{homeCopy.takbot.subtitle[lang]}</p>
-          <ul className="mt-8 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+    <Section id={sectionId("takbot")} labelledBy="home-takbot-title" className="tk-grain overflow-hidden bg-[#030812] py-20 sm:py-32">
+      <div aria-hidden className="absolute inset-0 opacity-70">
+        <Aurora />
+      </div>
+      <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <Rise>
+          <Eyebrow>{homeV2.takbot.eyebrow[lang]}</Eyebrow>
+          <TwoTone id="home-takbot-title" lead={homeV2.takbot.lead[lang]} rest={homeV2.takbot.rest[lang]} />
+          <p className="mt-6 max-w-lg text-[17px] leading-8 text-white/60">{homeV2.takbot.body[lang]}</p>
+
+          <ul className="mt-9 grid max-w-lg grid-cols-2 gap-x-6 border-t border-white/10 sm:grid-cols-3">
             {TAKBOT_MODES.map((m) => {
               const Icon = MODE_ICONS[m.key];
               return (
-                <li key={m.key}>
-                  <Link
-                    to={`/takbot?mode=${m.key}`}
-                    className="tk-lift group flex h-full flex-col gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 hover:border-[#29C3FF]/40"
-                  >
-                    <span className="flex items-center justify-between">
-                      <Icon size={18} className="text-[#29C3FF]" aria-hidden />
-                      <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10.5px] font-semibold text-white/65">
-                        {creditsFor(m)} cr
-                      </span>
-                    </span>
-                    <span className="text-[14px] font-bold text-white">{takbotModeCopy[m.key].name[lang]}</span>
-                    <span className="text-[12px] leading-4 text-white/50">{takbotModeCopy[m.key].hint[lang]}</span>
+                <li key={m.key} className="border-b border-white/10">
+                  <Link to={`/takbot?mode=${m.key}`} className="group flex items-center gap-2.5 py-3.5 text-[14.5px] text-white/75 hover:text-white">
+                    <Icon size={16} className="text-[#29C3FF]" aria-hidden />
+                    {takbotModeCopy[m.key].name[lang]}
+                    <span className="ml-auto text-[11.5px] tabular-nums text-white/35 group-hover:text-white/60">{creditsFor(m)} cr</span>
                   </Link>
                 </li>
               );
             })}
           </ul>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/takbot" className="tk-btn-primary inline-flex items-center gap-2 rounded-xl px-6 py-3.5 text-[15px] font-semibold">
-              <Sparkles size={16} aria-hidden /> {homeCopy.takbot.cta[lang]} <ArrowRight size={16} aria-hidden />
+
+          <div className="mt-9 flex flex-wrap items-center gap-3">
+            <Link to="/takbot" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-[15px] font-semibold text-[#060D1F] transition-transform hover:scale-[1.03]">
+              {homeCopy.takbot.cta[lang]} <ArrowRight size={16} aria-hidden />
             </Link>
-            <Link to="/takbot#credits" className="tk-btn-ghost inline-flex items-center gap-2 rounded-xl px-5 py-3.5 text-[15px] font-semibold">
+            <Link to="/takbot#credits" className="inline-flex items-center gap-2 rounded-full px-5 py-3.5 text-[15px] font-semibold text-white ring-1 ring-white/20 hover:bg-white/[0.06]">
               {homeCopy.takbot.credits[lang]}
             </Link>
           </div>
-        </div>
-        <div className="overflow-hidden">
-          <TakbotOrbit size={520} />
-        </div>
+        </Rise>
+        <Rise delay={150}>
+          <TakbotDemo />
+        </Rise>
       </div>
-    </section>
+    </Section>
   );
 }

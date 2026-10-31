@@ -292,3 +292,64 @@ export const HOME_FAQ: readonly { q: Bi; a: Bi }[] = [
 export function fill(text: string, vars: Record<string, string | number>): string {
   return text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ""));
 }
+
+/** Homepage v2 headlines (Oct 31 2026): a bright statement, then a quiet continuation. */
+export const homeV2 = {
+  band: {
+    words: {
+      en: ["Websites", "Domains", "Hosting", "Marketing", "Social", "Listings", "Reviews", "AI", "Invoicing"],
+      fr: ["Sites web", "Domaines", "Hébergement", "Marketing", "Réseaux sociaux", "Fiches locales", "Avis", "IA", "Facturation"],
+    },
+    proof: [
+      { value: "10", label: { en: "services, one account", fr: "services, un seul compte" } },
+      { value: "13", label: { en: "AI engines behind TAK bot", fr: "moteurs d’IA derrière TAK bot" } },
+      { value: "9", label: { en: "social networks connected", fr: "réseaux sociaux branchés" } },
+      { value: "FR · EN", label: { en: "team in Montréal", fr: "équipe à Montréal" } },
+    ],
+  },
+  services: {
+    eyebrow: { en: "Services", fr: "Services" },
+    lead: { en: "Ten services.", fr: "Dix services." },
+    rest: { en: "One team that runs every one of them for you.", fr: "Une seule équipe qui les gère tous pour vous." },
+    open: { en: "See details", fr: "Voir le détail" },
+    close: { en: "Close", fr: "Fermer" },
+    drag: { en: "Drag, swipe or use the arrows", fr: "Glissez ou utilisez les flèches" },
+  },
+  plan: {
+    eyebrow: { en: "Build your plan", fr: "Votre forfait" },
+    lead: { en: "Build your stack.", fr: "Composez votre forfait." },
+    rest: { en: "See the price before you sign up.", fr: "Voyez le prix avant de vous inscrire." },
+    presets: { en: "Start from your business", fr: "Partez de votre entreprise" },
+    pick: { en: "Services", fr: "Services" },
+    receipt: { en: "Your plan", fr: "Votre forfait" },
+    empty: { en: "Add a service to see your price.", fr: "Ajoutez un service pour voir votre prix." },
+    lines: { en: "Starting prices", fr: "Prix de départ" },
+    custom: { en: "Custom", fr: "Sur mesure" },
+  },
+  takbot: {
+    eyebrow: { en: "TAK bot", fr: "TAK bot" },
+    lead: { en: "Meet TAK bot.", fr: "Voici TAK bot." },
+    rest: { en: "Every AI engine, in one conversation.", fr: "Tous les moteurs d’IA, dans une seule conversation." },
+    body: {
+      en: "Ask once. TAK bot sends your request to the engine that does it best, or to the one you pick, and charges credits only for what runs.",
+      fr: "Demandez une fois. TAK bot envoie votre demande au moteur le plus doué pour la tâche, ou à celui que vous choisissez, et ne compte que les crédits utilisés.",
+    },
+    demo: { en: "Demo", fr: "Démo" },
+    routing: { en: "Routing", fr: "Aiguillage" },
+  },
+  suite: {
+    eyebrow: { en: "Our products", fr: "Nos produits" },
+    lead: { en: "Software we build,", fr: "Des logiciels que nous bâtissons," },
+    rest: { en: "not just services we sell.", fr: "pas seulement des services que nous vendons." },
+  },
+  pricing: {
+    eyebrow: { en: "Pricing", fr: "Tarifs" },
+    lead: { en: "Simple pricing.", fr: "Des prix simples." },
+    rest: { en: "In Canadian dollars, before taxes.", fr: "En dollars canadiens, avant taxes." },
+  },
+  faq: {
+    eyebrow: { en: "Questions", fr: "Questions" },
+    lead: { en: "Questions,", fr: "Vos questions," },
+    rest: { en: "answered.", fr: "nos réponses." },
+  },
+} as const;
