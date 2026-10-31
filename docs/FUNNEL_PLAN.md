@@ -29,9 +29,10 @@ Tests: `npm run qa:order-funnel`, `npm run qa:promotions`, `npm run qa:newslette
    landing page is built; it needs the % for each event, the services it covers and the end time. Then
    one line per campaign in `src/lib/promotions/catalog.ts` (example in the file) and the page goes live
    at `/offres/<CODE>` with its countdown.
-2. **B. Deal alerts + browser push**: needs VAPID keys (environment), a consent table, and the wording
-   approved. Push permission is asked only after a "Yes" in our own pop-up, and it is never treated as
-   email/SMS consent.
+2. **B. Deal alerts + browser push**: built (2026-10-31). Email deal alerts on every campaign page and on
+   the ended-offer page (the newsletter limited to offers, same unchecked consent and double opt-in);
+   device alerts behind our own "Yes" first, then the browser permission, separate consent, stop at any
+   time (`docs/PUSH_ALERTS.md`). Needs the owner's VAPID key pair in Coolify to switch on.
 3. **C. Sign-up with Google**: exists in TAKATAK Auth? To confirm with the auth owner; email sign-up exists.
 4. **D/G. Card pre-authorization and capture**: needs the processor decision (Stripe is used for social
    plans and AI credits; Upmind for domains/hosting). Rules we will follow: show the amount held and when it

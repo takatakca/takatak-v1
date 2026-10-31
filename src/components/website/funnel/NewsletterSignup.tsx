@@ -8,6 +8,7 @@ import { useCopy } from "@/components/website/premium/ui";
 import { NEWSLETTER_TOPICS, TOPIC_LABELS, type NewsletterTopic } from "@/lib/newsletter/topics";
 import { Link } from "@/lib/website/nav";
 import { Eyebrow, Rise, TwoTone } from "./primitives";
+import { PushAlert } from "./PushAlert";
 
 type Info =
   | { state: "loading" }
@@ -286,6 +287,7 @@ export function DealAlert({ sourcePage, className = "" }: { sourcePage: string; 
       <p className="hp-display mt-2 text-[24px] leading-tight sm:text-[28px]">{deal.title[lang]}</p>
       <p className="hp-ink-2 mt-2 text-[15px] leading-7">{deal.body[lang]}</p>
       <NewsletterForm sourcePage={sourcePage} fixedTopics={["offers"]} className="mt-5" />
+      <PushAlert sourcePage={sourcePage} />
     </aside>
   );
 }
