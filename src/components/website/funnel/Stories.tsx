@@ -107,7 +107,7 @@ export function PhotoStories() {
                   <StoryCard story={s.key} />
                 </div>
               </Rise>
-              <Rise delay={120} className={`lg:col-span-5 ${reverse ? "lg:order-1" : ""}`}>
+              <Rise delay={120} className={`mt-4 lg:col-span-5 lg:mt-0 ${reverse ? "lg:order-1" : ""}`}>
                 <p className="hp-accent text-[13px] font-semibold">{s.eyebrow[lang]}</p>
                 <h3 className="hp-display hp-ink mt-3 text-balance text-[32px] sm:text-[42px]">{s.title[lang]}</h3>
                 <p className="hp-ink-2 mt-5 text-[17px] leading-8">{s.body[lang]}</p>

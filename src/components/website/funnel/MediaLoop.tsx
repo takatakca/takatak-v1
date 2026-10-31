@@ -48,7 +48,7 @@ export function MediaLoop({
   }, [src]);
 
   return (
-    <div ref={ref} className={`hp-photo ${className}`}>
+    <div ref={ref} className={`hp-photo ${/\babsolute\b/.test(className) ? "" : "relative"} ${className}`}>
       <div className={reduced ? "absolute inset-0" : "hp-kenburns absolute inset-0"} style={{ transform: zoom !== 1 ? `scale(${zoom})` : undefined }}>
         <Image src={photo} alt={alt} fill sizes={sizes} priority={priority} className="object-cover" style={{ objectPosition: focus }} />
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { ArrowRight, X } from "lucide-react";
 
@@ -66,8 +67,9 @@ export function OrderSheet() {
   ].filter((r) => r.value > 0);
   const hasWebFoundation = plan.has("domains") || plan.has("hosting");
 
-  return (
-    <div className="fixed inset-0 z-[85] flex justify-end" role="dialog" aria-modal="true" aria-labelledby="order-title">
+  // Portal to <body>: the page wrapper isolates its children, which would put the sheet under the site header.
+  return createPortal(
+    <div className="hp hp-portal fixed inset-0 z-[120] flex justify-end" data-theme={document.querySelector(".hp")?.getAttribute("data-theme") ?? "light"} role="dialog" aria-modal="true" aria-labelledby="order-title">
       <div className="tk-fade-in absolute inset-0 bg-[#05070C]/55 backdrop-blur-sm" onClick={() => plan.setOrderOpen(false)} aria-hidden />
       <aside className="hp-bg hp-sheet-in relative flex h-full w-full max-w-[460px] flex-col shadow-[-30px_0_80px_-30px_rgb(0_0_0/0.5)]">
         <header className="hp-line flex items-center justify-between border-b px-6 py-5">
@@ -161,6 +163,7 @@ export function OrderSheet() {
           </footer>
         )}
       </aside>
-    </div>
+    </div>,
+    document.querySelector(".website-surface") ?? document.body,
   );
 }

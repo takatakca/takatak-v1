@@ -866,7 +866,7 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-ghost:hover { background: var(--hp-alt); border-color: var(--hp-ink-3); }
 .hp-focus:focus-visible { outline: 2px solid var(--hp-accent); outline-offset: 2px; }
 .hp-switch-off { background: var(--hp-switch-off); }
-.hp-photo { position: relative; overflow: hidden; background: var(--hp-alt); }
+.hp-photo { overflow: hidden; background: var(--hp-alt); }
 .hp-photo img { transition: transform 1.4s var(--tk-ease); }
 .hp-photo:hover img, .group:hover .hp-photo img { transform: scale(1.045); }
 @media (prefers-reduced-motion: reduce) {
@@ -902,3 +902,4 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 @keyframes hp-sheet-in { from { transform: translateX(100%); } to { transform: none; } }
 .hp-sheet-in { animation: hp-sheet-in 0.45s var(--tk-ease) both; }
 @media (prefers-reduced-motion: reduce) { .hp-sheet-in { animation: none; } }
+.hp.hp-portal { background: transparent; }

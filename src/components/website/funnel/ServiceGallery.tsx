@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Plus, X } from "lucide-react";
 
 import { FromLine, useCopy } from "@/components/website/premium/ui";
@@ -55,8 +56,15 @@ function ServiceModal({ category, onClose }: { category: CoreCategory; onClose: 
     };
   }, [onClose]);
 
-  return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-labelledby="svc-modal-title">
+  // Portal to <body> so the pop-up sits above the site header.
+  return createPortal(
+    <div
+      className="hp hp-portal fixed inset-0 z-[120] flex items-end justify-center sm:items-center sm:p-6"
+      data-theme={document.querySelector(".hp")?.getAttribute("data-theme") ?? "light"}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="svc-modal-title"
+    >
       <div className="tk-fade-in absolute inset-0 bg-[#05070C]/65 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="tk-modal-in hp-bg relative max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.6)] sm:rounded-[28px]">
         <button ref={closeRef} type="button" onClick={onClose} aria-label={homeV2.services.close[lang]} className="hp-btn hp-focus absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full">
@@ -104,7 +112,8 @@ function ServiceModal({ category, onClose }: { category: CoreCategory; onClose: 
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.querySelector(".website-surface") ?? document.body,
   );
 }
 
