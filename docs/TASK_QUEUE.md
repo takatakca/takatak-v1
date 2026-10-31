@@ -1,6 +1,6 @@
 # REVEW review API follow-up — 2026-10-31
 
-- Verify focused CI for `codex/review-ecosystem`; coordinator review/merge only.
+- Focused CI passed on 8c3cfb8 (https://github.com/takatakca/takatak-v1/actions/runs/41190779123); coordinator review/merge only.
 - QMAPS agent: accept its signed [API handoff](https://github.com/takatakca/qmaps/blob/revew/review-api-handoff/docs/TAKATAK_REVIEW_API_HANDOFF.md), including scoped review/business reads and counterpart reply ownership checks.
 - FLEXS agent: accept its signed [API handoff](https://github.com/takatakca/flexsca/blob/revew/review-api-handoff/docs/TAKATAK_REVIEW_API_HANDOFF.md), complete authorized business/lead/review feeds and dedicated credentials.
 - Reverify blocked official API documentation, production approval, scopes and source content rights before unlocking Facebook/Yelp/Tripadvisor/other adapters.
