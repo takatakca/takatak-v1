@@ -873,3 +873,11 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
   .hp, .hp-cta, .hp-btn { transition: none; }
   .hp-photo img { transition: none; transform: none !important; }
 }
+.hp { --hp-ok: #047857; --hp-warn: #B45309; --hp-info: #1D4ED8; }
+.hp[data-theme="dark"] { --hp-ok: #6EE7B7; --hp-warn: #FCD34D; --hp-info: #BAE6FD; }
+.hp-ok { color: var(--hp-ok); }
+.hp-warn { color: var(--hp-warn); }
+.hp-info { color: var(--hp-info); }
+.hp-aurora { opacity: 0.18; }
+.hp[data-theme="dark"] .hp-aurora { opacity: 0.8; }
+.hp-tint { background-color: color-mix(in oklab, var(--hp-cta) 12%, transparent); }
