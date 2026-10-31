@@ -8,7 +8,8 @@ import { PlanConfigurator } from "@/components/website/funnel/PlanConfigurator";
 import { PricingTabs } from "@/components/website/funnel/PricingTabs";
 import { ServiceGallery } from "@/components/website/funnel/ServiceGallery";
 import { StickyPlanDock } from "@/components/website/funnel/StickyPlanDock";
-import { PhotoStories, QuickActions } from "@/components/website/funnel/Stories";
+import { AskBar } from "@/components/website/funnel/AskBar";
+import { PhotoStories } from "@/components/website/funnel/Stories";
 import { SuiteBento } from "@/components/website/funnel/SuiteBento";
 import { TakbotSection } from "@/components/website/funnel/TakbotSection";
 import { UpsellToast } from "@/components/website/funnel/UpsellToast";
@@ -28,8 +29,8 @@ export const metadata: Metadata = {
 };
 
 // Homepage. The hero is the owner's design (Oct 2026) and stays as is.
-// Below it (Oct 31 2026), light by default with a dark mode toggle: quick
-// actions, photo stories, services gallery, plan configurator, TAK bot, product
+// Below it (Oct 31 2026), light by default with a dark mode toggle: ask bar
+// (voice, suggestions, guided assistant), photo stories, services gallery, plan configurator, TAK bot, product
 // suite, pricing, FAQ, and a plan dock that follows the visitor to /register.
 export default function HomePage() {
   return (
@@ -45,7 +46,7 @@ export default function HomePage() {
         <HomeThemeRoot>
           <div id="core" className="relative" style={{ scrollMarginTop: "var(--tk-header-h, 64px)" }}>
             <HomeSectionNav />
-            <QuickActions />
+            <AskBar />
             <section id="home-services" aria-labelledby="home-services-title" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
               <PhotoStories />
               <ServiceGallery />

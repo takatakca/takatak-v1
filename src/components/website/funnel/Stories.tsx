@@ -11,8 +11,8 @@ import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
 import { pricing } from "@/lib/website/pricing";
 import { useLanguage } from "@/lib/website/use-language";
-import { MediaLoop } from "./MediaLoop";
-import { Rise } from "./primitives";
+import { ClipModal, MediaLoop, PlayBadge } from "./MediaLoop";
+import { Rise, useTilt } from "./primitives";
 import { MediaChip } from "./ServiceGallery";
 
 /** A slim intent bar: pick what you want, one button takes you there. No icons, no boxes. */
@@ -82,6 +82,30 @@ function StoryCard({ story }: { story: (typeof homeV3.stories)[number]["key"] })
   return <MediaChip text={text} className="!px-4 !py-2.5 !text-[13.5px]" />;
 }
 
+const STORY_CLIP = { online: "website", found: "local", grow: "marketing" } as const;
+
+/** The story picture: tilts in 3D under the mouse, and plays the service's clip when clicked. */
+function StoryMedia({ story, lang }: { story: (typeof homeV3.stories)[number]; lang: "en" | "fr" }) {
+  const [playing, setPlaying] = useState(false);
+  const tilt = useTilt<HTMLButtonElement>(4);
+  const clip = STORY_CLIP[story.key];
+  return (
+    <>
+      <button
+        type="button"
+        {...tilt}
+        onClick={() => setPlaying(true)}
+        aria-label={`${lang === "fr" ? "Voir la vidéo" : "Watch the video"} · ${story.eyebrow[lang]}`}
+        className={`group hp-focus relative block w-full rounded-[28px] shadow-[0_40px_80px_-40px_rgb(6_13_31/0.55)] ${tilt.className}`}
+      >
+        <MediaLoop photo={story.photo} alt={story.alt[lang]} videoKey={clip} sizes="(min-width: 1024px) 720px, 100vw" className="aspect-[4/3] rounded-[28px] sm:aspect-[16/11]" />
+        <PlayBadge label={lang === "fr" ? "Voir la vidéo" : "Watch the video"} />
+      </button>
+      {playing && <ClipModal clip={clip} lang={lang} onClose={() => setPlaying(false)} />}
+    </>
+  );
+}
+
 /** Three photo stories: real people running real businesses, each tied to services you can add. */
 export function PhotoStories() {
   const { lang } = useLanguage();
@@ -96,19 +120,16 @@ export function PhotoStories() {
           return (
             <article key={s.key} className="grid items-center gap-8 lg:grid-cols-12 lg:gap-16">
               <Rise className={`relative lg:col-span-7 ${reverse ? "lg:order-2" : ""}`}>
-                <MediaLoop
-                  photo={s.photo}
-                  alt={s.alt[lang]}
-                  videoKey={s.key === "online" ? "website" : s.key === "found" ? "local" : "marketing"}
-                  sizes="(min-width: 1024px) 720px, 100vw"
-                  className="aspect-[4/3] rounded-[28px] sm:aspect-[16/11]"
-                />
+<StoryMedia story={s} lang={lang} />
                 <div className={`absolute -bottom-5 ${reverse ? "right-4 sm:right-8" : "left-4 sm:left-8"}`}>
                   <StoryCard story={s.key} />
                 </div>
               </Rise>
               <Rise delay={120} className={`mt-4 lg:col-span-5 lg:mt-0 ${reverse ? "lg:order-1" : ""}`}>
-                <p className="hp-accent text-[13px] font-semibold">{s.eyebrow[lang]}</p>
+                <p className="hp-ink-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em]">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--hp-cta)]" />
+                  {s.eyebrow[lang]}
+                </p>
                 <h3 className="hp-display hp-ink mt-3 text-balance text-[32px] sm:text-[42px]">{s.title[lang]}</h3>
                 <p className="hp-ink-2 mt-5 text-[17px] leading-8">{s.body[lang]}</p>
                 <div className="mt-8 flex flex-wrap items-center gap-3">

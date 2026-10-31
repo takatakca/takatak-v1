@@ -20,6 +20,7 @@
     "test:identity": "tsx --require ./scripts/register-server-only.cjs scripts/identity-isolation-tests.ts",
     "qa:takbot": "tsx scripts/takbot-tests.ts",
     "qa:order-funnel": "tsx scripts/order-funnel-tests.ts",
+    "qa:concierge": "tsx scripts/concierge-tests.ts",
     "media:videos": "node scripts/media/runway-generate.mjs",
     "qa:r2nette-sync": "tsx --require ./scripts/register-server-only.cjs scripts/r2nette-sync-tests.ts",
     "check:modules": "tsx scripts/check-compiled-modules.ts && tsx scripts/check-module-load.ts",

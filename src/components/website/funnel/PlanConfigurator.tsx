@@ -71,7 +71,7 @@ export function PlanConfigurator() {
                   key={g.key}
                   type="button"
                   onClick={() => plan.set(Array.from(new Set([...plan.keys, ...g.adds])))}
-                  className="hp-accent text-[13.5px] font-medium underline-offset-4 hover:underline"
+                  className="hp-ink-2 text-[13.5px] font-medium underline decoration-[var(--hp-line)] underline-offset-4 hover:text-[var(--hp-ink)] hover:decoration-current"
                 >
                   + {g.label[lang]}
                 </button>

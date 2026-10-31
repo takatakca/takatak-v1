@@ -11,7 +11,7 @@ import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
-import { MediaLoop } from "./MediaLoop";
+import { CLIP_KEYS, MediaLoop, PlayBadge } from "./MediaLoop";
 import { Rise, TwoTone } from "./primitives";
 
 const AUTOPLAY_MS = 5200;
@@ -72,8 +72,14 @@ function ServiceModal({ category, onClose }: { category: CoreCategory; onClose: 
         </button>
         <div className="grid lg:grid-cols-2">
           <div className="relative aspect-[4/3] lg:aspect-auto lg:min-h-[580px]">
-            <MediaLoop photo={media.photo} alt={media.alt[lang]} videoKey={media.video} focus={media.focus} zoom={media.zoom} sizes="(min-width: 1024px) 512px, 100vw" className="absolute inset-0" />
-            <MediaChip text={media.chip[lang]} className="absolute bottom-5 left-5" />
+            {CLIP_KEYS.has(category.key) ? (
+              <div className="absolute inset-0 grid place-items-center bg-[#05070C]">
+                <video className="h-full max-h-full w-auto" src={`/media/social/${category.key}-${lang}.mp4`} autoPlay muted loop playsInline controls />
+              </div>
+            ) : (
+              <MediaLoop photo={media.photo} alt={media.alt[lang]} videoKey={media.video} focus={media.focus} zoom={media.zoom} sizes="(min-width: 1024px) 512px, 100vw" className="absolute inset-0" />
+            )}
+            {!CLIP_KEYS.has(category.key) && <MediaChip text={media.chip[lang]} className="absolute bottom-5 left-5" />}
           </div>
           <div className="flex flex-col p-6 sm:p-10">
             <p className="hp-ink-2 text-[13px] font-medium">
@@ -268,6 +274,11 @@ export function ServiceGallery() {
                 className="absolute inset-0 transition-transform duration-[1.4s] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:scale-[1.04]"
               />
               <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(0_0_0/0.45)_0%,transparent_28%,transparent_45%,rgb(0_0_0/0.85)_100%)]" />
+              {CLIP_KEYS.has(c.key) && (
+                <span className="absolute inset-x-0 top-[34%] z-[1]">
+                  <PlayBadge label={lang === "fr" ? "Voir la vidéo" : "Watch the video"} />
+                </span>
+              )}
 
               <button
                 type="button"

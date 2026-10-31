@@ -5,6 +5,8 @@
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
+import { serifAccent } from "./home-fonts";
+
 export type HomeTheme = "light" | "dark";
 
 const KEY = "takatak:home-theme";
@@ -36,7 +38,7 @@ export function HomeThemeRoot({ children }: { children: ReactNode }) {
 
   return (
     <ThemeContext.Provider value={{ theme, toggle }}>
-      <div className="hp" data-theme={theme}>
+      <div className={`hp ${serifAccent.variable}`} data-theme={theme}>
         {children}
       </div>
     </ThemeContext.Provider>

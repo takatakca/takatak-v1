@@ -3,7 +3,7 @@
 // Shared building blocks for the homepage below the hero: one headline style,
 // one section shell, one reveal, an animated number and the aurora canvas.
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 
@@ -76,14 +76,19 @@ export function TwoTone({
   return (
     <Tag id={id} className={`hp-display hp-ink text-balance ${sizes} ${className}`}>
       {lead}
-      {rest && <span className="hp-ink-3"> {rest}</span>}
+      {rest && <span className="hp-serif hp-ink-2"> {rest}</span>}
     </Tag>
   );
 }
 
 /** Small label above a headline. */
 export function Eyebrow({ children }: { children: ReactNode }) {
-  return <p className="hp-accent mb-4 text-[13px] font-semibold tracking-[0.02em]">{children}</p>;
+  return (
+    <p className="hp-ink-2 mb-4 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em]">
+      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--hp-cta)]" />
+      {children}
+    </p>
+  );
 }
 
 /** Counts to a value when first seen. */
@@ -178,4 +183,25 @@ export function Section({
       {children}
     </section>
   );
+}
+
+/**
+ * A gentle 3D tilt that follows the pointer (mouse only; never with reduced
+ * motion). Spread the returned props on the element to tilt.
+ */
+export function useTilt<T extends HTMLElement>(max = 5) {
+  const ref = useRef<T>(null);
+  const reduced = useReducedMotion();
+  const onPointerMove = (e: ReactPointerEvent<T>) => {
+    const el = ref.current;
+    if (!el || reduced || e.pointerType !== "mouse") return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    el.style.transform = `perspective(1000px) rotateX(${(-y * max).toFixed(2)}deg) rotateY(${(x * max).toFixed(2)}deg)`;
+  };
+  const onPointerLeave = () => {
+    if (ref.current) ref.current.style.transform = "";
+  };
+  return { ref, onPointerMove, onPointerLeave, className: "hp-tilt" };
 }

@@ -1,0 +1,316 @@
+{
+  "note": "Ready-to-upload metadata for the TAKATAK YouTube channel. Upload in YouTube Studio (or with the Data API from the owner's machine). Signed: Claude (cloud session upbeat-einstein).",
+  "uploads": [
+    {
+      "file": "public/media/social/website-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Sites web | Votre commerce mérite un site à sa hauteur.",
+      "description": "Votre commerce mérite un site à sa hauteur.\n\nSites web — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#SiteWeb #Montréal #PME #Shorts",
+      "tags": [
+        "site web",
+        "création de site web",
+        "site web Montréal",
+        "PME",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/website-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Websites | Your business deserves a website that matches it.",
+      "description": "Your business deserves a website that matches it.\n\nWebsites — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Websites",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/domains-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Domaines | Votre nom, en ligne, aujourd’hui.",
+      "description": "Votre nom, en ligne, aujourd’hui.\n\nDomaines — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#NomDeDomaine #PointCA #Québec #Shorts",
+      "tags": [
+        "nom de domaine",
+        "domaine .ca",
+        "enregistrer un domaine",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/domains-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Domains | Your name, online, today.",
+      "description": "Your name, online, today.\n\nDomains — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Domains",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/hosting-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Hébergement | Rapide, sécurisé, avec une vraie équipe derrière.",
+      "description": "Rapide, sécurisé, avec une vraie équipe derrière.\n\nHébergement — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#HébergementWeb #Canada #SiteWeb #Shorts",
+      "tags": [
+        "hébergement web",
+        "hébergement Canada",
+        "SSL",
+        "sauvegardes",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/hosting-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Hosting | Fast, secure, with a real team behind it.",
+      "description": "Fast, secure, with a real team behind it.\n\nHosting — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Hosting",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/marketing-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Marketing | Des clients qui reviennent, semaine après semaine.",
+      "description": "Des clients qui reviennent, semaine après semaine.\n\nMarketing — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#MarketingNumérique #PME #Montréal #Shorts",
+      "tags": [
+        "publicité Facebook",
+        "Google Ads",
+        "marketing PME",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/marketing-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Marketing | Customers who come back, week after week.",
+      "description": "Customers who come back, week after week.\n\nMarketing — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Marketing",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/social-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Réseaux sociaux | Une publication. Tous vos réseaux.",
+      "description": "Une publication. Tous vos réseaux.\n\nRéseaux sociaux — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#RéseauxSociaux #Instagram #PME #Shorts",
+      "tags": [
+        "réseaux sociaux",
+        "gestion réseaux sociaux",
+        "Instagram",
+        "Facebook",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/social-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Social media | One post. Every network.",
+      "description": "One post. Every network.\n\nSocial media — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Social media",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/local-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Fiches locales | Quand on cherche près d’ici, c’est vous qu’on trouve.",
+      "description": "Quand on cherche près d’ici, c’est vous qu’on trouve.\n\nFiches locales — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#SEOlocal #GoogleMaps #Montréal #Shorts",
+      "tags": [
+        "SEO local",
+        "Google Maps",
+        "fiche Google",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/local-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Local listings | When people search nearby, they find you.",
+      "description": "When people search nearby, they find you.\n\nLocal listings — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Local listings",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/reviews-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Avis | Plus d’avis. De meilleures réponses.",
+      "description": "Plus d’avis. De meilleures réponses.\n\nAvis — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#AvisGoogle #Réputation #PME #Shorts",
+      "tags": [
+        "avis Google",
+        "réputation en ligne",
+        "obtenir des avis",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/reviews-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Reviews | More reviews. Better replies.",
+      "description": "More reviews. Better replies.\n\nReviews — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Reviews",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/billing-fr.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "fr-CA",
+      "title": "Facturation | Factures avec TPS et TVQ, payées en ligne.",
+      "description": "Factures avec TPS et TVQ, payées en ligne.\n\nFacturation — TAKATAK, équipe bilingue à Montréal.\nCréez votre compte : https://takatak.ca\n\n#Facturation #TPS #TVQ #Shorts",
+      "tags": [
+        "facturation",
+        "TPS TVQ",
+        "facture en ligne",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/billing-en.mp4",
+      "format": "Short (vertical 1080x1920, 7 s)",
+      "language": "en-CA",
+      "title": "Invoicing | Invoices with GST and QST, paid online.",
+      "description": "Invoices with GST and QST, paid online.\n\nInvoicing — TAKATAK, a bilingual team in Montréal.\nCreate your account: https://takatak.ca\n\n#SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "Invoicing",
+        "small business",
+        "Montreal",
+        "TAKATAK"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/takatak-60s-fr.mp4",
+      "format": "Short (vertical, 56 s)",
+      "language": "fr-CA",
+      "title": "TAKATAK en 60 secondes : site, domaine, hébergement, marketing, avis",
+      "description": "Tout ce qu’il faut pour votre commerce, avec une seule équipe bilingue à Montréal. https://takatak.ca #PME #Montréal #Shorts",
+      "tags": [
+        "TAKATAK",
+        "PME",
+        "Montréal",
+        "site web",
+        "marketing"
+      ],
+      "playlist": "TAKATAK — Services en 7 secondes",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    },
+    {
+      "file": "public/media/social/takatak-60s-en.mp4",
+      "format": "Short (vertical, 56 s)",
+      "language": "en-CA",
+      "title": "TAKATAK in 60 seconds: website, domain, hosting, marketing, reviews",
+      "description": "Everything your business runs on, with one bilingual team in Montréal. https://takatak.ca #SmallBusiness #Montreal #Shorts",
+      "tags": [
+        "TAKATAK",
+        "small business",
+        "Montreal",
+        "website",
+        "marketing"
+      ],
+      "playlist": "TAKATAK — Services in 7 seconds",
+      "category": "Science & Technology",
+      "madeForKids": false,
+      "visibility": "public"
+    }
+  ]
+}
