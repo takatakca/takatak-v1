@@ -62,4 +62,4 @@ Until all of it is set, the form shows "Sign-ups open very soon" and the API ans
 
 Tests: `npm run qa:newsletter`.
 
-— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-10-31 14:35 UTC
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-10-31 14:13 UTC
