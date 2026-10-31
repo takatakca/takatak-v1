@@ -26,7 +26,7 @@ const COPY = {
     { en: "Confirm and pay online", fr: "Confirmez et payez en ligne" },
     { en: "We set everything up with you", fr: "On met tout en place avec vous" },
   ],
-  order: { en: "Create my account and order", fr: "Créer mon compte et commander" },
+  order: { en: "Choose my tiers and order", fr: "Choisir mes forfaits et commander" },
   hosting: { en: "Buy domain and hosting now", fr: "Acheter domaine et hébergement maintenant" },
   login: { en: "I already have an account", fr: "J’ai déjà un compte" },
   taxes: { en: "Prices in Canadian dollars. Taxes are calculated at checkout.", fr: "Prix en dollars canadiens. Les taxes sont calculées au paiement." },
@@ -181,7 +181,7 @@ export function OrderSheet() {
 
         {plan.categories.length > 0 && (
           <footer className="hp-line grid gap-2.5 border-t px-6 pb-6 pt-5">
-            <Link to={plan.registerHref} className="hp-cta hp-halo hp-focus inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[16px] font-semibold">
+            <Link to="/commander" className="hp-cta hp-halo hp-focus inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[16px] font-semibold">
               {COPY.order[lang]} <ArrowRight size={17} aria-hidden />
             </Link>
             {hasWebFoundation && (
