@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { FinalChapter } from "@/components/website/funnel/FinalChapter";
 import { HomeFaq } from "@/components/website/funnel/HomeFaq";
+import { NewsletterSignup } from "@/components/website/funnel/NewsletterSignup";
 import { HomeSectionNav } from "@/components/website/funnel/HomeSectionNav";
 import { OrderSheet } from "@/components/website/funnel/OrderSheet";
 import { PlanConfigurator } from "@/components/website/funnel/PlanConfigurator";
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
 // Homepage. The hero is the owner's design (Oct 2026) and stays as is.
 // Below it (Oct 31 2026), light by default with a dark mode toggle: ask bar
 // (voice, suggestions, guided assistant), photo stories, services gallery, plan configurator, TAK bot, product
-// suite, pricing, FAQ, and a plan dock that follows the visitor to /register.
+// suite, pricing, FAQ, newsletter (own unchecked consent box), and a plan dock that follows the visitor to /register.
 export default function HomePage() {
   return (
     <div className="tk-page tk-premium brand-dark">
@@ -56,6 +57,7 @@ export default function HomePage() {
             <SuiteBento />
             <PricingTabs />
             <HomeFaq />
+            <NewsletterSignup />
           </div>
           <FinalChapter />
           <StickyPlanDock />

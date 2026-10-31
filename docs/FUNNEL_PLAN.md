@@ -18,9 +18,10 @@ Signed: Claude (cloud session upbeat-einstein).
 | G. Confirmation | Review page: edit/remove, FIRST10 saving, trust bar (true items only), Save this quote (shareable link), "Create my account and confirm" → `/register?plan=…` | same |
 | A. Real deadlines | Promo codes can carry `endsAt`; the server refuses them after it; live countdown on the homepage, order sheet and review | `src/lib/promotions/catalog.ts`, `GET /api/promotions/active` |
 | A. Campaign landing pages | `/offres/<code>`: big −% headline, real countdown, animated "Get the deal" → `/commander?promo=…`, terms; exists only while the campaign is live (unknown or ended codes show "not found", noindex) | `src/app/(website)/offres/[code]`, `CampaignLanding.tsx` |
+| Newsletter (email) | Homepage block + `/infolettre`: own unchecked consent box with the exact CASL wording, topics, double opt-in by email, one-click unsubscribe (also from mail apps), consent proof kept; off until the owner sets the mailing address and secrets (`docs/NEWSLETTER.md`) | `src/lib/newsletter/`, `src/app/api/public/newsletter/`, `NewsletterSignup.tsx` |
 | Homepage | "Added → pairs well with" chain, order sheet, FIRST10 saving, true badges | `src/components/website/funnel/` |
 
-Tests: `npm run qa:order-funnel`, `npm run qa:promotions`.
+Tests: `npm run qa:order-funnel`, `npm run qa:promotions`, `npm run qa:newsletter`.
 
 ## Not built yet (needs an owner decision or a key)
 
