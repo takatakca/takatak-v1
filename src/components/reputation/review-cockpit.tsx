@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ReviewSourceDirectory } from "./review-source-directory";
 import { BrandHeroBackdrop } from "@/components/brand/brand-hero-backdrop";
 import { Card } from "@/components/ui/card";
 import { GrowthKpi } from "@/components/growth/growth-header";
@@ -391,51 +392,7 @@ export function ReviewCockpit({
           )}
         </>
       )}
-      <section className="rounded-2xl border border-slate-200 bg-white">
-        <div className="border-b border-slate-100 p-5">
-          <h3 className="font-semibold text-slate-900">
-            Source API capabilities
-          </h3>
-          <p className="mt-2 text-xs leading-6 text-slate-600">
-            A source catalog is not a live connection. Read access, management
-            access and display rights are separate. Documentation access and
-            account approval must be verified before activation.
-          </p>
-        </div>
-        <div className="grid gap-px bg-slate-100 md:grid-cols-2 xl:grid-cols-3">
-          {REVIEW_SOURCES.map((s) => (
-            <div key={s.id} className="bg-white p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-sm font-semibold text-slate-900">
-                  {s.name}
-                </h4>
-                <Badge>{s.delivery.replaceAll("_", " ")}</Badge>
-              </div>
-              <p className="mt-3 text-xs leading-6 text-slate-700">{s.read}</p>
-              <p className="mt-2 text-xs leading-6 text-slate-600">{s.reply}</p>
-              <p className="mt-2 text-[11px] leading-6 text-slate-600">
-                {s.publication}
-              </p>
-              <div className="mt-4 flex gap-4">
-                <Link
-                  href={s.route}
-                  className="text-xs font-medium text-[#1565D8]"
-                >
-                  Open module
-                </Link>
-                <a
-                  href={s.docs}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-xs text-[#1565D8]"
-                >
-                  API reference <ArrowUpRight className="h-3 w-3" />
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <ReviewSourceDirectory />
     </section>
   );
 }

@@ -6,6 +6,8 @@ on:
     paths:
       - "src/lib/reputation/**"
       - "src/components/reputation/**"
+      - "src/components/brand/brand-hero-backdrop.tsx"
+      - "src/components/website/home/HomeHero.tsx"
       - "src/lib/qmaps/**"
       - "src/app/api/reputation/**"
       - "src/app/dashboard/growth/reviews/**"
@@ -43,5 +45,5 @@ jobs:
       - run: npm run qa:qmaps-sync
       - run: npm run typecheck
       - name: Lint changed review boundaries
-        run: npx eslint src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps scripts/review-cockpit-tests.ts
+        run: npx eslint src/components/brand/brand-hero-backdrop.tsx src/components/website/home/HomeHero.tsx src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps scripts/review-cockpit-tests.ts
       - run: npm run build
