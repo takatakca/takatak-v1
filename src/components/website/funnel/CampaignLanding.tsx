@@ -6,6 +6,7 @@ import { useCopy } from "@/components/website/premium/ui";
 import { Link } from "@/lib/website/nav";
 import { CampaignCountdown, type Campaign } from "./Campaign";
 import { MediaLoop } from "./MediaLoop";
+import { DealAlert } from "./NewsletterSignup";
 import { Rise } from "./primitives";
 
 const COPY = {
@@ -65,6 +66,35 @@ export function CampaignLanding({ campaign }: { campaign: Campaign }) {
         <Rise delay={120}>
           <MediaLoop photo="/photos/hero-cafe.webp" alt="" videoKey="domains" sizes="(min-width: 1024px) 600px, 100vw" className="aspect-[4/5] rounded-[32px]" priority />
         </Rise>
+      </div>
+      <div className="mx-auto max-w-3xl px-4 pb-20">
+        <DealAlert sourcePage={`/offres/${campaign.code}`} />
+      </div>
+    </section>
+  );
+}
+
+const ENDED = {
+  title: { en: "This offer is not running.", fr: "Cette offre n’est pas en cours." },
+  body: {
+    en: "It has ended, or the link is wrong. Our regular prices and the FIRST10 welcome offer still apply.",
+    fr: "Elle est terminée, ou le lien est erroné. Nos prix réguliers et l’offre de bienvenue FIRST10 s’appliquent toujours.",
+  },
+  cta: { en: "See services and prices", fr: "Voir les services et les prix" },
+} as const;
+
+/** Shown for an ended or unknown campaign code (404): honest, with a way to hear about the next one. */
+export function CampaignEnded() {
+  const { lang } = useCopy();
+  return (
+    <section className="hp-bg px-4 py-16 sm:py-24">
+      <div className="mx-auto max-w-3xl">
+        <h1 className="hp-display hp-ink text-[40px] leading-tight sm:text-[56px]">{ENDED.title[lang]}</h1>
+        <p className="hp-ink-2 mt-4 max-w-xl text-[17px] leading-8">{ENDED.body[lang]}</p>
+        <Link to="/commander" className="hp-cta hp-focus mt-8 inline-flex items-center gap-2 rounded-full px-7 py-4 text-[16px] font-semibold">
+          {ENDED.cta[lang]} <ArrowRight size={17} aria-hidden />
+        </Link>
+        <DealAlert sourcePage="/offres" className="mt-12" />
       </div>
     </section>
   );

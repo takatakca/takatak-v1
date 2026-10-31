@@ -52,14 +52,24 @@ const t = {
   photoAlt: { fr: "Dans un atelier de couture, au téléphone devant l'ordinateur", en: "In a sewing studio, on the phone at the laptop" },
 };
 
-/** Newsletter sign-up: its own unchecked consent box, double opt-in, proof kept server-side. */
-export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) {
+
+/** The sign-up form: its own unchecked consent box, double opt-in, proof kept server-side. */
+export function NewsletterForm({
+  sourcePage = "/",
+  fixedTopics,
+  className = "mt-10",
+}: {
+  sourcePage?: string;
+  /** Deal alerts pass ["offers"]: no topic picker. */
+  fixedTopics?: NewsletterTopic[];
+  className?: string;
+}) {
   const { lang } = useCopy();
   const ids = { email: useId(), consent: useId(), error: useId() };
   const [info, setInfo] = useState<Info>({ state: "loading" });
   const [email, setEmail] = useState("");
   const [consent, setConsent] = useState(false);
-  const [topics, setTopics] = useState<NewsletterTopic[]>([...NEWSLETTER_TOPICS]);
+  const [topics, setTopics] = useState<NewsletterTopic[]>(fixedTopics ?? [...NEWSLETTER_TOPICS]);
   const [honey, setHoney] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
@@ -106,6 +116,111 @@ export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) 
   const off = info.state !== "on";
 
   return (
+    <>
+    {status === "done" ? (
+      <div role="status" className={`hp-card flex items-start gap-4 rounded-[24px] p-6 ${className}`}>
+        <MailCheck size={28} className="hp-accent shrink-0" aria-hidden />
+        <div>
+          <p className="hp-display text-[24px]">{t.doneTitle[lang]}</p>
+          <p className="hp-ink-2 mt-2 text-[15px] leading-7">{t.doneBody[lang]}</p>
+        </div>
+      </div>
+    ) : (
+      <form onSubmit={submit} noValidate className={`grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 ${className}`}>
+        {!fixedTopics && (
+        <fieldset className="min-w-0">
+          <legend className="hp-ink-3 text-[13px] font-semibold">{t.topics[lang]}</legend>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {NEWSLETTER_TOPICS.map((k) => {
+              const on = topics.includes(k);
+              return (
+                <button
+                  key={k}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleTopic(k)}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-medium transition-all ${on ? "hp-btn" : "hp-card hp-ink-2 hover:shadow-[var(--hp-shadow)]"}`}
+                >
+                  {on && <Check size={14} strokeWidth={3} aria-hidden />} {TOPIC_LABELS[k][lang]}
+                </button>
+              );
+            })}
+          </div>
+        </fieldset>
+        )}
+
+        <div>
+          <label htmlFor={ids.email} className="hp-ink-3 text-[13px] font-semibold">{t.email[lang]}</label>
+          <div className="hp-card mt-2 flex items-center gap-2 rounded-full p-1.5 pl-5 shadow-[var(--hp-shadow)] focus-within:ring-2 focus-within:ring-[var(--hp-cta)]">
+            <input
+              id={ids.email}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t.placeholder[lang]}
+              disabled={off}
+              aria-describedby={error ? ids.error : undefined}
+              className="hp-ink min-w-0 flex-1 bg-transparent py-2.5 text-[16px] outline-none placeholder:text-[var(--hp-ink-3)] disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={off || status === "sending" || !consent || !email}
+              className="hp-cta inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-[15px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {status === "sending" ? <Loader2 size={16} className="animate-spin" aria-hidden /> : null}
+              {t.submit[lang]} <ArrowRight size={16} aria-hidden />
+            </button>
+          </div>
+        </div>
+
+        {/* Hidden from people; bots fill it. */}
+        <input type="text" name="website" tabIndex={-1} autoComplete="off" value={honey} onChange={(e) => setHoney(e.target.value)} className="absolute -left-[9999px] h-0 w-0 opacity-0" aria-hidden />
+
+        {info.state === "on" ? (
+          <label htmlFor={ids.consent} className="flex cursor-pointer items-start gap-3">
+            <input
+              id={ids.consent}
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => {
+                setConsent(e.target.checked);
+                if (e.target.checked) setError(null);
+              }}
+              className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-[var(--hp-cta)]"
+            />
+            <span className="hp-ink-2 min-w-0 break-words text-[13.5px] leading-6">{info.text[lang]}</span>
+          </label>
+        ) : info.state === "off" ? (
+          <p className="hp-ink-2 text-[14px] leading-6">{t.soon[lang]}</p>
+        ) : (
+          <p className="hp-ink-3 text-[14px]" aria-busy>…</p>
+        )}
+
+        {error && (
+          <p id={ids.error} role="alert" className="hp-warn text-[14px] font-medium">
+            {error}
+          </p>
+        )}
+
+        <p className="hp-ink-3 text-[12.5px] leading-5">
+          {t.separate[lang]}{" "}
+          <Link to="/privacy" className="underline underline-offset-4 hover:text-[var(--hp-ink)]">
+            {t.privacy[lang]}
+          </Link>
+        </p>
+      </form>
+    )}
+    </>
+  );
+}
+
+/** Newsletter sign-up: its own unchecked consent box, double opt-in, proof kept server-side. */
+export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) {
+  const { lang } = useCopy();
+  return (
     <section id="infolettre" aria-labelledby="newsletter-title" className="hp-bg px-4 py-20 sm:py-28" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
         {/* Picture + an honest preview of a real email (the FIRST10 welcome offer exists). */}
@@ -131,102 +246,31 @@ export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) 
           <TwoTone id="newsletter-title" lead={t.lead[lang]} rest={t.rest[lang]} />
           <p className="hp-ink-2 mt-6 max-w-xl text-[17px] leading-8">{t.body[lang]}</p>
 
-          {status === "done" ? (
-            <div role="status" className="hp-card mt-10 flex items-start gap-4 rounded-[24px] p-6">
-              <MailCheck size={28} className="hp-accent shrink-0" aria-hidden />
-              <div>
-                <p className="hp-display text-[24px]">{t.doneTitle[lang]}</p>
-                <p className="hp-ink-2 mt-2 text-[15px] leading-7">{t.doneBody[lang]}</p>
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={submit} noValidate className="mt-10 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5">
-              <fieldset className="min-w-0">
-                <legend className="hp-ink-3 text-[13px] font-semibold">{t.topics[lang]}</legend>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {NEWSLETTER_TOPICS.map((k) => {
-                    const on = topics.includes(k);
-                    return (
-                      <button
-                        key={k}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => toggleTopic(k)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-medium transition-all ${on ? "hp-btn" : "hp-card hp-ink-2 hover:shadow-[var(--hp-shadow)]"}`}
-                      >
-                        {on && <Check size={14} strokeWidth={3} aria-hidden />} {TOPIC_LABELS[k][lang]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-
-              <div>
-                <label htmlFor={ids.email} className="hp-ink-3 text-[13px] font-semibold">{t.email[lang]}</label>
-                <div className="hp-card mt-2 flex items-center gap-2 rounded-full p-1.5 pl-5 shadow-[var(--hp-shadow)] focus-within:ring-2 focus-within:ring-[var(--hp-cta)]">
-                  <input
-                    id={ids.email}
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t.placeholder[lang]}
-                    disabled={off}
-                    aria-describedby={error ? ids.error : undefined}
-                    className="hp-ink min-w-0 flex-1 bg-transparent py-2.5 text-[16px] outline-none placeholder:text-[var(--hp-ink-3)] disabled:opacity-60"
-                  />
-                  <button
-                    type="submit"
-                    disabled={off || status === "sending" || !consent || !email}
-                    className="hp-cta inline-flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-[15px] font-semibold disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {status === "sending" ? <Loader2 size={16} className="animate-spin" aria-hidden /> : null}
-                    {t.submit[lang]} <ArrowRight size={16} aria-hidden />
-                  </button>
-                </div>
-              </div>
-
-              {/* Hidden from people; bots fill it. */}
-              <input type="text" name="website" tabIndex={-1} autoComplete="off" value={honey} onChange={(e) => setHoney(e.target.value)} className="absolute -left-[9999px] h-0 w-0 opacity-0" aria-hidden />
-
-              {info.state === "on" ? (
-                <label htmlFor={ids.consent} className="flex cursor-pointer items-start gap-3">
-                  <input
-                    id={ids.consent}
-                    type="checkbox"
-                    checked={consent}
-                    onChange={(e) => {
-                      setConsent(e.target.checked);
-                      if (e.target.checked) setError(null);
-                    }}
-                    className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-[var(--hp-cta)]"
-                  />
-                  <span className="hp-ink-2 min-w-0 break-words text-[13.5px] leading-6">{info.text[lang]}</span>
-                </label>
-              ) : info.state === "off" ? (
-                <p className="hp-ink-2 text-[14px] leading-6">{t.soon[lang]}</p>
-              ) : (
-                <p className="hp-ink-3 text-[14px]" aria-busy>…</p>
-              )}
-
-              {error && (
-                <p id={ids.error} role="alert" className="hp-warn text-[14px] font-medium">
-                  {error}
-                </p>
-              )}
-
-              <p className="hp-ink-3 text-[12.5px] leading-5">
-                {t.separate[lang]}{" "}
-                <Link to="/privacy" className="underline underline-offset-4 hover:text-[var(--hp-ink)]">
-                  {t.privacy[lang]}
-                </Link>
-              </p>
-            </form>
-          )}
+          <NewsletterForm sourcePage={sourcePage} />
         </Rise>
       </div>
     </section>
+  );
+}
+
+const deal = {
+  eyebrow: { fr: "Alertes promo", en: "Deal alerts" },
+  title: { fr: "Soyez averti quand une vraie promotion commence.", en: "Get told when a real promotion starts." },
+  body: {
+    fr: "Un courriel au lancement de chaque promotion, avec son pourcentage et sa date de fin. Rien d'autre.",
+    en: "One email when each promotion starts, with its percentage and end date. Nothing else.",
+  },
+};
+
+/** Deal alerts: the newsletter limited to offers, for campaign and order pages. */
+export function DealAlert({ sourcePage, className = "" }: { sourcePage: string; className?: string }) {
+  const { lang } = useCopy();
+  return (
+    <aside aria-label={deal.eyebrow[lang]} className={`hp-card hp-ink rounded-[28px] p-6 sm:p-8 ${className}`}>
+      <p className="hp-accent text-[12px] font-semibold uppercase tracking-[0.18em]">{deal.eyebrow[lang]}</p>
+      <p className="hp-display mt-2 text-[24px] leading-tight sm:text-[28px]">{deal.title[lang]}</p>
+      <p className="hp-ink-2 mt-2 text-[15px] leading-7">{deal.body[lang]}</p>
+      <NewsletterForm sourcePage={sourcePage} fixedTopics={["offers"]} className="mt-5" />
+    </aside>
   );
 }
