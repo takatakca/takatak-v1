@@ -1,11 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { ArrowRight, Check, Headset } from "lucide-react";
 
 import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { CORE_CATEGORIES, type CoreCategory } from "@/lib/website/core-categories";
 import { BUSINESS_TYPES, GOALS, fill, homeCopy, homeV2 } from "@/lib/website/home-funnel";
+import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
 import { sectionId } from "./HomeSectionNav";
@@ -78,7 +80,7 @@ export function PlanConfigurator() {
             <ul className="hp-divide hp-line mt-8 border-y">
               {CORE_CATEGORIES.map((c) => {
                 const on = plan.has(c.key);
-                const Icon = c.icon;
+                const media = SERVICE_MEDIA[c.key];
                 return (
                   <li key={c.key}>
                     <button
@@ -88,7 +90,9 @@ export function PlanConfigurator() {
                       onClick={() => plan.toggle(c.key)}
                       className="group flex w-full items-center gap-4 py-4 text-left"
                     >
-                      <Icon size={20} className={`shrink-0 transition-colors ${on ? "hp-accent" : "hp-ink-3"}`} aria-hidden />
+                      <span className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${on ? "opacity-100 ring-2 ring-[var(--hp-cta)]" : "opacity-60 grayscale"}`}>
+                        <Image src={media.photo} alt="" fill sizes="44px" className="object-cover" style={{ objectPosition: media.focus, transform: `scale(${media.zoom})` }} />
+                      </span>
                       <span className="min-w-0 flex-1">
                         <span className={`block text-[16px] font-semibold transition-colors ${on ? "hp-ink" : "hp-ink-2"}`}>{tk(`cat.${c.key}.name`)}</span>
                         <span className="hp-ink-3 block truncate text-[13px]">{tk(`cat.${c.key}.h1`)}</span>
@@ -162,7 +166,7 @@ export function PlanConfigurator() {
                   to={plan.registerHref}
                   aria-disabled={!plan.keys.length}
                   className={`hp-focus inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-semibold ${
-                    plan.keys.length ? "hp-cta" : "hp-ink-3 pointer-events-none bg-[var(--hp-line)]"
+                    plan.keys.length ? "hp-cta hp-halo" : "hp-ink-3 pointer-events-none bg-[var(--hp-line)]"
                   }`}
                 >
                   {homeCopy.plan.cta[lang]} <ArrowRight size={16} aria-hidden />

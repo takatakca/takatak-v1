@@ -1,0 +1,49 @@
+{
+  "note": "Eight short image-to-video shots for takatak.ca. Each one starts from a licensed photo in public/photos (real people, Unsplash licence) so the result stays human. 5 seconds each to keep credit use low. Run: node scripts/media/runway-generate.mjs (dry run) then --run.",
+  "model": "gen4_turbo",
+  "duration": 5,
+  "ratio": "1280:720",
+  "verticalRatio": "720:1280",
+  "shots": [
+    {
+      "key": "website",
+      "photo": "public/photos/commerce-cafe.webp",
+      "prompt": "Slow cinematic push-in on the café owner talking on the phone behind his counter, warm morning light through the window, soft steam rising from a cup, gentle natural movement, shallow depth of field, realistic, no text, no logos."
+    },
+    {
+      "key": "domains",
+      "photo": "public/photos/hero-cafe.webp",
+      "prompt": "A woman in a café smiles at her phone and looks up, soft daylight, slight handheld camera drift, background patrons blurred and moving gently, realistic documentary style, no text, no logos."
+    },
+    {
+      "key": "social",
+      "photo": "public/photos/hero-cafe.webp",
+      "prompt": "Close, slow dolly toward her hands holding a phone over a wooden café table, thumb scrolling, warm light, realistic, calm pace, no text, no logos."
+    },
+    {
+      "key": "local",
+      "photo": "public/photos/artisan-atelier.webp",
+      "prompt": "A craftsman in his workshop celebrates reading his phone, dust particles floating in a beam of light, slow camera arc, realistic, joyful, no text, no logos."
+    },
+    {
+      "key": "reviews",
+      "photo": "public/photos/artisan-atelier.webp",
+      "prompt": "Slow push-in on the craftsman's smiling face as he reads good news on his phone, warm workshop light, realistic skin and fabric detail, no text, no logos."
+    },
+    {
+      "key": "marketing",
+      "photo": "public/photos/studio-design.webp",
+      "prompt": "A designer on the phone in her bright studio laughs and turns to her laptop, fabric samples sway slightly, slow lateral camera move, realistic, editorial, no text, no logos."
+    },
+    {
+      "key": "hosting",
+      "photo": "public/photos/pro-bureau.webp",
+      "prompt": "A professional on a phone call nods and types on her laptop, calm modern office, slow push-in, soft light, realistic, no text, no logos."
+    },
+    {
+      "key": "billing",
+      "photo": "public/photos/pro-bureau.webp",
+      "prompt": "Slow cinematic drift across the desk toward the laptop as the professional finishes her call and smiles, quiet satisfaction, realistic, no text, no logos."
+    }
+  ]
+}

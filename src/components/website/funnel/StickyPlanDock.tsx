@@ -6,7 +6,6 @@ import { ArrowRight, X } from "lucide-react";
 import { money, useCopy } from "@/components/website/premium/ui";
 import { fill, homeCopy } from "@/lib/website/home-funnel";
 import { useHomePlan } from "@/lib/website/home-plan";
-import { Link } from "@/lib/website/nav";
 import { sectionId } from "./HomeSectionNav";
 
 /**
@@ -81,9 +80,14 @@ export function StickyPlanDock() {
           </button>
         )}
         {count ? (
-          <Link to={plan.registerHref} tabIndex={tab} className="hp-cta inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13.5px] font-semibold">
-            {homeCopy.dock.cta[lang]} <ArrowRight size={15} aria-hidden />
-          </Link>
+          <button
+            type="button"
+            onClick={() => plan.setOrderOpen(true)}
+            tabIndex={tab}
+            className="hp-cta hp-halo inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13.5px] font-semibold"
+          >
+            {lang === "fr" ? "Commander" : "Order now"} <ArrowRight size={15} aria-hidden />
+          </button>
         ) : (
           <button type="button" onClick={goPlan} tabIndex={tab} className="hp-cta inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-2.5 text-[13.5px] font-semibold">
             {homeCopy.dock.build[lang]} <ArrowRight size={15} aria-hidden />

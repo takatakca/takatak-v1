@@ -1,0 +1,4 @@
+{
+  "note": "Short muted loops in public/media/videos, written by scripts/media/runway-generate.mjs. A key appears here only once its file exists, so the site never requests a missing video.",
+  "videos": {}
+}

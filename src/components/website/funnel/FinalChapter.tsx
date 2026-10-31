@@ -26,7 +26,7 @@ export function FinalChapter() {
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Link
                 to={registerHref}
-                className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-[16px] font-semibold text-[#0B0D12] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#1565D8]"
+                className="hp-halo inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 text-[16px] font-semibold text-[#0B0D12] transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#1565D8]"
               >
                 {tk("home.p.ctaStart")} <ArrowRight size={17} aria-hidden />
               </Link>

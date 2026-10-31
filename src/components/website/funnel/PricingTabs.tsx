@@ -130,7 +130,7 @@ export function PricingTabs() {
           {cards.map((card, i) => {
             const dark = card.featured;
             const btn = `inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold transition-all ${
-              dark ? "hp-cta" : "hp-btn"
+              dark ? "hp-cta hp-halo" : "hp-btn"
             }`;
             return (
               <li key={card.key} className="tk-stagger" style={{ animationDelay: `${i * 70}ms` }}>

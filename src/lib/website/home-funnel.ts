@@ -120,7 +120,7 @@ export const homeCopy = {
       credits: { en: "AI credits", fr: "Crédits IA" },
     },
     popular: { en: "Most chosen", fr: "Le plus choisi" },
-    choose: { en: "Choose {name}", fr: "Choisir {name}" },
+    choose: { en: "Order {name}", fr: "Commander {name}" },
     start: { en: "Start with {name}", fr: "Commencer avec {name}" },
     credits: { en: "{n} credits", fr: "{n} crédits" },
     perCredit: { en: "{price} per credit", fr: "{price} par crédit" },

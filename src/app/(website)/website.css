@@ -881,3 +881,24 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-aurora { opacity: 0.18; }
 .hp[data-theme="dark"] .hp-aurora { opacity: 0.8; }
 .hp-tint { background-color: color-mix(in oklab, var(--hp-cta) 12%, transparent); }
+@keyframes hp-kenburns { 0% { transform: scale(1.02) translate(0, 0); } 100% { transform: scale(1.1) translate(-1.5%, -1%); } }
+.hp-kenburns { animation: hp-kenburns 14s ease-in-out infinite alternate; transform-origin: 60% 50%; }
+.hp-kenburns > img { transition: none; }
+/* A light ring that travels around the main "order" buttons. */
+@property --hp-halo-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+@keyframes hp-halo-spin { to { --hp-halo-angle: 360deg; } }
+.hp-halo { position: relative; isolation: isolate; }
+.hp-halo::before {
+  content: ""; position: absolute; inset: -3px; z-index: -1; border-radius: inherit; padding: 2px;
+  background: conic-gradient(from var(--hp-halo-angle), transparent 0deg, #29C3FF 70deg, #FFFFFF 110deg, #1F8BFF 150deg, transparent 220deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: hp-halo-spin 3.2s linear infinite;
+}
+.hp-halo::after { content: ""; position: absolute; inset: -10px; z-index: -2; border-radius: inherit; background: radial-gradient(closest-side, color-mix(in oklab, var(--hp-cta) 35%, transparent), transparent); opacity: 0.7; animation: hp-halo-breathe 2.6s ease-in-out infinite; }
+@keyframes hp-halo-breathe { 50% { opacity: 0.25; transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) {
+  .hp-kenburns, .hp-halo::before, .hp-halo::after { animation: none; }
+}
+@keyframes hp-sheet-in { from { transform: translateX(100%); } to { transform: none; } }
+.hp-sheet-in { animation: hp-sheet-in 0.45s var(--tk-ease) both; }
+@media (prefers-reduced-motion: reduce) { .hp-sheet-in { animation: none; } }

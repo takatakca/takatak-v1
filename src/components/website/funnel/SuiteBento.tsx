@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { ArrowUpRight, Check, MapPin, Phone, Search } from "lucide-react";
+import { ArrowUpRight, Check, MapPin, Search } from "lucide-react";
 
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { SUITE_GROUPS, homeCopy, homeV2, type SuiteProduct, type SuiteStatus } from "@/lib/website/home-funnel";
@@ -209,9 +209,7 @@ export function SuiteBento() {
               className="h-full"
               visual={
                 <div className="flex items-center gap-3 rounded-2xl hp-raised p-3">
-                  <span className="grid h-10 w-10 place-items-center rounded-full bg-emerald-400/15 text-emerald-300">
-                    <Phone size={17} className="animate-pulse" aria-hidden />
-                  </span>
+                  <span aria-hidden className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500" />
                   <span className="text-[13px] tabular-nums hp-ink">+1 514 · · · · · · ·</span>
                 </div>
               }

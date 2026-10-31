@@ -56,12 +56,16 @@ interface PlanContextValue {
   categories: CoreCategory[];
   /** /register with the plan in the query string, so the next step can show it. */
   registerHref: string;
+  /** The order pop-up (summary and the buttons to order). */
+  orderOpen: boolean;
+  setOrderOpen: (open: boolean) => void;
 }
 
 const PlanContext = createContext<PlanContextValue | null>(null);
 
 export function HomePlanProvider({ children }: { children: ReactNode }) {
   const [keys, setKeys] = useState<CategoryKey[]>([]);
+  const [orderOpen, setOrderOpen] = useState(false);
 
   useEffect(() => {
     setKeys(readStoredPlan());
@@ -89,8 +93,10 @@ export function HomePlanProvider({ children }: { children: ReactNode }) {
       totals: planTotals(keys),
       categories: CORE_CATEGORIES.filter((c) => keys.includes(c.key)),
       registerHref: keys.length ? `/register?plan=${keys.join(",")}` : "/register",
+      orderOpen,
+      setOrderOpen,
     };
-  }, [keys, persist]);
+  }, [keys, persist, orderOpen]);
 
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;
 }

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { FinalChapter } from "@/components/website/funnel/FinalChapter";
 import { HomeFaq } from "@/components/website/funnel/HomeFaq";
 import { HomeSectionNav } from "@/components/website/funnel/HomeSectionNav";
+import { OrderSheet } from "@/components/website/funnel/OrderSheet";
 import { PlanConfigurator } from "@/components/website/funnel/PlanConfigurator";
 import { PricingTabs } from "@/components/website/funnel/PricingTabs";
 import { ServiceGallery } from "@/components/website/funnel/ServiceGallery";
@@ -56,6 +57,7 @@ export default function HomePage() {
           </div>
           <FinalChapter />
           <StickyPlanDock />
+          <OrderSheet />
         </HomeThemeRoot>
       </HomePlanProvider>
     </div>

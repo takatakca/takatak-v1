@@ -38,11 +38,9 @@ export function TakbotSection() {
 
           <ul className="mt-9 grid max-w-lg grid-cols-2 gap-x-6 border-t border-white/10 sm:grid-cols-3">
             {TAKBOT_MODES.map((m) => {
-              const Icon = MODE_ICONS[m.key];
               return (
                 <li key={m.key} className="border-b border-white/10">
                   <Link to={`/takbot?mode=${m.key}`} className="group flex items-center gap-2.5 py-3.5 text-[14.5px] text-white/75 hover:text-white">
-                    <Icon size={16} className="text-[#29C3FF]" aria-hidden />
                     {takbotModeCopy[m.key].name[lang]}
                     <span className="ml-auto text-[11.5px] tabular-nums text-white/35 group-hover:text-white/60">{creditsFor(m)} cr</span>
                   </Link>
