@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { BrandHeroBackdrop } from "@/components/brand/brand-hero-backdrop";
+import { Card } from "@/components/ui/card";
+import { GrowthKpi } from "@/components/growth/growth-header";
 import { useMemo, useState } from "react";
 import {
   ArrowUpRight,
@@ -64,13 +67,14 @@ export function ReviewCockpit({
   });
   return (
     <section className="space-y-5" aria-label="TAKATAK Review cockpit">
-      <div className="overflow-hidden rounded-2xl border border-blue-950 bg-[#060D1F] p-6 text-white sm:p-8">
-        <div className="flex flex-wrap items-start justify-between gap-5">
+      <div className="relative isolate overflow-hidden rounded-2xl border border-blue-950 bg-[#060D1F] p-6 text-[#F5F8FC] sm:p-8">
+        <BrandHeroBackdrop />
+        <div className="relative flex flex-wrap items-start justify-between gap-5">
           <div>
-            <p className="text-[10px] font-semibold tracking-[.2em] text-[#29C3FF]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#29C3FF]">
               GROUPE TAKATAK · REVIEW
             </p>
-            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h2 className="mt-4 text-balance text-2xl font-extrabold leading-[1.05] tracking-[-0.025em] sm:text-3xl">
               Every experience. One reputation.
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
@@ -82,13 +86,13 @@ export function ReviewCockpit({
             href="/dashboard/growth/ai-engine"
             className="inline-flex items-center gap-2 rounded-xl border border-blue-800 bg-blue-950 px-4 py-2 text-xs text-blue-100"
           >
-            <Sparkles className="h-4 w-4" /> Existing AI workforce{" "}
+            <Sparkles className="h-4 w-4" /> AI reply workspace{" "}
             <ArrowUpRight className="h-3 w-3" />
           </Link>
         </div>
-        <p className="mt-5 border-t border-slate-700 pt-4 text-xs text-slate-300">
-          One TAKATAK identity, workspace, permission model and billing
-          authority. Source credentials remain on the server.
+        <p className="relative mt-5 border-t border-slate-700 pt-4 text-xs text-[#B8C4D3]">
+          Digital Solutions. Real Results. Manage customer feedback across your
+          connected TAKATAK businesses.
         </p>
       </div>
       {!snapshot ? (
@@ -145,22 +149,11 @@ export function ReviewCockpit({
                   stats.responseRate === null ? "—" : `${stats.responseRate}%`,
                 icon: CheckCheck,
               },
-            ].map(({ name, value, icon: Icon }) => (
-              <div
-                key={name}
-                className="rounded-2xl border border-slate-200 bg-white p-5"
-              >
-                <div className="flex items-center justify-between gap-3 text-xs text-slate-600">
-                  <span>{name}</span>
-                  <Icon className="h-4 w-4 text-[#1565D8]" />
-                </div>
-                <p className="mt-3 text-3xl font-semibold text-slate-900">
-                  {value}
-                </p>
-              </div>
+            ].map(({ name, value }) => (
+              <GrowthKpi key={name} label={name} value={String(value)} />
             ))}
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <Card className="p-4">
             <div className="flex flex-wrap items-center gap-3">
               <label className="relative min-w-48 flex-1">
                 <span className="sr-only">Search reviews</span>
@@ -244,7 +237,7 @@ export function ReviewCockpit({
               recommendations, non-rated records and excluded reviews. Response
               rate counts only confirmed replies and reply-capable records.
             </p>
-          </div>
+          </Card>
           <div className="space-y-3">
             {filtered.slice((page - 1) * 12, page * 12).map((r) => (
               <article

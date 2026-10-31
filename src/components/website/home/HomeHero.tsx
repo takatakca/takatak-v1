@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandHeroBackdrop } from "@/components/brand/brand-hero-backdrop";
 import { ArrowRight, Headset, Languages, ShieldCheck, UserCheck } from "lucide-react";
 import { Link } from "@/lib/website/nav";
 import { openLiveChat } from "@/lib/website/chat-provider";
@@ -29,24 +30,8 @@ export function HomeHero() {
   ];
 
   return (
-    <section aria-labelledby="home-hero-title" className="brand-dark relative overflow-hidden border-b border-border">
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(900px 520px at 85% -10%, color-mix(in oklab, var(--primary) 30%, transparent), transparent 62%), radial-gradient(700px 420px at -10% 110%, color-mix(in oklab, var(--brand-accent-cyan) 12%, transparent), transparent 60%)",
-          }}
-        />
-        <div
-          className="absolute inset-0 opacity-[0.18]"
-          style={{
-            backgroundImage: "radial-gradient(color-mix(in oklab, var(--brand-accent-cyan) 50%, transparent) 1px, transparent 1px)",
-            backgroundSize: "28px 28px",
-            maskImage: "radial-gradient(ellipse at 70% 30%, black 10%, transparent 70%)",
-          }}
-        />
-      </div>
+    <section aria-labelledby="home-hero-title" className="brand-dark relative overflow-hidden border-b border-border [--hero-blue:var(--primary)] [--hero-cyan:var(--brand-accent-cyan)]">
+      <BrandHeroBackdrop />
 
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 pb-14 pt-12 md:pb-20 md:pt-20 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-14">
         <div>
