@@ -45,6 +45,7 @@ const cols = [
       { to: "/services/local-listings", label: "Local listings" },
       { to: "/services/reviews", label: "Reviews & reputation" },
       { to: "/services/ai-studio", label: "AI Studio" },
+      { to: "/takbot", label: "TAK bot AI" },
       { to: "/services/billing", label: "Billing & invoicing" },
       { to: "/services/voip", label: "Business phone (planned)" },
     ],

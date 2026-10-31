@@ -1,0 +1,73 @@
+{
+  "note": "Words on the short social clips (scripts/media/make-clips.py). Prices only from src/lib/website/pricing.ts; no client names; no result we cannot prove.",
+  "end": {
+    "fr": { "title": "Créez votre compte", "url": "takatak.ca", "cta": "Commencer" },
+    "en": { "title": "Create your account", "url": "takatak.ca", "cta": "Get started" }
+  },
+  "clips": [
+    {
+      "key": "website",
+      "photo": "public/photos/commerce-cafe.webp",
+      "focusX": 0.45,
+      "label": { "fr": "Sites web", "en": "Websites" },
+      "title": { "fr": "Votre commerce mérite un site à sa hauteur.", "en": "Your business deserves a website that matches it." },
+      "chip": { "fr": "votrecafe.ca · En ligne", "en": "yourcafe.ca · Live" }
+    },
+    {
+      "key": "domains",
+      "photo": "public/photos/hero-cafe.webp",
+      "focusX": 0.55,
+      "label": { "fr": "Domaines", "en": "Domains" },
+      "title": { "fr": "Votre nom, en ligne, aujourd’hui.", "en": "Your name, online, today." },
+      "chip": { "fr": "votremarque.ca · Disponible · 19,99 $/an", "en": "yourbrand.ca · Available · $19.99/yr" }
+    },
+    {
+      "key": "hosting",
+      "photo": "public/photos/pro-bureau.webp",
+      "focusX": 0.62,
+      "label": { "fr": "Hébergement", "en": "Hosting" },
+      "title": { "fr": "Rapide, sécurisé, avec une vraie équipe derrière.", "en": "Fast, secure, with a real team behind it." },
+      "chip": { "fr": "SSL actif · Sauvegardé aujourd’hui", "en": "SSL on · Backed up today" }
+    },
+    {
+      "key": "marketing",
+      "photo": "public/photos/studio-design.webp",
+      "focusX": 0.55,
+      "label": { "fr": "Marketing", "en": "Marketing" },
+      "title": { "fr": "Des clients qui reviennent, semaine après semaine.", "en": "Customers who come back, week after week." },
+      "chip": { "fr": "Campagne Meta · En cours", "en": "Meta campaign · Running" }
+    },
+    {
+      "key": "social",
+      "photo": "public/photos/hero-cafe.webp",
+      "focusX": 0.5,
+      "label": { "fr": "Réseaux sociaux", "en": "Social media" },
+      "title": { "fr": "Une publication. Tous vos réseaux.", "en": "One post. Every network." },
+      "chip": { "fr": "Planifiée · Mesurée", "en": "Scheduled · Measured" }
+    },
+    {
+      "key": "local",
+      "photo": "public/photos/artisan-atelier.webp",
+      "focusX": 0.3,
+      "label": { "fr": "Fiches locales", "en": "Local listings" },
+      "title": { "fr": "Quand on cherche près d’ici, c’est vous qu’on trouve.", "en": "When people search nearby, they find you." },
+      "chip": { "fr": "Fiche Google · À jour", "en": "Google profile · Up to date" }
+    },
+    {
+      "key": "reviews",
+      "photo": "public/photos/artisan-atelier.webp",
+      "focusX": 0.42,
+      "label": { "fr": "Avis", "en": "Reviews" },
+      "title": { "fr": "Plus d’avis. De meilleures réponses.", "en": "More reviews. Better replies." },
+      "chip": { "fr": "Nouvel avis Google · ★★★★★", "en": "New Google review · ★★★★★" }
+    },
+    {
+      "key": "billing",
+      "photo": "public/photos/pro-bureau.webp",
+      "focusX": 0.4,
+      "label": { "fr": "Facturation", "en": "Invoicing" },
+      "title": { "fr": "Factures avec TPS et TVQ, payées en ligne.", "en": "Invoices with GST and QST, paid online." },
+      "chip": { "fr": "Facture #1042 · Payée", "en": "Invoice #1042 · Paid" }
+    }
+  ]
+}
