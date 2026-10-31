@@ -34,6 +34,11 @@ const t = {
   needConsent: { fr: "Cochez la case pour vous inscrire.", en: "Tick the box to subscribe." },
   badEmail: { fr: "Vérifiez l'adresse courriel.", en: "Check the email address." },
   failed: { fr: "L'inscription n'a pas fonctionné. Réessayez dans un moment.", en: "Sign-up did not go through. Try again in a moment." },
+  reworded: {
+    fr: "Le texte du consentement vient de changer : relisez-le et cochez la case de nouveau.",
+    en: "The consent wording just changed: read it and tick the box again.",
+  },
+  busy: { fr: "Trop d'essais d'un coup. Réessayez dans quelques minutes.", en: "Too many tries at once. Try again in a few minutes." },
   soon: {
     fr: "Les inscriptions ouvrent très bientôt. En attendant, écrivez-nous à support@takatak.ca.",
     en: "Sign-ups open very soon. Meanwhile, write to support@takatak.ca.",
@@ -52,6 +57,16 @@ const t = {
   photoAlt: { fr: "Dans un atelier de couture, au téléphone devant l'ordinateur", en: "In a sewing studio, on the phone at the laptop" },
 };
 
+
+async function loadInfo(): Promise<Info> {
+  try {
+    const r = await fetch("/api/public/newsletter", { cache: "no-store" });
+    const d = (await r.json()) as { enabled?: boolean; consentVersion?: string; consentText?: { fr: string; en: string } };
+    return d.enabled && d.consentVersion && d.consentText ? { state: "on", version: d.consentVersion, text: d.consentText } : { state: "off" };
+  } catch {
+    return { state: "off" };
+  }
+}
 
 /** The sign-up form: its own unchecked consent box, double opt-in, proof kept server-side. */
 export function NewsletterForm({
@@ -76,13 +91,7 @@ export function NewsletterForm({
 
   useEffect(() => {
     let live = true;
-    fetch("/api/public/newsletter", { cache: "no-store" })
-      .then((r) => r.json())
-      .then((d: { enabled?: boolean; consentVersion?: string; consentText?: { fr: string; en: string } }) => {
-        if (!live) return;
-        setInfo(d.enabled && d.consentVersion && d.consentText ? { state: "on", version: d.consentVersion, text: d.consentText } : { state: "off" });
-      })
-      .catch(() => live && setInfo({ state: "off" }));
+    loadInfo().then((next) => live && setInfo(next));
     return () => {
       live = false;
     };
@@ -106,7 +115,13 @@ export function NewsletterForm({
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; fieldErrors?: Record<string, string> };
       if (res.ok && data.ok) return setStatus("done");
       setStatus("idle");
-      setError(data.fieldErrors?.email ? t.badEmail[lang] : t.failed[lang]);
+      if (data.fieldErrors?.consentVersion) {
+        // The wording changed since the page loaded: show the new text and ask again.
+        setInfo(await loadInfo());
+        setConsent(false);
+        return setError(t.reworded[lang]);
+      }
+      setError(data.fieldErrors?.email ? t.badEmail[lang] : res.status === 429 ? t.busy[lang] : t.failed[lang]);
     } catch {
       setStatus("idle");
       setError(t.failed[lang]);

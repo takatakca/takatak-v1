@@ -32,6 +32,46 @@ export function useActiveCampaign(): Campaign | null {
   return campaign;
 }
 
+const PROMO_KEY = "takatak:promo";
+
+/**
+ * The campaign code a visitor arrived with (?promo= from an /offres page, or
+ * kept from earlier in the visit), only while that campaign is live on the
+ * server. Kept in sessionStorage so the code follows the visitor to /register.
+ */
+export function useCampaignCode(): Campaign | null {
+  const [campaign, setCampaign] = useState<Campaign | null>(null);
+  useEffect(() => {
+    let wanted: string | null = new URLSearchParams(window.location.search).get("promo");
+    try {
+      wanted ||= window.sessionStorage.getItem(PROMO_KEY);
+    } catch {
+      /* storage may be unavailable */
+    }
+    const code = wanted?.trim().toUpperCase() ?? "";
+    if (!/^[A-Z0-9]{2,40}$/.test(code)) return;
+    let alive = true;
+    fetch("/api/promotions/active")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { campaigns?: Campaign[] } | null) => {
+        if (!alive) return;
+        const live = data?.campaigns?.find((c) => c.code === code) ?? null;
+        setCampaign(live);
+        try {
+          if (live) window.sessionStorage.setItem(PROMO_KEY, live.code);
+          else window.sessionStorage.removeItem(PROMO_KEY);
+        } catch {
+          /* storage may be unavailable */
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return campaign;
+}
+
 /** The current time, ticking each second; null until mounted, so server and browser render the same. */
 function useNow(active: boolean): number | null {
   const [now, setNow] = useState<number | null>(null);

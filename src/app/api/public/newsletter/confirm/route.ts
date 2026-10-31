@@ -21,15 +21,16 @@ export async function POST(request: NextRequest) {
 
   const body = await readJsonBody(request, 1_024);
   if (!body.ok) return jsonResponse({ ok: false, code: "invalid_request" }, body.status);
-  if (!allowRequest(hashRequestSource(request.headers))) return jsonResponse({ ok: false, code: "rate_limited" }, 429);
+  if (!allowRequest(`newsletter:${hashRequestSource(request.headers)}`)) return jsonResponse({ ok: false, code: "rate_limited" }, 429);
 
   const token = (body.body as Record<string, unknown> | null)?.token;
-  const id = verifyToken(token, "confirm", config.secret);
-  if (!id) return jsonResponse({ ok: false, code: "invalid_link" }, 400);
+  const link = verifyToken(token, "confirm", config.secret);
+  if (!link) return jsonResponse({ ok: false, code: "invalid_link" }, 400);
 
   const prisma = getPrisma();
   if (!prisma) return jsonResponse({ ok: false, code: "unavailable" }, 503);
-  const status = await applyLink(prisma, { clientId: config.clientId, id, action: "confirm" });
+  const status = await applyLink(prisma, { clientId: config.clientId, id: link.id, stamp: link.stamp, action: "confirm" });
   if (!status) return jsonResponse({ ok: false, code: "invalid_link" }, 404);
+  if (status === "expired_link") return jsonResponse({ ok: false, code: "expired_link" }, 410);
   return jsonResponse({ ok: true, status }, 200);
 }

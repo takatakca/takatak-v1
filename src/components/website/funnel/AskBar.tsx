@@ -11,6 +11,7 @@ import { respond, suggest, type Reply } from "@/lib/website/concierge";
 import { CORE_CATEGORIES, type CategoryKey } from "@/lib/website/core-categories";
 import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
+import { fill } from "@/lib/website/home-funnel";
 import { Link } from "@/lib/website/nav";
 import { PROMO_CODE, PROMO_PERCENT } from "@/lib/website/promotions";
 import { CampaignCountdown, useActiveCampaign } from "./Campaign";
@@ -51,7 +52,6 @@ const C = {
   close: { en: "Close", fr: "Fermer" },
 } as const;
 
-const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
 type SpeechCtor = new () => {
   lang: string;

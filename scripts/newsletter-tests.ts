@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import {
   CONSENT_VERSION,
+  confirmLinkValid,
   confirmationEmail,
   confirmed,
   consentText,
@@ -51,17 +52,21 @@ assert.ok(bot.ok && bot.honeypot);
 const page = validateSignup({ ...good, sourcePage: "https://evil.example/x" });
 assert.ok(page.ok && page.value.sourcePage === null);
 
-// Signed links: only for this purpose, this id, this secret.
+// Signed links: only for this purpose, this id, this secret, this stamp.
 const secret = "s".repeat(40);
 const id = "3f2b8c1e-0a4d-4e7f-9b21-6c5d8e9f0a1b";
 const unsub = signToken("unsubscribe", id, secret);
-assert.equal(verifyToken(unsub, "unsubscribe", secret), id);
+assert.deepEqual(verifyToken(unsub, "unsubscribe", secret), { id, stamp: "" });
 assert.equal(verifyToken(unsub, "confirm", secret), null, "an unsubscribe link cannot confirm");
 assert.equal(verifyToken(unsub, "unsubscribe", "t".repeat(40)), null);
 assert.equal(verifyToken(unsub.slice(0, -1) + (unsub.endsWith("A") ? "B" : "A"), "unsubscribe", secret), null);
 const otherId = "00000000-0000-4000-8000-000000000000";
-const forged = `${Buffer.from(otherId).toString("base64url")}.${unsub.split(".")[1]}`;
-assert.equal(verifyToken(forged, "unsubscribe", secret), null, "a signature cannot be moved to another id");
+const parts = unsub.split(".");
+assert.equal(verifyToken(`${Buffer.from(otherId).toString("base64url")}.${parts[1]}.${parts[2]}`, "unsubscribe", secret), null, "a signature cannot be moved to another id");
+const conf = signToken("confirm", id, secret, "2026-10-31T14:00:00.000Z");
+assert.equal(verifyToken(conf, "confirm", secret)?.stamp, "2026-10-31T14:00:00.000Z");
+const cp = conf.split(".");
+assert.equal(verifyToken(`${cp[0]}.${Buffer.from("2026-11-01T00:00:00.000Z").toString("base64url")}.${cp[2]}`, "confirm", secret), null, "the stamp cannot be changed");
 assert.equal(verifyToken(null, "unsubscribe", secret), null);
 
 // State: pending → confirmed → unsubscribed, proof kept; only confirmed may be sent.
@@ -86,6 +91,14 @@ assert.equal(again.consents.length, 2);
 assert.equal(withConsent(confirmed(withConsent(null, proof(now.toISOString()), ["news"]), now), proof(now.toISOString()), ["news"]).status, "confirmed");
 assert.deepEqual(readState({ newsletter: again })?.status, "pending");
 assert.equal(readState({ other: 1 }), null);
+// A new sign-up never removes topics from a confirmed subscriber (anyone can submit an address).
+const conf3 = confirmed(withConsent(null, proof(now.toISOString()), ["offers", "tips", "news"]), now);
+assert.deepEqual(withConsent(conf3, proof(now.toISOString()), ["offers"]).topics, ["offers", "tips", "news"]);
+// A confirm link only works for the latest sign-up, for 14 days.
+const pend = withConsent(null, proof("2026-10-31T14:00:00.000Z"), ["offers"]);
+assert.ok(confirmLinkValid(pend, "2026-10-31T14:00:00.000Z", new Date("2026-11-10T00:00:00Z")));
+assert.ok(!confirmLinkValid(pend, "2026-10-31T14:00:00.000Z", new Date("2026-11-20T00:00:00Z")), "expired after 14 days");
+assert.ok(!confirmLinkValid(withConsent(pend, proof("2026-11-02T10:00:00.000Z"), ["offers"]), "2026-10-31T14:00:00.000Z", new Date("2026-11-02T11:00:00Z")), "an older link cannot confirm a newer sign-up");
 
 // The confirmation email carries the link, the identification and an unsubscribe.
 const mail = confirmationEmail("fr", sender, "https://takatak.ca/infolettre/confirmer?t=a", "https://takatak.ca/infolettre/desabonnement?t=b");
@@ -113,6 +126,7 @@ const rows: Row[] = [];
 const audits: string[] = [];
 let sourceRow: { id: string; name: string } | null = null;
 let n = 0;
+let locks = 0;
 const tx = {
   leadSource: {
     findFirst: async () => sourceRow,
@@ -134,6 +148,10 @@ const tx = {
     },
   },
   auditLog: { create: async ({ data }: { data: { action: string } }) => void audits.push(data.action) },
+  $executeRaw: async () => {
+    locks += 1;
+    return 0;
+  },
 };
 const db = { $transaction: async (fn: (t: typeof tx) => unknown) => fn(tx) } as unknown as NewsletterDb;
 const clientId = env.WEBSITE_LEADS_CLIENT_ID;
@@ -144,11 +162,14 @@ async function storeTests() {
   const first = await recordSignup(db, { clientId, signup, proof: proof(t0.toISOString()), now: t0 });
   assert.equal(first.status, "pending");
   assert.equal(first.sendConfirmation, true);
+  assert.equal(first.stamp, t0.toISOString());
+  assert.equal(locks, 1, "each sign-up takes the per-address lock");
   const t1 = new Date(t0.getTime() + 60_000);
   const repeat = await recordSignup(db, { clientId, signup, proof: proof(t1.toISOString()), now: t1 });
   assert.equal(repeat.sendConfirmation, false, "no second email within 10 minutes");
   assert.equal(rows.length, 1, "one record per address");
-  assert.equal(await applyLink(db, { clientId, id: first.id, action: "confirm", now: t1 }), "confirmed");
+  assert.equal(await applyLink(db, { clientId, id: first.id, action: "confirm", stamp: "2026-01-01T00:00:00.000Z", now: t1 }), "expired_link");
+  assert.equal(await applyLink(db, { clientId, id: first.id, action: "confirm", stamp: first.stamp, now: t1 }), "confirmed");
   assert.equal(await applyLink(db, { clientId, id: first.id, action: "unsubscribe", now: t1 }), "unsubscribed");
   assert.equal(rows[0].status, "archived");
   assert.equal(readState(rows[0].metadata)?.consents.length, 1, "proof kept");

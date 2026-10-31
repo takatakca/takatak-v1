@@ -17,10 +17,10 @@ export function newsletterReady(): NewsletterConfig {
   return config;
 }
 
-export function newsletterLinks(id: string, secret: string): { confirm: string; unsubscribe: string } {
+export function newsletterLinks(id: string, secret: string, stamp = ""): { confirm: string; unsubscribe: string } {
   const origin = getApplicationOrigin();
   return {
-    confirm: `${origin}/infolettre/confirmer?t=${encodeURIComponent(signToken("confirm", id, secret))}`,
+    confirm: `${origin}/infolettre/confirmer?t=${encodeURIComponent(signToken("confirm", id, secret, stamp))}`,
     unsubscribe: `${origin}/infolettre/desabonnement?t=${encodeURIComponent(signToken("unsubscribe", id, secret))}`,
   };
 }
@@ -28,11 +28,13 @@ export function newsletterLinks(id: string, secret: string): { confirm: string; 
 export async function sendConfirmation(input: {
   to: string;
   id: string;
+  /** givenAt of the consent being confirmed. */
+  stamp: string;
   lang: Lang;
   sender: NewsletterSender;
   secret: string;
 }): Promise<ModeratorEmailResult> {
-  const links = newsletterLinks(input.id, input.secret);
+  const links = newsletterLinks(input.id, input.secret, input.stamp);
   const email = confirmationEmail(input.lang, input.sender, links.confirm, links.unsubscribe);
   return sendModeratorEmail({ to: input.to, ...email, fromName: input.sender.name });
 }

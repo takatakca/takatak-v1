@@ -172,18 +172,30 @@ export function encodeQuote(state: FunnelState): string {
     ),
   };
   const json = JSON.stringify(compact);
-  return typeof btoa === "function" ? btoa(unescape(encodeURIComponent(json))).replace(/=+$/, "") : "";
+  if (typeof btoa !== "function") return "";
+  // base64url: safe in a ?q= link without further encoding ("+" would become a space).
+  return btoa(unescape(encodeURIComponent(json))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
+
+const LINE_KEYS: ReadonlySet<string> = new Set<string>([...STEPS, ...(Object.keys(ADD_ONS) as AddOnKey[])]);
+const BUSINESS_RE = /^[a-z][a-z_-]{0,39}$/;
 
 export function decodeQuote(q: string): FunnelState | null {
   try {
-    const json = decodeURIComponent(escape(atob(q)));
-    const parsed = JSON.parse(json) as { b?: unknown; l?: Record<string, unknown> };
-    const state: FunnelState = { business: typeof parsed.b === "string" ? parsed.b : null, lines: {} };
-    for (const [key, value] of Object.entries(parsed.l ?? {})) {
-      if (value === "quote") state.lines[key as LineKey] = { kind: "quote" };
-      else if (value === "waitlist") state.lines[key as LineKey] = { kind: "waitlist" };
-      else if (typeof value === "string") {
+    // Accepts base64url and the older standard base64 links.
+    const b64 = q.trim().replace(/-/g, "+").replace(/_/g, "/").replace(/ /g, "+");
+    const json = decodeURIComponent(escape(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4))));
+    const parsed = JSON.parse(json) as { b?: unknown; l?: unknown };
+    const business = typeof parsed.b === "string" && BUSINESS_RE.test(parsed.b) ? parsed.b : null;
+    const state: FunnelState = { business, lines: {} };
+    const lines = parsed.l && typeof parsed.l === "object" ? (parsed.l as Record<string, unknown>) : {};
+    for (const [key, value] of Object.entries(lines)) {
+      // Only known lines, and "on quote" / "waitlist" only where the catalog says so.
+      if (!LINE_KEYS.has(key)) continue;
+      const step = (STEPS as readonly string[]).includes(key) ? (key as StepKey) : null;
+      if (value === "quote" || value === "waitlist") {
+        if (step && stepOffer(step).kind === value) state.lines[step] = { kind: value };
+      } else if (typeof value === "string") {
         const tier = findTier(key as LineKey, value);
         if (tier) state.lines[key as LineKey] = { kind: "price", tier };
       }

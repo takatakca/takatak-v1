@@ -55,5 +55,17 @@ const back = decodeQuote(encodeQuote(state));
 assert.ok(back);
 assert.deepEqual(funnelTotals(back!), totals);
 assert.equal(decodeQuote("not-base64!!"), null);
+// The link is base64url (no "+" or "/" that a URL would mangle), and survives URLSearchParams.
+const q = encodeQuote(state);
+assert.ok(!/[+/=]/.test(q));
+assert.deepEqual(funnelTotals(decodeQuote(new URLSearchParams(`q=${q}`).get("q")!)!), totals);
+// Older standard-base64 links still open.
+const legacy = Buffer.from(JSON.stringify({ b: null, l: { reviews: "quote" } })).toString("base64");
+assert.equal(decodeQuote(legacy)?.lines.reviews?.kind, "quote");
+// Crafted links: unknown keys, "on quote" on a priced step, odd business values are dropped.
+const crafted = Buffer.from(JSON.stringify({ b: "<script>", l: { foo: "quote", website: "quote", __proto__: "quote", reviews: "quote" } })).toString("base64url");
+const c = decodeQuote(crafted)!;
+assert.deepEqual(Object.keys(c.lines), ["reviews"]);
+assert.equal(c.business, null);
 
 console.log("order funnel tests: OK");

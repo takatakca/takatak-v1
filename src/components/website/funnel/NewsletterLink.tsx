@@ -40,6 +40,10 @@ const t = {
     en: "This link is not valid or was altered. Open the link from the email as is, or write to support@takatak.ca.",
   },
   failed: { fr: "Ça n'a pas fonctionné. Réessayez dans un moment.", en: "That did not work. Try again in a moment." },
+  expired: {
+    fr: "Ce lien de confirmation a expiré ou a été remplacé par un plus récent. Utilisez le dernier courriel reçu, ou inscrivez-vous de nouveau.",
+    en: "This confirmation link has expired or was replaced by a newer one. Use the latest email you received, or subscribe again.",
+  },
   home: { fr: "Retour à takatak.ca", en: "Back to takatak.ca" },
 };
 
@@ -47,7 +51,7 @@ const t = {
 export function NewsletterLink({ mode }: { mode: Mode }) {
   const { lang } = useCopy();
   const [token, setToken] = useState<string | null | undefined>(undefined);
-  const [state, setState] = useState<"idle" | "sending" | "done" | "bad" | "failed">("idle");
+  const [state, setState] = useState<"idle" | "sending" | "done" | "bad" | "expired" | "failed">("idle");
   const copy = t[mode];
 
   useEffect(() => {
@@ -64,13 +68,13 @@ export function NewsletterLink({ mode }: { mode: Mode }) {
         body: JSON.stringify({ token }),
       });
       if (res.ok) return setState("done");
-      setState(res.status === 400 || res.status === 404 ? "bad" : "failed");
+      setState(res.status === 410 ? "expired" : res.status === 400 || res.status === 404 ? "bad" : "failed");
     } catch {
       setState("failed");
     }
   }
 
-  const invalid = token === null || state === "bad";
+  const invalid = token === null || state === "bad" || state === "expired";
 
   return (
     <section className="hp-bg flex min-h-[70vh] items-center px-4 py-24">
@@ -86,7 +90,7 @@ export function NewsletterLink({ mode }: { mode: Mode }) {
         ) : (
           <>
             <h1 className="hp-display text-[34px] sm:text-[40px]">{copy.title[lang]}</h1>
-            <p className="hp-ink-2 mt-4 text-[16px] leading-7">{invalid ? t.bad[lang] : copy.body[lang]}</p>
+            <p className="hp-ink-2 mt-4 text-[16px] leading-7">{state === "expired" ? t.expired[lang] : invalid ? t.bad[lang] : copy.body[lang]}</p>
             {!invalid && (
               <button
                 type="button"

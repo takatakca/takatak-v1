@@ -7,6 +7,7 @@ import { debitCredits, getCreditSnapshot, refundDebit } from "@/lib/ai-credits/l
 import { providerEntry } from "@/lib/ai-providers/catalog";
 import { resolveProviderKey } from "@/lib/ai-providers/store";
 import { aiCreditsCheckoutEnabled } from "@/lib/billing/ai-credits/stripe";
+import { getPrisma } from "@/lib/db/prisma";
 
 import { TAKBOT_ENGINES, routeTakbotRequest } from "./catalog";
 import { relayPrompt, type RelayResult } from "./relay";
@@ -21,10 +22,31 @@ async function keyFor(engineKey: string): Promise<string | null> {
   }
 }
 
-/** Engines with a usable key. Booleans only: keys never leave this module. */
-export async function connectedEngines(): Promise<Set<string>> {
-  const checks = await Promise.all(TAKBOT_ENGINES.map(async (e) => [e.key, Boolean(await keyFor(e.key))] as const));
-  return new Set(checks.filter(([, ok]) => ok).map(([key]) => key));
+const CONNECTED_TTL_MS = 60_000;
+let connectedCache: { at: number; keys: Set<string> } | null = null;
+
+/**
+ * Engines with a key saved (one query on provider names, nothing decrypted)
+ * or set in the environment. Cached a minute: the public catalog calls it on
+ * every page load. A run still resolves its own key and fails cleanly without one.
+ */
+export async function connectedEngines(now = Date.now()): Promise<Set<string>> {
+  if (connectedCache && now - connectedCache.at < CONNECTED_TTL_MS) return connectedCache.keys;
+  let saved = new Set<string>();
+  try {
+    const rows = (await getPrisma()?.aiProviderCredential.findMany({ select: { provider: true } })) ?? [];
+    saved = new Set(rows.map((r) => r.provider));
+  } catch {
+    /* no database: environment keys only */
+  }
+  const keys = new Set(
+    TAKBOT_ENGINES.filter((e) => {
+      const entry = providerEntry(e.key);
+      return saved.has(e.key) || Boolean(entry && process.env[entry.env]?.trim());
+    }).map((e) => e.key),
+  );
+  connectedCache = { at: now, keys };
+  return keys;
 }
 
 export async function creditBalance(clientId: string): Promise<number | null> {

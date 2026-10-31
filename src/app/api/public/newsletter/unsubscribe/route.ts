@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   const config = readNewsletterLinkConfig();
   if (!config) return jsonResponse({ ok: false, code: "not_enabled" }, 503);
 
-  const id = verifyToken(await tokenFrom(request), "unsubscribe", config.secret);
+  const id = verifyToken(await tokenFrom(request), "unsubscribe", config.secret)?.id;
   if (!id) return jsonResponse({ ok: false, code: "invalid_link" }, 400);
 
   const prisma = getPrisma();

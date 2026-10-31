@@ -114,34 +114,43 @@ export function validateSignup(raw: unknown): SignupValidation {
 
 export type TokenPurpose = "confirm" | "unsubscribe";
 
+/** A confirm link works for 14 days, and only for the sign-up it was sent for. */
+export const CONFIRM_TTL_MS = 14 * 24 * 60 * 60 * 1000;
+
 function b64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url");
 }
 
-function mac(purpose: TokenPurpose, id: string, secret: string): string {
-  return createHmac("sha256", secret).update(`takatak-newsletter:${purpose}:${id}`).digest("base64url").slice(0, 32);
+function mac(purpose: TokenPurpose, id: string, stamp: string, secret: string): string {
+  return createHmac("sha256", secret).update(`takatak-newsletter:${purpose}:${id}:${stamp}`).digest("base64url").slice(0, 32);
 }
 
-export function signToken(purpose: TokenPurpose, id: string, secret: string): string {
-  return `${b64url(id)}.${mac(purpose, id, secret)}`;
+/**
+ * `stamp` ties a confirm link to one consent (its givenAt). Unsubscribe links
+ * carry no stamp: every unsubscribe link ever sent keeps working.
+ */
+export function signToken(purpose: TokenPurpose, id: string, secret: string, stamp = ""): string {
+  return `${b64url(id)}.${b64url(stamp)}.${mac(purpose, id, stamp, secret)}`;
 }
 
-/** Returns the subscription id, or null when the link was altered. */
-export function verifyToken(token: unknown, purpose: TokenPurpose, secret: string): string | null {
-  if (typeof token !== "string" || token.length > 200) return null;
-  const [idPart, sig] = token.split(".");
-  if (!idPart || !sig) return null;
+/** The subscription id and stamp, or null when the link was altered. */
+export function verifyToken(token: unknown, purpose: TokenPurpose, secret: string): { id: string; stamp: string } | null {
+  if (typeof token !== "string" || token.length > 300) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3 || !parts[0] || !parts[2]) return null;
   let id: string;
+  let stamp: string;
   try {
-    id = Buffer.from(idPart, "base64url").toString("utf8");
+    id = Buffer.from(parts[0], "base64url").toString("utf8");
+    stamp = Buffer.from(parts[1], "base64url").toString("utf8");
   } catch {
     return null;
   }
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const expected = Buffer.from(mac(purpose, id, secret));
-  const given = Buffer.from(sig);
+  if (!/^[0-9a-f-]{36}$/i.test(id) || stamp.length > 40) return null;
+  const expected = Buffer.from(mac(purpose, id, stamp, secret));
+  const given = Buffer.from(parts[2]);
   if (expected.length !== given.length || !timingSafeEqual(expected, given)) return null;
-  return id;
+  return { id, stamp };
 }
 
 // ── Subscription state, stored with the record ──────────────────────────────
@@ -187,11 +196,20 @@ export function withConsent(prev: NewsletterState | null, proof: ConsentProof, t
   const keepConfirmed = prev?.status === "confirmed";
   return {
     status: keepConfirmed ? "confirmed" : "pending",
-    topics,
+    // A confirmed subscriber only ever gains topics here: anyone can submit an
+    // address, so a new sign-up never removes what the person confirmed.
+    topics: keepConfirmed ? Array.from(new Set([...(prev?.topics ?? []), ...topics])) : topics,
     consents: [...(prev?.consents ?? []), proof].slice(-20),
     confirmedAt: keepConfirmed ? prev?.confirmedAt ?? null : null,
     unsubscribedAt: null,
   };
+}
+
+/** Whether a confirm link stamped `stamp` may confirm this state now. */
+export function confirmLinkValid(state: NewsletterState, stamp: string, now: Date): boolean {
+  const last = state.consents.at(-1)?.givenAt;
+  if (!last || stamp !== last) return false;
+  return now.getTime() - Date.parse(last) <= CONFIRM_TTL_MS;
 }
 
 export function confirmed(prev: NewsletterState, now: Date): NewsletterState {

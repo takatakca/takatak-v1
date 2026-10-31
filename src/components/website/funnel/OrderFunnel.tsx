@@ -7,7 +7,7 @@ import { ArrowLeft, ArrowRight, Check, Headset, Link2, Lock, Play, Plus, Shoppin
 
 import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
 import { openLiveChat } from "@/lib/website/chat-provider";
-import { readStoredPlan } from "@/lib/website/home-plan";
+import { readStoredPlan, registerHrefFor } from "@/lib/website/home-plan";
 import {
   ADD_ONS,
   EMPTY_FUNNEL,
@@ -25,8 +25,9 @@ import {
   type LineKey,
   type StepKey,
 } from "@/lib/website/order-funnel";
+import { fill } from "@/lib/website/home-funnel";
 import { Link } from "@/lib/website/nav";
-import { CampaignCountdown, WelcomeSaving, useActiveCampaign } from "./Campaign";
+import { CampaignCountdown, WelcomeSaving, useActiveCampaign, useCampaignCode } from "./Campaign";
 import { Ticker } from "./primitives";
 
 type Lang = "en" | "fr";
@@ -43,6 +44,10 @@ const C = {
   perYear: { en: "per year", fr: "par année" },
   quotes: { en: "{n} on quote", fr: "{n} sur soumission" },
   noPay: { en: "No payment at this step.", fr: "Aucun paiement à cette étape." },
+  promoKept: {
+    en: "Your code {code} (−{pct} %) is kept for this order. Enter it at checkout before the offer ends.",
+    fr: "Votre code {code} (−{pct} %) est gardé pour cette commande. Entrez-le au paiement avant la fin de l’offre.",
+  },
   continue: { en: "Continue", fr: "Continuer" },
   noThanks: { en: "No thanks", fr: "Non merci" },
   back: { en: "Back", fr: "Retour" },
@@ -105,7 +110,6 @@ const BUSINESSES: readonly { key: string; label: Bi; noun: Bi; photo: string; fo
 /** Steps that have a 7 s clip in public/media/social. */
 const CLIPS: Partial<Record<StepKey, string>> = { website: "website", hosting: "hosting", social: "social", marketing: "marketing", reviews: "reviews" };
 
-const fill = (s: string, v: Record<string, string | number>) => s.replace(/\{(\w+)\}/g, (_, k: string) => String(v[k] ?? ""));
 
 function useFunnelState(): [FunnelState, (s: FunnelState) => void, boolean] {
   const [state, setState] = useState<FunnelState>(EMPTY_FUNNEL);
@@ -188,7 +192,10 @@ export function OrderFunnel() {
   const [how, setHow] = useState(false);
   const [copied, setCopied] = useState(false);
   const [bump, setBump] = useState(0);
-  const campaign = useActiveCampaign();
+  const promo = useCampaignCode();
+  const soonest = useActiveCampaign();
+  // The code the visitor came with wins; otherwise the soonest-ending live campaign.
+  const campaign = promo ?? soonest;
   const topRef = useRef<HTMLDivElement>(null);
   const totals = funnelTotals(state);
   const review = index >= STEPS.length;
@@ -212,7 +219,7 @@ export function OrderFunnel() {
   };
 
   const keys = useMemo(() => planKeys(state), [state]);
-  const registerHref = keys.length ? `/register?plan=${keys.join(",")}` : "/register";
+  const registerHref = registerHrefFor(keys, promo?.code);
 
   const noThanks = (s: StepKey) => {
     const offer = stepOffer(s);
@@ -225,7 +232,7 @@ export function OrderFunnel() {
   };
 
   const saveQuote = async () => {
-    const url = `${window.location.origin}/commander?q=${encodeQuote(state)}`;
+    const url = `${window.location.origin}/commander?q=${encodeQuote(state)}${promo ? `&promo=${promo.code}` : ""}`;
     try {
       await navigator.clipboard.writeText(url);
     } catch {
@@ -445,7 +452,7 @@ export function OrderFunnel() {
     body = (
       <div>
         <h1 className="hp-display hp-ink text-[34px] sm:text-[48px]">{C.review[lang]}</h1>
-        {campaign && <CampaignCountdown campaign={campaign} lang={lang} className="mt-5" />}
+        {campaign && !promo && <CampaignCountdown campaign={campaign} lang={lang} className="mt-5" />}
         {entries.length ? (
           <ul className="hp-divide mt-6">
             {entries.map((k) => {
@@ -489,6 +496,12 @@ export function OrderFunnel() {
         {keys.length > 0 && (
           <div className="mt-6">
             <WelcomeSaving keys={keys} lang={lang} serviceName={(k) => tk(`cat.${k}.name`)} />
+          </div>
+        )}
+        {promo && (
+          <div className="hp-card mt-6 rounded-[20px] p-4">
+            <p className="hp-ink text-[14.5px] font-medium">{fill(C.promoKept[lang], { code: promo.code, pct: promo.percentOff })}</p>
+            <CampaignCountdown campaign={promo} lang={lang} className="mt-3" />
           </div>
         )}
         <ul className="hp-ink-2 mt-6 flex flex-wrap gap-x-6 gap-y-2 text-[13px]">

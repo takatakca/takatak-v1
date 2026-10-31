@@ -10,6 +10,16 @@ import { CORE_CATEGORIES, type CategoryKey, type CoreCategory } from "./core-cat
 
 const KEY = "takatak:home-plan";
 
+
+/** /register carrying the plan (and a live campaign code, when there is one). */
+export function registerHrefFor(keys: readonly string[], promo?: string | null): string {
+  const q = new URLSearchParams();
+  if (keys.length) q.set("plan", keys.join(","));
+  if (promo) q.set("promo", promo);
+  const query = q.toString().replace(/%2C/g, ",");
+  return query ? `/register?${query}` : "/register";
+}
+
 export interface PlanTotals {
   oneTime: number;
   monthly: number;
@@ -92,7 +102,7 @@ export function HomePlanProvider({ children }: { children: ReactNode }) {
       clear: () => persist([]),
       totals: planTotals(keys),
       categories: CORE_CATEGORIES.filter((c) => keys.includes(c.key)),
-      registerHref: keys.length ? `/register?plan=${keys.join(",")}` : "/register",
+      registerHref: registerHrefFor(keys),
       orderOpen,
       setOrderOpen,
     };

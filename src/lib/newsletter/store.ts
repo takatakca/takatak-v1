@@ -5,6 +5,7 @@
 import type { Prisma } from "@prisma/client";
 
 import {
+  confirmLinkValid,
   confirmed,
   readState,
   unsubscribed,
@@ -28,7 +29,7 @@ export class NewsletterRateLimitedError extends Error {
   }
 }
 
-type Tx = Pick<Prisma.TransactionClient, "leadSource" | "lead" | "auditLog">;
+type Tx = Pick<Prisma.TransactionClient, "leadSource" | "lead" | "auditLog" | "$executeRaw">;
 
 export interface NewsletterDb {
   $transaction<T>(fn: (tx: Tx) => Promise<T>): Promise<T>;
@@ -69,6 +70,8 @@ export interface RecordedSignup {
   status: SubscriptionStatus;
   /** False when already confirmed, or a confirmation was sent a moment ago. */
   sendConfirmation: boolean;
+  /** givenAt of the consent a confirmation email would confirm. */
+  stamp: string;
 }
 
 export async function recordSignup(
@@ -79,6 +82,8 @@ export async function recordSignup(
   const { clientId, signup, proof } = input;
 
   return db.$transaction(async (tx) => {
+    // One sign-up at a time per address (two tabs or a double click must not create two records).
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`newsletter:${clientId}:${signup.email}`}))`;
     const leadSourceId = await sourceId(tx, clientId);
 
     const existing = await tx.lead.findFirst({
@@ -99,7 +104,7 @@ export async function recordSignup(
       prev?.status === "pending" && lastConsent && now.getTime() - Date.parse(lastConsent) < RESEND_WINDOW_MS;
     // A repeat inside the window changes nothing (no new proof, no new email).
     if (existing && prev && recentlyAsked) {
-      return { id: existing.id, status: prev.status, sendConfirmation: false };
+      return { id: existing.id, status: prev.status, sendConfirmation: false, stamp: lastConsent ?? "" };
     }
 
     const state = withConsent(prev, proof, signup.topics);
@@ -127,15 +132,15 @@ export async function recordSignup(
       },
     });
 
-    return { id: lead.id, status: state.status, sendConfirmation: state.status === "pending" };
+    return { id: lead.id, status: state.status, sendConfirmation: state.status === "pending", stamp: proof.givenAt };
   });
 }
 
 /** Applies a confirm or unsubscribe link. Null when the record does not exist. */
 export async function applyLink(
   db: NewsletterDb,
-  input: { clientId: string; id: string; action: "confirm" | "unsubscribe"; now?: Date },
-): Promise<SubscriptionStatus | null> {
+  input: { clientId: string; id: string; action: "confirm" | "unsubscribe"; stamp?: string; now?: Date },
+): Promise<SubscriptionStatus | "expired_link" | null> {
   const now = input.now ?? new Date();
   return db.$transaction(async (tx) => {
     const lead = await tx.lead.findFirst({
@@ -144,6 +149,10 @@ export async function applyLink(
     });
     const prev = lead ? readState(lead.metadata) : null;
     if (!lead || !prev) return null;
+    // A confirm link only confirms the sign-up it was sent for, within its validity.
+    if (input.action === "confirm" && prev.status === "pending" && !confirmLinkValid(prev, input.stamp ?? "", now)) {
+      return "expired_link";
+    }
 
     const next = input.action === "confirm" ? confirmed(prev, now) : unsubscribed(prev, now);
     if (next.status === prev.status) return next.status;

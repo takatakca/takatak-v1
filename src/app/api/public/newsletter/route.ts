@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
   if (!body.ok) return jsonResponse({ ok: false, code: "invalid_request", message: body.message }, body.status);
 
   const sourceHash = hashRequestSource(request.headers);
-  if (!allowRequest(sourceHash)) return jsonResponse({ ok: false, code: "rate_limited" }, 429);
+  // Own bucket: the contact forms' limit is separate.
+  if (!allowRequest(`newsletter:${sourceHash}`)) return jsonResponse({ ok: false, code: "rate_limited" }, 429);
 
   const validation = validateSignup(body.body);
   if (!validation.ok) {
@@ -72,6 +73,7 @@ export async function POST(request: NextRequest) {
         const status = await sendConfirmation({
           to: signup.email,
           id: recorded.id,
+          stamp: recorded.stamp,
           lang: signup.language,
           sender: config.sender,
           secret: config.secret,
