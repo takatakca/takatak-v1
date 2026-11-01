@@ -5,6 +5,7 @@ import { HomeFaq } from "@/components/website/funnel/HomeFaq";
 import { NewsletterSignup } from "@/components/website/funnel/NewsletterSignup";
 import { HomeSectionNav } from "@/components/website/funnel/HomeSectionNav";
 import { AiTeam } from "@/components/website/funnel/AiTeam";
+import { DeviceShowcase } from "@/components/website/funnel/DeviceShowcase";
 import { KineticMarquee } from "@/components/website/funnel/KineticMarquee";
 import { LiveBand } from "@/components/website/funnel/LiveBand";
 import { PhoneChapter } from "@/components/website/funnel/PhoneChapter";
@@ -62,6 +63,7 @@ export default function HomePage() {
             <PlanConfigurator />
             <TakbotSection />
             <AiTeam />
+            <DeviceShowcase />
             <PhoneChapter />
             <SuiteBento />
             <PricingTabs />
