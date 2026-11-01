@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { ArrowRight, ArrowUp, Check, Headset, Mic, Plus, Sparkles, X } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, ClipboardList, Headset, Mic, Plus, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 
 import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
 import { openLiveChat } from "@/lib/website/chat-provider";
@@ -14,8 +14,11 @@ import { useHomePlan } from "@/lib/website/home-plan";
 import { fill } from "@/lib/website/home-funnel";
 import { Link } from "@/lib/website/nav";
 import { PROMO_CODE, PROMO_PERCENT } from "@/lib/website/promotions";
+import { FICHE_CONFIRM, FICHE_LABELS, FICHE_ORDER, answer, emptyFiche, fichePayload, question, type Fiche, type FicheStep } from "@/lib/website/sales-fiche";
+import { submitWebsiteRequest } from "@/lib/website/website-requests";
 import { CampaignCountdown, useActiveCampaign } from "./Campaign";
 import { sectionId } from "./HomeSectionNav";
+import { CONCIERGE_OPEN_EVENT } from "./OfferRail";
 import { prefillTakbot } from "./TakbotTryPanel";
 
 type Lang = "en" | "fr";
@@ -34,7 +37,7 @@ const C = {
   askAgent: { en: "Ask the assistant: “{q}”", fr: "Demander à l’assistant : « {q} »" },
   add: { en: "Add", fr: "Ajouter" },
   added: { en: "Added", fr: "Ajouté" },
-  agent: { en: "TAKATAK assistant", fr: "Assistant TAKATAK" },
+  agent: { en: "TAKATAK sales assistant", fr: "Assistant ventes TAKATAK" },
   askTakbot: { en: "Ask TAK bot (AI)", fr: "Demander à TAK bot (IA)" },
   agentNote: { en: "Guided answers from our catalog · a person can take over", fr: "Réponses guidées par notre catalogue · une personne peut prendre le relais" },
   hello: {
@@ -46,6 +49,15 @@ const C = {
     fr: "Bonne nouvelle : comme nouveau client, vous avez {p} % sur votre premier service avec le code {code}. Il s’applique au paiement.",
   },
   finalize: { en: "Finalize my order", fr: "Finaliser ma commande" },
+  prepare: { en: "Prepare my request", fr: "Préparer ma demande" },
+  support: { en: "Contact support", fr: "Contacter le soutien" },
+  fiche: { en: "Your request", fr: "Votre demande" },
+  yes: { en: "Yes, send it", fr: "Oui, envoyer" },
+  fix: { en: "Correct", fr: "Corriger" },
+  sent: { en: "Sent. Your reference: {ref}. We reply within one business day. You can also order right now:", fr: "Envoyé. Votre référence : {ref}. On vous répond en un jour ouvrable. Vous pouvez aussi commander tout de suite :" },
+  failed: { en: "I could not send it right now. A person can take over in the chat.", fr: "Je n’ai pas pu l’envoyer pour l’instant. Une personne peut prendre le relais dans le clavardage." },
+  voiceOn: { en: "Voice replies on", fr: "Réponses à voix haute" },
+  voiceOff: { en: "Voice replies off", fr: "Réponses en texte" },
   human: { en: "Talk to a person", fr: "Parler à une personne" },
   placeholder: { en: "Write or speak…", fr: "Écrivez ou parlez…" },
   quick: {
@@ -159,7 +171,7 @@ interface Msg {
 }
 
 /** The conversation panel: guided, catalog-grounded, ends on "Finalize my order". */
-function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
+function Concierge({ first, onClose, voice = false }: { first: string; onClose: () => void; voice?: boolean }) {
   const { tk, lang } = useCopy();
   const campaign = useActiveCampaign();
   const [msgs, setMsgs] = useState<Msg[]>([{ from: "bot", text: C.hello[lang] }]);
@@ -167,6 +179,11 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const dict = useDictation(lang, setDraft);
+  // The request form the assistant fills from the conversation.
+  const [step, setStep] = useState<FicheStep | "sending" | "done" | null>(null);
+  const [fiche, setFiche] = useState<Fiche>(emptyFiche);
+  const [speak, setSpeak] = useState(voice);
+  const seenServices = useRef<string[]>([]);
   // The live TAK bot is on the homepage only.
   const [hasTakbot] = useState(() => typeof document !== "undefined" && Boolean(document.getElementById(sectionId("takbot"))));
   const toTakbot = (q: string) => {
@@ -178,13 +195,74 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
     (text: string) => {
       const q = text.trim();
       if (!q) return;
+      setDraft("");
+      if (step && step !== "confirm" && step !== "sending" && step !== "done") {
+        const r = answer(step, q, fiche);
+        if (!r.ok) {
+          setMsgs((m) => [...m, { from: "me", text: q }, { from: "bot", text: r.error[lang] }]);
+          return;
+        }
+        setFiche(r.fiche);
+        setStep(r.next);
+        setMsgs((m) => [...m, { from: "me", text: q }, { from: "bot", text: r.next === "confirm" ? FICHE_CONFIRM[lang] : question(r.next, r.fiche, lang) }]);
+        return;
+      }
       const reply = respond(q, offered);
       if (reply.actions.includes("offer_welcome")) setOffered(true);
+      for (const k of reply.services) if (!seenServices.current.includes(k)) seenServices.current.push(k);
       setMsgs((m) => [...m, { from: "me", text: q }, { from: "bot", text: reply.text[lang], reply }]);
-      setDraft("");
     },
-    [lang, offered],
+    [lang, offered, step, fiche],
   );
+
+  const startFiche = () => {
+    if (step) return;
+    setStep(FICHE_ORDER[0]);
+    setMsgs((m) => [...m, { from: "bot", text: question(FICHE_ORDER[0], fiche, lang) }]);
+  };
+
+  const submitFiche = async () => {
+    setStep("sending");
+    const services = seenServices.current.map((k) => tk(`cat.${k}.name`));
+    const conversation = msgs.filter((m) => m.from === "me").map((m) => `> ${m.text}`);
+    const result = await submitWebsiteRequest(fichePayload(fiche, { services, conversation, lang }));
+    setStep("done");
+    setMsgs((m) => [
+      ...m,
+      result.status === "sent"
+        ? { from: "bot", text: fill(C.sent[lang], { ref: result.reference }), reply: { text: { fr: "", en: "" }, services: [], actions: ["finalize"] } }
+        : { from: "bot", text: C.failed[lang], reply: { text: { fr: "", en: "" }, services: [], actions: ["human"] } },
+    ]);
+  };
+
+  // Voice: the assistant reads its answers aloud, and a finished dictation is sent.
+  useEffect(() => {
+    if (!speak || typeof window === "undefined" || !("speechSynthesis" in window)) return;
+    const last = msgs[msgs.length - 1];
+    if (!last || last.from !== "bot") return;
+    const u = new SpeechSynthesisUtterance(last.text);
+    u.lang = lang === "fr" ? "fr-CA" : "en-CA";
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(u);
+  }, [msgs, speak, lang]);
+  useEffect(() => () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+  }, []);
+  const wasListening = useRef(false);
+  useEffect(() => {
+    if (dict.state === "listening") wasListening.current = true;
+    else if (wasListening.current && dict.state === "idle") {
+      wasListening.current = false;
+      if (speak && draft.trim()) send(draft);
+    }
+  }, [dict.state, speak, draft, send]);
+  const startedVoice = useRef(false);
+  useEffect(() => {
+    if (voice && !startedVoice.current) {
+      startedVoice.current = true;
+      dict.start();
+    }
+  }, [voice, dict]);
 
   const sentFirst = useRef(false);
   useEffect(() => {
@@ -214,10 +292,63 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
             <span className="hp-ink block text-[15.5px] font-semibold">{C.agent[lang]}</span>
             <span className="hp-ink-3 block truncate text-[13px]">{C.agentNote[lang]}</span>
           </span>
+          <button
+            type="button"
+            onClick={() => setSpeak((v) => !v)}
+            aria-pressed={speak}
+            aria-label={speak ? C.voiceOn[lang] : C.voiceOff[lang]}
+            title={speak ? C.voiceOn[lang] : C.voiceOff[lang]}
+            className={`hp-focus grid h-9 w-9 place-items-center rounded-full ${speak ? "hp-cta" : "hp-ghost"}`}
+          >
+            {speak ? <Volume2 size={16} aria-hidden /> : <VolumeX size={16} aria-hidden />}
+          </button>
           <button type="button" onClick={onClose} aria-label={C.close[lang]} className="hp-ghost hp-focus grid h-9 w-9 place-items-center rounded-full">
             <X size={16} aria-hidden />
           </button>
         </header>
+        {step && (
+          <div className="hp-line hp-card tk-fade-in mx-4 mt-3 rounded-2xl border p-3.5" aria-live="polite">
+            <p className="hp-ink-3 flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.14em]">
+              <ClipboardList size={13} aria-hidden /> {C.fiche[lang]}
+            </p>
+            <dl className="mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-[13.5px]">
+              {FICHE_ORDER.map((f) => (
+                <Fragment key={f}>
+                  <dt className="hp-ink-3">{FICHE_LABELS[f][lang]}</dt>
+                  <dd className={`hp-ink truncate font-semibold ${step === f ? "rounded bg-[var(--hp-alt)] px-1.5" : ""}`}>
+                    {fiche[f] ? (
+                      <span key={fiche[f]} className="tk-fade-in">
+                        {fiche[f]}
+                      </span>
+                    ) : step === f ? (
+                      <span className="hp-caret" aria-hidden />
+                    ) : (
+                      <span className="hp-ink-3 font-normal">—</span>
+                    )}
+                  </dd>
+                </Fragment>
+              ))}
+            </dl>
+            {step === "confirm" && (
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={() => void submitFiche()} className="hp-cta hp-focus inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13.5px] font-semibold">
+                  <Check size={14} aria-hidden /> {C.yes[lang]}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFiche(emptyFiche());
+                    setStep(FICHE_ORDER[0]);
+                    setMsgs((m) => [...m, { from: "bot", text: question(FICHE_ORDER[0], emptyFiche(), lang) }]);
+                  }}
+                  className="hp-ghost hp-focus rounded-full px-4 py-2 text-[13.5px] font-semibold"
+                >
+                  {C.fix[lang]}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex-1 overflow-y-auto px-5 py-5" aria-live="polite">
           <ol className="grid gap-3">
             {msgs.map((m, i) => (
@@ -242,17 +373,31 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
                     {campaign && <CampaignCountdown campaign={campaign} lang={lang} className="mt-2.5" />}
                   </div>
                 )}
-                {m.reply && hasTakbot && msgs[i - 1]?.from === "me" && (
+                {m.reply && hasTakbot && msgs[i - 1]?.from === "me" && !m.reply.actions.includes("support") && (
                   <button
                     type="button"
                     onClick={() => toTakbot(msgs[i - 1].text)}
-                    className="hp-ghost hp-focus inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold"
+                    className="hp-ghost hp-focus inline-flex w-fit items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold"
                   >
                     <Sparkles size={14} aria-hidden /> {C.askTakbot[lang]}
                   </button>
                 )}
+                {m.reply?.actions.includes("support") && (
+                  <button
+                    type="button"
+                    onClick={() => openLiveChat({ page: "/", intent: "support", lang })}
+                    className="hp-cta hp-focus inline-flex w-fit items-center gap-1.5 rounded-full px-4 py-2.5 text-[13.5px] font-semibold"
+                  >
+                    <Headset size={15} aria-hidden /> {C.support[lang]}
+                  </button>
+                )}
                 {m.reply && (m.reply.actions.includes("finalize") || m.reply.actions.includes("human")) && (
                   <div className="flex flex-wrap gap-2">
+                    {m.reply.actions.includes("finalize") && !step && (
+                      <button type="button" onClick={startFiche} className="hp-ghost hp-focus inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[13.5px] font-semibold">
+                        <ClipboardList size={15} aria-hidden /> {C.prepare[lang]}
+                      </button>
+                    )}
                     {m.reply.actions.includes("finalize") && (
                       <Link to="/commander" className="hp-cta hp-halo hp-focus inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[13.5px] font-semibold">
                         {C.finalize[lang]} <ArrowRight size={15} aria-hidden />
@@ -317,7 +462,18 @@ export function AskBar() {
   const [focus, setFocus] = useState(false);
   const [example, setExample] = useState(0);
   const [agent, setAgent] = useState<string | null>(null);
+  const [voice, setVoice] = useState(false);
   const dict = useDictation(lang, setText);
+  // The offer band and other sections open the same assistant.
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const d = (e as CustomEvent<{ first?: string; voice?: boolean }>).detail ?? {};
+      setVoice(Boolean(d.voice));
+      setAgent(typeof d.first === "string" ? d.first.slice(0, 300) : "");
+    };
+    window.addEventListener(CONCIERGE_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(CONCIERGE_OPEN_EVENT, onOpen);
+  }, []);
   const suggestions = suggest(text);
 
   useEffect(() => {
@@ -394,7 +550,16 @@ export function AskBar() {
           ))}
         </div>
       </div>
-      {agent !== null && <Concierge first={agent} onClose={() => setAgent(null)} />}
+      {agent !== null && (
+        <Concierge
+          first={agent}
+          voice={voice}
+          onClose={() => {
+            setAgent(null);
+            setVoice(false);
+          }}
+        />
+      )}
     </section>
   );
 }
