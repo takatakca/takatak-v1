@@ -332,7 +332,9 @@ export function HeroLiveBrowser() {
   const [typed, setTyped] = useState(0);
   const [step, setStep] = useState<Step>(reduced ? 3 : 0);
   const [scene, setScene] = useState<Scene>("website");
-  const [business, setBusiness] = useState(businessOf(DEMO[0].fr, lang));
+  // What the scene is about; the label follows the page language.
+  const [source, setSource] = useState(DEMO[0].en);
+  const business = businessOf(source, lang);
   const [result, setResult] = useState<{ query: string; match: IntentMatch } | null>(null);
   const [listening, setListening] = useState(false);
   const [voice, setVoice] = useState(false);
@@ -352,10 +354,10 @@ export function HeroLiveBrowser() {
   };
 
   /** Plays one scene: working, built, success. */
-  const play = (s: Scene, label: string) => {
+  const play = (s: Scene, text: string) => {
     clearTimers();
     setScene(s);
-    setBusiness(label);
+    setSource(text);
     if (reduced) {
       setStep(3);
       return;
@@ -375,7 +377,7 @@ export function HeroLiveBrowser() {
       return () => window.clearTimeout(id);
     }
     const match = resolveIntent(text);
-    play(sceneFor(match.intent), businessOf(text, lang));
+    play(sceneFor(match.intent), text);
     const next = window.setTimeout(() => {
       setStep((s) => (s === 3 ? 2 : s));
       setTyped(0);
@@ -389,10 +391,10 @@ export function HeroLiveBrowser() {
   useEffect(() => {
     const q = query.trim();
     if (q.length < 3) return;
-    const id = window.setTimeout(() => play(sceneFor(resolveIntent(q).intent), businessOf(q, lang)), 450);
+    const id = window.setTimeout(() => play(sceneFor(resolveIntent(q).intent), q), 450);
     return () => window.clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, lang]);
+  }, [query]);
 
   useEffect(() => () => clearTimers(), []);
 
@@ -406,7 +408,7 @@ export function HeroLiveBrowser() {
     if (!text) return;
     const match = resolveIntent(text);
     trackEvent("home_ai_search", { query: text, intent: match.intent, destination: match.to });
-    play(sceneFor(match.intent), businessOf(text, lang));
+    play(sceneFor(match.intent), text);
     setResult({ query: text, match });
   }
 

@@ -1203,3 +1203,78 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) {
   .tk-ghost-window, .tk-page-browse { animation: none; }
 }
+
+/* Header category rail: glass pills, a light that travels from pill to pill
+   (spinning conic border), turning icons, a beam under the bar. */
+@property --tk-rail-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.tk-rail-pill {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--secondary, #1b2436) 70%, transparent), color-mix(in oklab, var(--card, #0e1729) 55%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--border, #2a3550) 90%, transparent), inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+.tk-rail-pill::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--tk-rail-angle), transparent 0 50%, #29c3ff 68%, #1f8bff 80%, #a78bfa 88%, transparent 98%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.4s;
+  z-index: -1;
+}
+.tk-rail-pill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.16) 50%, transparent 70%);
+  background-size: 260% 100%;
+  background-position: 130% 0;
+  transition: background-position 0.9s ease;
+  z-index: -1;
+  pointer-events: none;
+}
+.tk-rail-pill:hover::before,
+.tk-rail-pill:focus-visible::before,
+.tk-rail-pill[data-lit]::before { opacity: 1; animation: tk-rail-spin 2.2s linear infinite; }
+.tk-rail-pill:hover::after,
+.tk-rail-pill[data-lit]::after { background-position: -30% 0; }
+.tk-rail-pill:hover,
+.tk-rail-pill[data-lit] { box-shadow: inset 0 0 0 1px transparent, 0 8px 26px -12px rgb(31 139 255 / 0.75); }
+@keyframes tk-rail-spin { to { --tk-rail-angle: 360deg; } }
+.tk-rail-icon {
+  color: #fff;
+  background: linear-gradient(135deg, #1565d8, #1f8bff 55%, #29c3ff);
+  box-shadow: 0 4px 14px -4px rgb(31 139 255 / 0.8), inset 0 1px 0 rgb(255 255 255 / 0.35);
+  transition: transform 0.75s cubic-bezier(0.3, 1.45, 0.4, 1);
+}
+.tk-rail-pill:hover .tk-rail-icon,
+.tk-rail-pill:focus-visible .tk-rail-icon { transform: rotate(360deg) scale(1.1); }
+.tk-rail-pill[data-trending] .tk-rail-icon { background: linear-gradient(135deg, #f59e0b, #f97316 55%, #ef4444); box-shadow: 0 4px 14px -4px rgb(249 115 22 / 0.85), inset 0 1px 0 rgb(255 255 255 / 0.35); }
+.tk-rail-pill[data-trending] .tk-rail-icon svg { animation: tk-rail-flicker 1.6s ease-in-out infinite; }
+@keyframes tk-rail-flicker { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(1.15) rotate(-6deg); } }
+.tk-rail-beam::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, #29c3ff, #1f8bff, transparent);
+  animation: tk-rail-beam 6s linear infinite;
+}
+@keyframes tk-rail-beam { from { transform: translateX(-100%); } to { transform: translateX(440%); } }
+.tk-rail-panel { animation: tk-rail-panel 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both; transform-origin: top center; }
+@keyframes tk-rail-panel { from { opacity: 0; transform: translateY(-6px) scale(0.985); } to { opacity: 1; transform: none; } }
+.tk-rail-item { animation: tk-rail-item 0.4s ease both; }
+@keyframes tk-rail-item { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .tk-rail-pill::before, .tk-rail-pill[data-trending] .tk-rail-icon svg, .tk-rail-beam::after,
+  .tk-rail-panel, .tk-rail-item { animation: none; }
+  .tk-rail-pill:hover .tk-rail-icon { transform: none; }
+}

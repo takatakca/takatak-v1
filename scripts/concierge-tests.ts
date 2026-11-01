@@ -3,6 +3,8 @@ import assert from "node:assert/strict";
 import { normalize, respond, suggest, understand } from "../src/lib/website/concierge";
 import { FICHE_ORDER, answer, emptyFiche, fichePayload, question } from "../src/lib/website/sales-fiche";
 import { resolveIntent } from "../src/lib/website/service-intent";
+import { MARKETPLACE_PACKAGES } from "../src/lib/website/marketplace-packages";
+import { PACKAGE_TITLE_FR, formatCad, startingPrice } from "../src/lib/website/marketplace-i18n";
 
 assert.equal(normalize("Hébergement Ça!").trim(), "hebergement ca");
 assert.deepEqual(understand("J'ai besoin d'un site web et d'un nom de domaine").services, ["website", "domains"]);
@@ -70,5 +72,11 @@ assert.equal(resolveIntent("More Google reviews for my salon").to, "/services/re
 assert.equal(resolveIntent("Être trouvé sur Google Maps").intent, "local_visibility");
 assert.equal(resolveIntent("Trouver un domaine .ca pour ma boutique").intent, "domain");
 assert.equal(resolveIntent("Je veux un site web premium pour mon restaurant").intent, "website");
+
+// Header mega-menu: every package has a French name, prices read "249 $" in French.
+for (const p of MARKETPLACE_PACKAGES) assert.ok(PACKAGE_TITLE_FR[p.id], `French title missing for ${p.id}`);
+assert.equal(formatCad(24900, "fr"), "249\u00a0$");
+assert.equal(formatCad(124900, "en"), "$1,249");
+assert.ok(startingPrice({ tiers: [{ priceCents: 50000 }, { priceCents: 24900 }] } as never, "fr").startsWith("dès 249"));
 
 console.log("concierge tests: OK");
