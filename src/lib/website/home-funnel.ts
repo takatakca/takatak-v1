@@ -230,8 +230,8 @@ export const SUITE_GROUPS: readonly SuiteGroup[] = [
     },
     image: "/marketplace/visuals/seo.jpg",
     products: [
-      { key: "qmaps", name: "QMAPS", mono: "QM", status: "live", url: "https://qmaps.ca/", desc: { en: "Local discovery across Québec", fr: "Découverte locale partout au Québec" } },
-      { key: "flexs", name: "FLEXS", mono: "FX", status: "live", url: "https://flexs.ca/", desc: { en: "Capture and follow up on leads", fr: "Captez et suivez vos prospects" } },
+      { key: "qmaps", name: "QMAPS", mono: "QM", status: "live", url: "https://qmaps.ca/", desc: { en: "Québec’s local directory: add your business at no cost, get found, get reviews", fr: "Le répertoire local du Québec : ajoutez votre commerce sans frais, soyez trouvé, recevez des avis" } },
+      { key: "flexs", name: "FLEXS", mono: "FX", status: "live", url: "https://flexs.ca/", desc: { en: "The service-request marketplace: customers describe their project, pros receive the requests", fr: "Le marché des demandes de service : les clients décrivent leur projet, les pros reçoivent les demandes" } },
       { key: "seo", name: "SEO TAKATAK", mono: "SE", status: "early", desc: { en: "Search Console data and SEO action plans", fr: "Données Search Console et plans d’action SEO" } },
     ],
   },
@@ -245,7 +245,7 @@ export const SUITE_GROUPS: readonly SuiteGroup[] = [
     image: "/marketplace/visuals/voip.jpg",
     products: [
       { key: "mimt", name: "MIMT", mono: "MI", status: "planned", url: "https://mimt.ca/", desc: { en: "Business phone and VoIP, made in Canada", fr: "Téléphonie d’affaires et VoIP, faite au Canada" } },
-      { key: "academy", name: "TAKATAK Academy", mono: "AC", status: "soon", desc: { en: "Courses for every TAKATAK service", fr: "Des formations pour chaque service TAKATAK" } },
+      { key: "academy", name: "TAKATAK Academy", mono: "AC", status: "soon", desc: { en: "Free courses to start, advanced tracks next, for every TAKATAK tool", fr: "Des formations gratuites pour commencer, des parcours avancés ensuite, sur chaque outil TAKATAK" } },
     ],
   },
 ];
@@ -393,12 +393,12 @@ export const homeV3 = {
     {
       key: "found",
       photo: "/photos/artisan-atelier.webp",
-      alt: { en: "A craftsman in his workshop looking at his phone", fr: "Un artisan dans son atelier qui regarde son téléphone" },
-      eyebrow: { en: "Get found", fr: "Être trouvé" },
-      title: { en: "Show up in Google Maps and local search.", fr: "Apparaissez dans Google Maps et les recherches locales." },
+      alt: { en: "A business listing being edited", fr: "Une fiche d’entreprise en cours de modification" },
+      eyebrow: { en: "Local listings · local SEO", fr: "Fiches locales · SEO local" },
+      title: { en: "Found everywhere. Chosen right away.", fr: "Trouvé partout. Choisi tout de suite." },
       body: {
-        en: "An up-to-date Google profile, maps, directories and reviews. Every local search leads to your door.",
-        fr: "Une fiche Google à jour, les cartes, les annuaires et vos avis. Chaque recherche locale mène à votre porte.",
+        en: "One listing, kept up to date in every directory your customers use: hours, menu, photos, phone number, holiday hours, reviews. AI does the updates, our team checks them.",
+        fr: "Une seule fiche, tenue à jour dans chaque annuaire où vos clients cherchent : heures, menu, photos, numéro, heures des fêtes, avis. L’IA fait les mises à jour, notre équipe les vérifie.",
       },
       keys: ["local", "reviews"],
       route: "/services/local-listings",

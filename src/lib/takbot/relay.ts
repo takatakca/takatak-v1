@@ -105,11 +105,12 @@ export function readRelayText(engine: TakbotEngine, body: unknown): string {
 }
 
 export async function relayPrompt(
-  input: { engine: TakbotEngine; mode: TakbotMode; apiKey: string; prompt: string },
+  input: { engine: TakbotEngine; mode: TakbotMode; apiKey: string; prompt: string; model?: string | null },
   fetchImpl: RelayFetch = fetch,
   env: Record<string, string | undefined> = process.env,
 ): Promise<RelayResult> {
-  const model = modelFor(input.engine, env);
+  // An explicit model (the trial's economy model) wins over the engine default.
+  const model = input.model || modelFor(input.engine, env);
   const request = model ? buildRequest(input.engine, input.mode, input.apiKey, model, input.prompt) : null;
   if (!request) return { ok: false, code: "unsupported" };
   let response: Response;

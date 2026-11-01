@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import { Play } from "lucide-react";
 
 import manifest from "@/lib/website/media-manifest.json";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
@@ -114,7 +115,7 @@ export function ClipModal({ clip, lang, onClose, origin = null }: { clip: string
 export function PlayBadge({ label }: { label: string }) {
   return (
     <span className="pointer-events-none absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-[#0B0D12] shadow-[0_12px_40px_-10px_rgb(0_0_0/0.6)] backdrop-blur transition-transform duration-500 group-hover:scale-110">
-      <span aria-hidden className="ml-1 block h-0 w-0 border-y-[10px] border-l-[16px] border-y-transparent border-l-current" />
+      <Play size={24} className="ml-1 fill-current" aria-hidden />
       <span className="sr-only">{label}</span>
     </span>
   );
