@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ReviewInsights } from "./review-insights";
 import { ReviewSourceDirectory } from "./review-source-directory";
 import { BrandHeroBackdrop } from "@/components/brand/brand-hero-backdrop";
 import { Card } from "@/components/ui/card";
@@ -35,28 +36,48 @@ export function ReviewCockpit({
 }) {
   const [source, setSource] = useState("all"),
     [query, setQuery] = useState(""),
+    [location, setLocation] = useState("all"),
+    [sort, setSort] = useState("newest"),
     [state, setState] = useState("all"),
     [rating, setRating] = useState("all"),
     [days, setDays] = useState("all"),
     [expanded, setExpanded] = useState<string | null>(null),
-    [page, setPage] = useState(1);
+    [page, setPage] = useState(1),
+    [selectedKey, setSelectedKey] = useState<string | null>(null);
   const records = snapshot?.records;
   const filtered = useMemo(
     () =>
       filterCockpit(records || [], {
         source,
+        location,
         query,
         state,
         rating: rating === "all" ? null : Number(rating),
         days: days === "all" ? null : Number(days),
+      }).sort((a, b) => {
+        if (
+          sort === "pending" &&
+          (a.state === "needs_reply") !== (b.state === "needs_reply")
+        )
+          return a.state === "needs_reply" ? -1 : 1;
+        const difference = Date.parse(b.createdAt) - Date.parse(a.createdAt);
+        return (
+          (sort === "oldest" ? -difference : difference) ||
+          a.key.localeCompare(b.key)
+        );
       }),
-    [records, source, query, state, rating, days],
+    [records, source, query, state, rating, days, location, sort],
   );
+  const visible = filtered.slice((page - 1) * 12, page * 12);
+  const selected =
+    visible.find((review) => review.key === selectedKey) || visible[0];
   const stats = cockpitStats(filtered);
   const missing = snapshot?.unavailable.length === 3;
   function reset(fn: () => void) {
     fn();
     setPage(1);
+    setSelectedKey(null);
+    setExpanded(null);
   }
   const exportQuery = new URLSearchParams({
     format: "csv",
@@ -65,6 +86,7 @@ export function ReviewCockpit({
     state,
     rating,
     days,
+    location,
   });
   return (
     <section className="space-y-5" aria-label="TAKATAK Review cockpit">
@@ -185,6 +207,39 @@ export function ReviewCockpit({
                 </select>
               </label>
               <label>
+                <span className="sr-only">Business location</span>
+                <select
+                  value={location}
+                  onChange={(event) =>
+                    reset(() => setLocation(event.target.value))
+                  }
+                  className="max-w-full rounded-lg border border-slate-300 p-2 text-xs"
+                >
+                  <option value="all">All locations</option>
+                  {Array.from(
+                    new Set((records || []).map((review) => review.location)),
+                  )
+                    .sort()
+                    .map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                <span className="sr-only">Review order</span>
+                <select
+                  value={sort}
+                  onChange={(event) => reset(() => setSort(event.target.value))}
+                  className="rounded-lg border border-slate-300 p-2 text-xs"
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="pending">Awaiting reply first</option>
+                </select>
+              </label>
+              <label>
                 <span className="sr-only">Review state</span>
                 <select
                   className="rounded-lg border border-slate-300 p-2 text-xs"
@@ -239,139 +294,197 @@ export function ReviewCockpit({
               rate counts only confirmed replies and reply-capable records.
             </p>
           </Card>
-          <div className="space-y-3">
-            {filtered.slice((page - 1) * 12, page * 12).map((r) => (
-              <article
-                key={r.key}
-                className="rounded-2xl border border-slate-200 bg-white p-5"
-              >
-                <div className="flex flex-wrap justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-semibold text-slate-900">
-                      {r.author}
-                    </h3>
-                    <p className="mt-1 text-xs text-slate-600">
-                      {reviewSource(r.source)?.name || "Other source"} ·{" "}
-                      {r.location} · {r.createdAt.slice(0, 10)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {r.rating !== null ? (
-                      <span
-                        aria-label={`${r.rating} out of 5 stars`}
-                        className="text-sm text-amber-800"
-                      >
-                        {"★".repeat(r.rating)}
-                        {"☆".repeat(5 - r.rating)}
-                      </span>
-                    ) : (
-                      <Badge>Not star-rated</Badge>
-                    )}
-                    <Badge
-                      tone={
-                        r.state === "answered"
-                          ? "success"
-                          : r.state === "needs_reply"
-                            ? "warning"
-                            : "neutral"
-                      }
-                    >
-                      {r.state.replaceAll("_", " ")}
-                    </Badge>
-                    {!r.recommended && <Badge>Excluded by source</Badge>}
-                  </div>
+          <ReviewInsights records={filtered} />
+          {visible.length > 0 && (
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.4fr)]">
+              <Card className="overflow-hidden">
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-slate-900">
+                    Review inbox
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Select a customer story to review and respond.
+                  </p>
                 </div>
-                <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
-                  {r.text || "No written comment."}
-                </p>
-                {r.response && (
-                  <div className="mt-4 rounded-xl border-l-2 border-blue-500 bg-blue-50 p-4">
-                    <p className="text-xs font-semibold text-blue-900">
-                      Confirmed source response
-                    </p>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
-                      {r.response}
-                    </p>
-                  </div>
-                )}
-                <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-3">
-                  {canManage &&
-                    r.source === "google" &&
-                    r.origin === "external" && (
-                      <button
-                        type="button"
-                        aria-expanded={expanded === r.key}
-                        aria-controls={
-                          expanded === r.key
-                            ? `review-response-${r.key}`
-                            : undefined
-                        }
-                        onClick={() =>
-                          setExpanded(expanded === r.key ? null : r.key)
-                        }
-                        className="text-xs font-semibold text-[#1565D8]"
-                      >
-                        {expanded === r.key
-                          ? "Close response"
-                          : "Respond on Google"}
-                      </button>
-                    )}
-                  {canManage && r.source === "qmaps" && r.qmapsReviewId && (
+                <div
+                  className="max-h-[560px] divide-y divide-slate-100 overflow-y-auto"
+                  aria-label="Select a review"
+                >
+                  {visible.map((review) => (
                     <button
                       type="button"
-                      aria-expanded={expanded === r.key}
-                      aria-controls={
-                        expanded === r.key
-                          ? `review-response-${r.key}`
-                          : undefined
-                      }
-                      onClick={() =>
-                        setExpanded(expanded === r.key ? null : r.key)
-                      }
-                      className="text-xs font-semibold text-[#1565D8]"
+                      key={review.key}
+                      aria-pressed={selected?.key === review.key}
+                      onClick={() => {
+                        setSelectedKey(review.key);
+                        setExpanded(null);
+                      }}
+                      className={`block w-full border-l-4 p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 ${selected?.key === review.key ? "border-[#1565D8] bg-blue-50" : "border-transparent bg-white hover:bg-slate-50"}`}
                     >
-                      {expanded === r.key
-                        ? "Close response"
-                        : "Respond on QMAPS"}
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-semibold text-slate-900">
+                          {review.author}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {review.rating === null
+                            ? "Not rated"
+                            : `${review.rating}/5`}
+                        </span>
+                      </span>
+                      <span className="mt-1 block text-xs text-slate-500">
+                        {reviewSource(review.source)?.name || "Other source"} ·{" "}
+                        {review.location}
+                      </span>
+                      <span className="mt-2 block line-clamp-2 text-xs leading-5 text-slate-600">
+                        {review.text || "No written comment."}
+                      </span>
+                      <span className="mt-2 flex justify-between gap-2 text-[11px] text-slate-500">
+                        <span>{review.state.replaceAll("_", " ")}</span>
+                        <span>{review.createdAt.slice(0, 10)}</span>
+                      </span>
                     </button>
-                  )}
-                  {r.origin === "feedback" && (
-                    <Link
-                      href="#first-party-feedback"
-                      className="text-xs font-semibold text-[#1565D8]"
-                    >
-                      Follow up / convert to lead
-                    </Link>
-                  )}
-                  {r.canDraft &&
-                    canManage &&
-                    (r.origin === "feedback" || r.origin === "external") && (
-                      <ReviewDraftForm reviewId={r.id} origin={r.origin} />
-                    )}
-                  <span className="text-[11px] text-slate-500">
-                    {r.origin === "feedback"
-                      ? "First-party feedback"
-                      : "Recorded in TAKATAK; provider access is checked when an action runs."}
-                  </span>
+                  ))}
                 </div>
-                {expanded === r.key && canManage && (
-                  <div
-                    id={`review-response-${r.key}`}
-                    className="mt-4 border-t border-slate-100 pt-4"
+              </Card>
+              <div
+                className="min-w-0 space-y-3"
+                aria-label="Selected review detail"
+              >
+                {(selected ? [selected] : []).map((r) => (
+                  <article
+                    key={r.key}
+                    className="rounded-2xl border border-slate-200 bg-white p-5"
                   >
-                    {r.source === "google" ? (
-                      <GoogleReplyForm reviewId={r.id} draft={null} />
-                    ) : r.source === "qmaps" && r.qmapsReviewId ? (
-                      <QmapsReplyForm
-                        reviewId={r.qmapsReviewId}
-                        listingReviewId={r.id}
-                      />
-                    ) : null}
-                  </div>
-                )}
-              </article>
-            ))}
-          </div>
+                    <div className="flex flex-wrap justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">
+                          {r.author}
+                        </h3>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {reviewSource(r.source)?.name || "Other source"} ·{" "}
+                          {r.location} · {r.createdAt.slice(0, 10)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {r.rating !== null ? (
+                          <span
+                            aria-label={`${r.rating} out of 5 stars`}
+                            className="text-sm text-amber-800"
+                          >
+                            {"★".repeat(r.rating)}
+                            {"☆".repeat(5 - r.rating)}
+                          </span>
+                        ) : (
+                          <Badge>Not star-rated</Badge>
+                        )}
+                        <Badge
+                          tone={
+                            r.state === "answered"
+                              ? "success"
+                              : r.state === "needs_reply"
+                                ? "warning"
+                                : "neutral"
+                          }
+                        >
+                          {r.state.replaceAll("_", " ")}
+                        </Badge>
+                        {!r.recommended && <Badge>Excluded by source</Badge>}
+                      </div>
+                    </div>
+                    <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
+                      {r.text || "No written comment."}
+                    </p>
+                    {r.response && (
+                      <div className="mt-4 rounded-xl border-l-2 border-blue-500 bg-blue-50 p-4">
+                        <p className="text-xs font-semibold text-blue-900">
+                          Confirmed source response
+                        </p>
+                        <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+                          {r.response}
+                        </p>
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-3">
+                      {canManage &&
+                        r.source === "google" &&
+                        r.origin === "external" && (
+                          <button
+                            type="button"
+                            aria-expanded={expanded === r.key}
+                            aria-controls={
+                              expanded === r.key
+                                ? `review-response-${r.key}`
+                                : undefined
+                            }
+                            onClick={() =>
+                              setExpanded(expanded === r.key ? null : r.key)
+                            }
+                            className="text-xs font-semibold text-[#1565D8]"
+                          >
+                            {expanded === r.key
+                              ? "Close response"
+                              : "Respond on Google"}
+                          </button>
+                        )}
+                      {canManage && r.source === "qmaps" && r.qmapsReviewId && (
+                        <button
+                          type="button"
+                          aria-expanded={expanded === r.key}
+                          aria-controls={
+                            expanded === r.key
+                              ? `review-response-${r.key}`
+                              : undefined
+                          }
+                          onClick={() =>
+                            setExpanded(expanded === r.key ? null : r.key)
+                          }
+                          className="text-xs font-semibold text-[#1565D8]"
+                        >
+                          {expanded === r.key
+                            ? "Close response"
+                            : "Respond on QMAPS"}
+                        </button>
+                      )}
+                      {r.origin === "feedback" && (
+                        <Link
+                          href="#first-party-feedback"
+                          className="text-xs font-semibold text-[#1565D8]"
+                        >
+                          Follow up / convert to lead
+                        </Link>
+                      )}
+                      {r.canDraft &&
+                        canManage &&
+                        (r.origin === "feedback" ||
+                          r.origin === "external") && (
+                          <ReviewDraftForm reviewId={r.id} origin={r.origin} />
+                        )}
+                      <span className="text-[11px] text-slate-500">
+                        {r.origin === "feedback"
+                          ? "First-party feedback"
+                          : "Recorded in TAKATAK; provider access is checked when an action runs."}
+                      </span>
+                    </div>
+                    {expanded === r.key && canManage && (
+                      <div
+                        id={`review-response-${r.key}`}
+                        className="mt-4 border-t border-slate-100 pt-4"
+                      >
+                        {r.source === "google" ? (
+                          <GoogleReplyForm reviewId={r.id} draft={null} />
+                        ) : r.source === "qmaps" && r.qmapsReviewId ? (
+                          <QmapsReplyForm
+                            reviewId={r.qmapsReviewId}
+                            listingReviewId={r.id}
+                          />
+                        ) : null}
+                      </div>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </div>
+          )}
           {!filtered.length && (
             <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center">
               <Star className="mx-auto h-8 w-8 text-[#1565D8]" />

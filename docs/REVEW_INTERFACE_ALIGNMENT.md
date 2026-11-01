@@ -33,3 +33,7 @@ Validation: changed-component ESLint, 15 cockpit checks and whitespace checks pa
 Signed GitHub note saved with source; matching Google Drive-ready note saved locally, NOT UPLOADED because no Drive connector is available. No email or recurring task executed.
 
 — REVEW
+
+## 2026-11-01 — Operational inbox implementation
+
+Implemented list/detail review selection, date/pending sorting, exact location filters shared with CSV, rating distribution and location performance from filtered loaded records. Existing Google/QMAPS/AI actions stay in the selected detail. 16 model checks, lint and whitespace pass. Isolated browser tests exercised actual cockpit with 14 synthetic records: selection, pagination, location/export URL scope, source filter resets, non-star exclusion and empty results. Server-action form components were stubbed; no live customer data/provider operations exercised. No authenticated foundation screenshot presented as full operational proof. Matching Drive copy local only; upload unavailable. — REVEW

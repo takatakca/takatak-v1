@@ -391,6 +391,29 @@ async function main() {
       }
     },
   );
+  await check(
+    "exact location filters compose with source and apply equally to export records",
+    () => {
+      const base = normalizeListing(listing);
+      const records = [
+        { ...base, key: "one", location: "Montreal" },
+        { ...base, key: "two", location: "Laval" },
+        { ...base, key: "three", location: "Montreal East" },
+      ];
+      const filtered = filterCockpit(records, {
+        location: "Montreal",
+        source: base.source,
+      });
+      assert.deepEqual(
+        filtered.map((review) => review.key),
+        ["one"],
+      );
+      assert.equal(filterCockpit(records, { location: "all" }).length, 3);
+      assert.equal(filterCockpit(records, { location: "Missing" }).length, 0);
+      assert.equal(cockpitCSV(filtered).includes("Laval"), false);
+      assert.equal(records.length, 3);
+    },
+  );
   console.log(`Review cockpit: ${count} checks passed.`);
 }
 main().catch((error) => {

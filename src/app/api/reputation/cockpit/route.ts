@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       );
     const records = filterCockpit(snapshot.records, {
       source: request.nextUrl.searchParams.get("source") || "all",
+      location: request.nextUrl.searchParams.get("location") || "all",
       query: request.nextUrl.searchParams.get("q") || "",
       state: request.nextUrl.searchParams.get("state") || "all",
       rating: [1, 2, 3, 4, 5].includes(

@@ -245,6 +245,7 @@ export function filterCockpit(
   records: ReviewRecord[],
   input: {
     source?: string;
+    location?: string;
     query?: string;
     state?: string;
     rating?: number | null;
@@ -256,6 +257,9 @@ export function filterCockpit(
   return records.filter(
     (r) =>
       (!input.source || input.source === "all" || r.source === input.source) &&
+      (!input.location ||
+        input.location === "all" ||
+        r.location === input.location) &&
       (!query ||
         `${r.author} ${r.text} ${r.location}`.toLowerCase().includes(query)) &&
       (!input.state || input.state === "all" || r.state === input.state) &&
