@@ -26,6 +26,7 @@ import {
   type StepKey,
 } from "@/lib/website/order-funnel";
 import { fill } from "@/lib/website/home-funnel";
+import { MIMT_LINKS, MIMT_PLAN_LIST } from "@/lib/website/mimt-plans";
 import { Link } from "@/lib/website/nav";
 import { CampaignCountdown, WelcomeSaving, useActiveCampaign, useCampaignCode } from "./Campaign";
 import { Ticker } from "./primitives";
@@ -96,7 +97,7 @@ const STEP_COPY: Record<StepKey, { name: Bi; title: Bi }> = {
   social: { name: { en: "Social", fr: "Réseaux" }, title: { en: "Post everywhere from one place.", fr: "Publiez partout, d’un seul endroit." } },
   marketing: { name: { en: "Marketing", fr: "Marketing" }, title: { en: "Bring in new customers.", fr: "Attirez de nouveaux clients." } },
   reviews: { name: { en: "Reviews", fr: "Avis" }, title: { en: "Turn customers into reviews.", fr: "Transformez vos clients en avis." } },
-  phone: { name: { en: "Phone", fr: "Téléphone" }, title: { en: "A business phone line, soon.", fr: "Une ligne d’affaires, bientôt." } },
+  phone: { name: { en: "Phone", fr: "Téléphone" }, title: { en: "Your business line, from $0.", fr: "Votre ligne d’affaires, dès 0 $." } },
   credits: { name: { en: "AI credits", fr: "Crédits IA" }, title: { en: "Let TAK bot do the busywork.", fr: "Laissez TAK bot faire le travail répétitif." } },
 };
 
@@ -334,7 +335,13 @@ export function OrderFunnel() {
       <div>
         <p className="hp-accent text-[13px] font-semibold">{fill(C.step[lang], { n: index + 1, t: STEPS.length })}</p>
         <h1 className="hp-display hp-ink mt-2 text-balance text-[34px] sm:text-[48px]">{STEP_COPY[step].title[lang]}</h1>
-        <p className="hp-ink-2 mt-3 max-w-2xl text-[16px] leading-7">{tk(`cat.${cat}.promise`)}</p>
+        <p className="hp-ink-2 mt-3 max-w-2xl text-[16px] leading-7">
+          {step === "phone"
+            ? lang === "fr"
+              ? "La téléphonie d'affaires TAKATAK, propulsée par MIMT : un numéro local, un standard automatique, des postes pour l'équipe, la boîte vocale en texte et le transfert d'appels, sur cellulaire et ordinateur."
+              : "TAKATAK business phone, powered by MIMT: a local number, an auto attendant, lines for the team, voicemail as text and call transfer, on phone and computer."
+            : tk(`cat.${cat}.promise`)}
+        </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {CLIPS[step] && (
             <button type="button" onClick={() => setVideo(step)} className="hp-ghost hp-focus inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-semibold">
@@ -394,7 +401,26 @@ export function OrderFunnel() {
           </ul>
         )}
 
-        {offer.kind !== "tiers" && (
+        {step === "phone" && (
+          <div className="mt-8 overflow-hidden rounded-[22px] bg-[linear-gradient(160deg,#0B1B3F,#060D1F_65%)] p-6 text-white">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#7FD8FF]">{lang === "fr" ? "Propulsée par MIMT" : "Powered by MIMT"}</p>
+            <p className="mt-2 text-[15.5px] leading-7 text-white/85">
+              {lang === "fr"
+                ? `Un vrai numéro local, un standard, la vidéo et l'IA. MIMT Gratuit à 0 $, Essentiel ${money(lang, MIMT_PLAN_LIST.lock.monthlyCents / 100)}/mois, Affaires ${money(lang, MIMT_PLAN_LIST.business.monthlyCents / 100)} par ligne. Inscription et paiement dans l'app MIMT.`
+                : `A real local number, an attendant, video and AI. MIMT Free at $0, Essential ${money(lang, MIMT_PLAN_LIST.lock.monthlyCents / 100)}/mo, Business ${money(lang, MIMT_PLAN_LIST.business.monthlyCents / 100)} per line. Sign-up and payment in the MIMT app.`}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link to="/" hash="home-phone" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-[14.5px] font-semibold text-[#060D1F]">
+                {lang === "fr" ? "Choisir mon numéro" : "Choose my number"} <ArrowRight size={16} aria-hidden />
+              </Link>
+              <a href={MIMT_LINKS.signup[lang]} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-full px-5 py-3 text-[14.5px] font-semibold text-white ring-1 ring-white/25 hover:bg-white/10">
+                {lang === "fr" ? "Commencer à 0 $" : "Start at $0"}
+              </a>
+            </div>
+          </div>
+        )}
+
+        {offer.kind !== "tiers" && step !== "phone" && (
           <div className="hp-card mt-8 flex flex-col gap-4 rounded-[22px] p-6 sm:flex-row sm:items-center sm:justify-between">
             <p className="hp-ink-2 text-[15px]">{offer.kind === "quote" ? C.quoteNote[lang] : C.waitNote[lang]}</p>
             <button
