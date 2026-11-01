@@ -67,15 +67,34 @@ function ConnectionRow({
           disabled={
             !canManage ||
             pending ||
-            !(state.ok === true ? state.hasMore : connection.hasOlder)
+            !(state.ok === true && "fetched" in state
+              ? state.hasMore
+              : connection.hasOlder)
           }
           className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-40"
         >
           <Download aria-hidden className="h-4 w-4" />
           Charger les avis plus anciens
         </button>
+        <button
+          name="mode"
+          value="visibility"
+          disabled={!canManage || pending}
+          className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+        >
+          Vérifier les avis retirés
+        </button>
       </form>
-      {state.ok === true && (
+      {state.ok === true && "checked" in state && (
+        <p role="status" className="mt-3 text-xs leading-6 text-slate-600">
+          {state.checked} identifiants vérifiés auprès de QMAPS ·{" "}
+          {state.archived} avis retirés archivés dans TAKATAK.{" "}
+          {state.hasMore
+            ? "Relancez pour contrôler la prochaine tranche."
+            : "Fin de cette série de vérification."}
+        </p>
+      )}
+      {state.ok === true && "fetched" in state && (
         <p role="status" className="mt-3 text-xs leading-6 text-slate-600">
           {state.fetched} avis lus · {state.created} ajoutés · {state.updated}{" "}
           actualisés · {state.skipped} versions anciennes ignorées.{" "}
@@ -109,9 +128,10 @@ export function QmapsReviewConnection({
       <CardBody className="space-y-4">
         <p className="text-xs leading-6 text-slate-500">
           Une lecture récupère jusqu’à 25 avis visibles de l’entreprise
-          autorisée. Les événements signés restent utilisés pour les mises à
-          jour et suppressions. L’accès aux avis et la publication sont
-          contrôlés sur les deux plateformes.
+          autorisée. La vérification des retraits contrôle jusqu’à 100 avis déjà
+          suivis par appel; une absence dans une page ne suffit jamais à retirer
+          un avis. L’accès aux avis et la publication sont contrôlés sur les
+          deux plateformes.
         </p>
         {connections.map((connection) => (
           <ConnectionRow

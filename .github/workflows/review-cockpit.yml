@@ -15,6 +15,7 @@ on:
       - "scripts/review-cockpit-tests.ts"
       - "scripts/review-qmaps-api-tests.ts"
       - "scripts/review-qmaps-contract-tests.ts"
+      - "scripts/review-qmaps-visibility-tests.ts"
       - "scripts/review-agent-tools-tests.ts"
       - "src/app/(website)/reviews/**"
       - "next.config.ts"
@@ -50,11 +51,12 @@ jobs:
       - run: npm run db:generate
       - run: npm run qa:review-cockpit
       - run: npm run qa:review-qmaps-api
+      - run: npm run qa:review-qmaps-visibility
       - name: Fetch exact QMAPS counterpart contract
         shell: bash
         run: |
           git init "$RUNNER_TEMP/revew-qmaps-contract"
-          git -C "$RUNNER_TEMP/revew-qmaps-contract" fetch --depth=1 https://github.com/takatakca/qmaps.git 6cc23f238556e38bf5ca2e29900dfac764d2e581
+          git -C "$RUNNER_TEMP/revew-qmaps-contract" fetch --depth=1 https://github.com/takatakca/qmaps.git 9a7403336a6e6aa4244c126630fe0460668ade8d
           git -C "$RUNNER_TEMP/revew-qmaps-contract" checkout --detach FETCH_HEAD
       - run: npm run qa:review-qmaps-contract
         env:

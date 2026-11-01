@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
-import { fetchQmapsReviewPage } from "../src/lib/qmaps/reviews-api";
+import {
+  fetchQmapsReviewPage,
+  fetchQmapsReviewVisibility,
+} from "../src/lib/qmaps/reviews-api";
 import { postQmaps } from "../src/lib/qmaps/remote";
 
 async function main() {
@@ -10,7 +13,11 @@ async function main() {
     throw new Error(
       "Set REVEW_QMAPS_CHECKOUT to the pinned QMAPS checkout; this contract test must not silently skip.",
     );
-  const { createReviewFeedHandler, createReviewReplyHandler } = await import(
+  const {
+    createReviewFeedHandler,
+    createReviewReplyHandler,
+    createReviewVisibilityHandler,
+  } = await import(
     pathToFileURL(
       join(checkout, "supabase/functions/_shared/takatak-reviews.ts"),
     ).href
@@ -42,9 +49,16 @@ async function main() {
     ownerReply: null as string | null,
     ownerRepliedAt: null as string | null,
   }));
+  const removedIds = new Set<string>();
   let writes = 0,
     calls = 0;
   const store = {
+    visibleReviewIds: async (business: string, ids: string[]) => {
+      assert.equal(business, businessId);
+      return ids.filter(
+        (id) => reviews.some((row) => row.id === id) && !removedIds.has(id),
+      );
+    },
     linkedBusiness: async (client: string, business: string) =>
       client === clientId && business === businessId,
     reviews: async (
@@ -74,11 +88,14 @@ async function main() {
     store: () => store,
     now: () => new Date("2026-01-03T12:00:00Z"),
   };
+  const visibility = createReviewVisibilityHandler(deps);
   const read = createReviewFeedHandler(deps),
     reply = createReviewReplyHandler(deps);
   const transport: typeof fetch = async (input, init) => {
     calls++;
     const request = new Request(String(input), init);
+    if (request.url.endsWith("/takatak-review-visibility"))
+      return visibility(request);
     if (request.url.endsWith("/takatak-list-reviews")) return read(request);
     if (request.url.endsWith("/takatak-reply-review-v2")) return reply(request);
     throw new Error("Unexpected old or external endpoint");
@@ -174,6 +191,31 @@ async function main() {
     console.log(
       "PASS actual subsequent API read returns the source reply; round trip complete",
     );
+    removedIds.add(reviews[0].id);
+    const checked = await fetchQmapsReviewVisibility(
+      clientId,
+      businessId,
+      [reviews[0].id, reviews[1].id],
+      transport,
+    );
+    assert.deepEqual(checked, {
+      ok: true,
+      unavailableReviewIds: [reviews[0].id],
+    });
+    assert.equal(writes, 1);
+    console.log(
+      "PASS actual QMAPS visibility handler proves withdrawn IDs without returning private content",
+    );
+    const foreignCheck = await fetchQmapsReviewVisibility(
+      otherId,
+      businessId,
+      [reviews[0].id],
+      transport,
+    );
+    assert.equal(foreignCheck.ok, false);
+    console.log(
+      "PASS cross-workspace visibility lookup is refused by actual source handler",
+    );
     process.env.QMAPS_INTEGRATION_SECRET =
       "synthetic-wrong-key-long-enough-for-protocol";
     const unauth = await fetchQmapsReviewPage(
@@ -188,7 +230,7 @@ async function main() {
       "PASS actual QMAPS authentication rejects a different integration secret",
     );
     console.log(
-      `Cross-repository QMAPS contract: 5 workflows passed, ${calls} in-process calls, synthetic storage only. No live network/database/public review operation.`,
+      `Cross-repository QMAPS contract: 7 workflows passed, ${calls} in-process calls, synthetic storage only. No live network/database/public review operation.`,
     );
   } finally {
     if (previousBase === undefined) delete process.env.QMAPS_FUNCTIONS_BASE_URL;

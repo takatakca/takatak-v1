@@ -158,6 +158,7 @@
     "qa:review-import-model": "tsx scripts/review-import-tests.ts",
     "qa:review-import-service": "tsx --require ./scripts/register-server-only.cjs scripts/review-import-service-tests.ts",
     "qa:review-qmaps-contract": "tsx --require ./scripts/register-server-only.cjs scripts/review-qmaps-contract-tests.ts",
+    "qa:review-qmaps-visibility": "tsx --require ./scripts/register-server-only.cjs scripts/review-qmaps-visibility-tests.ts",
     "qa:review-qmaps-api": "tsx --require ./scripts/register-server-only.cjs scripts/review-qmaps-api-tests.ts",
     "qa:review-agent-tools": "tsx --require ./scripts/register-server-only.cjs scripts/review-agent-tools-tests.ts",
     "qa:review-cockpit": "tsx --require ./scripts/register-server-only.cjs scripts/review-cockpit-tests.ts"

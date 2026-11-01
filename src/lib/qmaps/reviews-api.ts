@@ -226,3 +226,84 @@ export async function fetchQmapsReviewPage(
     return { ok: false, reason: "unreachable" };
   }
 }
+
+export async function fetchQmapsReviewVisibility(
+  clientId: string,
+  businessId: string,
+  reviewIds: string[],
+  fetchImpl: typeof fetch = fetch,
+): Promise<
+  | { ok: true; unavailableReviewIds: string[] }
+  | { ok: false; reason: QmapsReadFailure }
+> {
+  if (
+    ![clientId, businessId].every((id) => QMAPS_BUSINESS_ID.test(id)) ||
+    !reviewIds.length ||
+    reviewIds.length > 100 ||
+    reviewIds.some((id) => !QMAPS_BUSINESS_ID.test(id)) ||
+    new Set(reviewIds).size !== reviewIds.length
+  )
+    return { ok: false, reason: "refused" };
+  const base = process.env.QMAPS_FUNCTIONS_BASE_URL?.replace(/\/$/, "");
+  const secret = process.env.QMAPS_INTEGRATION_SECRET;
+  if (!base || !secret || secret.length < 32)
+    return { ok: false, reason: "not_configured" };
+  try {
+    const url = new URL(base);
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      url.search ||
+      url.hash
+    )
+      return { ok: false, reason: "not_configured" };
+  } catch {
+    return { ok: false, reason: "not_configured" };
+  }
+  try {
+    const response = await fetchImpl(`${base}/takatak-review-visibility`, {
+      method: "POST",
+      redirect: "error",
+      cache: "no-store",
+      headers: {
+        "content-type": "application/json",
+        "x-qmaps-integration-secret": secret,
+      },
+      body: JSON.stringify({ version: 1, clientId, businessId, reviewIds }),
+      signal: AbortSignal.timeout(15000),
+    });
+    if (response.status !== 200) return { ok: false, reason: "refused" };
+    try {
+      const data = object(await readQmapsJSON(response, 64000));
+      if (
+        data.ok !== true ||
+        data.version !== 1 ||
+        data.clientId !== clientId ||
+        data.businessId !== businessId ||
+        !Array.isArray(data.reviews) ||
+        data.reviews.length !== reviewIds.length
+      )
+        return { ok: false, reason: "invalid_response" };
+      const seen = new Set<string>(),
+        unavailable: string[] = [];
+      for (const item of data.reviews) {
+        const row = object(item);
+        if (
+          typeof row.id !== "string" ||
+          !reviewIds.includes(row.id) ||
+          seen.has(row.id) ||
+          typeof row.visible !== "boolean"
+        )
+          return { ok: false, reason: "invalid_response" };
+        seen.add(row.id);
+        if (!row.visible) unavailable.push(row.id);
+      }
+      return { ok: true, unavailableReviewIds: unavailable };
+    } catch {
+      return { ok: false, reason: "invalid_response" };
+    }
+  } catch {
+    return { ok: false, reason: "unreachable" };
+  }
+}

@@ -15,7 +15,7 @@ Plateformes à comparer: Birdeye, Podium, Reputation, Yext, ReviewTrackers, Gath
 | Source / système | Preuve ou état | Fonction à intégrer |
 | --- | --- | --- |
 | Google Business Profile | Service OAuth TAKATAK existant | Lire et répondre dans les droits du compte autorisé |
-| QMAPS | Code développé dans les deux dépôts, en validation | Lecture entreprise/espace paginée, événements signés, réponse v2 confirmée |
+| QMAPS | Code développé dans les deux dépôts, en validation | Lecture entreprise/espace paginée, contrôle explicite de visibilité, réponse v2 confirmée; récepteur signé V1 présent, pas de producteur QMAPS constaté |
 | Facebook | [SDK officiel Page ratings](https://github.com/facebook/facebook-python-business-sdk/blob/efd8423a2e595ea8d4c04eb824ce113f2f1d68cd/facebook_business/adobjects/page.py) | GET Page ratings → recommandations; permissions Page requises; publication de réponse non établie ici |
 | Instagram / réseaux sociaux | [SDK commentaires](https://github.com/facebook/facebook-python-business-sdk/blob/efd8423a2e595ea8d4c04eb824ce113f2f1d68cd/facebook_business/adobjects/igmedia.py), [réponses](https://github.com/facebook/facebook-python-business-sdk/blob/efd8423a2e595ea8d4c04eb824ce113f2f1d68cd/facebook_business/adobjects/igcomment.py) | Commentaires/réponses via module Social autorisé; pas de faux avis étoilés |
 | Trustpilot | [SDK officiel](https://github.com/trustpilot/node-trustpilot/tree/0bb51093b3aa25e964260f28717451b2fd42b017) | Lecture OAuth /v1/private/business-units/{id}/reviews; droits produit à vérifier; aucune écriture de réponse prouvée par ce SDK |

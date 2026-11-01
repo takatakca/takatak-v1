@@ -1,5 +1,9 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import {
+  reconcileQmapsReviewVisibility,
+  type QmapsVisibilityResult,
+} from "@/lib/qmaps/review-visibility";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import {
@@ -13,7 +17,8 @@ import {
 export type QmapsPullState =
   | { ok: null }
   | { ok: false; error: string }
-  | Extract<QmapsPullResult, { ok: true }>;
+  | Extract<QmapsPullResult, { ok: true }>
+  | Extract<QmapsVisibilityResult, { ok: true }>;
 export async function syncQmapsReviewsAction(
   _previous: QmapsPullState,
   form: FormData,
@@ -31,14 +36,20 @@ export async function syncQmapsReviewsAction(
   if (!(await clientHasGrowthFeature(access.activeClientId, "reputation")))
     return { ok: false, error: FEATURE_UPSELL.reputation };
   const mode = form.get("mode");
-  if (mode !== "latest" && mode !== "older")
+  if (mode !== "latest" && mode !== "older" && mode !== "visibility")
     return { ok: false, error: "Choisissez une opération de synchronisation." };
   try {
-    const result = await syncQmapsReviews(
-      access.activeClientId,
-      String(form.get("listingId") || ""),
-      mode,
-    );
+    const result =
+      mode === "visibility"
+        ? await reconcileQmapsReviewVisibility(
+            access.activeClientId,
+            String(form.get("listingId") || ""),
+          )
+        : await syncQmapsReviews(
+            access.activeClientId,
+            String(form.get("listingId") || ""),
+            mode,
+          );
     if (!result.ok) {
       const errors: Record<string, string> = {
         not_configured: "L'accès API QMAPS n'est pas configuré sur le serveur.",
