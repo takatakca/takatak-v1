@@ -1163,3 +1163,8 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-ticket-in { animation: hp-ticket-in 0.55s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
 @keyframes hp-ticket-in { from { opacity: 0; transform: translateX(24px) scale(0.96); box-shadow: 0 0 0 2px rgb(41 195 255 / 0.8); } }
 @media (prefers-reduced-motion: reduce) { .hp-kiosk-roll, .hp-ticket-in { animation: none; } }
+
+/* Telecom scene (TelecomScene.tsx): light runs along the wires. */
+.hp-wire { stroke-dasharray: 2 2.5; animation: hp-wire 1.6s linear infinite; }
+@keyframes hp-wire { to { stroke-dashoffset: -9; } }
+@media (prefers-reduced-motion: reduce) { .hp-wire { animation: none; } }

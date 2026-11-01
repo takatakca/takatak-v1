@@ -6,7 +6,7 @@ import { NewsletterSignup } from "@/components/website/funnel/NewsletterSignup";
 import { HomeSectionNav } from "@/components/website/funnel/HomeSectionNav";
 import { KineticMarquee } from "@/components/website/funnel/KineticMarquee";
 import { LiveBand } from "@/components/website/funnel/LiveBand";
-import { MimtPlans } from "@/components/website/funnel/MimtPlans";
+import { PhoneChapter } from "@/components/website/funnel/PhoneChapter";
 import { OrderSheet } from "@/components/website/funnel/OrderSheet";
 import { PlanConfigurator } from "@/components/website/funnel/PlanConfigurator";
 import { PricingTabs } from "@/components/website/funnel/PricingTabs";
@@ -60,8 +60,8 @@ export default function HomePage() {
             <KineticMarquee />
             <PlanConfigurator />
             <TakbotSection />
+            <PhoneChapter />
             <SuiteBento />
-            <MimtPlans />
             <PricingTabs />
             <HomeFaq />
             <NewsletterSignup />

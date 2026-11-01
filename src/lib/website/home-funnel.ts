@@ -6,12 +6,13 @@
 import type { CategoryKey } from "./core-categories";
 import type { Bi } from "./service-pages";
 
-export type HomeSectionId = "services" | "plan" | "takbot" | "suite" | "pricing" | "faq";
+export type HomeSectionId = "services" | "plan" | "takbot" | "phone" | "suite" | "pricing" | "faq";
 
 export const HOME_SECTIONS: readonly { id: HomeSectionId; label: Bi }[] = [
   { id: "services", label: { en: "Services", fr: "Services" } },
   { id: "plan", label: { en: "Build my plan", fr: "Mon forfait" } },
   { id: "takbot", label: { en: "TAK bot AI", fr: "TAK bot IA" } },
+  { id: "phone", label: { en: "Phone", fr: "Téléphonie" } },
   { id: "suite", label: { en: "Product suite", fr: "Nos produits" } },
   { id: "pricing", label: { en: "Pricing", fr: "Tarifs" } },
   { id: "faq", label: { en: "FAQ", fr: "FAQ" } },
