@@ -4,12 +4,15 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 
+import { money } from "@/components/website/premium/ui";
 import { openLiveChat } from "@/lib/website/chat-provider";
+import { MIMT_PLAN_LIST } from "@/lib/website/mimt-plans";
 import { SUITE_GROUPS, homeCopy, homeV2, type SuiteProduct, type SuiteStatus } from "@/lib/website/home-funnel";
 import { externalLinkProps } from "@/lib/website/product-destinations";
 import { useLanguage } from "@/lib/website/use-language";
 import { sectionId } from "./HomeSectionNav";
 import { KioskScene } from "./KioskScene";
+import { FlexsScene, MimtTeaser, QmapsScene } from "./SuiteScenes";
 import { Eyebrow, Rise, Section, TwoTone } from "./primitives";
 
 const ALL = SUITE_GROUPS.flatMap((g) => g.products);
@@ -98,15 +101,6 @@ function Shot({ src, url, alt, className = "h-[220px]" }: { src: string; url: st
   );
 }
 
-/** A licensed photo where no product screen can be shown yet (never presented as a client). */
-function Photo({ src, alt, focus = "50% 50%", className = "h-[220px]" }: { src: string; alt: string; focus?: string; className?: string }) {
-  return (
-    <div className={`hp-materialize relative overflow-hidden rounded-2xl ${className}`}>
-      <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 640px, 100vw" className="object-cover transition-transform duration-[1.6s] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:scale-[1.05]" style={{ objectPosition: focus }} />
-    </div>
-  );
-}
-
 /** TAKATAK's own products as a bento grid, each with its real status. */
 export function SuiteBento() {
   const { lang } = useLanguage();
@@ -158,17 +152,17 @@ export function SuiteBento() {
           </Rise>
 
           <Rise delay={140} className="hp-build">
-            <Tile p={product("qmaps")} className="h-full" visual={<Photo src="/photos/commerce-cafe.webp" alt={lang === "fr" ? "Une boutique de quartier" : "A neighbourhood shop"} className="h-[180px]" />} />
+            <Tile p={product("qmaps")} className="h-full" visual={<QmapsScene />} />
           </Rise>
           <Rise delay={200} className="hp-build">
-            <Tile p={product("flexs")} className="h-full" visual={<Photo src="/photos/artisan-atelier.webp" alt={lang === "fr" ? "Un atelier d’artisan" : "A craft workshop"} className="h-[180px]" />} />
+            <Tile p={product("flexs")} className="h-full" visual={<FlexsScene />} />
           </Rise>
 
           <Rise delay={80} className="hp-build">
             <Tile
               p={product("mimt")}
               className="h-full"
-              visual={<Photo src="/photos/pro-bureau.webp" alt={lang === "fr" ? "Un bureau professionnel" : "A professional office"} className="h-[180px]" />}
+              visual={<MimtTeaser fromLabel={`${lang === "fr" ? "Dès" : "From"} ${money(lang, MIMT_PLAN_LIST.free.monthlyCents / 100)}`} />}
             />
           </Rise>
           <Rise delay={140} className="hp-build">

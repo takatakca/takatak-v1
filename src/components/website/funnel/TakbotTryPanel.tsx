@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUp, Check, Loader2, Lock, Sparkles } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, Loader2, Lock } from "lucide-react";
 
 import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 import { TAKBOT_MODES, MAX_PROMPT_CHARS, creditsFor } from "@/lib/takbot/catalog";
@@ -11,6 +11,7 @@ import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
+import { RobotMascot } from "./RobotMascot";
 
 type TryMode = "chat" | "write" | "research";
 const TRY_MODES: TryMode[] = ["chat", "write", "research"];
@@ -277,8 +278,8 @@ export function TakbotTryPanel({ onShowApp }: { onShowApp: () => void }) {
     <div ref={panel} className="hp-pop3d overflow-hidden rounded-[22px] bg-[#0B1220] shadow-[0_50px_120px_-40px_rgb(0_0_0/0.9)] ring-1 ring-white/10">
       {/* Status bar */}
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
-        <span className="relative grid h-8 w-8 place-items-center rounded-full bg-[#1E6BFF]/20 text-[#7FD8FF]">
-          <Sparkles size={15} aria-hidden />
+        <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[#1E6BFF]/20">
+          <RobotMascot size={34} wave={false} headOnly title="TAK" />
           {trialOpen && <span aria-hidden className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#0B1220]" />}
         </span>
         <div className="min-w-0 flex-1">

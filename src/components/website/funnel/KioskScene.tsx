@@ -91,9 +91,9 @@ export function KioskScene() {
     });
 
   return (
-    <div ref={ref} className="relative overflow-hidden rounded-2xl bg-[linear-gradient(160deg,#0A1630,#060D1F)] p-4 sm:p-5">
+    <div ref={ref} className="relative flex h-full items-center overflow-hidden rounded-2xl bg-[linear-gradient(160deg,#0A1630,#060D1F)] p-4 sm:p-6">
       <span className="absolute right-3 top-3 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{T.demo[lang]}</span>
-      <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-[170px_minmax(0,1fr)]">
+      <div className="grid w-full grid-cols-1 items-center gap-4 sm:grid-cols-[170px_minmax(0,1fr)] [&>*]:min-w-0">
         {/* The kiosk on its stand */}
         <div className="mx-auto flex w-[180px] flex-col items-center sm:w-auto">
           <div className="relative w-full overflow-hidden rounded-[18px] border-[5px] border-[#1B2436] bg-white shadow-[0_30px_60px_-20px_rgb(0_0_0/0.8)]">

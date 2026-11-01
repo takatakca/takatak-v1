@@ -17,13 +17,24 @@ export function StickyPlanDock() {
   const plan = useHomePlan();
   const [visible, setVisible] = useState(false);
 
+  const hasItems = plan.keys.length > 0;
   useEffect(() => {
     const onScroll = () => {
+      const vh = window.innerHeight;
       const start = document.getElementById(sectionId("services"));
+      const planEl = document.getElementById(sectionId("plan"));
       const footer = document.querySelector("footer");
-      const past = start ? window.scrollY > start.offsetTop - window.innerHeight * 0.4 : false;
-      const nearFooter = footer ? window.scrollY + window.innerHeight > footer.offsetTop + 80 : false;
-      setVisible(past && !nearFooter);
+      const past = start ? window.scrollY > start.offsetTop - vh * 0.4 : false;
+      const nearFooter = footer ? window.scrollY + vh > footer.offsetTop + 80 : false;
+      // Quiet while a section already shows the plan or sells something else (the phone).
+      const onScreen = (id: string) => {
+        const r = document.getElementById(id)?.getBoundingClientRect();
+        return Boolean(r && r.top < vh * 0.6 && r.bottom > vh * 0.4);
+      };
+      const busy = onScreen(sectionId("plan")) || onScreen(sectionId("phone"));
+      // An empty plan is only offered once the visitor has scrolled past the plan builder.
+      const pastPlan = planEl ? planEl.getBoundingClientRect().bottom < vh * 0.4 : true;
+      setVisible(past && !nearFooter && !busy && (hasItems || pastPlan));
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -32,7 +43,7 @@ export function StickyPlanDock() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, []);
+  }, [hasItems]);
 
   const count = plan.keys.length;
   const t = plan.totals;

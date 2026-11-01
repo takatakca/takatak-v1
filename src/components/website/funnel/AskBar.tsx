@@ -19,6 +19,7 @@ import { submitWebsiteRequest } from "@/lib/website/website-requests";
 import { CampaignCountdown, useActiveCampaign } from "./Campaign";
 import { sectionId } from "./HomeSectionNav";
 import { CONCIERGE_OPEN_EVENT } from "./OfferRail";
+import { RobotMascot } from "./RobotMascot";
 import { prefillTakbot } from "./TakbotTryPanel";
 
 type Lang = "en" | "fr";
@@ -489,7 +490,11 @@ export function AskBar() {
 
   return (
     <section aria-labelledby="home-ask-title" className="hp-bg pb-6 pt-14 sm:pt-20">
-      <div className="mx-auto max-w-4xl px-4">
+      <div className="relative mx-auto max-w-4xl px-4">
+        {/* TAK, the TAKATAK robot, welcomes the visitor right under the hero */}
+        <div aria-hidden className="pointer-events-none absolute -left-24 -top-6 hidden xl:block">
+          <RobotMascot size={110} title="TAK" />
+        </div>
         <h2 id="home-ask-title" className="hp-display hp-ink text-balance text-center text-[30px] sm:text-[44px]">
           {C.title[lang]}
         </h2>
