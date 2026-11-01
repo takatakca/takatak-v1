@@ -101,7 +101,10 @@ export function AiTeam() {
     <Section id={sectionId("team")} labelledBy="home-team-title" className="hp-bg hp-live py-16 sm:py-24">
       <div ref={ref} className="mx-auto max-w-7xl px-4">
         <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
-          <Rise className="max-w-3xl">
+          <Rise className="relative max-w-3xl">
+            <div aria-hidden className="pointer-events-none absolute -top-4 right-0 lg:hidden">
+              <RobotMascot size={72} title="TAK" />
+            </div>
             <Eyebrow>{T.eyebrow[lang]}</Eyebrow>
             <TwoTone id="home-team-title" lead={T.lead[lang]} rest={T.rest[lang]} size="md" />
             <p className="hp-ink-2 mt-5 max-w-2xl text-[17px] leading-8">{T.body[lang]}</p>
