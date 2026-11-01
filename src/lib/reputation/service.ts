@@ -4,7 +4,7 @@ import "server-only";
 // Every dashboard read/write takes the caller's activeClientId and scopes by it.
 // Public functions resolve the tenant from the profile slug only.
 
-import { Prisma } from "@prisma/client";
+import { Prisma, type ReviewChannel, type ReviewRequestStatus } from "@prisma/client";
 
 import { triggerLowRatingResponder } from "@/lib/ai-agents/service";
 import { getPrisma } from "@/lib/db/prisma";
@@ -32,8 +32,8 @@ export interface ReputationSnapshot {
   requestHistory: Array<{
     id: string;
     profileName: string;
-    channel: "link" | "sms" | "whatsapp" | "email";
-    status: "created" | "opened" | "rated";
+    channel: ReviewChannel;
+    status: ReviewRequestStatus;
     deliveryStatus: string | null;
     recipientMasked: string | null;
     createdAt: Date;

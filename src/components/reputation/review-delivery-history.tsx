@@ -4,6 +4,7 @@ import type { ReputationSnapshot } from "@/lib/reputation/service";
 
 const CHANNELS = {
   link: "Shared link",
+  qr: "QR code",
   sms: "SMS",
   whatsapp: "WhatsApp",
   email: "Email",
