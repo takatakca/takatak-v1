@@ -1008,3 +1008,8 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
     @keyframes hp-enter3d { from { opacity: 0; transform: perspective(1200px) rotateX(16deg) translate3d(0, 70px, 0) scale(0.96); } to { opacity: 1; transform: none; } }
   }
 }
+
+/* Real screenshots scroll slowly on hover to show more of the page. */
+.hp-shot { transition: object-position 4.5s cubic-bezier(0.45, 0, 0.2, 1); }
+.group:hover .hp-shot { object-position: 50% 100%; }
+@media (prefers-reduced-motion: reduce) { .hp-shot { transition: none; } }
