@@ -5,6 +5,7 @@ import { FICHE_ORDER, answer, emptyFiche, fichePayload, question } from "../src/
 import { resolveIntent } from "../src/lib/website/service-intent";
 import { MARKETPLACE_PACKAGES } from "../src/lib/website/marketplace-packages";
 import { PACKAGE_TITLE_FR, formatCad, startingPrice } from "../src/lib/website/marketplace-i18n";
+import { SEO_FREE_TOOLS } from "../src/lib/seo/free-tools-catalog";
 
 assert.equal(normalize("Hébergement Ça!").trim(), "hebergement ca");
 assert.deepEqual(understand("J'ai besoin d'un site web et d'un nom de domaine").services, ["website", "domains"]);
@@ -78,5 +79,8 @@ for (const p of MARKETPLACE_PACKAGES) assert.ok(PACKAGE_TITLE_FR[p.id], `French 
 assert.equal(formatCad(24900, "fr"), "249\u00a0$");
 assert.equal(formatCad(124900, "en"), "$1,249");
 assert.ok(startingPrice({ tiers: [{ priceCents: 50000 }, { priceCents: 24900 }] } as never, "fr").startsWith("dès 249"));
+
+// The homepage and /seo say "15 free tools work today": keep the copy true.
+assert.equal(SEO_FREE_TOOLS.filter((t) => t.mode !== "provider").length, 15, "update the '15 outils gratuits' copy (SuiteBento, SeoProductPage)");
 
 console.log("concierge tests: OK");

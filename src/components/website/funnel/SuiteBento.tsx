@@ -196,11 +196,37 @@ export function SuiteBento() {
             </Tile>
           </Rise>
           <Rise className="hp-build md:col-span-2 lg:col-span-4">
-            <Tile
-              p={product("seo")}
-              className="h-full"
-              visual={<Shot src="/media/product/shot-seo.webp" url="takatak.ca/dashboard/seo" alt={lang === "fr" ? "L’audit SEO du tableau de bord TAKATAK" : "The SEO audit in the TAKATAK dashboard"} className="h-[260px]" />}
-            />
+            <Tile p={product("seo")} className="h-full">
+              <div className="relative z-[2] mt-5 grid items-start gap-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div>
+                  <ul className="grid gap-2.5 text-[14.5px] leading-6 hp-ink-2">
+                    {(lang === "fr"
+                      ? [
+                          "Audit de site et Core Web Vitals, en ligne aujourd’hui",
+                          "15 outils gratuits : robots.txt, sitemap, schéma, llms.txt, aperçu Google…",
+                          "Vos vraies requêtes Search Console, classées avec leur raison",
+                          "Préparation aux réponses d’IA (GEO), aucun lien acheté",
+                        ]
+                      : [
+                          "Site audit and Core Web Vitals, live today",
+                          "15 free tools: robots.txt, sitemap, schema, llms.txt, Google preview…",
+                          "Your real Search Console queries, ranked with their reason",
+                          "Ready for AI answers (GEO), no bought links",
+                        ]
+                    ).map((l) => (
+                      <li key={l} className="flex gap-2.5">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--hp-info)]" aria-hidden />
+                        {l}
+                      </li>
+                    ))}
+                  </ul>
+                  <a href="/seo" className="mt-5 inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-[13.5px] font-semibold hp-cta">
+                    {lang === "fr" ? "Tout sur SEO TAKATAK" : "All about SEO TAKATAK"} <ArrowUpRight size={15} aria-hidden />
+                  </a>
+                </div>
+                <Shot src="/media/product/shot-seo.webp" url="takatak.ca/dashboard/seo" alt={lang === "fr" ? "L’audit SEO du tableau de bord TAKATAK" : "The SEO audit in the TAKATAK dashboard"} className="h-[260px]" />
+              </div>
+            </Tile>
           </Rise>
         </div>
       </div>

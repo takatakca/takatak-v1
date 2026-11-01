@@ -17,6 +17,7 @@ import {
   Megaphone,
   PhoneIncoming,
   ReceiptText,
+  Search,
   Send,
   Server,
   Sparkles,
@@ -29,7 +30,7 @@ import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 
 type Lang = "fr" | "en";
 
-export type Scene = "website" | "domain" | "hosting" | "ads" | "social" | "reviews" | "local" | "leads" | "ai" | "billing" | "phone";
+export type Scene = "website" | "domain" | "hosting" | "ads" | "social" | "reviews" | "local" | "leads" | "ai" | "billing" | "phone" | "seo";
 
 /** Steps of a scene: 0 idle, 1 working, 2 built, 3 success. */
 export type Step = 0 | 1 | 2 | 3;
@@ -241,6 +242,56 @@ export function LiveScreen({ scene, step, business, lang }: { scene: Scene; step
           ))}
         </ul>
         <Toast show={step === 3}>{fr ? "Demandes ajoutées à votre CRM" : "Requests added to your CRM"}</Toast>
+      </div>
+    );
+  }
+  if (scene === "seo") {
+    const checks = fr
+      ? ["Titre et méta-description", "robots.txt et sitemap", "Vitesse mobile", "Données structurées"]
+      : ["Title and meta description", "robots.txt and sitemap", "Mobile speed", "Structured data"];
+    const score = step >= 3 ? 92 : step >= 2 ? 78 : step >= 1 ? 41 : 0;
+    return (
+      <div className="absolute inset-0 grid grid-cols-[auto_1fr] items-center gap-4 bg-white p-4 sm:gap-6 sm:p-6">
+        <div className="relative grid h-24 w-24 place-items-center sm:h-32 sm:w-32">
+          <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90" aria-hidden>
+            <circle cx="18" cy="18" r="15.5" fill="none" stroke="#E2E8F0" strokeWidth="3" />
+            <circle
+              cx="18"
+              cy="18"
+              r="15.5"
+              fill="none"
+              stroke={step >= 3 ? "#10B981" : "#1F8BFF"}
+              strokeWidth="3"
+              strokeLinecap="round"
+              pathLength={100}
+              strokeDasharray={`${score} 100`}
+              style={{ transition: "stroke-dasharray 0.9s ease, stroke 0.4s" }}
+            />
+          </svg>
+          <span className="text-center">
+            <span className="block text-[22px] font-extrabold text-slate-900 sm:text-[30px]">{score}</span>
+            <span className="block text-[9px] font-semibold uppercase tracking-wide text-slate-500 sm:text-[10px]">{fr ? "Score" : "Score"}</span>
+          </span>
+        </div>
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 text-[12px] font-bold text-slate-900 sm:text-[14px]">
+            <Search size={14} className="text-[#1F8BFF]" aria-hidden /> {fr ? "Audit · votresite.ca" : "Audit · yoursite.ca"}
+          </p>
+          <ul className="mt-2 grid gap-1.5">
+            {checks.map((c, i) => {
+              const ok = step >= 2 || (step >= 1 && i < 2);
+              return (
+                <li key={c} className={`flex items-center gap-2 text-[11.5px] text-slate-700 transition-opacity duration-500 sm:text-[13px] ${step >= 1 ? "opacity-100" : "opacity-0"}`} style={{ transitionDelay: `${i * 120}ms` }}>
+                  <span className={`grid h-4 w-4 shrink-0 place-items-center rounded-full ${ok ? "bg-emerald-500 text-white" : "bg-amber-100 text-amber-600"}`}>
+                    {ok ? <Check size={10} strokeWidth={3.5} aria-hidden /> : <span className="text-[9px] font-bold">!</span>}
+                  </span>
+                  <span className="truncate">{c}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <Toast show={step === 3}>{fr ? "Plan d’action prêt" : "Action plan ready"}</Toast>
       </div>
     );
   }
