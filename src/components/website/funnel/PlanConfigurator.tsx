@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowDown, ArrowRight, Check, Headset } from "lucide-react";
 
 import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
+import { ANNUAL_PREPAY_PERCENT, annualPrepayQuote } from "@/lib/promotions/catalog";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { CORE_CATEGORIES, type CoreCategory } from "@/lib/website/core-categories";
 import { BUSINESS_TYPES, GOALS, fill, homeCopy, homeV2 } from "@/lib/website/home-funnel";
@@ -189,6 +190,24 @@ export function PlanConfigurator() {
                   </div>
                 )}
               </dl>
+              {totals.monthly > 0 &&
+                (() => {
+                  const a = annualPrepayQuote(Math.round(totals.monthly * 100));
+                  return (
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[color-mix(in_oklab,var(--hp-info)_10%,transparent)] px-4 py-3 ring-1 ring-[color-mix(in_oklab,var(--hp-info)_30%,transparent)]">
+                      <span className="text-[13.5px] leading-5 hp-ink-2">
+                        <span className="block font-semibold hp-ink">
+                          {lang === "fr" ? `Payé à l’année : -${ANNUAL_PREPAY_PERCENT} %` : `Paid yearly: -${ANNUAL_PREPAY_PERCENT}%`}
+                        </span>
+                        {lang === "fr" ? `Vous économisez ${fmt(a.discountCents / 100)} sur 12 mois.` : `You save ${fmt(a.discountCents / 100)} over 12 months.`}
+                      </span>
+                      <span className="hp-display shrink-0 text-[22px]">
+                        {fmt(a.totalCents / 100)}
+                        <span className="text-[13px] font-medium hp-ink-3">{lang === "fr" ? " /an" : " /yr"}</span>
+                      </span>
+                    </div>
+                  );
+                })()}
 
               {plan.keys.length > 0 && (
                 <div className="mt-5">

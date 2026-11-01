@@ -3,7 +3,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { isPromoLive, listActiveCampaigns, lookupPromo, quotePromo } from "../src/lib/promotions/catalog";
+import { ANNUAL_PREPAY_PERCENT, annualPrepayQuote, isPromoLive, listActiveCampaigns, lookupPromo, quotePromo } from "../src/lib/promotions/catalog";
+import { easter, montreal, seasonalCampaigns } from "../src/lib/promotions/seasons";
 import {
   claimPromo,
   createMemoryPromoStore,
@@ -30,6 +31,41 @@ async function main() {
     assert.ok(lookupPromo("FIRST10"));
     assert.ok(listActiveCampaigns().every((c) => c.code !== "FIRST10"));
   });
+  await check("seasonal campaigns follow the retail calendar, at 5, 7 or 10 percent", () => {
+    const y2026 = seasonalCampaigns(2026);
+    const by = (k: string) => y2026.find((c) => c.key === k)!;
+    assert.equal(y2026.length, 14);
+    assert.ok(y2026.every((c) => [5, 7, 10].includes(c.percentOff)));
+    assert.ok(y2026.every((c) => Date.parse(c.startsAt) < Date.parse(c.endsAt)));
+    // Black Friday 2026 is Friday, November 27 (US Thanksgiving is the 26th).
+    assert.equal(by("black-friday").endsAt, "2026-11-27T23:59:59-05:00");
+    assert.equal(by("cyber-monday").endsAt, "2026-11-30T23:59:59-05:00");
+    // Canadian Thanksgiving: second Monday of October. Mother's Day: second Sunday of May.
+    assert.equal(by("thanksgiving").endsAt, "2026-10-12T23:59:59-04:00");
+    assert.equal(by("mothers-day").endsAt, "2026-05-10T23:59:59-04:00");
+    assert.deepEqual(easter(2026), { month: 4, day: 5 });
+    assert.deepEqual(easter(2027), { month: 3, day: 28 });
+    // Montréal offset follows daylight time.
+    assert.ok(montreal(2026, 7, 1).endsWith("-04:00"));
+    assert.ok(montreal(2026, 12, 1).endsWith("-05:00"));
+    // A code exists only inside its window, so countdowns are always true.
+    assert.equal(lookupPromo("BF2026", new Date("2026-11-01T12:00:00-04:00")), null);
+    assert.equal(lookupPromo("BF2026", new Date("2026-11-25T12:00:00-05:00"))?.percentOff, 10);
+    assert.equal(lookupPromo("BF2026", new Date("2026-11-28T00:00:01-05:00")), null);
+    assert.deepEqual(listActiveCampaigns(new Date("2026-11-25T12:00:00-05:00")).map((c) => c.code), ["BF2026"]);
+    // The next year's calendar is ready without anyone adding it.
+    assert.equal(lookupPromo("BOXING2027", new Date("2027-12-27T12:00:00-05:00"))?.percentOff, 10);
+  });
+
+  await check("paying a monthly service a year in advance is always 15 percent off", () => {
+    assert.equal(ANNUAL_PREPAY_PERCENT, 15);
+    const q = annualPrepayQuote(4_999);
+    assert.equal(q.fullCents, 59_988);
+    assert.equal(q.discountCents, Math.round(59_988 * 0.15));
+    assert.equal(q.totalCents, 59_988 - q.discountCents);
+    assert.equal(annualPrepayQuote(-5).totalCents, 0);
+  });
+
   await check("FIRST10 is 10 percent, unknown codes are not a discount", () => {
     const quoted = quotePromo(10_000, "FIRST10");
     assert.equal(quoted.discountCents, Math.round(10_000 * 0.1));
