@@ -21,3 +21,15 @@ After: 15 cockpit checks, changed-component ESLint and whitespace validation pas
 Notes: GitHub note travels with this branch; matching Drive-ready copy is local only, NOT UPLOADED. No Gmail, Google Drive or scheduling connector exists in this session. QMAPS and FLEXS API handoffs remain on their previously pushed review-api-handoff branches.
 
 — REVEW
+
+## REVEW — Reply accessibility and CI verification
+
+Verified prior source commit 5270c60 succeeded in full focused CI: https://github.com/takatakca/takatak-v1/actions/runs/41199783323 (3m33s). This proves the prior source, not the subsequent accessibility patch.
+
+Added a programmatically associated visible label and required input to Google's public reply form, publishing busy state and announced success. QMAPS now exposes submission busy state and announces source acknowledgement. Both prevent editing the comment while submitting. Review response toggles expose expanded state and identify their open response region; loaded filter counts are announced.
+
+Validation: changed-component ESLint, 15 cockpit checks and whitespace checks passed. After restarting the stopped local dev process, axe WCAG2A/AA/2.1AA scan returned zero violations within the visible review cockpit in foundation mode. This does not exercise authenticated Google/QMAPS forms or prove complete WCAG conformance. Existing tenant validation and provider acknowledgement remain server-owned. No live reply was sent. New source CI is pending on push. Not deployed.
+
+Signed GitHub note saved with source; matching Google Drive-ready note saved locally, NOT UPLOADED because no Drive connector is available. No email or recurring task executed.
+
+— REVEW

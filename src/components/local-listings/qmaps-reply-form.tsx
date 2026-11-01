@@ -20,7 +20,7 @@ export function QmapsReplyForm({
     initialState,
   );
   return (
-    <form action={formAction} className="grid gap-3">
+    <form action={formAction} aria-busy={pending} className="grid gap-3">
       <label className="space-y-1 text-xs font-medium text-slate-700">
         Identifiant de l&apos;avis QMAPS
         <input
@@ -46,6 +46,7 @@ export function QmapsReplyForm({
       <label className="space-y-1 text-xs font-medium text-slate-700">
         Réponse
         <textarea
+          disabled={pending}
           name="comment"
           required
           maxLength={2000}
@@ -63,6 +64,7 @@ export function QmapsReplyForm({
         </button>
         {state.ok === true ? (
           <p
+            role="status"
             className={
               state.sent ? "text-xs text-emerald-700" : "text-xs text-amber-700"
             }

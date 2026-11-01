@@ -233,7 +233,7 @@ export function ReviewCockpit({
                 <Download className="h-4 w-4" /> CSV window
               </a>
             </div>
-            <p className="mt-3 text-[11px] text-slate-600">
+            <p role="status" className="mt-3 text-[11px] text-slate-600">
               {filtered.length} loaded records · Star averages exclude
               recommendations, non-rated records and excluded reviews. Response
               rate counts only confirmed replies and reply-capable records.
@@ -299,6 +299,13 @@ export function ReviewCockpit({
                     r.source === "google" &&
                     r.origin === "external" && (
                       <button
+                        type="button"
+                        aria-expanded={expanded === r.key}
+                        aria-controls={
+                          expanded === r.key
+                            ? `review-response-${r.key}`
+                            : undefined
+                        }
                         onClick={() =>
                           setExpanded(expanded === r.key ? null : r.key)
                         }
@@ -311,6 +318,13 @@ export function ReviewCockpit({
                     )}
                   {canManage && r.source === "qmaps" && r.qmapsReviewId && (
                     <button
+                      type="button"
+                      aria-expanded={expanded === r.key}
+                      aria-controls={
+                        expanded === r.key
+                          ? `review-response-${r.key}`
+                          : undefined
+                      }
                       onClick={() =>
                         setExpanded(expanded === r.key ? null : r.key)
                       }
@@ -341,7 +355,10 @@ export function ReviewCockpit({
                   </span>
                 </div>
                 {expanded === r.key && canManage && (
-                  <div className="mt-4 border-t border-slate-100 pt-4">
+                  <div
+                    id={`review-response-${r.key}`}
+                    className="mt-4 border-t border-slate-100 pt-4"
+                  >
                     {r.source === "google" ? (
                       <GoogleReplyForm reviewId={r.id} draft={null} />
                     ) : r.source === "qmaps" && r.qmapsReviewId ? (
