@@ -2,6 +2,7 @@ import { TriangleAlert } from "lucide-react";
 import { Link } from "@/lib/website/nav";
 import { MasterPhoneRegistrationForm } from "@/components/auth/master-phone-registration-form";
 import { SignupPromoPanel } from "@/components/website/promotions/SignupPromoPanel";
+import { PlanCarryOver } from "@/components/website/funnel/PlanCarryOver";
 import { isSupabaseConfigured } from "@/lib/auth/env";
 
 export const metadata = {
@@ -25,6 +26,7 @@ export default function RegisterPage() {
           your email.
         </p>
         <div className="mt-6">
+          <PlanCarryOver />
           {configured ? (
             <MasterPhoneRegistrationForm />
           ) : (

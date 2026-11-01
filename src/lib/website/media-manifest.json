@@ -1,0 +1,13 @@
+{
+  "note": "Short muted loops in public/media/videos, written by scripts/media/make-clips.py (photo loops) or scripts/media/runway-generate.mjs (Runway). A key appears here only once its file exists, so the site never requests a missing video.",
+  "videos": {
+    "billing": "/media/videos/billing.mp4",
+    "domains": "/media/videos/domains.mp4",
+    "hosting": "/media/videos/hosting.mp4",
+    "local": "/media/videos/local.mp4",
+    "marketing": "/media/videos/marketing.mp4",
+    "reviews": "/media/videos/reviews.mp4",
+    "social": "/media/videos/social.mp4",
+    "website": "/media/videos/website.mp4"
+  }
+}

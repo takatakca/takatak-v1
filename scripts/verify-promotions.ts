@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-import { quotePromo } from "../src/lib/promotions/catalog";
+import { isPromoLive, listActiveCampaigns, lookupPromo, quotePromo } from "../src/lib/promotions/catalog";
 import {
   claimPromo,
   createMemoryPromoStore,
@@ -20,6 +20,16 @@ async function check(name: string, fn: () => void | Promise<void>) {
 }
 
 async function main() {
+  await check("time-limited campaigns stop existing after their end date", () => {
+    const campaign = { code: "FALL5", percentOff: 5, endsAt: "2026-11-15T23:59:59-05:00" };
+    assert.equal(isPromoLive(campaign, new Date("2026-11-15T23:00:00-05:00")), true);
+    assert.equal(isPromoLive(campaign, new Date("2026-11-16T00:00:00-05:00")), false);
+    assert.equal(isPromoLive({ code: "X", percentOff: 5, endsAt: "not a date" }), false);
+    assert.equal(isPromoLive({ code: "FIRST10", percentOff: 10 }), true);
+    // FIRST10 has no end date: never listed as a countdown campaign, always found.
+    assert.ok(lookupPromo("FIRST10"));
+    assert.ok(listActiveCampaigns().every((c) => c.code !== "FIRST10"));
+  });
   await check("FIRST10 is 10 percent, unknown codes are not a discount", () => {
     const quoted = quotePromo(10_000, "FIRST10");
     assert.equal(quoted.discountCents, Math.round(10_000 * 0.1));
