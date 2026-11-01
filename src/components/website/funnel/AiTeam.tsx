@@ -15,10 +15,11 @@ type Bi = Record<Lang, string>;
 type Status = "working" | "done" | "online" | "soon";
 
 const STATUS: Record<Status, { label: Bi; cls: string }> = {
-  working: { label: { fr: "Au travail", en: "Working" }, cls: "bg-[#1F8BFF]/12 text-[#1565D8]" },
-  done: { label: { fr: "Terminé", en: "Done" }, cls: "bg-emerald-500/12 text-emerald-700" },
-  online: { label: { fr: "En ligne", en: "Online" }, cls: "bg-emerald-500/12 text-emerald-700" },
-  soon: { label: { fr: "Bientôt", en: "Soon" }, cls: "bg-amber-400/15 text-amber-700" },
+  // Theme-aware status colours (--hp-info / --hp-ok / --hp-warn switch with light and dark).
+  working: { label: { fr: "Au travail", en: "Working" }, cls: "bg-[color-mix(in_srgb,var(--hp-info)_14%,transparent)] text-[var(--hp-info)]" },
+  done: { label: { fr: "Terminé", en: "Done" }, cls: "bg-[color-mix(in_srgb,var(--hp-ok)_14%,transparent)] text-[var(--hp-ok)]" },
+  online: { label: { fr: "En ligne", en: "Online" }, cls: "bg-[color-mix(in_srgb,var(--hp-ok)_14%,transparent)] text-[var(--hp-ok)]" },
+  soon: { label: { fr: "Bientôt", en: "Soon" }, cls: "bg-[color-mix(in_srgb,var(--hp-warn)_16%,transparent)] text-[var(--hp-warn)]" },
 };
 
 const AGENTS: { key: string; Icon: typeof Sparkles; name: Bi; task: Bi; status: Status }[] = [
@@ -206,7 +207,7 @@ export function AiTeam() {
                           <path d={icon.path} />
                         </svg>
                       ) : (
-                        <span className="font-mono text-[10px] font-bold">{e.name.slice(0, 2).toUpperCase()}</span>
+                        <span className="font-mono text-[10px] font-bold text-[#060D1F]">{e.name.slice(0, 2).toUpperCase()}</span>
                       )}
                     </span>
                     {e.name}
