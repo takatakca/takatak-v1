@@ -1,32 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowRight,
-  Check,
-  Globe2,
-  Lock,
-  MapPin,
-  Mic,
-  MicOff,
-  PhoneIncoming,
-  RotateCw,
-  Search,
-  Send,
-  Sparkles,
-  Star,
-  Users,
-} from "lucide-react";
+import { ArrowRight, Mic, MicOff, RotateCw, Search } from "lucide-react";
 
 import { GuidedAssistantPanel } from "@/components/website/home/GuidedAssistantPanel";
-import { BRAND_ICONS } from "@/lib/website/brand-icons";
 import { speechLocale } from "@/lib/website/i18n";
 import { resolveIntent, searchSuggestions, searchSuggestionsFr, trackEvent, type IntentMatch } from "@/lib/website/service-intent";
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
+import { LiveScreen, type Scene, type Step } from "./LiveScenes";
 
 type Lang = "fr" | "en";
-type Scene = "website" | "domain" | "social" | "reviews" | "local" | "leads" | "phone";
 
 type SpeechRecognitionLike = {
   lang: string;
@@ -85,236 +69,6 @@ const DEMO: { fr: string; en: string }[] = [
   { fr: "Plus d'avis Google pour mon salon", en: "More Google reviews for my salon" },
   { fr: "Être trouvé sur Google Maps", en: "Get found on Google Maps" },
 ];
-
-/** Steps of a scene: 0 idle, 1 working, 2 built, 3 success. */
-type Step = 0 | 1 | 2 | 3;
-
-function Toast({ show, children }: { show: boolean; children: React.ReactNode }) {
-  return (
-    <span
-      className={`absolute inset-x-4 bottom-4 flex items-center gap-2.5 rounded-2xl bg-emerald-500 px-4 py-3 text-[14px] font-semibold text-white shadow-[0_18px_40px_-14px_rgb(16_185_129/0.9)] transition-all duration-500 sm:inset-x-6 sm:bottom-5 sm:text-[15px] ${
-        show ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-      }`}
-    >
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/25">
-        <Check size={14} strokeWidth={3} aria-hidden />
-      </span>
-      {children}
-    </span>
-  );
-}
-
-function Brand({ slug, size = 18 }: { slug: string; size?: number }) {
-  const icon = BRAND_ICONS[slug];
-  if (!icon) return null;
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden fill={icon.hex}>
-      <path d={icon.path} />
-    </svg>
-  );
-}
-
-/** What the laptop screen shows for one scene. */
-function Screen({ scene, step, business, lang }: { scene: Scene; step: Step; business: string; lang: Lang }) {
-  const fr = lang === "fr";
-  const built = step >= 2;
-  if (scene === "website") {
-    return (
-      <div className="absolute inset-0 bg-white">
-        {/* skeleton while building */}
-        <div className={`absolute inset-0 grid place-items-center transition-opacity duration-500 ${built ? "opacity-0" : "opacity-100"}`}>
-          <div className="grid w-[70%] gap-2">
-            <span className="h-3 rounded bg-slate-100" />
-            <span className="h-3 w-2/3 rounded bg-slate-100" />
-            <span className={`mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100`}>
-              <span className="block h-full rounded-full bg-[#1F8BFF] transition-all duration-1000" style={{ width: step >= 1 ? "100%" : "8%" }} />
-            </span>
-            <span className="text-center text-[12px] font-semibold text-slate-500">{fr ? "Construction de votre site…" : "Building your site…"}</span>
-          </div>
-        </div>
-        {/* the site: poof */}
-        <div className={`absolute inset-0 p-3 transition-all duration-700 sm:p-4 ${built ? "scale-100 opacity-100 blur-0" : "scale-90 opacity-0 blur-sm"}`} style={{ transitionTimingFunction: "cubic-bezier(0.3,1.5,0.4,1)" }}>
-          <div className={built ? "tk-page-browse" : undefined}>
-          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 sm:text-[12px]">
-            <span>{business}</span>
-            <span className="hidden gap-3 text-slate-400 sm:flex">
-              <span>{fr ? "Menu" : "Menu"}</span>
-              <span>{fr ? "Réserver" : "Book"}</span>
-              <span>Contact</span>
-            </span>
-          </div>
-          <div className="mt-2 h-[52%] rounded-xl bg-[linear-gradient(135deg,#0B1B3D,#1F8BFF_60%,#29C3FF)] p-3 sm:p-4">
-            <p className="text-[16px] font-extrabold text-white sm:text-[22px]">{fr ? "Bienvenue chez vous" : "Welcome in"}</p>
-            <span className="mt-2 block h-2 w-1/2 rounded bg-white/50" />
-            <span className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-[10px] font-bold text-[#0B1B3D] sm:text-[11px]">{fr ? "Réserver →" : "Book →"}</span>
-          </div>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="h-10 rounded-lg bg-slate-100 sm:h-14" style={{ transition: "opacity 0.5s", transitionDelay: `${i * 120}ms`, opacity: built ? 1 : 0 }} />
-            ))}
-          </div>
-          {/* More of the page, reached by the slow scroll */}
-          <div className="mt-3 grid grid-cols-[1.2fr_1fr] gap-2">
-            <span className="h-16 rounded-lg bg-[linear-gradient(135deg,#F59E0B33,#F59E0B11)] sm:h-20" />
-            <div className="grid gap-1.5">
-              <span className="h-2 rounded bg-slate-200" />
-              <span className="h-2 w-4/5 rounded bg-slate-100" />
-              <span className="h-2 w-3/5 rounded bg-slate-100" />
-              <span className="mt-1 h-5 w-20 rounded-full bg-[#1F8BFF]/15" />
-            </div>
-          </div>
-          </div>
-        </div>
-        <Toast show={step === 3}>{fr ? "Succès, vous êtes en ligne" : "Success, you are live"}</Toast>
-      </div>
-    );
-  }
-  if (scene === "domain") {
-    const names = [
-      { n: fr ? "votremarque.ca" : "yourbrand.ca", ok: true },
-      { n: fr ? "votremarque.com" : "yourbrand.com", ok: true },
-      { n: fr ? "votremarque.quebec" : "yourbrand.shop", ok: true },
-    ];
-    return (
-      <div className="absolute inset-0 bg-white p-4 sm:p-5">
-        <p className="flex items-center gap-2 text-[13px] font-bold text-slate-900 sm:text-[15px]">
-          <Globe2 size={16} className="text-[#1F8BFF]" aria-hidden /> {fr ? "Domaines suggérés" : "Suggested domains"}
-        </p>
-        <ul className="mt-3 grid gap-2">
-          {names.map((d, i) => (
-            <li
-              key={d.n}
-              className={`flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-[12.5px] transition-all duration-500 sm:text-[14px] ${step >= 1 ? "translate-x-0 opacity-100" : "translate-x-3 opacity-0"} ${i === 0 && step >= 2 ? "border-[#1F8BFF] bg-[#1F8BFF]/5" : ""}`}
-              style={{ transitionDelay: `${i * 140}ms` }}
-            >
-              <span className="font-semibold text-slate-900">{d.n}</span>
-              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${i === 0 && step >= 2 ? "bg-[#1F8BFF] text-white" : "bg-slate-100 text-slate-600"}`}>
-                {i === 0 && step >= 2 ? (fr ? "Choisi" : "Picked") : fr ? "Vérifier" : "Check"}
-              </span>
-            </li>
-          ))}
-        </ul>
-        <div className={`mt-3 flex items-center gap-2 text-[12px] font-semibold text-slate-600 transition-opacity duration-500 ${step >= 2 ? "opacity-100" : "opacity-0"}`}>
-          <Lock size={13} className="text-emerald-600" aria-hidden /> {fr ? "SSL et hébergement inclus dans le forfait" : "SSL and hosting in the plan"}
-        </div>
-        <Toast show={step === 3}>{fr ? "Domaine connecté à votre site" : "Domain connected to your site"}</Toast>
-      </div>
-    );
-  }
-  if (scene === "social") {
-    const nets = ["facebook", "instagram", "tiktok"];
-    return (
-      <div className="absolute inset-0 bg-[#0E1729] p-4 sm:p-5">
-        <div className="flex gap-2">
-          {nets.map((n, i) => (
-            <span
-              key={n}
-              className={`relative grid h-10 w-10 place-items-center rounded-xl bg-white transition-all duration-500 ${step >= 1 ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}
-              style={{ transitionDelay: `${i * 140}ms`, transitionTimingFunction: "cubic-bezier(0.3,1.6,0.4,1)" }}
-            >
-              <Brand slug={n} />
-              {step >= 3 && (
-                <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-white">
-                  <Check size={10} strokeWidth={3.5} aria-hidden />
-                </span>
-              )}
-            </span>
-          ))}
-        </div>
-        <div className={`mt-3 flex gap-3 rounded-2xl bg-white/[0.06] p-3 ring-1 ring-white/10 transition-all duration-500 ${step >= 2 ? "opacity-100" : "opacity-0"}`}>
-          <span className="h-16 w-16 shrink-0 rounded-xl bg-[linear-gradient(135deg,#F59E0B,#B45309)] sm:h-20 sm:w-20" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-[13px] font-semibold text-white">{business} · {fr ? "nouveau menu" : "new menu"}</p>
-            <span className="mt-2 block h-1.5 rounded bg-white/15" />
-            <span className="mt-1.5 block h-1.5 w-2/3 rounded bg-white/15" />
-            <span className="mt-2.5 inline-flex items-center gap-1 rounded-full bg-[#1F8BFF] px-3 py-1 text-[11px] font-semibold text-white">
-              <Send size={11} aria-hidden /> {fr ? "Publier partout" : "Post everywhere"}
-            </span>
-          </div>
-        </div>
-        <Toast show={step === 3}>{fr ? "Publié sur vos 3 réseaux" : "Posted to your 3 networks"}</Toast>
-      </div>
-    );
-  }
-  if (scene === "reviews") {
-    return (
-      <div className="absolute inset-0 bg-white p-4 sm:p-5">
-        <p className="flex items-center gap-2 text-[13px] font-bold text-slate-900 sm:text-[15px]">
-          <Brand slug="google" size={16} /> {fr ? "Nouvel avis Google" : "New Google review"}
-        </p>
-        <div className="mt-2 flex gap-0.5">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <Star key={i} size={20} className={`fill-current transition-colors duration-300 ${step >= 1 ? "text-[#E7A008]" : "text-slate-200"}`} style={{ transitionDelay: `${i * 120}ms` }} aria-hidden />
-          ))}
-        </div>
-        <div className={`mt-3 rounded-2xl bg-[#EEF3FA] p-3 transition-all duration-500 ${step >= 2 ? "opacity-100" : "opacity-0"}`}>
-          <p className="flex items-center gap-1 text-[10.5px] font-semibold uppercase tracking-wide text-[#1565D8]">
-            <Sparkles size={11} aria-hidden /> {fr ? "Réponse proposée par l'IA" : "Reply drafted by AI"}
-          </p>
-          <p className="mt-1 text-[12.5px] text-slate-800 sm:text-[13.5px]">{fr ? "Merci beaucoup, au plaisir de vous revoir bientôt !" : "Thank you so much, see you again soon!"}</p>
-        </div>
-        <Toast show={step === 3}>{fr ? "Réponse publiée" : "Reply posted"}</Toast>
-      </div>
-    );
-  }
-  if (scene === "local") {
-    return (
-      <div className="absolute inset-0 bg-[#E8EEF7]">
-        <svg aria-hidden className="absolute inset-0 h-full w-full" viewBox="0 0 400 250" preserveAspectRatio="xMidYMid slice">
-          <path d="M0 170 L400 110 M90 0 L160 250 M280 0 L240 250 M0 60 L400 210" stroke="#fff" strokeWidth="14" />
-          <rect x="300" y="150" width="70" height="50" rx="8" fill="#CFE8D6" />
-        </svg>
-        <span className={`absolute left-[58%] top-[16%] transition-all duration-500 ${step >= 1 ? "translate-y-0 opacity-100" : "-translate-y-6 opacity-0"}`}>
-          <MapPin size={34} className="fill-[#1F8BFF] text-white drop-shadow-lg" aria-hidden />
-        </span>
-        <div className={`absolute inset-x-4 bottom-16 rounded-2xl bg-white p-3 shadow-lg transition-all duration-500 sm:bottom-20 ${step >= 2 ? "opacity-100" : "opacity-0"}`}>
-          <p className="text-[13px] font-bold text-slate-900">{business}</p>
-          <p className="mt-0.5 text-[11.5px] text-slate-600">
-            <span className="text-[#E7A008]">★★★★★</span> · {fr ? "Ouvert · Heures des fêtes à jour" : "Open · Holiday hours updated"}
-          </p>
-        </div>
-        <Toast show={step === 3}>{fr ? "Fiche à jour partout" : "Listing updated everywhere"}</Toast>
-      </div>
-    );
-  }
-  if (scene === "leads") {
-    return (
-      <div className="absolute inset-0 bg-white p-4 sm:p-5">
-        <p className="flex items-center gap-2 text-[13px] font-bold text-slate-900 sm:text-[15px]">
-          <Users size={16} className="text-[#1F8BFF]" aria-hidden /> {fr ? "Nouvelles demandes" : "New requests"}
-        </p>
-        <ul className="mt-3 grid gap-2">
-          {[fr ? "Soumission · rénovation de cuisine" : "Quote · kitchen renovation", fr ? "Réservation · 6 personnes, samedi" : "Booking · 6 people, Saturday", fr ? "Question · livraison à Laval" : "Question · delivery to Laval"].map((r, i) => (
-            <li
-              key={r}
-              className={`flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2 text-[12.5px] text-slate-800 transition-all duration-500 sm:text-[13.5px] ${step >= 1 ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}
-              style={{ transitionDelay: `${i * 160}ms` }}
-            >
-              {r}
-              <span className="rounded-full bg-[#1F8BFF]/10 px-2 py-0.5 text-[10.5px] font-semibold text-[#1565D8]">{fr ? "Nouveau" : "New"}</span>
-            </li>
-          ))}
-        </ul>
-        <Toast show={step === 3}>{fr ? "Demandes ajoutées à votre CRM" : "Requests added to your CRM"}</Toast>
-      </div>
-    );
-  }
-  // phone
-  return (
-    <div className="absolute inset-0 grid place-items-center bg-[linear-gradient(160deg,#0B1B3D,#060D1F)]">
-      <div className="text-center">
-        <span className={`mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#1F8BFF] text-white ${step === 1 ? "animate-bounce" : ""}`}>
-          <PhoneIncoming size={26} aria-hidden />
-        </span>
-        <p className="mt-3 text-[15px] font-semibold text-white">{fr ? "Appel entrant · Ligne Ventes" : "Incoming call · Sales line"}</p>
-        <p className={`mt-1 text-[13px] text-white/60 transition-opacity duration-500 ${step >= 2 ? "opacity-100" : "opacity-0"}`}>
-          {fr ? "Standard : 1 Ventes · 2 Soutien · 3 Heures" : "Attendant: 1 Sales · 2 Support · 3 Hours"}
-        </p>
-      </div>
-      <Toast show={step === 3}>{fr ? "Appel dirigé vers la bonne personne" : "Call routed to the right person"}</Toast>
-    </div>
-  );
-}
 
 /**
  * Hero visual: a laptop whose browser address bar is the TAKATAK search.
@@ -528,7 +282,7 @@ export function HeroLiveBrowser() {
             </form>
             {/* The page the browser shows */}
             <div className="relative aspect-[16/9] overflow-hidden" aria-live="polite">
-              <Screen scene={scene} step={step} business={business} lang={lang} />
+              <LiveScreen scene={scene} step={step} business={business} lang={lang} />
             </div>
           </div>
         </div>
