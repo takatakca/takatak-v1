@@ -45,31 +45,31 @@ export function PricingTabs() {
     tab === "hosting"
       ? pricing.hosting.map((h) => ({
           key: h.key,
-          name: h.name,
+          name: tk(`tier.hosting.${h.key}`),
           amount: h.amount,
           cadence: h.cadence,
-          lines: [h.description, ...h.features],
+          lines: [tk(`hosting.plan.${h.key}.desc`), ...h.features.map((_, f) => tk(`cat.hosting.tier.${h.key}.f${f + 1}`))],
           featured: h.key === "silver",
           badge: h.key === "silver" ? { en: "Recommended", fr: "Recommandé" } : h.key === "gold" ? { en: "Most complete", fr: "Le plus complet" } : undefined,
           action: { kind: "checkout", plan: h.key },
-          label: fill(t.choose[lang], { name: h.name }),
+          label: fill(t.choose[lang], { name: tk(`tier.hosting.${h.key}`) }),
         }))
       : tab === "websites"
         ? pricing.websites.map((w) => ({
             key: w.key,
-            name: w.name,
+            name: tk(`tier.websites.${w.key}`),
             amount: w.amount,
             cadence: w.cadence,
-            lines: [w.description],
+            lines: [tk(`cat.website.tier.${w.key}`)],
             featured: w.key === "business",
             badge: w.key === "business" ? { en: "Recommended", fr: "Recommandé" } : w.key === "ecommerce" ? { en: "To sell online", fr: "Pour vendre en ligne" } : undefined,
             action: { kind: "link", to: "/register?plan=website" },
-            label: fill(t.start[lang], { name: w.name }),
+            label: fill(t.start[lang], { name: tk(`tier.websites.${w.key}`) }),
           }))
         : tab === "marketing"
           ? pricing.marketing.map((m) => ({
               key: m.key,
-              name: m.name,
+              name: tk(`tier.marketing.${m.key}`),
               amount: m.amount,
               cadence: m.cadence,
               suffix: "suffix" in m ? m.suffix : undefined,
@@ -77,7 +77,7 @@ export function PricingTabs() {
               featured: m.key === "monthly",
               badge: m.key === "monthly" ? { en: "Recommended", fr: "Recommandé" } : undefined,
               action: { kind: "link", to: "/register?plan=marketing" },
-              label: fill(t.start[lang], { name: m.name }),
+              label: fill(t.start[lang], { name: tk(`tier.marketing.${m.key}`) }),
             }))
           : TAKBOT_PACKS.map((p) => ({
               key: p.key,
