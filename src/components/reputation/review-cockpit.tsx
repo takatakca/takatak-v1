@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { ReviewInsights } from "./review-insights";
-import { ReviewSourceDirectory } from "./review-source-directory";
 import { BrandHeroBackdrop } from "@/components/brand/brand-hero-backdrop";
 import { Card } from "@/components/ui/card";
 import { GrowthKpi } from "@/components/growth/growth-header";
@@ -22,6 +21,8 @@ import { QmapsReplyForm } from "@/components/local-listings/qmaps-reply-form";
 import { Badge } from "@/components/ui/badge";
 import {
   cockpitStats,
+  cockpitPage,
+  sourceLocationGroups,
   filterCockpit,
   type CockpitSnapshot,
 } from "@/lib/reputation/cockpit-model";
@@ -30,9 +31,11 @@ import { REVIEW_SOURCES, reviewSource } from "@/lib/reputation/sources";
 export function ReviewCockpit({
   snapshot,
   canManage,
+  googleDrafts = {},
 }: {
   snapshot: CockpitSnapshot | null;
   canManage: boolean;
+  googleDrafts?: Record<string, { status: string; text: string }>;
 }) {
   const [source, setSource] = useState("all"),
     [query, setQuery] = useState(""),
@@ -49,7 +52,7 @@ export function ReviewCockpit({
     () =>
       filterCockpit(records || [], {
         source,
-        location,
+        locationKey: location,
         query,
         state,
         rating: rating === "all" ? null : Number(rating),
@@ -68,7 +71,9 @@ export function ReviewCockpit({
       }),
     [records, source, query, state, rating, days, location, sort],
   );
-  const visible = filtered.slice((page - 1) * 12, page * 12);
+  const pagination = cockpitPage(filtered.length, page);
+  const visible = filtered.slice(pagination.start, pagination.end);
+  const locations = sourceLocationGroups(records || []);
   const selected =
     visible.find((review) => review.key === selectedKey) || visible[0];
   const stats = cockpitStats(filtered);
@@ -86,7 +91,7 @@ export function ReviewCockpit({
     state,
     rating,
     days,
-    location,
+    locationKey: location,
   });
   return (
     <section className="space-y-5" aria-label="TAKATAK Review cockpit">
@@ -216,15 +221,11 @@ export function ReviewCockpit({
                   className="max-w-full rounded-lg border border-slate-300 p-2 text-xs"
                 >
                   <option value="all">All locations</option>
-                  {Array.from(
-                    new Set((records || []).map((review) => review.location)),
-                  )
-                    .sort()
-                    .map((name) => (
-                      <option key={name} value={name}>
-                        {name}
-                      </option>
-                    ))}
+                  {locations.map((group) => (
+                    <option key={group.key} value={group.key}>
+                      {group.label}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label>
@@ -388,12 +389,33 @@ export function ReviewCockpit({
                         >
                           {r.state.replaceAll("_", " ")}
                         </Badge>
-                        {!r.recommended && <Badge>Excluded by source</Badge>}
+                        {r.ingestion ? (
+                          <Badge>Imported · {r.ingestion}</Badge>
+                        ) : !r.recommended ? (
+                          <Badge>Excluded by source</Badge>
+                        ) : null}
                       </div>
                     </div>
                     <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
                       {r.text || "No written comment."}
                     </p>
+                    {r.origin === "external" &&
+                      r.source === "google" &&
+                      googleDrafts[r.id] && (
+                        <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                          <p className="text-xs font-semibold text-blue-900">
+                            AI draft ·{" "}
+                            {googleDrafts[r.id].status.replaceAll("_", " ")}
+                          </p>
+                          <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
+                            {googleDrafts[r.id].text}
+                          </p>
+                          <p className="mt-2 text-[11px] text-slate-500">
+                            Review the wording before publishing. A generated
+                            draft is not a public response.
+                          </p>
+                        </div>
+                      )}
                     {r.response && (
                       <div className="mt-4 rounded-xl border-l-2 border-blue-500 bg-blue-50 p-4">
                         <p className="text-xs font-semibold text-blue-900">
@@ -445,6 +467,17 @@ export function ReviewCockpit({
                             : "Respond on QMAPS"}
                         </button>
                       )}
+                      {r.sourceUrl && (
+                        <a
+                          href={r.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-semibold text-[#1565D8]"
+                        >
+                          Open original review{" "}
+                          <span className="sr-only">(opens in a new tab)</span>
+                        </a>
+                      )}
                       {r.origin === "feedback" && (
                         <Link
                           href="#first-party-feedback"
@@ -460,9 +493,11 @@ export function ReviewCockpit({
                           <ReviewDraftForm reviewId={r.id} origin={r.origin} />
                         )}
                       <span className="text-[11px] text-slate-500">
-                        {r.origin === "feedback"
-                          ? "First-party feedback"
-                          : "Recorded in TAKATAK; provider access is checked when an action runs."}
+                        {r.ingestion
+                          ? "Operator-imported; not provider-verified. Excluded from source rating averages."
+                          : r.origin === "feedback"
+                            ? "First-party feedback"
+                            : "Recorded in TAKATAK; provider access is checked when an action runs."}
                       </span>
                     </div>
                     {expanded === r.key && canManage && (
@@ -471,7 +506,10 @@ export function ReviewCockpit({
                         className="mt-4 border-t border-slate-100 pt-4"
                       >
                         {r.source === "google" ? (
-                          <GoogleReplyForm reviewId={r.id} draft={null} />
+                          <GoogleReplyForm
+                            reviewId={r.id}
+                            draft={googleDrafts[r.id]?.text ?? null}
+                          />
                         ) : r.source === "qmaps" && r.qmapsReviewId ? (
                           <QmapsReplyForm
                             reviewId={r.qmapsReviewId}
@@ -502,18 +540,24 @@ export function ReviewCockpit({
           {filtered.length > 12 && (
             <div className="flex items-center justify-end gap-3 text-xs">
               <button
-                disabled={page === 1}
-                onClick={() => setPage(page - 1)}
+                disabled={pagination.page === 1}
+                onClick={() => {
+                  setPage(pagination.page - 1);
+                  setExpanded(null);
+                }}
                 className="rounded-lg border px-3 py-2 disabled:opacity-40"
               >
                 Previous
               </button>
               <span>
-                Page {page} of {Math.ceil(filtered.length / 12)}
+                Page {pagination.page} of {pagination.totalPages}
               </span>
               <button
-                disabled={page * 12 >= filtered.length}
-                onClick={() => setPage(page + 1)}
+                disabled={pagination.page === pagination.totalPages}
+                onClick={() => {
+                  setPage(pagination.page + 1);
+                  setExpanded(null);
+                }}
                 className="rounded-lg border px-3 py-2 disabled:opacity-40"
               >
                 Next
@@ -522,7 +566,6 @@ export function ReviewCockpit({
           )}
         </>
       )}
-      <ReviewSourceDirectory />
     </section>
   );
 }

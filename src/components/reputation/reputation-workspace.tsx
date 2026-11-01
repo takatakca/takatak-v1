@@ -12,6 +12,7 @@ import type { ReputationSnapshot } from "@/lib/reputation/service";
 
 import { CreateProfileForm } from "./create-profile-form";
 import { RequestLinkForm } from "./request-link-form";
+import { ReviewDeliveryHistory } from "./review-delivery-history";
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -78,6 +79,8 @@ export function ReputationWorkspace({
           </CardBody>
         </Card>
       ) : null}
+
+      <ReviewDeliveryHistory requests={data.requestHistory} />
 
       <Card>
         <CardHeader title="Feedback inbox" subtitle="Every rating customers leave, newest first. Low ratings stay open until resolved." />

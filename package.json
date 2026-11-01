@@ -149,6 +149,8 @@
     "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts",
     "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs",
     "qa:revers-experience": "tsx scripts/revers-experience-bridge-tests.ts",
+    "qa:review-import-model": "tsx scripts/review-import-tests.ts",
+    "qa:review-import-service": "tsx --require ./scripts/register-server-only.cjs scripts/review-import-service-tests.ts",
     "qa:review-cockpit": "tsx --require ./scripts/register-server-only.cjs scripts/review-cockpit-tests.ts"
   },
   "dependencies": {

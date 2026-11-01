@@ -1,3 +1,4 @@
+import { reviewEvidenceURL } from "./import-model";
 import { observedSource, reviewSource } from "./sources";
 
 export type ReviewOrigin = "feedback" | "external" | "listing";
@@ -8,6 +9,10 @@ export type ReviewRecord = {
   source: string;
   author: string;
   location: string;
+  /** Provider-scoped identity, not a claim of cross-source physical-location matching. */
+  locationKey?: string;
+  ingestion?: "manual" | "email" | "csv";
+  sourceUrl?: string;
   rating: number | null;
   text: string;
   createdAt: string;
@@ -25,7 +30,7 @@ export type FeedbackRow = {
   contactName: string | null;
   status: string;
   createdAt: Date;
-  profile: { name: string };
+  profile: { id?: string; name: string };
 };
 export type ExternalRow = {
   id: string;
@@ -35,7 +40,7 @@ export type ExternalRow = {
   comment: string | null;
   externalCreateAt: Date;
   replyComment: string | null;
-  location: { title: string };
+  location: { id?: string; title: string };
 };
 export type ListingRow = {
   id: string;
@@ -49,7 +54,7 @@ export type ListingRow = {
   reviewedAt: Date | null;
   createdAt: Date;
   metadata: unknown;
-  localListing: { name: string } | null;
+  localListing: { id?: string; name: string } | null;
 };
 export type CockpitReaders = {
   feedback: (clientId: string, take: number) => Promise<FeedbackRow[]>;
@@ -83,6 +88,7 @@ export function normalizeFeedback(row: FeedbackRow): ReviewRecord {
     source: "takatak",
     author: row.contactName || "Customer",
     location: row.profile.name,
+    locationKey: `feedback:takatak:${row.profile.id || `unlinked:${row.id}`}`,
     rating: rating(row.rating),
     text: row.feedback || "",
     createdAt: row.createdAt.toISOString(),
@@ -103,6 +109,7 @@ export function normalizeExternal(row: ExternalRow): ReviewRecord {
     source,
     author: row.reviewerName || "Customer",
     location: row.location.title,
+    locationKey: `external:${source}:${row.location.id || `unlinked:${row.id}`}`,
     rating:
       reviewSource(source)?.kind === "recommendations" ||
       reviewSource(source)?.kind === "social"
@@ -124,6 +131,13 @@ export function normalizeExternal(row: ExternalRow): ReviewRecord {
 }
 export function normalizeListing(row: ListingRow): ReviewRecord {
   const meta = record(row.metadata);
+  const ingestion =
+    meta.source === "reviewed_import" &&
+    (meta.ingestion === "manual" ||
+      meta.ingestion === "email" ||
+      meta.ingestion === "csv")
+      ? meta.ingestion
+      : undefined;
   // future_provider needs explicit provider provenance; never guess from body text.
   const source = observedSource(
     row.provider === "future_provider"
@@ -142,9 +156,10 @@ export function normalizeListing(row: ListingRow): ReviewRecord {
     row.status === "internal_demo" ||
     row.status === "planned";
   const confirmed =
-    source === "qmaps"
+    !ingestion &&
+    (source === "qmaps"
       ? meta.replyState === "sent_to_qmaps"
-      : meta.providerReplyConfirmed === true;
+      : meta.providerReplyConfirmed === true);
   const response = confirmed ? safeText(meta.replyText, 5000) || null : null;
   const rawRating =
     reviewSource(source)?.kind === "recommendations" ||
@@ -158,6 +173,13 @@ export function normalizeListing(row: ListingRow): ReviewRecord {
     source,
     author: row.reviewerName || "Customer",
     location: row.localListing?.name || "Unlinked record",
+    locationKey: `listing:${source}:${row.localListing?.id || `unlinked:${row.id}`}`,
+    ...(ingestion
+      ? {
+          ingestion,
+          sourceUrl: reviewEvidenceURL(meta.sourceUrl, source) || undefined,
+        }
+      : {}),
     rating: rawRating,
     text: row.body || row.title || "",
     createdAt: (row.reviewedAt || row.createdAt).toISOString(),
@@ -167,7 +189,7 @@ export function normalizeListing(row: ListingRow): ReviewRecord {
       : source === "qmaps" && qmapsId
         ? "needs_reply"
         : "tracked",
-    recommended: meta.recommended !== false,
+    recommended: !ingestion && meta.recommended !== false,
     sample,
     canDraft: false,
     qmapsReviewId: qmapsId,
@@ -241,11 +263,63 @@ export function cockpitStats(records: ReviewRecord[]) {
     })),
   };
 }
+/** Never infer branch identity from a name. Legacy/unlinked rows stay separate. */
+export function sourceLocationKey(review: ReviewRecord): string {
+  return (
+    review.locationKey ||
+    `${review.origin}:${review.source}:unlinked:${review.id}`
+  );
+}
+
+export function sourceLocationGroups(records: ReviewRecord[]) {
+  const groups = new Map<
+    string,
+    { key: string; name: string; source: string; records: ReviewRecord[] }
+  >();
+  for (const review of records) {
+    const key = sourceLocationKey(review);
+    const group = groups.get(key);
+    if (group) group.records.push(review);
+    else
+      groups.set(key, {
+        key,
+        name: review.location,
+        source: review.source,
+        records: [review],
+      });
+  }
+  const names = new Map<string, number>();
+  for (const group of groups.values())
+    names.set(group.name, (names.get(group.name) || 0) + 1);
+  return Array.from(groups.values())
+    .map((group) => ({
+      ...group,
+      label:
+        (names.get(group.name) || 0) > 1
+          ? `${group.name} · ${reviewSource(group.source)?.name || group.source} · ${group.key.slice(-6)}`
+          : group.name,
+    }))
+    .sort(
+      (a, b) => a.label.localeCompare(b.label) || a.key.localeCompare(b.key),
+    );
+}
+
+/** Server refresh can shrink the window while the operator is on a later page. */
+export function cockpitPage(recordCount: number, requestedPage: number) {
+  const totalPages = Math.max(1, Math.ceil(Math.max(0, recordCount) / 12));
+  const page = Math.min(
+    totalPages,
+    Math.max(1, Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1),
+  );
+  return { page, totalPages, start: (page - 1) * 12, end: page * 12 };
+}
+
 export function filterCockpit(
   records: ReviewRecord[],
   input: {
     source?: string;
     location?: string;
+    locationKey?: string;
     query?: string;
     state?: string;
     rating?: number | null;
@@ -257,6 +331,9 @@ export function filterCockpit(
   return records.filter(
     (r) =>
       (!input.source || input.source === "all" || r.source === input.source) &&
+      (!input.locationKey ||
+        input.locationKey === "all" ||
+        sourceLocationKey(r) === input.locationKey) &&
       (!input.location ||
         input.location === "all" ||
         r.location === input.location) &&
@@ -280,6 +357,7 @@ export function cockpitCSV(records: ReviewRecord[]): string {
       "source",
       "author",
       "location",
+      "location_key",
       "rating",
       "text",
       "response",
@@ -290,6 +368,7 @@ export function cockpitCSV(records: ReviewRecord[]): string {
       r.source,
       r.author,
       r.location,
+      sourceLocationKey(r),
       r.rating,
       r.text,
       r.response,

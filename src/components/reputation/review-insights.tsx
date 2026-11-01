@@ -1,20 +1,22 @@
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import type { ReviewRecord } from "@/lib/reputation/cockpit-model";
+import {
+  sourceLocationGroups,
+  type ReviewRecord,
+} from "@/lib/reputation/cockpit-model";
 
 export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
   const eligible = records.filter(
     (review) => review.recommended && review.rating !== null,
   );
-  const locations = Array.from(
-    new Set(records.map((review) => review.location)),
-  )
-    .map((name) => {
-      const reviews = records.filter((review) => review.location === name);
+  const locations = sourceLocationGroups(records)
+    .map((group) => {
+      const reviews = group.records;
       const rated = reviews.filter(
         (review) => review.recommended && review.rating !== null,
       );
       return {
-        name,
+        key: group.key,
+        name: group.label,
         count: reviews.length,
         pending: reviews.filter((review) => review.state === "needs_reply")
           .length,
@@ -75,8 +77,8 @@ export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
       </Card>
       <Card>
         <CardHeader
-          title="Location performance"
-          subtitle="Prioritized by reviews awaiting a confirmed reply"
+          title="Source location performance"
+          subtitle="Provider-specific locations; physical branches are not matched across sources"
         />
         <CardBody>
           <div className="max-h-56 overflow-auto">
@@ -104,7 +106,7 @@ export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
               <tbody>
                 {locations.map((location) => (
                   <tr
-                    key={location.name}
+                    key={location.key}
                     className="border-b border-slate-100 last:border-0"
                   >
                     <th

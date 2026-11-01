@@ -29,7 +29,7 @@ export async function getReviewCockpit(
           contactName: true,
           status: true,
           createdAt: true,
-          profile: { select: { name: true } },
+          profile: { select: { id: true, name: true } },
         },
       }),
     external: (tenant, take) =>
@@ -45,7 +45,7 @@ export async function getReviewCockpit(
           comment: true,
           externalCreateAt: true,
           replyComment: true,
-          location: { select: { title: true } },
+          location: { select: { id: true, title: true } },
         },
       }),
     listing: (tenant, take) =>
@@ -73,7 +73,7 @@ export async function getReviewCockpit(
           reviewedAt: true,
           createdAt: true,
           metadata: true,
-          localListing: { select: { name: true } },
+          localListing: { select: { id: true, name: true } },
         },
       }),
   });

@@ -13,6 +13,8 @@ on:
       - "src/app/dashboard/growth/reviews/**"
       - "src/app/dashboard/local-listings/reviews/**"
       - "scripts/review-cockpit-tests.ts"
+      - "scripts/review-import-tests.ts"
+      - "scripts/review-import-service-tests.ts"
       - ".github/workflows/review-cockpit.yml"
 permissions:
   contents: read
@@ -41,6 +43,8 @@ jobs:
       - run: npm ci --ignore-scripts=false
       - run: npm run db:generate
       - run: npm run qa:review-cockpit
+      - run: npm run qa:review-import-model
+      - run: npm run qa:review-import-service
       - run: npm run qa:qmaps-bridge
       - run: npm run qa:qmaps-sync
       - run: npm run typecheck

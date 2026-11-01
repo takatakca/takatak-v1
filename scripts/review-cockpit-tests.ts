@@ -7,6 +7,9 @@ import {
   cockpitStats,
   filterCockpit,
   cockpitCSV,
+  cockpitPage,
+  sourceLocationKey,
+  sourceLocationGroups,
   type CockpitReaders,
   type ListingRow,
 } from "../src/lib/reputation/cockpit-model";
@@ -412,6 +415,200 @@ async function main() {
       assert.equal(filterCockpit(records, { location: "Missing" }).length, 0);
       assert.equal(cockpitCSV(filtered).includes("Laval"), false);
       assert.equal(records.length, 3);
+    },
+  );
+  await check(
+    "same-name source locations stay separate by persisted identity",
+    () => {
+      const first = normalizeListing({
+        ...listing,
+        localListing: { id: "branch-one", name: "Downtown" },
+      });
+      const sameBranch = normalizeListing({
+        ...listing,
+        id: "another-review",
+        localListing: { id: "branch-one", name: "Downtown" },
+      });
+      const second = normalizeListing({
+        ...listing,
+        id: "second-review",
+        localListing: { id: "branch-two", name: "Downtown" },
+      });
+      const records = [first, sameBranch, second];
+      const groups = sourceLocationGroups(records);
+      assert.equal(groups.length, 2);
+      assert.ok(cockpitCSV(records).includes(`"${first.locationKey}"`));
+      assert.ok(cockpitCSV(records).includes(`"${second.locationKey}"`));
+      assert.notEqual(groups[0].label, groups[1].label);
+      assert.equal(
+        groups.find((group) => group.key === first.locationKey)?.records.length,
+        2,
+      );
+      assert.deepEqual(
+        filterCockpit(records, { locationKey: first.locationKey }).map(
+          (review) => review.id,
+        ),
+        [first.id, sameBranch.id],
+      );
+      assert.equal(filterCockpit(records, { locationKey: "all" }).length, 3);
+      assert.equal(
+        filterCockpit(records, { locationKey: "missing" }).length,
+        0,
+      );
+      assert.equal(filterCockpit(records, { location: "Downtown" }).length, 3);
+      assert.equal(
+        filterCockpit(records, {
+          locationKey: first.locationKey,
+          location: "Other",
+        }).length,
+        0,
+      );
+    },
+  );
+  await check(
+    "normalization carries provider-scoped IDs and never joins unlinked records by name",
+    () => {
+      const profile = normalizeFeedback({
+        id: "feedback",
+        rating: 4,
+        feedback: "Good",
+        contactName: null,
+        status: "new",
+        createdAt: date,
+        profile: { id: "source-location", name: "Same name" },
+      });
+      const external = normalizeExternal({
+        id: "external",
+        source: "google",
+        reviewerName: null,
+        rating: 4,
+        comment: "Good",
+        externalCreateAt: date,
+        replyComment: null,
+        location: { id: "source-location", title: "Same name" },
+      });
+      const local = normalizeListing({
+        ...listing,
+        localListing: { id: "source-location", name: "Same name" },
+      });
+      assert.equal(profile.locationKey, "feedback:takatak:source-location");
+      assert.equal(external.locationKey, "external:google:source-location");
+      assert.equal(local.locationKey, "listing:qmaps:source-location");
+      assert.equal(sourceLocationGroups([profile, external, local]).length, 3);
+      const unlinked = [
+        normalizeListing({ ...listing, id: "one", localListing: null }),
+        normalizeListing({ ...listing, id: "two", localListing: null }),
+      ];
+      assert.notEqual(
+        sourceLocationKey(unlinked[0]),
+        sourceLocationKey(unlinked[1]),
+      );
+      assert.equal(sourceLocationGroups(unlinked).length, 2);
+    },
+  );
+  await check(
+    "pagination clamps stale server-refresh pages while preserving valid selection windows",
+    () => {
+      assert.deepEqual(cockpitPage(30, 2), {
+        page: 2,
+        totalPages: 3,
+        start: 12,
+        end: 24,
+      });
+      assert.deepEqual(cockpitPage(5, 3), {
+        page: 1,
+        totalPages: 1,
+        start: 0,
+        end: 12,
+      });
+      assert.deepEqual(cockpitPage(0, 2), {
+        page: 1,
+        totalPages: 1,
+        start: 0,
+        end: 12,
+      });
+      assert.equal(cockpitPage(25, 3).start, 24);
+      assert.equal(cockpitPage(25, -1).page, 1);
+      assert.equal(cockpitPage(25, Number.NaN).page, 1);
+    },
+  );
+  await check(
+    "reviewed imports expose provenance but never source publication or source-verified averages",
+    () => {
+      const imported = normalizeListing({
+        ...listing,
+        provider: "future_provider",
+        metadata: {
+          source: "reviewed_import",
+          reputationProvider: "qmaps",
+          ingestion: "email",
+          importedBy: "private-profile",
+          externalId: "private-id",
+          recommended: true,
+          providerReplyConfirmed: true,
+          replyState: "sent_to_qmaps",
+          qmapsReviewId: reviewId,
+          replyText: "Not a confirmed reply",
+        },
+      });
+      assert.equal(imported.ingestion, "email");
+      assert.equal(imported.source, "qmaps");
+      assert.equal(imported.recommended, false);
+      assert.equal(imported.response, null);
+      assert.equal(imported.state, "tracked");
+      assert.equal(imported.qmapsReviewId, null);
+      assert.equal(imported.canDraft, false);
+      assert.equal(cockpitStats([imported]).rated, 0);
+      assert.equal(JSON.stringify(imported).includes("private-profile"), false);
+      assert.equal(JSON.stringify(imported).includes("private-id"), false);
+      assert.equal(
+        normalizeListing({
+          ...listing,
+          metadata: { ...(listing.metadata as object), ingestion: "email" },
+        }).ingestion,
+        undefined,
+      );
+    },
+  );
+  await check(
+    "operator evidence links are source-pinned and private import metadata stays private",
+    () => {
+      const imported = {
+        ...listing,
+        provider: "future_provider",
+        metadata: {
+          reputationProvider: "google",
+          source: "reviewed_import",
+          ingestion: "email",
+          sourceUrl: "https://www.google.com/maps/reviews/example",
+          importedBy: "private-actor",
+          externalId: "private-source-id",
+        },
+      };
+      const record = normalizeListing(imported);
+      assert.equal(
+        record.sourceUrl,
+        "https://www.google.com/maps/reviews/example",
+      );
+      assert.equal(JSON.stringify(record).includes("private-actor"), false);
+      assert.equal(JSON.stringify(record).includes("private-source-id"), false);
+      assert.equal(
+        normalizeListing({
+          ...imported,
+          metadata: {
+            ...imported.metadata,
+            sourceUrl: "https://evil.example/review",
+          },
+        }).sourceUrl,
+        undefined,
+      );
+      assert.equal(
+        normalizeListing({
+          ...imported,
+          metadata: { ...imported.metadata, sourceUrl: "javascript:alert(1)" },
+        }).sourceUrl,
+        undefined,
+      );
     },
   );
   console.log(`Review cockpit: ${count} checks passed.`);

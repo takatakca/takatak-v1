@@ -92,6 +92,7 @@ export type RequestLinkState =
       ok: true;
       url: string;
       recipientName: string | null;
+      profileName: string;
       delivery:
         null | { sent: true; to: string } | { sent: false; reason: string };
     }
@@ -168,7 +169,7 @@ export async function createReviewRequestAction(
         : { sent: false, reason: result.reason };
     }
     revalidatePath(REVIEWS_PATH);
-    return { ok: true, url, recipientName, delivery };
+    return { ok: true, url, recipientName, profileName: created.profileName, delivery };
   } catch {
     console.error("[reputation] create request failed");
     return {
