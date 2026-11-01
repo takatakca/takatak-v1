@@ -6,15 +6,16 @@
 type Lang = "fr" | "en";
 type Bi = Record<Lang, string>;
 
-export type FicheField = "name" | "email" | "phone" | "company";
+export type FicheField = "name" | "email" | "phone" | "company" | "address";
 export type FicheStep = FicheField | "confirm";
 export type Fiche = Record<FicheField, string>;
 
-export const FICHE_ORDER: FicheField[] = ["name", "company", "email", "phone"];
+export const FICHE_ORDER: FicheField[] = ["name", "company", "address", "email", "phone"];
 
 export const FICHE_LABELS: Record<FicheField, Bi> = {
   name: { fr: "Nom", en: "Name" },
   company: { fr: "Entreprise", en: "Business" },
+  address: { fr: "Adresse", en: "Address" },
   email: { fr: "Courriel", en: "Email" },
   phone: { fr: "Téléphone", en: "Phone" },
 };
@@ -22,6 +23,7 @@ export const FICHE_LABELS: Record<FicheField, Bi> = {
 const QUESTIONS: Record<FicheField, Bi> = {
   name: { fr: "Parfait. Je prépare votre demande. C'est quoi votre nom ?", en: "Great. I'm preparing your request. What's your name?" },
   company: { fr: "Merci {name}. Le nom de votre entreprise ?", en: "Thanks {name}. Your business name?" },
+  address: { fr: "L'adresse de l'entreprise ? (ou écrivez « passer »)", en: "The business address? (or type “skip”)" },
   email: { fr: "Votre courriel, pour vous envoyer la soumission ?", en: "Your email, to send you the quote?" },
   phone: { fr: "Un numéro pour vous joindre ? (ou écrivez « passer »)", en: "A number to reach you? (or type “skip”)" },
 };
@@ -35,7 +37,7 @@ const PHONE_RE = /^[+()0-9 .-]{7,40}$/;
 const SKIP = /^(passer|non|skip|no|-)$/i;
 
 export function emptyFiche(): Fiche {
-  return { name: "", company: "", email: "", phone: "" };
+  return { name: "", company: "", address: "", email: "", phone: "" };
 }
 
 export function question(field: FicheField, fiche: Fiche, lang: Lang): string {
@@ -58,6 +60,7 @@ export function answer(
     if (SKIP.test(value)) stored = "";
     else if (!PHONE_RE.test(value)) return { ok: false, error: FICHE_BAD_PHONE };
   }
+  if (step === "address" && SKIP.test(value)) stored = "";
   if ((step === "name" || step === "company") && !value) return { ok: false, error: { fr: "Je n'ai rien reçu, pouvez-vous réessayer ?", en: "I got nothing, could you try again?" } };
   const next = { ...fiche, [step]: stored };
   const i = FICHE_ORDER.indexOf(step);
@@ -77,6 +80,7 @@ export function fichePayload(fiche: Fiche, input: { services: string[]; conversa
     phone: fiche.phone || undefined,
     message: [
       `${input.lang === "fr" ? "Services" : "Services"}: ${list}`,
+      ...(fiche.address ? [`${input.lang === "fr" ? "Adresse" : "Address"}: ${fiche.address}`] : []),
       "",
       ...input.conversation.slice(-12),
     ]
