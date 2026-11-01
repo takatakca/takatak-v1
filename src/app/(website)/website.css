@@ -1168,3 +1168,21 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-wire { stroke-dasharray: 2 2.5; animation: hp-wire 1.6s linear infinite; }
 @keyframes hp-wire { to { stroke-dashoffset: -9; } }
 @media (prefers-reduced-motion: reduce) { .hp-wire { animation: none; } }
+
+/* TAK, the robot (RobotMascot.tsx) */
+.tk-bot .tk-bot-float { animation: tk-bot-float 4.5s ease-in-out infinite; }
+@keyframes tk-bot-float { 50% { transform: translateY(-8px); } }
+.tk-bot .tk-bot-shadow { transform-box: fill-box; transform-origin: center; animation: tk-bot-shadow 4.5s ease-in-out infinite; }
+@keyframes tk-bot-shadow { 50% { transform: scaleX(0.8); opacity: 0.15; } }
+.tk-bot .tk-bot-eyes { transform-box: fill-box; transform-origin: center; animation: tk-bot-blink 5s ease-in-out infinite; }
+@keyframes tk-bot-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+.tk-bot .tk-bot-wave { transform-box: view-box; transform-origin: 142px 146px; animation: tk-bot-wave 2.4s ease-in-out infinite; }
+@keyframes tk-bot-wave { 0%, 60%, 100% { transform: rotate(0deg); } 70% { transform: rotate(-14deg); } 80% { transform: rotate(8deg); } 90% { transform: rotate(-10deg); } }
+.tk-bot .tk-bot-antenna circle { animation: tk-bot-glow 2s ease-in-out infinite alternate; }
+@keyframes tk-bot-glow { to { opacity: 0.55; } }
+.tk-bot .tk-bot-core { animation: tk-bot-glow 1.6s ease-in-out infinite alternate; }
+.tk-bot .tk-bot-jet { transform-box: fill-box; transform-origin: center top; animation: tk-bot-jet 0.6s ease-in-out infinite alternate; }
+@keyframes tk-bot-jet { to { transform: scaleY(1.6); opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) {
+  .tk-bot *, .tk-bot .tk-bot-float { animation: none !important; }
+}

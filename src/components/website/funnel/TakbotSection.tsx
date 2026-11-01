@@ -13,6 +13,7 @@ import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
 import { Eyebrow, Magnetic, PointHere, Rise, Section, TwoTone, useSpotlight } from "./primitives";
+import { RobotMascot } from "./RobotMascot";
 import { TAKBOT_PREFILL_EVENT, TakbotTryPanel } from "./TakbotTryPanel";
 
 /** Mode icons, shared with the /takbot studio. */
@@ -125,6 +126,10 @@ function TakbotStage() {
   return (
     <div className="relative">
       <PointHere label={lang === "fr" ? "Essayez-le ici" : "Try it here"} flip color="#29C3FF" className="left-[96px] -top-[62px] hidden sm:flex" />
+      {/* TAK, the TAKATAK robot, says hello next to the live bot */}
+      <div aria-hidden className="pointer-events-none absolute -top-24 right-0 hidden sm:block">
+        <RobotMascot size={120} title="TAK" />
+      </div>
       <div role="tablist" aria-label="TAK bot" className="mb-4 inline-flex gap-1 rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10">
         {(["try", "app"] as const).map((k) => (
           <button
