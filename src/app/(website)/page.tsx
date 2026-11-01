@@ -1,13 +1,27 @@
 import type { Metadata } from "next";
 
-import { CoreCategoryBlocks } from "@/components/website/premium/CategoryBlock";
-import { CategoryNavigator } from "@/components/website/premium/CategoryNavigator";
-import { CoreIntro } from "@/components/website/premium/CoreIntro";
-import { PremiumFinalCta } from "@/components/website/premium/PremiumFinalCta";
+import { FinalChapter } from "@/components/website/funnel/FinalChapter";
+import { HomeFaq } from "@/components/website/funnel/HomeFaq";
+import { NewsletterSignup } from "@/components/website/funnel/NewsletterSignup";
+import { HomeSectionNav } from "@/components/website/funnel/HomeSectionNav";
+import { KineticMarquee } from "@/components/website/funnel/KineticMarquee";
+import { LiveBand } from "@/components/website/funnel/LiveBand";
+import { OrderSheet } from "@/components/website/funnel/OrderSheet";
+import { PlanConfigurator } from "@/components/website/funnel/PlanConfigurator";
+import { PricingTabs } from "@/components/website/funnel/PricingTabs";
+import { ServiceGallery } from "@/components/website/funnel/ServiceGallery";
+import { StickyPlanDock } from "@/components/website/funnel/StickyPlanDock";
+import { AskBar } from "@/components/website/funnel/AskBar";
+import { PhotoStories } from "@/components/website/funnel/Stories";
+import { SuiteBento } from "@/components/website/funnel/SuiteBento";
+import { TakbotSection } from "@/components/website/funnel/TakbotSection";
+import { UpsellToast } from "@/components/website/funnel/UpsellToast";
 import { PremiumHero } from "@/components/website/premium/PremiumHero";
-import { PriceTeaser } from "@/components/website/premium/PriceTeaser";
+import { GlowPointer } from "@/components/website/funnel/primitives";
 import { brand } from "@/lib/website/brand";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
+import { HomePlanProvider } from "@/lib/website/home-plan";
+import { HomeThemeRoot } from "@/lib/website/home-theme";
 import { websiteStructuredData } from "@/lib/website/structured-data";
 
 export const metadata: Metadata = {
@@ -18,8 +32,10 @@ export const metadata: Metadata = {
   },
 };
 
-// Premium homepage (Oct 2026): hero, the TAKATAK core (website + 9 categories
-// in the owner's order, with a sticky navigator), pricing teaser, final call to action.
+// Homepage. The hero is the owner's design (Oct 2026) and stays as is.
+// Below it (Oct 31 2026), light by default with a dark mode toggle: ask bar
+// (voice, suggestions, guided assistant), photo stories, services gallery, plan configurator, TAK bot, product
+// suite, pricing, FAQ, newsletter (own unchecked consent box), and a plan dock that follows the visitor to /register.
 export default function HomePage() {
   return (
     <div className="tk-page tk-premium brand-dark">
@@ -30,13 +46,31 @@ export default function HomePage() {
         }}
       />
       <PremiumHero />
-      <div id="core" className="relative" style={{ scrollMarginTop: "var(--tk-header-h, 64px)" }}>
-        <CoreIntro />
-        <CategoryNavigator />
-        <CoreCategoryBlocks />
-      </div>
-      <PriceTeaser />
-      <PremiumFinalCta />
+      <HomePlanProvider>
+        <HomeThemeRoot>
+          <div id="core" className="relative" style={{ scrollMarginTop: "var(--tk-header-h, 64px)" }}>
+            <HomeSectionNav />
+            <AskBar />
+            <LiveBand />
+            <section id="home-services" aria-labelledby="home-services-title" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
+              <PhotoStories />
+              <ServiceGallery />
+            </section>
+            <KineticMarquee />
+            <PlanConfigurator />
+            <TakbotSection />
+            <SuiteBento />
+            <PricingTabs />
+            <HomeFaq />
+            <NewsletterSignup />
+          </div>
+          <FinalChapter />
+          <StickyPlanDock />
+          <OrderSheet />
+          <UpsellToast />
+          <GlowPointer />
+        </HomeThemeRoot>
+      </HomePlanProvider>
     </div>
   );
 }
