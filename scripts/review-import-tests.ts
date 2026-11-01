@@ -117,7 +117,7 @@ async function main() {
         const row = {
           ...example(),
           source,
-          rating: source === "facebook" ? null : 4,
+          rating: source === "facebook" || source === "booking" ? null : 4,
           url: undefined,
         };
         assert.equal(parseReviewImport(input(row)).ok, true, source);

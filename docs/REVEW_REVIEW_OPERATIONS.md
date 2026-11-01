@@ -8,7 +8,7 @@ Open `/dashboard/growth/reviews` in an authorized workspace. The native TAKATAK 
 
 - **Inbox:** select a review, filter by source/location/date/status, inspect ratings and source-location performance, request the existing AI workflow, and deliberately publish through an authorized native Google/QMAPS action. Existing generated Google drafts are prefilled; queued requests are not generated output.
 - **Requests & activity:** create tracked requests and inspect the latest 50 sending/engagement records. Provider API acceptance does not mean delivery. Email/shared links sent outside TAKATAK have no automatic receipt. First-party ratings are not proof of a public Google/Facebook review.
-- **Import reviews:** enter extracted fields from an authorized email notification, add a review manually, or preview a CSV batch. A confirmation is required before saving. Maximum 50 rows/128KB. Create an active real Local Listing first; up to 200 listings are listed. Required CSV headers: `source,externalId,text,reviewedAt`; optional `author,rating,url`. Dates must be real timezone-qualified ISO timestamps. Facebook recommendations are never assigned star ratings.
+- **Import reviews:** enter extracted fields from an authorized email notification, add a review manually, or preview a CSV batch. A confirmation is required before saving. Maximum 50 rows/128KB. Create an active real Local Listing first; up to 200 listings are listed. Required CSV headers: `source,externalId,text,reviewedAt`; optional `author,rating,url`. Dates must be real timezone-qualified ISO timestamps. Facebook recommendations and unmapped Booking.com scores are never assigned five-star ratings.
 - **Connections:** existing Google controls, source capabilities and messaging configuration. The source directory is not proof of connected accounts.
 
 ## Import integrity
@@ -37,3 +37,15 @@ Run `npm run qa:review-cockpit`, `npm run qa:review-import-model`, `npm run qa:r
 Release coordinator reviews/merges/deploys. Dedicated provider credentials, authorized account setup, real database and configured AI worker are still needed for live operations. This is an operational product increment, not a claim of feature parity with Birdeye.
 
 GitHub note saved with source. Matching Drive-ready copy retained locally, NOT UPLOADED (no Drive connector). No Gmail session or recurring background task is active.
+
+## Reviewable UI evidence
+
+Actual components rendered in the native TAKATAK shell with conspicuously labelled synthetic records and stubbed server actions, not a connected customer account:
+
+- [Inbox, desktop](screenshots/native-review-operations-desktop-synthetic.png)
+- [Email field import](screenshots/native-review-import-synthetic.png)
+- [Inbox, mobile](screenshots/native-review-operations-mobile-synthetic.png)
+
+Local validation: 22 cockpit checks, 16 import parser checks, 10 import service checks and 17 QMAPS checks passed (65 total). Browser workflows passed native four-section navigation/permission states, hash/back/form preservation, isolated review selection/filter/pagination, email-field preview/confirmation with stubbed save, CSV preview, and source rating semantics. Native foundation route 200, scoped feed without authorized workspace 403, no page errors or horizontal overflow at 1440/390px. Visible foundation cockpit axe scan returned zero WCAG2A/AA/2.1AA violations; this does not establish whole-product conformance. Production CI initially found a missing native QR channel type; corrected using generated model types. Final source CI is being verified separately.
+
+Final review also corrected concurrent file-selection races and disallowed interpreting unmapped partner score scales as five stars. No arbitrary source fetching, mailbox connector, autonomous AI worker or new provider credentials were enabled. — REVEW
