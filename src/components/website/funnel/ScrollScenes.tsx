@@ -270,7 +270,7 @@ function InvoiceScene({ lang }: { lang: Lang }) {
   );
 }
 
-const SCENES: { key: string; tag: Bi; Body: (p: { lang: Lang }) => React.ReactElement }[] = [
+export const SCENES: { key: string; tag: Bi; Body: (p: { lang: Lang }) => React.ReactElement }[] = [
   { key: "web", tag: T.web.tag, Body: WebScene },
   { key: "social", tag: T.social.tag, Body: SocialScene },
   { key: "reviews", tag: T.reviews.tag, Body: ReviewScene },
