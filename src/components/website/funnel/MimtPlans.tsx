@@ -25,6 +25,7 @@ const T = {
   popular: { fr: "Pour les équipes", en: "For teams" },
   yearly: { fr: `À l'année : 12 mois pour le prix de ${MIMT_YEARLY_MONTHS_PAID}.`, en: `Yearly: 12 months for the price of ${MIMT_YEARLY_MONTHS_PAID}.` },
   taxes: { fr: "Prix avant taxes ; TPS, TVQ et taxe municipale 9-1-1 en sus.", en: "Prices before taxes; GST, QST and the 9-1-1 municipal tax are extra." },
+  where: { fr: "Les forfaits s’achètent sur mimt.ca ; le numéro est activé dès le paiement.", en: "Plans are bought on mimt.ca; the number is activated once payment goes through." },
   ask: { fr: "Quel forfait pour moi ?", en: "Which plan for me?" },
   compare: { fr: "Comparer tous les forfaits", en: "Compare all plans" },
   live: { fr: "Appel entrant · Ventes", en: "Incoming call · Sales" },
@@ -112,7 +113,7 @@ export function MimtPlans() {
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <p className="hp-ink-3 text-[13.5px]">
-            {T.yearly[lang]} {T.taxes[lang]}
+            {T.yearly[lang]} {T.taxes[lang]} {T.where[lang]}
           </p>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => openConcierge({ first: lang === "fr" ? "Téléphonie MIMT pour mon entreprise" : "MIMT business phone for my company" })} className="hp-ghost hp-focus inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[14px] font-semibold">
