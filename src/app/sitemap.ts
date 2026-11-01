@@ -22,6 +22,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/free-tools",
     "/services",
     "/privacy-manager",
+    "/privacy",
+    "/terms",
     "/search",
   ];
 
