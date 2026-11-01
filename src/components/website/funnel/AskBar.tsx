@@ -15,6 +15,8 @@ import { fill } from "@/lib/website/home-funnel";
 import { Link } from "@/lib/website/nav";
 import { PROMO_CODE, PROMO_PERCENT } from "@/lib/website/promotions";
 import { CampaignCountdown, useActiveCampaign } from "./Campaign";
+import { sectionId } from "./HomeSectionNav";
+import { prefillTakbot } from "./TakbotTryPanel";
 
 type Lang = "en" | "fr";
 
@@ -33,6 +35,7 @@ const C = {
   add: { en: "Add", fr: "Ajouter" },
   added: { en: "Added", fr: "Ajouté" },
   agent: { en: "TAKATAK assistant", fr: "Assistant TAKATAK" },
+  askTakbot: { en: "Ask TAK bot (AI)", fr: "Demander à TAK bot (IA)" },
   agentNote: { en: "Guided answers from our catalog · a person can take over", fr: "Réponses guidées par notre catalogue · une personne peut prendre le relais" },
   hello: {
     en: "Hi! Tell me about your business or what you want to do, and I’ll put together the right services with real prices.",
@@ -164,6 +167,12 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
   const [draft, setDraft] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const dict = useDictation(lang, setDraft);
+  // The live TAK bot is on the homepage only.
+  const [hasTakbot] = useState(() => typeof document !== "undefined" && Boolean(document.getElementById(sectionId("takbot"))));
+  const toTakbot = (q: string) => {
+    onClose();
+    window.setTimeout(() => prefillTakbot(q, "chat"), 50);
+  };
 
   const send = useCallback(
     (text: string) => {
@@ -232,6 +241,15 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
                     <p className="hp-ink text-[14px]">{fill(C.welcome[lang], { p: PROMO_PERCENT, code: PROMO_CODE })}</p>
                     {campaign && <CampaignCountdown campaign={campaign} lang={lang} className="mt-2.5" />}
                   </div>
+                )}
+                {m.reply && hasTakbot && msgs[i - 1]?.from === "me" && (
+                  <button
+                    type="button"
+                    onClick={() => toTakbot(msgs[i - 1].text)}
+                    className="hp-ghost hp-focus inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold"
+                  >
+                    <Sparkles size={14} aria-hidden /> {C.askTakbot[lang]}
+                  </button>
                 )}
                 {m.reply && (m.reply.actions.includes("finalize") || m.reply.actions.includes("human")) && (
                   <div className="flex flex-wrap gap-2">
