@@ -303,6 +303,46 @@ export default function PrivacyPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-slate-900">
+              TikTok integration in TAKATAK
+            </h2>
+            <p className="mt-2">
+              When you connect a TikTok account to TAKATAK, we request
+              only the permissions shown in TikTok&apos;s authorization
+              screen. Depending on the permissions you approve, TAKATAK
+              may process TikTok account identifiers, display name,
+              profile image, authorized video information, and related
+              account or content metrics to show your connected account
+              and the features you choose to use.
+            </p>
+            <p className="mt-3">
+              TAKATAK processes authorization tokens and permission
+              information needed to maintain the connection. If you
+              authorize publishing features, TAKATAK may process the
+              video or post content and publishing instructions you
+              submit. TAKATAK does not publish on your behalf without
+              the applicable authorization and your requested action.
+            </p>
+            <p className="mt-3">
+              Connected TikTok information is used to provide requested
+              account connections, authorized dashboard functions,
+              analytics where available, and security. TAKATAK does
+              not sell TikTok account information. Access is restricted
+              to authorized workspace users and service providers
+              required to operate the requested functions.
+            </p>
+            <p className="mt-3">
+              You can disconnect TikTok in TAKATAK or revoke the
+              connection through TikTok account settings. To request
+              deletion of TikTok information retained by TAKATAK,
+              contact support@takatak.ca. Revoking access stops future
+              authorized retrieval but may not immediately remove
+              records retained where legally required for security,
+              accounting, or disputes.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-slate-900">
               9. Information security
             </h2>
 
