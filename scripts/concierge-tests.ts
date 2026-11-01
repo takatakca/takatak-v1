@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { normalize, respond, suggest, understand } from "../src/lib/website/concierge";
 import { FICHE_ORDER, answer, emptyFiche, fichePayload, question } from "../src/lib/website/sales-fiche";
+import { resolveIntent } from "../src/lib/website/service-intent";
 
 assert.equal(normalize("Hébergement Ça!").trim(), "hebergement ca");
 assert.deepEqual(understand("J'ai besoin d'un site web et d'un nom de domaine").services, ["website", "domains"]);
@@ -62,5 +63,12 @@ assert.ok(payload.title.includes("Site web") && payload.title.length <= 160);
 assert.equal(payload.phone, undefined);
 assert.ok(payload.message.includes("Adresse: 1234, rue Exemple, Montréal"), "address travels in the message");
 assert.ok(!("price" in payload) && !("amount" in payload), "prices are never sent from the browser");
+
+// Hero search: review requests go to the reviews page, maps to local listings.
+assert.equal(resolveIntent("Plus d'avis Google pour mon salon").intent, "reviews");
+assert.equal(resolveIntent("More Google reviews for my salon").to, "/services/reviews");
+assert.equal(resolveIntent("Être trouvé sur Google Maps").intent, "local_visibility");
+assert.equal(resolveIntent("Trouver un domaine .ca pour ma boutique").intent, "domain");
+assert.equal(resolveIntent("Je veux un site web premium pour mon restaurant").intent, "website");
 
 console.log("concierge tests: OK");

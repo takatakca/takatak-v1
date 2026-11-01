@@ -1186,3 +1186,20 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 @media (prefers-reduced-motion: reduce) {
   .tk-bot *, .tk-bot .tk-bot-float { animation: none !important; }
 }
+
+/* Hero laptop: browser windows drifting behind, and the built page scrolling
+   slowly, as if someone were browsing. Off with reduced motion. */
+@keyframes tk-ghost {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-2deg); opacity: 0.55; }
+  33% { transform: translate3d(18px, -14px, 0) rotate(1deg); opacity: 0.9; }
+  66% { transform: translate3d(-12px, 10px, 0) rotate(-1deg); opacity: 0.7; }
+}
+.tk-ghost-window { animation: tk-ghost 17s ease-in-out infinite; will-change: transform; }
+@keyframes tk-page-browse {
+  0%, 20% { transform: translateY(0); }
+  70%, 100% { transform: translateY(-22%); }
+}
+.tk-page-browse { animation: tk-page-browse 3.2s cubic-bezier(0.45, 0, 0.25, 1) 0.6s both; }
+@media (prefers-reduced-motion: reduce) {
+  .tk-ghost-window, .tk-page-browse { animation: none; }
+}
