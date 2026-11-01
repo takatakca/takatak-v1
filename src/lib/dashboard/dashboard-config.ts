@@ -192,6 +192,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Integrations", href: "/dashboard/integrations", icon: PlugZap },
       { label: "Jobs", href: "/dashboard/jobs", icon: CalendarClock },
       { label: "Activity", href: "/dashboard/activity", icon: History },
+      { label: "Facturations — Administration", href: "/dashboard/admin/billing", icon: Receipt },
       { label: "Admin", href: "/dashboard/admin", icon: Briefcase },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },
     ],
