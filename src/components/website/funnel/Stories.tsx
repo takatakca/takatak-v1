@@ -14,6 +14,7 @@ import { useLanguage } from "@/lib/website/use-language";
 import { ClipModal, MediaLoop, PlayBadge } from "./MediaLoop";
 import { type Origin, originOf, RevealMedia, Rise, useTilt } from "./primitives";
 import { MediaChip } from "./ServiceGallery";
+import { LISTING_DIRECTORIES, ListingDemo } from "./ListingDemo";
 
 /** A slim intent bar: pick what you want, one button takes you there. No icons, no boxes. */
 export function QuickActions() {
@@ -122,10 +123,16 @@ export function PhotoStories() {
           return (
             <article key={s.key} className="grid items-center gap-8 lg:grid-cols-12 lg:gap-16">
               <Rise className={`relative lg:col-span-7 ${reverse ? "lg:order-2" : ""}`}>
-<StoryMedia story={s} lang={lang} />
-                <div className={`absolute -bottom-5 ${reverse ? "right-4 sm:right-8" : "left-4 sm:left-8"}`}>
-                  <StoryCard story={s.key} />
-                </div>
+                {s.key === "found" ? (
+                  <ListingDemo />
+                ) : (
+                  <>
+                    <StoryMedia story={s} lang={lang} />
+                    <div className={`absolute -bottom-5 ${reverse ? "right-4 sm:right-8" : "left-4 sm:left-8"}`}>
+                      <StoryCard story={s.key} />
+                    </div>
+                  </>
+                )}
               </Rise>
               <Rise delay={120} className={`mt-4 lg:col-span-5 lg:mt-0 ${reverse ? "lg:order-1" : ""}`}>
                 <p className="hp-ink-2 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.18em]">
@@ -134,6 +141,16 @@ export function PhotoStories() {
                 </p>
                 <h3 className="hp-display hp-ink mt-3 text-balance text-[32px] sm:text-[42px]">{s.title[lang]}</h3>
                 <p className="hp-ink-2 mt-5 text-[17px] leading-8">{s.body[lang]}</p>
+                {s.key === "found" && (
+                  <ul className="mt-5 flex flex-wrap gap-1.5" aria-label={lang === "fr" ? "Annuaires" : "Directories"}>
+                    {LISTING_DIRECTORIES.map((d) => (
+                      <li key={d.key} className="hp-card hp-ink rounded-full px-3 py-1 text-[12.5px] font-semibold ring-1 ring-[var(--hp-line)]">
+                        {d.name}
+                      </li>
+                    ))}
+                    <li className="hp-ink-3 px-2 py-1 text-[12.5px]">{lang === "fr" ? "et plus" : "and more"}</li>
+                  </ul>
+                )}
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                   <button
                     type="button"

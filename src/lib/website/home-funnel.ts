@@ -393,12 +393,12 @@ export const homeV3 = {
     {
       key: "found",
       photo: "/photos/artisan-atelier.webp",
-      alt: { en: "A craftsman in his workshop looking at his phone", fr: "Un artisan dans son atelier qui regarde son téléphone" },
-      eyebrow: { en: "Get found", fr: "Être trouvé" },
-      title: { en: "Show up in Google Maps and local search.", fr: "Apparaissez dans Google Maps et les recherches locales." },
+      alt: { en: "A business listing being edited", fr: "Une fiche d’entreprise en cours de modification" },
+      eyebrow: { en: "Local listings · local SEO", fr: "Fiches locales · SEO local" },
+      title: { en: "Found everywhere. Chosen right away.", fr: "Trouvé partout. Choisi tout de suite." },
       body: {
-        en: "An up-to-date Google profile, maps, directories and reviews. Every local search leads to your door.",
-        fr: "Une fiche Google à jour, les cartes, les annuaires et vos avis. Chaque recherche locale mène à votre porte.",
+        en: "One listing, kept up to date in every directory your customers use: hours, menu, photos, phone number, holiday hours, reviews. AI does the updates, our team checks them.",
+        fr: "Une seule fiche, tenue à jour dans chaque annuaire où vos clients cherchent : heures, menu, photos, numéro, heures des fêtes, avis. L’IA fait les mises à jour, notre équipe les vérifie.",
       },
       keys: ["local", "reviews"],
       route: "/services/local-listings",
