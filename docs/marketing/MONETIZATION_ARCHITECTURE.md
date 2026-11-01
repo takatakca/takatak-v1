@@ -174,8 +174,11 @@ dans les contrôles de blocage d'AdSense (**à vérifier** : noms exacts des ré
   non personnalisées jusqu'à « Accepter » ; bouton « Gérer les témoins » ; section « Publicité Google » dans la
   politique de confidentialité ; évaluation des facteurs relatifs à la vie privée (EFVP) pour Google, comme le
   prévoit déjà MIMT (`mimtcaapp/docs/MIMT-LAUNCH.md`, « Publicités et coûts »).
-- **takatak.ca :** une recherche rapide dans le code n'a pas trouvé de bannière de témoins : **à confirmer**, puis
-  reprendre celle de mimt.ca avant d'activer AdSense.
+- **takatak.ca (vérifié dans le code le 2026-11-01) :** aucune bannière de témoins, et aujourd'hui aucun traceur tiers
+  (pas de script Google, Meta ni Clarity sur le site public ; `trackPromo` ne fait qu'ajouter à un `dataLayer` local).
+  L'outil maison `public/takatak-analytics.js` est sans témoin, respecte Global Privacy Control et Do Not Track, et
+  n'est pas installé sur takatak.ca. **La bannière devient obligatoire avant** d'ajouter AdSense, GA4, le pixel Meta
+  ou Clarity : reprendre celle de mimt.ca (Consent Mode v2 « refusé » par défaut).
 - **Europe (EEE), Royaume-Uni, Suisse :** pour des annonces personnalisées, Google exige une plateforme de
   gestion du consentement certifiée par Google et intégrée au TCF de l'IAB (depuis le 16 janvier 2024 pour
   l'EEE et le Royaume-Uni, le 31 juillet 2024 pour la Suisse) ; sinon, seulement des annonces non
