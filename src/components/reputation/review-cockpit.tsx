@@ -326,20 +326,20 @@ export function ReviewCockpit({
                         <span className="text-sm font-semibold text-slate-900">
                           {review.author}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-slate-600">
                           {review.rating === null
                             ? "Not rated"
                             : `${review.rating}/5`}
                         </span>
                       </span>
-                      <span className="mt-1 block text-xs text-slate-500">
+                      <span className="mt-1 block text-xs text-slate-600">
                         {reviewSource(review.source)?.name || "Other source"} ·{" "}
                         {review.location}
                       </span>
                       <span className="mt-2 block line-clamp-2 text-xs leading-5 text-slate-600">
                         {review.text || "No written comment."}
                       </span>
-                      <span className="mt-2 flex justify-between gap-2 text-[11px] text-slate-500">
+                      <span className="mt-2 flex justify-between gap-2 text-[11px] text-slate-600">
                         <span>{review.state.replaceAll("_", " ")}</span>
                         <span>{review.createdAt.slice(0, 10)}</span>
                       </span>

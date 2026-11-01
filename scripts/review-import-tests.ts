@@ -345,7 +345,7 @@ async function main() {
   await check(
     "preview rejects normalized payloads that exceed the server submission bound",
     () => {
-      const row = input().rows[0];
+      const row = example();
       const result = parseReviewImport({
         ...input(),
         rows: Array.from({ length: 50 }, (_, index) => ({
