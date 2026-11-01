@@ -106,7 +106,7 @@ export function TelecomScene() {
       {/* Mobile and tablet: phone, then the options in a grid */}
       <div className="lg:hidden">
         <Handset lang={lang} onCall={onCall} secs={secs} reduced={reduced} className="mx-auto" small />
-        <div className="mt-6 grid grid-cols-2 gap-2.5">
+        <div className="mt-6 grid grid-cols-2 gap-2.5 [&>*]:min-w-0">
           {OPTIONS.map((o, i) => (
             <OptionCard key={o.key} o={o} lang={lang} shown={i < shown || reduced} active={i === active} />
           ))}

@@ -78,7 +78,7 @@ export function PhoneChapter() {
             <p className="mt-6 max-w-2xl text-[16.5px] leading-8 text-white/65">{T.body[lang]}</p>
           </Rise>
 
-          <div className="mt-12 grid items-start gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-12">
+          <div className="mt-12 grid items-start gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:gap-12 [&>*]:min-w-0">
             <Rise delay={80}>
               <TelecomScene />
             </Rise>
