@@ -73,12 +73,126 @@ export function TwoTone({
   size?: "lg" | "md";
 }) {
   const sizes = size === "lg" ? "text-[36px] sm:text-[54px] lg:text-[64px]" : "text-[30px] sm:text-[40px] lg:text-[46px]";
+  const { ref, seen } = useSeen<HTMLHeadingElement>("0px 0px -8% 0px");
+  const leadWords = lead.split(" ");
   return (
-    <Tag id={id} className={`hp-display hp-ink text-balance ${sizes} ${className}`}>
-      {lead}
-      {rest && <span className="hp-serif hp-ink-2"> {rest}</span>}
+    <Tag ref={ref} id={id} data-seen={seen} className={`hp-display hp-ink hp-kin text-balance ${sizes} ${className}`}>
+      <KineticWords words={leadWords} start={0} />
+      {rest && (
+        <span className="hp-serif hp-ink-2">
+          {" "}
+          <KineticWords words={rest.split(" ")} start={leadWords.length} />
+        </span>
+      )}
     </Tag>
   );
+}
+
+/** Words that rise out of a mask one after the other when the heading is seen. */
+function KineticWords({ words, start }: { words: string[]; start: number }) {
+  return (
+    <>
+      {words.map((w, i) => (
+        <span key={`${w}-${i}`} className="hp-w">
+          <span style={{ "--i": start + i } as CSSProperties}>{w}</span>
+          {i < words.length - 1 ? " " : ""}
+        </span>
+      ))}
+    </>
+  );
+}
+
+/**
+ * A picture that opens like a curtain (clip-path) and settles from a slight
+ * zoom when it enters the screen. Children fill it (next/image with fill).
+ */
+export function RevealMedia({
+  children,
+  className = "",
+  delay = 0,
+  radius = 32,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  radius?: number;
+}) {
+  const { ref, seen } = useSeen<HTMLDivElement>("0px 0px -10% 0px");
+  return (
+    <div ref={ref} data-seen={seen} className={`hp-curtain ${className}`} style={{ "--d": `${delay}ms`, "--r": `${radius}px` } as CSSProperties}>
+      <div className="hp-curtain-in absolute inset-0">{children}</div>
+    </div>
+  );
+}
+
+/**
+ * Pulls its child a few pixels towards the pointer (mouse only, never with
+ * reduced motion), then springs back: the call to action feels alive.
+ */
+export function Magnetic({ children, strength = 0.28, className = "" }: { children: ReactNode; strength?: number; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const reduced = useReducedMotion();
+  const move = (e: ReactPointerEvent<HTMLSpanElement>) => {
+    const el = ref.current;
+    if (!el || reduced || e.pointerType !== "mouse") return;
+    const r = el.getBoundingClientRect();
+    const x = (e.clientX - (r.left + r.width / 2)) * strength;
+    const y = (e.clientY - (r.top + r.height / 2)) * strength * 1.3;
+    el.style.transform = `translate3d(${Math.max(-10, Math.min(10, x)).toFixed(1)}px, ${Math.max(-8, Math.min(8, y)).toFixed(1)}px, 0)`;
+  };
+  const leave = () => {
+    if (ref.current) ref.current.style.transform = "";
+  };
+  return (
+    <span ref={ref} onPointerMove={move} onPointerLeave={leave} className={`hp-magnetic inline-flex ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * A soft light that follows the pointer over a section (sets --mx / --my for
+ * the .hp-spot CSS). Mouse only; nothing with reduced motion.
+ */
+export function useSpotlight<T extends HTMLElement>() {
+  const reduced = useReducedMotion();
+  return {
+    onPointerMove: (e: ReactPointerEvent<T>) => {
+      if (reduced || e.pointerType !== "mouse") return;
+      const el = e.currentTarget;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      el.style.setProperty("--my", `${e.clientY - r.top}px`);
+    },
+  };
+}
+
+/** 0 → 1 as the page scrolls past an element (for progress lines). */
+export function useScrollProgress(targetId: string) {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const el = document.getElementById(targetId);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const total = r.height - window.innerHeight;
+      setP(total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0);
+    };
+    const on = () => {
+      if (!frame) frame = requestAnimationFrame(read);
+    };
+    read();
+    window.addEventListener("scroll", on, { passive: true });
+    window.addEventListener("resize", on);
+    return () => {
+      window.removeEventListener("scroll", on);
+      window.removeEventListener("resize", on);
+      cancelAnimationFrame(frame);
+    };
+  }, [targetId]);
+  return p;
 }
 
 /** Small label above a headline. */

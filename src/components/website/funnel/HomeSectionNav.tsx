@@ -9,6 +9,7 @@ import { useHomePlan } from "@/lib/website/home-plan";
 import { useHomeTheme } from "@/lib/website/home-theme";
 import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
+import { useScrollProgress } from "./primitives";
 
 export const sectionId = (id: HomeSectionId) => `home-${id}`;
 
@@ -25,6 +26,7 @@ export function HomeSectionNav() {
   const [active, setActive] = useState<HomeSectionId | null>(null);
   const [bar, setBar] = useState<{ left: number; width: number } | null>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const progress = useScrollProgress("core");
   useHeaderHeight();
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export function HomeSectionNav() {
       className="hp-line sticky z-30 border-b backdrop-blur-xl backdrop-saturate-150"
       style={{ top: "var(--tk-header-h, 64px)", background: "color-mix(in oklab, var(--hp-bg) 96%, transparent)" }}
     >
+      <span aria-hidden className="hp-progress" style={{ transform: `scaleX(${progress.toFixed(4)})` }} />
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
         <ul ref={listRef} className="tk-no-scrollbar relative flex h-full flex-1 items-center gap-7 overflow-x-auto">
           {HOME_SECTIONS.map((s) => {

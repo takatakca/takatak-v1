@@ -8,7 +8,7 @@ import { homeCopy, homeV2 } from "@/lib/website/home-funnel";
 import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { sectionId } from "./HomeSectionNav";
-import { Aurora, Eyebrow, Rise, Section, TwoTone } from "./primitives";
+import { Aurora, Eyebrow, Rise, Section, TwoTone, useSpotlight } from "./primitives";
 import { TakbotDemo } from "./TakbotDemo";
 
 export const MODE_ICONS = {
@@ -23,10 +23,14 @@ export const MODE_ICONS = {
 /** Homepage chapter for TAK bot, the master AI bot. */
 export function TakbotSection() {
   const { lang } = useLanguage();
+  const spot = useSpotlight<HTMLDivElement>();
   return (
     // Always a dark chapter, in both themes: TAK bot is the night sky of the page.
-    <div className="hp" data-theme="dark">
+    <div className="hp" data-theme="dark" {...spot}>
     <Section id={sectionId("takbot")} labelledBy="home-takbot-title" className="tk-grain overflow-hidden bg-[#030812] py-20 sm:py-32">
+      <div aria-hidden className="hp-tech-grid" />
+      <div aria-hidden className="hp-scan" />
+      <div aria-hidden className="hp-spot-layer" />
       <div aria-hidden className="absolute inset-0 opacity-70">
         <Aurora />
       </div>

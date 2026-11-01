@@ -7,7 +7,7 @@ import { ArrowRight, Check, Loader2, MailCheck } from "lucide-react";
 import { useCopy } from "@/components/website/premium/ui";
 import { NEWSLETTER_TOPICS, TOPIC_LABELS, type NewsletterTopic } from "@/lib/newsletter/topics";
 import { Link } from "@/lib/website/nav";
-import { Eyebrow, Rise, TwoTone } from "./primitives";
+import { Eyebrow, RevealMedia, Rise, TwoTone } from "./primitives";
 import { PushAlert } from "./PushAlert";
 
 type Info =
@@ -241,9 +241,11 @@ export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) 
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
         {/* Picture + an honest preview of a real email (the FIRST10 welcome offer exists). */}
         <Rise className="relative min-w-0">
-          <div className="hp-photo relative aspect-[4/5] overflow-hidden rounded-[32px] shadow-[var(--hp-shadow)] sm:aspect-[5/4] lg:aspect-[4/5]">
-            <Image src="/photos/studio-design.webp" alt={t.photoAlt[lang]} fill sizes="(min-width: 1024px) 560px, 100vw" className="hp-kenburns object-cover" style={{ objectPosition: "55% 40%" }} />
-          </div>
+          <RevealMedia className="aspect-[4/5] shadow-[var(--hp-shadow)] sm:aspect-[5/4] lg:aspect-[4/5]">
+            <div className="hp-parallax absolute inset-0">
+              <Image src="/photos/studio-design.webp" alt={t.photoAlt[lang]} fill sizes="(min-width: 1024px) 560px, 100vw" className="object-cover" style={{ objectPosition: "55% 40%" }} />
+            </div>
+          </RevealMedia>
           <div className="hp-card hp-ink absolute bottom-5 left-5 right-5 rounded-2xl p-4 shadow-[0_24px_60px_-24px_rgba(11,13,18,0.45)] sm:bottom-8 sm:left-auto sm:right-8 sm:w-[340px]">
             <p className="hp-ink-3 text-[11px] font-semibold uppercase tracking-[0.18em]">{t.previewTag[lang]}</p>
             <div className="mt-3 flex items-start gap-3">

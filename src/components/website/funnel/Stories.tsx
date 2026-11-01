@@ -12,7 +12,7 @@ import { Link } from "@/lib/website/nav";
 import { pricing } from "@/lib/website/pricing";
 import { useLanguage } from "@/lib/website/use-language";
 import { ClipModal, MediaLoop, PlayBadge } from "./MediaLoop";
-import { Rise, useTilt } from "./primitives";
+import { RevealMedia, Rise, useTilt } from "./primitives";
 import { MediaChip } from "./ServiceGallery";
 
 /** A slim intent bar: pick what you want, one button takes you there. No icons, no boxes. */
@@ -98,7 +98,9 @@ function StoryMedia({ story, lang }: { story: (typeof homeV3.stories)[number]; l
         aria-label={`${lang === "fr" ? "Voir la vidéo" : "Watch the video"} · ${story.eyebrow[lang]}`}
         className={`group hp-focus relative block w-full rounded-[28px] shadow-[0_40px_80px_-40px_rgb(6_13_31/0.55)] ${tilt.className}`}
       >
-        <MediaLoop photo={story.photo} alt={story.alt[lang]} videoKey={clip} sizes="(min-width: 1024px) 720px, 100vw" className="aspect-[4/3] rounded-[28px] sm:aspect-[16/11]" />
+        <RevealMedia radius={28} className="aspect-[4/3] sm:aspect-[16/11]">
+          <MediaLoop photo={story.photo} alt={story.alt[lang]} videoKey={clip} sizes="(min-width: 1024px) 720px, 100vw" className="absolute inset-0" />
+        </RevealMedia>
         <PlayBadge label={lang === "fr" ? "Voir la vidéo" : "Watch the video"} />
       </button>
       {playing && <ClipModal clip={clip} lang={lang} onClose={() => setPlaying(false)} />}

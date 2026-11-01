@@ -12,7 +12,7 @@ import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
 import { WelcomeSaving } from "./Campaign";
 import { sectionId } from "./HomeSectionNav";
-import { Eyebrow, Rise, Section, Ticker, TwoTone } from "./primitives";
+import { Eyebrow, Magnetic, Rise, Section, Ticker, TwoTone } from "./primitives";
 
 function linePrice(c: CoreCategory, tk: (k: string) => string, lang: "en" | "fr"): string {
   if (c.from === "quote") return tk("cat.onQuote");
@@ -168,15 +168,17 @@ export function PlanConfigurator() {
                 </div>
               )}
               <div className="mt-7 grid gap-2">
+                <Magnetic strength={0.12} className="w-full">
                 <Link
                   to={plan.registerHref}
                   aria-disabled={!plan.keys.length}
-                  className={`hp-focus inline-flex items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-semibold ${
+                  className={`hp-focus inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-4 text-[15px] font-semibold ${
                     plan.keys.length ? "hp-cta hp-halo" : "hp-ink-3 pointer-events-none bg-[var(--hp-line)]"
                   }`}
                 >
                   {homeCopy.plan.cta[lang]} <ArrowRight size={16} aria-hidden />
                 </Link>
+                </Magnetic>
                 <button
                   type="button"
                   onClick={() => openLiveChat({ page: "/", intent: "plan_builder", lang })}

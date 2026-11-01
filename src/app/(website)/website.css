@@ -920,3 +920,52 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
   .hp-mic, .hp-mic-on, .hp-orb { animation: none; }
   .hp-tilt { transition: none; transform: none !important; }
 }
+
+
+/* ── v6 motion (owner 2026-11-01: "a second wind", animated, premium, tech) ── */
+
+/* Kinetic headings: each word rises out of its own mask, one after the other. */
+.hp-kin .hp-w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.1em; margin-bottom: -0.1em; }
+.hp-kin .hp-w > span { display: inline-block; transform: translate3d(0, 108%, 0) rotate(3deg); transform-origin: 0 100%; transition: transform 1s cubic-bezier(0.19, 1, 0.22, 1) calc(var(--i, 0) * 60ms); }
+.hp-kin[data-seen="true"] .hp-w > span { transform: none; }
+
+/* Curtain reveal for big pictures: opens from the bottom, settles from a slight zoom. */
+.hp-curtain { position: relative; overflow: hidden; clip-path: inset(100% 0 0 0 round var(--r, 32px)); transition: clip-path 1.3s cubic-bezier(0.77, 0, 0.18, 1) var(--d, 0ms); }
+.hp-curtain[data-seen="true"] { clip-path: inset(0 0 0 0 round var(--r, 32px)); }
+.hp-curtain-in { transform: scale(1.18); transition: transform 1.8s cubic-bezier(0.19, 1, 0.22, 1) var(--d, 0ms); }
+.hp-curtain[data-seen="true"] .hp-curtain-in { transform: scale(1); }
+
+/* Magnetic calls to action. */
+.hp-magnetic { transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); will-change: transform; }
+
+/* Pointer light on dark sections, plus a faint moving grid and scan line ("robotic" touch). */
+.hp-spot-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(560px circle at var(--mx, 70%) var(--my, 35%), rgba(41, 195, 255, 0.16), transparent 46%); }
+.hp-tech-grid { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.5;
+  background-image: linear-gradient(rgba(120, 170, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 170, 255, 0.07) 1px, transparent 1px);
+  background-size: 56px 56px; mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%);
+  animation: hp-grid-drift 24s linear infinite; }
+@keyframes hp-grid-drift { to { background-position: 56px 56px, 56px 56px; } }
+.hp-scan { position: absolute; left: 0; right: 0; height: 120px; top: -120px; pointer-events: none; z-index: 0;
+  background: linear-gradient(180deg, transparent, rgba(41, 195, 255, 0.08) 60%, rgba(41, 195, 255, 0.22) 98%, transparent);
+  animation: hp-scan 7s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+@keyframes hp-scan { 0% { transform: translateY(0); opacity: 0; } 10% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateY(1100px); opacity: 0; } }
+
+/* Reading progress under the section menu. */
+.hp-progress { position: absolute; left: 0; bottom: -1px; height: 2px; width: 100%; transform-origin: 0 50%; background: linear-gradient(90deg, var(--hp-cta), #29c3ff); }
+
+/* Scroll-linked parallax where the browser supports it (pure CSS, no listeners). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hp-parallax { animation: hp-parallax linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+    @keyframes hp-parallax { from { transform: translate3d(0, -7%, 0) scale(1.14); } to { transform: translate3d(0, 7%, 0) scale(1.14); } }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-kin .hp-w > span { transform: none; transition: none; }
+  .hp-curtain { clip-path: none; transition: none; }
+  .hp-curtain-in { transform: none; transition: none; }
+  .hp-magnetic { transition: none; }
+  .hp-tech-grid, .hp-scan { animation: none; }
+  .hp-scan { display: none; }
+}
