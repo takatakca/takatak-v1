@@ -12,7 +12,7 @@ import { Link } from "@/lib/website/nav";
 import { pricing } from "@/lib/website/pricing";
 import { useLanguage } from "@/lib/website/use-language";
 import { ClipModal, MediaLoop, PlayBadge } from "./MediaLoop";
-import { RevealMedia, Rise, useTilt } from "./primitives";
+import { type Origin, originOf, RevealMedia, Rise, useTilt } from "./primitives";
 import { MediaChip } from "./ServiceGallery";
 
 /** A slim intent bar: pick what you want, one button takes you there. No icons, no boxes. */
@@ -86,7 +86,7 @@ const STORY_CLIP = { online: "website", found: "local", grow: "marketing" } as c
 
 /** The story picture: tilts in 3D under the mouse, and plays the service's clip when clicked. */
 function StoryMedia({ story, lang }: { story: (typeof homeV3.stories)[number]; lang: "en" | "fr" }) {
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState<Origin | false>(false);
   const tilt = useTilt<HTMLButtonElement>(4);
   const clip = STORY_CLIP[story.key];
   return (
@@ -94,7 +94,7 @@ function StoryMedia({ story, lang }: { story: (typeof homeV3.stories)[number]; l
       <button
         type="button"
         {...tilt}
-        onClick={() => setPlaying(true)}
+        onClick={(e) => setPlaying(originOf(e.currentTarget))}
         aria-label={`${lang === "fr" ? "Voir la vidéo" : "Watch the video"} · ${story.eyebrow[lang]}`}
         className={`group hp-focus relative block w-full rounded-[28px] shadow-[0_40px_80px_-40px_rgb(6_13_31/0.55)] ${tilt.className}`}
       >
@@ -103,7 +103,7 @@ function StoryMedia({ story, lang }: { story: (typeof homeV3.stories)[number]; l
         </RevealMedia>
         <PlayBadge label={lang === "fr" ? "Voir la vidéo" : "Watch the video"} />
       </button>
-      {playing && <ClipModal clip={clip} lang={lang} onClose={() => setPlaying(false)} />}
+      {playing !== false && <ClipModal clip={clip} lang={lang} origin={playing} onClose={() => setPlaying(false)} />}
     </>
   );
 }

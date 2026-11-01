@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Plus, X } from "lucide-react";
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Pause, Play, Plus, RotateCcw, X } from "lucide-react";
 
 import { FromLine, useCopy } from "@/components/website/premium/ui";
 import { CORE_CATEGORIES, type CoreCategory } from "@/lib/website/core-categories";
@@ -12,7 +12,7 @@ import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { CLIP_KEYS, MediaLoop, PlayBadge } from "./MediaLoop";
-import { Rise, TwoTone } from "./primitives";
+import { type Origin, originOf, Rise, TwoTone, useZoomFrom } from "./primitives";
 
 const AUTOPLAY_MS = 5200;
 
@@ -34,7 +34,19 @@ export function MediaChip({ text, className = "" }: { text: string; className?: 
 }
 
 /** Pop-up with the full story of one service. */
-function ServiceModal({ category, onClose }: { category: CoreCategory; onClose: () => void }) {
+const FLIP = {
+  open: { en: "What’s included", fr: "Ce qui est inclus" },
+  back: { en: "Back to the picture", fr: "Retour à la photo" },
+  details: { en: "See details", fr: "Voir le détail" },
+};
+
+function ServiceModal({ category, onClose: done, origin }: { category: CoreCategory; onClose: () => void; origin: Origin }) {
+  const [zoomRef, zoomClose, zoomAnimated] = useZoomFrom<HTMLDivElement>(origin);
+  const onClose = () => zoomClose(done);
+  const closeLatest = useRef(onClose);
+  useEffect(() => {
+    closeLatest.current = onClose;
+  });
   const { tk, lang } = useCopy();
   const plan = useHomePlan();
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -45,7 +57,7 @@ function ServiceModal({ category, onClose }: { category: CoreCategory; onClose: 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeLatest.current();
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
@@ -54,7 +66,7 @@ function ServiceModal({ category, onClose }: { category: CoreCategory; onClose: 
       window.removeEventListener("keydown", onKey);
       previous?.focus();
     };
-  }, [onClose]);
+  }, []);
 
   // Portal to <body> so the pop-up sits above the site header.
   return createPortal(
@@ -66,7 +78,7 @@ function ServiceModal({ category, onClose }: { category: CoreCategory; onClose: 
       aria-labelledby="svc-modal-title"
     >
       <div className="tk-fade-in absolute inset-0 bg-[#05070C]/65 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <div className="tk-modal-in hp-bg relative max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.6)] sm:rounded-[28px]">
+      <div ref={zoomRef} className={`${zoomAnimated ? "" : "tk-modal-in "}hp-bg relative max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.6)] sm:rounded-[28px]`}>
         <button ref={closeRef} type="button" onClick={onClose} aria-label={homeV2.services.close[lang]} className="hp-btn hp-focus absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full">
           <X size={18} aria-hidden />
         </button>
@@ -137,7 +149,8 @@ export function ServiceGallery() {
   const [playing, setPlaying] = useState(true);
   const [hold, setHold] = useState(false);
   const [inView, setInView] = useState(false);
-  const [open, setOpen] = useState<CoreCategory | null>(null);
+  const [open, setOpen] = useState<{ c: CoreCategory; origin: Origin } | null>(null);
+  const [flipped, setFlipped] = useState<string | null>(null);
   const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
   const total = CORE_CATEGORIES.length;
 
@@ -260,10 +273,13 @@ export function ServiceGallery() {
               key={c.key}
               aria-roledescription="slide"
               aria-label={`${i + 1} / ${total} · ${name}`}
-              className={`group relative h-[580px] w-[82vw] max-w-[420px] shrink-0 overflow-hidden rounded-[28px] bg-black shadow-[var(--hp-shadow)] transition-[transform,opacity] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] sm:w-[420px] ${
+              data-flipped={flipped === c.key}
+              className={`hp-flip group relative h-[580px] w-[82vw] max-w-[420px] shrink-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] sm:w-[420px] ${
                 on ? "scale-100 opacity-100" : "scale-[0.95] opacity-75 hover:opacity-100"
               }`}
             >
+              <div className="hp-flip-inner">
+              <div className="hp-face overflow-hidden rounded-[28px] bg-black shadow-[var(--hp-shadow)]" inert={flipped === c.key}>
               <MediaLoop
                 photo={media.photo}
                 alt={media.alt[lang]}
@@ -282,8 +298,8 @@ export function ServiceGallery() {
 
               <button
                 type="button"
-                onClick={() => {
-                  if (!drag.current?.moved) setOpen(c);
+                onClick={(e) => {
+                  if (!drag.current?.moved) setOpen({ c, origin: originOf(e.currentTarget) });
                 }}
                 className="absolute inset-0 z-[2] flex flex-col p-7 pb-[92px] text-left text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
                 aria-label={`${homeV2.services.open[lang]}: ${name}`}
@@ -311,6 +327,58 @@ export function ServiceGallery() {
                   {inPlan ? <Check size={16} strokeWidth={3} aria-hidden /> : <Plus size={16} strokeWidth={2.5} aria-hidden />}
                   {inPlan ? homeV3.added[lang] : homeV3.addAll[lang]}
                 </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFlipped(c.key)}
+                className="absolute right-4 top-4 z-[4] inline-flex h-9 items-center gap-1.5 rounded-full bg-white/15 px-3.5 text-[12.5px] font-semibold text-white ring-1 ring-white/30 backdrop-blur-md transition-colors hover:bg-white/25"
+              >
+                {FLIP.open[lang]}
+              </button>
+              </div>
+
+              {/* Back of the card: what is included, the price, add. */}
+              <div className="hp-face hp-face-back flex flex-col overflow-hidden rounded-[28px] bg-[#071021] p-7 text-white shadow-[var(--hp-shadow)]" inert={flipped !== c.key}>
+                <div aria-hidden className="hp-tech-grid opacity-60" />
+                <p className="relative text-[13px] font-semibold text-white/70">{name}</p>
+                <p className="hp-display relative mt-3 text-balance text-[26px] leading-tight">{tk(`cat.${c.key}.headline`)}</p>
+                <ul className="relative mt-6 grid gap-3.5 border-t border-white/10 pt-6">
+                  {(["h1", "h2", "h3"] as const).map((h) => (
+                    <li key={h} className="flex gap-3 text-[14.5px] leading-6 text-white/85">
+                      <Check size={16} className="mt-1 shrink-0 text-[#29C3FF]" strokeWidth={2.5} aria-hidden />
+                      {tk(`cat.${c.key}.${h}`)}
+                    </li>
+                  ))}
+                </ul>
+                <div className="relative mt-auto">
+                  <FromLine category={c} className="block text-[15px] [&_span]:!text-white" />
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => plan.toggle(c.key)}
+                      aria-pressed={inPlan}
+                      className={`inline-flex h-11 items-center gap-1.5 rounded-full px-5 text-[13.5px] font-semibold transition-all ${inPlan ? "bg-emerald-500 text-white" : "bg-white text-[#0B0D12] hover:scale-[1.04]"}`}
+                    >
+                      {inPlan ? <Check size={16} strokeWidth={3} aria-hidden /> : <Plus size={16} strokeWidth={2.5} aria-hidden />}
+                      {inPlan ? homeV3.added[lang] : homeV3.addAll[lang]}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => setOpen({ c, origin: originOf(e.currentTarget.closest("article")) })}
+                      className="inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-semibold text-white ring-1 ring-white/30 hover:bg-white/10"
+                    >
+                      {FLIP.details[lang]} <ArrowRight size={15} aria-hidden />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setFlipped(null)}
+                    className="mt-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-white/65 hover:text-white"
+                  >
+                    <RotateCcw size={14} aria-hidden /> {FLIP.back[lang]}
+                  </button>
+                </div>
+              </div>
               </div>
             </article>
           );
@@ -342,7 +410,7 @@ export function ServiceGallery() {
         <span className="hp-ink-3 hidden text-[12px] sm:inline">{homeV2.services.drag[lang]}</span>
       </div>
 
-      {open && <ServiceModal category={open} onClose={() => setOpen(null)} />}
+      {open && <ServiceModal category={open.c} origin={open.origin} onClose={() => setOpen(null)} />}
     </section>
   );
 }

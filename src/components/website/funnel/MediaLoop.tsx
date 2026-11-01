@@ -6,6 +6,7 @@ import Image from "next/image";
 
 import manifest from "@/lib/website/media-manifest.json";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
+import { useZoomFrom, type Origin } from "./primitives";
 
 const VIDEOS = (manifest as { videos: Record<string, string> }).videos;
 
@@ -73,9 +74,15 @@ export function MediaLoop({
 export const CLIP_KEYS = new Set(["website", "domains", "hosting", "marketing", "social", "local", "reviews", "billing"]);
 
 /** Full-screen pop-up that plays a service's vertical clip, with sound controls. */
-export function ClipModal({ clip, lang, onClose }: { clip: string; lang: "en" | "fr"; onClose: () => void }) {
+export function ClipModal({ clip, lang, onClose, origin = null }: { clip: string; lang: "en" | "fr"; onClose: () => void; origin?: Origin }) {
+  const [zoomRef, zoomClose, zoomAnimated] = useZoomFrom<HTMLDivElement>(origin);
+  const close = () => zoomClose(onClose);
+  const closeRef = useRef(close);
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    closeRef.current = close;
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeRef.current();
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     window.addEventListener("keydown", onKey);
@@ -86,12 +93,12 @@ export function ClipModal({ clip, lang, onClose }: { clip: string; lang: "en" | 
   }, [onClose]);
   return createPortal(
     <div className="fixed inset-0 z-[130] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={clip}>
-      <div className="tk-fade-in absolute inset-0 bg-[#02040A]/85 backdrop-blur-md" onClick={onClose} aria-hidden />
-      <div className="tk-modal-in relative overflow-hidden rounded-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)]">
+      <div className="tk-fade-in absolute inset-0 bg-[#02040A]/85 backdrop-blur-md" onClick={close} aria-hidden />
+      <div ref={zoomRef} className={`${zoomAnimated ? "" : "tk-modal-in "}relative overflow-hidden rounded-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)]`}>
         <video className="block aspect-[9/16] max-h-[86vh] w-auto bg-black" src={`/media/social/${clip}-${lang}.mp4`} autoPlay muted loop playsInline controls />
         <button
           type="button"
-          onClick={onClose}
+          onClick={close}
           aria-label={lang === "fr" ? "Fermer" : "Close"}
           className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/90 text-[#0B0D12] hover:bg-white"
         >

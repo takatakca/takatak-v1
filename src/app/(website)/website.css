@@ -969,3 +969,24 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
   .hp-tech-grid, .hp-scan { animation: none; }
   .hp-scan { display: none; }
 }
+
+/* Flip cards: the service card turns over to show what is included. */
+.hp-flip { perspective: 1600px; }
+.hp-flip-inner { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform 0.9s cubic-bezier(0.2, 0.85, 0.2, 1); }
+.hp-flip[data-flipped="true"] .hp-flip-inner { transform: rotateY(180deg); }
+.hp-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.hp-face-back { transform: rotateY(180deg); }
+
+/* Kinetic marquee: big service names, filled and outlined, leaning with scroll speed. */
+.hp-marquee { overflow: hidden; white-space: nowrap; user-select: none; }
+.hp-marquee-track { display: inline-flex; width: max-content; animation: hp-marquee 38s linear infinite; transform: skewX(var(--skew, 0deg)); }
+.hp-marquee-track[data-reverse="true"] { animation-direction: reverse; animation-duration: 46s; }
+@keyframes hp-marquee { to { translate: -50% 0; } }
+.hp-marquee-item { display: inline-flex; align-items: center; gap: 0.45em; padding-right: 0.45em; }
+.hp-outline { color: transparent; -webkit-text-stroke: 1.5px var(--hp-ink); }
+.hp-marquee:hover .hp-marquee-track { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-flip-inner { transition: none; }
+  .hp-marquee-track { animation: none; transform: none; }
+}

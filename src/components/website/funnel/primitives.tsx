@@ -3,7 +3,7 @@
 // Shared building blocks for the homepage below the hero: one headline style,
 // one section shell, one reveal, an animated number and the aurora canvas.
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 
@@ -318,4 +318,59 @@ export function useTilt<T extends HTMLElement>(max = 5) {
     if (ref.current) ref.current.style.transform = "";
   };
   return { ref, onPointerMove, onPointerLeave, className: "hp-tilt" };
+}
+
+export type Origin = { left: number; top: number; width: number; height: number } | null;
+
+/** The rect of the clicked element, to zoom a pop-up out of it. */
+export function originOf(el: Element | null): Origin {
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { left: r.left, top: r.top, width: r.width, height: r.height };
+}
+
+/**
+ * Pop-ups that grow out of the picture that was clicked, and shrink back into
+ * it on close (FLIP with the Web Animations API). Without an origin, or with
+ * reduced motion, they simply appear and close at once.
+ */
+export function useZoomFrom<T extends HTMLElement>(origin: Origin) {
+  const ref = useRef<T>(null);
+  const reduced = useReducedMotion();
+  const closing = useRef(false);
+
+  const frames = (el: T) => {
+    if (!origin) return null;
+    const to = el.getBoundingClientRect();
+    if (!to.width || !to.height) return null;
+    const s = Math.max(0.08, Math.min(origin.width / to.width, origin.height / to.height));
+    const dx = origin.left + origin.width / 2 - (to.left + to.width / 2);
+    const dy = origin.top + origin.height / 2 - (to.top + to.height / 2);
+    return [
+      { transform: `translate3d(${dx}px, ${dy}px, 0) scale(${s})`, opacity: 0.35, filter: "blur(2px)" },
+      { transform: "none", opacity: 1, filter: "blur(0)" },
+    ];
+  };
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || !origin || reduced || typeof el.animate !== "function") return;
+    const k = frames(el);
+    if (k) el.animate(k, { duration: 640, easing: "cubic-bezier(0.2, 0.85, 0.2, 1)" });
+    // Measured once, on open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const close = (done: () => void) => {
+    const el = ref.current;
+    if (closing.current) return;
+    if (!el || !origin || reduced || typeof el.animate !== "function") return done();
+    const k = frames(el);
+    if (!k) return done();
+    closing.current = true;
+    const anim = el.animate([...k].reverse(), { duration: 360, easing: "cubic-bezier(0.55, 0, 0.7, 0.2)", fill: "forwards" });
+    anim.onfinish = () => done();
+  };
+
+  return [ref, close, Boolean(origin) && !reduced] as const;
 }
