@@ -198,7 +198,7 @@ export interface SuiteGroup {
 /**
  * Statuses from each repository (2026-10-30): the nine Clover apps are drafts in
  * the Clover developer portal; Food Hub is RC10; QMAPS and FLEXS are linked from
- * the header; MIMT telecom is pre-launch; the Academy has no public address yet.
+ * the header; MIMT sells its plans on mimt.ca (live since 2026-11-01 on this page); the Academy has no public address yet.
  */
 export const SUITE_GROUPS: readonly SuiteGroup[] = [
   {
@@ -245,7 +245,7 @@ export const SUITE_GROUPS: readonly SuiteGroup[] = [
     },
     image: "/marketplace/visuals/voip.jpg",
     products: [
-      { key: "mimt", name: "MIMT", mono: "MI", status: "planned", url: "https://mimt.ca/", desc: { en: "Business phone and VoIP, made in Canada", fr: "Téléphonie d’affaires et VoIP, faite au Canada" } },
+      { key: "mimt", name: "MIMT", mono: "MI", status: "live", url: "https://mimt.ca/", desc: { en: "Business phone and VoIP, made in Canada", fr: "Téléphonie d’affaires et VoIP, faite au Canada" } },
       { key: "academy", name: "TAKATAK Academy", mono: "AC", status: "soon", desc: { en: "Free courses to start, advanced tracks next, for every TAKATAK tool", fr: "Des formations gratuites pour commencer, des parcours avancés ensuite, sur chaque outil TAKATAK" } },
     ],
   },
