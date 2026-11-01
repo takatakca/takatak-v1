@@ -64,7 +64,7 @@ function Tile({
       )}
     </>
   );
-  const cls = `group hp-card relative flex flex-col overflow-hidden rounded-[28px] p-6 transition-all duration-500 hover:-translate-y-0.5 hover:shadow-[var(--hp-shadow)] sm:p-7 ${className}`;
+  const cls = `group hp-card hp-glow hp-enter3d relative flex flex-col overflow-hidden rounded-[28px] p-6 transition-[box-shadow] duration-500 hover:shadow-[var(--hp-shadow)] sm:p-7 ${className}`;
   return p?.url ? (
     <a href={p.url} {...externalLinkProps} className={cls}>
       {body}

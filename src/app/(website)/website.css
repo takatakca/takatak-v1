@@ -990,3 +990,21 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
   .hp-flip-inner { transition: none; }
   .hp-marquee-track { animation: none; transform: none; }
 }
+
+/* Cards that are not flat boxes: a light runs along the border under the mouse. */
+.hp-glow { position: relative; isolation: isolate; }
+.hp-glow::after { content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none; z-index: 3;
+  background: radial-gradient(360px circle at var(--gx, -400px) var(--gy, -400px), rgba(41, 195, 255, 0.85), rgba(21, 101, 216, 0.35) 30%, transparent 60%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity 0.35s ease; }
+.hp-glow::before { content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: -1;
+  background: radial-gradient(420px circle at var(--gx, -400px) var(--gy, -400px), rgba(41, 195, 255, 0.07), transparent 50%); opacity: 0; transition: opacity 0.35s ease; }
+.hp-glow:hover::after, .hp-glow:hover::before { opacity: 1; }
+
+/* 3D entrance as cards scroll in (CSS scroll-driven where supported). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .hp-enter3d { animation: hp-enter3d linear both; animation-timeline: view(); animation-range: entry 0% entry 85%; transform-origin: 50% 100%; }
+    @keyframes hp-enter3d { from { opacity: 0; transform: perspective(1200px) rotateX(16deg) translate3d(0, 70px, 0) scale(0.96); } to { opacity: 1; transform: none; } }
+  }
+}

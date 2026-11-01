@@ -16,6 +16,7 @@ import { SuiteBento } from "@/components/website/funnel/SuiteBento";
 import { TakbotSection } from "@/components/website/funnel/TakbotSection";
 import { UpsellToast } from "@/components/website/funnel/UpsellToast";
 import { PremiumHero } from "@/components/website/premium/PremiumHero";
+import { GlowPointer } from "@/components/website/funnel/primitives";
 import { brand } from "@/lib/website/brand";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { HomePlanProvider } from "@/lib/website/home-plan";
@@ -65,6 +66,7 @@ export default function HomePage() {
           <StickyPlanDock />
           <OrderSheet />
           <UpsellToast />
+          <GlowPointer />
         </HomeThemeRoot>
       </HomePlanProvider>
     </div>

@@ -146,7 +146,7 @@ export function PricingTabs() {
             return (
               <li key={card.key} className="tk-stagger" style={{ animationDelay: `${i * 70}ms` }}>
                 <div
-                  className={`relative flex h-full flex-col rounded-[26px] p-7 transition-all duration-500 hover:-translate-y-1 ${
+                  className={`hp-glow relative flex h-full flex-col rounded-[26px] p-7 transition-all duration-500 hover:-translate-y-1 ${
                     dark ? "hp-raised hp-ink ring-2 ring-[var(--hp-cta)]" : "hp-raised hp-ink"
                   }`}
                 >

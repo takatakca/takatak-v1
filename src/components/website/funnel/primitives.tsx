@@ -3,7 +3,7 @@
 // Shared building blocks for the homepage below the hero: one headline style,
 // one section shell, one reveal, an animated number and the aurora canvas.
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 
@@ -93,10 +93,13 @@ function KineticWords({ words, start }: { words: string[]; start: number }) {
   return (
     <>
       {words.map((w, i) => (
-        <span key={`${w}-${i}`} className="hp-w">
-          <span style={{ "--i": start + i } as CSSProperties}>{w}</span>
-          {i < words.length - 1 ? " " : ""}
-        </span>
+        <Fragment key={`${w}-${i}`}>
+          <span className="hp-w">
+            <span style={{ "--i": start + i } as CSSProperties}>{w}</span>
+          </span>
+          {/* The space sits between the masks: inside an inline-block it would collapse. */}
+          {i < words.length - 1 ? " " : null}
+        </Fragment>
       ))}
     </>
   );
@@ -373,4 +376,38 @@ export function useZoomFrom<T extends HTMLElement>(origin: Origin) {
   };
 
   return [ref, close, Boolean(origin) && !reduced] as const;
+}
+
+/**
+ * One pointer listener for the whole page: cards with .hp-glow get a light
+ * that follows the mouse along their border (sets --gx / --gy on the card).
+ */
+export function GlowPointer() {
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    if (reduced) return;
+    let frame = 0;
+    let last: PointerEvent | null = null;
+    const apply = () => {
+      frame = 0;
+      const e = last;
+      if (!e) return;
+      const card = (e.target as Element | null)?.closest?.(".hp-glow") as HTMLElement | null;
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--gx", `${e.clientX - r.left}px`);
+      card.style.setProperty("--gy", `${e.clientY - r.top}px`);
+    };
+    const on = (e: PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      last = e;
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+    document.addEventListener("pointermove", on, { passive: true });
+    return () => {
+      document.removeEventListener("pointermove", on);
+      cancelAnimationFrame(frame);
+    };
+  }, [reduced]);
+  return null;
 }
