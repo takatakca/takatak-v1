@@ -4,9 +4,10 @@ Signed REVEW · 2026-11-01
 
 ## Working paths
 
-Open `/dashboard/growth/reviews` in an authorized workspace. The native TAKATAK shell now provides four focused sections:
+Open `/dashboard/growth/reviews` in an authorized workspace. The native TAKATAK shell now provides five focused sections:
 
 - **Inbox:** select a review, filter by source/location/date/status, inspect ratings and source-location performance, request the existing AI workflow, and deliberately publish through an authorized native Google/QMAPS action. Existing generated Google drafts are prefilled; queued requests are not generated output.
+- **Réponses IA:** inspect the latest 50 real Review Responder runs, read the returned text, and approve or reject that exact draft with current workspace permissions. Approval queues execution; only a matching provider receipt or later exact source confirmation establishes publication. First-party drafts remain internal follow-up.
 - **Requests & activity:** create tracked requests and inspect the latest 50 sending/engagement records. Provider API acceptance does not mean delivery. Email/shared links sent outside TAKATAK have no automatic receipt. First-party ratings are not proof of a public Google/Facebook review.
 - **Import reviews:** enter extracted fields from an authorized email notification, add a review manually, or preview a CSV batch. A confirmation is required before saving. Maximum 50 rows/128KB. Create an active real Local Listing first; up to 200 listings are listed. Required CSV headers: `source,externalId,text,reviewedAt`; optional `author,rating,url`. Dates must be real timezone-qualified ISO timestamps. Facebook recommendations and unmapped Booking.com scores are never assigned five-star ratings.
 - **Connections:** existing Google controls, source capabilities and messaging configuration. The source directory is not proof of connected accounts.

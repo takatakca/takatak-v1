@@ -193,7 +193,7 @@ export function normalizeListing(row: ListingRow): ReviewRecord {
         : "tracked",
     recommended: !ingestion && meta.recommended !== false,
     sample,
-    canDraft: false,
+    canDraft: !ingestion && source === "qmaps" && !!qmapsId && !!row.body,
     qmapsReviewId: qmapsId,
   };
 }

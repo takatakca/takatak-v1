@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
-import { Inbox, Send, Upload, PlugZap } from "lucide-react";
+import { Inbox, Send, Upload, PlugZap, ClipboardCheck } from "lucide-react";
 
 const SECTIONS = [
   { id: "inbox", hash: "review-inbox", label: "Inbox", icon: Inbox },
+  {
+    id: "approvals",
+    hash: "review-approvals",
+    label: "Réponses IA",
+    icon: ClipboardCheck,
+  },
   {
     id: "requests",
     hash: "review-requests",
@@ -45,12 +51,14 @@ function subscribe(listener: () => void) {
 export function ReviewWorkspaceNavigation({
   inbox,
   requests,
+  approvals,
   imports,
   connections,
   initialSection = "inbox",
 }: {
   inbox: ReactNode;
   requests: ReactNode;
+  approvals: ReactNode;
   imports: ReactNode;
   connections: ReactNode;
   initialSection?: SectionId;
@@ -70,7 +78,7 @@ export function ReviewWorkspaceNavigation({
     );
     return () => cancelAnimationFrame(frame);
   }, [active]);
-  const content = { inbox, requests, import: imports, connections };
+  const content = { inbox, approvals, requests, import: imports, connections };
   return (
     <div className="space-y-5">
       <nav
@@ -80,7 +88,7 @@ export function ReviewWorkspaceNavigation({
         <div
           role="group"
           aria-label="Review workspace sections"
-          className="grid grid-cols-2 gap-2 lg:grid-cols-4"
+          className="grid grid-cols-2 gap-2 lg:grid-cols-5"
         >
           {SECTIONS.map((section) => (
             <button

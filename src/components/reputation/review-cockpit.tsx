@@ -655,7 +655,8 @@ export function ReviewCockpit({
                       {r.canDraft &&
                         canManage &&
                         (r.origin === "feedback" ||
-                          r.origin === "external") && (
+                          r.origin === "external" ||
+                          r.origin === "listing") && (
                           <ReviewDraftForm reviewId={r.id} origin={r.origin} />
                         )}
                       <span className="text-[11px] text-slate-500">

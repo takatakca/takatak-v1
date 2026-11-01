@@ -2,6 +2,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
+import { AI_CREDIT_ACTIONS } from "@/lib/growth/ai-engine";
 import {
   requestReviewDraftAction,
   type ReviewDraftState,
@@ -12,7 +13,7 @@ export function ReviewDraftForm({
   origin,
 }: {
   reviewId: string;
-  origin: "feedback" | "external";
+  origin: "feedback" | "external" | "listing";
 }) {
   const [state, action, pending] = useActionState(
     requestReviewDraftAction,
@@ -33,6 +34,12 @@ export function ReviewDraftForm({
             ? "Draft queued"
             : "Request AI draft"}
       </button>
+      <span className="block text-[11px] text-slate-600">
+        Tarif catalogue de génération :{" "}
+        {AI_CREDIT_ACTIONS.find((action) => action.key === "review_reply")
+          ?.credits ?? "—"}{" "}
+        crédit. La mise en file et l’approbation ne prélèvent aucun crédit.
+      </span>
       {state.ok === true && (
         <p role="status" className="text-xs text-slate-600">
           Request queued in the existing AI workforce. No reply has been

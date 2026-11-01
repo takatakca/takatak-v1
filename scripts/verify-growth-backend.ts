@@ -717,7 +717,7 @@ async function main(): Promise<void> {
         if (url.host === "mybusinessaccountmanagement.googleapis.com") return ok({ accounts: [{ name: "accounts/111", accountName: "Garage" }] });
         if (url.host === "mybusinessbusinessinformation.googleapis.com") return ok({ locations: [{ name: "locations/222", title: "Garage Verdun" }] });
         if (url.host === "mybusiness.googleapis.com" && (init?.method ?? "GET") === "GET") return ok(reviewsPages[url.searchParams.get("pageToken") ?? ""] ?? {});
-        if (url.host === "mybusiness.googleapis.com" && init?.method === "PUT") return ok({ comment: JSON.parse(body).comment });
+        if (url.host === "mybusiness.googleapis.com" && init?.method === "PUT") return ok({ comment: JSON.parse(body).comment, updateTime: "2026-10-31T12:00:00Z" });
         return new Response("{}", { status: 404 });
       };
 

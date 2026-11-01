@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { resolveReviewTarget } from "@/lib/reputation/review-target";
 import { redirect } from "next/navigation";
 
 import {
@@ -169,7 +170,13 @@ export async function createReviewRequestAction(
         : { sent: false, reason: result.reason };
     }
     revalidatePath(REVIEWS_PATH);
-    return { ok: true, url, recipientName, profileName: created.profileName, delivery };
+    return {
+      ok: true,
+      url,
+      recipientName,
+      profileName: created.profileName,
+      delivery,
+    };
   } catch {
     console.error("[reputation] create request failed");
     return {
@@ -318,10 +325,17 @@ export async function replyGoogleReviewAction(
     if (!result.ok)
       return {
         ok: false,
-        error: `Google refused the reply (${result.reason}).`,
+        error:
+          result.reason === "reply_unconfirmed"
+            ? "Publication non confirmée. Synchronisez Google avant de renvoyer la réponse."
+            : `Google n’a pas confirmé la réponse (${result.reason}).`,
       };
   } catch {
-    return { ok: false, error: "The reply could not be posted. Try again." };
+    return {
+      ok: false,
+      error:
+        "Publication non confirmée. Vérifiez Google et actualisez les avis avant de renvoyer.",
+    };
   }
   revalidatePath(REVIEWS_PATH);
   return { ok: true };
@@ -343,64 +357,28 @@ export async function requestReviewDraftAction(
     };
   const id = String(formData.get("reviewId") ?? "");
   const origin = String(formData.get("origin") ?? "");
-  if (!UUID.test(id) || !["feedback", "external"].includes(origin))
+  if (!UUID.test(id) || !["feedback", "external", "listing"].includes(origin))
     return { ok: false, error: "Choose a review in this workspace." };
   const db = getPrisma();
   if (!db) return { ok: false, error: "The review database is unavailable." };
   try {
-    const content =
+    const source =
       origin === "external"
-        ? await db.externalReview
-            .findFirst({
-              where: {
-                id,
-                clientId: access.activeClientId,
-                source: "google",
-                location: { clientId: access.activeClientId },
-              },
-              select: {
-                rating: true,
-                comment: true,
-                location: { select: { title: true } },
-              },
-            })
-            .then((row) =>
-              row
-                ? {
-                    rating: row.rating,
-                    text: row.comment,
-                    business: row.location.title,
-                    source: "google",
-                  }
-                : null,
-            )
-        : await db.reviewResponse
-            .findFirst({
-              where: {
-                id,
-                clientId: access.activeClientId,
-                profile: { clientId: access.activeClientId },
-              },
-              select: {
-                rating: true,
-                feedback: true,
-                profile: { select: { name: true } },
-              },
-            })
-            .then((row) =>
-              row
-                ? {
-                    rating: row.rating,
-                    text: row.feedback,
-                    business: row.profile.name,
-                    source: "takatak",
-                  }
-                : null,
-            );
-    if (!content?.text)
+        ? "google"
+        : origin === "listing"
+          ? "qmaps"
+          : "takatak";
+    const target = await resolveReviewTarget(
+      db,
+      access.activeClientId,
+      source,
+      id,
+    );
+    if (!target?.text.trim())
       return {
         ok: false,
-        error: "This workspace review has no written feedback to draft from.",
+        error:
+          "This workspace review has no written content or is no longer available.",
       };
     const { requestAgentRun } = await import("@/lib/ai-agents/service");
     const result = await requestAgentRun(
@@ -410,10 +388,12 @@ export async function requestReviewDraftAction(
         trigger: "review_cockpit",
         context: {
           reviewResponseId: id,
-          source: content.source,
-          rating: content.rating,
-          feedback: content.text.slice(0, 2000),
-          businessName: content.business.slice(0, 80),
+          source: target.source,
+          rating: target.rating ?? 0,
+          feedback: target.text.slice(0, 2000),
+          businessName: target.location.slice(0, 80),
+          reviewWorkflowVersion: 2,
+          reviewContentHash: target.fingerprint,
         },
       },
       access.profileId,

@@ -13,6 +13,7 @@ import { Prisma, type AiAgentRunStatus } from "@prisma/client";
 import { clientHasGrowthFeature } from "@/lib/billing/growth/entitlements";
 import { getPrisma } from "@/lib/db/prisma";
 import { AI_AGENTS } from "@/lib/growth/ai-engine";
+import { reviewRequiresHumanApproval } from "@/lib/reputation/review-target-model";
 
 import { latestDueSlot, type AgentSchedule, type ScheduleKind } from "./schedule";
 
@@ -111,6 +112,11 @@ export async function requestAgentRun(
   if (!setting?.enabled) return { ok: false, error: "agent_disabled" };
   // Every path (manual, schedule, event trigger) respects the AI Autopilot plan when enforcement is on.
   if (!(await clientHasGrowthFeature(clientId, "ai_autopilot"))) return { ok: false, error: "plan_required" };
+  if (agentKey === "review_responder" && input.context?.reviewWorkflowVersion === 2) {
+    const { enqueueCanonicalReviewRun } = await import("@/lib/reputation/review-run-queue");
+    const payload = { ...(input.brief?.trim() ? { brief: input.brief.trim().slice(0, 2000) } : {}), ...(input.context ?? {}) };
+    return enqueueCanonicalReviewRun(prisma, clientId, payload, profileId, input.trigger ?? "review_cockpit");
+  }
   const pending = await prisma.aiAgentRun.count({
     where: { clientId, agentKey, status: { in: ["queued", "running", "awaiting_approval", "approved", "executing"] } },
   });
@@ -245,7 +251,7 @@ export async function claimNextAgentRun(now = new Date()): Promise<ClaimedRun | 
     input: row.input,
     output: row.output,
     instructions: setting?.instructions ?? null,
-    requireApproval: agentDef(row.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true,
+    requireApproval: reviewRequiresHumanApproval(row.agentKey, row.input) ? true : agentDef(row.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true,
   };
 }
 
@@ -265,7 +271,7 @@ export async function reportAgentRun(
     output = parsed === null ? Prisma.JsonNull : parsed;
   }
   const prisma = requirePrisma();
-  const run = await prisma.aiAgentRun.findUnique({ where: { id: runId }, select: { status: true, clientId: true, agentKey: true } });
+  const run = await prisma.aiAgentRun.findUnique({ where: { id: runId }, select: { status: true, clientId: true, agentKey: true, input: true } });
   if (!run) return { ok: false, code: "not_found" };
   if (run.status !== "running" && run.status !== "executing") return { ok: false, code: "not_claimed" };
 
@@ -277,7 +283,7 @@ export async function reportAgentRun(
       where: { clientId_agentKey: { clientId: run.clientId, agentKey: run.agentKey } },
       select: { requireApproval: true },
     });
-    const needsApproval = agentDef(run.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true;
+    const needsApproval = reviewRequiresHumanApproval(run.agentKey, run.input) ? true : agentDef(run.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true;
     next = needsApproval ? "awaiting_approval" : "completed";
   }
   const terminal = next === "completed" || next === "failed";
@@ -342,6 +348,9 @@ export async function triggerLowRatingResponder(
   review: { responseId: string; rating: number; feedback: string | null; businessName: string; source?: "takatak" | "google" },
 ): Promise<boolean> {
   if (review.rating > 3) return false;
+  const { resolveReviewTarget } = await import("@/lib/reputation/review-target");
+  const target = await resolveReviewTarget(requirePrisma(), clientId, review.source === "google" ? "google" : "takatak", review.responseId);
+  if (!target) return false;
   const result = await requestAgentRun(
     clientId,
     "review_responder",
@@ -352,7 +361,9 @@ export async function triggerLowRatingResponder(
         rating: review.rating,
         feedback: (review.feedback ?? "").slice(0, 2000),
         businessName: review.businessName.slice(0, 80),
-        ...(review.source === "google" ? { source: "google" } : {}),
+        source: target.source,
+        reviewWorkflowVersion: 2,
+        reviewContentHash: target.fingerprint,
       },
     },
     null,
@@ -411,7 +422,7 @@ export async function authorizeAgentRun(runId: string, agentKey: string): Promis
       where: { clientId_agentKey: { clientId: run.clientId, agentKey } },
       select: { requireApproval: true },
     });
-    canAct = !(agentDef(agentKey)?.alwaysRequiresApproval ?? false) && setting?.requireApproval === false;
+    canAct = !(agentDef(agentKey)?.alwaysRequiresApproval ?? false) && setting?.requireApproval === false && !reviewRequiresHumanApproval(agentKey, run.input);
   }
   const asObject = (v: Prisma.JsonValue | null) => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
   return { ok: true, run: { id: run.id, clientId: run.clientId, input: asObject(run.input) ?? {}, output: asObject(run.output), canAct } };

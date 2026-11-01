@@ -161,7 +161,10 @@
     "qa:review-qmaps-visibility": "tsx --require ./scripts/register-server-only.cjs scripts/review-qmaps-visibility-tests.ts",
     "qa:review-qmaps-api": "tsx --require ./scripts/register-server-only.cjs scripts/review-qmaps-api-tests.ts",
     "qa:review-agent-tools": "tsx --require ./scripts/register-server-only.cjs scripts/review-agent-tools-tests.ts",
-    "qa:review-cockpit": "tsx --require ./scripts/register-server-only.cjs scripts/review-cockpit-tests.ts"
+    "qa:review-cockpit": "tsx --require ./scripts/register-server-only.cjs scripts/review-cockpit-tests.ts",
+    "qa:review-approval": "tsx --require ./scripts/register-server-only.cjs scripts/review-approval-tests.ts",
+    "qa:review-publisher": "tsx --require ./scripts/register-server-only.cjs scripts/review-publisher-tests.ts",
+    "qa:review-google-publication": "tsx --require ./scripts/register-server-only.cjs scripts/review-google-publication-tests.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",

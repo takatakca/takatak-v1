@@ -10,9 +10,16 @@ on:
       - "src/components/website/home/HomeHero.tsx"
       - "src/lib/qmaps/**"
       - "src/app/api/reputation/**"
+      - "src/app/api/ai/reviews/**"
+      - "src/app/dashboard/growth/ai-engine/actions.ts"
+      - "src/lib/ai-agents/service.ts"
+      - "src/lib/integrations/google-business/service.ts"
       - "src/app/dashboard/growth/reviews/**"
       - "src/app/dashboard/local-listings/reviews/**"
       - "scripts/review-cockpit-tests.ts"
+      - "scripts/review-approval-tests.ts"
+      - "scripts/review-publisher-tests.ts"
+      - "scripts/review-google-publication-tests.ts"
       - "scripts/review-qmaps-api-tests.ts"
       - "scripts/review-qmaps-contract-tests.ts"
       - "scripts/review-qmaps-visibility-tests.ts"
@@ -50,6 +57,9 @@ jobs:
       - run: npm ci --ignore-scripts=false
       - run: npm run db:generate
       - run: npm run qa:review-cockpit
+      - run: npm run qa:review-approval
+      - run: npm run qa:review-publisher
+      - run: npm run qa:review-google-publication
       - run: npm run qa:review-qmaps-api
       - run: npm run qa:review-qmaps-visibility
       - name: Fetch exact QMAPS counterpart contract
@@ -68,5 +78,5 @@ jobs:
       - run: npm run qa:qmaps-sync
       - run: npm run typecheck
       - name: Lint changed review boundaries
-        run: npx eslint next.config.ts src/lib/security/https-redirect.ts "src/app/(website)/reviews" src/components/brand/brand-hero-backdrop.tsx src/components/website/home/HomeHero.tsx src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps scripts/review-cockpit-tests.ts
+        run: npx eslint next.config.ts src/lib/security/https-redirect.ts "src/app/(website)/reviews" src/components/brand/brand-hero-backdrop.tsx src/components/website/home/HomeHero.tsx src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps src/app/api/ai/reviews src/app/dashboard/growth/ai-engine/actions.ts src/lib/ai-agents/service.ts src/lib/integrations/google-business/service.ts scripts/review-cockpit-tests.ts
       - run: npm run build
