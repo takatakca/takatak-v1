@@ -172,7 +172,7 @@ export function SuiteBento() {
             <Tile
               p={product("academy")}
               className="h-full"
-              visual={<Shot src="/media/product/shot-academy.webp" url="takatak.ca/dashboard/academy" alt={lang === "fr" ? "TAKATAK Academy dans le tableau de bord" : "TAKATAK Academy in the dashboard"} className="h-[180px]" />}
+              visual={<Shot src="/media/product/shot-academy.webp" url="TAKATAK Academy" alt={lang === "fr" ? "La page d’accueil de TAKATAK Academy" : "The TAKATAK Academy home page"} className="h-[180px]" />}
             />
           </Rise>
           <Rise delay={200} className="md:col-span-2">

@@ -309,15 +309,15 @@ export const homeV2 = {
   },
   services: {
     eyebrow: { en: "Services", fr: "Services" },
-    lead: { en: "Ten services.", fr: "Dix services." },
-    rest: { en: "One team that runs every one of them for you.", fr: "Une seule équipe qui les gère tous pour vous." },
+    lead: { en: "Services.", fr: "Nos services." },
+    rest: { en: "Choose what your business needs.", fr: "Choisissez ce dont votre entreprise a besoin." },
     open: { en: "See details", fr: "Voir le détail" },
     close: { en: "Close", fr: "Fermer" },
     drag: { en: "Drag, swipe or use the arrows", fr: "Glissez ou utilisez les flèches" },
   },
   plan: {
     eyebrow: { en: "Build your plan", fr: "Votre forfait" },
-    lead: { en: "Build your stack.", fr: "Composez votre forfait." },
+    lead: { en: "Build your plan.", fr: "Composez votre forfait." },
     rest: { en: "See the price before you sign up.", fr: "Voyez le prix avant de vous inscrire." },
     presets: { en: "Start from your business", fr: "Partez de votre entreprise" },
     pick: { en: "Services", fr: "Services" },
@@ -347,18 +347,18 @@ export const homeV2 = {
   },
   suite: {
     eyebrow: { en: "Our products", fr: "Nos produits" },
-    lead: { en: "Software we build,", fr: "Des logiciels que nous bâtissons," },
-    rest: { en: "not just services we sell.", fr: "pas seulement des services que nous vendons." },
+    lead: { en: "Our software.", fr: "Nos logiciels." },
+    rest: { en: "Built and run by TAKATAK.", fr: "Conçus et exploités par TAKATAK." },
   },
   pricing: {
     eyebrow: { en: "Pricing", fr: "Tarifs" },
-    lead: { en: "Simple pricing.", fr: "Des prix simples." },
+    lead: { en: "Prices by service.", fr: "Prix par service." },
     rest: { en: "In Canadian dollars, before taxes.", fr: "En dollars canadiens, avant taxes." },
   },
   faq: {
     eyebrow: { en: "Questions", fr: "Questions" },
-    lead: { en: "Questions,", fr: "Vos questions," },
-    rest: { en: "answered.", fr: "nos réponses." },
+    lead: { en: "Frequently asked", fr: "Questions" },
+    rest: { en: "questions.", fr: "fréquentes." },
   },
 } as const;
 
@@ -379,9 +379,9 @@ export const homeV3 = {
     {
       key: "online",
       photo: "/photos/commerce-cafe.webp",
-      alt: { en: "A café owner on the phone behind the counter", fr: "Un propriétaire de café au téléphone derrière son comptoir" },
+      alt: { en: "On the phone behind a café counter", fr: "Au téléphone derrière le comptoir d’un café" },
       eyebrow: { en: "Get online", fr: "Être en ligne" },
-      title: { en: "Your business deserves a website that matches it.", fr: "Votre commerce mérite un site à sa hauteur." },
+      title: { en: "A website built for your business.", fr: "Un site web conçu pour votre commerce." },
       body: {
         en: "Website, domain name, hosting and business email. We set it all up and look after it, you keep full control.",
         fr: "Site web, nom de domaine, hébergement et courriel pro. On installe tout et on s’en occupe; vous gardez le plein contrôle.",
@@ -395,7 +395,7 @@ export const homeV3 = {
       photo: "/photos/artisan-atelier.webp",
       alt: { en: "A craftsman in his workshop looking at his phone", fr: "Un artisan dans son atelier qui regarde son téléphone" },
       eyebrow: { en: "Get found", fr: "Être trouvé" },
-      title: { en: "When people search nearby, they find you.", fr: "Quand on cherche près d’ici, c’est vous qu’on trouve." },
+      title: { en: "Show up in Google Maps and local search.", fr: "Apparaissez dans Google Maps et les recherches locales." },
       body: {
         en: "An up-to-date Google profile, maps, directories and reviews. Every local search leads to your door.",
         fr: "Une fiche Google à jour, les cartes, les annuaires et vos avis. Chaque recherche locale mène à votre porte.",
@@ -409,7 +409,7 @@ export const homeV3 = {
       photo: "/photos/studio-design.webp",
       alt: { en: "A designer on the phone in her studio", fr: "Une designer au téléphone dans son atelier" },
       eyebrow: { en: "Grow", fr: "Grandir" },
-      title: { en: "Customers who come back, week after week.", fr: "Des clients qui reviennent, semaine après semaine." },
+      title: { en: "Bring your customers back.", fr: "Faites revenir vos clients." },
       body: {
         en: "Meta and Google ads, social media and content made faster with AI, all measured in one dashboard.",
         fr: "Publicités Meta et Google, réseaux sociaux et contenu accéléré par l’IA, le tout mesuré dans un seul tableau de bord.",
@@ -422,15 +422,15 @@ export const homeV3 = {
   addAll: { en: "Add to my plan", fr: "Ajouter à mon forfait" },
   added: { en: "In my plan", fr: "Dans mon forfait" },
   gallery: {
-    lead: { en: "Every service.", fr: "Tous nos services." },
-    rest: { en: "One account, one team.", fr: "Un seul compte, une seule équipe." },
+    lead: { en: "All services.", fr: "Tous les services." },
+    rest: { en: "Add them to your plan in one click.", fr: "Ajoutez-les à votre forfait en un clic." },
   },
   final: {
-    title: { en: "Your business, at its best online.", fr: "Votre entreprise, à son meilleur en ligne." },
+    title: { en: "Start today.", fr: "Commencez aujourd’hui." },
     body: {
       en: "Create your account, pick your services, and our bilingual team in Montréal sets everything up with you.",
       fr: "Créez votre compte, choisissez vos services, et notre équipe bilingue de Montréal met tout en place avec vous.",
     },
-    photoAlt: { en: "A customer smiling at her phone in a café", fr: "Une cliente sourit à son téléphone dans un café" },
+    photoAlt: { en: "Looking at a phone in a café", fr: "Au téléphone dans un café" },
   },
 } as const;

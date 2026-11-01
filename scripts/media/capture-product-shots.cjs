@@ -3,6 +3,9 @@
  * cards. Needs a running app; developer-only overlays are hidden.
  *
  *   node scripts/media/capture-product-shots.cjs http://localhost:3000
+ *
+ * shot-academy.webp comes from the TAKATAK Academy app itself (repo
+ * takatakca/ACADEMYTAKATAK, `npm run dev`): its home page, top 1440×750.
  */
 const { chromium } = require("playwright");
 const { execFileSync } = require("node:child_process");
@@ -15,7 +18,6 @@ const SHOTS = [
   // name, path, clip within a 1440×900 page (x, y, w, h)
   ["seo", "/dashboard/seo", { x: 280, y: 110, width: 1140, height: 640 }],
   ["reviews", "/dashboard/growth/reviews", { x: 280, y: 110, width: 1140, height: 700 }],
-  ["academy", "/dashboard/academy", { x: 280, y: 110, width: 1140, height: 560 }],
 ];
 
 (async () => {

@@ -34,7 +34,7 @@ export const SERVICE_MEDIA: Record<CategoryKey, ServiceMedia> = {
     focus: "45% 50%",
     zoom: 1,
     video: "website",
-    alt: { en: "A café owner behind his counter", fr: "Un propriétaire de café derrière son comptoir" },
+    alt: { en: "Behind a café counter", fr: "Derrière le comptoir d’un café" },
     chip: { en: "yourcafe.ca · Live", fr: "votrecafe.ca · En ligne" },
   },
   domains: {
@@ -106,7 +106,7 @@ export const SERVICE_MEDIA: Record<CategoryKey, ServiceMedia> = {
     focus: "68% 38%",
     zoom: 1.3,
     video: "voip",
-    alt: { en: "A café owner on the phone", fr: "Un propriétaire de café au téléphone" },
+    alt: { en: "On the phone in a café", fr: "Au téléphone dans un café" },
     chip: { en: "Incoming call · Sales", fr: "Appel entrant · Ventes" },
   },
 };
