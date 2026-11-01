@@ -11,13 +11,13 @@ import { SUITE_GROUPS, homeCopy, homeV2, type SuiteProduct, type SuiteStatus } f
 import { externalLinkProps } from "@/lib/website/product-destinations";
 import { useLanguage } from "@/lib/website/use-language";
 import { sectionId } from "./HomeSectionNav";
+import { CloverSuite } from "./CloverSuite";
 import { KioskScene } from "./KioskScene";
 import { FlexsScene, MimtTeaser, QmapsScene } from "./SuiteScenes";
 import { Eyebrow, Rise, Section, TwoTone } from "./primitives";
 
 const ALL = SUITE_GROUPS.flatMap((g) => g.products);
 const product = (key: string) => ALL.find((p) => p.key === key) as SuiteProduct;
-const CLOVER_APPS = ALL.filter((p) => p.status === "clover" || p.key === "ch4t");
 
 const DOT: Record<SuiteStatus, string> = {
   live: "bg-emerald-400",
@@ -130,27 +130,6 @@ export function SuiteBento() {
             </Tile>
           </Rise>
 
-          <Rise delay={80} className="hp-build md:col-span-2">
-            <Tile title={lang === "fr" ? "La suite Clover" : "The Clover suite"} className="h-full">
-              <p className="relative z-[2] mt-1 text-[14px] hp-ink-2">
-                {lang === "fr"
-                  ? "Neuf applications pour votre caisse Clover. Chacune fonctionne seule ; ensemble, elles se parlent par Food Hub et se gèrent avec l’IA de TAKATAK."
-                  : "Nine apps for your Clover point of sale. Each works on its own; together they talk through Food Hub and are managed with TAKATAK's AI."}
-              </p>
-              <ul className="relative z-[2] mt-5 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-                {CLOVER_APPS.map((a) => (
-                  <li key={a.key}>
-                    <span className="block text-[13.5px] font-bold tracking-[0.06em] hp-ink">{a.name}</span>
-                    <span className="block truncate text-[13.5px] hp-ink-3">{a.desc[lang]}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="relative z-[2] mt-5">
-                <Status status="clover" />
-              </div>
-            </Tile>
-          </Rise>
-
           <Rise delay={140} className="hp-build">
             <Tile p={product("qmaps")} className="h-full" visual={<QmapsScene />} />
           </Rise>
@@ -172,7 +151,17 @@ export function SuiteBento() {
               visual={<Shot src="/media/product/shot-academy.webp" url="TAKATAK Academy" alt={lang === "fr" ? "La page d’accueil de TAKATAK Academy" : "The TAKATAK Academy home page"} className="h-[180px]" />}
             />
           </Rise>
-          <Rise delay={200} className="hp-build md:col-span-2">
+          <Rise className="hp-build md:col-span-2 lg:col-span-4">
+            <Tile title={lang === "fr" ? "La suite Clover" : "The Clover suite"} className="h-full">
+              <p className="relative z-[2] mt-1 max-w-3xl text-[14px] hp-ink-2">
+                {lang === "fr"
+                  ? "Neuf applications pour votre caisse Clover. Chacune fonctionne seule ; ensemble, elles se parlent par Food Hub et se gèrent avec l’IA de TAKATAK."
+                  : "Nine apps for your Clover point of sale. Each works on its own; together they talk through Food Hub and are managed with TAKATAK's AI."}
+              </p>
+              <CloverSuite statusLabel={<Status status="clover" />} />
+            </Tile>
+          </Rise>
+          <Rise className="hp-build md:col-span-2 lg:col-span-4">
             <Tile
               p={product("seo")}
               className="h-full"
