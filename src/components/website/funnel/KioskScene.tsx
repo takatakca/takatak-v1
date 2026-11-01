@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChefHat, Hand, MonitorSmartphone, Store } from "lucide-react";
+import { Bike, Check, ChefHat, CupSoda, Drumstick, Hand, MonitorSmartphone, Sandwich, ShoppingBag, Soup, Store, Utensils } from "lucide-react";
 
 import { BRAND_ICONS } from "@/lib/website/brand-icons";
 import { useLanguage } from "@/lib/website/use-language";
@@ -19,6 +19,31 @@ const MENU: { fr: string; en: string; price: string }[] = [
   { fr: "Limonade", en: "Lemonade", price: "3,95" },
 ];
 
+/** Kiosk tiles: the first four menu items, with an icon and a warm "photo" tone. */
+const TILES = [
+  { m: 0, Icon: Drumstick, bg: "linear-gradient(135deg,#FDBA74,#EA580C)" },
+  { m: 2, Icon: Soup, bg: "linear-gradient(135deg,#FDE68A,#D97706)" },
+  { m: 4, Icon: Sandwich, bg: "linear-gradient(135deg,#FCA5A5,#DC2626)" },
+  { m: 5, Icon: CupSoda, bg: "linear-gradient(135deg,#BEF264,#65A30D)" },
+] as const;
+
+const CATS = [
+  { fr: "Populaires", en: "Popular" },
+  { fr: "Poulet", en: "Chicken" },
+  { fr: "À côté", en: "Sides" },
+  { fr: "Boissons", en: "Drinks" },
+];
+
+/** How each order leaves: take-out, delivery or dine-in. */
+const MODES = [
+  { key: "pickup", Icon: ShoppingBag, fr: "Pour emporter", en: "Take-out" },
+  { key: "delivery", Icon: Bike, fr: "Livraison", en: "Delivery" },
+  { key: "dinein", Icon: Utensils, fr: "Sur place", en: "Dine-in" },
+] as const;
+
+const price = (m: number) => Number(MENU[m].price.replace(",", "."));
+const fmt = (n: number, lang: Lang) => (lang === "fr" ? `${n.toFixed(2).replace(".", ",")} $` : `$${n.toFixed(2)}`);
+
 /** Where orders come from: delivery apps through Food Hub, the kiosk, the Clover counter. */
 const SOURCES: { key: string; name: string; icon?: string; Icon?: typeof Store }[] = [
   { key: "doordash", name: "DoorDash", icon: "doordash" },
@@ -35,6 +60,11 @@ const T = {
   demo: { fr: "Démonstration", en: "Demo" },
   kiosk: { fr: "Borne libre-service", en: "Self-service kiosk" },
   touch: { fr: "Touchez pour commander", en: "Tap to order" },
+  order: { fr: "Commander", en: "Order" },
+  cart: { fr: "Panier", en: "Cart" },
+  thanks: { fr: "Merci !", en: "Thank you!" },
+  ready: { fr: "Prêt dans 12 min", en: "Ready in 12 min" },
+  sent: { fr: "Envoyée en cuisine", en: "Sent to the kitchen" },
   added: { fr: "Ajouté", en: "Added" },
   kitchen: { fr: "Écran de cuisine · Food Hub", en: "Kitchen screen · Food Hub" },
   status: [
@@ -81,7 +111,10 @@ export function KioskScene() {
   }, [reduced, seen]);
 
   const brand = BRANDS[Math.floor(tick / 5) % BRANDS.length];
-  const tapped = tick % 5;
+  // The kiosk loop: browse, tap one item, tap a drink, press Order, thank-you screen.
+  const stage = reduced ? 4 : tick % 5;
+  const cartCount = stage >= 2 ? 2 : stage >= 1 ? 1 : 0;
+  const cartTotal = (stage >= 1 ? price(TILES[0].m) : 0) + (stage >= 2 ? price(TILES[3].m) : 0);
   // The last four orders, newest first; each one ages through the statuses.
   const orders = [0, 1, 2, 3]
     .filter((k) => tick + 3 - k >= 0)
@@ -93,31 +126,75 @@ export function KioskScene() {
   return (
     <div ref={ref} className="relative flex h-full items-center overflow-hidden rounded-2xl bg-[linear-gradient(160deg,#0A1630,#060D1F)] p-4 sm:p-6">
       <span className="absolute right-3 top-3 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{T.demo[lang]}</span>
-      <div className="grid w-full grid-cols-1 items-center gap-4 sm:grid-cols-[170px_minmax(0,1fr)] [&>*]:min-w-0">
+      <div className="grid w-full grid-cols-1 items-center gap-4 sm:grid-cols-[190px_minmax(0,1fr)] [&>*]:min-w-0">
         {/* The kiosk on its stand */}
-        <div className="mx-auto flex w-[180px] flex-col items-center sm:w-auto">
+        <div className="mx-auto flex w-[200px] flex-col items-center sm:mx-0 sm:w-full">
           <div className="relative w-full overflow-hidden rounded-[18px] border-[5px] border-[#1B2436] bg-white shadow-[0_30px_60px_-20px_rgb(0_0_0/0.8)]">
             <div className="flex items-center justify-between px-2.5 py-2 text-white transition-colors duration-700" style={{ background: brand }}>
               <span className="truncate text-[11px] font-bold">{T.kiosk[lang]}</span>
               <ChefHat size={13} aria-hidden />
             </div>
-            <div className="relative h-[170px] overflow-hidden sm:h-[190px]">
-              <ul className={`${reduced ? "" : "hp-kiosk-roll"} grid gap-1.5 p-2`}>
-                {[...MENU, ...MENU].map((m, i) => (
-                  <li
-                    key={i}
-                    className={`flex items-center justify-between rounded-lg px-2 py-1.5 text-[10.5px] transition-all duration-300 ${
-                      i % MENU.length === tapped ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-800"
-                    }`}
-                  >
-                    <span className="truncate font-semibold">{m[lang]}</span>
-                    <span className="tabular-nums">{m.price} $</span>
-                  </li>
+            <div className="relative h-[200px] overflow-hidden sm:h-[214px]">
+              {/* Categories */}
+              <div className="flex gap-1 overflow-hidden px-2 pt-2">
+                {CATS.map((c, i) => (
+                  <span key={c.en} className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold transition-colors ${i === 0 ? "text-white" : "bg-slate-100 text-slate-600"}`} style={i === 0 ? { background: brand } : undefined}>
+                    {c[lang]}
+                  </span>
                 ))}
-              </ul>
-              <span className="absolute bottom-2 left-1/2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg transition-colors duration-700" style={{ background: brand }}>
-                <Hand size={11} className={reduced ? "" : "animate-bounce"} aria-hidden /> {T.touch[lang]}
-              </span>
+              </div>
+              {/* Item tiles: two taps add to the cart */}
+              <div className="grid grid-cols-2 gap-1.5 p-2">
+                {TILES.map((t, i) => {
+                  const hit = (stage === 1 && i === 0) || (stage === 2 && i === 3);
+                  return (
+                    <div
+                      key={t.m}
+                      className={`relative overflow-hidden rounded-lg bg-slate-50 ring-1 transition-all duration-300 ${hit ? "scale-95 ring-2" : "ring-slate-200"}`}
+                      style={hit ? { boxShadow: `0 0 0 2px ${brand}` } : undefined}
+                    >
+                      <span className="grid h-9 place-items-center text-white" style={{ background: t.bg }}>
+                        <t.Icon size={16} aria-hidden />
+                      </span>
+                      <span className="block truncate px-1.5 pt-1 text-[9.5px] font-semibold text-slate-800">{MENU[t.m][lang]}</span>
+                      <span className="block px-1.5 pb-1 text-[9px] tabular-nums text-slate-500">{MENU[t.m].price} $</span>
+                      {hit && (
+                        <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full text-[9px] font-bold text-white" style={{ background: brand }}>
+                          +1
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Cart bar */}
+              <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 rounded-lg bg-slate-900 px-2 py-1.5 text-white">
+                <span className="flex min-w-0 items-center gap-1 whitespace-nowrap text-[9px]">
+                  <ShoppingBag size={10} className="shrink-0" aria-hidden /> {cartCount}
+                  <span className="tabular-nums text-white/70">{cartCount > 0 ? fmt(cartTotal, lang) : T.cart[lang]}</span>
+                </span>
+                <span className={`rounded-md px-2 py-0.5 text-[9.5px] font-bold transition-transform ${stage === 3 ? "scale-90" : ""}`} style={{ background: brand }}>
+                  {T.order[lang]}
+                </span>
+              </div>
+              {stage === 0 && (
+                <span className="absolute bottom-10 left-1/2 flex -translate-x-1/2 items-center gap-1 whitespace-nowrap rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-semibold text-slate-800 shadow-lg">
+                  <Hand size={11} className={reduced ? "" : "animate-bounce"} aria-hidden /> {T.touch[lang]}
+                </span>
+              )}
+              {/* Confirmation */}
+              <div className={`absolute inset-0 grid place-items-center bg-white text-center transition-opacity duration-500 ${stage === 4 ? "opacity-100" : "pointer-events-none opacity-0"}`}>
+                <div>
+                  <span className="mx-auto grid h-11 w-11 place-items-center rounded-full text-white" style={{ background: brand }}>
+                    <Check size={22} strokeWidth={3} aria-hidden />
+                  </span>
+                  <p className="mt-2 text-[14px] font-extrabold text-slate-900">{T.thanks[lang]}</p>
+                  <p className="text-[11px] font-semibold text-slate-600">#{100 + tick} · {T.ready[lang]}</p>
+                  <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[9.5px] font-semibold text-emerald-700">
+                    <ChefHat size={10} aria-hidden /> {T.sent[lang]}
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
           <span className="h-6 w-3 bg-[#1B2436]" aria-hidden />
@@ -134,6 +211,13 @@ export function KioskScene() {
           <p className="flex items-center gap-1.5 text-[11.5px] font-semibold text-white/80">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" aria-hidden /> {T.kitchen[lang]}
           </p>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {MODES.map((m, i) => (
+              <span key={m.key} className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${i === 0 ? "bg-white text-[#0B1220]" : "bg-white/[0.06] text-white/60"}`}>
+                <m.Icon size={10} aria-hidden /> {m[lang]}
+              </span>
+            ))}
+          </div>
           <ul className="mt-2 grid gap-1.5" aria-live="off">
             {orders.map((o, i) => (
               <li
@@ -145,7 +229,13 @@ export function KioskScene() {
                   <span className="block truncate text-[11.5px] font-semibold text-white">
                     {o.source.name} · #{o.id}
                   </span>
-                  <span className="block truncate text-[10.5px] text-white/50">{MENU[o.id % MENU.length][lang]}</span>
+                  <span className="flex items-center gap-1 truncate text-[10.5px] text-white/50">
+                    {(() => {
+                      const m = MODES[o.id % MODES.length];
+                      return <m.Icon size={10} className="shrink-0" aria-hidden />;
+                    })()}
+                    {MENU[o.id % MENU.length][lang]} · {[12, 8, 15, 10][o.id % 4]} min
+                  </span>
                 </span>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
