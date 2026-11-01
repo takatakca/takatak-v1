@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { ArrowRight, Headset } from "lucide-react";
 
 import { useCopy } from "@/components/website/premium/ui";
@@ -9,6 +8,7 @@ import { homeV3 } from "@/lib/website/home-funnel";
 import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
 import { Magnetic, PointHere, RevealMedia, Rise } from "./primitives";
+import { SceneReel } from "./SceneReel";
 
 /** The last screen: a full-width brand-blue band, one promise, three ways to start. */
 export function FinalChapter() {
@@ -46,9 +46,7 @@ export function FinalChapter() {
             </div>
           </div>
           <RevealMedia radius={0} className="min-h-[320px] lg:min-h-[560px]">
-            <div className="hp-parallax absolute inset-0">
-              <Image src="/photos/hero-cafe.webp" alt={homeV3.final.photoAlt[lang]} fill sizes="(min-width: 1024px) 640px, 100vw" className="object-cover" />
-            </div>
+            <SceneReel />
           </RevealMedia>
         </div>
       </Rise>

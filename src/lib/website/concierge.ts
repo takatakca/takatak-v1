@@ -32,6 +32,7 @@ const INTENT_WORDS = {
   order: ["commander", "acheter", "finaliser", "inscrire", "order", "buy", "checkout", "sign up", "start"],
   promo: ["rabais", "promo", "code", "special", "reduction", "discount", "deal", "offre", "offer"],
   human: ["humain", "personne", "appeler", "human", "person", "agent", "call me", "parler a"],
+  support: ["probleme", "panne", "fonctionne pas", "marche pas", "bogue", "bug", "erreur", "remboursement", "refund", "broken", "not working", "problem", "plainte", "complaint"],
 } as const;
 
 export function normalize(text: string): string {
@@ -76,7 +77,7 @@ export function suggest(text: string, limit = 4): CategoryKey[] {
   return [...merged.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([k]) => k);
 }
 
-export type ReplyAction = "show_services" | "offer_welcome" | "finalize" | "human" | "ask_goal";
+export type ReplyAction = "show_services" | "offer_welcome" | "finalize" | "human" | "ask_goal" | "support";
 
 export interface Reply {
   text: Record<Lang, string>;
@@ -90,6 +91,17 @@ export interface Reply {
  */
 export function respond(input: string, offered: boolean): Reply {
   const u = understand(input);
+  // A sales assistant: problems with an existing service go to the support team.
+  if (u.intents.includes("support")) {
+    return {
+      text: {
+        fr: "Je suis l’assistant ventes : je vous parle des services, des prix et je prépare votre commande. Pour un problème avec un service que vous avez déjà (téléphone, site, facture), notre équipe de soutien s’en occupe.",
+        en: "I’m the sales assistant: I cover services, prices and your order. For a problem with a service you already have (phone, website, invoice), our support team takes care of it.",
+      },
+      services: [],
+      actions: ["support"],
+    };
+  }
   if (u.intents.includes("human")) {
     return {
       text: { fr: "Bien sûr. Une personne de notre équipe peut prendre le relais dans le clavardage.", en: "Of course. Someone from our team can take over in the chat." },

@@ -8,10 +8,12 @@ import { TAKBOT_MODES, TAKBOT_PACKS, creditsFor } from "@/lib/takbot/catalog";
 import { takbotModeCopy } from "@/lib/takbot/copy";
 import { homeCopy, homeV2 } from "@/lib/website/home-funnel";
 import { Link } from "@/lib/website/nav";
+import { trialCopy } from "@/lib/takbot/trial-copy";
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
 import { Eyebrow, Magnetic, PointHere, Rise, Section, TwoTone, useSpotlight } from "./primitives";
+import { TAKBOT_PREFILL_EVENT, TakbotTryPanel } from "./TakbotTryPanel";
 
 /** Mode icons, shared with the /takbot studio. */
 export const MODE_ICONS = {
@@ -111,6 +113,44 @@ function ProductViewer() {
   );
 }
 
+/** Right column: the live bot first, the recordings of the real app one click away. */
+function TakbotStage() {
+  const { lang } = useLanguage();
+  const [view, setView] = useState<"try" | "app">("try");
+  useEffect(() => {
+    const back = () => setView("try");
+    window.addEventListener(TAKBOT_PREFILL_EVENT, back);
+    return () => window.removeEventListener(TAKBOT_PREFILL_EVENT, back);
+  }, []);
+  return (
+    <div className="relative">
+      <PointHere label={lang === "fr" ? "Essayez-le ici" : "Try it here"} flip color="#29C3FF" className="left-[96px] -top-[62px] hidden sm:flex" />
+      <div role="tablist" aria-label="TAK bot" className="mb-4 inline-flex gap-1 rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10">
+        {(["try", "app"] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            id={`home-takbot-tab-${k}`}
+            aria-selected={view === k}
+            aria-controls={`home-takbot-view-${k}`}
+            onClick={() => setView(k)}
+            className={`rounded-full px-4 py-2 text-[13.5px] font-semibold transition-colors ${view === k ? "bg-white text-[#060D1F]" : "text-white/65 hover:text-white"}`}
+          >
+            {trialCopy.tabs[k][lang]}
+          </button>
+        ))}
+      </div>
+      <div id="home-takbot-view-try" role="tabpanel" aria-labelledby="home-takbot-tab-try" hidden={view !== "try"}>
+        <TakbotTryPanel onShowApp={() => setView("app")} />
+      </div>
+      <div id="home-takbot-view-app" role="tabpanel" aria-labelledby="home-takbot-tab-app" hidden={view !== "app"}>
+        {view === "app" && <ProductViewer />}
+      </div>
+    </div>
+  );
+}
+
 /** Homepage chapter for TAK bot: the real product, real credit costs and real pack prices. */
 export function TakbotSection() {
   const { lang } = useLanguage();
@@ -144,7 +184,6 @@ export function TakbotSection() {
               </ul>
 
               <div className="relative mt-9 flex flex-wrap items-center gap-3">
-                <PointHere label={lang === "fr" ? "Essayez-le" : "Try it"} flip color="#29C3FF" className="left-[230px] -top-9 hidden sm:flex" />
                 <Magnetic>
                   <Link to="/takbot" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-[15px] font-semibold text-[#060D1F] transition-transform hover:scale-[1.03]">
                     {homeCopy.takbot.cta[lang]} <ArrowRight size={16} aria-hidden />
@@ -153,7 +192,7 @@ export function TakbotSection() {
               </div>
             </Rise>
             <Rise delay={120}>
-              <ProductViewer />
+              <TakbotStage />
             </Rise>
           </div>
 

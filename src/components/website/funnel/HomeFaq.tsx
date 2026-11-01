@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Headset, Plus } from "lucide-react";
+import { Headset, MessageSquareText, Mic, Plus, Sparkles } from "lucide-react";
 
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { HOME_FAQ, homeV2 } from "@/lib/website/home-funnel";
 import { useLanguage } from "@/lib/website/use-language";
 import { sectionId } from "./HomeSectionNav";
+import { openConcierge } from "./OfferRail";
 import { Eyebrow, Rise, Section, TwoTone } from "./primitives";
 
 /** Short answers to the questions that stop a sign-up. */
@@ -19,13 +20,32 @@ export function HomeFaq() {
         <Rise>
           <Eyebrow>{homeV2.faq.eyebrow[lang]}</Eyebrow>
           <TwoTone id="home-faq-title" lead={homeV2.faq.lead[lang]} rest={homeV2.faq.rest[lang]} />
-          <button
-            type="button"
-            onClick={() => openLiveChat({ page: "/", intent: "faq", lang })}
-            className="hp-ghost hp-focus mt-8 inline-flex items-center gap-2 rounded-full px-5 py-3 text-[14.5px] font-semibold"
-          >
-            <Headset size={16} className="hp-accent" aria-hidden /> {lang === "fr" ? "Parler à TAKATAK" : "Talk to TAKATAK"}
-          </button>
+          <div className="hp-card hp-glow mt-8 max-w-md rounded-[24px] p-5 ring-1 ring-[var(--hp-line)]">
+            <p className="hp-ink flex items-center gap-2 text-[15.5px] font-semibold">
+              <Sparkles size={16} className="hp-accent" aria-hidden />
+              {lang === "fr" ? "Votre question n’est pas là ?" : "Your question isn’t here?"}
+            </p>
+            <p className="hp-ink-2 mt-1.5 text-[14.5px] leading-6">
+              {lang === "fr"
+                ? "Demandez à l’assistant ventes : services, prix, délais. Écrivez ou parlez."
+                : "Ask the sales assistant: services, prices, timing. Type or talk."}
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => openConcierge()} className="hp-cta hp-focus inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[14px] font-semibold">
+                <MessageSquareText size={15} aria-hidden /> {lang === "fr" ? "Écrire" : "Type"}
+              </button>
+              <button type="button" onClick={() => openConcierge({ voice: true })} className="hp-ghost hp-focus inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[14px] font-semibold">
+                <Mic size={15} aria-hidden /> {lang === "fr" ? "Parler" : "Talk"}
+              </button>
+              <button
+                type="button"
+                onClick={() => openLiveChat({ page: "/", intent: "faq", lang })}
+                className="hp-ghost hp-focus inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[14px] font-semibold"
+              >
+                <Headset size={15} aria-hidden /> {lang === "fr" ? "Un humain" : "A person"}
+              </button>
+            </div>
+          </div>
         </Rise>
         <ul className="hp-line border-t">
           {HOME_FAQ.map((item, i) => {
