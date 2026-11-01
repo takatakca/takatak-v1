@@ -49,7 +49,7 @@ const nextConfig: NextConfig = {
     };
   },
   async redirects() {
-    return ["dashboard", "login", "signup", "auth", "oauth"].map((route) => ({
+    return ["dashboard", "login", "register", "signup", "auth", "oauth"].map((route) => ({
       source: `/${route}/:path*`,
       has: [{ type: "host" as const, value: "review\\.takatak\\.ca" }],
       destination: `https://takatak.ca/${route}/:path*`,
