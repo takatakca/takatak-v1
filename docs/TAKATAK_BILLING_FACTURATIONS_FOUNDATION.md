@@ -1,6 +1,6 @@
 # GROUPE TAKATAK Billing — Facturations integration foundation
 
-Status: **foundation on branch `claude/takatak-billing-foundation`. Integration disabled by default. Not deployed. Its migration is not yet in the approved staging/production migration trains.**
+Status: **foundation code exists on TAKATAK-V1 `main`; live Facturations connectivity and the isolated service remain unverified. Integration is disabled by default; migrations and billing operations require independent approval and environment evidence.**
 
 GROUPE TAKATAK has one invoicing authority for the whole ecosystem: the independent **Facturations** service (`takatakca/Facturations`). TAKATAK V1 is the **billing gateway**:
 
@@ -299,3 +299,18 @@ npm run typecheck
 npm run lint
 npm run build
 ```
+
+## 2026-11-01 — Facturations in TAKATAK-V1: owner activation request
+
+**What exists on `main` already:** authenticated platform admin at `/dashboard/admin/billing`, central B2B invoice-request queue, signed client to `/integration/v1/*` (read-only discovery/drafts and OWNER-gated creation of **drafts only**), separately authorized customer invoice area at `/dashboard/invoices`, provider reconciliation and Stripe integration with separate gates. This does **not** mean the standalone Facturations service or Wave issuance is live. All resources are tenant-scoped; food receipts in QCMEV and Food Hub are distinct.
+
+**Increment in branch `fix/facturations-admin-activation-guard-20261101`:**
+- `src/lib/dashboard/dashboard-config.ts`: visible platform-owner/admin navigation `Facturations — Administration` → `/dashboard/admin/billing`. Existing sidebar `session.platformRole` gate and `admin/layout.tsx` server guard remain in force.
+- `src/app/dashboard/admin/billing/page.tsx`: a configured server-side environment is **not** green. Green requires successful signed remote capability, dashboard, and draft-list reads; status explicitly states read-only, not payment/issuance.
+- `scripts/verify-takatak-billing.ts`: regression checks for the admin guard, navigation, real-remote-read-only success semantics. `npm run qa:billing` is the relevant CI command.
+- `WORKLOG.md` and `docs/AGENT_HANDOFF.md`: checkpoint, exact pushed SHA and results.
+
+**Live activation still blocked:** `FACTURATIONS_INTEGRATION_ENABLED=1`, exact `FACTURATIONS_ORIGIN` over HTTPS, matching server-only `FACTURATIONS_INTEGRATION_HMAC_SECRET`, issuer/audience and Facturations `WAVE_BUSINESS_ID` mapping are required on **both server configurations**; project-private HTTPS, dedicated Facturations PostgreSQL, backup/restore and verified remote readiness must exist. Do not commit secret values or set NEXT_PUBLIC variables. The main Facturations branch remains independent with unmerged PRs #164/#166/#171. Its `FACTURATIONS_INTEGRATION_WRITES_ENABLED=1` additionally gates only draft creation and cannot be enabled without specific validation. Wave issuance, delivery, client emails, real Stripe payments/refunds remain disabled pending separate owner approval and GO/NO-GO. This work does not merge or deploy any repo and cannot verify a live Facturations release SHA.
+
+**Next:** inspect CI of the exact branch HEAD, repair any failed check, request coordinator review/merge. Only the authorized operator may set runtime flags/secrets and test isolated service-to-service calls. Then verify production `/dashboard/admin/billing` with actual owner session and Facturations read status, and the live TAKATAK release SHA.
+
