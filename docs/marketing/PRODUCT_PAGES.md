@@ -6,6 +6,7 @@
 | --- | --- | --- | --- |
 | SEO TAKATAK | `/seo` (`src/components/website/seo/SeoProductPage.tsx`) | `seo.takatak.ca` | page built |
 | 10 core services | `/services/<slug>` (with "Voyez-le en action") | — | built |
+| Clover suite (9 apps) | `/clover` (`src/components/website/clover/CloverSuitePage.tsx`), facts from each app README and `foodhubca/docs/TAKATAK_SUITE.md` | — | page built |
 
 ## What `/seo` says, and where each fact comes from
 

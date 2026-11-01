@@ -23,12 +23,12 @@ import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { useSeen } from "./primitives";
 
 type Lang = "fr" | "en";
-type F = 0 | 1 | 2 | 3;
+export type F = 0 | 1 | 2 | 3;
 
-const APPS = SUITE_GROUPS.flatMap((g) => g.products).filter((p) => p.status === "clover" || p.key === "ch4t");
+export const APPS = SUITE_GROUPS.flatMap((g) => g.products).filter((p) => p.status === "clover" || p.key === "ch4t");
 
 /** Each app's colour on its mini screen (the app's own accent, not a status). */
-const ACCENT: Record<string, string> = {
+export const ACCENT: Record<string, string> = {
   c4isse: "#1F8BFF",
   t4ctile: "#E5484D",
   "4ccounting": "#12A150",
@@ -65,7 +65,7 @@ function Tap({ show, className }: { show: boolean; className: string }) {
 }
 
 /** One app's moving mini screen: four frames that loop like a GIF. */
-function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
+export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
   const a = ACCENT[app] ?? "#1F8BFF";
   const box = "relative h-full w-full overflow-hidden rounded-[10px] bg-white text-[#0B1220]";
   switch (app) {
@@ -253,7 +253,7 @@ function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
             className={`ml-auto mt-1 block max-w-[80%] rounded-lg rounded-br-sm px-1.5 py-1 text-[9px] text-white transition-all duration-300 ${f >= 2 ? "opacity-100" : "opacity-0"}`}
             style={{ background: a }}
           >
-            {w(lang, "Elle est en route, 10 min.", "On its way, 10 min.")}
+            {w(lang, "Clover · commande #108 en route", "Clover · order #108 on its way")}
           </span>
           {f === 1 && (
             <span className="ml-auto mt-1 flex w-8 justify-center gap-0.5 rounded-lg bg-white py-1.5" aria-hidden>
@@ -288,9 +288,10 @@ export function CloverSuite({ statusLabel }: { statusLabel: ReactNode }) {
         // Each card runs a beat behind the previous one, so they never flip together.
         const f = (reduced ? 3 : (tick + i * 3) % 4) as F;
         return (
-          <div
+          <a
             key={p.key}
-            className="group/app flex items-center gap-3 rounded-2xl p-2.5 ring-1 ring-[var(--hp-line)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-22px_var(--hp-ink)]"
+            href={`/clover#${p.key}`}
+            className="group/app flex items-center gap-3 rounded-2xl p-2.5 ring-1 ring-[var(--hp-line)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-22px_var(--hp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hp-info)]"
           >
             <div
               className="h-[92px] w-[120px] shrink-0 rounded-[14px] p-1 shadow-[0_10px_24px_-14px_rgb(6_13_31/0.7)]"
@@ -306,7 +307,7 @@ export function CloverSuite({ statusLabel }: { statusLabel: ReactNode }) {
               </p>
               <p className="mt-0.5 text-[13px] leading-5 hp-ink-2">{p.desc[lang]}</p>
             </div>
-          </div>
+          </a>
         );
       })}
       <div className="sm:col-span-2 lg:col-span-3">{statusLabel}</div>

@@ -50,6 +50,7 @@ const cols: { title: Bi; links: FooterLink[] }[] = [
       { to: "/services/social-media", label: { en: "Social media", fr: "Réseaux sociaux" } },
       { to: "/services/local-listings", label: { en: "Local listings", fr: "Fiches locales" } },
       { to: "/seo", label: { en: "SEO TAKATAK", fr: "SEO TAKATAK" } },
+      { to: "/clover", label: { en: "Clover suite", fr: "Suite Clover" } },
       { to: "/services/reviews", label: { en: "Reviews & reputation", fr: "Avis et réputation" } },
       { to: "/services/ai-studio", label: { en: "AI Studio", fr: "AI Studio" } },
       { to: "/takbot", label: { en: "TAK-TAK AI", fr: "TAK-TAK IA" } },
