@@ -1,4 +1,4 @@
-// TAK bot trial: a few free credits for new accounts, run on an economy
+// TAK-TAK trial: a few free credits for new accounts, run on an economy
 // engine. Premium engines unlock once the workspace has bought (or been
 // granted) real credits. Pure module: configuration and routing only.
 

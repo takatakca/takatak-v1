@@ -37,7 +37,7 @@ export const metadata: Metadata = {
 
 // Homepage. The hero is the owner's design (Oct 2026) and stays as is.
 // Below it (Oct 31 2026), light by default with a dark mode toggle: ask bar
-// (voice, suggestions, guided assistant), photo stories, services gallery, plan configurator, TAK bot, product
+// (voice, suggestions, guided assistant), photo stories, services gallery, plan configurator, TAK-TAK, product
 // suite, pricing, FAQ, newsletter (own unchecked consent box), and a plan dock that follows the visitor to /register.
 export default function HomePage() {
   return (

@@ -1,4 +1,4 @@
-// TAK bot — the master bot that relays a request to the right AI engine.
+// TAK-TAK — the master bot that relays a request to the right AI engine.
 // Pure data and routing (no I/O), shared by the public /takbot page and the
 // /api/takbot routes, so what the page promises is exactly what the server runs.
 //
@@ -12,7 +12,7 @@ import { AI_PROVIDER_CATALOG } from "@/lib/ai-providers/catalog";
 export type TakbotMode = "chat" | "write" | "research" | "image" | "voice" | "video";
 
 /** How the server talks to an engine. Only `openai_compat`, `anthropic` and
- *  `gemini` engines answer from the TAK bot page today; the others are routed
+ *  `gemini` engines answer from the TAK-TAK page today; the others are routed
  *  through the AI Studio jobs and show as "studio" on the page. */
 export type RelayKind = "openai_compat" | "anthropic" | "gemini" | "studio";
 
@@ -32,9 +32,9 @@ export interface TakbotModeDef {
   key: TakbotMode;
   /** Credit action debited for one request in this mode (AI_CREDIT_ACTIONS). */
   actionKey: string;
-  /** Engine TAK bot picks when the visitor leaves "Auto" on, in order of preference. */
+  /** Engine TAK-TAK picks when the visitor leaves "Auto" on, in order of preference. */
   autoOrder: readonly string[];
-  /** True when the TAK bot page can answer this mode inline today. */
+  /** True when the TAK-TAK page can answer this mode inline today. */
   inline: boolean;
 }
 
@@ -72,7 +72,7 @@ function relayFor(key: string): RelayKind {
   return "studio";
 }
 
-/** Every engine TAK bot can relay to, built from the provider catalogs (client-billable only). */
+/** Every engine TAK-TAK can relay to, built from the provider catalogs (client-billable only). */
 export const TAKBOT_ENGINES: readonly TakbotEngine[] = AI_PROVIDERS.filter((p) =>
   AI_PROVIDER_CATALOG.some((c) => c.key === p.key && c.billableToClients),
 ).map((p) => {

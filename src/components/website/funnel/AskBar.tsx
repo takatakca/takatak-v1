@@ -39,7 +39,7 @@ const C = {
   add: { en: "Add", fr: "Ajouter" },
   added: { en: "Added", fr: "Ajouté" },
   agent: { en: "TAKATAK sales assistant", fr: "Assistant ventes TAKATAK" },
-  askTakbot: { en: "Ask TAK bot (AI)", fr: "Demander à TAK bot (IA)" },
+  askTakbot: { en: "Ask TAK-TAK (AI)", fr: "Demander à TAK-TAK (IA)" },
   agentNote: { en: "Guided answers from our catalog · a person can take over", fr: "Réponses guidées par notre catalogue · une personne peut prendre le relais" },
   hello: {
     en: "Hi! Tell me about your business or what you want to do, and I’ll put together the right services with real prices.",
@@ -185,7 +185,7 @@ function Concierge({ first, onClose, voice = false }: { first: string; onClose: 
   const [fiche, setFiche] = useState<Fiche>(emptyFiche);
   const [speak, setSpeak] = useState(voice);
   const seenServices = useRef<string[]>([]);
-  // The live TAK bot is on the homepage only.
+  // The live TAK-TAK is on the homepage only.
   const [hasTakbot] = useState(() => typeof document !== "undefined" && Boolean(document.getElementById(sectionId("takbot"))));
   const toTakbot = (q: string) => {
     onClose();
@@ -493,7 +493,7 @@ export function AskBar() {
       <div className="relative mx-auto max-w-4xl px-4">
         {/* TAK, the TAKATAK robot, welcomes the visitor right under the hero */}
         <div aria-hidden className="pointer-events-none absolute -left-24 -top-6 hidden xl:block">
-          <RobotMascot size={110} title="TAK" />
+          <RobotMascot size={110} title="TAK-TAK" />
         </div>
         <h2 id="home-ask-title" className="hp-display hp-ink text-balance text-center text-[30px] sm:text-[44px]">
           {C.title[lang]}

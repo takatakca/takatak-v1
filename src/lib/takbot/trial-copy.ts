@@ -1,10 +1,10 @@
-// Words for the live TAK bot trial on the homepage. French first.
+// Words for the live TAK-TAK trial on the homepage. French first.
 
 type T = { fr: string; en: string };
 
 export const trialCopy = {
   tabs: { try: { fr: "Essayer maintenant", en: "Try it now" }, app: { fr: "Voir l'app", en: "See the app" } },
-  title: { fr: "TAK bot, en direct", en: "TAK bot, live" },
+  title: { fr: "TAK-TAK, en direct", en: "TAK-TAK, live" },
   free: (n: number): T => ({ fr: `${n} crédits offerts`, en: `${n} free credits` }),
   steps: [
     { fr: "Connectez-vous avec Google", en: "Sign in with Google" },
@@ -20,10 +20,10 @@ export const trialCopy = {
   terms: { fr: "Conditions", en: "Terms" },
   privacy: { fr: "Confidentialité", en: "Privacy" },
   soon: {
-    fr: "L'essai gratuit ouvre très bientôt. En attendant, regardez l'app ou ouvrez TAK bot.",
-    en: "The free trial opens very soon. Meanwhile, watch the app or open TAK bot.",
+    fr: "L'essai gratuit ouvre très bientôt. En attendant, regardez l'app ou ouvrez TAK-TAK.",
+    en: "The free trial opens very soon. Meanwhile, watch the app or open TAK-TAK.",
   },
-  openTakbot: { fr: "Ouvrir TAK bot", en: "Open TAK bot" },
+  openTakbot: { fr: "Ouvrir TAK-TAK", en: "Open TAK-TAK" },
   welcome: (name: string | null, n: number): T => ({
     fr: `${name ? `Bienvenue, ${name}. ` : "Bienvenue. "}${n} crédits sont dans votre compte.`,
     en: `${name ? `Welcome, ${name}. ` : "Welcome. "}${n} credits are in your account.`,
@@ -36,7 +36,7 @@ export const trialCopy = {
   }),
   premium: { fr: "Premium · les meilleurs moteurs", en: "Premium · the best engines" },
   placeholder: {
-    chat: { fr: "Posez votre question à TAK bot…", en: "Ask TAK bot anything…" },
+    chat: { fr: "Posez votre question à TAK-TAK…", en: "Ask TAK-TAK anything…" },
     write: { fr: "Ex. : une publication Facebook pour mon resto, ton chaleureux", en: "E.g. a Facebook post for my restaurant, warm tone" },
     research: { fr: "Ex. : 5 idées de mots-clés pour un plombier à Laval", en: "E.g. 5 keyword ideas for a plumber in Laval" },
   },
@@ -48,7 +48,7 @@ export const trialCopy = {
   samplesLabel: { fr: "Exemples", en: "Examples" },
   send: { fr: "Envoyer", en: "Send" },
   costs: (n: number): T => ({ fr: n === 1 ? "1 crédit" : `${n} crédits`, en: n === 1 ? "1 credit" : `${n} credits` }),
-  thinking: { fr: "TAK bot réfléchit…", en: "TAK bot is thinking…" },
+  thinking: { fr: "TAK-TAK réfléchit…", en: "TAK-TAK is thinking…" },
   saved: { fr: "Gardée dans votre fiche", en: "Saved to your file" },
   seeSaved: { fr: "Voir mes réponses", en: "See my answers" },
   out: {

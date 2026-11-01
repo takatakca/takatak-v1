@@ -18,7 +18,7 @@ const TRY_MODES: TryMode[] = ["chat", "write", "research"];
 const PENDING_KEY = "takbot:pending";
 const RETURN_PATH = "/?essai=takbot";
 
-/** Ask TAK bot from anywhere on the page (the concierge uses it). */
+/** Ask TAK-TAK from anywhere on the page (the concierge uses it). */
 export const TAKBOT_PREFILL_EVENT = "takbot:prefill";
 export function prefillTakbot(prompt: string, mode: TryMode = "chat") {
   window.dispatchEvent(new CustomEvent(TAKBOT_PREFILL_EVENT, { detail: { prompt, mode } }));
@@ -119,7 +119,7 @@ function GoogleMark() {
 }
 
 /**
- * The real TAK bot on the homepage. Signed out: sign in with Google (or
+ * The real TAK-TAK on the homepage. Signed out: sign in with Google (or
  * email) first, which creates the visitor's TAKATAK account and client file.
  * Signed in: the trial credits are claimed once, then every answer runs on
  * the server (credits debited, refunded on failure) and is kept in the file.
@@ -279,7 +279,7 @@ export function TakbotTryPanel({ onShowApp }: { onShowApp: () => void }) {
       {/* Status bar */}
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
         <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[#1E6BFF]/20">
-          <RobotMascot size={34} wave={false} headOnly title="TAK" />
+          <RobotMascot size={34} wave={false} headOnly title="TAK-TAK" />
           {trialOpen && <span aria-hidden className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#0B1220]" />}
         </span>
         <div className="min-w-0 flex-1">

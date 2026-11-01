@@ -15,7 +15,7 @@ du kit ; le dernier élément, `_signature`, n'est pas une vidéo). Architecture
 - **Runway ne dessine jamais une interface.** Tout ce qui est écran (taper « www », toucher « Publier »,
   l'avis Google qui arrive, l'appel que MIMT dirige, la fiche qu'on modifie) vient d'un enregistrement réel
   sur un compte de démonstration. Runway sert à l'ambiance et aux mouvements de caméra.
-- **12 sections** (sites web, domaines et hébergement, réseaux sociaux, fiches locales, avis, MIMT, TAK bot,
+- **12 sections** (sites web, domaines et hébergement, réseaux sociaux, fiches locales, avis, MIMT, TAK-TAK,
   facturation, QMAPS, FLEXS, SEO TAKATAK, Academy) × 5 durées = 60 scripts, **9 vidéos YouTube de 3 min**,
   et le complément du pack Clover (déclinaisons courtes des 12 films, bleu au lieu de l'or).
 - **Règles qui ne bougent pas :** aucun faux témoignage, aucune personne de banque d'images présentée comme
@@ -128,7 +128,7 @@ raccourcissent d'autant ; les minutages exacts sont dans chaque tableau.
   canadiens et « avant taxes ». On revérifie le fichier le jour de l'export. Les packs de crédits IA de
   `src/lib/growth/ai-engine.ts` sont marqués **DRAFT** : jamais à l'écran tant que le paiement n'est pas ouvert.
 - **Le statut réel de chaque produit** (code du 2026-11-01) : en ligne = sites web, domaines, hébergement,
-  fiches locales, facturation, QMAPS, FLEXS ; accès anticipé = réseaux sociaux, avis, TAK bot, SEO TAKATAK ;
+  fiches locales, facturation, QMAPS, FLEXS ; accès anticipé = réseaux sociaux, avis, TAK-TAK, SEO TAKATAK ;
   bientôt = Academy (pas encore d'adresse publique), CH4T ; **prélancement = MIMT** (takatak.ca dit « pas
   encore lancé, liste d'attente ») ; les apps Clover sont des brouillons au portail. Une fonction marquée
   « s'en vient » dans le code (par exemple les brouillons de réponse IA aux avis) porte l'étiquette
@@ -206,7 +206,7 @@ Note : YouTube annonce la fin progressive des licences payantes de Creator Music
   et l'inverse. Nos propres canaux (takatak.ca, notre chaîne YouTube, nos réseaux) peuvent en montrer
   plusieurs. Food Hub, Clover et UrbanPiper peuvent être nommés.
 - **Logos de tiers** (Facebook, Instagram, TikTok, Google, Clover, Stripe, moteurs d'IA) : seulement les
-  fichiers officiels des centres de marque, sans déformation ; les noms des moteurs d'IA de TAK bot en texte
+  fichiers officiels des centres de marque, sans déformation ; les noms des moteurs d'IA de TAK-TAK en texte
   seulement. Les chartes de Meta et TikTok limitent certains usages et animations de leurs logos : **à
   vérifier** avant d'animer les icônes.
 - **Français d'abord.** Au Québec, une publication commerciale sur les réseaux sociaux doit exister en français,
@@ -590,10 +590,10 @@ texte à l'écran FR et EN, voix off FR et EN. La version EN est un montage sép
 | 0:23–0:27 | B | Plan B : designer qui rit au téléphone | Votre système téléphonique, sans matériel. | Your company phone system, no hardware. | Le système téléphonique de votre entreprise, sans matériel. | Your company phone system, no hardware. |
 | 0:27–0:30 | FIN | Carte de fin : logo officiel, mimt.ca | MIMT arrive bientôt. Liste d'attente : mimt.ca | MIMT is coming soon. Waiting list: mimt.ca | MIMT arrive bientôt. Inscrivez-vous sur mimt.ca. | MIMT is coming soon. Sign up at mimt.ca. |
 
-### 4.7 TAKATAK — TAK bot IA / TAK bot AI
+### 4.7 TAKATAK — TAK-TAK IA / TAK-TAK AI
 
 - **Statut (code) :** Accès anticipé ; essai de 50 crédits quand il est ouvert en production (docs/TAKBOT_TRIAL.md : connexion Google, clé économique, TAKBOT_TRIAL_ENABLED)
-- **Lien :** takatak.ca/takbot · **Appel à l'action :** Essayez TAK bot sur takatak.ca/takbot / Try TAK bot at takatak.ca/takbot
+- **Lien :** takatak.ca/takbot · **Appel à l'action :** Essayez TAK-TAK sur takatak.ca/takbot / Try TAK-TAK at takatak.ca/takbot
 - **Musique :** Synthé ambiant moderne, ~100 BPM.
 - **Prix :** Aucun prix : les packs de crédits sont DRAFT (src/lib/growth/ai-engine.ts). « 50 crédits d'essai » seulement quand l'essai est ouvert en production.
 - **Matériel réel à fournir :**
@@ -607,7 +607,7 @@ texte à l'écran FR et EN, voix off FR et EN. La version EN est un montage sép
     `A designer in her bright studio reads her laptop screen, nods and smiles, slow arc, realistic, screen not readable, no text, no logos.`
 - **Règles propres :**
   - Noms des moteurs (Claude, ChatGPT, Gemini, Mistral, Grok) en texte seulement, aucun logo de tiers.
-  - « 13 moteurs d'IA » (home-funnel.ts › homeV2) seulement tant que le catalogue TAK bot le dit.
+  - « 13 moteurs d'IA » (home-funnel.ts › homeV2) seulement tant que le catalogue TAK-TAK le dit.
   - Coûts montrés = ceux de l'essai : Clavarder 1 crédit, Écrire 2, Rechercher 2 (TAKBOT_TRIAL.md).
 
 **5 s** · 16:9 (site) + 9:16 (bumper) · Boucle du site (16:9, muette, sans texte) · bumper Stories/Shorts (9:16, titre au montage)
@@ -621,35 +621,35 @@ texte à l'écran FR et EN, voix off FR et EN. La version EN est un montage sép
 | Temps | Bloc | Image | Texte FR | Text EN | Voix FR | Voice EN |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0:00–0:05 | A | Plan A : professionnelle qui tape une question | Un bot maître. Tous les moteurs d'IA derrière lui. | One master bot. Every AI engine behind it. | Un bot maître, tous les moteurs d'IA derrière lui. | One master bot, every AI engine behind it. |
-| 0:05–0:08 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK bot sur takatak.ca/takbot | Try TAK bot at takatak.ca/takbot | Essayez TAK bot sur takatak.ca. | Try TAK bot at takatak.ca. |
+| 0:05–0:08 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca/takbot | Try TAK-TAK at takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca. | Try TAK-TAK at takatak.ca. |
 
 **13 s** · 9:16 · Reels · Shorts · TikTok · publicité Meta
 
 | Temps | Bloc | Image | Texte FR | Text EN | Voix FR | Voice EN |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0:00–0:04 | A | Plan A : professionnelle qui tape une question | Un bot maître. Tous les moteurs d'IA derrière lui. | One master bot. Every AI engine behind it. | Un bot maître, tous les moteurs d'IA derrière lui. | One master bot, every AI engine behind it. |
-| 0:04–0:10 | P1 | Capture : on tape « Écris une publication pour mon café » dans TAK bot | Demandez une fois à TAK bot | Ask TAK bot once | Vous demandez une fois ; TAK bot choisit le bon moteur. | Ask once; TAK bot picks the right engine. |
-| 0:10–0:13 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK bot sur takatak.ca/takbot | Try TAK bot at takatak.ca/takbot | Essayez TAK bot sur takatak.ca. | Try TAK bot at takatak.ca. |
+| 0:04–0:10 | P1 | Capture : on tape « Écris une publication pour mon café » dans TAK-TAK | Demandez une fois à TAK-TAK | Ask TAK-TAK once | Vous demandez une fois ; TAK-TAK choisit le bon moteur. | Ask once; TAK-TAK picks the right engine. |
+| 0:10–0:13 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca/takbot | Try TAK-TAK at takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca. | Try TAK-TAK at takatak.ca. |
 
 **15 s** · 9:16 (+ 16:9 pour la pub YouTube/Meta) · Reels · Shorts · TikTok · publicités Meta et YouTube
 
 | Temps | Bloc | Image | Texte FR | Text EN | Voix FR | Voice EN |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0:00–0:04 | A | Plan A : professionnelle qui tape une question | Un bot maître. Tous les moteurs d'IA derrière lui. | One master bot. Every AI engine behind it. | Un bot maître, tous les moteurs d'IA derrière lui. | One master bot, every AI engine behind it. |
-| 0:04–0:08 | P1 | Capture : on tape « Écris une publication pour mon café » dans TAK bot | Demandez une fois à TAK bot | Ask TAK bot once | Vous demandez une fois ; TAK bot choisit le bon moteur. | Ask once; TAK bot picks the right engine. |
+| 0:04–0:08 | P1 | Capture : on tape « Écris une publication pour mon café » dans TAK-TAK | Demandez une fois à TAK-TAK | Ask TAK-TAK once | Vous demandez une fois ; TAK-TAK choisit le bon moteur. | Ask once; TAK-TAK picks the right engine. |
 | 0:08–0:12 | P2 | Capture : « 2 crédits » affiché, puis la réponse | Le coût s'affiche avant chaque demande | The cost shows before every request | Le coût en crédits s'affiche avant ; si un moteur échoue, les crédits reviennent. | The credit cost shows first; if an engine fails, the credits come back. |
-| 0:12–0:15 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK bot sur takatak.ca/takbot | Try TAK bot at takatak.ca/takbot | Essayez TAK bot sur takatak.ca. | Try TAK bot at takatak.ca. |
+| 0:12–0:15 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca/takbot | Try TAK-TAK at takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca. | Try TAK-TAK at takatak.ca. |
 
 **30 s** · 9:16 + 16:9 · Page de service du site · YouTube Shorts · Reels · publicités YouTube et Meta (TikTok Creator Rewards exige 1 min et plus)
 
 | Temps | Bloc | Image | Texte FR | Text EN | Voix FR | Voice EN |
 | --- | --- | --- | --- | --- | --- | --- |
 | 0:00–0:04 | A | Plan A : professionnelle qui tape une question | Un bot maître. Tous les moteurs d'IA derrière lui. | One master bot. Every AI engine behind it. | Un bot maître, tous les moteurs d'IA derrière lui. | One master bot, every AI engine behind it. |
-| 0:04–0:11 | P1 | Capture : on tape « Écris une publication pour mon café » dans TAK bot | Demandez une fois à TAK bot | Ask TAK bot once | Vous demandez une fois ; TAK bot choisit le bon moteur. | Ask once; TAK bot picks the right engine. |
+| 0:04–0:11 | P1 | Capture : on tape « Écris une publication pour mon café » dans TAK-TAK | Demandez une fois à TAK-TAK | Ask TAK-TAK once | Vous demandez une fois ; TAK-TAK choisit le bon moteur. | Ask once; TAK-TAK picks the right engine. |
 | 0:11–0:18 | P2 | Capture : « 2 crédits » affiché, puis la réponse | Le coût s'affiche avant chaque demande | The cost shows before every request | Le coût en crédits s'affiche avant ; si un moteur échoue, les crédits reviennent. | The credit cost shows first; if an engine fails, the credits come back. |
 | 0:18–0:23 | P3 | Capture : la réponse gardée dans le dossier | Gardé dans votre dossier | Saved to your file | Chaque réponse est gardée dans votre dossier. | Every answer is saved to your file. |
 | 0:23–0:27 | B | Plan B : designer qui lit son écran et sourit | Payé en crédits, pas en abonnements. | Paid with credits, not subscriptions. | Vous payez seulement ce que vous utilisez. | You pay only for what you use. |
-| 0:27–0:30 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK bot sur takatak.ca/takbot | Try TAK bot at takatak.ca/takbot | Essayez TAK bot sur takatak.ca. | Try TAK bot at takatak.ca. |
+| 0:27–0:30 | FIN | Carte de fin : logo officiel, takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca/takbot | Try TAK-TAK at takatak.ca/takbot | Essayez TAK-TAK sur takatak.ca. | Try TAK-TAK at takatak.ca. |
 
 ### 4.8 TAKATAK — Facturation / Invoicing
 
@@ -1025,23 +1025,23 @@ pour l'accroche, chapitres en capture réelle, plan B, écran de fin.
 - **Plans Runway :** A et B de la section « Réseaux sociaux » (§ 4) ; musique de la même section, sous la voix.
 - **À fournir :** Marque de démo branchée sur des comptes de test ; Aucun compte client réel à l'écran.
 
-### TAK bot : un seul bot, plusieurs moteurs d'IA, payé en crédits | TAKATAK
+### TAK-TAK : un seul bot, plusieurs moteurs d'IA, payé en crédits | TAKATAK
 
-*TAK bot: one bot, many AI engines, paid with credits | TAKATAK* · TAKATAK · 16:9, 1920×1080 · voix FR (version EN séparée) · sous-titres SRT FR et EN
+*TAK-TAK: one bot, many AI engines, paid with credits | TAKATAK* · TAKATAK · 16:9, 1920×1080 · voix FR (version EN séparée) · sous-titres SRT FR et EN
 
 | Temps | Image | Contenu FR | Content EN |
 | --- | --- | --- | --- |
 | 0:00–0:10 | Runway A (takbot) | Accroche : « Un bot maître, tous les moteurs d'IA derrière lui. » | Hook: "One master bot, every AI engine behind it." |
 | 0:10–0:35 | Capture réelle | Se connecter (Google ou courriel) ; l'essai, s'il est ouvert | Sign in (Google or email); the trial, if open |
 | 0:35–1:15 | Capture réelle | Les modes Clavarder, Écrire, Rechercher et leur coût en crédits | Chat, Write and Research modes and their credit cost |
-| 1:15–1:50 | Capture réelle | Laisser TAK bot choisir le moteur, ou le choisir soi-même | Let TAK bot pick the engine, or pick it yourself |
+| 1:15–1:50 | Capture réelle | Laisser TAK-TAK choisir le moteur, ou le choisir soi-même | Let TAK-TAK pick the engine, or pick it yourself |
 | 1:50–2:15 | Capture réelle | Les réponses gardées dans votre dossier ; crédits remboursés si un moteur échoue | Answers saved to your file; credits refunded if an engine fails |
 | 2:15–2:40 | Montage | Bonnes pratiques : vérifier les faits, ne pas coller de données sensibles (leçon Academy « Where AI helps and fails ») | Good practice: check facts, never paste sensitive data (Academy lesson "Where AI helps and fails") |
 | 2:40–2:50 | Runway B (takbot) | « Vous payez seulement ce que vous utilisez. » | "You pay only for what you use." |
 | 2:50–3:00 | Écran de fin | takatak.ca/takbot | takatak.ca/takbot |
 
-- **Appel à l'action :** Essayez TAK bot sur takatak.ca/takbot / Try TAK bot at takatak.ca/takbot
-- **Plans Runway :** A et B de la section « TAK bot IA » (§ 4) ; musique de la même section, sous la voix.
+- **Appel à l'action :** Essayez TAK-TAK sur takatak.ca/takbot / Try TAK-TAK at takatak.ca/takbot
+- **Plans Runway :** A et B de la section « TAK-TAK IA » (§ 4) ; musique de la même section, sous la voix.
 - **À fournir :** takbot-fr.mp4 / takbot-en.mp4 ou nouvel enregistrement ; Aucun prix de pack (DRAFT).
 
 ### Ajouter votre commerce sur QMAPS, sans frais | QMAPS

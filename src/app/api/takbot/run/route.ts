@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 const REQUEST_ID = /^[A-Za-z0-9_-]{16,64}$/;
 
 /**
- * POST { mode, engine, prompt, requestId } — one TAK bot request for the
+ * POST { mode, engine, prompt, requestId } — one TAK-TAK request for the
  * active workspace. Same-origin only; credits are debited before the relay
  * and refunded when the engine fails. requestId makes a retry safe.
  */

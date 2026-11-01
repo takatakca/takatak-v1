@@ -98,7 +98,7 @@ const STEP_COPY: Record<StepKey, { name: Bi; title: Bi }> = {
   marketing: { name: { en: "Marketing", fr: "Marketing" }, title: { en: "Bring in new customers.", fr: "Attirez de nouveaux clients." } },
   reviews: { name: { en: "Reviews", fr: "Avis" }, title: { en: "Turn customers into reviews.", fr: "Transformez vos clients en avis." } },
   phone: { name: { en: "Phone", fr: "Téléphone" }, title: { en: "Your business line, from $0.", fr: "Votre ligne d’affaires, dès 0 $." } },
-  credits: { name: { en: "AI credits", fr: "Crédits IA" }, title: { en: "Let TAK bot do the busywork.", fr: "Laissez TAK bot faire le travail répétitif." } },
+  credits: { name: { en: "AI credits", fr: "Crédits IA" }, title: { en: "Let TAK-TAK do the busywork.", fr: "Laissez TAK-TAK faire le travail répétitif." } },
 };
 
 const BUSINESSES: readonly { key: string; label: Bi; noun: Bi; photo: string; focus: string }[] = [

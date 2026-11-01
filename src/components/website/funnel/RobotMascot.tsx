@@ -11,7 +11,7 @@ export function RobotMascot({
   size = 160,
   wave = true,
   className = "",
-  title = "TAK, le robot de TAKATAK",
+  title = "TAK-TAK, le robot de TAKATAK",
   headOnly = false,
 }: {
   size?: number;

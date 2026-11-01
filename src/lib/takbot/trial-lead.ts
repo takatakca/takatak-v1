@@ -1,5 +1,6 @@
-// A TAK bot trial sign-up becomes one card in the TAKATAK agency CRM
-// (/dashboard/leads, source "takatak.ca TAK bot trial"), so the team sees who
+// A TAK-TAK trial sign-up becomes one card in the TAKATAK agency CRM
+// (/dashboard/leads, source "takatak.ca TAK bot trial": the bot's earlier name,
+// kept because it is the lookup key of existing cards), so the team sees who
 // started and can help. One card per address; never a marketing consent:
 // newsletter and device alerts keep their own opt-in.
 
@@ -39,7 +40,7 @@ async function sourceId(tx: Tx, clientId: string): Promise<string> {
       type: "website_form",
       provider: "manual",
       status: "active_internal",
-      metadata: { note: "Visitors who signed in on takatak.ca to try TAK bot with trial credits." },
+      metadata: { note: "Visitors who signed in on takatak.ca to try TAK-TAK with trial credits." },
     },
     select: { id: true },
   });
@@ -80,7 +81,7 @@ export async function recordTrialLead(db: TrialLeadDb, input: TrialLeadInput): P
         leadSourceId,
         name,
         email,
-        message: `TAK bot trial · ${input.credits} credits · ${input.language.toUpperCase()}`,
+        message: `TAK-TAK trial · ${input.credits} credits · ${input.language.toUpperCase()}`,
         status: "new_internal",
         priority: "normal",
         currency: "CAD",

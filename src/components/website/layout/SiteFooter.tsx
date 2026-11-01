@@ -51,7 +51,7 @@ const cols: { title: Bi; links: FooterLink[] }[] = [
       { to: "/services/local-listings", label: { en: "Local listings", fr: "Fiches locales" } },
       { to: "/services/reviews", label: { en: "Reviews & reputation", fr: "Avis et réputation" } },
       { to: "/services/ai-studio", label: { en: "AI Studio", fr: "AI Studio" } },
-      { to: "/takbot", label: { en: "TAK bot AI", fr: "TAK bot IA" } },
+      { to: "/takbot", label: { en: "TAK-TAK AI", fr: "TAK-TAK IA" } },
       { to: "/services/billing", label: { en: "Billing & invoicing", fr: "Facturation" } },
       { to: "/services/voip", label: { en: "Business phone · MIMT", fr: "Téléphonie d'affaires · MIMT" } },
     ],

@@ -26,7 +26,7 @@ const AGENTS: { key: string; Icon: typeof Sparkles; name: Bi; task: Bi; status: 
   { key: "social", Icon: PenLine, name: { fr: "Agent Réseaux sociaux", en: "Social Media Agent" }, task: { fr: "Rédige vos publications de la semaine", en: "Writing this week's posts" }, status: "working" },
   { key: "local", Icon: MapPin, name: { fr: "Agent Fiches locales", en: "Local Listings Agent" }, task: { fr: "Heures des fêtes ajoutées à votre fiche", en: "Holiday hours added to your listing" }, status: "done" },
   { key: "sales", Icon: MessageSquareText, name: { fr: "Assistant ventes", en: "Sales Assistant" }, task: { fr: "Répond aux visiteurs et prépare les demandes", en: "Answers visitors and prepares requests" }, status: "online" },
-  { key: "takbot", Icon: Sparkles, name: { fr: "TAK bot", en: "TAK bot" }, task: { fr: "Rédige, cherche et répond pour votre équipe", en: "Writes, researches and answers for your team" }, status: "online" },
+  { key: "takbot", Icon: Sparkles, name: { fr: "TAK-TAK", en: "TAK-TAK" }, task: { fr: "Rédige, cherche et répond pour votre équipe", en: "Writes, researches and answers for your team" }, status: "online" },
   { key: "reviews", Icon: Star, name: { fr: "Agent Avis", en: "Reviews Agent" }, task: { fr: "Proposera des réponses aux nouveaux avis", en: "Will draft replies to new reviews" }, status: "soon" },
 ];
 
@@ -54,7 +54,7 @@ const T = {
   example: { fr: "Exemple : une semaine type dans votre compte TAKATAK.", en: "Example: a typical week in your TAKATAK account." },
   posts: { fr: "Publications de la semaine", en: "This week's posts" },
   engines: { fr: "Moteurs d'IA branchés en ce moment", en: "AI engines connected right now" },
-  try: { fr: "Essayer TAK bot gratuitement", en: "Try TAK bot for free" },
+  try: { fr: "Essayer TAK-TAK gratuitement", en: "Try TAK-TAK for free" },
 } as const;
 
 const ENGINE_ICON: Record<string, string> = {
@@ -104,14 +104,14 @@ export function AiTeam() {
         <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
           <Rise className="relative max-w-3xl">
             <div aria-hidden className="pointer-events-none absolute -top-4 right-0 lg:hidden">
-              <RobotMascot size={72} title="TAK" />
+              <RobotMascot size={72} title="TAK-TAK" />
             </div>
             <Eyebrow>{T.eyebrow[lang]}</Eyebrow>
             <TwoTone id="home-team-title" lead={T.lead[lang]} rest={T.rest[lang]} size="md" />
             <p className="hp-ink-2 mt-5 max-w-2xl text-[17px] leading-8">{T.body[lang]}</p>
           </Rise>
           <Rise delay={120} className="hidden justify-self-end lg:block">
-            <RobotMascot size={150} title="TAK" />
+            <RobotMascot size={150} title="TAK-TAK" />
           </Rise>
         </div>
 

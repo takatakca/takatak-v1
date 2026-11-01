@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 /**
- * GET — what TAK bot can do right now: engines with a live connection flag,
+ * GET — what TAK-TAK can do right now: engines with a live connection flag,
  * modes with their credit cost, credit packs, the trial offer (and whether
  * this workspace used it), and the visitor's own balance when signed in to a
  * workspace. Never returns keys or another client's data.

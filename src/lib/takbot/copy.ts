@@ -1,4 +1,4 @@
-// TAK bot wording, English and Canadian French side by side.
+// TAK-TAK wording, English and Canadian French side by side.
 
 import type { Bi } from "@/lib/website/service-pages";
 import type { TakbotMode } from "./catalog";
@@ -7,7 +7,7 @@ export const takbotModeCopy: Record<TakbotMode, { name: Bi; hint: Bi; placeholde
   chat: {
     name: { en: "Chat", fr: "Clavarder" },
     hint: { en: "Ask anything", fr: "Posez n’importe quelle question" },
-    placeholder: { en: "Ask TAK bot anything about your business…", fr: "Demandez n’importe quoi à TAK bot sur votre entreprise…" },
+    placeholder: { en: "Ask TAK-TAK anything about your business…", fr: "Demandez n’importe quoi à TAK-TAK sur votre entreprise…" },
   },
   write: {
     name: { en: "Write", fr: "Rédiger" },
@@ -38,12 +38,12 @@ export const takbotModeCopy: Record<TakbotMode, { name: Bi; hint: Bi; placeholde
 
 export const takbotCopy = {
   meta: {
-    title: "TAK bot — one AI, every engine",
-    description: "TAK bot is TAKATAK's master AI bot. Ask once; it relays to Claude, ChatGPT, Gemini, Mistral and more. Pay with credits.",
+    title: "TAK-TAK — one AI, every engine",
+    description: "TAK-TAK is TAKATAK's master AI bot. Ask once; it relays to Claude, ChatGPT, Gemini, Mistral and more. Pay with credits.",
   },
   hero: {
     eyebrow: { en: "TAKATAK AI · Master bot", fr: "TAKATAK IA · Bot maître" },
-    title: { en: "Ask once. TAK bot picks the best AI.", fr: "Demandez une fois. TAK bot choisit la meilleure IA." },
+    title: { en: "Ask once. TAK-TAK picks the best AI.", fr: "Demandez une fois. TAK-TAK choisit la meilleure IA." },
     subtitle: {
       en: "One prompt bar for every engine: Claude, ChatGPT, Gemini, Mistral, Grok and more. Leave it on Auto, or choose the engine yourself.",
       fr: "Une seule barre pour tous les moteurs : Claude, ChatGPT, Gemini, Mistral, Grok et plus. Laissez-le en Auto, ou choisissez le moteur vous-même.",
@@ -51,13 +51,13 @@ export const takbotCopy = {
   },
   composer: {
     engine: { en: "Engine", fr: "Moteur" },
-    auto: { en: "Auto (TAK bot decides)", fr: "Auto (TAK bot décide)" },
+    auto: { en: "Auto (TAK-TAK decides)", fr: "Auto (TAK-TAK décide)" },
     search: { en: "Search engines…", fr: "Chercher un moteur…" },
     send: { en: "Run", fr: "Lancer" },
     cost: { en: "{n} credits per request", fr: "{n} crédits par demande" },
     costOne: { en: "1 credit per request", fr: "1 crédit par demande" },
     balance: { en: "Balance: {n} credits", fr: "Solde : {n} crédits" },
-    signIn: { en: "Create a free account to run TAK bot", fr: "Créez un compte gratuit pour lancer TAK bot" },
+    signIn: { en: "Create a free account to run TAK-TAK", fr: "Créez un compte gratuit pour lancer TAK-TAK" },
     signInCta: { en: "Create my account", fr: "Créer mon compte" },
     login: { en: "Sign in", fr: "Se connecter" },
     workspace: { en: "Choose a workspace in your dashboard first.", fr: "Choisissez d’abord un espace de travail dans votre tableau de bord." },
@@ -66,15 +66,15 @@ export const takbotCopy = {
       fr: "{mode} se fait dans AI Studio, dans votre tableau de bord, où vous validez chaque résultat avant de l’utiliser.",
     },
     openStudio: { en: "Open AI Studio", fr: "Ouvrir AI Studio" },
-    thinking: { en: "TAK bot is relaying to {engine}…", fr: "TAK bot relaie à {engine}…" },
+    thinking: { en: "TAK-TAK is relaying to {engine}…", fr: "TAK-TAK relaie à {engine}…" },
     answeredBy: { en: "Answered by {engine}", fr: "Réponse de {engine}" },
-    viaAuto: { en: " · picked by TAK bot", fr: " · choisi par TAK bot" },
+    viaAuto: { en: " · picked by TAK-TAK", fr: " · choisi par TAK-TAK" },
     spent: { en: "{n} credits used · {b} left", fr: "{n} crédits utilisés · reste {b}" },
     connected: { en: "Connected", fr: "Connecté" },
     notConnected: { en: "Not connected yet", fr: "Pas encore connecté" },
   },
   errors: {
-    sign_in_required: { en: "Sign in to run TAK bot.", fr: "Connectez-vous pour lancer TAK bot." },
+    sign_in_required: { en: "Sign in to run TAK-TAK.", fr: "Connectez-vous pour lancer TAK-TAK." },
     workspace_required: { en: "Choose a workspace in your dashboard first.", fr: "Choisissez d’abord un espace de travail dans votre tableau de bord." },
     forbidden: { en: "Your role cannot create content in this workspace.", fr: "Votre rôle ne permet pas de créer du contenu dans cet espace." },
     insufficient_credits: { en: "Not enough credits. Add a pack below.", fr: "Crédits insuffisants. Ajoutez un forfait plus bas." },
@@ -87,7 +87,7 @@ export const takbotCopy = {
     title: { en: "How the master bot works", fr: "Comment fonctionne le bot maître" },
     steps: [
       { t: { en: "You ask", fr: "Vous demandez" }, d: { en: "One prompt, in French or English, in Chat, Write or Research.", fr: "Une demande, en français ou en anglais, en Clavarder, Rédiger ou Rechercher." } },
-      { t: { en: "TAK bot routes", fr: "TAK bot aiguille" }, d: { en: "It picks the best connected engine for the job, or uses the one you chose.", fr: "Il choisit le meilleur moteur connecté pour la tâche, ou celui que vous avez choisi." } },
+      { t: { en: "TAK-TAK routes", fr: "TAK-TAK aiguille" }, d: { en: "It picks the best connected engine for the job, or uses the one you chose.", fr: "Il choisit le meilleur moteur connecté pour la tâche, ou celui que vous avez choisi." } },
       { t: { en: "Credits, not subscriptions", fr: "Des crédits, pas d’abonnements" }, d: { en: "The cost is shown before you run. If the engine fails, the credits come back.", fr: "Le coût est affiché avant de lancer. Si le moteur échoue, les crédits reviennent." } },
       { t: { en: "Your keys stay ours", fr: "Les clés restent chez nous" }, d: { en: "Engine keys live encrypted on TAKATAK servers. Your browser never sees them.", fr: "Les clés des moteurs restent chiffrées sur les serveurs TAKATAK. Votre navigateur ne les voit jamais." } },
     ],
@@ -95,8 +95,8 @@ export const takbotCopy = {
   engines: {
     title: { en: "Engine status board", fr: "Tableau des moteurs" },
     subtitle: {
-      en: "Live from our servers: which engines TAK bot can reach right now.",
-      fr: "En direct de nos serveurs : les moteurs que TAK bot peut joindre en ce moment.",
+      en: "Live from our servers: which engines TAK-TAK can reach right now.",
+      fr: "En direct de nos serveurs : les moteurs que TAK-TAK peut joindre en ce moment.",
     },
     inline: { en: "Answers here", fr: "Répond ici" },
     studio: { en: "In AI Studio", fr: "Dans AI Studio" },
@@ -104,8 +104,8 @@ export const takbotCopy = {
   credits: {
     title: { en: "Credit packs", fr: "Forfaits de crédits" },
     subtitle: {
-      en: "Buy once, use across TAK bot and every TAKATAK AI tool. Credits do not expire while your account is open.",
-      fr: "Achetez une fois, utilisez partout : TAK bot et tous les outils d’IA TAKATAK. Les crédits n’expirent pas tant que votre compte est ouvert.",
+      en: "Buy once, use across TAK-TAK and every TAKATAK AI tool. Credits do not expire while your account is open.",
+      fr: "Achetez une fois, utilisez partout : TAK-TAK et tous les outils d’IA TAKATAK. Les crédits n’expirent pas tant que votre compte est ouvert.",
     },
     buy: { en: "Buy {name}", fr: "Acheter {name}" },
     soon: { en: "Online checkout opens soon. Ask us to add credits to your account.", fr: "Le paiement en ligne ouvre bientôt. Demandez-nous d’ajouter des crédits à votre compte." },
