@@ -13,6 +13,7 @@ import {
   type CoreCategory,
   type PriceTier,
 } from "@/lib/website/core-categories";
+import { MIMT_LINKS, MIMT_START_PLANS } from "@/lib/website/mimt-plans";
 import { Link } from "@/lib/website/nav";
 import { CtaButton, SegmentedTabs, cadenceSuffix, money, useCopy } from "./ui";
 
@@ -216,6 +217,42 @@ export function CategoryPricing({ category, ...ctaProps }: { category: CoreCateg
             <p className="mt-6 text-xs text-white/45">{tk("cat.price.note")}</p>
           </div>
         )}
+      </div>
+    );
+  }
+
+  // The phone is MIMT: its real plans, bought in the MIMT app.
+  if (category.key === "voip") {
+    return (
+      <div className="grid gap-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          {MIMT_START_PLANS.map((p) => (
+            <div key={p.code} className={`rounded-2xl p-6 ring-1 ${p.featured ? "bg-white text-[#060D1F] ring-white" : "bg-white/[0.04] text-white ring-white/10"}`}>
+              <p className="text-[15px] font-semibold">MIMT {p.name[lang]}</p>
+              <p className="mt-3 text-[36px] font-bold leading-none">
+                {p.monthlyCents === 0 ? (lang === "fr" ? "0 $" : "$0") : money(lang, p.monthlyCents / 100)}
+                {p.monthlyCents > 0 && (
+                  <span className="ml-1 text-[13px] font-normal opacity-60">
+                    {lang === "fr" ? "/mois" : "/mo"}
+                    {p.perLine ? (lang === "fr" ? " · par ligne" : " · per line") : ""}
+                  </span>
+                )}
+              </p>
+              <p className="mt-3 text-[13.5px] opacity-75">{p.pitch[lang]}</p>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <CtaButton cta={category.primary} {...ctaProps} />
+          <a href={MIMT_LINKS.plans[lang]} target="_blank" rel="noopener noreferrer" className="tk-btn-ghost inline-flex items-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold">
+            {lang === "fr" ? "Comparer sur mimt.ca" : "Compare on mimt.ca"}
+          </a>
+        </div>
+        <p className="text-xs text-white/45">
+          {lang === "fr"
+            ? "Prix avant taxes ; TPS, TVQ et taxe municipale 9-1-1 en sus. Inscription et paiement dans l'app MIMT."
+            : "Prices before taxes; GST, QST and the 9-1-1 municipal tax are extra. Sign-up and payment in the MIMT app."}
+        </p>
       </div>
     );
   }

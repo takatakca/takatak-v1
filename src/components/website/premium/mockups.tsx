@@ -506,7 +506,7 @@ function CallFlowMock() {
   const { tk } = useCopy();
   const node = "rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-1.5 text-center font-semibold text-white text-[11px]";
   return (
-    <Window title={tk("mock.attendant")} right={<SoonTag />}>
+    <Window title={tk("mock.attendant")}>
       <div className="flex h-full flex-col items-center justify-between gap-1">
         <div className={`${node} inline-flex items-center gap-1.5`}>
           <Phone size={11} className="text-[var(--tk-accent)]" aria-hidden /> {tk("mock.incoming")}
