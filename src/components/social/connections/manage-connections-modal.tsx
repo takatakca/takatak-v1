@@ -2388,7 +2388,7 @@ export function ManageConnectionsModal({
                             : `${card.backgroundClassName} ${card.textClassName}`
                         }`}
                       >
-                        <span className="truncate pr-4">{buttonLabel}</span>
+                        <span className="truncate pr-4">{displayedButtonLabel}</span>
 
                         {busy ? (
                           <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
