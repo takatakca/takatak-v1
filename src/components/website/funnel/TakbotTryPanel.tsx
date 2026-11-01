@@ -13,7 +13,7 @@ import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
 import { RobotMascot } from "./RobotMascot";
 
-type TryMode = "chat" | "write" | "research";
+export type TryMode = "chat" | "write" | "research";
 const TRY_MODES: TryMode[] = ["chat", "write", "research"];
 const PENDING_KEY = "takbot:pending";
 const RETURN_PATH = "/?essai=takbot";
@@ -22,6 +22,10 @@ const RETURN_PATH = "/?essai=takbot";
 export const TAKBOT_PREFILL_EVENT = "takbot:prefill";
 export function prefillTakbot(prompt: string, mode: TryMode = "chat") {
   window.dispatchEvent(new CustomEvent(TAKBOT_PREFILL_EVENT, { detail: { prompt, mode } }));
+}
+/** Switch the live bot's mode without touching the prompt or scrolling (the studio's side menu). */
+export function setTakbotMode(mode: TryMode) {
+  window.dispatchEvent(new CustomEvent(TAKBOT_PREFILL_EVENT, { detail: { mode, stay: true } }));
 }
 
 interface Trial {
@@ -124,7 +128,7 @@ function GoogleMark() {
  * Signed in: the trial credits are claimed once, then every answer runs on
  * the server (credits debited, refunded on failure) and is kept in the file.
  */
-export function TakbotTryPanel({ onShowApp }: { onShowApp: () => void }) {
+export function TakbotTryPanel({ onShowApp, bare = false }: { onShowApp: () => void; /** Inside the studio frame: no frame of its own. */ bare?: boolean }) {
   const { lang } = useLanguage();
   const [trial, setTrial] = useState<Trial | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -173,9 +177,10 @@ export function TakbotTryPanel({ onShowApp }: { onShowApp: () => void }) {
   // Requests from the concierge or anywhere else on the page.
   useEffect(() => {
     const onPrefill = (e: Event) => {
-      const d = (e as CustomEvent<{ prompt?: string; mode?: TryMode }>).detail;
+      const d = (e as CustomEvent<{ prompt?: string; mode?: TryMode; stay?: boolean }>).detail;
       if (typeof d?.prompt === "string") setPrompt(d.prompt.slice(0, MAX_PROMPT_CHARS));
       if (d?.mode && TRY_MODES.includes(d.mode)) setMode(d.mode);
+      if (d?.stay) return;
       document.getElementById(sectionId("takbot"))?.scrollIntoView({ behavior: "smooth", block: "start" });
       window.setTimeout(() => input.current?.focus({ preventScroll: true }), 600);
     };
@@ -275,7 +280,7 @@ export function TakbotTryPanel({ onShowApp }: { onShowApp: () => void }) {
   const label = trial?.premium ? c.premium[lang] : c.economy(engineShort)[lang];
 
   return (
-    <div ref={panel} className="hp-pop3d overflow-hidden rounded-[22px] bg-[#0B1220] shadow-[0_50px_120px_-40px_rgb(0_0_0/0.9)] ring-1 ring-white/10">
+    <div ref={panel} className={bare ? "overflow-hidden bg-[#0B1220]" : "hp-pop3d overflow-hidden rounded-[22px] bg-[#0B1220] shadow-[0_50px_120px_-40px_rgb(0_0_0/0.9)] ring-1 ring-white/10"}>
       {/* Status bar */}
       <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
         <span className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[#1E6BFF]/20">

@@ -67,7 +67,7 @@ const T = {
   houseTag: { fr: "maison", en: "house" },
 } as const;
 
-function Mark({ item, index }: { item: WallItem; index: number }) {
+export function Mark({ item, index }: { item: WallItem; index: number }) {
   if (item.group === "house") {
     const Icon = item.mark ? HOUSE_ICONS[item.mark] : null;
     return (

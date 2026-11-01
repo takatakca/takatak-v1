@@ -14,6 +14,7 @@ import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
 import { Eyebrow, Magnetic, PointHere, Rise, Section, TwoTone, useSpotlight } from "./primitives";
 import { RobotMascot } from "./RobotMascot";
+import { StudioShell } from "./StudioShell";
 import { TAKBOT_PREFILL_EVENT, TakbotTryPanel } from "./TakbotTryPanel";
 
 /** Mode icons, shared with the /takbot studio. */
@@ -147,7 +148,9 @@ function TakbotStage() {
         ))}
       </div>
       <div id="home-takbot-view-try" role="tabpanel" aria-labelledby="home-takbot-tab-try" hidden={view !== "try"}>
-        <TakbotTryPanel onShowApp={() => setView("app")} />
+        <StudioShell>
+          <TakbotTryPanel bare onShowApp={() => setView("app")} />
+        </StudioShell>
       </div>
       <div id="home-takbot-view-app" role="tabpanel" aria-labelledby="home-takbot-tab-app" hidden={view !== "app"}>
         {view === "app" && <ProductViewer />}
@@ -170,7 +173,7 @@ export function TakbotSection() {
         <div aria-hidden className="hp-tech-grid" />
         <div aria-hidden className="hp-spot-layer" />
         <div className="relative mx-auto max-w-7xl px-4">
-          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16 [&>*]:min-w-0">
             <Rise>
               <Eyebrow>{t.eyebrow[lang]}</Eyebrow>
               <TwoTone id="home-takbot-title" lead={t.lead[lang]} rest={t.rest[lang]} size="md" />
