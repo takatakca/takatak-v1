@@ -146,13 +146,18 @@ export function SuiteBento() {
                   ))}
                 </ul>
               </div>
-              <button
-                type="button"
-                onClick={() => openLiveChat({ page: "/", intent: "suite_foodhub", lang })}
-                className="relative z-[2] mt-5 w-fit hp-cta rounded-full px-5 py-2.5 text-[13.5px] font-semibold"
-              >
-                {homeCopy.suite.ask[lang]}
-              </button>
+              <div className="relative z-[2] mt-5 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openLiveChat({ page: "/", intent: "suite_foodhub", lang })}
+                  className="w-fit hp-cta rounded-full px-5 py-2.5 text-[13.5px] font-semibold"
+                >
+                  {homeCopy.suite.ask[lang]}
+                </button>
+                <a href="/foodhub" className="inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-[13.5px] font-semibold hp-ghost">
+                  {lang === "fr" ? "Tout sur Food Hub" : "All about Food Hub"} <ArrowUpRight size={15} aria-hidden />
+                </a>
+              </div>
             </Tile>
           </Rise>
 
