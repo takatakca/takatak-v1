@@ -980,7 +980,7 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 
 /* Kinetic marquee: big service names, filled and outlined, leaning with scroll speed. */
 .hp-marquee { overflow: hidden; white-space: nowrap; user-select: none; }
-.hp-marquee-track { display: inline-flex; width: max-content; animation: hp-marquee 38s linear infinite; transform: skewX(var(--skew, 0deg)); }
+.hp-marquee-track { display: flex; width: max-content; animation: hp-marquee 38s linear infinite; transform: skewX(var(--skew, 0deg)); }
 .hp-marquee-track[data-reverse="true"] { animation-direction: reverse; animation-duration: 46s; }
 @keyframes hp-marquee { to { translate: -50% 0; } }
 .hp-marquee-item { display: inline-flex; align-items: center; gap: 0.45em; padding-right: 0.45em; }
