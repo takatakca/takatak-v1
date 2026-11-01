@@ -221,7 +221,7 @@ export function NewsletterForm({
           </p>
         )}
 
-        <p className="hp-ink-3 text-[12.5px] leading-5">
+        <p className="hp-ink-3 text-[13.5px] leading-5">
           {t.separate[lang]}{" "}
           <Link to="/privacy" className="underline underline-offset-4 hover:text-[var(--hp-ink)]">
             {t.privacy[lang]}
@@ -237,7 +237,7 @@ export function NewsletterForm({
 export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) {
   const { lang } = useCopy();
   return (
-    <section id="infolettre" aria-labelledby="newsletter-title" className="hp-bg px-4 py-20 sm:py-28" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
+    <section id="infolettre" aria-labelledby="newsletter-title" className="hp-bg hp-live px-4 py-14 sm:py-20" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
         {/* Picture + an honest preview of a real email (the FIRST10 welcome offer exists). */}
         <Rise className="relative min-w-0">
@@ -285,7 +285,7 @@ export function DealAlert({ sourcePage, className = "" }: { sourcePage: string; 
   const { lang } = useCopy();
   return (
     <aside aria-label={deal.eyebrow[lang]} className={`hp-card hp-ink rounded-[28px] p-6 sm:p-8 ${className}`}>
-      <p className="hp-accent text-[12px] font-semibold uppercase tracking-[0.18em]">{deal.eyebrow[lang]}</p>
+      <p className="hp-accent text-[13px] font-semibold uppercase tracking-[0.18em]">{deal.eyebrow[lang]}</p>
       <p className="hp-display mt-2 text-[24px] leading-tight sm:text-[28px]">{deal.title[lang]}</p>
       <p className="hp-ink-2 mt-2 text-[15px] leading-7">{deal.body[lang]}</p>
       <NewsletterForm sourcePage={sourcePage} fixedTopics={["offers"]} className="mt-5" />

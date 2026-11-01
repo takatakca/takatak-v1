@@ -63,7 +63,7 @@ export function UpsellToast() {
           </span>
         )}
         <span className="min-w-0 flex-1">
-          <span className="hp-ink-2 flex items-center gap-1.5 text-[12.5px] font-medium">
+          <span className="hp-ink-2 flex items-center gap-1.5 text-[13.5px] font-medium">
             <Check size={13} className="text-emerald-500" strokeWidth={3} aria-hidden />
             {tk(`cat.${added}.name`)} {lang === "fr" ? "ajouté" : "added"}
           </span>

@@ -809,21 +809,22 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
    Tokens for everything below the hero. Light: white, near-black ink, one
    brand blue (BRAND.md "brand blue on light"). Dark: the navy brand ground. */
 .hp {
-  --hp-bg: #FFFFFF;
-  --hp-alt: #F4F5F7;
-  --hp-card: #F4F5F7;
+  /* Light theme: cool tinted canvas (never flat white), white cards, strong ink. */
+  --hp-bg: #EEF3FA;
+  --hp-alt: #E4ECF7;
+  --hp-card: #FFFFFF;
   --hp-raised: #FFFFFF;
-  --hp-ink: #0B0D12;
-  --hp-ink-2: #4A5060;
-  --hp-ink-3: #8A90A0;
-  --hp-line: #E4E6EB;
+  --hp-ink: #070B16;
+  --hp-ink-2: #2A3142;
+  --hp-ink-3: #4F586C;
+  --hp-line: #D3DCEA;
   --hp-accent: #1565D8;
   --hp-cta: #1565D8;
   --hp-cta-hover: #0F52B5;
   --hp-btn: #0B0D12;
   --hp-btn-ink: #FFFFFF;
-  --hp-shadow: 0 1px 2px rgb(16 24 40 / 0.05), 0 18px 40px -18px rgb(16 24 40 / 0.18);
-  --hp-switch-off: #D5D8DE;
+  --hp-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 24px 50px -22px rgb(16 40 90 / 0.30);
+  --hp-switch-off: #C9D2E0;
   background: var(--hp-bg);
   color: var(--hp-ink);
   font-family: var(--font-website-body), ui-sans-serif, system-ui, sans-serif;
@@ -927,7 +928,7 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 /* Kinetic headings: each word rises out of its own mask, one after the other. */
 .hp-kin .hp-w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 0.1em; margin-bottom: -0.1em; }
 .hp-kin .hp-w > span { display: inline-block; transform: translate3d(0, 108%, 0) rotate(3deg); transform-origin: 0 100%; transition: transform 1s cubic-bezier(0.19, 1, 0.22, 1) calc(var(--i, 0) * 60ms); }
-.hp-kin[data-seen="true"] .hp-w > span { transform: none; }
+.hp-kin[data-seen="true"][data-typed="true"] .hp-w > span { transform: none; }
 
 /* Curtain reveal for big pictures: opens from the bottom, settles from a slight zoom. */
 .hp-curtain { position: relative; overflow: hidden; clip-path: inset(100% 0 0 0 round var(--r, 32px)); transition: clip-path 1.3s cubic-bezier(0.77, 0, 0.18, 1) var(--d, 0ms); }
@@ -1013,3 +1014,67 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-shot { transition: object-position 4.5s cubic-bezier(0.45, 0, 0.2, 1); }
 .group:hover .hp-shot { object-position: 50% 100%; }
 @media (prefers-reduced-motion: reduce) { .hp-shot { transition: none; } }
+
+
+/* ── v7 (owner 2026-11-01 04:50: no empty white, nothing cheap, alive) ── */
+
+/* Living background on every section: drifting blue light + a fine dot grid. */
+.hp-live { position: relative; isolation: isolate; overflow-x: clip; }
+.hp-live::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: radial-gradient(color-mix(in oklab, var(--hp-cta) 22%, transparent) 1px, transparent 1.2px); background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, #000 25%, transparent 80%); opacity: 0.55; }
+.hp-live::after { content: ""; position: absolute; inset: -25%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(32% 28% at 18% 28%, rgba(41, 195, 255, 0.22), transparent 70%),
+    radial-gradient(30% 26% at 82% 18%, rgba(21, 101, 216, 0.20), transparent 70%),
+    radial-gradient(38% 32% at 62% 86%, rgba(99, 102, 241, 0.14), transparent 70%);
+  animation: hp-live-drift 18s ease-in-out infinite alternate; }
+@keyframes hp-live-drift { 0% { transform: translate3d(-3%, 2%, 0) rotate(-4deg) scale(1); } 100% { transform: translate3d(4%, -3%, 0) rotate(7deg) scale(1.1); } }
+.hp[data-theme="dark"] .hp-live::after { opacity: 0.9; }
+@media (prefers-reduced-motion: reduce) { .hp-live::after { animation: none; } }
+
+/* The page codes itself: a caret types the headline… */
+.hp-caret { display: inline-block; width: 0.07em; height: 0.86em; margin-left: 0.03em; margin-right: -0.1em; vertical-align: -0.06em; background: var(--hp-cta); border-radius: 2px; box-shadow: 0 0 18px var(--hp-cta); animation: hp-blink 0.9s steps(1) infinite; }
+.hp-caret-done { animation: hp-blink 0.9s steps(1) 3, hp-caret-out 0.4s ease 2.7s forwards; }
+@keyframes hp-blink { 50% { opacity: 0; } }
+@keyframes hp-caret-out { to { opacity: 0; } }
+.hp-code-eyebrow { font-family: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace; }
+
+/* …skeletons light up, then the real card pops in. */
+.hp-build { position: relative; }
+.hp-build > * { opacity: 0; transform: translate3d(0, 22px, 0) scale(0.94); filter: blur(10px);
+  transition: opacity 0.45s ease var(--bd, 380ms), transform 0.75s cubic-bezier(0.2, 1.3, 0.3, 1) var(--bd, 380ms), filter 0.5s ease var(--bd, 380ms); }
+.hp-build[data-seen="true"] > * { opacity: 1; transform: none; filter: none; }
+.hp-build::before, .hp-build::after { content: ""; position: absolute; inset: 0; border-radius: 26px; pointer-events: none; opacity: 0; z-index: 6; }
+.hp-build::after {
+  background:
+    linear-gradient(var(--hp-line) 0 0) 28px 30px / 42% 16px no-repeat,
+    linear-gradient(var(--hp-line) 0 0) 28px 60px / 68% 10px no-repeat,
+    linear-gradient(var(--hp-line) 0 0) 28px 80px / 54% 10px no-repeat,
+    linear-gradient(var(--hp-line) 0 0) 28px 112px / calc(100% - 56px) calc(100% - 150px) no-repeat,
+    var(--hp-card);
+  box-shadow: inset 0 0 0 1px var(--hp-line); }
+.hp-build::before { z-index: 7; background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.75) 45%, rgba(41, 195, 255, 0.35) 50%, transparent 70%) -150% 0 / 60% 100% no-repeat; }
+.hp-build[data-seen="true"]::after { animation: hp-skel 0.9s ease calc(var(--bd, 380ms) - 380ms) both; }
+.hp-build[data-seen="true"]::before { animation: hp-shimmer 0.9s ease calc(var(--bd, 380ms) - 380ms) both; }
+@keyframes hp-skel { 0%, 55% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes hp-shimmer { 0% { opacity: 1; background-position: -150% 0; } 55% { opacity: 1; background-position: 250% 0; } 100% { opacity: 0; background-position: 250% 0; } }
+.hp[data-theme="dark"] .hp-build::before { background: linear-gradient(100deg, transparent 20%, rgba(41, 195, 255, 0.25) 50%, transparent 70%) -150% 0 / 60% 100% no-repeat; }
+
+/* …and pictures materialize: blurred and grey, a scan line passes, then sharp. */
+.hp-materialize { position: relative; }
+.hp-materialize img { filter: blur(16px) saturate(0.15) brightness(1.12); transform: scale(1.06);
+  transition: filter 1s ease calc(var(--bd, 380ms) + 120ms), transform 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--bd, 380ms) + 120ms), object-position 4.5s cubic-bezier(0.45, 0, 0.2, 1); }
+[data-seen="true"] .hp-materialize img { filter: none; transform: none; }
+.hp-materialize::after { content: ""; position: absolute; left: 0; right: 0; top: -45%; height: 45%; pointer-events: none; opacity: 0;
+  background: linear-gradient(180deg, transparent, rgba(41, 195, 255, 0.28) 75%, rgba(255, 255, 255, 0.9) 77%, transparent 80%); }
+[data-seen="true"] .hp-materialize::after { animation: hp-scanline 1.15s ease var(--bd, 380ms) both; }
+@keyframes hp-scanline { 0% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; } 100% { opacity: 0; transform: translateY(330%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-caret { display: none; }
+  .hp-build > * { opacity: 1; transform: none; filter: none; transition: none; }
+  .hp-build::before, .hp-build::after { display: none; }
+  .hp-materialize img { filter: none; transform: none; transition: none; }
+  .hp-materialize::after { display: none; }
+}

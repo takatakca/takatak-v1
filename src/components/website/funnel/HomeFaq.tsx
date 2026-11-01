@@ -14,7 +14,7 @@ export function HomeFaq() {
   const { lang } = useLanguage();
   const [open, setOpen] = useState(0);
   return (
-    <Section id={sectionId("faq")} labelledBy="home-faq-title" className="hp-bg py-20 sm:py-28">
+    <Section id={sectionId("faq")} labelledBy="home-faq-title" className="hp-bg py-14 sm:py-20">
       <div className="mx-auto grid max-w-7xl gap-12 px-4 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
         <Rise>
           <Eyebrow>{homeV2.faq.eyebrow[lang]}</Eyebrow>

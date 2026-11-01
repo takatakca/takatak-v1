@@ -103,7 +103,7 @@ export function PricingTabs() {
   const tabs = Object.keys(t.tabs) as TabKey[];
 
   return (
-    <Section id={sectionId("pricing")} labelledBy="home-pricing-title" className="hp-alt py-20 sm:py-28">
+    <Section id={sectionId("pricing")} labelledBy="home-pricing-title" className="hp-alt py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <Rise className="max-w-2xl">
@@ -144,7 +144,7 @@ export function PricingTabs() {
               dark ? "hp-cta hp-halo" : "hp-btn"
             }`;
             return (
-              <li key={card.key} className="tk-stagger" style={{ animationDelay: `${i * 70}ms` }}>
+              <Rise as="li" key={card.key} delay={i * 90} className="hp-build">
                 <div
                   className={`hp-glow relative flex h-full flex-col rounded-[26px] p-7 transition-all duration-500 hover:-translate-y-1 ${
                     dark ? "hp-raised hp-ink ring-2 ring-[var(--hp-cta)]" : "hp-raised hp-ink"
@@ -160,7 +160,7 @@ export function PricingTabs() {
                     <span className="hp-display text-[44px] leading-none">{money(lang, card.amount)}</span>
                     <span className="hp-ink-2 text-[14px]">{cadenceSuffix(tk, card.cadence)}</span>
                   </p>
-                  {card.suffix && <p className="hp-ink-3 mt-1 text-[12px]">{card.suffix}</p>}
+                  {card.suffix && <p className="hp-ink-3 mt-1 text-[13px]">{card.suffix}</p>}
                   <ul className="hp-line hp-ink-2 mt-6 grid gap-2.5 border-t pt-6 text-[14px]">
                     {card.lines.map((line) => (
                       <li key={line} className="flex items-start gap-2.5">
@@ -180,7 +180,7 @@ export function PricingTabs() {
                     )}
                   </div>
                 </div>
-              </li>
+              </Rise>
             );
           })}
         </ul>

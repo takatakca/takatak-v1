@@ -149,7 +149,7 @@ export function WelcomeSaving({
         {lang === "fr" ? "· jusqu’à" : "· up to"}
         <Ticker value={saving.amount} format={(n) => `−${fmt(n)}`} className="hp-display text-[22px]" />
       </p>
-      <p className="hp-ink-2 mt-1 text-[12.5px]">
+      <p className="hp-ink-2 mt-1 text-[13.5px]">
         {lang === "fr"
           ? `${PROMO_PERCENT} % sur votre premier service, par exemple ${serviceName(saving.on)}. Une offre par nouveau client.`
           : `${PROMO_PERCENT}% off your first service, for example ${serviceName(saving.on)}. One offer per new client.`}

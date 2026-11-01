@@ -26,7 +26,7 @@ const AVAIL: Record<CoreCategory["availability"], { en: string; fr: string }> = 
 /** The one line of product UI over a picture: a frosted chip, no icon. */
 export function MediaChip({ text, className = "" }: { text: string; className?: string }) {
   return (
-    <span className={`inline-flex items-center gap-2 rounded-full bg-white/90 px-3.5 py-1.5 text-[12.5px] font-semibold text-[#0B0D12] shadow-[0_8px_24px_-10px_rgb(0_0_0/0.5)] backdrop-blur ${className}`}>
+    <span className={`inline-flex items-center gap-2 rounded-full bg-white/90 px-3.5 py-1.5 text-[13.5px] font-semibold text-[#0B0D12] shadow-[0_8px_24px_-10px_rgb(0_0_0/0.5)] backdrop-blur ${className}`}>
       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
       {text}
     </span>
@@ -221,7 +221,7 @@ export function ServiceGallery() {
   };
 
   return (
-    <section aria-labelledby="home-services-title" className="hp-alt overflow-hidden py-20 sm:py-28">
+    <section aria-labelledby="home-services-title" className="hp-alt hp-live overflow-hidden py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <Rise className="max-w-3xl">
@@ -331,7 +331,7 @@ export function ServiceGallery() {
               <button
                 type="button"
                 onClick={() => setFlipped(c.key)}
-                className="absolute right-4 top-4 z-[4] inline-flex h-9 items-center gap-1.5 rounded-full bg-white/15 px-3.5 text-[12.5px] font-semibold text-white ring-1 ring-white/30 backdrop-blur-md transition-colors hover:bg-white/25"
+                className="absolute right-4 top-4 z-[4] inline-flex h-9 items-center gap-1.5 rounded-full bg-white/15 px-3.5 text-[13.5px] font-semibold text-white ring-1 ring-white/30 backdrop-blur-md transition-colors hover:bg-white/25"
               >
                 {FLIP.open[lang]}
               </button>
@@ -407,7 +407,7 @@ export function ServiceGallery() {
             </button>
           ))}
         </div>
-        <span className="hp-ink-3 hidden text-[12px] sm:inline">{homeV2.services.drag[lang]}</span>
+        <span className="hp-ink-3 hidden text-[13px] sm:inline">{homeV2.services.drag[lang]}</span>
       </div>
 
       {open && <ServiceModal category={open.c} origin={open.origin} onClose={() => setOpen(null)} />}

@@ -50,13 +50,43 @@ export function Rise({
   const { ref, seen } = useSeen<HTMLDivElement & HTMLLIElement>();
   const Tag = as;
   return (
-    <Tag ref={ref} data-seen={seen} className={`tk-rise ${className}`} style={{ ...style, transitionDelay: `${delay}ms` }}>
+    <Tag
+      ref={ref}
+      data-seen={seen}
+      className={`tk-rise ${className}`}
+      style={{ ...style, transitionDelay: `${delay}ms`, "--bd": `${380 + delay}ms` } as CSSProperties}
+    >
       {children}
     </Tag>
   );
 }
 
-/** Section headline: a strong statement and a quieter continuation (theme aware). */
+/** Types `text` one character at a time once `active` (instant with reduced motion). */
+function useTyped(text: string, active: boolean, speed = 26) {
+  const reduced = useReducedMotion();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    if (reduced) {
+      setN(text.length);
+      return;
+    }
+    let i = 0;
+    const t = window.setInterval(() => {
+      i += 1;
+      setN(i);
+      if (i >= text.length) window.clearInterval(t);
+    }, speed);
+    return () => window.clearInterval(t);
+  }, [active, text, reduced, speed]);
+  return n;
+}
+
+/**
+ * Section headline. The statement types itself with a blue caret, as if the
+ * page were being coded live; then the quieter continuation rises word by word.
+ * Screen readers get the whole sentence at once.
+ */
 export function TwoTone({
   id,
   lead,
@@ -72,18 +102,30 @@ export function TwoTone({
   as?: "h1" | "h2" | "h3";
   size?: "lg" | "md";
 }) {
-  const sizes = size === "lg" ? "text-[36px] sm:text-[54px] lg:text-[64px]" : "text-[30px] sm:text-[40px] lg:text-[46px]";
+  const sizes = size === "lg" ? "text-[38px] sm:text-[58px] lg:text-[68px]" : "text-[32px] sm:text-[42px] lg:text-[50px]";
   const { ref, seen } = useSeen<HTMLHeadingElement>("0px 0px -8% 0px");
-  const leadWords = lead.split(" ");
+  const n = useTyped(lead, seen);
+  const typed = n >= lead.length;
   return (
-    <Tag ref={ref} id={id} data-seen={seen} className={`hp-display hp-ink hp-kin text-balance ${sizes} ${className}`}>
-      <KineticWords words={leadWords} start={0} />
-      {rest && (
-        <span className="hp-serif hp-ink-2">
-          {" "}
-          <KineticWords words={rest.split(" ")} start={leadWords.length} />
-        </span>
-      )}
+    <Tag
+      ref={ref}
+      id={id}
+      data-seen={seen}
+      data-typed={typed}
+      aria-label={rest ? `${lead} ${rest}` : lead}
+      className={`hp-display hp-ink hp-kin text-balance ${sizes} ${className}`}
+    >
+      <span aria-hidden>
+        <span>{lead.slice(0, n)}</span>
+        <span className={`hp-caret ${typed ? "hp-caret-done" : ""}`} />
+        <span className="opacity-0">{lead.slice(n)}</span>
+        {rest && (
+          <span className="hp-serif hp-ink-2">
+            {" "}
+            <KineticWords words={rest.split(" ")} start={0} />
+          </span>
+        )}
+      </span>
     </Tag>
   );
 }
@@ -198,11 +240,11 @@ export function useScrollProgress(targetId: string) {
   return p;
 }
 
-/** Small label above a headline. */
+/** Small label above a headline, styled like a line of code: // SECTION. */
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="hp-ink-2 mb-4 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em]">
-      <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--hp-cta)]" />
+    <p className="hp-code-eyebrow mb-4 flex items-center gap-2 text-[12.5px] font-semibold uppercase tracking-[0.16em] hp-ink-2">
+      <span aria-hidden className="text-[var(--hp-cta)]">{"//"}</span>
       {children}
     </p>
   );
@@ -296,7 +338,7 @@ export function Section({
   children: ReactNode;
 }) {
   return (
-    <section id={id} aria-labelledby={labelledBy} className={`relative ${className}`} style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 52px)" }}>
+    <section id={id} aria-labelledby={labelledBy} className={`hp-live relative ${className}`} style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 52px)" }}>
       {children}
     </section>
   );

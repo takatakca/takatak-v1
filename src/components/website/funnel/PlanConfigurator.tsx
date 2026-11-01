@@ -40,7 +40,7 @@ export function PlanConfigurator() {
   ];
 
   return (
-    <Section id={sectionId("plan")} labelledBy="home-plan-title" className="hp-bg py-20 sm:py-28">
+    <Section id={sectionId("plan")} labelledBy="home-plan-title" className="hp-bg py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4">
         <Rise className="max-w-3xl">
           <Eyebrow>{homeV2.plan.eyebrow[lang]}</Eyebrow>
@@ -119,7 +119,7 @@ export function PlanConfigurator() {
             <div className="hp-card hp-ink relative overflow-hidden rounded-[28px] p-7">
               <div className="flex items-baseline justify-between">
                 <p className="hp-display text-[24px]">{homeV2.plan.receipt[lang]}</p>
-                <p className="text-[12px] font-medium hp-ink-3">TAKATAK · CAD</p>
+                <p className="text-[13px] font-medium hp-ink-3">TAKATAK · CAD</p>
               </div>
 
               {plan.categories.length ? (

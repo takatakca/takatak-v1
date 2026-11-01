@@ -113,7 +113,7 @@ export function PhotoStories() {
   const { lang } = useLanguage();
   const plan = useHomePlan();
   return (
-    <div className="hp-bg py-10 sm:py-16">
+    <div className="hp-bg hp-live py-8 sm:py-12">
       <div className="mx-auto grid max-w-7xl gap-16 px-4 sm:gap-24">
         {homeV3.stories.map((s, i) => {
           const keys = s.keys as readonly CategoryKey[];
@@ -128,7 +128,7 @@ export function PhotoStories() {
                 </div>
               </Rise>
               <Rise delay={120} className={`mt-4 lg:col-span-5 lg:mt-0 ${reverse ? "lg:order-1" : ""}`}>
-                <p className="hp-ink-2 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em]">
+                <p className="hp-ink-2 flex items-center gap-2 text-[13px] font-semibold uppercase tracking-[0.18em]">
                   <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[var(--hp-cta)]" />
                   {s.eyebrow[lang]}
                 </p>

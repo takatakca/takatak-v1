@@ -53,12 +53,12 @@ export function CampaignLanding({ campaign }: { campaign: Campaign }) {
           <ol className="mt-8 grid gap-2">
             {COPY.how.map((s, i) => (
               <li key={s.en} className="hp-ink flex items-center gap-3 text-[15px]">
-                <span className="hp-btn grid h-7 w-7 place-items-center rounded-full text-[12.5px] font-bold">{i + 1}</span>
+                <span className="hp-btn grid h-7 w-7 place-items-center rounded-full text-[13.5px] font-bold">{i + 1}</span>
                 {s[lang]}
               </li>
             ))}
           </ol>
-          <p className="hp-ink-3 mt-6 flex items-start gap-1.5 text-[12.5px]">
+          <p className="hp-ink-3 mt-6 flex items-start gap-1.5 text-[13.5px]">
             <Check size={14} className="mt-0.5 shrink-0" aria-hidden />
             {COPY.terms[lang].replace("{code}", campaign.code).replace("{date}", date)}
           </p>

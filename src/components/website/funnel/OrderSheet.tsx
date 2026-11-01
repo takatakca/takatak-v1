@@ -100,7 +100,7 @@ export function OrderSheet() {
                       <span className="hp-ink block text-[15px] font-semibold">{tk(`cat.${c.key}.name`)}</span>
                       <span className="hp-ink-2 block text-[13px] tabular-nums">{linePrice(c, tk, lang)}</span>
                     </span>
-                    <button type="button" onClick={() => plan.toggle(c.key)} className="hp-ink-3 hp-focus rounded-full px-2 py-1 text-[12.5px] font-medium underline-offset-4 hover:text-[var(--hp-ink)] hover:underline">
+                    <button type="button" onClick={() => plan.toggle(c.key)} className="hp-ink-3 hp-focus rounded-full px-2 py-1 text-[13.5px] font-medium underline-offset-4 hover:text-[var(--hp-ink)] hover:underline">
                       {COPY.remove[lang]}
                     </button>
                   </li>
@@ -144,7 +144,7 @@ export function OrderSheet() {
               </div>
               {suggestions.length > 0 && (
                 <div className="mt-6">
-                  <p className="hp-ink-3 text-[12.5px] font-semibold">{lang === "fr" ? "Complétez votre forfait" : "Complete your plan"}</p>
+                  <p className="hp-ink-3 text-[13.5px] font-semibold">{lang === "fr" ? "Complétez votre forfait" : "Complete your plan"}</p>
                   <ul className="mt-2 grid gap-2">
                     {suggestions.map((k) => {
                       const c = CORE_CATEGORIES.find((x) => x.key === k)!;
@@ -156,7 +156,7 @@ export function OrderSheet() {
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="hp-ink block text-[14px] font-semibold">{tk(`cat.${k}.name`)}</span>
-                            <span className="hp-ink-2 block text-[12.5px]">{linePrice(c, tk, lang)}</span>
+                            <span className="hp-ink-2 block text-[13.5px]">{linePrice(c, tk, lang)}</span>
                           </span>
                           <button type="button" onClick={() => plan.toggle(k)} className="hp-btn hp-focus rounded-full px-4 py-2 text-[13px] font-semibold">
                             + {lang === "fr" ? "Ajouter" : "Add"}
@@ -170,7 +170,7 @@ export function OrderSheet() {
               <ol className="mt-6 grid gap-3">
                 {COPY.steps.map((s, i) => (
                   <li key={s.en} className="flex items-center gap-3">
-                    <span className="hp-btn grid h-7 w-7 shrink-0 place-items-center rounded-full text-[12.5px] font-bold">{i + 1}</span>
+                    <span className="hp-btn grid h-7 w-7 shrink-0 place-items-center rounded-full text-[13.5px] font-bold">{i + 1}</span>
                     <span className="hp-ink text-[14.5px]">{s[lang]}</span>
                   </li>
                 ))}
@@ -192,7 +192,7 @@ export function OrderSheet() {
             <Link to="/login" className="hp-ink-2 hp-focus py-1 text-center text-[13.5px] font-medium underline-offset-4 hover:text-[var(--hp-ink)] hover:underline">
               {COPY.login[lang]}
             </Link>
-            <p className="hp-ink-3 text-center text-[12px]">{COPY.taxes[lang]}</p>
+            <p className="hp-ink-3 text-center text-[13px]">{COPY.taxes[lang]}</p>
           </footer>
         )}
       </aside>

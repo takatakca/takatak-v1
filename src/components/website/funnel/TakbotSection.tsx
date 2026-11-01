@@ -66,7 +66,7 @@ function ProductViewer() {
             <span className="h-3 w-3 rounded-full bg-white/15" />
             <span className="h-3 w-3 rounded-full bg-white/15" />
           </span>
-          <span className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1.5 text-[12.5px] text-white/60">
+          <span className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1.5 text-[13.5px] text-white/60">
             <Lock size={12} aria-hidden /> <span className="truncate">{t.url[screen]}</span>
           </span>
           <div role="tablist" aria-label="TAKATAK" className="flex gap-1 rounded-full bg-white/[0.06] p-1">
@@ -77,7 +77,7 @@ function ProductViewer() {
                 role="tab"
                 aria-selected={screen === k}
                 onClick={() => setScreen(k)}
-                className={`rounded-full px-3 py-1 text-[12.5px] font-semibold transition-colors ${screen === k ? "bg-white text-[#060D1F]" : "text-white/65 hover:text-white"}`}
+                className={`rounded-full px-3 py-1 text-[13.5px] font-semibold transition-colors ${screen === k ? "bg-white text-[#060D1F]" : "text-white/65 hover:text-white"}`}
               >
                 {t.tabs[k][lang]}
               </button>
@@ -106,7 +106,7 @@ function ProductViewer() {
           </span>
         </Link>
       </div>
-      <p className="mt-3 text-[12.5px] text-white/45">{t.real[lang]}</p>
+      <p className="mt-3 text-[13.5px] text-white/45">{t.real[lang]}</p>
     </div>
   );
 }
@@ -137,7 +137,7 @@ export function TakbotSection() {
                   <li key={m.key} className="border-b border-white/10">
                     <Link to={`/takbot?mode=${m.key}`} className="group flex items-center gap-2.5 py-3 text-[14.5px] text-white/80 hover:text-white">
                       {takbotModeCopy[m.key].name[lang]}
-                      <span className="ml-auto text-[12px] tabular-nums text-white/45 group-hover:text-white/70">{creditsFor(m)}</span>
+                      <span className="ml-auto text-[13px] tabular-nums text-white/45 group-hover:text-white/70">{creditsFor(m)}</span>
                     </Link>
                   </li>
                 ))}
@@ -170,7 +170,7 @@ export function TakbotSection() {
                     {p.credits.toLocaleString(lang === "fr" ? "fr-CA" : "en-CA")} {t.credits[lang]}
                   </p>
                   <p className="hp-display mt-1 text-[30px] leading-none text-white">{money(lang, p.priceCad)}</p>
-                  <p className="mt-1.5 text-[12px] tabular-nums text-white/40">
+                  <p className="mt-1.5 text-[13px] tabular-nums text-white/40">
                     {money(lang, Math.round(perCredit[i] * 1000) / 1000)} {t.perCredit[lang]}
                   </p>
                   <Link to="/takbot#credits" className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-white/10 px-4 py-2 text-[13px] font-semibold text-white hover:bg-white/20">

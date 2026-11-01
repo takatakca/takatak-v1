@@ -26,7 +26,7 @@ const DOT: Record<SuiteStatus, string> = {
 function Status({ status }: { status: SuiteStatus }) {
   const { lang } = useLanguage();
   return (
-    <span className="inline-flex items-center gap-1.5 hp-ink-2 text-[12.5px]">
+    <span className="inline-flex items-center gap-1.5 hp-ink-2 text-[13.5px]">
       <span className={`h-1.5 w-1.5 rounded-full ${DOT[status]}`} aria-hidden />
       {homeCopy.suite.status[status][lang]}
     </span>
@@ -65,7 +65,7 @@ function Tile({
       )}
     </>
   );
-  const cls = `group hp-card hp-glow hp-enter3d relative flex flex-col overflow-hidden rounded-[28px] p-6 transition-[box-shadow] duration-500 hover:shadow-[var(--hp-shadow)] sm:p-7 ${className}`;
+  const cls = `group hp-card hp-glow relative flex flex-col overflow-hidden rounded-[28px] p-6 transition-[box-shadow] duration-500 hover:shadow-[var(--hp-shadow)] sm:p-7 ${className}`;
   return p?.url ? (
     <a href={p.url} {...externalLinkProps} className={cls}>
       {body}
@@ -90,7 +90,7 @@ function Shot({ src, url, alt, className = "h-[220px]" }: { src: string; url: st
         </span>
         <span className="truncate text-[11px] text-black/45">{url}</span>
       </div>
-      <div className={`relative overflow-hidden ${className}`}>
+      <div className={`hp-materialize relative overflow-hidden ${className}`}>
         <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 640px, 100vw" className="hp-shot object-cover object-top" />
       </div>
     </div>
@@ -100,7 +100,7 @@ function Shot({ src, url, alt, className = "h-[220px]" }: { src: string; url: st
 /** A licensed photo where no product screen can be shown yet (never presented as a client). */
 function Photo({ src, alt, focus = "50% 50%", className = "h-[220px]" }: { src: string; alt: string; focus?: string; className?: string }) {
   return (
-    <div className={`relative overflow-hidden rounded-2xl ${className}`}>
+    <div className={`hp-materialize relative overflow-hidden rounded-2xl ${className}`}>
       <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 640px, 100vw" className="object-cover transition-transform duration-[1.6s] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:scale-[1.05]" style={{ objectPosition: focus }} />
     </div>
   );
@@ -110,7 +110,7 @@ function Photo({ src, alt, focus = "50% 50%", className = "h-[220px]" }: { src: 
 export function SuiteBento() {
   const { lang } = useLanguage();
   return (
-    <Section id={sectionId("suite")} labelledBy="home-suite-title" className="hp-bg py-20 sm:py-28">
+    <Section id={sectionId("suite")} labelledBy="home-suite-title" className="hp-bg py-14 sm:py-20">
       <div className="mx-auto max-w-7xl px-4">
         <Rise className="max-w-3xl">
           <Eyebrow>{homeV2.suite.eyebrow[lang]}</Eyebrow>
@@ -118,7 +118,7 @@ export function SuiteBento() {
         </Rise>
 
         <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 [&>*]:min-w-0">
-          <Rise className="md:col-span-2 lg:row-span-2">
+          <Rise className="hp-build md:col-span-2 lg:row-span-2">
             <Tile
               p={product("foodhub")}
               title="TAKATAK Food Hub"
@@ -135,7 +135,7 @@ export function SuiteBento() {
             </Tile>
           </Rise>
 
-          <Rise delay={80} className="md:col-span-2">
+          <Rise delay={80} className="hp-build md:col-span-2">
             <Tile title={lang === "fr" ? "La suite Clover" : "The Clover suite"} className="h-full">
               <p className="relative z-[2] mt-1 text-[14px] hp-ink-2">
                 {lang === "fr" ? "Neuf applications pour votre caisse Clover." : "Nine apps for your Clover point of sale."}
@@ -144,7 +144,7 @@ export function SuiteBento() {
                 {CLOVER_APPS.map((a) => (
                   <li key={a.key}>
                     <span className="block text-[13.5px] font-bold tracking-[0.06em] hp-ink">{a.name}</span>
-                    <span className="block truncate text-[12px] hp-ink-3">{a.desc[lang]}</span>
+                    <span className="block truncate text-[13.5px] hp-ink-3">{a.desc[lang]}</span>
                   </li>
                 ))}
               </ul>
@@ -154,28 +154,28 @@ export function SuiteBento() {
             </Tile>
           </Rise>
 
-          <Rise delay={140}>
+          <Rise delay={140} className="hp-build">
             <Tile p={product("qmaps")} className="h-full" visual={<Photo src="/photos/commerce-cafe.webp" alt={lang === "fr" ? "Une boutique de quartier" : "A neighbourhood shop"} className="h-[180px]" />} />
           </Rise>
-          <Rise delay={200}>
+          <Rise delay={200} className="hp-build">
             <Tile p={product("flexs")} className="h-full" visual={<Photo src="/photos/artisan-atelier.webp" alt={lang === "fr" ? "Un atelier d’artisan" : "A craft workshop"} className="h-[180px]" />} />
           </Rise>
 
-          <Rise delay={80}>
+          <Rise delay={80} className="hp-build">
             <Tile
               p={product("mimt")}
               className="h-full"
               visual={<Photo src="/photos/pro-bureau.webp" alt={lang === "fr" ? "Un bureau professionnel" : "A professional office"} className="h-[180px]" />}
             />
           </Rise>
-          <Rise delay={140}>
+          <Rise delay={140} className="hp-build">
             <Tile
               p={product("academy")}
               className="h-full"
               visual={<Shot src="/media/product/shot-academy.webp" url="TAKATAK Academy" alt={lang === "fr" ? "La page d’accueil de TAKATAK Academy" : "The TAKATAK Academy home page"} className="h-[180px]" />}
             />
           </Rise>
-          <Rise delay={200} className="md:col-span-2">
+          <Rise delay={200} className="hp-build md:col-span-2">
             <Tile
               p={product("seo")}
               className="h-full"

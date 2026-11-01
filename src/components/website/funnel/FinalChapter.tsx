@@ -15,7 +15,7 @@ export function FinalChapter() {
   const { tk, lang } = useCopy();
   const { registerHref } = useHomePlan();
   return (
-    <section aria-labelledby="final-title" className="hp-bg px-4 pb-24 pt-4 sm:pb-32">
+    <section aria-labelledby="final-title" className="hp-bg hp-live px-4 pb-16 pt-4 sm:pb-24">
       <Rise className="mx-auto max-w-7xl">
         <div className="grid overflow-hidden rounded-[32px] bg-[#1565D8] text-white lg:grid-cols-2">
           <div className="flex flex-col justify-center p-8 sm:p-14 lg:p-16">

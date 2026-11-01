@@ -135,7 +135,7 @@ function ServiceRow({ k, lang, tk }: { k: CategoryKey; lang: Lang; tk: (key: str
       </span>
       <span className="min-w-0 flex-1">
         <span className="hp-ink block text-[14.5px] font-semibold">{tk(`cat.${k}.name`)}</span>
-        <span className="hp-ink-2 block text-[12.5px]">{price}</span>
+        <span className="hp-ink-2 block text-[13.5px]">{price}</span>
       </span>
       <button
         type="button"
@@ -203,7 +203,7 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
           </span>
           <span className="min-w-0 flex-1">
             <span className="hp-ink block text-[15.5px] font-semibold">{C.agent[lang]}</span>
-            <span className="hp-ink-3 block truncate text-[12px]">{C.agentNote[lang]}</span>
+            <span className="hp-ink-3 block truncate text-[13px]">{C.agentNote[lang]}</span>
           </span>
           <button type="button" onClick={onClose} aria-label={C.close[lang]} className="hp-ghost hp-focus grid h-9 w-9 place-items-center rounded-full">
             <X size={16} aria-hidden />
@@ -281,7 +281,7 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
           </button>
         </form>
         {(dict.state === "denied" || dict.state === "unsupported") && (
-          <p className="hp-warn px-5 pb-3 text-[12.5px]">{dict.state === "denied" ? C.denied[lang] : C.unsupported[lang]}</p>
+          <p className="hp-warn px-5 pb-3 text-[13.5px]">{dict.state === "denied" ? C.denied[lang] : C.unsupported[lang]}</p>
         )}
       </aside>
     </div>,

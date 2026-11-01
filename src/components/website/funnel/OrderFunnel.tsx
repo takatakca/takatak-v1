@@ -247,7 +247,7 @@ export function OrderFunnel() {
     <div className="hp-card rounded-[24px] p-5">
       <p className="hp-ink flex items-center justify-between text-[15px] font-semibold">
         {C.cart[lang]}
-        <span key={bump} className="tk-pop hp-btn grid h-7 min-w-7 place-items-center rounded-full px-2 text-[12.5px] font-bold">
+        <span key={bump} className="tk-pop hp-btn grid h-7 min-w-7 place-items-center rounded-full px-2 text-[13.5px] font-bold">
           {totals.count}
         </span>
       </p>
@@ -260,7 +260,7 @@ export function OrderFunnel() {
         </div>
         {(totals.monthly > 0 || totals.yearly > 0) && (
           <div className="hp-line border-t pt-2">
-            <dt className="hp-ink-3 text-[12px] font-semibold">{C.then[lang]}</dt>
+            <dt className="hp-ink-3 text-[13px] font-semibold">{C.then[lang]}</dt>
             {totals.monthly > 0 && (
               <dd className="hp-ink flex justify-between text-[14px]">
                 <span className="hp-ink-2">{C.perMonth[lang]}</span>
@@ -277,7 +277,7 @@ export function OrderFunnel() {
         )}
         {totals.quotes > 0 && <dd className="hp-ink-2 text-[13px]">{fill(C.quotes[lang], { n: totals.quotes })}</dd>}
       </dl>
-      <p className="hp-ink-3 mt-3 flex items-center gap-1.5 text-[12px]">
+      <p className="hp-ink-3 mt-3 flex items-center gap-1.5 text-[13px]">
         <Lock size={12} aria-hidden /> {C.noPay[lang]}
       </p>
     </div>
@@ -415,7 +415,7 @@ export function OrderFunnel() {
           return (
             <div className="hp-line mt-6 flex items-center justify-between gap-4 rounded-[22px] border border-dashed p-5">
               <div>
-                <p className="hp-ink-3 text-[12px] font-semibold">{C.addOn[lang]}</p>
+                <p className="hp-ink-3 text-[13px] font-semibold">{C.addOn[lang]}</p>
                 <p className="hp-ink text-[15.5px] font-semibold">{addOn === "domain" ? tk("cat.domains.name") : tk(t.nameKey)}</p>
                 <p className="hp-ink-2 text-[13.5px]">{price(t, tk, lang)}</p>
               </div>
@@ -522,7 +522,7 @@ export function OrderFunnel() {
             <ArrowLeft size={15} aria-hidden /> {C.back[lang]}
           </button>
         </div>
-        <p className="hp-ink-3 mt-4 flex items-center gap-1.5 text-[12.5px]">
+        <p className="hp-ink-3 mt-4 flex items-center gap-1.5 text-[13.5px]">
           <Lock size={12} aria-hidden /> {C.noPay[lang]}
         </p>
         {helpRow}
