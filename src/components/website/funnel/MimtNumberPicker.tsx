@@ -262,7 +262,14 @@ export const MimtNumberPicker = forwardRef<HTMLInputElement, { lang: Lang; plan:
             <Loader2 size={15} className="animate-spin" aria-hidden /> {fr ? "Recherche…" : "Searching…"}
           </p>
         )}
-        {state.kind === "error" && <p className="rounded-2xl bg-amber-400/10 px-4 py-2.5 text-[14px] text-amber-200">{state.message}</p>}
+        {state.kind === "error" && (
+          <p className="rounded-2xl bg-amber-400/10 px-4 py-2.5 text-[14px] text-amber-200">
+            {state.message}{" "}
+            <a href={`${MIMT_APP_URL}/numero`} target="_blank" rel="noopener noreferrer" className="font-semibold text-white underline underline-offset-4">
+              {fr ? "Choisir dans l'app MIMT" : "Pick it in the MIMT app"}
+            </a>
+          </p>
+        )}
         {state.kind === "idle" && (
           <p className="flex items-center gap-2 text-[13.5px] text-white/45">
             <Lock size={13} aria-hidden />
