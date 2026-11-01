@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, type FormEvent } from "react";
+import { useActionState, useState, useRef, type FormEvent } from "react";
 import { Upload, Mail, ClipboardList } from "lucide-react";
 import { importReviewedReviewsAction } from "@/app/dashboard/growth/reviews/import-actions";
 import {
@@ -87,6 +87,7 @@ export function ReviewImportWorkspace({
 }: {
   locations: ImportLocations;
 }) {
+  const fileReadVersion = useRef(0);
   const [mode, setMode] = useState<"manual" | "email" | "csv">("manual");
   const [preview, setPreview] = useState<ReviewImportResult | null>(null);
   const [csv, setCSV] = useState("");
@@ -149,6 +150,7 @@ export function ReviewImportWorkspace({
                 type="button"
                 aria-pressed={mode === id}
                 onClick={() => {
+                  fileReadVersion.current++;
                   setMode(id as typeof mode);
                   setPreview(null);
                   setFileError("");
@@ -200,6 +202,7 @@ export function ReviewImportWorkspace({
                         accept=".csv,text/csv"
                         className={inputClass}
                         onChange={async (event) => {
+                          const version = ++fileReadVersion.current;
                           const file = event.target.files?.[0];
                           setPreview(null);
                           setFileError("");
@@ -210,9 +213,12 @@ export function ReviewImportWorkspace({
                             return;
                           }
                           try {
-                            setCSV(await file.text());
+                            const text = await file.text();
+                            if (version === fileReadVersion.current)
+                              setCSV(text);
                           } catch {
-                            setFileError("This file could not be read.");
+                            if (version === fileReadVersion.current)
+                              setFileError("This file could not be read.");
                           }
                         }}
                       />
@@ -285,7 +291,9 @@ export function ReviewImportWorkspace({
                         Star rating
                         <select
                           name="rating"
-                          disabled={source === "facebook"}
+                          disabled={
+                            source === "facebook" || source === "booking"
+                          }
                           className={inputClass}
                         >
                           <option value="">Not star-rated</option>

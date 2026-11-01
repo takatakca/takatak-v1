@@ -611,6 +611,23 @@ async function main() {
       );
     },
   );
+  await check(
+    "unmapped partner score scales never display as five-star ratings",
+    () => {
+      const record = normalizeListing({
+        ...listing,
+        provider: "future_provider",
+        rating: 4,
+        metadata: {
+          reputationProvider: "booking",
+          source: "reviewed_import",
+          ingestion: "csv",
+        },
+      });
+      assert.equal(record.rating, null);
+      assert.equal(record.recommended, false);
+    },
+  );
   console.log(`Review cockpit: ${count} checks passed.`);
 }
 main().catch((error) => {

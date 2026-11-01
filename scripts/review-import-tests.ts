@@ -358,6 +358,27 @@ async function main() {
       if (!result.ok) assert.match(result.error, /128 KiB/);
     },
   );
+  await check("Booking scores never become invented five-star ratings", () => {
+    invalid(
+      input({
+        ...example(),
+        source: "booking",
+        rating: 4,
+        url: "https://www.booking.com/hotel/test",
+      }),
+    );
+    assert.equal(
+      parseReviewImport(
+        input({
+          ...example(),
+          source: "booking",
+          rating: null,
+          url: "https://www.booking.com/hotel/test",
+        }),
+      ).ok,
+      true,
+    );
+  });
   console.log(`Review import: ${count} checks passed.`);
 }
 main().catch((error) => {

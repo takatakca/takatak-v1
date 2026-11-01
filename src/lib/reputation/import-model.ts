@@ -234,6 +234,11 @@ export function parseReviewImport(input: unknown): ReviewImportResult {
       return fail(
         prefix + "Facebook recommendations cannot be imported as star ratings.",
       );
+    if (item.source === "booking" && rating !== null)
+      return fail(
+        prefix +
+          "Booking.com scores cannot be treated as five-star ratings; omit the rating until a source scale mapping is verified.",
+      );
     const reviewedAt = importDate(item.reviewedAt, now);
     if (!reviewedAt)
       return fail(

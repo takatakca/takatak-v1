@@ -112,7 +112,8 @@ export function normalizeExternal(row: ExternalRow): ReviewRecord {
     locationKey: `external:${source}:${row.location.id || `unlinked:${row.id}`}`,
     rating:
       reviewSource(source)?.kind === "recommendations" ||
-      reviewSource(source)?.kind === "social"
+      reviewSource(source)?.kind === "social" ||
+      reviewSource(source)?.kind === "partner"
         ? null
         : rating(row.rating),
     text: row.comment || "",
@@ -163,7 +164,8 @@ export function normalizeListing(row: ListingRow): ReviewRecord {
   const response = confirmed ? safeText(meta.replyText, 5000) || null : null;
   const rawRating =
     reviewSource(source)?.kind === "recommendations" ||
-    reviewSource(source)?.kind === "social"
+    reviewSource(source)?.kind === "social" ||
+    reviewSource(source)?.kind === "partner"
       ? null
       : rating(row.rating);
   return {
