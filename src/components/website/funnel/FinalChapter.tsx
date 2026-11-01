@@ -8,7 +8,7 @@ import { openLiveChat } from "@/lib/website/chat-provider";
 import { homeV3 } from "@/lib/website/home-funnel";
 import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
-import { Magnetic, RevealMedia, Rise } from "./primitives";
+import { Magnetic, PointHere, RevealMedia, Rise } from "./primitives";
 
 /** The last screen: a full-width brand-blue band, one promise, three ways to start. */
 export function FinalChapter() {
@@ -23,7 +23,8 @@ export function FinalChapter() {
               {homeV3.final.title[lang]}
             </h2>
             <p className="mt-6 max-w-lg text-[17px] leading-8 text-white/85">{homeV3.final.body[lang]}</p>
-            <div className="mt-10 flex flex-wrap items-center gap-3">
+            <div className="relative mt-14 flex flex-wrap items-center gap-3">
+              <PointHere label={lang === "fr" ? "Cliquez ici" : "Click here"} color="#FFFFFF" className="-top-16 left-6" />
               <Magnetic>
               <Link
                 to={registerHref}

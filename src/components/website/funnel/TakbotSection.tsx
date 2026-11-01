@@ -11,7 +11,7 @@ import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
-import { Eyebrow, Magnetic, Rise, Section, TwoTone, useSpotlight } from "./primitives";
+import { Eyebrow, Magnetic, PointHere, Rise, Section, TwoTone, useSpotlight } from "./primitives";
 
 /** Mode icons, shared with the /takbot studio. */
 export const MODE_ICONS = {
@@ -143,7 +143,8 @@ export function TakbotSection() {
                 ))}
               </ul>
 
-              <div className="mt-9 flex flex-wrap items-center gap-3">
+              <div className="relative mt-9 flex flex-wrap items-center gap-3">
+                <PointHere label={lang === "fr" ? "Essayez-le" : "Try it"} flip color="#29C3FF" className="left-[230px] -top-9 hidden sm:flex" />
                 <Magnetic>
                   <Link to="/takbot" className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-3.5 text-[15px] font-semibold text-[#060D1F] transition-transform hover:scale-[1.03]">
                     {homeCopy.takbot.cta[lang]} <ArrowRight size={16} aria-hidden />

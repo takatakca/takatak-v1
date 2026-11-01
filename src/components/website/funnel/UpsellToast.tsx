@@ -55,7 +55,7 @@ export function UpsellToast() {
         role="status"
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
-        className="hp-raised tk-modal-in pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-3xl p-2.5 pl-3 ring-1 ring-[var(--hp-line)] sm:mr-36"
+        className="hp-raised hp-pop3d pointer-events-auto flex w-full max-w-xl items-center gap-3 rounded-3xl p-2.5 pl-3 ring-1 ring-[var(--hp-line)] sm:mr-36"
       >
         {media && (
           <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-2xl">

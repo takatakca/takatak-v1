@@ -392,7 +392,8 @@ export function useZoomFrom<T extends HTMLElement>(origin: Origin) {
     const dx = origin.left + origin.width / 2 - (to.left + to.width / 2);
     const dy = origin.top + origin.height / 2 - (to.top + to.height / 2);
     return [
-      { transform: `translate3d(${dx}px, ${dy}px, 0) scale(${s})`, opacity: 0.35, filter: "blur(2px)" },
+      { transform: `perspective(1400px) translate3d(${dx}px, ${dy}px, -120px) scale(${s}) rotateX(14deg)`, opacity: 0.35, filter: "blur(2px)" },
+      { transform: `perspective(1400px) translate3d(0, -8px, 40px) scale(1.02) rotateX(-2deg)`, opacity: 1, filter: "blur(0)", offset: 0.75 },
       { transform: "none", opacity: 1, filter: "blur(0)" },
     ];
   };
@@ -452,4 +453,34 @@ export function GlowPointer() {
     };
   }, [reduced]);
   return null;
+}
+
+/**
+ * A hand-drawn arrow that draws itself towards a button with a short label
+ * ("Click here"), then bobs. Place it inside a relative wrapper around the button.
+ */
+export function PointHere({
+  label,
+  className = "-left-2 -top-14",
+  flip = false,
+  color = "var(--hp-cta)",
+}: {
+  label: string;
+  className?: string;
+  /** Points down-left instead of down-right (label on the right of the button). */
+  flip?: boolean;
+  color?: string;
+}) {
+  const { ref, seen } = useSeen<HTMLSpanElement>("0px 0px -15% 0px");
+  return (
+    <span ref={ref} data-seen={seen} aria-hidden className={`hp-point ${flip ? "flex-row-reverse" : ""} ${className}`}>
+      <span className="hp-point-label hp-serif whitespace-nowrap text-[22px] leading-none" style={{ color }}>
+        {label}
+      </span>
+      <svg width="64" height="54" viewBox="0 0 64 54" fill="none" className={`mt-2 ${flip ? "-scale-x-100" : ""}`}>
+        <path d="M4 6 C 26 6, 46 14, 52 40" stroke={color} strokeWidth="3" strokeLinecap="round" />
+        <path d="M42 34 L 52 44 L 60 31" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
 }

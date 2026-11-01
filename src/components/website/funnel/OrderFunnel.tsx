@@ -175,7 +175,7 @@ function Modal({ onClose, children, label }: { onClose: () => void; children: Re
   return createPortal(
     <div className="hp hp-portal fixed inset-0 z-[120] flex items-end justify-center sm:items-center sm:p-6" data-theme="light" role="dialog" aria-modal="true" aria-label={label}>
       <div className="tk-fade-in absolute inset-0 bg-[#05070C]/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <div className="tk-modal-in hp-bg relative w-full max-w-lg overflow-hidden rounded-t-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.6)] sm:rounded-[28px]">{children}</div>
+      <div className="hp-pop3d hp-bg relative w-full max-w-lg overflow-hidden rounded-t-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.6)] sm:rounded-[28px]">{children}</div>
     </div>,
     document.querySelector(".website-surface") ?? document.body,
   );

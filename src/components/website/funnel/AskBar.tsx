@@ -196,7 +196,7 @@ function Concierge({ first, onClose }: { first: string; onClose: () => void }) {
   return createPortal(
     <div className="hp hp-portal fixed inset-0 z-[120] flex justify-end" data-theme={document.querySelector(".hp")?.getAttribute("data-theme") ?? "light"} role="dialog" aria-modal="true" aria-label={C.agent[lang]}>
       <div className="tk-fade-in absolute inset-0 bg-[#05070C]/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <aside className="hp-bg hp-sheet-in relative flex h-full w-full max-w-[460px] flex-col shadow-[-30px_0_80px_-30px_rgb(0_0_0/0.5)]">
+      <aside className="hp-bg hp-sheet3d relative flex h-full w-full max-w-[460px] flex-col shadow-[-30px_0_80px_-30px_rgb(0_0_0/0.5)]">
         <header className="hp-line flex items-center gap-3 border-b px-5 py-4">
           <span className="hp-orb relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-white">
             <Sparkles size={17} aria-hidden />

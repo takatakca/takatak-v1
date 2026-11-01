@@ -94,7 +94,7 @@ export function ClipModal({ clip, lang, onClose, origin = null }: { clip: string
   return createPortal(
     <div className="fixed inset-0 z-[130] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={clip}>
       <div className="tk-fade-in absolute inset-0 bg-[#02040A]/85 backdrop-blur-md" onClick={close} aria-hidden />
-      <div ref={zoomRef} className={`${zoomAnimated ? "" : "tk-modal-in "}relative overflow-hidden rounded-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)]`}>
+      <div ref={zoomRef} className={`${zoomAnimated ? "" : "hp-pop3d "}relative overflow-hidden rounded-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.9)]`}>
         <video className="block aspect-[9/16] max-h-[86vh] w-auto bg-black" src={`/media/social/${clip}-${lang}.mp4`} autoPlay muted loop playsInline controls />
         <button
           type="button"

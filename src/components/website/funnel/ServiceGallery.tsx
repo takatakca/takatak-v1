@@ -78,7 +78,7 @@ function ServiceModal({ category, onClose: done, origin }: { category: CoreCateg
       aria-labelledby="svc-modal-title"
     >
       <div className="tk-fade-in absolute inset-0 bg-[#05070C]/65 backdrop-blur-sm" onClick={onClose} aria-hidden />
-      <div ref={zoomRef} className={`${zoomAnimated ? "" : "tk-modal-in "}hp-bg relative max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.6)] sm:rounded-[28px]`}>
+      <div ref={zoomRef} className={`${zoomAnimated ? "" : "hp-pop3d "}hp-bg relative max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-t-[28px] shadow-[0_40px_120px_-30px_rgb(0_0_0/0.6)] sm:rounded-[28px]`}>
         <button ref={closeRef} type="button" onClick={onClose} aria-label={homeV2.services.close[lang]} className="hp-btn hp-focus absolute right-4 top-4 z-10 grid h-10 w-10 place-items-center rounded-full">
           <X size={18} aria-hidden />
         </button>

@@ -1078,3 +1078,48 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
   .hp-materialize img { filter: none; transform: none; transition: none; }
   .hp-materialize::after { display: none; }
 }
+
+/* Pop-ups come out of the screen in 3D, with a light sweep across them. */
+@keyframes hp-pop3d {
+  0% { opacity: 0; transform: perspective(1400px) translate3d(0, 110px, -260px) rotateX(26deg) scale(0.8); }
+  55% { opacity: 1; }
+  78% { transform: perspective(1400px) translate3d(0, -6px, 30px) rotateX(-3deg) scale(1.015); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes hp-sheet3d {
+  0% { opacity: 0; transform: perspective(1600px) translate3d(120px, 0, -220px) rotateY(-24deg); }
+  60% { opacity: 1; }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes hp-glare { 0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateX(260%) skewX(-18deg); opacity: 0; } }
+.hp-pop3d { animation: hp-pop3d 0.75s cubic-bezier(0.16, 1, 0.3, 1) both; transform-origin: 50% 100%; position: relative; }
+.hp-sheet3d { animation: hp-sheet3d 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; transform-origin: 100% 50%; }
+.hp-pop3d::after, .hp-sheet3d::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 35%; pointer-events: none; z-index: 50;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent); animation: hp-glare 1.1s ease 0.25s both; }
+
+/* A hand-drawn arrow that draws itself towards the button, then bobs. */
+.hp-point { position: absolute; pointer-events: none; z-index: 5; display: flex; align-items: flex-start; gap: 4px; }
+.hp-point svg path { stroke-dasharray: 160; stroke-dashoffset: 160; }
+.hp-point[data-seen="true"] svg path { animation: hp-draw 0.9s cubic-bezier(0.6, 0, 0.3, 1) 0.4s forwards; }
+.hp-point[data-seen="true"] { animation: hp-bob 1.6s ease-in-out 1.4s infinite; }
+.hp-point-label { opacity: 0; transform: translateY(6px); transition: opacity 0.4s ease 0.2s, transform 0.5s ease 0.2s; }
+.hp-point[data-seen="true"] .hp-point-label { opacity: 1; transform: none; }
+@keyframes hp-draw { to { stroke-dashoffset: 0; } }
+@keyframes hp-bob { 50% { transform: translate(5px, 5px); } }
+
+/* Live band: real prices sliding by, chips lighting up one after the other. */
+.hp-ticker { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.hp-ticker-track { display: inline-flex; gap: 12px; width: max-content; animation: hp-marquee 42s linear infinite; }
+.hp-ticker:hover .hp-ticker-track { animation-play-state: paused; }
+.hp-chip-flash { animation: hp-chip-flash 6s ease-in-out infinite; }
+@keyframes hp-chip-flash { 0%, 86%, 100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); }
+  90% { box-shadow: 0 0 0 1px rgba(41, 195, 255, 0.9), 0 0 28px rgba(41, 195, 255, 0.55); background: rgba(41, 195, 255, 0.16); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-pop3d, .hp-sheet3d { animation: none; }
+  .hp-pop3d::after, .hp-sheet3d::after { display: none; }
+  .hp-point svg path { stroke-dashoffset: 0; }
+  .hp-point[data-seen="true"] svg path, .hp-point[data-seen="true"] { animation: none; }
+  .hp-point-label { opacity: 1; transform: none; }
+  .hp-ticker-track, .hp-chip-flash { animation: none; }
+}

@@ -5,6 +5,7 @@ import { HomeFaq } from "@/components/website/funnel/HomeFaq";
 import { NewsletterSignup } from "@/components/website/funnel/NewsletterSignup";
 import { HomeSectionNav } from "@/components/website/funnel/HomeSectionNav";
 import { KineticMarquee } from "@/components/website/funnel/KineticMarquee";
+import { LiveBand } from "@/components/website/funnel/LiveBand";
 import { OrderSheet } from "@/components/website/funnel/OrderSheet";
 import { PlanConfigurator } from "@/components/website/funnel/PlanConfigurator";
 import { PricingTabs } from "@/components/website/funnel/PricingTabs";
@@ -50,6 +51,7 @@ export default function HomePage() {
           <div id="core" className="relative" style={{ scrollMarginTop: "var(--tk-header-h, 64px)" }}>
             <HomeSectionNav />
             <AskBar />
+            <LiveBand />
             <section id="home-services" aria-labelledby="home-services-title" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
               <PhotoStories />
               <ServiceGallery />
