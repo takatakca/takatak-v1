@@ -342,6 +342,22 @@ async function main() {
       }
     },
   );
+  await check(
+    "preview rejects normalized payloads that exceed the server submission bound",
+    () => {
+      const row = input().rows[0];
+      const result = parseReviewImport({
+        ...input(),
+        rows: Array.from({ length: 50 }, (_, index) => ({
+          ...row,
+          externalId: `large-${index}`,
+          text: "é".repeat(5000),
+        })),
+      });
+      assert.equal(result.ok, false);
+      if (!result.ok) assert.match(result.error, /128 KiB/);
+    },
+  );
   console.log(`Review import: ${count} checks passed.`);
 }
 main().catch((error) => {

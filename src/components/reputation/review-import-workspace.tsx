@@ -335,7 +335,8 @@ export function ReviewImportWorkspace({
               {preview?.ok && (
                 <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4">
                   <h3 className="text-sm font-semibold text-slate-900">
-                    Review before saving · {preview.rows.length} records
+                    Review before saving · {preview.rows.length}{" "}
+                    {preview.rows.length === 1 ? "record" : "records"}
                   </h3>
                   <ul className="mt-3 max-h-72 space-y-3 overflow-y-auto">
                     {preview.rows.map((row, index) => (

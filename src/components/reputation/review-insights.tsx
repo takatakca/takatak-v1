@@ -55,13 +55,20 @@ export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
                   <span className="w-12 shrink-0 text-slate-600">
                     {rating} stars
                   </span>
-                  <meter
-                    min={0}
-                    max={Math.max(eligible.length, 1)}
-                    value={count}
+                  <div
+                    role="meter"
+                    aria-valuemin={0}
+                    aria-valuemax={Math.max(eligible.length, 1)}
+                    aria-valuenow={count}
+                    aria-valuetext={`${count} reviews · ${percentage}%`}
                     aria-label={`${rating} star reviews`}
-                    className="h-3 min-w-0 flex-1 accent-[#1565D8]"
-                  />
+                    className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100"
+                  >
+                    <div
+                      className="h-full rounded-full bg-[#1565D8]"
+                      style={{ width: `${percentage}%` }}
+                    />
+                  </div>
                   <span className="w-20 text-right tabular-nums text-slate-600">
                     {count} · {percentage}%
                   </span>

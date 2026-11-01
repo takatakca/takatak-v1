@@ -264,6 +264,19 @@ export function parseReviewImport(input: unknown): ReviewImportResult {
       url,
     });
   }
+  if (
+    new TextEncoder().encode(
+      JSON.stringify({
+        listingId: input.listingId,
+        provenance: input.provenance,
+        rows,
+      }),
+    ).byteLength >
+    128 * 1024
+  )
+    return fail(
+      "Normalized import must be at most 128 KiB; split this batch before previewing.",
+    );
   return {
     ok: true,
     rows,
