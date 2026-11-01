@@ -71,6 +71,7 @@ export type ManageConnectionsProvider = {
   platforms: string[];
   implemented: boolean;
   connectable: boolean;
+  planAllowed: boolean;
   configured: boolean;
   supportsMultipleAccounts: boolean;
 
@@ -2103,6 +2104,17 @@ export function ManageConnectionsModal({
                                       ? 'View only'
                                       : card.actionLabel,
                                 }));
+
+                // Distinguish a subscription restriction from an unavailable
+                // integration. Never override the server-side entitlement gate.
+                const displayedButtonLabel =
+                  provider?.implemented === true &&
+                  provider.state === 'ready_for_authorization' &&
+                  provider.planAllowed === false &&
+                  !platformConnected &&
+                  !card.planned
+                    ? 'Not included in current plan'
+                    : buttonLabel;
 
                 const primaryProviderCard =
                   provider !== null && isProviderStartCard(card);
