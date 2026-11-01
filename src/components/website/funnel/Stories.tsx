@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Check, Plus } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check, Plus } from "lucide-react";
 
 import { DomainSearchDialog } from "@/components/website/premium/DomainSearchDialog";
 import { money } from "@/components/website/premium/ui";
@@ -150,6 +150,16 @@ export function PhotoStories() {
                     ))}
                     <li className="hp-ink-3 px-2 py-1 text-[12.5px]">{lang === "fr" ? "et plus" : "and more"}</li>
                   </ul>
+                )}
+                {s.key === "found" && (
+                  <a
+                    href="https://qmaps.ca/add-business"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hp-accent hp-focus mt-4 inline-flex items-center gap-1.5 text-[14.5px] font-semibold underline-offset-4 hover:underline"
+                  >
+                    {lang === "fr" ? "Ajoutez votre commerce sur QMAPS, sans frais" : "Add your business to QMAPS at no cost"} <ArrowUpRight size={15} aria-hidden />
+                  </a>
                 )}
                 <div className="mt-8 flex flex-wrap items-center gap-3">
                   <button
