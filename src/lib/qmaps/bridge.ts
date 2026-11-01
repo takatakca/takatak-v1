@@ -62,7 +62,7 @@ export function replyOutcome(remote: QmapsRemoteResult): {
     message:
       remote.reason === "not_configured"
         ? "QMAPS n'est pas configuré. La réponse n'a pas été envoyée. Elle est conservée comme brouillon."
-        : "QMAPS n'a pas accepté la réponse. Elle n'a pas été publiée. Le texte est conservé comme brouillon.",
+        : "La publication n'est pas confirmée. Le texte est conservé dans TAKATAK; actualisez les avis QMAPS avant de renvoyer, car la source a pu recevoir la réponse sans nous retourner sa confirmation.",
   };
 }
 

@@ -13,6 +13,12 @@ on:
       - "src/app/dashboard/growth/reviews/**"
       - "src/app/dashboard/local-listings/reviews/**"
       - "scripts/review-cockpit-tests.ts"
+      - "scripts/review-qmaps-api-tests.ts"
+      - "scripts/review-qmaps-contract-tests.ts"
+      - "scripts/review-agent-tools-tests.ts"
+      - "src/app/(website)/reviews/**"
+      - "next.config.ts"
+      - "src/lib/security/https-redirect.ts"
       - "scripts/review-import-tests.ts"
       - "scripts/review-import-service-tests.ts"
       - ".github/workflows/review-cockpit.yml"
@@ -43,11 +49,22 @@ jobs:
       - run: npm ci --ignore-scripts=false
       - run: npm run db:generate
       - run: npm run qa:review-cockpit
+      - run: npm run qa:review-qmaps-api
+      - name: Fetch exact QMAPS counterpart contract
+        shell: bash
+        run: |
+          git init "$RUNNER_TEMP/revew-qmaps-contract"
+          git -C "$RUNNER_TEMP/revew-qmaps-contract" fetch --depth=1 https://github.com/takatakca/qmaps.git 6cc23f238556e38bf5ca2e29900dfac764d2e581
+          git -C "$RUNNER_TEMP/revew-qmaps-contract" checkout --detach FETCH_HEAD
+      - run: npm run qa:review-qmaps-contract
+        env:
+          REVEW_QMAPS_CHECKOUT: ${{ runner.temp }}/revew-qmaps-contract
+      - run: npm run qa:review-agent-tools
       - run: npm run qa:review-import-model
       - run: npm run qa:review-import-service
       - run: npm run qa:qmaps-bridge
       - run: npm run qa:qmaps-sync
       - run: npm run typecheck
       - name: Lint changed review boundaries
-        run: npx eslint src/components/brand/brand-hero-backdrop.tsx src/components/website/home/HomeHero.tsx src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps scripts/review-cockpit-tests.ts
+        run: npx eslint next.config.ts src/lib/security/https-redirect.ts "src/app/(website)/reviews" src/components/brand/brand-hero-backdrop.tsx src/components/website/home/HomeHero.tsx src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps scripts/review-cockpit-tests.ts
       - run: npm run build

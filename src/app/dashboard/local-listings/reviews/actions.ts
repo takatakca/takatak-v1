@@ -10,6 +10,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import {
   QMAPS_BUSINESS_ID,
   matchesTrackedQmapsReview,
+  readQmapsBusinessId,
   qmapsReplyMetadata,
   replyOutcome,
 } from "@/lib/qmaps/bridge";
@@ -78,7 +79,11 @@ export async function replyQmapsReviewAction(
       status: { not: "archived" },
       localListing: { clientId: access.activeClientId, provider: "qmaps" },
     },
-    select: { id: true, metadata: true },
+    select: {
+      id: true,
+      metadata: true,
+      localListing: { select: { metadata: true } },
+    },
   });
   if (!existing || !matchesTrackedQmapsReview(existing.metadata, reviewId))
     return {
@@ -86,7 +91,17 @@ export async function replyQmapsReviewAction(
       error: "Cet avis QMAPS n'est pas lié à cet espace. Rien n'a été envoyé.",
     };
 
-  const remote = await postQmaps("takatak-reply-review", {
+  const businessId = readQmapsBusinessId(existing.localListing?.metadata);
+  if (!businessId)
+    return {
+      ok: false,
+      error:
+        "La fiche QMAPS de cet avis doit être liée à une entreprise avant de répondre.",
+    };
+  const remote = await postQmaps("takatak-reply-review-v2", {
+    version: 1,
+    clientId: access.activeClientId,
+    businessId,
     reviewId,
     body: comment,
   });

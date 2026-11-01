@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { QmapsReviewConnection } from "@/components/reputation/qmaps-review-connection";
+import { getQmapsReviewConnections } from "@/lib/qmaps/review-sync";
 import { ReviewWorkspaceNavigation } from "@/components/reputation/review-workspace-navigation";
 import { ReviewSourceDirectory } from "@/components/reputation/review-source-directory";
 import { ReviewImportWorkspace } from "@/components/reputation/review-import-workspace";
@@ -50,6 +52,16 @@ export default async function ReputationPage({
   let unavailable = false;
   let googleUnavailable = false;
   let cockpit: CockpitSnapshot | null = null;
+  let qmapsConnections: Awaited<
+    ReturnType<typeof getQmapsReviewConnections>
+  > | null = null;
+  if (scoped) {
+    try {
+      qmapsConnections = await getQmapsReviewConnections(access.activeClientId);
+    } catch {
+      console.error("[reputation] QMAPS connections unavailable");
+    }
+  }
   let importLocations: Awaited<
     ReturnType<typeof getReviewImportLocations>
   > | null = null;
@@ -198,6 +210,18 @@ export default async function ReputationPage({
                 {googleUnavailable
                   ? "Google Business connection data is temporarily unavailable. Retry before changing its connection."
                   : "Select an authorized client workspace to manage its Google Business connection."}
+              </HonestyNote>
+            )}
+            {qmapsConnections !== null ? (
+              <QmapsReviewConnection
+                connections={qmapsConnections}
+                canManage={canManage}
+              />
+            ) : (
+              <HonestyNote>
+                {scoped
+                  ? "Les liens QMAPS sont temporairement indisponibles."
+                  : "Sélectionnez un espace autorisé pour consulter ses connexions QMAPS."}
               </HonestyNote>
             )}
             <ReviewSourceDirectory />

@@ -1,6 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import {
+  ReviewLayoutPicker,
+  useReviewLayout,
+  type ReviewLayout,
+} from "./review-layout-picker";
 import { ReviewInsights } from "./review-insights";
 import { BrandHeroBackdrop } from "@/components/brand/brand-hero-backdrop";
 import { Card } from "@/components/ui/card";
@@ -25,8 +30,192 @@ import {
   sourceLocationGroups,
   filterCockpit,
   type CockpitSnapshot,
+  type ReviewRecord,
 } from "@/lib/reputation/cockpit-model";
 import { REVIEW_SOURCES, reviewSource } from "@/lib/reputation/sources";
+
+function ReviewSelection({
+  review,
+  active,
+  onSelect,
+  compact = false,
+}: {
+  review: ReviewRecord;
+  active: boolean;
+  onSelect: (key: string) => void;
+  compact?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={() => onSelect(review.key)}
+      className={`block w-full min-w-0 border-l-4 p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 ${active ? "border-[#1565D8] bg-blue-50" : "border-transparent bg-white hover:bg-slate-50"}`}
+    >
+      <span
+        className={
+          compact
+            ? "grid min-w-0 gap-x-4 gap-y-1 sm:grid-cols-[minmax(120px,0.7fr)_minmax(160px,1fr)_minmax(140px,1fr)_80px]"
+            : "block"
+        }
+      >
+        <span className="flex min-w-0 items-center justify-between gap-2">
+          <span className="break-words text-sm font-semibold text-slate-900">
+            {review.author}
+          </span>
+          <span className="shrink-0 text-xs text-slate-600">
+            {review.rating === null ? "Not rated" : `${review.rating}/5`}
+          </span>
+        </span>
+        <span
+          className={`${compact ? "" : "mt-1"} block min-w-0 break-words text-xs text-slate-600`}
+        >
+          {reviewSource(review.source)?.name || "Other source"} ·{" "}
+          {review.location}
+        </span>
+        <span
+          className={`${compact ? "line-clamp-1" : "mt-2 line-clamp-2"} block min-w-0 break-words text-xs leading-5 text-slate-600`}
+        >
+          {review.text || "No written comment."}
+        </span>
+        <span
+          className={`${compact ? "" : "mt-2"} flex flex-wrap justify-between gap-x-2 gap-y-1 text-[11px] text-slate-600`}
+        >
+          <span>{review.state.replaceAll("_", " ")}</span>
+          <span>{review.createdAt.slice(0, 10)}</span>
+        </span>
+      </span>
+      {review.ingestion && (
+        <span className="mt-2 block text-[11px] text-slate-600">
+          Imported · {review.ingestion}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function ReviewResults({
+  reviews,
+  selectedKey,
+  layout,
+  onSelect,
+}: {
+  reviews: ReviewRecord[];
+  selectedKey?: string;
+  layout: ReviewLayout;
+  onSelect: (key: string) => void;
+}) {
+  if (layout === "platforms") {
+    const sources = Array.from(new Set(reviews.map((review) => review.source)));
+    return (
+      <Card className="min-w-0 overflow-hidden">
+        <div className="border-b border-slate-100 px-4 py-3">
+          <h2 className="text-sm font-semibold text-slate-900">
+            Reviews by platform
+          </h2>
+          <p className="mt-1 text-xs text-slate-600">
+            Source columns show this page of the filtered feed. Select any
+            review to work on it below.
+          </p>
+        </div>
+        <div
+          role="region"
+          aria-label="Review platform columns"
+          tabIndex={0}
+          className="overflow-x-auto p-3 focus-visible:outline-2 focus-visible:outline-blue-600"
+        >
+          <div className="flex items-start gap-3">
+            {sources.map((source) => {
+              const items = reviews.filter(
+                (review) => review.source === source,
+              );
+              return (
+                <section
+                  key={source}
+                  aria-label={`${reviewSource(source)?.name || "Other source"} reviews`}
+                  className="w-72 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-50"
+                >
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 px-3 py-3">
+                    <h3 className="text-xs font-semibold text-slate-900">
+                      {reviewSource(source)?.name || "Other source"}
+                    </h3>
+                    <span className="text-xs text-slate-600">
+                      {items.length} on this page
+                    </span>
+                  </div>
+                  <ul className="max-h-[560px] space-y-2 overflow-y-auto p-2">
+                    {items.map((review) => (
+                      <li
+                        key={review.key}
+                        className="overflow-hidden rounded-lg border border-slate-200"
+                      >
+                        <ReviewSelection
+                          review={review}
+                          active={selectedKey === review.key}
+                          onSelect={onSelect}
+                        />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      </Card>
+    );
+  }
+  if (layout === "grid")
+    return (
+      <section aria-label="Review grid">
+        <h2 className="mb-3 text-sm font-semibold text-slate-900">
+          Review grid
+        </h2>
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {reviews.map((review) => (
+            <li
+              key={review.key}
+              className="min-w-0 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+            >
+              <ReviewSelection
+                review={review}
+                active={selectedKey === review.key}
+                onSelect={onSelect}
+              />
+            </li>
+          ))}
+        </ul>
+      </section>
+    );
+  return (
+    <Card className="min-w-0 overflow-hidden">
+      <div className="border-b border-slate-100 px-4 py-3">
+        <h2 className="text-sm font-semibold text-slate-900">
+          {layout === "list" ? "Review list" : "Review inbox"}
+        </h2>
+        <p className="mt-1 text-xs text-slate-600">
+          Select a customer story to review and respond
+          {layout === "list" ? " below" : ""}.
+        </p>
+      </div>
+      <ul
+        className={`${layout === "inbox" ? "max-h-[560px] overflow-y-auto" : ""} divide-y divide-slate-100`}
+        aria-label="Select a review"
+      >
+        {reviews.map((review) => (
+          <li key={review.key}>
+            <ReviewSelection
+              review={review}
+              active={selectedKey === review.key}
+              onSelect={onSelect}
+              compact={layout === "list"}
+            />
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
 
 export function ReviewCockpit({
   snapshot,
@@ -37,6 +226,7 @@ export function ReviewCockpit({
   canManage: boolean;
   googleDrafts?: Record<string, { status: string; text: string }>;
 }) {
+  const [layout, setLayout] = useReviewLayout();
   const [source, setSource] = useState("all"),
     [query, setQuery] = useState(""),
     [location, setLocation] = useState("all"),
@@ -76,6 +266,13 @@ export function ReviewCockpit({
   const locations = sourceLocationGroups(records || []);
   const selected =
     visible.find((review) => review.key === selectedKey) || visible[0];
+  const selectedIndex = selected
+    ? visible.findIndex((review) => review.key === selected.key)
+    : -1;
+  function selectReview(key: string) {
+    setSelectedKey(key);
+    setExpanded(null);
+  }
   const stats = cockpitStats(filtered);
   const missing = snapshot?.unavailable.length === 3;
   function reset(fn: () => void) {
@@ -295,58 +492,27 @@ export function ReviewCockpit({
               rate counts only confirmed replies and reply-capable records.
             </p>
           </Card>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-slate-600">
+              One review feed · four ways to work
+            </p>
+            <ReviewLayoutPicker layout={layout} onChange={setLayout} />
+          </div>
           <ReviewInsights records={filtered} />
           {visible.length > 0 && (
-            <div className="grid items-start gap-4 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.4fr)]">
-              <Card className="overflow-hidden">
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-slate-900">
-                    Review inbox
-                  </h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    Select a customer story to review and respond.
-                  </p>
-                </div>
-                <div
-                  className="max-h-[560px] divide-y divide-slate-100 overflow-y-auto"
-                  aria-label="Select a review"
-                >
-                  {visible.map((review) => (
-                    <button
-                      type="button"
-                      key={review.key}
-                      aria-pressed={selected?.key === review.key}
-                      onClick={() => {
-                        setSelectedKey(review.key);
-                        setExpanded(null);
-                      }}
-                      className={`block w-full border-l-4 p-4 text-left focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-blue-600 ${selected?.key === review.key ? "border-[#1565D8] bg-blue-50" : "border-transparent bg-white hover:bg-slate-50"}`}
-                    >
-                      <span className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-semibold text-slate-900">
-                          {review.author}
-                        </span>
-                        <span className="text-xs text-slate-600">
-                          {review.rating === null
-                            ? "Not rated"
-                            : `${review.rating}/5`}
-                        </span>
-                      </span>
-                      <span className="mt-1 block text-xs text-slate-600">
-                        {reviewSource(review.source)?.name || "Other source"} ·{" "}
-                        {review.location}
-                      </span>
-                      <span className="mt-2 block line-clamp-2 text-xs leading-5 text-slate-600">
-                        {review.text || "No written comment."}
-                      </span>
-                      <span className="mt-2 flex justify-between gap-2 text-[11px] text-slate-600">
-                        <span>{review.state.replaceAll("_", " ")}</span>
-                        <span>{review.createdAt.slice(0, 10)}</span>
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </Card>
+            <div
+              className={
+                layout === "inbox"
+                  ? "grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.4fr)]"
+                  : "min-w-0 space-y-4"
+              }
+            >
+              <ReviewResults
+                reviews={visible}
+                selectedKey={selected?.key}
+                layout={layout}
+                onSelect={selectReview}
+              />
               <div
                 className="min-w-0 space-y-3"
                 aria-label="Selected review detail"
@@ -518,6 +684,37 @@ export function ReviewCockpit({
                         ) : null}
                       </div>
                     )}
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                      <p className="text-xs text-slate-600">
+                        Review {selectedIndex + 1} of {visible.length} on this
+                        page
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          disabled={selectedIndex <= 0}
+                          onClick={() =>
+                            selectReview(visible[selectedIndex - 1].key)
+                          }
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 disabled:opacity-40"
+                        >
+                          Previous review
+                        </button>
+                        <button
+                          type="button"
+                          disabled={
+                            selectedIndex < 0 ||
+                            selectedIndex >= visible.length - 1
+                          }
+                          onClick={() =>
+                            selectReview(visible[selectedIndex + 1].key)
+                          }
+                          className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 disabled:opacity-40"
+                        >
+                          Next review
+                        </button>
+                      </div>
+                    </div>
                   </article>
                 ))}
               </div>

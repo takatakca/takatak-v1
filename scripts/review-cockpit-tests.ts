@@ -347,16 +347,27 @@ async function main() {
             assert.equal(init?.redirect, "error");
             return new Response(JSON.stringify(reply), { status: 200 });
           };
-        const body = { reviewId, body: "Synthetic response" };
+        const body = {
+          version: 1,
+          clientId: tenant,
+          businessId: tenant,
+          reviewId,
+          body: "Synthetic response",
+        };
         assert.equal(
-          (await postQmaps("takatak-reply-review", body, fake({ ok: false })))
-            .ok,
+          (
+            await postQmaps(
+              "takatak-reply-review-v2",
+              body,
+              fake({ ok: false }),
+            )
+          ).ok,
           false,
         );
         assert.equal(
           (
             await postQmaps(
-              "takatak-reply-review",
+              "takatak-reply-review-v2",
               body,
               fake({ ok: true, reviewId: tenant }),
             )
@@ -366,9 +377,17 @@ async function main() {
         assert.equal(
           (
             await postQmaps(
-              "takatak-reply-review",
+              "takatak-reply-review-v2",
               body,
-              fake({ ok: true, reviewId }),
+              fake({
+                ok: true,
+                version: 1,
+                clientId: tenant,
+                businessId: tenant,
+                ownerReply: "Synthetic response",
+                ownerRepliedAt: "2026-11-01T12:00:00.000Z",
+                reviewId,
+              }),
             )
           ).ok,
           true,
@@ -377,9 +396,17 @@ async function main() {
         assert.equal(
           (
             await postQmaps(
-              "takatak-reply-review",
+              "takatak-reply-review-v2",
               body,
-              fake({ ok: true, reviewId }),
+              fake({
+                ok: true,
+                version: 1,
+                clientId: tenant,
+                businessId: tenant,
+                ownerReply: "Synthetic response",
+                ownerRepliedAt: "2026-11-01T12:00:00.000Z",
+                reviewId,
+              }),
             )
           ).ok,
           false,
