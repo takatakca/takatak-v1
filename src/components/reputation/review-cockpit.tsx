@@ -576,7 +576,7 @@ export function ReviewCockpit({
                           <p className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">
                             {googleDrafts[r.id].text}
                           </p>
-                          <p className="mt-2 text-[11px] text-slate-500">
+                          <p className="mt-2 text-[11px] text-slate-600">
                             Review the wording before publishing. A generated
                             draft is not a public response.
                           </p>
