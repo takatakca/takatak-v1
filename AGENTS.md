@@ -37,3 +37,7 @@ Everything visual or written for TAKATAK follows `BRAND.md` (logo, colours, tagl
 ## MIMT / TAKATAK AUTH — mandatory product context
 
 For any TAKATAK phone login, Twilio SMS, customer identity/CRM, MIMT telecom, wholesale Internet, SIM/eSIM, or MIMT.ca website task: **read [`docs/mimt/README.md`](docs/mimt/README.md) and the relevant linked runbook first**. Current P0 is [TAKATAK AUTH issue #141](https://github.com/takatakca/takatak-v1/issues/141). Do not create duplicate projects, assume supplier API access, or import private subscribers/communications into agency knowledge. Document actual tests and hand off through WORKLOG.md.
+
+## NEWBUY — ecosystem add-on continuity
+
+Before NEWBUY add-on work, read [`00-NEWBUY-ADDONS.md`](00-NEWBUY-ADDONS.md). The owner's permanent requirement is signed notes before, during and after work in GitHub, the authorized project Drive dossier and the existing coordination channel. Preserve existing services and keep confidential details outside this public repository.
