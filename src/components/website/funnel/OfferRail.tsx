@@ -85,7 +85,7 @@ export function OfferRail() {
                   <div className="relative h-[104px] overflow-hidden">
                     <Image
                       src={media.photo}
-                      alt=""
+                      alt={media.alt[lang]}
                       fill
                       sizes="248px"
                       className="object-cover transition-transform duration-700 group-hover:scale-110"

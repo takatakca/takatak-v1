@@ -1,9 +1,10 @@
-// Organization + WebSite JSON-LD for the public homepage. Only facts that are
+// Organization + WebPage + WebSite JSON-LD for the public homepage. Only facts that are
 // already published on the site (name, domain, support email) are included.
 
 import { brand } from "./brand";
+import { HOME_SEO, type HomeLanguage } from "./home-seo";
 
-export function websiteStructuredData(origin: string): string {
+export function websiteStructuredData(origin: string, lang: HomeLanguage = "en"): string {
   const base = origin.replace(/\/+$/, "");
   const graph = {
     "@context": "https://schema.org",
@@ -11,9 +12,10 @@ export function websiteStructuredData(origin: string): string {
       {
         "@type": "Organization",
         "@id": `${base}/#organization`,
-        name: brand.brandName,
+        name: "Groupe TAKATAK",
+        alternateName: brand.brandName,
         url: base,
-        description: brand.positioning,
+        description: HOME_SEO[lang].description,
         email: brand.supportEmail,
         areaServed: "CA",
         contactPoint: {
@@ -22,6 +24,16 @@ export function websiteStructuredData(origin: string): string {
           email: brand.supportEmail,
           availableLanguage: ["English", "French"],
         },
+      },
+      {
+        "@type": "WebPage",
+        "@id": `${base}/${lang === "fr" ? "?lang=fr" : ""}#webpage`,
+        url: `${base}/${lang === "fr" ? "?lang=fr" : ""}`,
+        name: HOME_SEO[lang].title,
+        description: HOME_SEO[lang].description,
+        inLanguage: lang === "fr" ? "fr-CA" : "en-CA",
+        isPartOf: { "@id": `${base}/#website` },
+        about: { "@id": `${base}/#organization` },
       },
       {
         "@type": "WebSite",

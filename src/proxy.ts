@@ -22,6 +22,7 @@ import {
 } from "@/lib/auth/workspace-session-cookies";
 import { isProductionAppRuntime, originFromRequest } from "@/lib/config/app-origin";
 import { httpsRedirectTarget } from "@/lib/security/https-redirect";
+import { HOME_LANGUAGE_HEADER, homeLanguage } from "@/lib/website/home-seo";
 import {
   AUTH_IDENTITY_COOKIE,
   AUTH_VERIFIED_AT_COOKIE,
@@ -63,6 +64,11 @@ function trustedRequestHeaders(
   input: { status: AuthStatus; userId?: string | null },
 ): Headers {
   const headers = new Headers(request.headers);
+  // Presentation only; always overwrite incoming values, never trust a client header.
+  headers.delete(HOME_LANGUAGE_HEADER);
+  if (request.nextUrl.pathname === "/") {
+    headers.set(HOME_LANGUAGE_HEADER, homeLanguage(request.nextUrl.searchParams.get("lang")));
+  }
   applyTrustedAuthRequestHeaders(headers, {
     status: input.status,
     pathname: request.nextUrl.pathname,

@@ -4,6 +4,7 @@ import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { MARKETPLACE_CATEGORIES } from "@/lib/website/marketplace-catalog";
 import { MARKETPLACE_PACKAGES } from "@/lib/website/marketplace-catalog";
 import { servicePages } from "@/lib/website/service-pages";
+import { homeLanguageAlternates } from "@/lib/website/home-seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = getApplicationOrigin();
@@ -29,6 +30,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     ...paths.map((path) => ({
       url: `${baseUrl}${path}`,
+      ...(path === "" ? { alternates: { languages: homeLanguageAlternates(baseUrl) } } : {}),
       lastModified: new Date(),
       changeFrequency:
         path === ""
@@ -37,6 +39,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority:
         path === "" ? 1 : 0.8,
     })),
+
+    {
+      url: `${baseUrl}/?lang=fr`,
+      alternates: { languages: homeLanguageAlternates(baseUrl) },
+      changeFrequency: "weekly" as const,
+      priority: 1,
+    },
 
     ...servicePages.map((service) => ({
       url: `${baseUrl}/services/${service.slug}`,
