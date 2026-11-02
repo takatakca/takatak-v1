@@ -41,3 +41,7 @@ For any TAKATAK phone login, Twilio SMS, customer identity/CRM, MIMT telecom, wh
 ## NEWBUY — ecosystem add-on continuity
 
 Before NEWBUY add-on work, read [`00-NEWBUY-ADDONS.md`](00-NEWBUY-ADDONS.md). The owner's permanent requirement is signed notes before, during and after work in GitHub, the authorized project Drive dossier and the existing coordination channel. Preserve existing services and keep confidential details outside this public repository.
+
+## Codex SEO — TAKATAK.ca audit continuity
+
+For the owner's 2026-11-02 full-control completion mandate and supplied Semrush audit, read `00-SEO-CONTINUITY.md` and `docs/seo/SEMRUSH_AUDIT_2026-11-02.md`. Continue from merged PR #244, preserve other active PRs, and keep signed before/during/after coordination notes. Require live deployment and re-audit evidence before reporting a score or full completion.

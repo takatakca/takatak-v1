@@ -29,9 +29,11 @@ The live homepage HTML was fetched directly, independently of the screenshots:
 - Local SEO suite: 11/11 passed, including actual React server rendering in English and French and metadata/schema consistency.
 - Local auth cookie, frontend and session suites passed; access matrix 17/17 passed.
 - Typecheck passed. Initial full lint identified only two new native language-link errors; links intentionally reload the document to refresh root layout language, with a scoped explanatory lint exception. Other 12 warnings predate this change.
-- First production build compiled; its TypeScript worker hit the default 2 GiB Node heap. Retry uses a 6 GiB local heap; no server or repository memory settings changed.
+- Production build PASSED after a local retry with a 6 GiB Node heap; no server or repository memory settings changed.
+- Full source CI 41409704490 PASSED on 867dd5f255d2d0f6724466d4ffcf5f878007ebf8. PR #244 MERGED to main at a429e391ec8666ad22e2f9fe73984198c5b612ef.
 - Production HTML audit still fails the new checks until this revision is deployed. A GitHub merge is not proof of deployment.
-- Coolify console currently shows the login form; no authenticated deployment session has been verified.
+- Coolify console showed the login form. The secure sign-in request was cancelled; it has not been retried. No authenticated deployment session or live release has been verified.
+- The long sign-in wait ended the local test runtime. A local HTTP response confirmed the new EN title, 152-character description, hreflang, WebPage schema, one H1 and 12 decorative images; complete EN+FR HTTP acceptance remains pending. Do not infer it from the pure SSR tests.
 
 ## Remaining audit items requiring real external evidence
 
