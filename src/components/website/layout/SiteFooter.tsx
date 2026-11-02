@@ -120,6 +120,13 @@ export function SiteFooter() {
             © {new Date().getFullYear()} {brand.legalName}. {brand.domain}
           </p>
           <p>{POSITIONING[l]}</p>
+          <nav aria-label={l === "fr" ? "Langue de la page d'accueil" : "Homepage language"} className="flex gap-4">
+            {/* Full document navigation also refreshes the root HTML language and server metadata. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a href="/?lang=fr" hrefLang="fr-CA" lang="fr" className="hover:text-foreground">Français</a>
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a href="/?lang=en" hrefLang="en-CA" lang="en" className="hover:text-foreground">English</a>
+          </nav>
         </div>
       </div>
     </footer>

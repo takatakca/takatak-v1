@@ -28,15 +28,19 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  // SSR-safe: always start in English, then adopt the stored/browser language
-  // after hydration so markup matches on the first paint.
-  const [lang, setLangState] = useState<Language>("en");
+export function LanguageProvider({ children, initialLanguage }: { children: ReactNode; initialLanguage?: Language }) {
+  // The homepage's explicit URL locale must match its server-rendered HTML.
+  const [lang, setLangState] = useState<Language>(initialLanguage ?? "en");
 
   useEffect(() => {
+    if (initialLanguage) return;
     const detected = detectLanguage();
     if (detected !== "en") setLangState(detected);
-  }, []);
+  }, [initialLanguage]);
+
+  useEffect(() => {
+    if (initialLanguage) setLangState(initialLanguage);
+  }, [initialLanguage]);
 
   useEffect(() => {
     if (typeof document !== "undefined") document.documentElement.lang = lang;
@@ -45,6 +49,11 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   const setLang = useCallback((next: Language) => {
     setLangState(next);
     storeLanguage(next);
+    if (window.location.pathname === "/") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("lang", next);
+      window.history.replaceState(null, "", url);
+    }
   }, []);
 
   const value = useMemo<LanguageContextValue>(

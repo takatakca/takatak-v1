@@ -122,7 +122,7 @@ export function ListingDemo() {
         className={`absolute left-3 right-3 top-3 overflow-hidden sm:right-auto sm:w-[min(62%,330px)] rounded-2xl bg-white shadow-[0_24px_60px_-24px_rgb(6_13_31/0.5)] transition-all duration-700 sm:left-5 sm:top-5 ${end ? "scale-[0.96] opacity-40 blur-[1px]" : ""}`}
       >
         <div className="relative h-[64px] sm:h-[84px]">
-          <Image src="/photos/commerce-cafe.webp" alt="" fill sizes="330px" className="object-cover" />
+          <Image src="/photos/commerce-cafe.webp" alt={lang === "fr" ? "Comptoir de café illustrant une fiche d'entreprise locale" : "Café counter illustrating a local business listing"} fill sizes="330px" className="object-cover" />
           <span
             className={`absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10.5px] font-semibold text-slate-800 transition-all duration-500 ${b >= 1 ? "scale-100 opacity-100" : "scale-50 opacity-0"}`}
           >

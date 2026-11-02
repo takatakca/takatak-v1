@@ -1,3 +1,13 @@
+## Latest TAKATAK.ca homepage SEO handoff — 2026-11-02
+
+Signed: Codex SEO @ ChatGPT Work. Owner authorized full control and asked this agent to add itself for completion.
+
+2026-11-02 | Codex SEO @ ChatGPT Work | main ← PR #244 | merged a429e391; full source CI 41409704490 PASS; not verified live | bilingual homepage SEO, schema/images and accurate catalog values; 00-SEO-CONTINUITY.md | next: authenticated Coolify deployment, live EN/FR HTTP acceptance, official social profiles/assets and new Semrush audit
+
+This section supersedes older homepage deployment-status notes below. Source and full CI are verified; production and a new external score are not. Secure Coolify sign-in was cancelled and was not retried. Read 00-SEO-CONTINUITY.md and docs/seo/SEMRUSH_AUDIT_2026-11-02.md. Preserve other active PRs. No credentials or permissions were changed.
+
+---
+
 # SEO integration / TAKATAK V1 — agent handoff, 2026-10-15
 
 ## Scope, latest task and branches
