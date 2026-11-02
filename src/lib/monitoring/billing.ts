@@ -16,7 +16,7 @@ export async function startMonitoringCheckout(clientId: string, domainId: string
   if (!accepted) throw new ServiceError("invalid_input", "Confirm the recurring price and service terms.");
   if (!monitoringBillingEnabled()) throw new ServiceError("unavailable", "Monitoring enrollment is not open yet.");
   const db = monitoringDb();
-  const domain = await db.domainAsset.findFirst({ where: monitoringDomainWhere(clientId, domainId), select: { domainName: true } });
+  const domain = await db.domainAsset.findFirst({ where: monitoringDomainWhere(clientId, domainId), select: { domainName: true, metadata: true } });
   if (!domain) throw new ServiceError("not_found", "Website not found in this workspace.");
   // A sync grant is required before selling checks for this particular website.
   let grants: Record<string, unknown> = {};
@@ -24,13 +24,22 @@ export async function startMonitoringCheckout(clientId: string, domainId: string
   if (!/^[0-9a-f]{64}$/.test(String(grants[domainId] ?? ""))) throw new ServiceError("unavailable", "Contact support to prepare monitoring for this website before subscribing.");
   const token = randomUUID();
   const now = Date.now();
+  const priorCheckout = record(record(domain.metadata).monitoringCheckout);
+  let expiredToken: unknown = null;
+  if (priorCheckout.token && typeof priorCheckout.expiresAt === "number" && priorCheckout.expiresAt <= now) {
+    // An old completed session may have a delayed webhook. Expiry alone never permits a second charge.
+    if (typeof priorCheckout.sessionId !== "string") throw new ServiceError("conflict", "A previous checkout needs support reconciliation before retrying.");
+    const previousSession = await getStripe().checkout.sessions.retrieve(priorCheckout.sessionId);
+    if (previousSession.status !== "expired") throw new ServiceError("conflict", "The previous checkout is still open or awaiting payment confirmation.");
+    expiredToken = priorCheckout.token;
+  }
   // CAS reservation precedes external checkout creation. Concurrent requests cannot create two subscriptions.
   await updateMonitoringMetadata(clientId, domainId, meta => {
     const billing = record(meta.monitoringBilling), checkout = record(meta.monitoringCheckout);
     if (monitoringEntitled(billing) || (billing.subscriptionId && !["canceled", "incomplete_expired"].includes(String(billing.status)))) {
       throw new ServiceError("conflict", "This website already has a monitoring subscription. Manage it through billing.");
     }
-    if (typeof checkout.expiresAt === "number" && checkout.expiresAt > now) throw new ServiceError("conflict", "A checkout is already in progress. Complete it or wait 31 minutes before retrying.");
+    if (checkout.token && checkout.token !== expiredToken) throw new ServiceError("conflict", "A checkout is already in progress. Complete it or wait for its expiry before retrying.");
     return { ...meta, monitoringCheckout: { token, expiresAt: now + 31 * 60000 } };
   });
   const metadata = { billingDomain: MONITORING_BILLING_DOMAIN, clientId, domainAssetId: domainId, checkoutToken: token };
@@ -45,6 +54,10 @@ export async function startMonitoringCheckout(clientId: string, domainId: string
     automatic_tax: { enabled: true },
     success_url: `${origin}${MONITORING_PATH}?checkout=success`, cancel_url: `${origin}${MONITORING_PATH}?checkout=canceled`,
   }, { idempotencyKey: `monitoring-checkout:${token}` });
+  await updateMonitoringMetadata(clientId, domainId, current => {
+    const checkout = record(current.monitoringCheckout);
+    return checkout.token === token ? { ...current, monitoringCheckout: { ...checkout, sessionId: session.id } } : current;
+  });
   if (!session.url) throw new ServiceError("unavailable", "Checkout could not be started.");
   return session.url;
 }

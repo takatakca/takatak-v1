@@ -41,7 +41,7 @@ export default async function MonitoringPage({ searchParams }: { searchParams: P
             <div><dt className="text-slate-500">{month} successful checks</dt><dd className="mt-1 font-medium">{stats?.checks ? `${(stats.successes / stats.checks * 100).toFixed(2)}% (${stats.successes}/${stats.checks})` : "No observations yet"}</dd></div>
             <div><dt className="text-slate-500">Subscription</dt><dd className="mt-1 font-medium">{row.billing.cancelAtPeriodEnd && active ? "Cancels at period end" : row.billing.status.replaceAll("_", " ")}</dd></div>
           </dl>
-          {canManage && <div className="mt-5"><MonitoringBillingButton domainAssetId={row.id} subscribed={row.billing.status !== "not_subscribed"} enabled={monitoringBillingEnabled()} /></div>}
+          {canManage && <div className="mt-5"><MonitoringBillingButton domainAssetId={row.id} subscribed={!["not_subscribed", "canceled", "incomplete_expired"].includes(row.billing.status)} enabled={monitoringBillingEnabled()} /></div>}
         </article>;
       })}</div>}
     <section className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600">

@@ -25,7 +25,7 @@ async function main() {
   let providerSub: Record<string, unknown> = {};
   const fake = {
     customers: { retrieve: async () => ({ id: "cus_MONITORQA001" }) },
-    checkout: { sessions: { create: async (params: Stripe.Checkout.SessionCreateParams) => { calls.push(params); return { id: "cs_monitoring", url: "https://checkout.stripe.com/c/pay/test" }; } } },
+    checkout: { sessions: { retrieve: async () => ({ status: "complete" }), create: async (params: Stripe.Checkout.SessionCreateParams) => { calls.push(params); return { id: "cs_monitoring", url: "https://checkout.stripe.com/c/pay/test" }; } } },
     subscriptions: { retrieve: async () => providerSub },
     billingPortal: { sessions: { create: async () => ({ url: "https://billing.stripe.com/p/session/test" }) } },
   };
@@ -91,6 +91,18 @@ async function main() {
     await applyMonitoringStripeEvent(event(seconds + 3));
     assert.equal((await (await send(authorization)).json()).enabled, false);
     console.log("PASS failed payment and cancellation disable checks; out-of-order events do not reactivate service");
+
+    await startMonitoringCheckout(a.id, site.id, true);
+    assert.equal(calls.length, 2, "canceled add-on can be subscribed again");
+    await applyMonitoringStripeEvent(event(seconds + 4));
+    assert.equal(typeof record(record((await db.domainAsset.findUniqueOrThrow({ where: { id: site.id } })).metadata).monitoringCheckout).token, "string", "old subscription events cannot clear a new checkout reservation");
+    providerSub = { ...providerSub, id: "sub_MONITORQA002", status: "active", metadata: calls[1].subscription_data!.metadata! };
+    await applyMonitoringStripeEvent(event(seconds + 5));
+    assert.equal(monitoringEntitled((await getMonitoringRows(a.id))[0].billing), true);
+    await updateMonitoringMetadata(a.id, site.id, current => ({ ...current, monitoringBilling: { ...record(current.monitoringBilling), status: "canceled" }, monitoringCheckout: { token: "old", expiresAt: 1, sessionId: "cs_completed" } }));
+    await assert.rejects(startMonitoringCheckout(a.id, site.id, true), /awaiting payment confirmation/);
+    assert.equal(calls.length, 2, "a completed session with a delayed webhook cannot be charged again");
+    console.log("PASS resubscribe after cancellation and delayed-webhook checkout safety");
   } finally {
     await db.client.deleteMany({ where: { id: { in: [a.id, b.id] } } });
     await db.$disconnect();
