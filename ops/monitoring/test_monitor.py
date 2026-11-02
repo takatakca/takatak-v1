@@ -1,0 +1,135 @@
+"""Behavioral coverage: incident thresholds, delivery retries, reporting, network isolation."""
+import csv
+import datetime as dt
+import json
+from pathlib import Path
+import smtplib
+import tempfile
+import unittest
+from unittest.mock import Mock
+
+import monitor
+
+GOOD = (True, 200, 15, "http")
+BAD = (False, 503, 20, "http")
+CONFIG = {"interval_seconds": 300, "sites": [{"hostname": "example.com"}]}
+
+
+class MonitorTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.db = monitor.open_db(self.root / "monitor.sqlite3")
+        self.addCleanup(self.db.close)
+
+    def observe(self, results, start=1000):
+        for i, result in enumerate(results):
+            monitor.record(self.db, "example.com", start + i * 300, result)
+
+    def events(self):
+        return self.db.execute("SELECT event FROM outbox ORDER BY id").fetchall()
+
+    def test_transient_failure_does_not_alert(self):
+        self.observe([GOOD, GOOD, BAD, BAD, GOOD])
+        self.assertEqual(self.events(), [])
+
+    def test_one_incident_and_one_recovery(self):
+        self.observe([BAD, BAD, BAD, BAD, GOOD, GOOD, GOOD])
+        self.assertEqual(self.events(), [("DOWN",), ("RECOVERED",)])
+
+    def test_restart_preserves_streak_and_does_not_repeat_incident(self):
+        self.observe([BAD, BAD])
+        with monitor.open_db(self.root / "monitor.sqlite3") as other:
+            monitor.record(other, "example.com", 1600, BAD)
+            monitor.record(other, "example.com", 1900, BAD)
+        self.assertEqual(self.events(), [("DOWN",)])
+
+    def test_duplicate_does_not_confirm_failure(self):
+        for _ in range(4):
+            monitor.record(self.db, "example.com", 1000, BAD)
+        self.assertEqual(self.events(), [])
+
+    def test_monitoring_gap_resets_confirmation(self):
+        self.observe([BAD, BAD])
+        monitor.record(self.db, "example.com", 5000, BAD)
+        self.assertEqual(self.events(), [])
+
+    def test_backwards_clock_rejected(self):
+        self.observe([GOOD])
+        with self.assertRaises(ValueError):
+            monitor.record(self.db, "example.com", 999, BAD)
+
+    def test_missing_smtp_keeps_alert_pending(self):
+        self.observe([BAD] * 3)
+        self.assertFalse(monitor.deliver(self.db, {}))
+        self.assertEqual(self.db.execute("SELECT sent FROM outbox").fetchone()[0], 0)
+
+    def test_smtp_failure_is_retried_with_same_message_id(self):
+        self.observe([BAD] * 3)
+        env = dict.fromkeys(["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "MONITOR_FROM", "MONITOR_TO"], "owner@example.com")
+        smtp = Mock()
+        smtp.__enter__ = Mock(return_value=smtp)
+        smtp.__exit__ = Mock(return_value=False)
+        smtp.send_message.side_effect = [smtplib.SMTPException("offline"), {}]
+        factory = Mock(return_value=smtp)
+        self.assertFalse(monitor.deliver(self.db, env, factory))
+        self.assertTrue(monitor.deliver(self.db, env, factory))
+        ids = [call.args[0]["Message-ID"] for call in smtp.send_message.call_args_list]
+        self.assertEqual(ids[0], ids[1])
+        self.assertEqual(smtp.starttls.call_count, 2)
+        self.assertEqual(self.db.execute("SELECT sent FROM outbox").fetchone()[0], 1)
+
+    def test_month_boundaries_and_unknown_site_coverage(self):
+        at = int(dt.datetime(2026, 10, 31, 23, 55, tzinfo=monitor.UTC).timestamp())
+        self.observe([GOOD, BAD], at)
+        config = {**CONFIG, "sites": CONFIG["sites"] + [{"hostname": "missing.example.com"}]}
+        output = self.root / "report.csv"
+        monitor.report(self.db, "2026-10", output, config)
+        with output.open() as handle:
+            rows = list(csv.DictReader(handle))
+        self.assertEqual(rows[0]["observed_checks"], "1")
+        self.assertEqual(rows[0]["sample_success_percent"], "100.0")
+        self.assertEqual(rows[1]["observed_checks"], "0")
+        self.assertEqual(rows[1]["sample_success_percent"], "")
+        self.assertEqual(rows[1]["sample_coverage_percent"], "0.0")
+
+    def test_config_rejects_unsafe_targets_duplicates_and_tight_loop(self):
+        for host in ["localhost", "127.0.0.1", "https://example.com", "a.example.com:443", "a/b.example.com", "a\n.example.com"]:
+            path = self.root / "sites.json"
+            path.write_text(json.dumps({"sites": [{"hostname": host}]}))
+            with self.assertRaises(ValueError, msg=host):
+                monitor.load_config(path)
+        for config in [{**CONFIG, "interval_seconds": 1}, {**CONFIG, "sites": CONFIG["sites"] * 2}]:
+            path.write_text(json.dumps(config))
+            with self.assertRaises(ValueError):
+                monitor.load_config(path)
+
+    def test_dns_private_mixed_and_metadata_addresses_blocked(self):
+        for addresses in [["127.0.0.1"], ["169.254.169.254"], ["::1"], ["224.0.0.1"], ["ff0e::1"], ["93.184.216.34", "10.0.0.1"]]:
+            resolver = Mock(return_value=[(2, 1, 6, "", (ip, 443)) for ip in addresses])
+            factory = Mock()
+            self.assertEqual(monitor.probe("example.com", resolver, factory)[3], "blocked_address")
+            factory.assert_not_called()
+
+    def test_redirect_not_followed_and_body_not_read(self):
+        resolver = Mock(return_value=[(2, 1, 6, "", ("93.184.216.34", 443))])
+        conn = Mock()
+        conn.getresponse.return_value.status = 302
+        factory = Mock(return_value=conn)
+        result = monitor.probe("example.com", resolver, factory)
+        self.assertFalse(result[0])
+        factory.assert_called_once_with("example.com", "93.184.216.34")
+        conn.getresponse.return_value.read.assert_not_called()
+        conn.request.assert_called_once()
+        conn.close.assert_called_once()
+
+    def test_successful_https_probe(self):
+        resolver = Mock(return_value=[(2, 1, 6, "", ("93.184.216.34", 443))])
+        conn = Mock()
+        conn.getresponse.return_value.status = 200
+        self.assertTrue(monitor.probe("example.com", resolver, Mock(return_value=conn))[0])
+
+
+if __name__ == "__main__":
+    unittest.main()
