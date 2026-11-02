@@ -46,6 +46,7 @@ const cols: { title: Bi; links: FooterLink[] }[] = [
       { to: "/services/websites", label: { en: "Websites", fr: "Sites web" } },
       { to: "/domain", label: { en: "Domains", fr: "Domaines" } },
       { to: "/hosting", label: { en: "Hosting", fr: "Hébergement" } },
+      { to: "/monitoring", label: { en: "Website Monitoring", fr: "Surveillance de sites web" } },
       { to: "/services/marketing", label: { en: "Marketing & ads", fr: "Marketing et publicité" } },
       { to: "/services/social-media", label: { en: "Social media", fr: "Réseaux sociaux" } },
       { to: "/services/local-listings", label: { en: "Local listings", fr: "Fiches locales" } },

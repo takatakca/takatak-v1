@@ -15,6 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/marketplace/post-project",
     "/domain",
     "/hosting",
+    "/monitoring",
     "/deals",
     "/pricing",
     "/takbot",
