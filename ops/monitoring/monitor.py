@@ -4,6 +4,8 @@ Signed: Codex MONITOR. No public API, customer credentials or billing access.
 """
 import argparse
 import csv
+import hashlib
+import hmac
 import datetime as dt
 import http.client
 import ipaddress
@@ -15,6 +17,7 @@ import socket
 import sqlite3
 import ssl
 import time
+import uuid
 from email.message import EmailMessage
 
 UTC = dt.timezone.utc
@@ -47,6 +50,11 @@ def load_config(path):
         if host in seen:
             raise ValueError("duplicate hostname")
         seen.add(host)
+        if "domain_asset_id" in site or "sync_key_env" in site:
+            uuid.UUID(site.get("domain_asset_id", ""))
+            key_env = site.get("sync_key_env", "")
+            if not key_env.startswith("MONITORING_KEY_") or not all(c.isupper() or c.isdigit() or c == "_" for c in key_env):
+                raise ValueError("sync_key_env must name a MONITORING_KEY_ environment variable")
     return config
 
 
@@ -189,10 +197,67 @@ def report(db, month, output, config):
     temp.replace(output)
 
 
-def run_cycle(db, config, output, probe_fn=probe):
+def dashboard_request(site, payload, env=os.environ, connection=PinnedHTTPS, resolver=socket.getaddrinfo):
+    """Per-domain authenticated exchange. No login database or payment credentials in worker."""
+    if env.get("DASHBOARD_SYNC_ENABLED") != "true":
+        return None
+    secret = env.get(site.get("sync_key_env", ""), "")
+    if len(secret) != 64 or any(c not in "0123456789abcdef" for c in secret):
+        return None
+    raw = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
+    timestamp = str(int(time.time()))
+    signature = hmac.new(bytes.fromhex(secret), timestamp.encode() + b"." + raw, hashlib.sha256).hexdigest()
+    conn = None
+    try:
+        addresses = [answer[4][0] for answer in resolver("takatak.ca", 443, type=socket.SOCK_STREAM)]
+        if not addresses or any(not ipaddress.ip_address(ip).is_global or ipaddress.ip_address(ip).is_multicast for ip in addresses):
+            return None
+        conn = connection("takatak.ca", addresses[0])
+        conn.request("POST", "/api/integrations/monitoring/snapshot", body=raw,
+                     headers={"Content-Type": "application/json", "x-monitor-timestamp": timestamp,
+                              "x-monitor-signature": signature, "Connection": "close"})
+        response = conn.getresponse()
+        body = response.read(8193)
+        if response.status != 200 or len(body) > 8192:
+            return None
+        result = json.loads(body)
+        return result if isinstance(result, dict) and result.get("ok") is True else None
+    except (OSError, http.client.HTTPException, ValueError):
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+def snapshot_payload(db, site, at, result, interval):
+    now = dt.datetime.fromtimestamp(at, UTC)
+    first = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    previous = (first - dt.timedelta(days=1)).replace(day=1)
+    months = []
+    for start in (previous, first):
+        end = (start.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+        count, successes, mean = db.execute("SELECT COUNT(*),SUM(ok),AVG(latency_ms) FROM samples WHERE host=? AND at>=? AND at<?",
+                                          (site["hostname"], int(start.timestamp()), int(end.timestamp()))).fetchone()
+        months.append({"month": start.strftime("%Y-%m"), "checks": count, "successes": successes or 0, "meanMs": round(mean or 0, 1)})
+    stable = db.execute("SELECT stable FROM state WHERE host=?", (site["hostname"],)).fetchone()[0]
+    return {"domainAssetId": site["domain_asset_id"], "hostname": site["hostname"], "observedAt": at,
+            "intervalSeconds": interval, "stable": stable, "ok": result[0], "status": result[1],
+            "latencyMs": result[2], "reason": result[3], "months": months}
+
+
+def run_cycle(db, config, output, probe_fn=probe, dashboard_fn=dashboard_request):
     for site in config["sites"]:
+        if site.get("domain_asset_id"):
+            authorization = dashboard_fn(site, {"kind": "authorization", "domainAssetId": site["domain_asset_id"], "hostname": site["hostname"]})
+            if not authorization or authorization.get("enabled") is not True:
+                print(json.dumps({"host": site["hostname"], "monitoring": "awaiting_authorization"}), flush=True)
+                continue  # Failed/expired payment or unavailable authorization never enables paid checks.
         at = int(time.time())
-        record(db, site["hostname"], at, probe_fn(site["hostname"]), config["interval_seconds"])
+        result = probe_fn(site["hostname"])
+        record(db, site["hostname"], at, result, config["interval_seconds"])
+        if site.get("domain_asset_id"):
+            if not dashboard_fn(site, snapshot_payload(db, site, at, result, config["interval_seconds"])):
+                print(json.dumps({"host": site["hostname"], "dashboard_sync": "retry_next_cycle"}), flush=True)
     deliver(db)
     now = dt.datetime.now(UTC)
     previous = (now.replace(day=1) - dt.timedelta(days=1)).strftime("%Y-%m")

@@ -4,6 +4,7 @@ import { BarChart3, FileText, Loader2, Star, X } from 'lucide-react';
 import { FaXTwitter } from 'react-icons/fa6';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMemo, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 
 import type { PlansBillingPageData } from '@/lib/billing/social/billing-page-data';
 import {
@@ -69,6 +70,11 @@ export function PlansBillingView({
       <CurrentPlanCard data={data} canManage={canManage} />
       <BrandFreezePanel data={data} canManage={canManage} />
       <AddOnsRow data={data} canManage={canManage} />
+      <section className="rounded-xl border border-slate-200 bg-white p-6">
+        <h2 className="text-lg font-semibold text-slate-900">Website Monitoring add-on</h2>
+        <p className="mt-2 text-sm text-slate-600">Availability checks, confirmed alerts and monthly reports. $5 CAD per website / month plus applicable taxes, billed separately through your TAKATAK account.</p>
+        <Link href="/dashboard/web-hosting/monitoring" className="mt-4 inline-block font-semibold text-[#1565D8]">Manage monitoring &amp; subscription →</Link>
+      </section>
       <PlanCatalog data={data} canManage={canManage} />
       <PaymentsHistory />
       <BillingInformationForm data={data} canManage={canManage} />

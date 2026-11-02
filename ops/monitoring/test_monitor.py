@@ -2,6 +2,8 @@
 import csv
 import datetime as dt
 import json
+import hashlib
+import hmac
 from pathlib import Path
 import smtplib
 import tempfile
@@ -129,6 +131,44 @@ class MonitorTests(unittest.TestCase):
         conn = Mock()
         conn.getresponse.return_value.status = 200
         self.assertTrue(monitor.probe("example.com", resolver, Mock(return_value=conn))[0])
+
+    def test_paid_monitor_checks_require_current_dashboard_authorization(self):
+        site = {"hostname": "example.com", "domain_asset_id": "a1111111-1111-4111-8111-111111111111", "sync_key_env": "MONITORING_KEY_EXAMPLE"}
+        probe = Mock(return_value=GOOD)
+        for authorization in [None, {"ok": True, "enabled": False}]:
+            monitor.run_cycle(self.db, {**CONFIG, "sites": [site]}, self.root / "reports", probe, Mock(return_value=authorization))
+        probe.assert_not_called()
+        self.assertEqual(self.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0], 0)
+        dashboard = Mock(side_effect=[{"ok": True, "enabled": True}, {"ok": True, "accepted": True}])
+        monitor.run_cycle(self.db, {**CONFIG, "sites": [site]}, self.root / "reports", probe, dashboard)
+        probe.assert_called_once_with("example.com")
+        snapshot = dashboard.call_args_list[1].args[1]
+        self.assertEqual(snapshot["domainAssetId"], site["domain_asset_id"])
+        self.assertEqual(snapshot["ok"], True)
+        self.assertEqual(snapshot["months"][1]["checks"], 1)
+
+    def test_sync_is_signed_with_per_domain_secret_and_fixed_https_destination(self):
+        conn = Mock()
+        conn.getresponse.return_value.status = 200
+        conn.getresponse.return_value.read.return_value = b'{"ok":true,"enabled":true}'
+        resolver = Mock(return_value=[(2, 1, 6, "", ("93.184.216.34", 443))])
+        factory = Mock(return_value=conn)
+        site = {"sync_key_env": "MONITORING_KEY_EXAMPLE"}
+        env = {"DASHBOARD_SYNC_ENABLED": "true", "MONITORING_KEY_EXAMPLE": "1a" * 32}
+        payload = {"domainAssetId": "a1111111-1111-4111-8111-111111111111", "kind": "authorization", "hostname": "example.com"}
+        self.assertTrue(monitor.dashboard_request(site, payload, env, factory, resolver)["enabled"])
+        factory.assert_called_once_with("takatak.ca", "93.184.216.34")
+        args = conn.request.call_args
+        self.assertEqual(args.args[:2], ("POST", "/api/integrations/monitoring/snapshot"))
+        headers, raw = args.kwargs["headers"], args.kwargs["body"]
+        expected = hmac.new(bytes.fromhex(env["MONITORING_KEY_EXAMPLE"]), headers["x-monitor-timestamp"].encode() + b"." + raw, hashlib.sha256).hexdigest()
+        self.assertEqual(headers["x-monitor-signature"], expected)
+        self.assertNotIn(env["MONITORING_KEY_EXAMPLE"], str(args))
+
+    def test_sync_fails_closed_without_credentials(self):
+        factory = Mock()
+        self.assertIsNone(monitor.dashboard_request({}, {}, {}, factory))
+        factory.assert_not_called()
 
 
 if __name__ == "__main__":

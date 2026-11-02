@@ -4,6 +4,7 @@ import { getStripe } from "@/lib/billing/social/stripe-client";
 import { getStripeWebhookSecret } from "@/lib/billing/social/stripe-env";
 import { applySocialStripeWebhookEvent } from "@/lib/billing/social/stripe-webhook-apply";
 import { jsonResponse } from "@/lib/security/api-response";
+import { applyMonitoringStripeEvent } from "@/lib/monitoring/billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +50,9 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (await applyMonitoringStripeEvent(event)) {
+      return jsonResponse({ ok: true, processed: true, module: "website_monitoring" }, 200);
+    }
     const result = await applySocialStripeWebhookEvent(event);
     return jsonResponse(
       {
