@@ -96,6 +96,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Web Integration", href: "/dashboard/web-hosting", icon: Globe, hasDropdown: true, children: [
         { label: "Overview", href: "/dashboard/web-hosting", icon: LayoutDashboard },
         { label: "Websites", href: "/dashboard/web-hosting/websites", icon: Globe },
+        { label: "Website Monitoring", href: "/dashboard/web-hosting/monitoring", icon: BarChart3 },
         { label: "Domains", href: "/dashboard/web-hosting/domains", icon: Link2 },
         { label: "SSL Certificates", href: "/dashboard/web-hosting/ssl", icon: Lock },
         { label: "Hosting", href: "/dashboard/web-hosting/hosting", icon: Server },
