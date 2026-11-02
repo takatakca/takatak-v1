@@ -21,31 +21,32 @@ import { TakbotSection } from "@/components/website/funnel/TakbotSection";
 import { UpsellToast } from "@/components/website/funnel/UpsellToast";
 import { PremiumHero } from "@/components/website/premium/PremiumHero";
 import { GlowPointer } from "@/components/website/funnel/primitives";
-import { brand } from "@/lib/website/brand";
+import { homeLanguage, homeMetadata } from "@/lib/website/home-seo";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { HomePlanProvider } from "@/lib/website/home-plan";
 import { HomeThemeRoot } from "@/lib/website/home-theme";
 import { websiteStructuredData } from "@/lib/website/structured-data";
 
-export const metadata: Metadata = {
-  title: { absolute: "TAKATAK — Websites, domains, hosting & growth" },
-  description: brand.tagline,
-  alternates: {
-    canonical: "/",
-  },
-};
+export async function generateMetadata({ searchParams }: {
+  searchParams: Promise<{ lang?: string | string[] }>;
+}): Promise<Metadata> {
+  return homeMetadata(homeLanguage((await searchParams).lang), getApplicationOrigin());
+}
 
 // Homepage. The hero is the owner's design (Oct 2026) and stays as is.
 // Below it (Oct 31 2026), light by default with a dark mode toggle: ask bar
 // (voice, suggestions, guided assistant), photo stories, services gallery, plan configurator, TAK bot, product
 // suite, pricing, FAQ, newsletter (own unchecked consent box), and a plan dock that follows the visitor to /register.
-export default function HomePage() {
+export default async function HomePage({ searchParams }: {
+  searchParams: Promise<{ lang?: string | string[] }>;
+}) {
+  const lang = homeLanguage((await searchParams).lang);
   return (
     <div className="tk-page tk-premium brand-dark">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: websiteStructuredData(getApplicationOrigin()),
+          __html: websiteStructuredData(getApplicationOrigin(), lang),
         }}
       />
       <PremiumHero />

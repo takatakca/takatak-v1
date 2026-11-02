@@ -1,6 +1,8 @@
 import { NetworkStatusBanner } from "@/components/network/network-status-banner";
 import { ClickPendingProvider } from "@/components/ui/click-pending-provider";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { HOME_LANGUAGE_HEADER, homeLanguage } from "@/lib/website/home-seo";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -19,14 +21,15 @@ export const metadata: Metadata = {
   description: "takatak.ca official platform",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const lang = homeLanguage((await headers()).get(HOME_LANGUAGE_HEADER));
   return (
     <html
-      lang="en"
+      lang={lang}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
