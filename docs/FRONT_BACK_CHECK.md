@@ -12,6 +12,7 @@ Each line below was run against a real Postgres database (local, and in CI on th
 | TAK-TAK live trial (signed-in) | Trial credits granted once ever in the visitor's own ledger; the sign-up is one Lead in the agency inbox (source "TAK bot trial"); owner can switch it off | `npm run qa:takbot-trial-db` (CI step) | Works (needs an economy engine key in production) |
 | Newsletter sign-up (homepage, CASL) | One Lead "takatak.ca newsletter" with the exact consent text as proof; only the confirm link sent for it confirms it; unsubscribe archives it at once; only a confirmed address may be emailed; every step in the audit log | `npm run qa:newsletter-db` (CI step) | Works (needs the settings below) |
 | "Créer un logo" chip | TAK-TAK links to the real page `/marketplace/gigs/logo-design` (200) | `qa:concierge` + browser run | Works |
+| "Parler à une personne" (hero, TAK-TAK drawer, bottom-right button) | With no live-chat tool set, a small "Soutien TAKATAK" panel opens. "Demander une soumission" → `/marketplace/post-project` → Lead in the inbox. "Écrire au soutien" is a `mailto:` link: it opens the visitor's own email app, and nothing reaches the dashboard (some visitors have no email app set up) | Code read (`LiveChatLauncher.tsx`, `chat-provider.ts`); the post-project form uses the same intake | **Owner decision** (see below) |
 | "Finaliser ma commande" | `/commander` order funnel → `/register?plan=…&promo=…` | Existing funnel tests (`qa:order-funnel`) | Works |
 
 ## What the owner must have in production (Coolify)
@@ -22,6 +23,15 @@ Each line below was run against a real Postgres database (local, and in CI on th
 - For the TAK-TAK trial: one economy engine key (Groq, Gemini, DeepSeek or OpenAI) saved in AI provider keys.
 - For the newsletter: `NEWSLETTER_TOKEN_SECRET` (32+ characters), `NEWSLETTER_SENDER_ADDRESS` (the postal address
   shown in each email, CASL) and the email sender already used for sign-in codes (SendGrid or Gmail SMTP).
+
+## Owner decision: a real "talk to a person"
+
+The site already supports a live-chat tool. Two options:
+1. **No code:** set one public key in Coolify (`NEXT_PUBLIC_CRISP_WEBSITE_ID`, `NEXT_PUBLIC_TIDIO_PUBLIC_KEY`,
+   `NEXT_PUBLIC_INTERCOM_APP_ID` or `NEXT_PUBLIC_HUBSPOT_PORTAL_ID`). Every "Parler à une personne" button then opens
+   that chat, with the page and request already written in.
+2. **Small change (needs your OK, it touches the support panel):** replace the `mailto:` button with a two-line
+   message box that sends to the same intake, so the message lands in the Lead Inbox like the others.
 
 ## One-minute live test (owner)
 
