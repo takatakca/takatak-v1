@@ -14,7 +14,6 @@ import { PlanConfigurator } from "@/components/website/funnel/PlanConfigurator";
 import { PricingTabs } from "@/components/website/funnel/PricingTabs";
 import { ServiceGallery } from "@/components/website/funnel/ServiceGallery";
 import { StickyPlanDock } from "@/components/website/funnel/StickyPlanDock";
-import { AskBar } from "@/components/website/funnel/AskBar";
 import { PhotoStories } from "@/components/website/funnel/Stories";
 import { SuiteBento } from "@/components/website/funnel/SuiteBento";
 import { TakbotSection } from "@/components/website/funnel/TakbotSection";
@@ -33,9 +32,9 @@ export async function generateMetadata({ searchParams }: {
   return homeMetadata(homeLanguage((await searchParams).lang), getApplicationOrigin());
 }
 
-// Homepage. The hero is the owner's design (Oct 2026) and stays as is.
-// Below it (Oct 31 2026), light by default with a dark mode toggle: ask bar
-// (voice, suggestions, guided assistant), photo stories, services gallery, plan configurator, TAK-TAK, product
+// Homepage. Hero (owner, Nov 3 2026): plain words on the left, TAK-TAK on the
+// right (one bar with voice, suggestions and the guided assistant, six starting
+// points). Below it (Oct 31 2026), light by default with a dark mode toggle: photo stories, services gallery, plan configurator, TAK-TAK, product
 // suite, pricing, FAQ, newsletter (own unchecked consent box), and a plan dock that follows the visitor to /register.
 export default async function HomePage({ searchParams }: {
   searchParams: Promise<{ lang?: string | string[] }>;
@@ -49,12 +48,11 @@ export default async function HomePage({ searchParams }: {
           __html: websiteStructuredData(getApplicationOrigin(), lang),
         }}
       />
-      <PremiumHero />
       <HomePlanProvider>
+        <PremiumHero />
         <HomeThemeRoot>
           <div id="core" className="relative" style={{ scrollMarginTop: "var(--tk-header-h, 64px)" }}>
             <HomeSectionNav />
-            <AskBar />
             <LiveBand />
             <section id="home-services" aria-labelledby="home-services-title" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
               <PhotoStories />

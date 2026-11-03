@@ -3,11 +3,11 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { ArrowRight, ArrowUp, Check, ClipboardList, Headset, Mic, Plus, Sparkles, Volume2, VolumeX, X } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, ClipboardList, Globe, Headset, LayoutTemplate, MapPin, Megaphone, Mic, PenTool, Plus, Server, Sparkles, Volume2, VolumeX, X } from "lucide-react";
 
 import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
 import { openLiveChat } from "@/lib/website/chat-provider";
-import { respond, suggest, type Reply } from "@/lib/website/concierge";
+import { HERO_CHIPS, respond, suggest, type Reply } from "@/lib/website/concierge";
 import { CORE_CATEGORIES, type CategoryKey } from "@/lib/website/core-categories";
 import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
@@ -38,7 +38,8 @@ const C = {
   askAgent: { en: "Ask the assistant: “{q}”", fr: "Demander à l’assistant : « {q} »" },
   add: { en: "Add", fr: "Ajouter" },
   added: { en: "Added", fr: "Ajouté" },
-  agent: { en: "TAKATAK sales assistant", fr: "Assistant ventes TAKATAK" },
+  agent: { en: "TAK-TAK", fr: "TAK-TAK" },
+  agentRole: { en: "TAKATAK sales assistant", fr: "Assistant ventes TAKATAK" },
   askTakbot: { en: "Ask TAK-TAK (AI)", fr: "Demander à TAK-TAK (IA)" },
   agentNote: { en: "Guided answers from our catalog · a person can take over", fr: "Réponses guidées par notre catalogue · une personne peut prendre le relais" },
   hello: {
@@ -66,6 +67,14 @@ const C = {
     fr: ["Un site web", "Être trouvé sur Google", "Plus de clients", "J’ai un restaurant", "Des rabais ?"],
   },
   close: { en: "Close", fr: "Fermer" },
+  role: { en: "TAKATAK’s assistant", fr: "l’assistant de TAKATAK" },
+  greet: {
+    // Non-breaking hyphen: the name never splits over two lines.
+    en: "Hi! I’m TAK\u2011TAK. Tell me what you want to do and I’ll show you the right services, with real prices.",
+    fr: "Bonjour ! Moi, c’est TAK\u2011TAK. Dites-moi ce que vous voulez faire et je vous montre les bons services, avec les vrais prix.",
+  },
+  typing: { en: "TAK-TAK is typing", fr: "TAK-TAK écrit" },
+  starts: { en: "Where to start", fr: "Par où commencer" },
 } as const;
 
 
@@ -282,16 +291,16 @@ function Concierge({ first, onClose, voice = false }: { first: string; onClose: 
   }, [onClose]);
 
   return createPortal(
-    <div className="hp hp-portal fixed inset-0 z-[120] flex justify-end" data-theme={document.querySelector(".hp")?.getAttribute("data-theme") ?? "light"} role="dialog" aria-modal="true" aria-label={C.agent[lang]}>
+    <div className="hp hp-portal fixed inset-0 z-[120] flex justify-end" data-theme={document.querySelector(".hp:not([data-hero])")?.getAttribute("data-theme") ?? "light"} role="dialog" aria-modal="true" aria-label={`${C.agent[lang]} · ${C.agentRole[lang]}`}>
       <div className="tk-fade-in absolute inset-0 bg-[#05070C]/50 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <aside className="hp-bg hp-sheet3d relative flex h-full w-full max-w-[460px] flex-col shadow-[-30px_0_80px_-30px_rgb(0_0_0/0.5)]">
         <header className="hp-line flex items-center gap-3 border-b px-5 py-4">
-          <span className="hp-orb relative grid h-10 w-10 shrink-0 place-items-center rounded-full text-white">
-            <Sparkles size={17} aria-hidden />
+          <span aria-hidden className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-[#060D1F] ring-1 ring-[var(--hp-line)]">
+            <RobotMascot headOnly size={32} wave={false} title="TAK-TAK" />
           </span>
           <span className="min-w-0 flex-1">
             <span className="hp-ink block text-[15.5px] font-semibold">{C.agent[lang]}</span>
-            <span className="hp-ink-3 block truncate text-[13px]">{C.agentNote[lang]}</span>
+            <span className="hp-ink-3 block truncate text-[13px]">{C.agentRole[lang]}</span>
           </span>
           <button
             type="button"
@@ -368,6 +377,11 @@ function Concierge({ first, onClose, voice = false }: { first: string; onClose: 
                     ))}
                   </div>
                 ) : null}
+                {m.reply?.links?.map((l) => (
+                  <Link key={l.to} to={l.to} className="hp-cta hp-focus inline-flex w-fit items-center gap-1.5 rounded-full px-4 py-2.5 text-[13.5px] font-semibold">
+                    {l.label[lang]} <ArrowRight size={15} aria-hidden />
+                  </Link>
+                ))}
                 {m.reply?.actions.includes("offer_welcome") && (
                   <div className="w-full rounded-2xl border border-dashed border-[var(--hp-cta)] p-3.5">
                     <p className="hp-ink text-[14px]">{fill(C.welcome[lang], { p: PROMO_PERCENT, code: PROMO_CODE })}</p>
@@ -453,9 +467,24 @@ function Concierge({ first, onClose, voice = false }: { first: string; onClose: 
   );
 }
 
+const CHIP_ICON: Record<string, typeof Globe> = { domains: Globe, website: LayoutTemplate, hosting: Server, leads: MapPin, logo: PenTool, marketing: Megaphone };
+
+/** TAK-TAK says hello once, after a short "typing" pause (immediately with reduced motion). */
+function useGreeting() {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    const t = window.setTimeout(() => setReady(true), still ? 0 : 1100);
+    return () => window.clearTimeout(t);
+  }, []);
+  return ready;
+}
+
 /**
- * "What can we do for your business?": type or speak, see matching services
- * with real prices as you go, add them, or hand the question to the assistant.
+ * Homepage hero, right side: TAK-TAK, the TAKATAK robot, welcomes the visitor.
+ * One bar (type or speak) with matching services and real prices as you go,
+ * six starting points under it, and every question opens the guided assistant.
+ * The other homepage sections open the same assistant (CONCIERGE_OPEN_EVENT).
  */
 export function AskBar() {
   const { tk, lang } = useCopy();
@@ -465,7 +494,7 @@ export function AskBar() {
   const [agent, setAgent] = useState<string | null>(null);
   const [voice, setVoice] = useState(false);
   const dict = useDictation(lang, setText);
-  // The offer band and other sections open the same assistant.
+  const greeted = useGreeting();
   useEffect(() => {
     const onOpen = (e: Event) => {
       const d = (e as CustomEvent<{ first?: string; voice?: boolean }>).detail ?? {};
@@ -475,7 +504,7 @@ export function AskBar() {
     window.addEventListener(CONCIERGE_OPEN_EVENT, onOpen);
     return () => window.removeEventListener(CONCIERGE_OPEN_EVENT, onOpen);
   }, []);
-  const suggestions = suggest(text);
+  const suggestions = suggest(text, 3);
 
   useEffect(() => {
     if (text || focus) return;
@@ -489,70 +518,107 @@ export function AskBar() {
   };
 
   return (
-    <section aria-labelledby="home-ask-title" className="hp-bg pb-6 pt-14 sm:pt-20">
-      <div className="relative mx-auto max-w-4xl px-4">
-        {/* TAK, the TAKATAK robot, welcomes the visitor right under the hero */}
-        <div aria-hidden className="pointer-events-none absolute -left-24 -top-6 hidden xl:block">
-          <RobotMascot size={110} title="TAK-TAK" />
-        </div>
-        <h2 id="home-ask-title" className="hp-display hp-ink text-balance text-center text-[30px] sm:text-[44px]">
-          {C.title[lang]}
-        </h2>
-        <form
-          className="relative mt-8"
-          onSubmit={(e) => {
-            e.preventDefault();
-            open(text);
-          }}
-        >
-          <div className="hp-ask hp-raised relative flex items-center gap-2 rounded-full p-2 pl-3 ring-1 ring-[var(--hp-line)]">
-            <MicButton state={dict.state} onClick={dict.start} lang={lang} />
-            <div className="relative min-w-0 flex-1">
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onFocus={() => setFocus(true)}
-                onBlur={() => window.setTimeout(() => setFocus(false), 150)}
-                aria-label={C.title[lang]}
-                className="hp-ink w-full bg-transparent px-2 py-3 text-[17px] focus:outline-none sm:text-[18px]"
-              />
-              {!text && (
-                <span aria-hidden className="hp-ink-3 pointer-events-none absolute inset-y-0 left-2 flex items-center text-[17px] sm:text-[18px]">
-                  <span key={`${example}-${dict.state}`} className="tk-fade-in truncate">
-                    {dict.state === "listening" ? C.listening[lang] : C.examples[lang][example]}
+    // Dark homepage tokens on the navy hero; data-hero keeps the assistant on the page's own theme.
+    <div className="hp relative z-30 mx-auto w-full max-w-[600px] lg:max-w-none" data-theme="dark" data-hero style={{ background: "transparent" }}>
+      <div aria-hidden className="pointer-events-none absolute -inset-8 rounded-[48px] bg-[radial-gradient(closest-side,rgb(31_139_255/0.32),transparent)] blur-2xl" />
+      <div className="tk-hero-ring relative rounded-[30px] p-px">
+        <div className="relative rounded-[29px] bg-[#071330]/90 px-4 pb-5 pt-5 backdrop-blur-xl sm:px-7 sm:pb-7 sm:pt-6">
+          {/* TAK-TAK and its hello */}
+          <div className="flex items-end gap-3 sm:gap-5">
+            <div className="-mt-14 shrink-0 sm:-mt-20">
+              <RobotMascot size={92} title="TAK-TAK" className="sm:hidden" />
+              <RobotMascot size={138} title="TAK-TAK" className="hidden sm:block" />
+            </div>
+            <div className="min-w-0 flex-1 pb-3">
+              <p className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--tk-cyan)]">
+                TAK-TAK <span className="font-medium normal-case tracking-normal text-white/55">· {C.role[lang]}</span>
+              </p>
+              <div className="relative mt-2 min-h-[64px] rounded-2xl rounded-bl-md bg-white/[0.07] px-4 py-3 ring-1 ring-white/10" aria-live="polite">
+                {greeted ? (
+                  <p className="tk-fade-in text-[14.5px] leading-6 text-white/90 sm:text-[15.5px]">{C.greet[lang]}</p>
+                ) : (
+                  <span className="flex h-6 items-center gap-1.5" aria-label={C.typing[lang]}>
+                    <span className="tk-typing-dot" />
+                    <span className="tk-typing-dot [animation-delay:0.15s]" />
+                    <span className="tk-typing-dot [animation-delay:0.3s]" />
                   </span>
-                </span>
-              )}
+                )}
+              </div>
             </div>
-            <button type="submit" className="hp-cta hp-halo hp-focus inline-flex shrink-0 items-center gap-2 rounded-full px-6 py-3.5 text-[15px] font-semibold">
-              {C.ask[lang]} <ArrowRight size={16} aria-hidden />
-            </button>
           </div>
-          {(dict.state === "denied" || dict.state === "unsupported") && (
-            <p className="hp-warn mt-2 text-center text-[13px]">{dict.state === "denied" ? C.denied[lang] : C.unsupported[lang]}</p>
-          )}
-          {focus && text.trim().length >= 2 && (
-            <div className="hp-raised tk-modal-in absolute inset-x-0 top-full z-20 mt-2 rounded-[24px] p-2 ring-1 ring-[var(--hp-line)]">
-              <button type="button" onClick={() => open(text)} className="hp-ink hp-focus flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-left text-[14.5px] hover:bg-[var(--hp-alt)]">
-                <Sparkles size={16} className="hp-accent shrink-0" aria-hidden />
-                <span className="truncate">{fill(C.askAgent[lang], { q: text.trim() })}</span>
+
+          <h2 id="home-ask-title" className="hp-display hp-ink mt-5 text-balance text-[24px] sm:mt-6 sm:text-[32px]">
+            {C.title[lang]}
+          </h2>
+          <form
+            className="relative mt-4 sm:mt-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              open(text);
+            }}
+          >
+            <div className="hp-ask hp-raised relative flex items-center gap-2 rounded-full p-1.5 pl-2 ring-1 ring-[var(--hp-line)] sm:p-2 sm:pl-3">
+              <MicButton state={dict.state} onClick={dict.start} lang={lang} size={44} />
+              <div className="relative min-w-0 flex-1">
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onFocus={() => setFocus(true)}
+                  onBlur={() => window.setTimeout(() => setFocus(false), 150)}
+                  aria-label={C.title[lang]}
+                  className="hp-ink w-full bg-transparent px-1.5 py-3 text-[16px] focus:outline-none sm:px-2 sm:text-[17px]"
+                />
+                {!text && (
+                  <span aria-hidden className="hp-ink-3 pointer-events-none absolute inset-y-0 left-1.5 right-0 flex items-center text-[16px] sm:left-2 sm:text-[17px]">
+                    <span key={`${example}-${dict.state}`} className="tk-fade-in truncate">
+                      {dict.state === "listening" ? C.listening[lang] : C.examples[lang][example]}
+                    </span>
+                  </span>
+                )}
+              </div>
+              <button type="submit" className="hp-cta hp-halo hp-focus inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-3 text-[15px] font-semibold sm:px-6 sm:py-3.5">
+                <span className="hidden sm:inline">{C.ask[lang]}</span> <ArrowRight size={16} aria-hidden />
+                <span className="sr-only sm:hidden">{C.ask[lang]}</span>
               </button>
-              {suggestions.length > 0 && (
-                <div className="grid gap-2 p-1">
-                  {suggestions.map((k) => (
-                    <ServiceRow key={k} k={k} lang={lang} tk={tk} />
-                  ))}
-                </div>
-              )}
             </div>
-          )}
-        </form>
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
-          {C.quick[lang].slice(0, 4).map((q) => (
-            <button key={q} type="button" onClick={() => open(q)} className="hp-ghost hp-focus rounded-full px-4 py-2 text-[13.5px]">
-              {q}
-            </button>
-          ))}
+            {(dict.state === "denied" || dict.state === "unsupported") && (
+              <p className="hp-warn mt-2 text-[13px]">{dict.state === "denied" ? C.denied[lang] : C.unsupported[lang]}</p>
+            )}
+            {focus && text.trim().length >= 2 && (
+              <div className="hp-raised tk-modal-in absolute inset-x-0 top-full z-40 mt-2 rounded-[24px] p-2 ring-1 ring-[var(--hp-line)]">
+                <button type="button" onClick={() => open(text)} className="hp-ink hp-focus flex w-full items-center gap-2 rounded-2xl px-3 py-3 text-left text-[14.5px] hover:bg-[var(--hp-alt)]">
+                  <Sparkles size={16} className="hp-accent shrink-0" aria-hidden />
+                  <span className="truncate">{fill(C.askAgent[lang], { q: text.trim() })}</span>
+                </button>
+                {suggestions.length > 0 && (
+                  <div className="grid gap-2 p-1">
+                    {suggestions.map((k) => (
+                      <ServiceRow key={k} k={k} lang={lang} tk={tk} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </form>
+
+          {/* Six starting points: each one asks TAK-TAK */}
+          <ul className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap" aria-label={C.starts[lang]}>
+            {HERO_CHIPS.map((c) => {
+              const Icon = CHIP_ICON[c.key] ?? Sparkles;
+              return (
+                <li key={c.key} className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => open(c.ask[lang])}
+                    className="hp-focus inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/[0.05] px-2 py-2 text-center text-[12.5px] font-medium leading-tight text-white/85 transition-colors hover:border-[var(--tk-cyan)]/60 hover:bg-white/[0.1] hover:text-white sm:w-auto sm:px-3.5 sm:text-[13px]"
+                  >
+                    <Icon size={14} className="hidden shrink-0 text-[var(--tk-cyan)] sm:block" aria-hidden /> {c.label[lang]}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-4 text-[12.5px] text-white/50">{C.agentNote[lang]}</p>
         </div>
       </div>
       {agent !== null && (
@@ -565,6 +631,6 @@ export function AskBar() {
           }}
         />
       )}
-    </section>
+    </div>
   );
 }
