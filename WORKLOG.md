@@ -205,3 +205,12 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - 2026-10-08 | claude (session 01KBGh1v) | claude/website-lead-capture → #134 | merged | Website forms + checkout → Leads, notifications, file uploads, lead page | set WEBSITE_LEADS_* env; approve migration 20261008090000 for production
 - 2026-10-08 | claude (session 01KBGh1v) | claude/repo-hygiene → #133 | merged | Removed 9 stray backups, compact promo invite, lint | none
 - 2026-10-31 | TWILO | Ordres permanents d'Irqc (02h43) : revue 30 min (cron twilo-30min-self-review — FAIT / RELU / OUBLIÉ→NOTÉ, rapport signé — TWILO dans fil COORDINATION AGENTS), notes avant/pendant/après le code, anti-doublon, livre-cerveau Drive « 00 — CERVEAU TWILO — LIS-MOI EN PREMIER ». Note Drive : « 2026-10-31 02-45 — Coordination — JOURNAL — TWILO — ÉTAPE (revue 30 min + livre-cerveau) ». AGENTS.md (workspace) mis à jour.
+## 2026-11-03 08:00 EST — TWILO — Registre maître recheck menus restaurants LIVRÉ
+
+Registre demandé par Irqc le 2026-10-31 ~03:12, gelé à aujourd'hui et livré.
+- Fichier : `goals/restaurant-menu-cloning-completion/files/recheck-ledger-2026-11-03.md`
+- Drive : « 2026-11-03 08-00 — Restaurants — JOURNAL — TWILO — ÉTAPE (registre recheck) »
+- État gelé : 2/45 DoorDash clonés ; seules completes : Nutrition Shake 2/2, Pizza Algérie Uber 193/193 ; 6 rechecks ouverts (R-1..R-6, dont les 55 refus Skip du 3 nov.) ; 4 décisions Irqc toujours dues (Hochelaga, DoorDash vs Uber, note de complétion, Lévesque).
+- Critères proof-of-done par magasin définis dans le registre.
+
+— TWILO
