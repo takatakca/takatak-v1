@@ -3,6 +3,14 @@
 Owner's order: everything the homepage offers must work in the dashboard, tested, no mock-ups.
 Each line below was run against a real Postgres database (local, and in CI on the ephemeral database).
 
+**Summary (2026-11-03 11:45 UTC):** 17 rows checked.
+- **13 work in code:** each is proven by a test (in CI on a real database where there is one) or by reading the code.
+- **1 was fixed today and still needs a live check:** the plan is now kept after sign-up.
+- **1 is off until a setting:** deal alerts by browser notification.
+- **2 need your decision:** "Parler à une personne", and the hosting checkout page.
+- **1 wording decision:** FIRST10 counts once per account, but the offer text says "par entreprise".
+- **Production settings:** several things work only once their settings are on in Coolify (see below).
+
 | Homepage action | What happens on the server | Proof | Status |
 |---|---|---|---|
 | TAK-TAK bar or one of the 6 chips → "Préparer ma demande" → "Oui, envoyer" | `POST /api/public/website-requests` → one **Lead** in the TAKATAK agency workspace, source "takatak.ca website", plus an audit entry and an in-app notification (no contact details in it) | Browser run: reference `53469AA8` shown, lead in the database and in `/dashboard/leads/inbox`. `npm run qa:website-lead-inbox-db` (CI step) | Works |
@@ -18,6 +26,9 @@ Each line below was run against a real Postgres database (local, and in CI on th
 | Hosting "Commander Portfolio / Bronze / Silver / Gold" (homepage pricing) | Saves the chosen plan in the browser, then `/checkout` (sign-in first). There, hosting is ordered in the Upmind window; when Upmind is not set, a hosting request goes to the inbox (`HostingRequestFallback`). **The chosen plan is never read back**: the visitor lands on an older English page ("Checkout: Get Started With Your Domain & Hosting Journey") and picks the plan again | Code read (`PricingTabs.tsx` writes `hostingPlan`; nothing reads it; `checkout-client.tsx`, `upmind-hosting-plans.tsx`) | **Owner decision** (see below) |
 | Marketplace package order (`/checkout` after a package) | Sign-in required; `package_order` priced by the server from the catalog (static prices when the database has none), promo checked server-side → Lead | `qa:website-leads` (pricing), `qa:lead-order-billing-db` (won order → billing queue) | Works |
 | Phone section: "Trouvez votre numéro maintenant" (search, hold a number 10 minutes) | Calls MIMT's API (`https://api.mimt.ca`): `GET /v1/public/numbers/search`, `POST/GET/DELETE /v1/public/numbers/holds`, in `takatakca/mimtcaapp` `apps/api/src/routes/numberPicker.ts`; the 10 minutes is the shared `NUMBER_HOLD_MINUTES` on both sides | 20/20 tests of `apps/api/test/numberPicker.test.ts` pass on MIMT `main` `1c33e7e` (run 2026-11-03 08:46 UTC). The live API cannot be reached from the cloud session | Works in code; live check is the owner's |
+| "Créer mon compte" (hero, section bar, plan dock) | `/register` → `POST /api/auth/register` → one-time code by email → account and profile | CI step "Application-flow tests (memory OTP adapter)" (`qa:ephemeral-app-flow`) on the ephemeral database | Works (needs the sign-in email sender in production) |
+| Offer countdown ("se termine dans …") | `GET /api/promotions/active`: only campaigns running right now, computed by the server from the calendar (`seasons.ts`); outside a campaign nothing is shown | `qa:promotions` (calendar dates, windows) + `qa:promotions-db` (a seasonal code is refused before its dates) | Works |
+| Deal alerts by browser notification | Off until the VAPID key pair is set; the button only shows when it works | `qa:push` | Off: owner sets `PUSH_VAPID_PUBLIC_KEY` / `PUSH_VAPID_PRIVATE_KEY` |
 | "Finaliser ma commande" | `/commander` order funnel → `/register?plan=…&promo=…` | Existing funnel tests (`qa:order-funnel`) | Works |
 
 ## What the owner must have in production (Coolify)
