@@ -40,7 +40,7 @@ names, no results we cannot prove, and each delivery platform is only ever named
 
 ## Phase 2: product videos from the agents' raw material
 
-Food Hub, the Clover suite, QMAPS, FLEXS, MIMT and TAK bot need screen recordings of the real products
+Food Hub, the Clover suite, QMAPS, FLEXS, MIMT and TAK-TAK need screen recordings of the real products
 (without merchant or customer data). The request to each product's agent is in
 `docs/media/RAW_MATERIAL_REQUEST.md`. When the recordings arrive, cut each to 5–8 seconds and add it to
 `media-manifest.json` under the product's key.

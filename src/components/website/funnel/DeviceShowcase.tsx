@@ -45,8 +45,8 @@ const T = {
   lead: { fr: "Tout votre commerce,", en: "Your whole business," },
   rest: { fr: "sur l'ordinateur et le cellulaire.", en: "on your computer and your phone." },
   body: {
-    fr: "Ce sont les vrais écrans de TAKATAK : le tableau de bord sur l'ordinateur, TAK bot sur le cellulaire. Chaque service s'y branche.",
-    en: "These are the real TAKATAK screens: the dashboard on the computer, TAK bot on the phone. Every service plugs into it.",
+    fr: "Ce sont les vrais écrans de TAKATAK : le tableau de bord sur l'ordinateur, TAK-TAK sur le cellulaire. Chaque service s'y branche.",
+    en: "These are the real TAKATAK screens: the dashboard on the computer, TAK-TAK on the phone. Every service plugs into it.",
   },
   real: { fr: "Vraies captures de l'application TAKATAK.", en: "Real recordings of the TAKATAK app." },
 } as const;
@@ -105,7 +105,7 @@ export function DeviceShowcase() {
               <div className="relative aspect-[390/844] bg-white">
                 <Image
                   src={`/media/product/takbot-mobile-${lang}.webp`}
-                  alt={lang === "fr" ? "TAK bot sur cellulaire" : "TAK bot on a phone"}
+                  alt={lang === "fr" ? "TAK-TAK sur cellulaire" : "TAK-TAK on a phone"}
                   fill
                   sizes="220px"
                   className="object-cover object-top"

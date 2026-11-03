@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/takbot" },
 };
 
-// TAK bot: the master AI bot. The page reads /api/takbot/catalog for live
+// TAK-TAK: the master AI bot. The page reads /api/takbot/catalog for live
 // engine status and the visitor's credits, and runs prompts through /api/takbot/run.
 export default function TakbotPage() {
   return (

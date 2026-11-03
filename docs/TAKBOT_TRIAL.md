@@ -1,9 +1,17 @@
-# TAK bot trial on the homepage
+# TAK-TAK trial on the homepage
 
-*Essai de TAK bot sur l'accueil. Résumé en français plus bas.*
+*Essai de TAK-TAK sur l'accueil. Résumé en français plus bas.*
 
-The homepage TAK bot chapter now opens on the **live bot** ("Essayer maintenant"). The recordings of the real app stay
+The homepage TAK-TAK chapter now opens on the **live bot** ("Essayer maintenant"). The recordings of the real app stay
 one click away ("Voir l'app").
+
+## Name
+
+The bot is called **TAK-TAK** (all caps, with the hyphen) everywhere visitors see it, including its own answers (the
+system prompt in `src/lib/takbot/relay.ts`). Code names stay `takbot`: the `/takbot` URL, `/api/takbot/*`, file names,
+`TAKBOT_*` variables, the ledger key `grant:takbot-trial:<workspace>` and the CRM source name "takatak.ca TAK bot
+trial" (a lookup key for existing cards), so links, tests and trial grants keep working. A `/tak-tak` URL can redirect
+to `/takbot` later if wanted.
 
 ## What the visitor sees
 
@@ -22,7 +30,7 @@ one click away ("Voir l'app").
 5. **Trial closed** (no economy engine connected, or switched off): an honest "L'essai gratuit ouvre très bientôt" and
    links to the app recording and `/takbot`. Nothing breaks.
 
-The homepage concierge ("Qu'est-ce qu'on fait pour votre entreprise ?") gets a **Demander à TAK bot (IA)** button under
+The homepage concierge ("Qu'est-ce qu'on fait pour votre entreprise ?") gets a **Demander à TAK-TAK (IA)** button under
 each answer: it closes the panel and puts the question in the live bot.
 
 ## How it works
@@ -44,7 +52,7 @@ each answer: it closes the panel and puts the question in the live bot.
   second one, so a retry or a second tab never doubles it.
 - **Economy engine:** the first connected of Groq, Gemini, DeepSeek, OpenAI (their default models: Llama 3.3 70B,
   Gemini 2.5 Flash, DeepSeek Chat, GPT-5 mini). Premium engines are never used for a trial.
-- **Premium:** as soon as the workspace has a purchase or a grant other than the trial, the normal TAK bot routing
+- **Premium:** as soon as the workspace has a purchase or a grant other than the trial, the normal TAK-TAK routing
   applies (best engine per mode, or the one picked on `/takbot`).
 - **CRM:** a new trial creates one card per email in `/dashboard/leads` (source **takatak.ca TAK bot trial**), when
   `WEBSITE_LEADS_ENABLED` and `WEBSITE_LEADS_CLIENT_ID` are set. Name and email come from the profile row, never from
@@ -64,7 +72,7 @@ each answer: it closes the panel and puts the question in the live bot.
 
 ## En bref (français)
 
-- L'accueil montre le **vrai TAK bot**. Avant de l'utiliser : **connexion Google** (ou courriel). Ça crée le compte
+- L'accueil montre le **vrai TAK-TAK**. Avant de l'utiliser : **connexion Google** (ou courriel). Ça crée le compte
   TAKATAK et la **fiche client** du visiteur, puis met **50 crédits d'essai** dans son compte, une seule fois.
 - L'essai roule sur un **moteur économique** (Groq, Gemini, DeepSeek ou OpenAI mini). Dès qu'un forfait est acheté,
   les **moteurs premium** s'ouvrent.

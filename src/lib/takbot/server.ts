@@ -1,6 +1,6 @@
 import "server-only";
 
-// TAK bot server side: which engines are connected (a key is saved or set in
+// TAK-TAK server side: which engines are connected (a key is saved or set in
 // the environment), and one metered run: debit credits, relay, refund on failure.
 
 import { debitCredits, getCreditSnapshot, grantCredits, refundDebit } from "@/lib/ai-credits/ledger";
@@ -127,7 +127,7 @@ export async function claimTrial(clientId: string): Promise<{ ok: true; balance:
     credits: status.credits,
     reason: "grant",
     idempotencyKey: trialGrantKey(clientId),
-    note: "TAK bot trial (economy engine)",
+    note: "TAK-TAK trial (economy engine)",
   });
   if (!result.ok) return { ok: false, code: result.code };
   return { ok: true, balance: result.balance, granted: !result.replayed };
@@ -203,7 +203,7 @@ export async function runTakbot(input: {
     model: trial ? route.model : null,
   });
   if (!relayed.ok) {
-    const refund = await refundDebit({ clientId: input.clientId, debitIdempotencyKey: idempotencyKey, note: `TAK bot ${relayed.code}` });
+    const refund = await refundDebit({ clientId: input.clientId, debitIdempotencyKey: idempotencyKey, note: `TAK-TAK ${relayed.code}` });
     return { ok: false, status: RELAY_STATUS[relayed.code], code: relayed.code, balance: refund.ok ? refund.balance : debit.balance };
   }
   const savedId = await saveOutput({ clientId: input.clientId, mode: decision.mode.key, prompt: input.prompt, text: relayed.text, engine: decision.engine.key, trial });

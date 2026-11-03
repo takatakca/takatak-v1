@@ -35,7 +35,7 @@ interface Turn {
 
 const newId = () => (crypto.randomUUID?.() ?? `${Date.now()}${Math.random()}`).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40).padEnd(16, "0");
 
-/** The TAK bot page: mode tabs, engine picker with search, prompt bar, answers, status board, credits. */
+/** The TAK-TAK page: mode tabs, engine picker with search, prompt bar, answers, status board, credits. */
 export function TakbotStudio() {
   const { lang } = useLanguage();
   const { theme, toggle } = useHomeTheme();
@@ -152,7 +152,7 @@ export function TakbotStudio() {
 
             {/* Composer */}
             <div className="hp-raised mt-10 rounded-[28px] p-3 text-left ring-1 ring-[var(--hp-line)]">
-              <div role="tablist" aria-label="TAK bot" className="tk-no-scrollbar flex gap-1 overflow-x-auto pb-2">
+              <div role="tablist" aria-label="TAK-TAK" className="tk-no-scrollbar flex gap-1 overflow-x-auto pb-2">
                 {TAKBOT_MODES.map((m) => {
                   const Icon = MODE_ICONS[m.key];
                   const on = m.key === mode;
@@ -334,7 +334,7 @@ export function TakbotStudio() {
       {/* How it works */}
       <section className="hp-bg py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4">
-          <Kicker>TAK bot</Kicker>
+          <Kicker>TAK-TAK</Kicker>
           <h2 className="mt-3 hp-display hp-ink text-3xl sm:text-[42px]">{c.how.title[lang]}</h2>
           <ol className="mt-10 grid gap-4 md:grid-cols-4">
             {c.how.steps.map((s, i) => (

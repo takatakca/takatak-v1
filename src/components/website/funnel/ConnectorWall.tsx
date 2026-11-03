@@ -62,12 +62,12 @@ const T = {
     en: "Your tools, your networks, your AI engines and our own apps, plugged into one account.",
   },
   services: { fr: "services", en: "services" },
-  engines: { fr: "moteurs d'IA dans TAK bot", en: "AI engines in TAK bot" },
+  engines: { fr: "moteurs d'IA dans TAK-TAK", en: "AI engines in TAK-TAK" },
   rows: { ai: { fr: "IA", en: "AI" }, growth: { fr: "Réseaux et outils", en: "Networks and tools" }, house: { fr: "Maison TAKATAK", en: "TAKATAK house" } },
   houseTag: { fr: "maison", en: "house" },
 } as const;
 
-function Mark({ item, index }: { item: WallItem; index: number }) {
+export function Mark({ item, index }: { item: WallItem; index: number }) {
   if (item.group === "house") {
     const Icon = item.mark ? HOUSE_ICONS[item.mark] : null;
     return (

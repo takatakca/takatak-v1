@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 
-import { normalize, respond, suggest, understand } from "../src/lib/website/concierge";
+import { HERO_CHIPS, normalize, respond, suggest, understand } from "../src/lib/website/concierge";
 import { FICHE_ORDER, answer, emptyFiche, fichePayload, question } from "../src/lib/website/sales-fiche";
+import { resolveIntent } from "../src/lib/website/service-intent";
+import { MARKETPLACE_PACKAGES } from "../src/lib/website/marketplace-packages";
+import { PACKAGE_TITLE_FR, formatCad, startingPrice } from "../src/lib/website/marketplace-i18n";
+import { SEO_FREE_TOOLS } from "../src/lib/seo/free-tools-catalog";
 
 assert.equal(normalize("Hébergement Ça!").trim(), "hebergement ca");
 assert.deepEqual(understand("J'ai besoin d'un site web et d'un nom de domaine").services, ["website", "domains"]);
@@ -62,5 +66,42 @@ assert.ok(payload.title.includes("Site web") && payload.title.length <= 160);
 assert.equal(payload.phone, undefined);
 assert.ok(payload.message.includes("Adresse: 1234, rue Exemple, Montréal"), "address travels in the message");
 assert.ok(!("price" in payload) && !("amount" in payload), "prices are never sent from the browser");
+
+// Hero search: review requests go to the reviews page, maps to local listings.
+assert.equal(resolveIntent("Plus d'avis Google pour mon salon").intent, "reviews");
+assert.equal(resolveIntent("More Google reviews for my salon").to, "/services/reviews");
+assert.equal(resolveIntent("Être trouvé sur Google Maps").intent, "local_visibility");
+assert.equal(resolveIntent("Trouver un domaine .ca pour ma boutique").intent, "domain");
+assert.equal(resolveIntent("Je veux un site web premium pour mon restaurant").intent, "website");
+
+// Header mega-menu: every package has a French name, prices read "249 $" in French.
+for (const p of MARKETPLACE_PACKAGES) assert.ok(PACKAGE_TITLE_FR[p.id], `French title missing for ${p.id}`);
+assert.equal(formatCad(24900, "fr"), "249\u00a0$");
+assert.equal(formatCad(124900, "en"), "$1,249");
+assert.ok(startingPrice({ tiers: [{ priceCents: 50000 }, { priceCents: 24900 }] } as never, "fr").startsWith("dès 249"));
+
+// The homepage and /seo say "15 free tools work today": keep the copy true.
+assert.equal(SEO_FREE_TOOLS.filter((t) => t.mode !== "provider").length, 15, "update the '15 outils gratuits' copy (SuiteBento, SeoProductPage)");
+
+// The six hero chips under TAK-TAK's bar: each one gets a real answer in both languages, never "tell me what you want".
+assert.equal(HERO_CHIPS.length, 6);
+for (const chip of HERO_CHIPS) {
+  for (const l of ["fr", "en"] as const) {
+    const r = respond(chip.ask[l], false);
+    assert.ok(!r.actions.includes("ask_goal"), `chip ${chip.key} (${l}) has no answer`);
+    assert.ok(r.services.length > 0 || (r.links?.length ?? 0) > 0, `chip ${chip.key} (${l}) shows nothing`);
+  }
+}
+assert.deepEqual(respond(HERO_CHIPS[0].ask.fr, false).services, ["domains"]);
+assert.ok(respond(HERO_CHIPS[2].ask.en, false).services.includes("hosting"));
+assert.deepEqual(respond(HERO_CHIPS[3].ask.fr, false).services.sort(), ["local", "marketing"]);
+// A logo is marketplace work: the reply points to its real page, no core-plan order and no welcome code.
+const logo = respond("J'ai besoin d'un logo", false);
+assert.equal(logo.links?.[0]?.to, "/marketplace/gigs/logo-design");
+assert.ok(!logo.actions.includes("finalize") && !logo.actions.includes("offer_welcome"));
+// A logo next to a core service keeps the core answer.
+const both = respond("un site web et un logo", false);
+assert.ok(both.services.includes("website") && both.links?.[0]?.to === "/marketplace/gigs/logo-design");
+assert.equal(respond("un site web", false).links, undefined);
 
 console.log("concierge tests: OK");

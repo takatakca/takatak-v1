@@ -3,7 +3,7 @@
 import { useId } from "react";
 
 /**
- * TAK, the TAKATAK robot: an original mascot in the BRAND.md colours (navy
+ * TAK-TAK, the TAKATAK robot: an original mascot in the BRAND.md colours (navy
  * visor, electric blue, cyan, white and silver). Pure inline SVG: it floats,
  * blinks, glows and waves; every motion stops with reduced motion.
  */
@@ -11,7 +11,7 @@ export function RobotMascot({
   size = 160,
   wave = true,
   className = "",
-  title = "TAK, le robot de TAKATAK",
+  title = "TAK-TAK, le robot de TAKATAK",
   headOnly = false,
 }: {
   size?: number;

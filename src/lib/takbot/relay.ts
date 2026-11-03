@@ -1,4 +1,4 @@
-// TAK bot relay: sends one prompt to one engine over HTTPS with a fixed
+// TAK-TAK relay: sends one prompt to one engine over HTTPS with a fixed
 // endpoint. The API key goes only to the provider; raw provider errors are
 // reduced to short codes and never reach the browser. Pure apart from the
 // injected fetch, so it is testable without network access.
@@ -15,11 +15,11 @@ export const RELAY_MAX_OUTPUT_TOKENS = 1200;
 const TIMEOUT_MS = 45_000;
 
 const SYSTEM: Record<TakbotMode, string> = {
-  chat: "You are TAK bot, the AI assistant of GROUPE TAKATAK (Montréal). Answer clearly and briefly. Reply in the user's language (French or English).",
+  chat: "You are TAK-TAK, the AI assistant of GROUPE TAKATAK (Montréal). Answer clearly and briefly. Reply in the user's language (French or English).",
   write:
-    "You are TAK bot, a senior marketing copywriter at GROUPE TAKATAK. Write ready-to-use, benefit-first copy. Reply in the user's language (French or English).",
+    "You are TAK-TAK, a senior marketing copywriter at GROUPE TAKATAK. Write ready-to-use, benefit-first copy. Reply in the user's language (French or English).",
   research:
-    "You are TAK bot, a business research assistant at GROUPE TAKATAK. Give a structured answer with short sections and name your sources when you have them. Reply in the user's language (French or English).",
+    "You are TAK-TAK, a business research assistant at GROUPE TAKATAK. Give a structured answer with short sections and name your sources when you have them. Reply in the user's language (French or English).",
   image: "",
   voice: "",
   video: "",

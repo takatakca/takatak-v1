@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, CalendarClock, MapPin, MessageSquareText, PenLine, Sparkles, Star } from "lucide-react";
+import { ArrowRight, CalendarClock, Mail, MapPin, MessageSquareText, PenLine, Sparkles, Star } from "lucide-react";
+
+import { openLiveChat } from "@/lib/website/chat-provider";
 
 import { BRAND_ICONS } from "@/lib/website/brand-icons";
 import { useLanguage } from "@/lib/website/use-language";
@@ -26,7 +28,7 @@ const AGENTS: { key: string; Icon: typeof Sparkles; name: Bi; task: Bi; status: 
   { key: "social", Icon: PenLine, name: { fr: "Agent Réseaux sociaux", en: "Social Media Agent" }, task: { fr: "Rédige vos publications de la semaine", en: "Writing this week's posts" }, status: "working" },
   { key: "local", Icon: MapPin, name: { fr: "Agent Fiches locales", en: "Local Listings Agent" }, task: { fr: "Heures des fêtes ajoutées à votre fiche", en: "Holiday hours added to your listing" }, status: "done" },
   { key: "sales", Icon: MessageSquareText, name: { fr: "Assistant ventes", en: "Sales Assistant" }, task: { fr: "Répond aux visiteurs et prépare les demandes", en: "Answers visitors and prepares requests" }, status: "online" },
-  { key: "takbot", Icon: Sparkles, name: { fr: "TAK bot", en: "TAK bot" }, task: { fr: "Rédige, cherche et répond pour votre équipe", en: "Writes, researches and answers for your team" }, status: "online" },
+  { key: "takbot", Icon: Sparkles, name: { fr: "TAK-TAK", en: "TAK-TAK" }, task: { fr: "Rédige, cherche et répond pour votre équipe", en: "Writes, researches and answers for your team" }, status: "online" },
   { key: "reviews", Icon: Star, name: { fr: "Agent Avis", en: "Reviews Agent" }, task: { fr: "Proposera des réponses aux nouveaux avis", en: "Will draft replies to new reviews" }, status: "soon" },
 ];
 
@@ -54,7 +56,7 @@ const T = {
   example: { fr: "Exemple : une semaine type dans votre compte TAKATAK.", en: "Example: a typical week in your TAKATAK account." },
   posts: { fr: "Publications de la semaine", en: "This week's posts" },
   engines: { fr: "Moteurs d'IA branchés en ce moment", en: "AI engines connected right now" },
-  try: { fr: "Essayer TAK bot gratuitement", en: "Try TAK bot for free" },
+  try: { fr: "Essayer TAK-TAK gratuitement", en: "Try TAK-TAK for free" },
 } as const;
 
 const ENGINE_ICON: Record<string, string> = {
@@ -104,14 +106,14 @@ export function AiTeam() {
         <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
           <Rise className="relative max-w-3xl">
             <div aria-hidden className="pointer-events-none absolute -top-4 right-0 lg:hidden">
-              <RobotMascot size={72} title="TAK" />
+              <RobotMascot size={72} title="TAK-TAK" />
             </div>
             <Eyebrow>{T.eyebrow[lang]}</Eyebrow>
             <TwoTone id="home-team-title" lead={T.lead[lang]} rest={T.rest[lang]} size="md" />
             <p className="hp-ink-2 mt-5 max-w-2xl text-[17px] leading-8">{T.body[lang]}</p>
           </Rise>
           <Rise delay={120} className="hidden justify-self-end lg:block">
-            <RobotMascot size={150} title="TAK" />
+            <RobotMascot size={150} title="TAK-TAK" />
           </Rise>
         </div>
 
@@ -191,6 +193,57 @@ export function AiTeam() {
             </div>
           </Rise>
         </div>
+
+        {/* AIOS: the next agent, one per restaurant (in preparation) */}
+        <Rise className="mt-6">
+          <div className="hp-glow relative grid items-center gap-5 overflow-hidden rounded-[26px] bg-[linear-gradient(120deg,#060D1F,#0B1B3D_55%,#1565D8)] p-5 text-white sm:p-7 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+            <div aria-hidden className="hidden lg:block">
+              <RobotMascot size={92} title="AIOS" />
+            </div>
+            <div>
+              <p className="flex flex-wrap items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.18em] text-[#7FD8FF]">
+                {lang === "fr" ? "Nouveau projet" : "New project"}
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10.5px] tracking-wide text-white/75">{lang === "fr" ? "En préparation" : "In preparation"}</span>
+              </p>
+              <p className="mt-2 text-[24px] font-extrabold leading-tight tracking-[-0.02em] sm:text-[28px]">
+                {lang === "fr" ? "AIOS : un agent IA attitré à chaque restaurant." : "AIOS: one AI agent assigned to each restaurant."}
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2 text-[13.5px] text-white/85">
+                {(lang === "fr"
+                  ? [
+                      [Mail, "Courriels et réponses"],
+                      [Star, "Avis Google et Facebook"],
+                      [MessageSquareText, "Questions des clients"],
+                      [Sparkles, "Résumé de la journée Food Hub"],
+                    ]
+                  : [
+                      [Mail, "Email and replies"],
+                      [Star, "Google and Facebook reviews"],
+                      [MessageSquareText, "Customer questions"],
+                      [Sparkles, "Food Hub day summary"],
+                    ]
+                ).map(([Icon, label]) => {
+                  const I = Icon as typeof Mail;
+                  return (
+                    <li key={label as string} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">
+                      <I size={14} className="text-[#7FD8FF]" aria-hidden /> {label as string}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="mt-3 text-[13.5px] text-white/60">
+                {lang === "fr" ? "Vous approuvez avant chaque envoi. Il dit toujours qu’il est une IA." : "You approve before anything is sent. It always says it is an AI."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => openLiveChat({ page: "/", intent: "aios_waitlist", lang })}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-[14.5px] font-semibold text-[#060D1F] transition-transform hover:scale-[1.02]"
+            >
+              {lang === "fr" ? "Réserver AIOS" : "Reserve AIOS"} <ArrowRight size={16} aria-hidden />
+            </button>
+          </div>
+        </Rise>
 
         {/* Only the engines with a working key on the server */}
         {engines.length > 0 && (

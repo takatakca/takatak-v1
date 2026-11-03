@@ -79,11 +79,36 @@ export function suggest(text: string, limit = 4): CategoryKey[] {
 
 export type ReplyAction = "show_services" | "offer_welcome" | "finalize" | "human" | "ask_goal" | "support";
 
+export interface ReplyLink {
+  to: string;
+  label: Record<Lang, string>;
+}
+
 export interface Reply {
   text: Record<Lang, string>;
   services: CategoryKey[];
   actions: ReplyAction[];
+  /** Pages outside the nine core services (marketplace work such as a logo). */
+  links?: ReplyLink[];
 }
+
+/** The six starting points under TAK-TAK's bar in the hero; each one opens the assistant with its question. */
+export const HERO_CHIPS: readonly { key: string; label: Record<Lang, string>; ask: Record<Lang, string> }[] = [
+  { key: "domains", label: { fr: "Chercher un domaine", en: "Search domains" }, ask: { fr: "Je cherche un nom de domaine .ca", en: "I want a .ca domain name" } },
+  { key: "website", label: { fr: "Créer un site web", en: "Build a website" }, ask: { fr: "J’ai besoin d’un site web pour mon entreprise", en: "I need a website for my business" } },
+  { key: "hosting", label: { fr: "Voir l’hébergement", en: "View hosting" }, ask: { fr: "J’ai besoin d’hébergement avec SSL", en: "I need hosting with SSL" } },
+  { key: "leads", label: { fr: "Trouver des clients", en: "Get leads" }, ask: { fr: "Je veux plus de clients et être trouvé sur Google Maps", en: "I want more customers and to get found on Google Maps" } },
+  { key: "logo", label: { fr: "Créer un logo", en: "Create logo" }, ask: { fr: "J’ai besoin d’un logo", en: "I need a logo" } },
+  { key: "marketing", label: { fr: "Lancer le marketing", en: "Start marketing" }, ask: { fr: "Je veux du marketing et de la publicité", en: "I need marketing and ads" } },
+];
+
+/** Work sold in the marketplace, not as a core service: the reply points to its real page. */
+const MARKETPLACE_ASKS: { words: readonly string[]; link: ReplyLink }[] = [
+  {
+    words: ["logo", "branding", "image de marque", "identite visuelle", "visual identity", "brand kit"],
+    link: { to: "/marketplace/gigs/logo-design", label: { fr: "Voir les forfaits logo", en: "See logo packages" } },
+  },
+];
 
 /**
  * One concierge turn. `offered` says whether the welcome offer was already
@@ -107,6 +132,18 @@ export function respond(input: string, offered: boolean): Reply {
       text: { fr: "Bien sûr. Une personne de notre équipe peut prendre le relais dans le clavardage.", en: "Of course. Someone from our team can take over in the chat." },
       services: [],
       actions: ["human"],
+    };
+  }
+  const links = MARKETPLACE_ASKS.filter((m) => has(normalize(input), m.words)).map((m) => m.link);
+  if (links.length && !u.services.length) {
+    return {
+      text: {
+        fr: "Les logos sont faits par des designers vérifiés dans notre marketplace. Les forfaits et les vrais prix sont ici :",
+        en: "Logos are made by vetted designers in our marketplace. The packages and real prices are here:",
+      },
+      services: [],
+      actions: ["human"],
+      links,
     };
   }
   let services = u.services;
@@ -142,5 +179,5 @@ export function respond(input: string, offered: boolean): Reply {
   if (services.length) actions.push("show_services");
   if (!offered || u.intents.includes("promo")) actions.push("offer_welcome");
   actions.push("finalize");
-  return { text: lead, services: services.slice(0, 4), actions };
+  return { text: lead, services: services.slice(0, 4), actions, ...(links.length ? { links } : {}) };
 }

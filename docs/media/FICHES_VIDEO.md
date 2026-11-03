@@ -113,7 +113,7 @@ fiches s’y ajoutent, elles ne le remplacent pas.
 
 ## Phase 2 — produits (après réception du matériel brut des agents)
 
-Food Hub, la suite Clover, QMAPS, FLEXS, MIMT, Academy et TAK bot : enregistrements d’écran de 10 à 30 s
+Food Hub, la suite Clover, QMAPS, FLEXS, MIMT, Academy et TAK-TAK : enregistrements d’écran de 10 à 30 s
 sur comptes de démo (demande : `docs/media/RAW_MATERIAL_REQUEST.md`). Montage : 2 s d’ambiance (photo ou
 plan Runway) + 3 à 5 s d’écran réel + carte de fin bleue. Les films Clover suivent le pack existant
 (foodhubca, 2026-10-28) en remplaçant l’or par le bleu.
