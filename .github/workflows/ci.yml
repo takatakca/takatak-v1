@@ -426,6 +426,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:newsletter-db
 
+      - name: TAK-TAK answer (credits debited once, saved output, refund on failure) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:takbot-run-db
+
       - name: AI provider keys against the ephemeral database
         env:
           NODE_ENV: development
