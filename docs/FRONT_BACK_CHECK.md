@@ -13,6 +13,8 @@ Each line below was run against a real Postgres database (local, and in CI on th
 | Newsletter sign-up (homepage, CASL) | One Lead "takatak.ca newsletter" with the exact consent text as proof; only the confirm link sent for it confirms it; unsubscribe archives it at once; only a confirmed address may be emailed; every step in the audit log | `npm run qa:newsletter-db` (CI step) | Works (needs the settings below) |
 | "Créer un logo" chip | TAK-TAK links to the real page `/marketplace/gigs/logo-design` (200) | `qa:concierge` + browser run | Works |
 | "Parler à une personne" (hero, TAK-TAK drawer, bottom-right button) | With no live-chat tool set, a small "Soutien TAKATAK" panel opens. "Demander une soumission" → `/marketplace/post-project` → Lead in the inbox. "Écrire au soutien" is a `mailto:` link: it opens the visitor's own email app, and nothing reaches the dashboard (some visitors have no email app set up) | Code read (`LiveChatLauncher.tsx`, `chat-provider.ts`); the post-project form uses the same intake | **Owner decision** (see below) |
+| Hosting "Commander Portfolio / Bronze / Silver / Gold" (homepage pricing) | Saves the chosen plan in the browser, then `/checkout` (sign-in first). There, hosting is ordered in the Upmind window; when Upmind is not set, a hosting request goes to the inbox (`HostingRequestFallback`). **The chosen plan is never read back**: the visitor lands on an older English page ("Checkout: Get Started With Your Domain & Hosting Journey") and picks the plan again | Code read (`PricingTabs.tsx` writes `hostingPlan`; nothing reads it; `checkout-client.tsx`, `upmind-hosting-plans.tsx`) | **Owner decision** (see below) |
+| Marketplace package order (`/checkout` after a package) | Sign-in required; `package_order` priced by the server from the catalog (static prices when the database has none), promo checked server-side → Lead | `qa:website-leads` (pricing), `qa:lead-order-billing-db` (won order → billing queue) | Works |
 | "Finaliser ma commande" | `/commander` order funnel → `/register?plan=…&promo=…` | Existing funnel tests (`qa:order-funnel`) | Works |
 
 ## What the owner must have in production (Coolify)
@@ -32,6 +34,13 @@ The site already supports a live-chat tool. Two options:
    that chat, with the page and request already written in.
 2. **Small change (needs your OK, it touches the support panel):** replace the `mailto:` button with a two-line
    message box that sends to the same intake, so the message lands in the Lead Inbox like the others.
+
+## Owner decision: the hosting order page
+
+When a visitor clicks "Commander Silver" on the homepage, `/checkout` should open on Silver, in French, with the
+price they saw. Today it opens an older English page with a domain search first, and the plan must be picked again.
+Proposal (touches the checkout page, so it needs your OK): read the saved plan, scroll to it and highlight it, and
+translate the page (FR first, EN alongside). Upmind stays the billing system; nothing changes in it.
 
 ## One-minute live test (owner)
 
