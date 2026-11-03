@@ -411,6 +411,16 @@ jobs:
           NODE_ENV: development
         run: npm run qa:lead-order-billing-db
 
+      - name: Homepage assistant request → Lead Inbox against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:website-lead-inbox-db
+
+      - name: TAK-TAK homepage trial (credits once, lead in inbox) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:takbot-trial-db
+
       - name: AI provider keys against the ephemeral database
         env:
           NODE_ENV: development
