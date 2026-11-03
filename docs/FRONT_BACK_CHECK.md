@@ -10,6 +10,7 @@ Each line below was run against a real Postgres database (local, and in CI on th
 | Domain search request | Lead with the domain, same inbox | `qa:website-lead-inbox-db` | Works |
 | Plan built on the homepage → `/register` → account created | **Was lost** (it stayed in the browser). Now: on the first dashboard visit, `PlanHandoff` sends it once as a Lead (title "Forfait choisi sur takatak.ca · …", category `homepage-plan`, promo code if any), tied to the signed-in account; the client sees the reference | `qa:website-lead-inbox-db` (server path). The banner itself needs a signed-in account (not testable here without Supabase) | Fixed, to check live |
 | TAK-TAK live trial (signed-in) | Trial credits granted once ever in the visitor's own ledger; the sign-up is one Lead in the agency inbox (source "TAK bot trial"); owner can switch it off | `npm run qa:takbot-trial-db` (CI step) | Works (needs an economy engine key in production) |
+| Newsletter sign-up (homepage, CASL) | One Lead "takatak.ca newsletter" with the exact consent text as proof; only the confirm link sent for it confirms it; unsubscribe archives it at once; only a confirmed address may be emailed; every step in the audit log | `npm run qa:newsletter-db` (CI step) | Works (needs the settings below) |
 | "Créer un logo" chip | TAK-TAK links to the real page `/marketplace/gigs/logo-design` (200) | `qa:concierge` + browser run | Works |
 | "Finaliser ma commande" | `/commander` order funnel → `/register?plan=…&promo=…` | Existing funnel tests (`qa:order-funnel`) | Works |
 
@@ -19,6 +20,8 @@ Each line below was run against a real Postgres database (local, and in CI on th
   homepage request is refused ("Je n'ai pas pu l'envoyer…") and nothing reaches the inbox.
 - `NEXT_PUBLIC_APP_URL=https://takatak.ca`: the intake only accepts requests from the site's own address.
 - For the TAK-TAK trial: one economy engine key (Groq, Gemini, DeepSeek or OpenAI) saved in AI provider keys.
+- For the newsletter: `NEWSLETTER_TOKEN_SECRET` (32+ characters), `NEWSLETTER_SENDER_ADDRESS` (the postal address
+  shown in each email, CASL) and the email sender already used for sign-in codes (SendGrid or Gmail SMTP).
 
 ## One-minute live test (owner)
 

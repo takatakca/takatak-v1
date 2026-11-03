@@ -421,6 +421,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:takbot-trial-db
 
+      - name: Homepage newsletter (double opt-in, unsubscribe, inbox) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:newsletter-db
+
       - name: AI provider keys against the ephemeral database
         env:
           NODE_ENV: development
