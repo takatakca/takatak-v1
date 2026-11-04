@@ -19,8 +19,9 @@ simulated in the browser because the cloud session has no Supabase sign-in).
 
 ## Rules (server side, `src/lib/security/checks/`)
 
-- The number to tap is **never sent to the device that must tap it**. A wrong number counts; after 2 the check
-  closes as « mauvais nombre ».
+- The number to tap is **never sent to the device that must tap it**. One tap only (like Google): a wrong number
+  closes the check as « mauvais nombre », so a blind tap passes one time in three, never two in three. The agent
+  can start a new check if the person simply mistapped.
 - Support check: only a platform owner/admin can start it, never on their own account or a disabled one; at most
   3 open per person; expires after 3 minutes; only the agent who asked follows the answer.
 - New sign-in: a device is an opaque random id in an httpOnly cookie (`tk_device`), not a fingerprint. The first

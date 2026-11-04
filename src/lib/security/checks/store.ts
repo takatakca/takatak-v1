@@ -21,7 +21,8 @@ import { matchChoices } from "./numbers";
 
 export const SUPPORT_CHECK_TTL_MS = 3 * 60_000;
 export const SIGN_IN_CHECK_TTL_MS = 24 * 60 * 60_000;
-export const MAX_ATTEMPTS = 2;
+/** One tap, like Google: a blind tap passes one time in three, never two in three. */
+export const MAX_ATTEMPTS = 1;
 const MAX_PENDING_SUPPORT_CHECKS = 3;
 
 export type CheckKind = "support_identity" | "new_sign_in";
@@ -224,8 +225,9 @@ export type RespondResult =
 
 /**
  * The person answers on one of their devices: a number, or « Ce n'est pas moi ».
- * A wrong number counts as an attempt; after MAX_ATTEMPTS the check closes as a
- * mismatch (the agent sees it, or the sign-in is treated as not confirmed).
+ * A wrong number closes the check as a mismatch (MAX_ATTEMPTS = 1): the agent
+ * sees it, or the sign-in is treated as not confirmed. The agent can start a
+ * new check if the person simply mistapped.
  */
 export async function respondToCheck(
   db: Db,

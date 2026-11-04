@@ -69,15 +69,19 @@ async function main() {
     assert.equal(await agentCheckStatus(db, { checkId: asked.checkId, agentProfileId: otherAgent.id, now: t0 }), null, "only the agent who asked follows it");
     console.log("PASS the client's devices get the question and three numbers, not the answer; nobody else sees it");
 
-    const wrong = asked.matchNumber === 10 ? 11 : 10;
-    const r1 = await respondToCheck(db, { profileId: client.id, checkId: asked.checkId, deviceId: null, answer: wrong, now: t0 });
-    assert.ok(r1.ok && r1.status === "wrong_number" && r1.attemptsLeft === MAX_ATTEMPTS - 1);
+    const wrong = seen[0].choices.find((n) => n !== asked.matchNumber)!;
     const rStranger = await respondToCheck(db, { profileId: stranger.id, checkId: asked.checkId, deviceId: null, answer: asked.matchNumber, now: t0 });
     assert.deepEqual(rStranger, { ok: false, code: "not_found" }, "another account cannot answer");
-    const r2 = await respondToCheck(db, { profileId: client.id, checkId: asked.checkId, deviceId: null, answer: wrong, now: t0 });
-    assert.ok(r2.ok && r2.status === "mismatch");
+    assert.equal(MAX_ATTEMPTS, 1, "one tap only: a blind tap passes one time in three");
+    const r1 = await respondToCheck(db, { profileId: client.id, checkId: asked.checkId, deviceId: null, answer: wrong, now: t0 });
+    assert.ok(r1.ok && r1.status === "mismatch");
+    assert.deepEqual(
+      await respondToCheck(db, { profileId: client.id, checkId: asked.checkId, deviceId: null, answer: asked.matchNumber, now: t0 }),
+      { ok: false, code: "closed" },
+      "no second try after a wrong number",
+    );
     assert.equal((await agentCheckStatus(db, { checkId: asked.checkId, agentProfileId: agent.id, now: t0 }))?.status, "mismatch");
-    console.log(`PASS a wrong number counts; after ${MAX_ATTEMPTS} the agent sees « mauvais nombre » and the check is closed`);
+    console.log("PASS another account cannot answer; one wrong tap closes the check and the agent sees « mauvais nombre »");
 
     const asked2 = await createSupportCheck(db, { agentProfileId: agent.id, targetProfileId: client.id, now: t0 });
     assert.ok(asked2.ok);
@@ -144,8 +148,7 @@ async function main() {
     const actions = new Set(audits.map((a) => a.action));
     for (const a of [
       "security.support_check.requested",
-      "security.support_identity.wrong_number",
-      "security.support_identity.mismatch",
+            "security.support_identity.mismatch",
       "security.support_identity.confirmed",
       "security.support_identity.denied",
       "security.new_device",
