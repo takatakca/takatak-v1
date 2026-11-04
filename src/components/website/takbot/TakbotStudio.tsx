@@ -5,9 +5,9 @@ import { ArrowRight, Bot, Check, ChevronDown, Coins, Headset, Loader2, Moon, Sea
 
 import { MODE_ICONS } from "@/components/website/funnel/TakbotSection";
 import { Aurora } from "@/components/website/funnel/primitives";
-import { Kicker, money } from "@/components/website/premium/ui";
+import { money } from "@/components/website/premium/ui";
 import { TAKBOT_ACTIONS, TAKBOT_ENGINES, TAKBOT_MODES, TAKBOT_PACKS, MAX_PROMPT_CHARS, creditsFor, type TakbotMode } from "@/lib/takbot/catalog";
-import { takbotCopy, takbotModeCopy } from "@/lib/takbot/copy";
+import { engineBestFor, takbotCopy, takbotModeCopy } from "@/lib/takbot/copy";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { fill } from "@/lib/website/home-funnel";
 import { useHomeTheme } from "@/lib/website/home-theme";
@@ -80,7 +80,7 @@ export function TakbotStudio() {
   const modeDef = TAKBOT_MODES.find((m) => m.key === mode)!;
   const connected = useMemo(() => new Set(catalog?.engines.filter((e) => e.connected).map((e) => e.key) ?? []), [catalog]);
   const engines = TAKBOT_ENGINES.filter((e) => e.modes.includes(mode));
-  const filtered = engines.filter((e) => `${e.name} ${e.bestFor}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const filtered = engines.filter((e) => `${e.name} ${e.bestFor} ${engineBestFor(e.key, e.bestFor, lang)}`.toLowerCase().includes(query.trim().toLowerCase()));
   const selected = engine === "auto" ? null : TAKBOT_ENGINES.find((e) => e.key === engine) ?? null;
   const session = catalog?.session;
   const balance = turns.findLast((t) => typeof t.balance === "number")?.balance ?? session?.balance ?? null;
@@ -237,7 +237,7 @@ export function TakbotStudio() {
                                   <span className={`h-2 w-2 shrink-0 rounded-full ${live ? "bg-emerald-500" : "bg-[var(--hp-line)]"}`} aria-hidden />
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-[13px] font-semibold hp-ink">{e.name}</span>
-                                    {e.bestFor && <span className="block truncate text-[11.5px] hp-ink-3">{e.bestFor}</span>}
+                                    {e.bestFor && <span className="block truncate text-[11.5px] hp-ink-3">{engineBestFor(e.key, e.bestFor, lang)}</span>}
                                   </span>
                                   {on && <Check size={14} className="hp-accent" aria-hidden />}
                                 </button>
@@ -334,7 +334,7 @@ export function TakbotStudio() {
       {/* How it works */}
       <section className="hp-bg py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-4">
-          <Kicker>TAK-TAK</Kicker>
+          <p className="hp-accent text-[11px] font-semibold uppercase tracking-[0.28em]">TAK-TAK</p>
           <h2 className="mt-3 hp-display hp-ink text-3xl sm:text-[42px]">{c.how.title[lang]}</h2>
           <ol className="mt-10 grid gap-4 md:grid-cols-4">
             {c.how.steps.map((s, i) => (
@@ -370,7 +370,7 @@ export function TakbotStudio() {
                       {!catalog ? "…" : live ? c.composer.connected[lang] : c.composer.notConnected[lang]}
                     </span>
                   </div>
-                  <p className="mt-2 text-[13px] leading-5 hp-ink-2">{e.bestFor}</p>
+                  <p className="mt-2 text-[13px] leading-5 hp-ink-2">{engineBestFor(e.key, e.bestFor, lang)}</p>
                   <p className="mt-3 flex flex-wrap gap-1">
                     {e.modes.map((m) => (
                       <span key={m} className="rounded-full bg-[var(--hp-alt)] px-2 py-0.5 text-[10.5px] hp-ink-2">

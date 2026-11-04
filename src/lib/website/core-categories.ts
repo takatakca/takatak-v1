@@ -177,11 +177,12 @@ export const SOCIAL_NETWORKS_LIVE = [
   "X",
   "Bluesky",
   "Twitch",
+  "Pinterest",
   "Google Business Profile",
 ] as const;
 
 /** In the provider registry but not implemented yet. */
-export const SOCIAL_NETWORKS_SOON = ["LinkedIn", "Pinterest"] as const;
+export const SOCIAL_NETWORKS_SOON = ["LinkedIn"] as const;
 
 /** Ad platforms with a live account connection (registry: meta_ads, google_ads). */
 export const AD_PLATFORMS_LIVE = ["Meta Ads", "Google Ads"] as const;

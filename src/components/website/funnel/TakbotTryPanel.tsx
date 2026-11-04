@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, ArrowUp, Check, Loader2, Lock } from "lucide-react";
 
-import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 import { TAKBOT_MODES, MAX_PROMPT_CHARS, creditsFor } from "@/lib/takbot/catalog";
 import { takbotModeCopy } from "@/lib/takbot/copy";
 import { trialCopy as c } from "@/lib/takbot/trial-copy";
@@ -222,6 +221,8 @@ export function TakbotTryPanel({ onShowApp, bare = false }: { onShowApp: () => v
 
   const signInGoogle = useCallback(async () => {
     writePending(prompt.trim() ? { prompt: prompt.trim(), mode } : null);
+    // Loaded on click: the sign-in library is not needed to show the homepage.
+    const { createSupabaseBrowserClient } = await import("@/lib/auth/supabase-browser");
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
       setGoogleOff(true);

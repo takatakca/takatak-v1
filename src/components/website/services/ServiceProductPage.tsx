@@ -3,9 +3,10 @@
 import { Link } from "@/lib/website/nav";
 import { ArrowRight, Check, Headset, MessageSquare } from "lucide-react";
 import { ServiceFlowDiagram } from "@/components/website/services/ServiceFlowDiagram";
+import type { TranslationKey } from "@/lib/website/i18n";
 import { useLanguage } from "@/lib/website/use-language";
 import { openLiveChat } from "@/lib/website/chat-provider";
-import { formatCAD, cadenceLabel } from "@/lib/website/pricing";
+import { formatCAD, cadenceKeys } from "@/lib/website/pricing";
 import type { ServicePage } from "@/lib/website/service-pages";
 
 export function ServiceProductPage({ page }: { page: ServicePage }) {
@@ -125,7 +126,7 @@ export function ServiceProductPage({ page }: { page: ServicePage }) {
                     <p className="mt-2 text-2xl font-bold text-foreground">
                       {formatCAD(p.amount)}
                       <span className="text-xs font-medium text-muted-foreground">
-                        {cadenceLabel(p.cadence)}
+                        {t(cadenceKeys[p.cadence] as TranslationKey)}
                         {p.suffix ? ` ${p.suffix}` : ""} CAD
                       </span>
                     </p>

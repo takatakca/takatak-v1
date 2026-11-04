@@ -6,14 +6,18 @@ import { HOME_LANGUAGE_HEADER, homeLanguage } from "@/lib/website/home-seo";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+// Not preloaded: the public website uses its own fonts, so preloading these on
+// every page only delays the first paint on phones. The dashboard still gets them.
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  preload: false,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  preload: false,
 });
 
 export const metadata: Metadata = {

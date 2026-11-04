@@ -12,7 +12,7 @@ import { trialCopy } from "@/lib/takbot/trial-copy";
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
-import { Eyebrow, Magnetic, PointHere, Rise, Section, TwoTone, useSpotlight } from "./primitives";
+import { Eyebrow, Magnetic, PointHere, Rise, Section, TwoTone, useSeen, useSpotlight } from "./primitives";
 import { RobotMascot } from "./RobotMascot";
 import { StudioShell } from "./StudioShell";
 import { TAKBOT_PREFILL_EVENT, TakbotTryPanel } from "./TakbotTryPanel";
@@ -50,18 +50,20 @@ function ProductViewer() {
   const reduced = useReducedMotion();
   const [screen, setScreen] = useState<Screen>("takbot");
   const video = useRef<HTMLVideoElement>(null);
+  // The recording and its poster load once the frame is near the screen, not with the first paint.
+  const { ref: nearRef, seen: near } = useSeen<HTMLDivElement>("600px 0px 600px 0px");
   const t = homeV2.takbot;
   const s = SCREENS[screen];
 
   useEffect(() => {
     const v = video.current;
-    if (!v) return;
+    if (!v || !near) return;
     v.load();
     if (!reduced) v.play().catch(() => undefined);
-  }, [screen, lang, reduced]);
+  }, [screen, lang, reduced, near]);
 
   return (
-    <div className="relative">
+    <div ref={nearRef} className="relative">
       <div className="overflow-hidden rounded-[22px] bg-[#0B1220] shadow-[0_50px_120px_-40px_rgb(0_0_0/0.9)] ring-1 ring-white/10">
         {/* Browser bar */}
         <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
@@ -94,15 +96,14 @@ function ProductViewer() {
             ref={video}
             key={`${screen}-${lang}`}
             className="tk-fade-in absolute inset-0 h-full w-full object-cover object-top"
-            poster={s.poster(lang)}
-            autoPlay={!reduced}
+            src={near ? s.src(lang) : undefined}
+            poster={near ? s.poster(lang) : undefined}
+            autoPlay={near && !reduced}
             muted
             loop
             playsInline
-            preload="metadata"
-          >
-            <source src={s.src(lang)} type="video/mp4" />
-          </video>
+            preload={near ? "metadata" : "none"}
+          />
           <span className="pointer-events-none absolute inset-0 flex items-end justify-end bg-gradient-to-t from-black/45 via-transparent to-transparent p-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-visible:opacity-100">
             <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[13.5px] font-semibold text-[#060D1F]">
               {t.open[screen][lang]} <ArrowRight size={15} aria-hidden />
