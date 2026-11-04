@@ -124,6 +124,7 @@ export const ENGINE_BEST_FOR_FR: Record<string, string> = {
   perplexity: "Recherche web avec sources et veille des concurrents",
   deepseek: "Production en volume à faible coût",
   groq: "Réponses de clavardage très rapides",
+  ollama: "Modèles ouverts (gpt-oss, Kimi, GLM, DeepSeek) à faible coût",
   cohere: "Classement, vecteurs et tri des avis",
   elevenlabs: "Voix hors champ et voix téléphoniques IA",
   runway: "Courtes vidéos pour pubs et réseaux sociaux",
