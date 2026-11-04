@@ -28,6 +28,7 @@ import { LiveLaptop, useScenePlayer } from "@/components/website/premium/LiveSce
 import { NavyBackdrop } from "@/components/website/premium/ui";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { SEO_FREE_TOOLS, type SeoTool } from "@/lib/seo/free-tools-catalog";
+import { SEO_CATEGORY_FR, SEO_TOOL_FR } from "@/lib/seo/free-tools-fr";
 import { MARKETPLACE_PACKAGES } from "@/lib/website/marketplace-packages";
 import { fastestDelivery, packageTitle, startingPrice } from "@/lib/website/marketplace-i18n";
 import { Link } from "@/lib/website/nav";
@@ -165,40 +166,6 @@ const SCREENS: { screen: T; shows: T; state: State }[] = [
   { screen: { fr: "SEO · Liens", en: "SEO · Backlinks" }, shows: { fr: "Liens gagnés, vérifiés par une source indépendante", en: "Earned links, verified by an independent source" }, state: "planned" },
 ];
 
-/** French names of the free tools (src/lib/seo/free-tools-catalog.ts). */
-const TOOL_FR: Record<string, string> = {
-  "geo-audit": "Audit GEO (préparation IA)",
-  "ai-search-audit": "Audit de recherche IA",
-  "chatgpt-visibility-checker": "Visibilité dans ChatGPT",
-  "llm-citation-checker": "Citations dans les IA",
-  "ai-seo-audit": "Audit SEO pour l’IA",
-  "ai-overview-checker": "Aperçus IA de Google",
-  "perplexity-ranking-checker": "Citations dans Perplexity",
-  "google-index-checker": "Indexation Google",
-  "robots-checker": "Vérificateur robots.txt",
-  "robots-generator": "Générateur robots.txt",
-  "sitemap-checker": "Vérificateur de sitemap",
-  "canonical-checker": "Balise canonique",
-  "schema-generator": "Générateur de schéma JSON-LD",
-  "llms-generator": "Générateur llms.txt",
-  "llms-validator": "Validateur llms.txt",
-  "ai-readability-checker": "Lisibilité pour l’IA",
-  "h1-checker": "Vérificateur H1",
-  "keyword-density-checker": "Densité de mots-clés",
-  "meta-description-checker": "Méta-description",
-  "serp-snippet-preview": "Aperçu dans Google",
-  "open-graph-checker": "Open Graph (partages)",
-  "missing-keywords": "Mots-clés manquants",
-  "seo-competitor-analysis": "Analyse des concurrents",
-};
-
-const CAT_FR: Record<string, string> = {
-  "AI Visibility & GEO": "Visibilité IA et GEO",
-  "Technical SEO": "SEO technique",
-  "On-Page & Content": "Page et contenu",
-  "Keywords & Competitors": "Mots-clés et concurrents",
-};
-
 const START_PACKAGES = ["local-seo-setup", "gbp-optimization", "citation-package", "qmaps-listing-setup"];
 
 const NEVER: T[] = [
@@ -282,7 +249,7 @@ function HeroScreen() {
   return (
     <div ref={ref}>
       <LiveLaptop scene="seo" step={step} business="" lang={lang} address="takatak.ca/dashboard/seo" tab="SEO TAKATAK" />
-      <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-white/35">{tx({ fr: "Aperçu à titre illustratif", en: "Illustrative preview" })}</p>
+      <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-white/70">{tx({ fr: "Aperçu à titre illustratif", en: "Illustrative preview" })}</p>
     </div>
   );
 }
@@ -295,7 +262,7 @@ export function SeoProductPage() {
   const providerTools = SEO_FREE_TOOLS.length - liveTools;
   const categories = Array.from(new Set(SEO_FREE_TOOLS.map((t) => t.category)));
   const packages = START_PACKAGES.map((id) => MARKETPLACE_PACKAGES.find((p) => p.id === id)).filter((p): p is (typeof MARKETPLACE_PACKAGES)[number] => Boolean(p));
-  const toolName = (t: SeoTool) => (lang === "fr" ? TOOL_FR[t.id] ?? t.title : t.title);
+  const toolName = (t: SeoTool) => (lang === "fr" ? SEO_TOOL_FR[t.id]?.title ?? t.title : t.title);
 
   return (
     <div className="tk-page tk-premium brand-dark bg-[#060D1F] text-white">
@@ -478,7 +445,7 @@ export function SeoProductPage() {
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-bold">
                 <span className="flex items-center gap-2">
                   <ListChecks size={18} className="text-sky-300" aria-hidden />
-                  {lang === "fr" ? CAT_FR[c] ?? c : c}
+                  {lang === "fr" ? SEO_CATEGORY_FR[c] ?? c : c}
                   <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white/70">{SEO_FREE_TOOLS.filter((t) => t.category === c).length}</span>
                 </span>
                 <ChevronDown size={18} className="tk-faq-chevron shrink-0 text-white/50" aria-hidden />

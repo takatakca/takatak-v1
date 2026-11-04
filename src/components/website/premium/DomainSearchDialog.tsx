@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 import { DomainSearchOverlay } from "@/components/website/domain/DomainSearchOverlay";
 
@@ -23,13 +24,16 @@ export function DomainSearchDialog({ open, onClose }: { open: boolean; onClose: 
     };
   }, [open, onClose]);
 
-  if (!open) return null;
-  return (
+  if (!open || typeof document === "undefined") return null;
+  // Rendered at the document level: homepage sections are laid out lazily (content-visibility),
+  // which would otherwise make this fixed layer relative to its section.
+  return createPortal(
     <div className="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-20 sm:pt-28" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-[#060D1F]/70 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="brand-dark relative w-full max-w-2xl animate-scale-in" style={{ background: "transparent" }}>
         <DomainSearchOverlay onClose={onClose} />
       </div>
-    </div>
+    </div>,
+    document.querySelector(".website-surface") ?? document.body,
   );
 }

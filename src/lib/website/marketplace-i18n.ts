@@ -78,3 +78,30 @@ export function fastestDelivery(p: Pick<MarketplacePackageDetail, "tiers">, lang
   if (lang === "fr") return d <= 1 ? "Livré en 1 jour" : `Livré en ${d} jours`;
   return d <= 1 ? "1-day delivery" : `${d}-day delivery`;
 }
+
+/** French name of every marketplace category (src/lib/website/marketplace-categories.ts). */
+export const CATEGORY_NAME_FR: Record<string, string> = {
+  logo_design: "Conception de logo",
+  website_design: "Conception de site web",
+  mobile_app_design: "Design d'appli mobile",
+  branding: "Image de marque",
+  business_card_design: "Cartes d'affaires",
+  page_layout: "Mise en page",
+  data_entry: "Saisie de données",
+  virtual_assistance: "Assistance virtuelle",
+  social_media_content: "Contenu pour les réseaux sociaux",
+  online_advertising: "Publicité en ligne",
+  seo_local_visibility: "SEO et visibilité locale",
+  automation_setup: "Automatisation",
+  ai_tool_setup: "Outils d'IA",
+  content_writing: "Rédaction",
+  menu_design: "Conception de menu",
+  flyer_design: "Conception de dépliant",
+  ecommerce_setup: "Boutique en ligne",
+  lead_generation: "Génération de prospects",
+  voip: "Téléphonie d'affaires",
+};
+
+export function categoryName(slug: string, english: string, lang: Lang): string {
+  return lang === "fr" ? (CATEGORY_NAME_FR[slug] ?? english) : english;
+}

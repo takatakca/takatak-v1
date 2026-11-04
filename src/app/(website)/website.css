@@ -906,10 +906,12 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp.hp-portal { background: transparent; }
 
 /* ── Ask bar, mic, assistant orb, 3D tilt (Oct 31 2026) ─────────────────── */
-@property --hp-mic-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
-@keyframes hp-mic-spin { to { --hp-mic-angle: 360deg; } }
-.hp-mic { background: conic-gradient(from var(--hp-mic-angle), #1F8BFF, #29C3FF, #22C55E, #F59E0B, #EC4899, #8B5CF6, #1F8BFF); animation: hp-mic-spin 4s linear infinite; }
-.hp-mic-on { animation-duration: 0.9s; box-shadow: 0 0 0 0 rgb(236 72 153 / 0.45); animation-name: hp-mic-spin, hp-mic-pulse; animation-iteration-count: infinite, infinite; animation-timing-function: linear, ease-out; }
+@keyframes hp-mic-spin { to { transform: rotate(360deg); } }
+.hp-mic { overflow: hidden; isolation: isolate; }
+.hp-mic::before { content: ""; position: absolute; inset: -25%; z-index: 0; pointer-events: none;
+  background: conic-gradient(#1F8BFF, #29C3FF, #22C55E, #F59E0B, #EC4899, #8B5CF6, #1F8BFF); animation: hp-mic-spin 4s linear infinite; }
+.hp-mic-on::before { animation-duration: 0.9s; }
+.hp-mic-on { box-shadow: 0 0 0 0 rgb(236 72 153 / 0.45); animation: hp-mic-pulse 0.9s ease-out infinite; }
 @keyframes hp-mic-pulse { 0% { box-shadow: 0 0 0 0 rgb(236 72 153 / 0.45); } 100% { box-shadow: 0 0 0 18px rgb(236 72 153 / 0); } }
 .hp-ask { transition: box-shadow 0.35s ease, transform 0.35s var(--tk-ease); }
 .hp-ask:focus-within { box-shadow: 0 0 0 4px color-mix(in oklab, var(--hp-cta) 22%, transparent), var(--hp-shadow); transform: translateY(-1px); }
@@ -918,7 +920,7 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-tilt { transform-style: preserve-3d; transition: transform 0.6s var(--tk-ease), box-shadow 0.6s var(--tk-ease); will-change: transform; }
 .hp-serif { font-family: var(--font-serif), Georgia, "Times New Roman", serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
 @media (prefers-reduced-motion: reduce) {
-  .hp-mic, .hp-mic-on, .hp-orb { animation: none; }
+  .hp-mic::before, .hp-mic-on, .hp-orb { animation: none; }
   .hp-tilt { transition: none; transform: none !important; }
 }
 
@@ -943,9 +945,7 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-spot-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(560px circle at var(--mx, 70%) var(--my, 35%), rgba(41, 195, 255, 0.16), transparent 46%); }
 .hp-tech-grid { position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.5;
   background-image: linear-gradient(rgba(120, 170, 255, 0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 170, 255, 0.07) 1px, transparent 1px);
-  background-size: 56px 56px; mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%);
-  animation: hp-grid-drift 24s linear infinite; }
-@keyframes hp-grid-drift { to { background-position: 56px 56px, 56px 56px; } }
+  background-size: 56px 56px; mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%); }
 .hp-scan { position: absolute; left: 0; right: 0; height: 120px; top: -120px; pointer-events: none; z-index: 0;
   background: linear-gradient(180deg, transparent, rgba(41, 195, 255, 0.08) 60%, rgba(41, 195, 255, 0.22) 98%, transparent);
   animation: hp-scan 7s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
@@ -1112,9 +1112,11 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .hp-ticker-track { display: inline-flex; gap: 12px; width: max-content; animation: hp-marquee 42s linear infinite; }
 .hp-ticker:hover .hp-ticker-track { animation-play-state: paused; }
 .hp-ticker-track[data-reverse] { animation-direction: reverse; }
-.hp-chip-flash { animation: hp-chip-flash 6s ease-in-out infinite; }
-@keyframes hp-chip-flash { 0%, 86%, 100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); }
-  90% { box-shadow: 0 0 0 1px rgba(41, 195, 255, 0.9), 0 0 28px rgba(41, 195, 255, 0.55); background: rgba(41, 195, 255, 0.16); } }
+.hp-chip-flash { isolation: isolate; }
+.hp-chip-flash::after { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none; opacity: 0;
+  box-shadow: 0 0 0 1px rgba(41, 195, 255, 0.9), 0 0 28px rgba(41, 195, 255, 0.55); background: rgba(41, 195, 255, 0.16);
+  animation: hp-chip-flash 6s ease-in-out infinite; animation-delay: inherit; }
+@keyframes hp-chip-flash { 0%, 86%, 100% { opacity: 0; } 90% { opacity: 1; } }
 
 @media (prefers-reduced-motion: reduce) {
   .hp-pop3d, .hp-sheet3d { animation: none; }
@@ -1122,7 +1124,7 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
   .hp-point svg path { stroke-dashoffset: 0; }
   .hp-point[data-seen="true"] svg path, .hp-point[data-seen="true"] { animation: none; }
   .hp-point-label { opacity: 1; transform: none; }
-  .hp-ticker-track, .hp-chip-flash { animation: none; }
+  .hp-ticker-track, .hp-chip-flash::after { animation: none; }
 }
 
 /* Scroll scenes (ScrollScenes.tsx): data-s grows "0" → "01" → "012" → "0123" as a card crosses the window. */
@@ -1196,17 +1198,16 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 
 /* Hero: TAK-TAK's card. A slow light runs around its border, and the robot
    "types" before it says hello. Off with reduced motion. */
-@property --tk-ring-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
-@keyframes tk-ring-spin { to { --tk-ring-angle: 360deg; } }
-.tk-hero-ring {
-  background: conic-gradient(from var(--tk-ring-angle), rgb(41 195 255 / 0.7), rgb(255 255 255 / 0.08) 22%, rgb(255 255 255 / 0.06) 50%, rgb(31 139 255 / 0.65) 72%, rgb(41 195 255 / 0.7));
-  box-shadow: 0 40px 120px -48px rgb(31 139 255 / 0.65);
-  animation: tk-ring-spin 9s linear infinite;
-}
+@keyframes tk-ring-spin { to { transform: rotate(360deg); } }
+.tk-hero-ring { box-shadow: 0 40px 120px -48px rgb(31 139 255 / 0.65); }
+.tk-hero-ring-layer { position: absolute; inset: 0; border-radius: inherit; overflow: hidden; pointer-events: none; }
+.tk-hero-ring-layer::before { content: ""; position: absolute; left: 50%; top: 50%; width: 160%; aspect-ratio: 1; translate: -50% -50%;
+  background: conic-gradient(rgb(41 195 255 / 0.7), rgb(255 255 255 / 0.08) 22%, rgb(255 255 255 / 0.06) 50%, rgb(31 139 255 / 0.65) 72%, rgb(41 195 255 / 0.7));
+  animation: tk-ring-spin 9s linear infinite; }
 @keyframes tk-typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.45; } 30% { transform: translateY(-4px); opacity: 1; } }
 .tk-typing-dot { width: 7px; height: 7px; border-radius: 9999px; background: var(--tk-cyan); animation: tk-typing 1s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .tk-page-browse, .tk-hero-ring, .tk-typing-dot { animation: none; }
+  .tk-page-browse, .tk-hero-ring-layer::before, .tk-typing-dot { animation: none; }
 }
 
 /* Header category rail: glass pills, a light that travels from pill to pill
@@ -1283,3 +1284,8 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
   .tk-rail-panel, .tk-rail-item { animation: none; }
   .tk-rail-pill:hover .tk-rail-icon { transform: none; }
 }
+
+/* Performance (owner, Nov 4 2026: 100 % on every scanner). The homepage has ~5,500 elements: sections
+   below the hero are laid out and painted only when they come near the screen (the browser remembers
+   their real height after the first pass, so scrolling stays steady). */
+#core > section, #core > div { content-visibility: auto; contain-intrinsic-size: auto 960px; }

@@ -1,5 +1,9 @@
+"use client";
+
 import { Link } from "@/lib/website/nav";
 import { MARKETPLACE_CATEGORIES } from "@/lib/website/marketplace-categories";
+import { categoryName } from "@/lib/website/marketplace-i18n";
+import { useLanguage } from "@/lib/website/use-language";
 import {
   Palette, Globe2, Smartphone, Layers, FileText, ListChecks,
   ClipboardList, Headphones, Share2, Megaphone, Search, Workflow,
@@ -27,6 +31,7 @@ const ICONS: Record<string, typeof Palette> = {
 };
 
 export function MarketplaceCategoryGrid() {
+  const { lang } = useLanguage();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
       {MARKETPLACE_CATEGORIES.map((c) => {
@@ -39,10 +44,10 @@ export function MarketplaceCategoryGrid() {
             className="group rounded-xl border border-border bg-card p-4 hover:border-primary/50 hover:shadow-[var(--shadow-card)] transition-all"
           >
             <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-secondary group-hover:bg-primary/10 transition-colors">
-              <Icon size={18} className="text-primary" />
+              <Icon size={18} className="text-primary" aria-hidden />
             </div>
-            <div className="mt-3 font-medium text-sm text-foreground">{c.name}</div>
-            <div className="mt-1 text-xs text-muted-foreground">Browse packages →</div>
+            <div className="mt-3 font-medium text-sm text-foreground">{categoryName(c.slug, c.name, lang)}</div>
+            <div className="mt-1 text-xs text-muted-foreground">{lang === "fr" ? "Voir les forfaits →" : "Browse packages →"}</div>
           </Link>
         );
       })}

@@ -139,7 +139,7 @@ export function ServiceLiveDemo({ categoryKey }: { categoryKey: CategoryKey }) {
           address={tx(demo.address)}
           tab={tx(demo.tab)}
         />
-        <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-white/35">{tx({ fr: "Aperçu à titre illustratif", en: "Illustrative preview" })}</p>
+        <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-white/70">{tx({ fr: "Aperçu à titre illustratif", en: "Illustrative preview" })}</p>
       </div>
       <ol className="grid gap-3 lg:col-span-5">
         {demo.steps.map((s, i) => {

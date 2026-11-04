@@ -17,8 +17,8 @@ export function TakatakLogo({
       <Image
         src="/img/imgtak/takicon2.png"
         alt=""
-        width={816}
-        height={816}
+        width={36}
+        height={36}
         className="h-9 w-9 shrink-0 object-contain"
         priority
       />

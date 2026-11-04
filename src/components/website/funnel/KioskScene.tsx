@@ -199,7 +199,7 @@ export function KioskScene() {
           </div>
           <span className="h-6 w-3 bg-[#1B2436]" aria-hidden />
           <span className="h-2 w-16 rounded-full bg-[#1B2436]" aria-hidden />
-          <div className="mt-2 flex items-center gap-1.5" aria-label={T.brand[lang]}>
+          <div className="mt-2 flex items-center gap-1.5" role="img" aria-label={T.brand[lang]}>
             {BRANDS.map((c) => (
               <span key={c} className={`h-3 w-3 rounded-full ring-2 transition-all ${c === brand ? "scale-125 ring-white" : "ring-transparent"}`} style={{ background: c }} />
             ))}
@@ -239,7 +239,7 @@ export function KioskScene() {
                 </span>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                    o.age === 0 ? "bg-[#1E6BFF] text-white" : o.age === 1 ? "bg-amber-400/90 text-[#1B1300]" : "bg-emerald-500 text-white"
+                    o.age === 0 ? "bg-[#1E6BFF] text-white" : o.age === 1 ? "bg-amber-400/90 text-[#1B1300]" : "bg-emerald-700 text-white"
                   }`}
                 >
                   {T.status[o.age][lang]}

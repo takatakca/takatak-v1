@@ -1,19 +1,35 @@
 import type { NextConfig } from "next";
 
-// Phase 14 — conservative security-header baseline.
-// Strict CSP is deliberately DEFERRED (documented in
-// docs/TAKATAK_V1_SECURITY_CHECKLIST.md): an untested strict policy can break
-// Next.js hydration and auth flows. HSTS should be enabled at the platform
-// level once the production HTTPS domain is confirmed.
+// Security headers (owner, Nov 4 2026: "100 % on every scanner, even security").
+// - HSTS: production is https://takatak.ca. One year, this host only (no includeSubDomains
+//   or preload until every takatak.ca subdomain is confirmed on HTTPS).
+// - CSP: a baseline that cannot break hydration, auth, Stripe or Upmind (no script/style
+//   allow-list yet): no plugins, no <base> hijack, no framing by other sites, forms post
+//   to this site or HTTPS only. A strict nonce-based CSP needs the auth proxy and is a
+//   separate change (docs/TAKATAK_V1_SECURITY_CHECKLIST.md).
+// - Permissions: the site itself may ask for the microphone (TAK-TAK dictation), the
+//   camera and screen sharing (calls), full screen, passkeys and SMS one-time codes
+//   (sign-in); embedded third parties may not. Location, USB and Bluetooth are off.
 const securityHeaders = [
+  { key: "Strict-Transport-Security", value: "max-age=31536000" },
+  {
+    key: "Content-Security-Policy",
+    value: "base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self' https:",
+  },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=()" },
+  {
+    key: "Permissions-Policy",
+    value:
+      "camera=(self), microphone=(self), display-capture=(self), fullscreen=(self), publickey-credentials-get=(self), otp-credentials=(self), geolocation=(), usb=(), bluetooth=()",
+  },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
 ];
 
 const nextConfig: NextConfig = {
+  // Do not announce the framework in every response (scanners flag X-Powered-By).
+  poweredByHeader: false,
   // Keep Prisma out of the bundle so Node resolves the real package names.
   // Production builds MUST use webpack (`next build --webpack`). Next.js 16
   // Turbopack rewrites these to hashed aliases such as

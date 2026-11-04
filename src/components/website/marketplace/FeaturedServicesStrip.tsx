@@ -1,42 +1,71 @@
-import { Link } from "@/lib/website/nav";
+"use client";
+
 import { ArrowUpRight } from "lucide-react";
+
+import { categoryName, formatCad } from "@/lib/website/marketplace-i18n";
+import { MARKETPLACE_PACKAGES, type ThumbKind } from "@/lib/website/marketplace-packages";
+import { Link } from "@/lib/website/nav";
+import { useLanguage } from "@/lib/website/use-language";
 import { ServiceThumbnail } from "./ServiceThumbnail";
 
-const FEATURED = [
-  { slug: "website_design", name: "Website Development", thumb: "website" as const, from: "$180" },
-  { slug: "logo_design", name: "Logo & Branding", thumb: "logo" as const, from: "$25" },
-  { slug: "social_media_content", name: "Social Media Content", thumb: "social" as const, from: "$40" },
-  { slug: "seo_local_visibility", name: "Local SEO / QMAPS", thumb: "seo" as const, from: "$99" },
-  { slug: "lead_generation", name: "Lead Generation / FLEXS", thumb: "ai" as const, from: "$150" },
-  { slug: "data_entry", name: "Data Entry", thumb: "data" as const, from: "$20" },
-  { slug: "mobile_app_design", name: "Mobile App Design", thumb: "mobile" as const, from: "$250" },
-  { slug: "ecommerce_setup", name: "Ecommerce Setup", thumb: "ecommerce" as const, from: "$220" },
+/** Categories shown here; the "from" price is the cheapest tier in the catalog for that category. */
+const FEATURED: { slug: string; thumb: ThumbKind }[] = [
+  { slug: "website_design", thumb: "website" },
+  { slug: "logo_design", thumb: "logo" },
+  { slug: "social_media_content", thumb: "social" },
+  { slug: "seo_local_visibility", thumb: "seo" },
+  { slug: "online_advertising", thumb: "ai" },
+  { slug: "data_entry", thumb: "data" },
+  { slug: "mobile_app_design", thumb: "mobile" },
+  { slug: "ecommerce_setup", thumb: "ecommerce" },
 ];
 
+const COPY = {
+  title: { fr: "Services TAKATAK en vedette", en: "Featured TAKATAK services" },
+  lead: { fr: "Les grandes familles de services, avec leur vrai prix de départ.", en: "The main kinds of work, with their real starting price." },
+  from: { fr: "Dès", en: "From" },
+} as const;
+
+function cheapest(slug: string): { cents: number; name: string } | null {
+  const inCategory = MARKETPLACE_PACKAGES.filter((p) => p.category === slug);
+  if (!inCategory.length) return null;
+  const cents = Math.min(...inCategory.flatMap((p) => p.tiers.map((t) => t.priceCents)));
+  return { cents, name: inCategory[0].categoryName };
+}
+
 export function FeaturedServicesStrip() {
+  const { lang } = useLanguage();
+  const rows = FEATURED.flatMap((f) => {
+    const c = cheapest(f.slug);
+    return c ? [{ ...f, ...c }] : [];
+  });
   return (
     <section>
-      <div className="flex items-end justify-between flex-wrap gap-3 mb-6">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Featured TAKATAK services</h2>
-          <p className="mt-1 text-sm text-muted-foreground">The most-booked services across the TAKATAK marketplace.</p>
+          <h2 className="text-2xl font-bold text-foreground md:text-3xl">{COPY.title[lang]}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{COPY.lead[lang]}</p>
         </div>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {FEATURED.map((f) => (
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {rows.map((f) => (
           <Link
             key={f.slug}
             to="/marketplace/category/$slug"
             params={{ slug: f.slug }}
-            className="group relative rounded-xl border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-[var(--shadow-card)] transition-all"
+            className="group relative overflow-hidden rounded-xl border border-border bg-card transition-all hover:border-primary/40 hover:shadow-[var(--shadow-card)]"
           >
             <ServiceThumbnail kind={f.thumb} />
-            <div className="p-3 flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 p-3">
               <div className="min-w-0">
-                <div className="text-[13px] font-semibold text-foreground truncate group-hover:text-primary transition-colors">{f.name}</div>
-                <div className="text-[11px] text-muted-foreground">From {f.from}</div>
+                <div className="truncate text-[13px] font-semibold text-foreground transition-colors group-hover:text-primary">
+                  {categoryName(f.slug, f.name, lang)}
+                </div>
+                <div className="text-[11px] text-muted-foreground">
+                  {COPY.from[lang]} {formatCad(f.cents, lang)}
+                </div>
               </div>
-              <ArrowUpRight size={16} className="text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+              <ArrowUpRight size={16} className="shrink-0 text-muted-foreground transition-colors group-hover:text-primary" aria-hidden />
             </div>
           </Link>
         ))}
