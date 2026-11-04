@@ -25,6 +25,8 @@ for (const key of TRIAL_ECONOMY_ORDER) {
 
 // The trial engine is the cheapest one connected; a pinned engine must be connected.
 assert.equal(trialEngineKey(def, new Set(["anthropic", "gemini", "groq"])), "groq");
+// Ollama Cloud is the second economy engine: used for the trial when Groq is not connected.
+assert.equal(trialEngineKey(def, new Set(["anthropic", "gemini", "ollama"])), "ollama");
 assert.equal(trialEngineKey(def, new Set(["anthropic", "deepseek"])), "deepseek");
 assert.equal(trialEngineKey(def, new Set(["anthropic", "perplexity"])), null, "premium engines are never used for the trial");
 const pinned = readTrialConfig({ TAKBOT_TRIAL_ENGINE: "Gemini", TAKBOT_TRIAL_MODEL: "gemini-2.5-flash-lite" });

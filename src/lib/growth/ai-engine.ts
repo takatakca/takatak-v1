@@ -18,7 +18,7 @@ export interface AiProviderDef {
 }
 
 /**
- * The 13 engines in the TAKATAK AI roster. Edit this list to match the
+ * The 14 engines in the TAKATAK AI roster. Edit this list to match the
  * providers the gateway actually runs; order is display order only.
  */
 export const AI_PROVIDERS: AiProviderDef[] = [
@@ -30,6 +30,7 @@ export const AI_PROVIDERS: AiProviderDef[] = [
   { key: "perplexity", name: "Perplexity", capabilities: ["search", "text"], bestFor: "Cited web research and competitor scans", env: "PERPLEXITY_API_KEY" },
   { key: "deepseek", name: "DeepSeek", capabilities: ["text", "code"], bestFor: "Low-cost bulk generation", env: "DEEPSEEK_API_KEY" },
   { key: "groq", name: "Groq (open models)", capabilities: ["text"], bestFor: "Very low-latency chat replies", env: "GROQ_API_KEY" },
+  { key: "ollama", name: "Ollama Cloud (open models)", capabilities: ["text", "code"], bestFor: "Open models (gpt-oss, Kimi, GLM, DeepSeek) at low cost", env: "OLLAMA_API_KEY" },
   { key: "cohere", name: "Cohere", capabilities: ["text", "search"], bestFor: "Classification, embeddings and review triage", env: "COHERE_API_KEY" },
   { key: "elevenlabs", name: "ElevenLabs", capabilities: ["voice"], bestFor: "Voice-overs and AI phone voices", env: "ELEVENLABS_API_KEY" },
   { key: "runway", name: "Runway", capabilities: ["video"], bestFor: "Short ad and social video generation", env: "RUNWAYML_API_SECRET" },

@@ -55,7 +55,7 @@ export default async function AiEnginePage({ searchParams }: { searchParams: Pro
     <div className="space-y-6">
       <GrowthHeader
         title="AI Engine & Credits"
-        description="Every AI task (posts, replies, ads, audits, videos) runs through the TAKATAK AI Gateway, which picks the best of 13 engines and bills clients in credits."
+        description="Every AI task (posts, replies, ads, audits, videos) runs through the TAKATAK AI Gateway, which picks the best of 14 engines and bills clients in credits."
         actions={
           <Link href="/dashboard/ai-studio" className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-indigo-300">
             AI Studio →
@@ -149,7 +149,7 @@ export default async function AiEnginePage({ searchParams }: { searchParams: Pro
       </Card>
 
       <Card>
-        <CardHeader title="AI roster" subtitle="13 engines. Edit the roster in src/lib/growth/ai-engine.ts to match the gateway." />
+        <CardHeader title="AI roster" subtitle="14 engines. Edit the roster in src/lib/growth/ai-engine.ts to match the gateway." />
         <CardBody className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {AI_PROVIDERS.map((p) => (
             <div key={p.key} className="rounded-lg border border-slate-200 px-3 py-2">
