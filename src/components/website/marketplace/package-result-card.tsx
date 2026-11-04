@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   Clock,
   ShieldCheck,
-  Star,
 } from "lucide-react";
 
 import { ServiceThumbnail } from "@/components/website/marketplace/ServiceThumbnail";
@@ -44,18 +43,6 @@ export function PackageResultCard({
         </p>
 
         <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-          <span className="inline-flex items-center gap-1 font-medium text-slate-950">
-            <Star
-              size={12}
-              className="fill-slate-950"
-            />
-
-            {pkg.rating.toFixed(1)}
-          </span>
-
-          <span>({pkg.reviews})</span>
-          <span>·</span>
-
           <span className="inline-flex items-center gap-1">
             <Clock size={12} />
             {shortestDelivery(pkg)}-day delivery

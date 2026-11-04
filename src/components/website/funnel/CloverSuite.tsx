@@ -40,12 +40,25 @@ export const ACCENT: Record<string, string> = {
   ch4t: "#14B8A6",
 };
 
+/** Darker shade of each accent for the mini screens' small text (WCAG AA 4.5:1 on white, and white on it). */
+const ACCENT_INK: Record<string, string> = {
+  c4isse: "#1565D8",
+  t4ctile: "#C2262C",
+  "4ccounting": "#0B7A3B",
+  tr4cker: "#B45309",
+  st4ff: "#6D28D9",
+  m4rketing: "#BE185D",
+  loy4lty: "#0369A1",
+  rew4rd: "#C2410C",
+  ch4t: "#0F766E",
+};
+
 const w = (lang: Lang, fr: string, en: string) => (lang === "fr" ? fr : en);
 
 function Done({ show, children }: { show: boolean; children: ReactNode }) {
   return (
     <span
-      className={`absolute inset-x-1.5 bottom-1.5 flex items-center gap-1 rounded-md bg-emerald-500 px-1.5 py-1 text-[9.5px] font-bold text-white transition-all duration-300 ${
+      className={`absolute inset-x-1.5 bottom-1.5 flex items-center gap-1 rounded-md bg-emerald-700 px-1.5 py-1 text-[9.5px] font-bold text-white transition-all duration-300 ${
         show ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
       }`}
     >
@@ -66,7 +79,7 @@ function Tap({ show, className }: { show: boolean; className: string }) {
 
 /** One app's moving mini screen: four frames that loop like a GIF. */
 export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
-  const a = ACCENT[app] ?? "#1F8BFF";
+  const a = ACCENT_INK[app] ?? "#1565D8";
   const box = "relative h-full w-full overflow-hidden rounded-[10px] bg-white text-[#0B1220]";
   switch (app) {
     case "c4isse":

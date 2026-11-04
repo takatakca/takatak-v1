@@ -38,7 +38,7 @@ export type Step = 0 | 1 | 2 | 3;
 function Toast({ show, children }: { show: boolean; children: ReactNode }) {
   return (
     <span
-      className={`absolute inset-x-4 bottom-4 flex items-center gap-2.5 rounded-2xl bg-emerald-500 px-4 py-3 text-[14px] font-semibold text-white shadow-[0_18px_40px_-14px_rgb(16_185_129/0.9)] transition-all duration-500 sm:inset-x-6 sm:bottom-5 sm:text-[15px] ${
+      className={`absolute inset-x-4 bottom-4 flex items-center gap-2.5 rounded-2xl bg-emerald-700 px-4 py-3 text-[14px] font-semibold text-white shadow-[0_18px_40px_-14px_rgb(16_185_129/0.9)] transition-all duration-500 sm:inset-x-6 sm:bottom-5 sm:text-[15px] ${
         show ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
       }`}
     >

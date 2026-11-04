@@ -239,7 +239,7 @@ export function KioskScene() {
                 </span>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                    o.age === 0 ? "bg-[#1E6BFF] text-white" : o.age === 1 ? "bg-amber-400/90 text-[#1B1300]" : "bg-emerald-500 text-white"
+                    o.age === 0 ? "bg-[#1E6BFF] text-white" : o.age === 1 ? "bg-amber-400/90 text-[#1B1300]" : "bg-emerald-700 text-white"
                   }`}
                 >
                   {T.status[o.age][lang]}

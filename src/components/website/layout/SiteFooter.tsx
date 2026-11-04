@@ -89,15 +89,15 @@ export function SiteFooter() {
       <div className="max-w-7xl mx-auto px-4 py-16">
         <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
           <div className="col-span-2 md:col-span-1">
-            <h3 className="flex items-center gap-1.5">
+            <p className="flex items-center gap-1.5">
               <TakatakLogo />
-            </h3>
+            </p>
             <p className="mt-3 text-sm text-muted-foreground max-w-xs">{POSITIONING[l]}</p>
             <p className="mt-6 text-xs text-muted-foreground">{brand.supportEmail}</p>
           </div>
           {cols.map((col) => (
             <div key={col.title.en}>
-              <h4 className="text-sm font-semibold mb-4">{col.title[l]}</h4>
+              <h2 className="text-sm font-semibold mb-4">{col.title[l]}</h2>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {col.links.map((link) => {
                   const linkProps = link.params ? { to: link.to, params: link.params as never } : { to: link.to };

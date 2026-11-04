@@ -113,3 +113,24 @@ export const takbotCopy = {
     costs: { en: "What one credit buys", fr: "Ce qu’un crédit permet" },
   },
 } as const;
+
+/** French "best for" line of each engine (English source: src/lib/growth/ai-engine.ts). */
+export const ENGINE_BEST_FOR_FR: Record<string, string> = {
+  openai: "Textes, images et voix au quotidien",
+  anthropic: "Longs textes, stratégie et agents",
+  gemini: "Briefs multimédias, contexte YouTube et Ads",
+  mistral: "Textes rapides en français et en anglais",
+  xai: "Textes sociaux au fil des tendances",
+  perplexity: "Recherche web avec sources et veille des concurrents",
+  deepseek: "Production en volume à faible coût",
+  groq: "Réponses de clavardage très rapides",
+  cohere: "Classement, vecteurs et tri des avis",
+  elevenlabs: "Voix hors champ et voix téléphoniques IA",
+  runway: "Courtes vidéos pour pubs et réseaux sociaux",
+  stability: "Images de produits et de publicités",
+  heygen: "Vidéos avec porte-parole avatar",
+};
+
+export function engineBestFor(key: string, bestFor: string, lang: "en" | "fr"): string {
+  return lang === "fr" ? ENGINE_BEST_FOR_FR[key] ?? bestFor : bestFor;
+}

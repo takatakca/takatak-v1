@@ -1071,7 +1071,7 @@ export const en = {
   "cat.social.tier.business": "Managed content across more channels.",
   "cat.social.tier.pro": "Full-service social, managed end to end.",
   "cat.social.faq1.q": "Which networks can I connect?",
-  "cat.social.faq1.a": "Facebook, Instagram, Threads, TikTok, YouTube, X, Bluesky, Twitch and Google Business Profile today, plus your website and blog. LinkedIn and Pinterest are coming soon.",
+  "cat.social.faq1.a": "Facebook, Instagram, Threads, TikTok, YouTube, X, Bluesky, Twitch, Pinterest and Google Business Profile today, plus your website and blog. LinkedIn is coming soon.",
   "cat.social.faq2.q": "Is X included?",
   "cat.social.faq2.a": "X connects with the X add-on, {price}/month on Starter and Advanced plans.",
   "cat.social.faq3.q": "Can I pay yearly?",

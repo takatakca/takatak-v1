@@ -19,7 +19,8 @@ assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="text").length,2);
 assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="provider").length,8);
 
 const privatePage=source("src/app/dashboard/seo/free-tools/page.tsx");
-const publicPage=source("src/app/(website)/free-tools/page.tsx");
+// The public page renders FreeToolsBoard (French and English copy).
+const publicPage=source("src/app/(website)/free-tools/page.tsx")+source("src/components/website/seo/FreeToolsBoard.tsx");
 const action=source("src/app/dashboard/seo/free-tools/actions.ts");
 const portfolio=source("src/lib/seo/seotakatak-bridge.ts");
 assert.match(privatePage,/requireGrowthAccess\(/,"Dashboard route uses existing TAKATAK Auth");

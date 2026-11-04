@@ -249,7 +249,7 @@ function HeroScreen() {
   return (
     <div ref={ref}>
       <LiveLaptop scene="seo" step={step} business="" lang={lang} address="takatak.ca/dashboard/seo" tab="SEO TAKATAK" />
-      <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-white/35">{tx({ fr: "Aperçu à titre illustratif", en: "Illustrative preview" })}</p>
+      <p className="mt-3 text-[11px] uppercase tracking-[0.18em] text-white/70">{tx({ fr: "Aperçu à titre illustratif", en: "Illustrative preview" })}</p>
     </div>
   );
 }

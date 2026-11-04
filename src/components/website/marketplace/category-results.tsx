@@ -271,10 +271,6 @@ export function CategoryResults({
             <option value="delivery">
               Fastest delivery
             </option>
-
-            <option value="rating">
-              Highest rated
-            </option>
           </select>
         </div>
 
