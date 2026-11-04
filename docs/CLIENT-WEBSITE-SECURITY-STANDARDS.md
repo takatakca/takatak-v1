@@ -63,7 +63,7 @@ de connexion, avec les paramètres propres du client
 
 - **Uber Eats — Bolon Café (Saint-Léonard)** : tentative de modification des
 informations bancaires le 2026-11-04 à 00:40 depuis un appareil Linux.
-À clarifier avec Irqc : était-ce lui ?
+**CONFIRMÉ par Irqc le 2026-11-04 ~00:44 : c'était lui.** Pas de fraude.
 - Rappel : alerte similaire **Uber Eats — O'Crêpe** (tentative + ajout
 réussi) le 2026-11-03 — attribution toujours non confirmée par Irqc.
 
