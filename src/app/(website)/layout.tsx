@@ -3,6 +3,8 @@ import type {
   Viewport,
 } from "next";
 import type { ReactNode } from "react";
+import { headers } from "next/headers";
+import { HOME_LANGUAGE_HEADER, HOME_SEO } from "@/lib/website/home-seo";
 import {
   Inter,
   Montserrat,
@@ -36,11 +38,10 @@ const montserrat = Montserrat({
 
 export const metadata: Metadata = {
   title: {
-    default: "TAKATAK — Websites, domains, hosting & growth",
+    default: "TAKATAK — Websites, Hosting & Digital Marketing in Montréal",
     template: "%s — TAKATAK",
   },
-  description:
-    "Find the right service, launch your digital foundation, and connect websites, hosting, marketing, leads, communications and automation in one professional experience.",
+  description: HOME_SEO.en.description,
   applicationName: "TAKATAK",
   authors: [{ name: "TAKATAK" }],
   creator: "TAKATAK",
@@ -54,15 +55,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "TAKATAK",
-    title: "TAKATAK — Business services marketplace",
-    description:
-      "Managed online services for growing businesses.",
+    title: HOME_SEO.en.title,
+    description: HOME_SEO.en.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: "TAKATAK — Business services marketplace",
-    description:
-      "TAKATAK automates business services, from domains and hosting to AI-driven marketing and a freelancer marketplace.",
+    title: HOME_SEO.en.title,
+    description: HOME_SEO.en.description,
   },
 };
 
@@ -79,6 +78,7 @@ export default async function WebsiteLayout({
 }) {
   const session = await getWebsiteSession();
   const catalogRows = await loadPublicCatalogRows();
+  const homeLocale = (await headers()).get(HOME_LANGUAGE_HEADER);
 
   return (
     <div
@@ -86,6 +86,7 @@ export default async function WebsiteLayout({
     >
       <UpmindHeadScripts />
       <WebsiteProviders
+        initialLanguage={homeLocale === "fr" ? "fr" : homeLocale === "en" ? "en" : undefined}
         isAuthenticated={session.isAuthenticated}
         email={session.email}
         catalogRows={catalogRows}

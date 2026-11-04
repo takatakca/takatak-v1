@@ -6,12 +6,13 @@
 import type { CategoryKey } from "./core-categories";
 import type { Bi } from "./service-pages";
 
-export type HomeSectionId = "services" | "plan" | "takbot" | "suite" | "pricing" | "faq";
+export type HomeSectionId = "services" | "plan" | "takbot" | "team" | "phone" | "suite" | "pricing" | "faq";
 
 export const HOME_SECTIONS: readonly { id: HomeSectionId; label: Bi }[] = [
   { id: "services", label: { en: "Services", fr: "Services" } },
   { id: "plan", label: { en: "Build my plan", fr: "Mon forfait" } },
-  { id: "takbot", label: { en: "TAK bot AI", fr: "TAK bot IA" } },
+  { id: "takbot", label: { en: "TAK-TAK AI", fr: "TAK-TAK IA" } },
+  { id: "phone", label: { en: "Phone", fr: "Téléphonie" } },
   { id: "suite", label: { en: "Product suite", fr: "Nos produits" } },
   { id: "pricing", label: { en: "Pricing", fr: "Tarifs" } },
   { id: "faq", label: { en: "FAQ", fr: "FAQ" } },
@@ -79,13 +80,13 @@ export const homeCopy = {
     clear: { en: "Clear my plan", fr: "Vider mon forfait" },
   },
   takbot: {
-    kicker: { en: "03 · TAK bot", fr: "03 · TAK bot" },
+    kicker: { en: "03 · TAK-TAK", fr: "03 · TAK-TAK" },
     title: { en: "One master bot. Every AI engine behind it.", fr: "Un bot maître. Tous les moteurs d’IA derrière lui." },
     subtitle: {
-      en: "Ask TAK bot once. It picks the right engine for the job, or you choose it yourself. Pay with credits, only for what you use.",
-      fr: "Demandez une fois à TAK bot. Il choisit le bon moteur pour la tâche, ou c’est vous qui choisissez. Payez en crédits, seulement ce que vous utilisez.",
+      en: "Ask TAK-TAK once. It picks the right engine for the job, or you choose it yourself. Pay with credits, only for what you use.",
+      fr: "Demandez une fois à TAK-TAK. Il choisit le bon moteur pour la tâche, ou c’est vous qui choisissez. Payez en crédits, seulement ce que vous utilisez.",
     },
-    cta: { en: "Open TAK bot", fr: "Ouvrir TAK bot" },
+    cta: { en: "Open TAK-TAK", fr: "Ouvrir TAK-TAK" },
     credits: { en: "See credit packs", fr: "Voir les crédits" },
     relay: { en: "Relays to", fr: "Relaie vers" },
   },
@@ -197,7 +198,7 @@ export interface SuiteGroup {
 /**
  * Statuses from each repository (2026-10-30): the nine Clover apps are drafts in
  * the Clover developer portal; Food Hub is RC10; QMAPS and FLEXS are linked from
- * the header; MIMT telecom is pre-launch; the Academy has no public address yet.
+ * the header; MIMT sells its plans on mimt.ca (live since 2026-11-01 on this page); the Academy has no public address yet.
  */
 export const SUITE_GROUPS: readonly SuiteGroup[] = [
   {
@@ -244,7 +245,7 @@ export const SUITE_GROUPS: readonly SuiteGroup[] = [
     },
     image: "/marketplace/visuals/voip.jpg",
     products: [
-      { key: "mimt", name: "MIMT", mono: "MI", status: "planned", url: "https://mimt.ca/", desc: { en: "Business phone and VoIP, made in Canada", fr: "Téléphonie d’affaires et VoIP, faite au Canada" } },
+      { key: "mimt", name: "MIMT", mono: "MI", status: "live", url: "https://mimt.ca/", desc: { en: "Business phone and VoIP, made in Canada", fr: "Téléphonie d’affaires et VoIP, faite au Canada" } },
       { key: "academy", name: "TAKATAK Academy", mono: "AC", status: "soon", desc: { en: "Free courses to start, advanced tracks next, for every TAKATAK tool", fr: "Des formations gratuites pour commencer, des parcours avancés ensuite, sur chaque outil TAKATAK" } },
     ],
   },
@@ -268,8 +269,8 @@ export const HOME_FAQ: readonly { q: Bi; a: Bi }[] = [
   {
     q: { en: "What are AI credits?", fr: "Que sont les crédits IA ?" },
     a: {
-      en: "TAK bot and the AI tools run on credits. Each action has a fixed cost, shown before you run it. If an engine fails, the credits come back automatically.",
-      fr: "TAK bot et les outils d’IA fonctionnent avec des crédits. Chaque action a un coût fixe, affiché avant de la lancer. Si un moteur échoue, les crédits reviennent automatiquement.",
+      en: "TAK-TAK and the AI tools run on credits. Each action has a fixed cost, shown before you run it. If an engine fails, the credits come back automatically.",
+      fr: "TAK-TAK et les outils d’IA fonctionnent avec des crédits. Chaque action a un coût fixe, affiché avant de la lancer. Si un moteur échoue, les crédits reviennent automatiquement.",
     },
   },
   {
@@ -302,7 +303,7 @@ export const homeV2 = {
     },
     proof: [
       { value: "10", label: { en: "services, one account", fr: "services, un seul compte" } },
-      { value: "13", label: { en: "AI engines behind TAK bot", fr: "moteurs d’IA derrière TAK bot" } },
+      { value: "13", label: { en: "AI engines behind TAK-TAK", fr: "moteurs d’IA derrière TAK-TAK" } },
       { value: "9", label: { en: "social networks connected", fr: "réseaux sociaux branchés" } },
       { value: "FR · EN", label: { en: "team in Montréal", fr: "équipe à Montréal" } },
     ],
@@ -327,7 +328,7 @@ export const homeV2 = {
     custom: { en: "Custom", fr: "Sur mesure" },
   },
   takbot: {
-    eyebrow: { en: "TAK bot · in your TAKATAK account", fr: "TAK bot · dans votre compte TAKATAK" },
+    eyebrow: { en: "TAK-TAK · in your TAKATAK account", fr: "TAK-TAK · dans votre compte TAKATAK" },
     lead: { en: "Your AI tools, in your account.", fr: "Vos outils d’IA, dans votre compte." },
     rest: { en: "Paid with credits, not subscriptions.", fr: "Payés en crédits, pas en abonnements." },
     body: {
@@ -340,8 +341,8 @@ export const homeV2 = {
     perCredit: { en: "per credit", fr: "le crédit" },
     best: { en: "Best price per credit", fr: "Meilleur prix au crédit" },
     buy: { en: "Buy", fr: "Acheter" },
-    tabs: { takbot: { en: "TAK bot", fr: "TAK bot" }, dashboard: { en: "Dashboard", fr: "Tableau de bord" } },
-    open: { takbot: { en: "Open TAK bot", fr: "Ouvrir TAK bot" }, dashboard: { en: "Sign in to your dashboard", fr: "Ouvrir mon tableau de bord" } },
+    tabs: { takbot: { en: "TAK-TAK", fr: "TAK-TAK" }, dashboard: { en: "Dashboard", fr: "Tableau de bord" } },
+    open: { takbot: { en: "Open TAK-TAK", fr: "Ouvrir TAK-TAK" }, dashboard: { en: "Sign in to your dashboard", fr: "Ouvrir mon tableau de bord" } },
     real: { en: "Real recordings of the TAKATAK app, not mock-ups.", fr: "Vraies captures de l’application TAKATAK, pas des maquettes." },
     url: { takbot: "takatak.ca/takbot", dashboard: "takatak.ca/dashboard" },
   },
@@ -372,7 +373,7 @@ export const homeV3 = {
       { key: "hosting", icon: "hosting", to: "/hosting", label: { en: "Host my site", fr: "Héberger mon site" } },
       { key: "customers", icon: "customers", to: "/services/marketing", label: { en: "Get more customers", fr: "Avoir plus de clients" } },
       { key: "reviews", icon: "reviews", to: "/services/reviews", label: { en: "Grow my Google reviews", fr: "Plus d’avis Google" } },
-      { key: "takbot", icon: "takbot", to: "/takbot", label: { en: "Ask TAK bot", fr: "Demander à TAK bot" } },
+      { key: "takbot", icon: "takbot", to: "/takbot", label: { en: "Ask TAK-TAK", fr: "Demander à TAK-TAK" } },
     ],
   },
   stories: [

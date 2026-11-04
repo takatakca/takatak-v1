@@ -1,14 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight, Check, Headset } from "lucide-react";
+import { ArrowDown, ArrowRight, Check, Headset } from "lucide-react";
 
 import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
+import { ANNUAL_PREPAY_PERCENT, annualPrepayQuote } from "@/lib/promotions/catalog";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { CORE_CATEGORIES, type CoreCategory } from "@/lib/website/core-categories";
 import { BUSINESS_TYPES, GOALS, fill, homeCopy, homeV2 } from "@/lib/website/home-funnel";
 import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
+import { MIMT_PLAN_LIST } from "@/lib/website/mimt-plans";
 import { Link } from "@/lib/website/nav";
 import { WelcomeSaving } from "./Campaign";
 import { sectionId } from "./HomeSectionNav";
@@ -82,6 +84,33 @@ export function PlanConfigurator() {
               {CORE_CATEGORIES.map((c) => {
                 const on = plan.has(c.key);
                 const media = SERVICE_MEDIA[c.key];
+                // The phone is MIMT, sold in the MIMT app: this row opens the phone chapter instead of the cart.
+                if (c.key === "voip") {
+                  return (
+                    <li key={c.key}>
+                      <a
+                        href={`#${sectionId("phone")}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          document.getElementById(sectionId("phone"))?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        }}
+                        className="group flex w-full items-center gap-4 py-4 text-left"
+                      >
+                        <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-2 ring-[var(--hp-cta)]">
+                          <Image src={media.photo} alt="" fill sizes="44px" className="object-cover" style={{ objectPosition: media.focus, transform: `scale(${media.zoom})` }} />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="hp-ink block text-[16px] font-semibold">{tk(`cat.${c.key}.name`)}</span>
+                          <span className="hp-ink-3 block truncate text-[13px]">{lang === "fr" ? "MIMT : numéro, standard, vidéo et IA" : "MIMT: number, attendant, video and AI"}</span>
+                        </span>
+                        <span className="hp-cta inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-semibold">
+                          {lang === "fr" ? `Dès ${money(lang, MIMT_PLAN_LIST.free.monthlyCents / 100)}` : `From ${money(lang, MIMT_PLAN_LIST.free.monthlyCents / 100)}`}
+                          <ArrowDown size={14} aria-hidden />
+                        </span>
+                      </a>
+                    </li>
+                  );
+                }
                 return (
                   <li key={c.key}>
                     <button
@@ -161,6 +190,24 @@ export function PlanConfigurator() {
                   </div>
                 )}
               </dl>
+              {totals.monthly > 0 &&
+                (() => {
+                  const a = annualPrepayQuote(Math.round(totals.monthly * 100));
+                  return (
+                    <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-[color-mix(in_oklab,var(--hp-info)_10%,transparent)] px-4 py-3 ring-1 ring-[color-mix(in_oklab,var(--hp-info)_30%,transparent)]">
+                      <span className="text-[13.5px] leading-5 hp-ink-2">
+                        <span className="block font-semibold hp-ink">
+                          {lang === "fr" ? `Payé à l’année : -${ANNUAL_PREPAY_PERCENT} %` : `Paid yearly: -${ANNUAL_PREPAY_PERCENT}%`}
+                        </span>
+                        {lang === "fr" ? `Vous économisez ${fmt(a.discountCents / 100)} sur 12 mois.` : `You save ${fmt(a.discountCents / 100)} over 12 months.`}
+                      </span>
+                      <span className="hp-display shrink-0 text-[22px]">
+                        {fmt(a.totalCents / 100)}
+                        <span className="text-[13px] font-medium hp-ink-3">{lang === "fr" ? " /an" : " /yr"}</span>
+                      </span>
+                    </div>
+                  );
+                })()}
 
               {plan.keys.length > 0 && (
                 <div className="mt-5">

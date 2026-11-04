@@ -14,7 +14,7 @@ Google profiles.
 | MIMT (`mimt`, `mimtcaapp`) | The web app call/text screens with demo numbers only; any approved launch visuals. |
 | Academy (`ACADEMYTAKATAK`) | A lesson page and a course list; the public address once it exists. |
 | SEO TAKATAK (`SEOTAKATAK`) | The action-plan screen with a demo site. |
-| TAK bot / AI (`takatak-v1`, `knowledgeAI`) | Approved logo files (`knowledgeAI/brand/`) and any brand video. |
+| TAK-TAK / AI (`takatak-v1`, `knowledgeAI`) | Approved logo files (`knowledgeAI/brand/`) and any brand video. |
 | Facturations (`Facturations`) | Nothing until it is cleared for public use. |
 
 ## Rules (public repositories)

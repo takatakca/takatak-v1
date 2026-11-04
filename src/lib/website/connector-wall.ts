@@ -126,7 +126,7 @@ export const WALL_GROWTH: WallItem[] = [
 
 export const WALL_HOUSE: WallItem[] = (() => {
   const items: WallItem[] = [
-    { key: "takbot", name: "TAK bot", group: "house", mark: "spark" },
+    { key: "takbot", name: "TAK-TAK", group: "house", mark: "spark" },
     ...CONNECTORS.filter((c) => isHouse(c.key)).map((c) => ({ key: c.key, name: houseName(c.key, c.name), group: "house" as const, mark: HOUSE_CONNECTOR_MARK[c.key] })),
   ];
   for (const g of SUITE_GROUPS) {

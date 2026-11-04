@@ -23,7 +23,7 @@ import { WALL_AI, WALL_GROWTH, WALL_HOUSE, WALL_TOTAL, type WallItem } from "@/l
 import { CORE_CATEGORIES } from "@/lib/website/core-categories";
 import { TAKBOT_ENGINES } from "@/lib/takbot/catalog";
 import { useLanguage } from "@/lib/website/use-language";
-import { Rise, Ticker, useSeen } from "./primitives";
+import { Rise, Ticker } from "./primitives";
 
 const HOUSE_ICONS: Record<string, LucideIcon> = {
   spark: Sparkles,
@@ -62,12 +62,12 @@ const T = {
     en: "Your tools, your networks, your AI engines and our own apps, plugged into one account.",
   },
   services: { fr: "services", en: "services" },
-  engines: { fr: "moteurs d'IA dans TAK bot", en: "AI engines in TAK bot" },
+  engines: { fr: "moteurs d'IA dans TAK-TAK", en: "AI engines in TAK-TAK" },
   rows: { ai: { fr: "IA", en: "AI" }, growth: { fr: "Réseaux et outils", en: "Networks and tools" }, house: { fr: "Maison TAKATAK", en: "TAKATAK house" } },
   houseTag: { fr: "maison", en: "house" },
 } as const;
 
-function Mark({ item, index }: { item: WallItem; index: number }) {
+export function Mark({ item, index }: { item: WallItem; index: number }) {
   if (item.group === "house") {
     const Icon = item.mark ? HOUSE_ICONS[item.mark] : null;
     return (
@@ -126,9 +126,8 @@ function Row({ items, reverse, label, speed }: { items: WallItem[]; reverse?: bo
 /** Real logos of what TAKATAK connects to, our own marks next to them, and the true total. */
 export function ConnectorWall() {
   const { lang } = useLanguage();
-  const { ref, seen } = useSeen<HTMLDivElement>();
   return (
-    <div ref={ref} className="relative mx-auto grid max-w-7xl gap-8 px-4 pb-6 pt-10 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:items-center lg:gap-10">
+    <div className="relative mx-auto grid max-w-7xl gap-8 px-4 pb-6 pt-10 lg:grid-cols-[minmax(0,320px)_minmax(0,1fr)] lg:items-center lg:gap-10">
       <Rise>
         <p className="hp-code-eyebrow flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.16em] text-[#7FD8FF]">
           <span aria-hidden className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
@@ -137,12 +136,12 @@ export function ConnectorWall() {
         <p className="mt-1 pl-4 text-[12px] text-white/45">{T.live[lang]}</p>
         <p className="mt-3 flex items-baseline gap-3">
           <span className="hp-display text-[64px] leading-none text-white">
-            <Ticker value={seen ? WALL_TOTAL : 0} format={(v) => String(Math.round(v))} />
+            <Ticker value={WALL_TOTAL} format={(v) => String(Math.round(v))} />
           </span>
           <span className="text-[18px] font-semibold text-white">{T.total[lang]}</span>
         </p>
         <p className="mt-1 text-[14.5px] text-[#7FD8FF]">
-          <Ticker value={seen ? WALL_HOUSE.length : 0} format={(v) => String(Math.round(v))} /> {T.house[lang]}
+          <Ticker value={WALL_HOUSE.length} format={(v) => String(Math.round(v))} /> {T.house[lang]}
         </p>
         <p className="mt-4 max-w-sm text-[14.5px] leading-6 text-white/65">{T.lead[lang]}</p>
         <dl className="mt-5 flex gap-8">
@@ -154,7 +153,7 @@ export function ConnectorWall() {
               <dt className="sr-only">{s.l}</dt>
               <dd className="flex items-baseline gap-2">
                 <span className="hp-display text-[28px] leading-none text-white">
-                  <Ticker value={seen ? s.n : 0} format={(v) => String(Math.round(v))} />
+                  <Ticker value={s.n} format={(v) => String(Math.round(v))} />
                 </span>
                 <span className="text-[13px] text-white/60">{s.l}</span>
               </dd>

@@ -58,6 +58,9 @@ jobs:
       - name: Strict runtime health readiness safeguards
         run: npx tsx scripts/verify-runtime-readiness.ts
 
+      - name: Website monitoring dashboard and signed-sync safeguards
+        run: node --import tsx --require ./scripts/register-server-only.cjs scripts/monitoring-tests.ts
+
       - name: Lint
         run: npm run lint
 
@@ -396,6 +399,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:client-invoices-db
 
+      - name: Monitoring checkout, tenant isolation and signed sync against ephemeral database
+        env:
+          NODE_ENV: development
+        run: node --import tsx --require ./scripts/register-server-only.cjs scripts/monitoring-db-tests.ts
+
       - name: GROUPE TAKATAK billing ecosystem feed against the ephemeral database
         env:
           NODE_ENV: development
@@ -405,6 +413,21 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:lead-order-billing-db
+
+      - name: Homepage assistant request → Lead Inbox against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:website-lead-inbox-db
+
+      - name: TAK-TAK homepage trial (credits once, lead in inbox) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:takbot-trial-db
+
+      - name: Homepage newsletter (double opt-in, unsubscribe, inbox) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:newsletter-db
 
       - name: AI provider keys against the ephemeral database
         env:

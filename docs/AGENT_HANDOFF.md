@@ -1,6 +1,15 @@
 # REVEW review cockpit handoff — 2026-10-31
 
 Branch `codex/review-ecosystem`, based on main 35c62f0. Native V1 review cockpit, private unified feed, capability registry, existing AI queue action and tighter QMAPS reply ownership/acknowledgement. No migration or deployment. Main details and counterpart links: [REVEW_REVIEW_ECOSYSTEM.md](REVEW_REVIEW_ECOSYSTEM.md). Local 15 cockpit, 4 QMAPS bridge and 13 QMAPS sync checks passed; Prisma/Growth-wide checks blocked by engine-host 403. Gmail/Drive/scheduling tools unavailable; no 30-minute email task is active. CI on source 8c3cfb8 passed: https://github.com/takatakca/takatak-v1/actions/runs/41190779123 (real Prisma generation, tests, full typecheck/lint/build). Next: coordinator reviews the feature branch; no deployment by REVEW. — REVEW
+## Latest TAKATAK.ca homepage SEO handoff — 2026-11-02
+
+Signed: Codex SEO @ ChatGPT Work. Owner authorized full control and asked this agent to add itself for completion.
+
+2026-11-02 | Codex SEO @ ChatGPT Work | main ← PR #244 | merged a429e391; full source CI 41409704490 PASS; not verified live | bilingual homepage SEO, schema/images and accurate catalog values; 00-SEO-CONTINUITY.md | next: authenticated Coolify deployment, live EN/FR HTTP acceptance, official social profiles/assets and new Semrush audit
+
+This section supersedes older homepage deployment-status notes below. Source and full CI are verified; production and a new external score are not. Secure Coolify sign-in was cancelled and was not retried. Read 00-SEO-CONTINUITY.md and docs/seo/SEMRUSH_AUDIT_2026-11-02.md. Preserve other active PRs. No credentials or permissions were changed.
+
+---
 
 # SEO integration / TAKATAK V1 — agent handoff, 2026-10-15
 

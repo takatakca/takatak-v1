@@ -20,7 +20,7 @@ const PAGE_RE = /^\/[A-Za-z0-9/_\-.?=&%]{0,200}$/;
 
 /**
  * POST { language?, sourcePage? } — gives the signed-in visitor's own
- * workspace its TAK bot trial credits, once ever, and records the sign-up in
+ * workspace its TAK-TAK trial credits, once ever, and records the sign-up in
  * the TAKATAK CRM. Same-origin only. Name and email come from the profile
  * row, never from the request.
  */

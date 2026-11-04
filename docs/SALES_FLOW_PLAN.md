@@ -12,7 +12,7 @@ Aucun secret ici. English summary at the bottom.*
 | Remplit la fiche dans la conversation (nom, entreprise, courriel, téléphone), la montre à côté, demande « Tout est bon ? », envoie | fait | `src/lib/website/sales-fiche.ts`, `AskBar.tsx` |
 | La demande arrive dans `/dashboard/leads/inbox` (même circuit que les formulaires) | fait | `POST /api/public/website-requests`, `category: sales-assistant` |
 | Mode voix : dictée du navigateur, réponses lues à voix haute, envoi automatique à la fin de la dictée | fait (navigateur) | `AskBar.tsx` |
-| Essai TAK bot : connexion Google, fiche client, 50 crédits | fait | `docs/TAKBOT_TRIAL.md` |
+| Essai TAK-TAK : connexion Google, fiche client, 50 crédits | fait | `docs/TAKBOT_TRIAL.md` |
 | Commande pas à pas, sans paiement | existe | `/commander` |
 
 ## 2. Ce qui reste, dans l'ordre
@@ -71,7 +71,7 @@ Chaque étape est une PR séparée, testée, derrière un interrupteur (variable
 ## English summary
 
 Done: AI sales assistant beside the offers (type, talk, a person), sales-only answers (problems go to support), the
-request form filled from the conversation and sent to the leads inbox, browser voice mode, TAK bot trial. Next, one PR
+request form filled from the conversation and sent to the leads inbox, browser voice mode, TAK-TAK trial. Next, one PR
 each, behind a switch: real-time voice, Stripe Checkout subscription with opt-in saved card and manual-capture
 pre-authorization, phone OTP (issue #141, reuse MIMT's onboarding stages), passkeys, optional selfie check, e-signed
 contract, one-offer-at-a-time upsell chain with an equally visible "No thanks". Biometric checks in Québec need express

@@ -1,13 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useId, useState, type FormEvent } from "react";
-import { ArrowRight, Check, Loader2, MailCheck } from "lucide-react";
+import { ArrowRight, Check, GraduationCap, Inbox, Loader2, MailCheck, Phone, Tag } from "lucide-react";
 
 import { useCopy } from "@/components/website/premium/ui";
 import { NEWSLETTER_TOPICS, TOPIC_LABELS, type NewsletterTopic } from "@/lib/newsletter/topics";
 import { Link } from "@/lib/website/nav";
-import { Eyebrow, RevealMedia, Rise, TwoTone } from "./primitives";
+import { Eyebrow, Rise, TwoTone, useSeen } from "./primitives";
 import { PushAlert } from "./PushAlert";
 
 type Info =
@@ -49,13 +48,6 @@ const t = {
     fr: "Ouvrez le courriel que nous venons de vous envoyer et cliquez sur « Confirmer ». Sans confirmation, vous ne recevrez rien.",
     en: "Open the email we just sent you and click “Confirm”. Without confirmation, you will receive nothing.",
   },
-  previewTag: { fr: "Aperçu d'un courriel", en: "Email preview" },
-  previewSubject: { fr: "Bienvenue : 10 % sur votre premier achat", en: "Welcome: 10% off your first purchase" },
-  previewLine: {
-    fr: "Code FIRST10, une fois par compte, sur les services admissibles.",
-    en: "Code FIRST10, once per account, on eligible services.",
-  },
-  photoAlt: { fr: "Dans un atelier de couture, au téléphone devant l'ordinateur", en: "In a sewing studio, on the phone at the laptop" },
 };
 
 
@@ -233,30 +225,88 @@ export function NewsletterForm({
   );
 }
 
+const INBOX = [
+  {
+    Icon: Tag,
+    topic: { fr: "Offres", en: "Offers" },
+    subject: { fr: "Bienvenue : 10 % sur votre premier achat", en: "Welcome: 10% off your first purchase" },
+    line: { fr: "Code FIRST10, une fois par compte, sur les services admissibles.", en: "Code FIRST10, once per account, on eligible services." },
+  },
+  {
+    Icon: GraduationCap,
+    topic: { fr: "TAKATAK Academy", en: "TAKATAK Academy" },
+    subject: { fr: "Leçon : votre fiche locale à jour en 10 minutes", en: "Lesson: your local listing up to date in 10 minutes" },
+    line: { fr: "Heures, photos, heures des fêtes : le pas à pas.", en: "Hours, photos, holiday hours: step by step." },
+  },
+  {
+    Icon: Phone,
+    topic: { fr: "Nouveaux services", en: "New services" },
+    subject: { fr: "Nouveau : la téléphonie TAKATAK × MIMT", en: "New: TAKATAK × MIMT phone" },
+    line: { fr: "Un numéro local, un standard, la vidéo et l'IA.", en: "A local number, an attendant, video and AI." },
+  },
+] as const;
+
+/** A dark inbox where one email per newsletter topic arrives, labelled as a preview. */
+function InboxPreview({ lang }: { lang: "en" | "fr" }) {
+  const { ref, seen } = useSeen<HTMLDivElement>();
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!seen) return;
+    const t = window.setInterval(() => setN((v) => (v + 1) % (INBOX.length + 2)), 1600);
+    return () => window.clearInterval(t);
+  }, [seen]);
+  const shown = Math.min(INBOX.length, n + 1);
+  return (
+    <div ref={ref} className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(160deg,#0B1B3F,#060D1F_65%)] p-5 shadow-[0_50px_120px_-40px_rgb(6_13_31/0.8)] sm:p-7">
+      <span aria-hidden className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-[#1E6BFF]/25 blur-3xl" />
+      <div className="relative flex items-center justify-between">
+        <p className="flex items-center gap-2 text-[14px] font-semibold text-white">
+          <Inbox size={16} aria-hidden /> {lang === "fr" ? "Boîte de réception" : "Inbox"}
+        </p>
+        <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{lang === "fr" ? "Aperçu" : "Preview"}</span>
+      </div>
+      <ul className="relative mt-5 grid gap-3">
+        {INBOX.map((m, i) => (
+          <li
+            key={m.subject.fr}
+            className={`rounded-2xl p-4 transition-all duration-700 ${i < shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"} ${
+              i === shown - 1 ? "bg-white text-[#060D1F] shadow-[0_24px_60px_-24px_rgb(41_195_255/0.6)]" : "bg-white/[0.06] text-white ring-1 ring-white/10"
+            }`}
+          >
+            <div className="flex items-start gap-3">
+              <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${i === shown - 1 ? "bg-[#1E6BFF] text-white" : "bg-white/10 text-[#7FD8FF]"}`}>
+                <m.Icon size={16} aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center justify-between gap-2 text-[12px] font-semibold opacity-70">
+                  <span>Groupe TAKATAK</span>
+                  <span className="truncate">{m.topic[lang]}</span>
+                </p>
+                <p className="mt-0.5 truncate text-[14.5px] font-semibold">{m.subject[lang]}</p>
+                <p className="mt-0.5 text-[13px] leading-5 opacity-70">{m.line[lang]}</p>
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+      <p className="relative mt-5 text-[12px] leading-5 text-white/45">
+        {lang === "fr"
+          ? "Seulement les sujets que vous choisissez. Le lien de désabonnement est dans chaque courriel."
+          : "Only the topics you choose. The unsubscribe link is in every email."}
+      </p>
+    </div>
+  );
+}
+
 /** Newsletter sign-up: its own unchecked consent box, double opt-in, proof kept server-side. */
 export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) {
   const { lang } = useCopy();
   return (
     <section id="infolettre" aria-labelledby="newsletter-title" className="hp-bg hp-live px-4 py-14 sm:py-20" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
-        {/* Picture + an honest preview of a real email (the FIRST10 welcome offer exists). */}
+        {/* An inbox preview: one email per topic the visitor can choose. */}
         <Rise className="relative min-w-0">
-          <RevealMedia className="aspect-[4/5] shadow-[var(--hp-shadow)] sm:aspect-[5/4] lg:aspect-[4/5]">
-            <div className="hp-parallax absolute inset-0">
-              <Image src="/photos/studio-design.webp" alt={t.photoAlt[lang]} fill sizes="(min-width: 1024px) 560px, 100vw" className="object-cover" style={{ objectPosition: "55% 40%" }} />
-            </div>
-          </RevealMedia>
-          <div className="hp-card hp-ink absolute bottom-5 left-5 right-5 rounded-2xl p-4 shadow-[0_24px_60px_-24px_rgba(11,13,18,0.45)] sm:bottom-8 sm:left-auto sm:right-8 sm:w-[340px]">
-            <p className="hp-ink-3 text-[11px] font-semibold uppercase tracking-[0.18em]">{t.previewTag[lang]}</p>
-            <div className="mt-3 flex items-start gap-3">
-              <span aria-hidden className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[var(--hp-cta)] text-[13px] font-bold text-white">T</span>
-              <div className="min-w-0">
-                <p className="text-[13px] font-semibold">Groupe TAKATAK</p>
-                <p className="truncate text-[14px] font-semibold">{t.previewSubject[lang]}</p>
-                <p className="hp-ink-2 mt-0.5 text-[13px] leading-5">{t.previewLine[lang]}</p>
-              </div>
-            </div>
-          </div>
+          <InboxPreview lang={lang} />
         </Rise>
 
         <Rise className="min-w-0">

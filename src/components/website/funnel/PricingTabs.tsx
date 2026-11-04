@@ -45,31 +45,31 @@ export function PricingTabs() {
     tab === "hosting"
       ? pricing.hosting.map((h) => ({
           key: h.key,
-          name: h.name,
+          name: tk(`tier.hosting.${h.key}`),
           amount: h.amount,
           cadence: h.cadence,
-          lines: [h.description, ...h.features],
+          lines: [tk(`hosting.plan.${h.key}.desc`), ...h.features.map((_, f) => tk(`cat.hosting.tier.${h.key}.f${f + 1}`))],
           featured: h.key === "silver",
           badge: h.key === "silver" ? { en: "Recommended", fr: "Recommandé" } : h.key === "gold" ? { en: "Most complete", fr: "Le plus complet" } : undefined,
           action: { kind: "checkout", plan: h.key },
-          label: fill(t.choose[lang], { name: h.name }),
+          label: fill(t.choose[lang], { name: tk(`tier.hosting.${h.key}`) }),
         }))
       : tab === "websites"
         ? pricing.websites.map((w) => ({
             key: w.key,
-            name: w.name,
+            name: tk(`tier.websites.${w.key}`),
             amount: w.amount,
             cadence: w.cadence,
-            lines: [w.description],
+            lines: [tk(`cat.website.tier.${w.key}`)],
             featured: w.key === "business",
             badge: w.key === "business" ? { en: "Recommended", fr: "Recommandé" } : w.key === "ecommerce" ? { en: "To sell online", fr: "Pour vendre en ligne" } : undefined,
             action: { kind: "link", to: "/register?plan=website" },
-            label: fill(t.start[lang], { name: w.name }),
+            label: fill(t.start[lang], { name: tk(`tier.websites.${w.key}`) }),
           }))
         : tab === "marketing"
           ? pricing.marketing.map((m) => ({
               key: m.key,
-              name: m.name,
+              name: tk(`tier.marketing.${m.key}`),
               amount: m.amount,
               cadence: m.cadence,
               suffix: "suffix" in m ? m.suffix : undefined,
@@ -77,7 +77,7 @@ export function PricingTabs() {
               featured: m.key === "monthly",
               badge: m.key === "monthly" ? { en: "Recommended", fr: "Recommandé" } : undefined,
               action: { kind: "link", to: "/register?plan=marketing" },
-              label: fill(t.start[lang], { name: m.name }),
+              label: fill(t.start[lang], { name: tk(`tier.marketing.${m.key}`) }),
             }))
           : TAKBOT_PACKS.map((p) => ({
               key: p.key,
@@ -147,7 +147,9 @@ export function PricingTabs() {
               <Rise as="li" key={card.key} delay={i * 90} className="hp-build">
                 <div
                   className={`hp-glow relative flex h-full flex-col rounded-[26px] p-7 transition-all duration-500 hover:-translate-y-1 ${
-                    dark ? "hp-raised hp-ink ring-2 ring-[var(--hp-cta)]" : "hp-raised hp-ink"
+                    dark
+                      ? "bg-[linear-gradient(160deg,#0B1B3F,#060D1F_65%)] text-white shadow-[0_50px_100px_-40px_rgb(30_107_255/0.95)] ring-1 ring-[#29C3FF]/45 lg:-mt-3 lg:mb-3"
+                      : "hp-raised hp-ink"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -158,13 +160,13 @@ export function PricingTabs() {
                   </div>
                   <p className="mt-6 flex items-baseline gap-1">
                     <span className="hp-display text-[44px] leading-none">{money(lang, card.amount)}</span>
-                    <span className="hp-ink-2 text-[14px]">{cadenceSuffix(tk, card.cadence)}</span>
+                    <span className={`text-[14px] ${dark ? "text-white/60" : "hp-ink-2"}`}>{cadenceSuffix(tk, card.cadence)}</span>
                   </p>
-                  {card.suffix && <p className="hp-ink-3 mt-1 text-[13px]">{card.suffix}</p>}
-                  <ul className="hp-line hp-ink-2 mt-6 grid gap-2.5 border-t pt-6 text-[14px]">
+                  {card.suffix && <p className={`mt-1 text-[13px] ${dark ? "text-white/50" : "hp-ink-3"}`}>{card.suffix}</p>}
+                  <ul className={`mt-6 grid gap-2.5 border-t pt-6 text-[14px] ${dark ? "border-white/10 text-white/80" : "hp-line hp-ink-2"}`}>
                     {card.lines.map((line) => (
                       <li key={line} className="flex items-start gap-2.5">
-                        <Check size={15} className="hp-accent mt-0.5 shrink-0" strokeWidth={2.5} aria-hidden /> {line}
+                        <Check size={15} className={`mt-0.5 shrink-0 ${dark ? "text-[#29C3FF]" : "hp-accent"}`} strokeWidth={2.5} aria-hidden /> {line}
                       </li>
                     ))}
                   </ul>

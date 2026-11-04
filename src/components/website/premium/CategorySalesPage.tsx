@@ -20,6 +20,7 @@ import { CategoryVisual } from "./CategoryVisual";
 import { DomainSearchDialog } from "./DomainSearchDialog";
 import { FloatCard } from "./mockups";
 import { ScaledMock } from "./ScaledMock";
+import { ServiceLiveDemo } from "./ServiceLiveDemo";
 import { CategoryPricing } from "./CategoryPricing";
 import {
   AvailabilityBadge,
@@ -35,7 +36,7 @@ import {
   useCopy,
 } from "./ui";
 
-const SECTIONS = ["included", "how", "see", "pricing", "faq"] as const;
+const SECTIONS = ["live", "included", "how", "see", "pricing", "faq"] as const;
 
 /** Values inserted into FAQ answers, all from the code catalogs. */
 function faqVars(key: CategoryKey, lang: "en" | "fr"): Record<string, string | number> {
@@ -165,7 +166,12 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
         </ul>
       </nav>
 
-      {/* 2. What's included */}
+      {/* 2. See it live: the service plays in a laptop, step by step */}
+      <Section id="live" title={tk("cat.page.live")} subtitle={tk("cat.page.liveSub")}>
+        <ServiceLiveDemo categoryKey={k} />
+      </Section>
+
+      {/* 3. What's included */}
       <Section id="included" title={tk("cat.page.included")} subtitle={tk("cat.page.includedSub")}>
         <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {category.included.map((item, i) => {
@@ -188,7 +194,7 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
         </ul>
       </Section>
 
-      {/* 3. How it works */}
+      {/* 4. How it works */}
       <Section id="how" title={tk("cat.page.how")} subtitle={tk("cat.page.howSub")} tinted>
         <ol className="relative grid gap-4 md:grid-cols-4">
           <span aria-hidden className="absolute left-0 right-0 top-[27px] hidden h-px bg-[linear-gradient(90deg,transparent,color-mix(in_oklab,var(--tk-accent)_60%,transparent),transparent)] md:block" />
@@ -205,7 +211,7 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
         </ol>
       </Section>
 
-      {/* 4. Visuals */}
+      {/* 5. Visuals */}
       <Section id="see" title={tk("cat.page.see")} subtitle={tk("cat.page.seeSub")}>
         <div className={`grid gap-5 ${category.views.length === 3 ? "lg:grid-cols-3" : "md:grid-cols-2"}`}>
           {category.views.map((view, i) => (
@@ -239,12 +245,12 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
         </div>
       </Section>
 
-      {/* 5. Pricing */}
+      {/* 6. Pricing */}
       <Section id="pricing" title={tk("cat.page.pricing")} subtitle={tk("cat.page.pricingSub")} tinted>
         <CategoryPricing category={category} {...ctaProps} />
       </Section>
 
-      {/* 6. FAQ */}
+      {/* 7. FAQ */}
       <Section id="faq" title={tk("cat.page.faq")}>
         <div className="mx-auto grid max-w-3xl gap-3">
           {Array.from({ length: category.faqs }, (_, i) => (
@@ -259,7 +265,7 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
         </div>
       </Section>
 
-      {/* 7. Start */}
+      {/* 8. Start */}
       <section aria-labelledby="cat-cta-title" className="px-4 pb-6 pt-4">
         <Reveal className="relative mx-auto max-w-[1248px]">
           <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-[linear-gradient(135deg,#0B1B3D,#08142E_60%)] px-6 py-14 sm:px-12 sm:py-16">

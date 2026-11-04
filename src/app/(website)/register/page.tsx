@@ -4,6 +4,7 @@ import { MasterPhoneRegistrationForm } from "@/components/auth/master-phone-regi
 import { SignupPromoPanel } from "@/components/website/promotions/SignupPromoPanel";
 import { PlanCarryOver } from "@/components/website/funnel/PlanCarryOver";
 import { isSupabaseConfigured } from "@/lib/auth/env";
+import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 
 export const metadata = {
   title: "Create account",
@@ -13,8 +14,9 @@ export const metadata = {
   },
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const configured = isSupabaseConfigured();
+  const next = sanitizeNextPath((await searchParams).next);
 
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-8 px-4 py-16 lg:grid-cols-[1fr_1.1fr]">
@@ -28,7 +30,7 @@ export default function RegisterPage() {
         <div className="mt-6">
           <PlanCarryOver />
           {configured ? (
-            <MasterPhoneRegistrationForm />
+            <MasterPhoneRegistrationForm nextPath={next} />
           ) : (
             <div className="space-y-3 text-center">
               <TriangleAlert className="mx-auto h-6 w-6 text-warning" />
@@ -44,7 +46,7 @@ export default function RegisterPage() {
         </div>
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link to="/login" className="text-primary">
+          <Link to={next === "/dashboard" ? "/login" : `/login?next=${encodeURIComponent(next)}`} className="text-primary">
             Sign in
           </Link>
         </p>

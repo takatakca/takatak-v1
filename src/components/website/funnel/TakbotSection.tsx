@@ -13,6 +13,8 @@ import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
 import { Eyebrow, Magnetic, PointHere, Rise, Section, TwoTone, useSpotlight } from "./primitives";
+import { RobotMascot } from "./RobotMascot";
+import { StudioShell } from "./StudioShell";
 import { TAKBOT_PREFILL_EVENT, TakbotTryPanel } from "./TakbotTryPanel";
 
 /** Mode icons, shared with the /takbot studio. */
@@ -125,7 +127,11 @@ function TakbotStage() {
   return (
     <div className="relative">
       <PointHere label={lang === "fr" ? "Essayez-le ici" : "Try it here"} flip color="#29C3FF" className="left-[96px] -top-[62px] hidden sm:flex" />
-      <div role="tablist" aria-label="TAK bot" className="mb-4 inline-flex gap-1 rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10">
+      {/* TAK, the TAKATAK robot, says hello next to the live bot */}
+      <div aria-hidden className="pointer-events-none absolute -top-24 right-0 hidden sm:block">
+        <RobotMascot size={120} title="TAK-TAK" />
+      </div>
+      <div role="tablist" aria-label="TAK-TAK" className="mb-4 inline-flex gap-1 rounded-full bg-white/[0.06] p-1 ring-1 ring-white/10">
         {(["try", "app"] as const).map((k) => (
           <button
             key={k}
@@ -142,7 +148,9 @@ function TakbotStage() {
         ))}
       </div>
       <div id="home-takbot-view-try" role="tabpanel" aria-labelledby="home-takbot-tab-try" hidden={view !== "try"}>
-        <TakbotTryPanel onShowApp={() => setView("app")} />
+        <StudioShell>
+          <TakbotTryPanel bare onShowApp={() => setView("app")} />
+        </StudioShell>
       </div>
       <div id="home-takbot-view-app" role="tabpanel" aria-labelledby="home-takbot-tab-app" hidden={view !== "app"}>
         {view === "app" && <ProductViewer />}
@@ -151,7 +159,7 @@ function TakbotStage() {
   );
 }
 
-/** Homepage chapter for TAK bot: the real product, real credit costs and real pack prices. */
+/** Homepage chapter for TAK-TAK: the real product, real credit costs and real pack prices. */
 export function TakbotSection() {
   const { lang } = useLanguage();
   const spot = useSpotlight<HTMLDivElement>();
@@ -165,7 +173,7 @@ export function TakbotSection() {
         <div aria-hidden className="hp-tech-grid" />
         <div aria-hidden className="hp-spot-layer" />
         <div className="relative mx-auto max-w-7xl px-4">
-          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16">
+          <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-16 [&>*]:min-w-0">
             <Rise>
               <Eyebrow>{t.eyebrow[lang]}</Eyebrow>
               <TwoTone id="home-takbot-title" lead={t.lead[lang]} rest={t.rest[lang]} size="md" />
