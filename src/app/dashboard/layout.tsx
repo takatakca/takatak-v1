@@ -10,6 +10,7 @@ import { AccessDenied } from "@/components/security/access-denied";
 import { MembershipRequired } from "@/components/security/membership-required";
 import { CheckNetworkScreen } from "@/components/network/check-network-screen";
 import { PlanHandoff } from "@/components/dashboard/plan-handoff";
+import { SecurityPrompts } from "@/components/security/security-prompts";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { AUTH_STATUS_HEADER } from "@/lib/auth/session-user";
 import { getServerAccessContext } from "@/lib/security/access-context";
@@ -89,6 +90,7 @@ export default async function DashboardLayout({
           <>
             <MembershipRequired email={displayEmail} />
             <PlanHandoff />
+            <SecurityPrompts />
           </>
         );
       case "profile_disabled":
@@ -255,6 +257,8 @@ export default async function DashboardLayout({
     >
       {children}
       {access.mode === "client_scoped" ? <PlanHandoff /> : null}
+      {/* Security screens: support identity checks and new-device sign-ins (not in the foundation demo). */}
+      {access.mode !== "foundation_demo" ? <SecurityPrompts /> : null}
     </DashboardShell>
   );
 }

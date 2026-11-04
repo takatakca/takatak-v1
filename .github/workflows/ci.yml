@@ -436,6 +436,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:promotions-db
 
+      - name: Security screens (support identity check, new-device sign-in, match the number) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:security-checks-db
+
       - name: AI provider keys against the ephemeral database
         env:
           NODE_ENV: development

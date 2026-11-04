@@ -342,6 +342,9 @@ model Profile {
   contributorReputations   ContributorReputation[]
   createdBillingInvoiceRequests   BillingInvoiceRequest[] @relation("BillingInvoiceRequestCreatedBy")
   submittedBillingInvoiceRequests BillingInvoiceRequest[] @relation("BillingInvoiceRequestSubmittedBy")
+  securityChecks                  SecurityCheck[]         @relation("SecurityCheckTarget")
+  requestedSecurityChecks         SecurityCheck[]         @relation("SecurityCheckRequestedBy")
+  securityDevices                 SecurityDevice[]
 
   @@map("profiles")
 }
@@ -3420,6 +3423,57 @@ model IntegrationRequestNonce {
   @@unique([integrationId, nonce])
   @@index([expiresAt])
   @@map("integration_request_nonces")
+}
+
+/// Security screens (docs/security/SECURITY_SCREENS.md): a question shown as a
+/// pop-up on the person's signed-in devices. `support_identity`: a TAKATAK agent
+/// on a call asks "is it really you?" and the person taps the number the agent
+/// reads out. `new_sign_in`: a new device signed in; the other devices are asked
+/// "was it you?" and must tap the number shown on the new device.
+model SecurityCheck {
+  id                   String    @id @default(uuid()) @db.Uuid
+  profileId            String    @db.Uuid
+  /// support_identity | new_sign_in
+  kind                 String
+  /// pending | confirmed | denied | mismatch | expired
+  status               String    @default("pending")
+  /// The number the person must tap (shown to the agent, or on the new device).
+  matchNumber          Int
+  /// The three numbers offered in the pop-up (matchNumber is one of them).
+  choices              Int[]
+  requestedByProfileId String?   @db.Uuid
+  /// new_sign_in: the device that signed in (never asked about itself).
+  deviceId             String?
+  deviceLabel          String?
+  ipHint               String?
+  attempts             Int       @default(0)
+  respondedAt          DateTime?
+  responseDeviceId     String?
+  expiresAt            DateTime
+  createdAt            DateTime  @default(now())
+
+  profile     Profile  @relation("SecurityCheckTarget", fields: [profileId], references: [id], onDelete: Cascade)
+  requestedBy Profile? @relation("SecurityCheckRequestedBy", fields: [requestedByProfileId], references: [id], onDelete: SetNull)
+
+  @@index([profileId, status])
+  @@index([expiresAt])
+  @@map("security_checks")
+}
+
+/// Browsers a person has signed in from (an opaque random id in an httpOnly
+/// cookie, never a fingerprint). Used to tell a new device from a known one.
+model SecurityDevice {
+  id          String   @id @default(uuid()) @db.Uuid
+  profileId   String   @db.Uuid
+  deviceId    String
+  label       String
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, deviceId])
+  @@map("security_devices")
 }
 
 model MasterMerchant {
