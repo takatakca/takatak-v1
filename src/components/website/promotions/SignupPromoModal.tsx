@@ -54,13 +54,13 @@ export function SignupPromoModal() {
       trackPromo("signup_promo_viewed", { reason });
     };
 
-    const t = window.setTimeout(() => openOnce("dwell_20s"), 20_000);
+    // Only when a desktop visitor heads for the tab bar, never on a timer: the
+    // top banner already shows the offer, and phones have no exit intent.
     const exitHandler = (e: MouseEvent) => {
       if (e.clientY <= 0) openOnce("exit_intent");
     };
     document.addEventListener("mouseleave", exitHandler);
     return () => {
-      window.clearTimeout(t);
       document.removeEventListener("mouseleave", exitHandler);
     };
   }, [pathname]);

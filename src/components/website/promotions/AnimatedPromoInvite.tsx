@@ -33,10 +33,16 @@ function isTyping(): boolean {
   return active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
 }
 
+/** Phones already see the offer in the top banner; a sheet over a third of the screen is too much. */
+function isPhone(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+}
+
 /**
- * Animated new-client invite. Appears once per visitor after 10s or 35% scroll
- * (never over a form being filled in), captures an email and hands off to
- * signup with the FIRST10 intent preserved. Compact on small screens.
+ * Animated new-client invite. Appears once per visitor, only after 35% scroll
+ * (well past the hero, never over a form being filled in), captures an email
+ * and hands off to signup with the FIRST10 intent preserved. Not on phones:
+ * the top banner carries the same offer there (inventory 2026-11-03, item 1).
  */
 export function AnimatedPromoInvite() {
   const { t } = useLanguage();
@@ -62,7 +68,7 @@ export function AnimatedPromoInvite() {
 
   useEffect(() => {
     if (suppressed || armed.current) return;
-    if (alreadySeen()) return;
+    if (alreadySeen() || isPhone()) return;
     const state = getPromoState();
     if (state.status === "claimed" || state.status === "used") return;
 
@@ -87,10 +93,8 @@ export function AnimatedPromoInvite() {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max > 0 && window.scrollY / max >= 0.35) show();
     };
-    const timer = window.setTimeout(show, 10_000);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      window.clearTimeout(timer);
       window.clearTimeout(retry);
       window.removeEventListener("scroll", onScroll);
     };

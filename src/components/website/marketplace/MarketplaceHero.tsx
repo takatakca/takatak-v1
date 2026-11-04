@@ -21,10 +21,10 @@ const QUICK_PICKS = [
 
 /** Real packages from the catalog: their own title, starting price and fastest delivery. */
 const HERO_COLLAGE = [
-  { id: "website-starter", pos: "top-0 left-0 w-[62%] rotate-[-3deg] z-20" },
-  { id: "logo-design", pos: "top-[8%] right-0 w-[42%] rotate-[4deg] z-10" },
-  { id: "local-seo-setup", pos: "bottom-0 left-[6%] w-[44%] rotate-[2deg] z-30" },
-  { id: "app-ui-prototype", pos: "bottom-[6%] right-[2%] w-[44%] rotate-[-4deg] z-20" },
+  { id: "website-starter", pos: "top-0 left-0 w-[56%] rotate-[-3deg] z-20" },
+  { id: "logo-design", pos: "top-[6%] right-0 w-[42%] rotate-[4deg] z-10" },
+  { id: "local-seo-setup", pos: "bottom-[-4%] left-[4%] w-[42%] rotate-[2deg] z-30" },
+  { id: "app-ui-prototype", pos: "bottom-[2%] right-[0%] w-[42%] rotate-[-4deg] z-20" },
 ].flatMap((c) => {
   const pkg = getPackage(c.id);
   return pkg ? [{ ...c, pkg }] : [];
@@ -132,7 +132,7 @@ export function MarketplaceHero() {
               </div>
             ))}
             {/* floating trust badge */}
-            <div className="absolute top-[42%] left-[44%] z-40 -translate-x-1/2 -translate-y-1/2 px-3 py-2 rounded-full bg-white text-neutral-900 text-[11px] font-semibold shadow-lg inline-flex items-center gap-1.5">
+            <div className="absolute top-[3%] left-[50%] z-40 -translate-x-1/2 -translate-y-1/2 px-3 py-2 rounded-full bg-white text-neutral-900 text-[11px] font-semibold shadow-lg inline-flex items-center gap-1.5">
               <ShieldCheck size={13} className="text-primary" aria-hidden />
               {COPY.badge[lang]}
             </div>
