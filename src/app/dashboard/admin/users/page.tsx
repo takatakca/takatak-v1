@@ -2,6 +2,7 @@ import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminUserDeleteButton } from "@/components/admin/admin-user-delete-button";
+import { SupportIdentityCheck } from "@/components/admin/support-identity-check";
 import { AdminSourceBanner } from "@/components/admin/source-banner";
 import {
   AdminTable,
@@ -98,6 +99,16 @@ function createColumns({
             )
           )}
         </div>
+      ),
+    },
+    {
+      key: "identity",
+      header: "Identity check (call)",
+      render: (user) => (
+        <SupportIdentityCheck
+          profileId={user.id}
+          disabled={user.id === currentProfileId || user.profileStatus === "disabled"}
+        />
       ),
     },
     {
