@@ -165,6 +165,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
     "@atproto/oauth-client-node": "^0.5.7",
+    "@fontsource-variable/geist": "5.3.0",
+    "@fontsource-variable/geist-mono": "5.3.0",
+    "@fontsource-variable/inter": "5.3.0",
+    "@fontsource-variable/montserrat": "5.3.0",
+    "@fontsource/instrument-serif": "5.3.0",
     "@prisma/adapter-pg": "6.19.3",
     "@prisma/client": "6.19.3",
     "@supabase/ssr": "^0.12.0",

@@ -1,3 +1,13 @@
+## Local-font build portability — 2026-11-04
+
+Branch `feature/cloud-local-fonts`, based on latest main `b853bb6` (PR248), fixes the recorded intermittent Google font fetch failures using the same five families from locked official Fontsource packages and `next/font/local`. Four loader modules preserve existing CSS variables, variable weights, both serif styles and the latest preload choices. Original font licenses are public assets. Authentication/master API behavior, schema and migrations are untouched.
+
+Full production build/TypeScript and105 static pages, standalone tsc, source/module checks, access/auth/identity, website SEO/theme pass. Lint0errors/12existingwarnings; targetedsource/verifier clean. Actual production-app HTTP/Chromium evidence verifies6 exact font assets,5 licenses and3 page states, with no externalfontrequests/pageerrors. See [local font record](LOCAL_FONTS.md) and [sanitized proof](proofs/2026-11-04/local-fonts/README.md).
+
+The normal Prisma checksum-stamp subcheck remains skipped under the genuine official types-only cloud bootstrap; DB/runtime/migration and production release are not proven. PR API is blocked by current environment policy; next is coordinator review/CI/PR release once access is available. No main merge or deployment performed.
+
+— signé : Codex build continuation @ Codex cloud · 2026-11-04
+
 ## Latest TAKATAK.ca homepage SEO handoff — 2026-11-02
 
 Signed: Codex SEO @ ChatGPT Work. Owner authorized full control and asked this agent to add itself for completion.
