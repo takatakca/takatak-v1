@@ -55,17 +55,28 @@ function Loop({ src, poster, className }: { src: string; poster: string; classNa
   const reduced = useReducedMotion();
   const ref = useRef<HTMLVideoElement>(null);
   const { ref: seenRef, seen } = useSeen<HTMLDivElement>();
+  const { ref: nearRef, seen: near } = useSeen<HTMLDivElement>("600px 0px 600px 0px");
   useEffect(() => {
     const v = ref.current;
     if (!v || reduced) return;
-    if (seen) v.play().catch(() => undefined);
+    if (seen && near) v.play().catch(() => undefined);
     else v.pause();
-  }, [seen, reduced]);
+  }, [seen, near, reduced]);
   return (
     <div ref={seenRef} className={className}>
-      <video ref={ref} className="absolute inset-0 h-full w-full object-cover object-top" poster={poster} muted loop playsInline preload="metadata">
-        <source src={src} type="video/mp4" />
-      </video>
+      {/* Poster and video load once the frame is near the screen, not with the first paint. */}
+      <div ref={nearRef} className="absolute inset-0">
+        <video
+          ref={ref}
+          className="absolute inset-0 h-full w-full object-cover object-top"
+          src={near ? src : undefined}
+          poster={near ? poster : undefined}
+          muted
+          loop
+          playsInline
+          preload={near ? "metadata" : "none"}
+        />
+      </div>
     </div>
   );
 }

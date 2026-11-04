@@ -10,6 +10,8 @@ import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
 import { Link } from "@/lib/website/nav";
 
+import { useSeen } from "./primitives";
+
 /** Opens the homepage sales assistant (AskBar's concierge) from anywhere. */
 export const CONCIERGE_OPEN_EVENT = "concierge:open";
 export function openConcierge(detail: { first?: string; voice?: boolean } = {}) {
@@ -38,6 +40,8 @@ const T = {
 /** Starting prices from the catalog as real offers, next to the AI sales assistant. */
 export function OfferRail() {
   const { tk, lang } = useCopy();
+  // The photos load once the rail is near the screen, not with the first paint.
+  const { ref: railRef, seen: near } = useSeen<HTMLUListElement>("400px 0px 400px 0px");
   const plan = useHomePlan();
   const priced = CORE_CATEGORIES.filter((c) => typeof c.from === "object");
 
@@ -75,7 +79,7 @@ export function OfferRail() {
 
         {/* Offers: real starting prices, add in one click, or see the service */}
         <div className="min-w-0">
-          <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
+          <ul ref={railRef} className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
             {priced.map((c, i) => {
               const from = c.from as { amount: number; cadence: Parameters<typeof cadenceSuffix>[1]; prefixKey: string };
               const media = SERVICE_MEDIA[c.key];
@@ -83,14 +87,16 @@ export function OfferRail() {
               return (
                 <li key={c.key} className="hp-glow group relative flex w-[248px] shrink-0 snap-start flex-col overflow-hidden rounded-[22px] bg-white/[0.05] ring-1 ring-white/10">
                   <div className="relative h-[104px] overflow-hidden">
-                    <Image
-                      src={media.photo}
-                      alt={media.alt[lang]}
-                      fill
-                      sizes="248px"
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
-                      style={{ objectPosition: media.focus }}
-                    />
+                    {near ? (
+                      <Image
+                        src={media.photo}
+                        alt={media.alt[lang]}
+                        fill
+                        sizes="248px"
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
+                        style={{ objectPosition: media.focus }}
+                      />
+                    ) : null}
                     <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-[#050B1A] via-[#050B1A]/30 to-transparent" />
                     <span className="hp-chip-flash absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-[#050B1A]/70 px-2.5 py-1 text-[11px] font-semibold text-[#7FD8FF] backdrop-blur" style={{ animationDelay: `${i * 0.9}s` }}>
                       <Sparkles size={11} aria-hidden /> {tk(from.prefixKey)}
