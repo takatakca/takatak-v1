@@ -33,10 +33,8 @@ const cols: { title: Bi; links: FooterLink[] }[] = [
   {
     title: { en: "For Groupe TAKATAK Freelancers", fr: "Pour les pigistes de Groupe TAKATAK" },
     links: [
-      { to: "/dashboard/freelancer", label: { en: "Become a freelancer", fr: "Devenir pigiste" } },
-      { to: "/dashboard/freelancer/contracts", label: { en: "Contracts", fr: "Contrats" } },
-      { to: "/dashboard/freelancer/deliveries", label: { en: "Deliveries", fr: "Livraisons" } },
-      { to: "/dashboard/freelancer/payouts", label: { en: "Payouts", fr: "Paiements" } },
+      // There is no freelancer area yet (the old /dashboard/freelancer/* links were 404s): applications go to the team.
+      { to: "mailto:support@takatak.ca?subject=Devenir%20pigiste%20%C2%B7%20Become%20a%20freelancer", label: { en: "Become a freelancer", fr: "Devenir pigiste" } },
     ],
   },
   {
@@ -105,9 +103,15 @@ export function SiteFooter() {
                   const linkProps = link.params ? { to: link.to, params: link.params as never } : { to: link.to };
                   return (
                     <li key={`${col.title.en}-${link.label.en}`}>
-                      <Link {...linkProps} className="hover:text-foreground transition-colors">
-                        {link.label[l]}
-                      </Link>
+                      {link.to.startsWith("mailto:") ? (
+                        <a href={link.to} className="hover:text-foreground transition-colors">
+                          {link.label[l]}
+                        </a>
+                      ) : (
+                        <Link {...linkProps} className="hover:text-foreground transition-colors">
+                          {link.label[l]}
+                        </Link>
+                      )}
                     </li>
                   );
                 })}

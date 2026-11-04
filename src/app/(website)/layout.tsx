@@ -19,7 +19,6 @@ import { getWebsiteSession } from "@/lib/website/website-session";
 import { loadPublicCatalogRows } from "@/lib/website/load-public-catalog";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { WebsiteProviders } from "@/lib/website/website-providers";
-import { UpmindHeadScripts } from "@/components/website/domain/upmind-head-scripts";
 
 import "./website.css";
 
@@ -84,7 +83,6 @@ export default async function WebsiteLayout({
     <div
       className={`website-surface ${inter.variable} ${montserrat.variable}`}
     >
-      <UpmindHeadScripts />
       <WebsiteProviders
         initialLanguage={homeLocale === "fr" ? "fr" : homeLocale === "en" ? "en" : undefined}
         isAuthenticated={session.isAuthenticated}

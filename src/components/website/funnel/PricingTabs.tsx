@@ -131,13 +131,8 @@ export function PricingTabs() {
           </div>
         </div>
 
-        <ul
-          id="home-pricing-panel"
-          role="tabpanel"
-          aria-labelledby={`home-pricing-tab-${tab}`}
-          key={tab}
-          className={`mt-12 grid gap-4 sm:grid-cols-2 ${cards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}
-        >
+        <div id="home-pricing-panel" role="tabpanel" aria-labelledby={`home-pricing-tab-${tab}`} key={tab}>
+        <ul className={`mt-12 grid gap-4 sm:grid-cols-2 ${cards.length === 4 ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
           {cards.map((card, i) => {
             const dark = card.featured;
             const btn = `inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-3 text-[14px] font-semibold transition-all ${
@@ -186,6 +181,7 @@ export function PricingTabs() {
             );
           })}
         </ul>
+        </div>
         <div className="hp-line mt-10 flex flex-col items-center justify-between gap-3 border-t pt-6 text-center sm:flex-row sm:text-left">
           <p className="hp-ink-3 text-[13px]">{tab === "credits" ? t.draftCredits[lang] : tk("cat.price.note")}</p>
           <Link to="/pricing" className="hp-accent inline-flex items-center gap-1.5 text-[14px] font-semibold hover:underline">

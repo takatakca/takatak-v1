@@ -522,6 +522,7 @@ export function AskBar() {
     <div className="hp relative z-30 mx-auto w-full max-w-[600px] lg:max-w-none" data-theme="dark" data-hero style={{ background: "transparent" }}>
       <div aria-hidden className="pointer-events-none absolute -inset-8 rounded-[48px] bg-[radial-gradient(closest-side,rgb(31_139_255/0.32),transparent)] blur-2xl" />
       <div className="tk-hero-ring relative rounded-[30px] p-px">
+        <span aria-hidden className="tk-hero-ring-layer" />
         <div className="relative rounded-[29px] bg-[#071330]/90 px-4 pb-5 pt-5 backdrop-blur-xl sm:px-7 sm:pb-7 sm:pt-6">
           {/* TAK-TAK and its hello */}
           <div className="flex items-end gap-3 sm:gap-5">
