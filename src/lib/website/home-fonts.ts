@@ -8,4 +8,6 @@ export const serifAccent = Instrument_Serif({
   style: ["normal", "italic"],
   display: "swap",
   variable: "--font-serif",
+  // Used below the hero only: load it when a heading needs it, not with the first paint.
+  preload: false,
 });
