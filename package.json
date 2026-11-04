@@ -130,6 +130,8 @@
     "qa:website-lead-inbox-db": "tsx --require ./scripts/register-server-only.cjs scripts/website-lead-inbox-db-tests.ts",
     "qa:takbot-trial-db": "tsx --require ./scripts/register-server-only.cjs scripts/takbot-trial-db-tests.ts",
     "qa:newsletter-db": "tsx --require ./scripts/register-server-only.cjs scripts/newsletter-db-tests.ts",
+    "qa:takbot-run-db": "tsx --require ./scripts/register-server-only.cjs scripts/takbot-run-db-tests.ts",
+    "qa:promotions-db": "tsx --require ./scripts/register-server-only.cjs scripts/promotions-db-tests.ts",
     "qa:client-invoices": "tsx scripts/verify-client-invoices.ts",
     "qa:client-invoices-db": "tsx --require ./scripts/register-server-only.cjs scripts/client-invoices-db-tests.ts && tsx --require ./scripts/register-server-only.cjs scripts/client-invoice-checkout-db-tests.ts",
     "ads:seed:ahmv": "tsx scripts/seed-ahmv-ads-publisher.ts",

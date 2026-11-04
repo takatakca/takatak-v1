@@ -426,6 +426,16 @@ jobs:
           NODE_ENV: development
         run: npm run qa:newsletter-db
 
+      - name: TAK-TAK answer (credits debited once, saved output, refund on failure) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:takbot-run-db
+
+      - name: Homepage promo codes (FIRST10 once per account, seasonal dates) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:promotions-db
+
       - name: AI provider keys against the ephemeral database
         env:
           NODE_ENV: development
