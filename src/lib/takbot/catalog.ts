@@ -39,8 +39,8 @@ export interface TakbotModeDef {
 }
 
 export const TAKBOT_MODES: readonly TakbotModeDef[] = [
-  { key: "chat", actionKey: "chat_reply", autoOrder: ["anthropic", "openai", "gemini", "mistral", "groq", "deepseek", "xai"], inline: true },
-  { key: "write", actionKey: "ad_copy_set", autoOrder: ["anthropic", "openai", "mistral", "gemini", "deepseek"], inline: true },
+  { key: "chat", actionKey: "chat_reply", autoOrder: ["anthropic", "openai", "gemini", "mistral", "groq", "ollama", "deepseek", "xai"], inline: true },
+  { key: "write", actionKey: "ad_copy_set", autoOrder: ["anthropic", "openai", "mistral", "gemini", "ollama", "deepseek"], inline: true },
   { key: "research", actionKey: "seo_audit_summary", autoOrder: ["perplexity", "gemini", "anthropic", "openai"], inline: true },
   { key: "image", actionKey: "image", autoOrder: ["openai", "stability", "gemini"], inline: false },
   { key: "voice", actionKey: "voice_over", autoOrder: ["elevenlabs", "openai", "heygen"], inline: false },
@@ -53,6 +53,8 @@ const OPENAI_COMPAT: Record<string, { endpoint: string; model: string }> = {
   mistral: { endpoint: "https://api.mistral.ai/v1/chat/completions", model: "mistral-large-latest" },
   deepseek: { endpoint: "https://api.deepseek.com/chat/completions", model: "deepseek-chat" },
   groq: { endpoint: "https://api.groq.com/openai/v1/chat/completions", model: "llama-3.3-70b-versatile" },
+  // OpenAI-compatible Ollama Cloud endpoint (docs.ollama.com/api/openai-compatibility, checked 2026-11-04).
+  ollama: { endpoint: "https://ollama.com/v1/chat/completions", model: "gpt-oss:120b" },
   perplexity: { endpoint: "https://api.perplexity.ai/chat/completions", model: "sonar" },
 };
 

@@ -103,6 +103,16 @@ export const AI_PROVIDER_CATALOG: AiProviderEntry[] = [
     check: { kind: "http", url: "https://api.groq.com/openai/v1/models", auth: "bearer" },
   },
   {
+    key: "ollama",
+    name: "Ollama Cloud (open models)",
+    category: "text",
+    env: envFor("ollama", "OLLAMA_API_KEY"),
+    billableToClients: true,
+    // GET /api/balance only reads the remaining usage credits (docs.ollama.com/api/balance, checked 2026-11-04).
+    check: { kind: "http", url: "https://ollama.com/api/balance", auth: "bearer" },
+    note: "Create the key at ollama.com/settings/keys. Cloud usage needs Ollama credits or a paid plan.",
+  },
+  {
     key: "cohere",
     name: "Cohere",
     category: "text",

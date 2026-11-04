@@ -4,7 +4,7 @@
 
 export const TRIAL_DEFAULT_CREDITS = 50;
 /** Economy engines, cheapest first, tried when TAKBOT_TRIAL_ENGINE is not set. */
-export const TRIAL_ECONOMY_ORDER = ["groq", "gemini", "deepseek", "openai"] as const;
+export const TRIAL_ECONOMY_ORDER = ["groq", "ollama", "gemini", "deepseek", "openai"] as const;
 /** Ledger key prefix of the one-time trial grant (the ledger adds "grant:"). */
 export const TRIAL_GRANT_PREFIX = "takbot-trial:";
 
