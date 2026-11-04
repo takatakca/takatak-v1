@@ -52,6 +52,29 @@ async function main() {
   });
   assert.deepEqual(down, { ok: false, code: "network" });
 
+  // Ollama Cloud: an OpenAI-compatible open-model engine, offered to every workspace once its key is saved.
+  const ollama = takbotEngine("ollama")!;
+  assert.ok(ollama, "Ollama Cloud is a TAK-TAK engine");
+  assert.equal(ollama.relay, "openai_compat");
+  assert.equal(ollama.endpoint, "https://ollama.com/v1/chat/completions");
+  assert.ok(ollama.modes.includes("chat") && ollama.modes.includes("write"));
+  assert.equal(modelFor(ollama, {}), "gpt-oss:120b");
+  assert.equal(modelFor(ollama, { TAKBOT_MODEL_OLLAMA: "kimi-k2.7-code" }), "kimi-k2.7-code");
+  const ollamaAuto = routeTakbotRequest({ mode: "chat", engine: "auto", connected: new Set(["ollama", "deepseek"]) });
+  assert.ok(ollamaAuto.ok && ollamaAuto.engine.key === "ollama", "auto prefers Ollama over DeepSeek");
+  const ollamaPicked = routeTakbotRequest({ mode: "write", engine: "ollama", connected: new Set(["ollama"]) });
+  assert.ok(ollamaPicked.ok && ollamaPicked.engine.key === "ollama");
+  let ollamaCall: { url: string; auth: string; model: string } | null = null;
+  const ollamaRun = await relayPrompt({ engine: ollama, mode: "chat", apiKey: "ok-test", prompt: "Bonjour" }, async (url, init) => {
+    const headers = init.headers as Record<string, string>;
+    ollamaCall = { url, auth: headers.Authorization, model: JSON.parse(String(init.body)).model };
+    return new Response(JSON.stringify({ choices: [{ message: { content: "Salut !" } }] }), { status: 200 });
+  }, {});
+  assert.deepEqual(ollamaRun, { ok: true, text: "Salut !" });
+  assert.deepEqual(ollamaCall, { url: "https://ollama.com/v1/chat/completions", auth: "Bearer ok-test", model: "gpt-oss:120b" });
+  const ollamaDenied = await relayPrompt({ engine: ollama, mode: "chat", apiKey: "bad", prompt: "x" }, async () => new Response("{}", { status: 401 }), {});
+  assert.deepEqual(ollamaDenied, { ok: false, code: "auth" });
+
   console.log("takbot tests: OK");
 }
 

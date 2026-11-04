@@ -37,6 +37,7 @@ const AI_NAME: Record<string, string> = {
   gemini: "Gemini",
   xai: "Grok",
   groq: "Groq",
+  ollama: "Ollama",
   stability: "Stability AI",
 };
 

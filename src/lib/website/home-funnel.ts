@@ -303,7 +303,7 @@ export const homeV2 = {
     },
     proof: [
       { value: "10", label: { en: "services, one account", fr: "services, un seul compte" } },
-      { value: "13", label: { en: "AI engines behind TAK-TAK", fr: "moteurs d’IA derrière TAK-TAK" } },
+      { value: "14", label: { en: "AI engines behind TAK-TAK", fr: "moteurs d’IA derrière TAK-TAK" } },
       { value: "9", label: { en: "social networks connected", fr: "réseaux sociaux branchés" } },
       { value: "FR · EN", label: { en: "team in Montréal", fr: "équipe à Montréal" } },
     ],
