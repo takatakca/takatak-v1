@@ -91,7 +91,7 @@ export const en = {
   "home.hero.searchLabel": "Tell TAKATAK what you want to build",
   "home.hero.ctaMarketplace": "Start building now",
   "home.hero.ctaDomains": "Browse premium services",
-  "home.hero.ctaChat": "Talk to TAKATAK",
+  "home.hero.ctaChat": "Talk to a person",
   "home.hero.trust.escrow": "Protected payments",
   "home.hero.trust.managed": "Managed by our team",
   "home.hero.trust.cad": "Clear CAD pricing",

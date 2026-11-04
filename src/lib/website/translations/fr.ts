@@ -93,7 +93,7 @@ export const fr: Record<TranslationKey, string> = {
   "home.hero.searchLabel": "Dites à TAKATAK ce que vous voulez bâtir",
   "home.hero.ctaMarketplace": "Commencer maintenant",
   "home.hero.ctaDomains": "Voir les services premium",
-  "home.hero.ctaChat": "Parler à TAKATAK",
+  "home.hero.ctaChat": "Parler à une personne",
   "home.hero.trust.escrow": "Paiements protégés",
   "home.hero.trust.managed": "Géré par notre équipe",
   "home.hero.trust.cad": "Prix clairs en CAD",

@@ -113,13 +113,18 @@ export function OfferRail() {
                         type="button"
                         onClick={() => plan.toggle(c.key)}
                         aria-pressed={on}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${on ? "bg-emerald-500 text-white" : "bg-white text-[#050B1A] hover:bg-[#DCEBFF]"}`}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[13px] font-semibold transition-colors ${on ? "bg-emerald-700 text-white" : "bg-white text-[#050B1A] hover:bg-[#DCEBFF]"}`}
                       >
                         {on ? <Check size={14} strokeWidth={3} aria-hidden /> : <Plus size={14} strokeWidth={3} aria-hidden />}
                         {on ? T.added[lang] : T.add[lang]}
                       </button>
                       <Link to={c.route} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-[13px] font-semibold text-white/80 ring-1 ring-white/15 hover:text-white">
-                        {T.more[lang]} <ArrowRight size={13} aria-hidden />
+                        {T.more[lang]}
+                        <span className="sr-only">
+                          {" "}
+                          {lang === "fr" ? ":" : "about"} {tk(`cat.${c.key}.name`)}
+                        </span>{" "}
+                        <ArrowRight size={13} aria-hidden />
                       </Link>
                     </div>
                     <button
