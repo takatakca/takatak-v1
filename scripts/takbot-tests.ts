@@ -39,7 +39,10 @@ async function main() {
     seen = { url, headers: init.headers as Record<string, string> };
     return new Response(JSON.stringify({ content: [{ type: "text", text: "yo" }] }), { status: 200 });
   });
-  assert.deepEqual(ok, { ok: true, text: "yo" });
+  assert.ok(ok.ok);
+  assert.equal(ok.text, "yo");
+  assert.equal(ok.model, modelFor(anthropic));
+  assert.equal(ok.usage.inputTokens, null, "missing provider usage is unknown");
   assert.equal(seen!.url, "https://api.anthropic.com/v1/messages");
   assert.equal(seen!.headers["x-api-key"], "k-test");
 
@@ -70,7 +73,9 @@ async function main() {
     ollamaCall = { url, auth: headers.Authorization, model: JSON.parse(String(init.body)).model };
     return new Response(JSON.stringify({ choices: [{ message: { content: "Salut !" } }] }), { status: 200 });
   }, {});
-  assert.deepEqual(ollamaRun, { ok: true, text: "Salut !" });
+  assert.ok(ollamaRun.ok);
+  assert.equal(ollamaRun.text, "Salut !");
+  assert.equal(ollamaRun.model, "gpt-oss:120b");
   assert.deepEqual(ollamaCall, { url: "https://ollama.com/v1/chat/completions", auth: "Bearer ok-test", model: "gpt-oss:120b" });
   const ollamaDenied = await relayPrompt({ engine: ollama, mode: "chat", apiKey: "bad", prompt: "x" }, async () => new Response("{}", { status: 401 }), {});
   assert.deepEqual(ollamaDenied, { ok: false, code: "auth" });

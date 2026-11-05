@@ -7,6 +7,7 @@ import { parseStudioBrief, parseStudioPack, storedStudioBrief, studioEnabled, ST
 
 import { connectedEngines, creditBalance } from "@/lib/takbot/server";
 import { STUDIO_AGENT_SOURCE, STUDIO_SCENE_SOURCE } from "@/lib/studio/agent-policy";
+import { studioLibraryMetadata } from "@/lib/studio/library-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,11 +23,12 @@ export async function GET(request: NextRequest) {
     const rows = await db.savedAiOutput.findMany({ where: { clientId: gate.access.activeClientId, metadata: { path: ["source"], equals: STUDIO_PROJECT_SOURCE }, status: { not: "archived" } },
       select: { id: true, content: true, metadata: true, createdAt: true }, orderBy: [{ createdAt: "desc" }, { id: "desc" }], take: 21, skip: offset });
     const projects = rows.slice(0,20).flatMap((r) => { const brief = storedStudioBrief(r); return brief ? [{ id: r.id, ...brief, createdAt: r.createdAt.toISOString() }] : []; });
-    const outputs = await db.savedAiOutput.findMany({ where: { clientId: gate.access.activeClientId, metadata: { path: ["source"], equals: STUDIO_OUTPUT_SOURCE }, status: { not: "archived" } },
+    const outputRows = await db.savedAiOutput.findMany({ where: { clientId: gate.access.activeClientId, metadata: { path: ["source"], equals: STUDIO_OUTPUT_SOURCE }, status: { not: "archived" } },
       select: { id: true, title: true, content: true, metadata: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 30 });
+    const outputs=outputRows.map(row=>({...row,metadata:studioLibraryMetadata(row.metadata,STUDIO_OUTPUT_SOURCE)}));
     const [accounts, scenePlans, agentJobs, engineKeys, balance] = await Promise.all([
-      db.socialAccount.findMany({where:{clientId:gate.access.activeClientId,status:"connected"},select:{id:true,platform:true,displayName:true,businessBrandId:true},orderBy:{createdAt:"asc"},take:50}),
-      db.savedAiOutput.findMany({where:{clientId:gate.access.activeClientId,metadata:{path:["source"],equals:STUDIO_SCENE_SOURCE}},select:{id:true,content:true,metadata:true},take:50}),
+      db.socialAccount.findMany({where:{clientId:gate.access.activeClientId,status:"connected",accessStatus:{in:["available","selected"]},isAvailableThroughAuth:true},select:{id:true,platform:true,displayName:true,businessBrandId:true},orderBy:{createdAt:"asc"},take:50}),
+      db.savedAiOutput.findMany({where:{clientId:gate.access.activeClientId,status:{not:"archived"},AND:[{metadata:{path:["source"],equals:STUDIO_SCENE_SOURCE}},{OR:projects.map(project=>({metadata:{path:["projectId"],equals:project.id}}))}]},select:{id:true,content:true,metadata:true},take:20}),
       db.job.findMany({where:{clientId:gate.access.activeClientId,metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},select:{id:true,status:true,scheduledFor:true,leaseExpiresAt:true,errorMessage:true,metadata:true},orderBy:{createdAt:"desc"},take:60}),
       connectedEngines(),creditBalance(gate.access.activeClientId),
     ]);
