@@ -15,6 +15,7 @@ import { getPrisma } from '@/lib/db/prisma';
 export type SocialShellBilling = {
   planName: string;
   hasPaidPlan: boolean;
+  billingExempt: boolean;
   reports: boolean;
   analyticsHistoryDays: number | null;
   entitlements: SocialEntitlements;
@@ -61,7 +62,8 @@ export async function getSocialShellBilling(
       }),
     ]);
 
-    const { lifecycle, entitlements } = resolveEffectiveSocialEntitlements({
+    const { lifecycle, entitlements, billingExempt } = resolveEffectiveSocialEntitlements({
+      clientId,
       status: subscription?.status,
       planCode: subscription?.planCode,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,
@@ -85,12 +87,13 @@ export async function getSocialShellBilling(
     const billableCount = freeze.billableCount;
 
     return {
-      planName: entitlements.planName,
+      planName: billingExempt ? 'Internal — Billing exempt' : entitlements.planName,
+      billingExempt,
       hasPaidPlan: lifecycle.access === 'paid',
       reports: entitlements.reports,
       analyticsHistoryDays: entitlements.analyticsHistoryDays,
       entitlements,
-      banner: resolveSocialBillingBanner({
+      banner: billingExempt ? null : resolveSocialBillingBanner({
         access: lifecycle.access,
         statusLabel: lifecycle.label,
         planName: entitlements.planName,
