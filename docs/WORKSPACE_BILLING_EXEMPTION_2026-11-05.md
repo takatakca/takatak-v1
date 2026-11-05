@@ -16,6 +16,7 @@ Owner requirement: reuse the existing `SOCIAL_CONNECTION_SETUP_CLIENT_IDS` deplo
 - Social connection, provisioning, page, team and server entitlement paths pass workspace context to the common resolver.
 - Social Stripe subscription and add-on checkout entry points reject new charges for exempt workspaces.
 - Growth Suite feature gates grant exemption by workspace and prevent new paid Growth subscription checkout.
+- Website Monitoring uses the same exemption for signed-worker snapshot ingestion and dashboard access; no new monitoring checkout for exempt workspaces, with required per-domain security keys retained.
 - No changes to third-party OAuth permission approval, rate limits, content policies, tenant isolation or platform admin roles.
 
 ## Uncovered payment domains and costs
