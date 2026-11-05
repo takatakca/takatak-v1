@@ -29,7 +29,7 @@ export default async function MonitoringPage({ searchParams }: { searchParams: P
     <section className="rounded-2xl bg-[#060D1F] p-6 text-[#F5F8FC]">
       <Activity className="h-7 w-7 text-[#29C3FF]" /><h2 className="mt-3 text-xl font-semibold">One TAKATAK account. Monitoring for each website.</h2>
       <p className="mt-2 max-w-3xl text-sm text-[#B8C4D3]">{billingExempt ? "Included for this TAKATAK internal workspace. Checks require an authorized monitoring worker and the first successful sync." : "$5 CAD per website / month, plus applicable taxes. Checks every five minutes, confirmed outage and recovery alerts, and monthly reports. Service starts after payment and the first successful worker sync."}</p>
-      {!monitoringBillingEnabled() && <p className="mt-3 text-sm text-amber-200">Enrollment opens after the monitoring service is activated. Your existing services continue as usual.</p>}
+      {!billingExempt && !monitoringBillingEnabled() && <p className="mt-3 text-sm text-amber-200">Enrollment opens after the monitoring service is activated. Your existing services continue as usual.</p>}
     </section>
     {unavailable ? <p role="alert" className="rounded-xl border border-amber-200 p-5">Monitoring data is temporarily unavailable. Please try again later.</p> : rows.length === 0 ? <section className="rounded-xl border border-slate-200 bg-white p-6"><h2 className="font-semibold">Add your website first</h2><p className="mt-2 text-sm text-slate-600">Monitoring uses websites assigned to your selected TAKATAK workspace.</p><Link className="mt-4 inline-block font-semibold text-[#1565D8]" href="/dashboard/web-hosting/domains">Manage your domains</Link></section> :
       <div className="grid gap-4 xl:grid-cols-2">{rows.map(row => {
@@ -41,7 +41,7 @@ export default async function MonitoringPage({ searchParams }: { searchParams: P
             <div><dt className="text-slate-500">Last observation (UTC)</dt><dd className="mt-1 font-medium">{row.snapshot ? new Date(row.snapshot.observedAt * 1000).toISOString().replace("T", " ").slice(0, 19) : "No observations yet"}</dd></div>
             <div><dt className="text-slate-500">Response time</dt><dd className="mt-1 font-medium">{row.snapshot?.ok ? `${row.snapshot.latencyMs} ms` : "—"}</dd></div>
             <div><dt className="text-slate-500">{month} successful checks</dt><dd className="mt-1 font-medium">{stats?.checks ? `${(stats.successes / stats.checks * 100).toFixed(2)}% (${stats.successes}/${stats.checks})` : "No observations yet"}</dd></div>
-            <div><dt className="text-slate-500">Subscription</dt><dd className="mt-1 font-medium">{row.billing.cancelAtPeriodEnd && active ? "Cancels at period end" : row.billing.status.replaceAll("_", " ")}</dd></div>
+            <div><dt className="text-slate-500">Subscription</dt><dd className="mt-1 font-medium">{billingExempt ? "Included — billing exempt" : row.billing.cancelAtPeriodEnd && active ? "Cancels at period end" : row.billing.status.replaceAll("_", " ")}</dd></div>
           </dl>
           {canManage && !billingExempt && <div className="mt-5"><MonitoringBillingButton domainAssetId={row.id} subscribed={!["not_subscribed", "canceled", "incomplete_expired"].includes(row.billing.status)} enabled={monitoringBillingEnabled()} /></div>}
         </article>;
