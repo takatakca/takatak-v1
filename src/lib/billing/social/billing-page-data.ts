@@ -115,7 +115,7 @@ export async function getPlansBillingPageData(
       }),
     ]);
 
-    const { lifecycle, entitlements } = resolveEffectiveSocialEntitlements({
+    const { lifecycle, entitlements, billingExempt } = resolveEffectiveSocialEntitlements({
       clientId: access.activeClientId,
       status: client.subscription?.status,
       planCode: client.subscription?.planCode,
@@ -143,7 +143,7 @@ export async function getPlansBillingPageData(
       billingCountry: client.billingCountry || 'Canada',
       invoiceEmails,
       planCode: entitlements.planCode,
-      planName: entitlements.planName,
+      planName: billingExempt ? 'Internal — Billing exempt' : entitlements.planName,
       subscriptionStatus: lifecycle.status ?? 'missing',
       subscriptionStatusLabel: lifecycle.label,
       subscriptionAccess: lifecycle.access,
@@ -163,8 +163,8 @@ export async function getPlansBillingPageData(
         brands: brandFreeze.brands,
       },
       xAccountCount,
-      checkoutLive: isSocialStripeCheckoutLive(),
-      addonCheckoutLive: isSocialStripeAddonCheckoutLive(),
+      checkoutLive: !billingExempt && isSocialStripeCheckoutLive(),
+      addonCheckoutLive: !billingExempt && isSocialStripeAddonCheckoutLive(),
       stripeCustomerReady: Boolean(client.subscription?.externalCustomerId),
       stripeSubscriptionReady: Boolean(
         client.subscription?.externalSubscriptionId,
