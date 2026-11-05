@@ -217,6 +217,7 @@ export function resolveEffectiveSocialEntitlements(input: {
   lifecycle: SocialSubscriptionLifecycle;
   entitlements: SocialEntitlements;
   effectivePlanCode: SocialPlanCode;
+  billingExempt: boolean;
 } {
   const billingExempt = Boolean(
     input.clientId && isBillingExemptWorkspace(input.clientId),
