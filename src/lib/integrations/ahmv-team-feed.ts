@@ -112,6 +112,7 @@ export function resolveAhmvTeamFeedAccess(
   if (!subscription) return "subscription_required";
 
   const { lifecycle } = resolveEffectiveSocialEntitlements({
+    clientId: service.clientId,
     status: subscription.status,
     planCode: subscription.planCode,
     cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
