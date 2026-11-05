@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
 import { resolveEffectiveSocialEntitlements } from "@/lib/billing/social/subscription-lifecycle";
+import { isBillingExemptWorkspace } from '@/lib/billing/billing-exemption-policy';
 
 export const AHMV_PUBLIC_TEAM_ID_RE = /^\d{8,24}$/;
 
@@ -109,17 +110,17 @@ export function resolveAhmvTeamFeedAccess(
   }
 
   const subscription = service.client.subscription;
-  if (!subscription) return "subscription_required";
+  if (!subscription && !isBillingExemptWorkspace(service.clientId)) return "subscription_required";
 
   const { lifecycle } = resolveEffectiveSocialEntitlements({
     clientId: service.clientId,
-    status: subscription.status,
-    planCode: subscription.planCode,
-    cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-    currentPeriodEnd: subscription.currentPeriodEnd,
+    status: subscription?.status,
+    planCode: subscription?.planCode,
+    cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,
+    currentPeriodEnd: subscription?.currentPeriodEnd,
     addOns: {
-      xAccountAllowance: subscription.xAccountAllowance,
-      advancedAnalytics: subscription.advancedAnalytics,
+      xAccountAllowance: subscription?.xAccountAllowance,
+      advancedAnalytics: subscription?.advancedAnalytics,
     },
   });
 
