@@ -2066,6 +2066,21 @@ export function ManageConnectionsModal({
                   busyCardKey === null &&
                   busyConnectionId === null;
 
+                // Keep implemented cards responsive when an access gate blocks
+                // authorization. Clicking explains the blocker; it never skips
+                // the server's OAuth, billing or workspace permission checks.
+                const diagnosticCard =
+                  card.key === 'tiktok-personal' ||
+                  card.key === 'meta-ads' ||
+                  card.key === 'google-ads' ||
+                  card.key === 'looker-studio';
+                const canExplainBlock =
+                  diagnosticCard &&
+                  !canStart &&
+                  !platformConnected &&
+                  busyCardKey === null &&
+                  busyConnectionId === null;
+
                 const busy = busyCardKey === card.key;
 
                 const buttonLabel =
@@ -2312,9 +2327,29 @@ export function ManageConnectionsModal({
                     ) : (
                       <button
                         type="button"
-                        disabled={!canStart || busy}
+                        disabled={(!canStart && !canExplainBlock) || busy}
                         aria-busy={busy}
                         onClick={() => {
+                          if (canExplainBlock) {
+                            const reason =
+                              !activeBrandId
+                                ? 'Select or create a brand before connecting this service.'
+                                : !canManage
+                                  ? 'Your account needs permission to manage social connections.'
+                                  : provider?.state === 'not_configured'
+                                    ? `${card.label} is not configured on the running server. Check the runtime deployment environment.`
+                                    : provider?.planAllowed === false
+                                      ? `${card.label} is not included in this workspace subscription. Review Plans and billing.`
+                                      : card.planned || provider?.implemented === false
+                                        ? `${card.label} is not available yet.`
+                                        : connection?.status === 'pending_authorization'
+                                          ? 'Authorization is pending. Continue or cancel the existing request.'
+                                          : connection?.status === 'authorized'
+                                            ? 'Authorization is complete. Open the integration to select an account.'
+                                            : `${card.label} cannot start authorization right now. Check the connection status.`;
+                            setNotice({ tone: 'info', message: reason });
+                            return;
+                          }
                           if (metaAdsNeedsChoice) {
                             router.push(
                               withSocialPreview(
