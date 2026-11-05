@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { isBillingExemptWorkspace } from '@/lib/billing/billing-exemption-policy';
+
 import type Stripe from 'stripe';
 
 import { ensureDefaultSocialSubscription } from './ensure-default-subscription';
@@ -345,6 +347,13 @@ export async function startSocialStripeCheckout(input: {
   billingCycle: SocialBillingCycle;
   requestOrigin?: string | null;
 }): Promise<{ url: string } | { updated: true; message: string }> {
+  if (isBillingExemptWorkspace(input.clientId)) {
+    throw new ServiceError(
+      'forbidden',
+      'This TAKATAK workspace is billing exempt. Subscription checkout is not required.',
+    );
+  }
+
   if (!isSocialStripeCheckoutLive()) {
     throw new ServiceError(
       'unavailable',
@@ -691,6 +700,13 @@ export async function startSocialStripeAddonChange(input: {
   addonCode: SocialAddonCode;
   action: SocialAddonAction;
 }): Promise<{ updated: true; message: string }> {
+  if (isBillingExemptWorkspace(input.clientId)) {
+    throw new ServiceError(
+      'forbidden',
+      'This TAKATAK workspace is billing exempt. Subscription checkout is not required.',
+    );
+  }
+
   if (!isSocialStripeCheckoutLive() || !isSocialStripeAddonCheckoutLive()) {
     throw new ServiceError(
       'unavailable',
