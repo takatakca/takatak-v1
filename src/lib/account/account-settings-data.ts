@@ -143,7 +143,7 @@ export async function getAccountSettingsPageData(
     }
 
     const { entitlements } = resolveEffectiveSocialEntitlements({
-      clientId: access.activeClientId,
+      clientId: access.mode === 'client_scoped' ? access.activeClientId : undefined,
       status: subscription?.status,
       planCode: subscription?.planCode,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,
