@@ -28,6 +28,7 @@ export type PlansBillingPageData =
       subscriptionStatus: string;
       subscriptionStatusLabel: string;
       subscriptionAccess: SocialSubscriptionAccess;
+      billingExempt: boolean;
       cancelAtPeriodEnd: boolean;
       currentPeriodEnd: string | null;
       entitlements: SocialEntitlements;
@@ -147,6 +148,7 @@ export async function getPlansBillingPageData(
       subscriptionStatus: lifecycle.status ?? 'missing',
       subscriptionStatusLabel: lifecycle.label,
       subscriptionAccess: lifecycle.access,
+      billingExempt,
       cancelAtPeriodEnd: Boolean(client.subscription?.cancelAtPeriodEnd),
       currentPeriodEnd:
         client.subscription?.currentPeriodEnd?.toISOString() ?? null,
