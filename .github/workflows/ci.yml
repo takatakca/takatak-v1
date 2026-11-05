@@ -9,6 +9,7 @@ on:
       - master
       - fix/auth-identity-deployment-hardening
       - codex/rentauto-integration
+      - codex/review-ecosystem
   workflow_dispatch:
 
 jobs:
@@ -51,6 +52,19 @@ jobs:
 
       - name: Review cockpit normalization, isolation boundaries and provider capabilities
         run: npm run qa:review-cockpit
+
+      - name: Review approval, editing, publication and source integrity
+        run: |
+          npm run qa:review-approval
+          npm run qa:review-draft-edit
+          npm run qa:review-draft-actions
+          npm run qa:review-publisher
+          npm run qa:review-google-publication
+          npm run qa:review-qmaps-api
+          npm run qa:review-qmaps-visibility
+          npm run qa:review-agent-tools
+          npm run qa:review-import-model
+          npm run qa:review-import-service
 
       - name: Typecheck
         run: npm run typecheck
