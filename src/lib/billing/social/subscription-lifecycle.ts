@@ -1,3 +1,4 @@
+import { isBillingExemptWorkspace } from '@/lib/billing/billing-exemption-policy';
 import { resolveSocialEntitlements } from './entitlements';
 
 import { SOCIAL_UNSUBSCRIBED_PLAN_CODE } from './plan-catalog';
@@ -206,6 +207,7 @@ export function socialSubscriptionStatusLabel(
 export function resolveEffectiveSocialEntitlements(input: {
   status?: string | null;
   planCode?: string | null;
+  clientId?: string;
   cancelAtPeriodEnd?: boolean;
   currentPeriodEnd?: Date | string | null;
   addOns?: Partial<SocialAddonState>;
@@ -216,13 +218,28 @@ export function resolveEffectiveSocialEntitlements(input: {
   entitlements: SocialEntitlements;
   effectivePlanCode: SocialPlanCode;
 } {
-  const lifecycle = resolveSocialSubscriptionLifecycle(input);
+  const billingExempt = Boolean(
+    input.clientId && isBillingExemptWorkspace(input.clientId),
+  );
+  const lifecycle = billingExempt
+    ? {
+        access: 'paid' as const,
+        status: 'active' as const,
+        displayKey: 'active' as const,
+        label: 'Internal — Billing exempt',
+        paidUntil: null,
+      }
+    : resolveSocialSubscriptionLifecycle(input);
 
   const paid = lifecycle.access === 'paid';
 
   const entitlements = resolveSocialEntitlements({
-    planCode: paid ? input.planCode : SOCIAL_UNSUBSCRIBED_PLAN_CODE,
-    addOns: paid ? input.addOns : undefined,
+    planCode: billingExempt
+      ? 'social_custom'
+      : paid ? input.planCode : SOCIAL_UNSUBSCRIBED_PLAN_CODE,
+    addOns: billingExempt
+      ? { xAccountAllowance: 100, advancedAnalytics: true }
+      : paid ? input.addOns : undefined,
     customBrandAllowance: paid ? input.customBrandAllowance : undefined,
   });
 
@@ -230,5 +247,6 @@ export function resolveEffectiveSocialEntitlements(input: {
     lifecycle,
     entitlements,
     effectivePlanCode: entitlements.planCode,
+    billingExempt,
   };
 }
