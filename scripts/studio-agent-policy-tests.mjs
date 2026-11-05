@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { parseScenes, parseAgentPlan, planSteps, canHandoff, newStudioRequestId } from '../src/lib/studio/agent-policy.ts';
+const id='11111111-1111-4111-8111-111111111111';
+const scene={title:'Opening',visual:'An original forest',narration:'Hello',seconds:10};
+const plan={projectId:id,requestId:id,tracks:['video','social'],days:3,budgetCredits:12,engine:'ollama'};
+test('scene bounds reject malformed, excessive and overlong productions',()=>{assert.deepEqual(parseScenes([scene]),[scene]);for(const value of [null,[],Array(9).fill(scene),[{...scene,seconds:1}],[{...scene,seconds:30.1}],[{...scene,visual:''}],Array(7).fill({...scene,seconds:30})])assert.equal(parseScenes(value),null)});
+test('exact maximum duration remains valid',()=>{assert.equal(parseScenes(Array(6).fill({...scene,seconds:30})).length,6)});
+test('plan requires an explicit sufficient finite budget and bounded unique formats',()=>{assert.deepEqual(parseAgentPlan(plan,2),plan);for(const change of [{budgetCredits:11},{budgetCredits:Infinity},{days:0},{days:8},{tracks:['video','video']},{tracks:['publish']},{engine:'external'},{requestId:'bad'}])assert.equal(parseAgentPlan({...plan,...change},2),null);assert.equal(parseAgentPlan(plan,0),null)});
+test('untrusted imported fields cannot grant account, client or publication authority',()=>{assert.deepEqual(parseAgentPlan({...plan,clientId:'foreign',accountId:id,publish:true},2),plan)});
+test('daily steps remain ordered, bounded and explicit UTC instants',()=>{const steps=planSteps(plan,Date.parse('2026-11-05T12:00:00Z'));assert.equal(steps.length,6);assert.equal(steps[0].track,'video');assert.equal(steps[1].track,'social');assert.equal(steps[2].dueAt,'2026-11-06T12:00:00.000Z');assert.equal(steps[5].day,2)});
+const handoff={track:'social',outputClientId:'a',accountClientId:'a',clientId:'a',outputStatus:'draft',accountStatus:'connected',platform:'instagram',content:'Original caption'};
+test('social review accepts only owned connected eligible caption drafts',()=>{assert.equal(canHandoff(handoff),true);for(const change of [{outputClientId:'b'},{accountClientId:'b'},{track:'video'},{outputStatus:'archived'},{accountStatus:'expired'},{platform:'unknown'},{content:' '},{content:'a'.repeat(8001)}])assert.equal(canHandoff({...handoff,...change}),false)});
+test('secure operation IDs work without randomUUID and set UUIDv4 bits',()=>{const random={getRandomValues:buffer=>{buffer.fill(255);return buffer}};assert.equal(newStudioRequestId(random),'ffffffff-ffff-4fff-bfff-ffffffffffff');assert.notEqual(newStudioRequestId(),newStudioRequestId())});

@@ -1,7 +1,7 @@
 /** Shared Studio contract. No I/O, secrets, credentials or alternate identity. */
 export const STUDIO_PROJECT_SOURCE = "takatakstudio_project";
 export const STUDIO_OUTPUT_SOURCE = "takatakstudio_output";
-export const STUDIO_TRACKS = ["video", "book", "music"] as const;
+export const STUDIO_TRACKS = ["video", "book", "music", "social"] as const;
 export type StudioTrack = (typeof STUDIO_TRACKS)[number];
 export interface StudioBrief {
   title: string;
@@ -57,6 +57,7 @@ export function storedStudioBrief(row: { content: string; metadata: unknown }): 
   try { return parseStudioBrief(JSON.parse(row.content)); } catch { return null; }
 }
 const TASK: Record<StudioTrack, string> = {
+  social: "Write one original social media caption, maximum 120 words, for this creative project. Return only the caption, ready for editorial review. No invented offers or claims.",
   video: "Write a 2–4 minute original video script with scene directions and narration. This is a text script, not a rendered video.",
   book: "Write an original illustrated storybook outline and opening spread, plus an illustration brief. This is a text draft, not a print-ready book.",
   music: "Write original lyrics with verse/chorus labels and a composition brief. This is text, not recorded or synthesized music.",
@@ -69,13 +70,14 @@ export function studioPrompt(brief: StudioBrief, track: StudioTrack): string {
     "No private KnowledgeAI retrieval was performed for this draft. Do not claim otherwise.",
     JSON.stringify(brief)].join("\n\n");
 }
-export interface StudioGenerationRequest { projectId: string; track: StudioTrack; requestId: string }
+export interface StudioGenerationRequest { projectId: string; track: StudioTrack; requestId: string; engine?: "auto" | "ollama" }
 export function parseStudioGeneration(value: unknown): StudioGenerationRequest | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const raw = value as Record<string, unknown>;
   if (typeof raw.projectId !== "string" || !/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(raw.projectId) ||
       !STUDIO_TRACKS.includes(raw.track as StudioTrack) || typeof raw.requestId !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(raw.requestId)) return null;
-  return { projectId: raw.projectId, track: raw.track as StudioTrack, requestId: raw.requestId };
+  if (raw.engine !== undefined && raw.engine !== "auto" && raw.engine !== "ollama") return null;
+  return { projectId: raw.projectId, track: raw.track as StudioTrack, requestId: raw.requestId, ...(raw.engine ? { engine: raw.engine as "auto" | "ollama" } : {}) };
 }
 export type StudioRelayResult = { ok: true; text: string; savedId: string | null; credits: number; balance: number; engineName: string } |
   { ok: false; code: string; status: number; balance?: number };
@@ -91,7 +93,7 @@ export async function generateStudioDraft(deps: StudioDependencies, clientId: st
   if (!brief) return { ok: false as const, status: 404, code: "project_not_found" };
   const prompt = studioPrompt(brief, input.track);
   if (prompt.length > 4000) return { ok: false as const, status: 400, code: "brief_too_large_for_engine" };
-  const result = await deps.run({ clientId, mode: "write", engine: "auto", prompt,
+  const result = await deps.run({ clientId, mode: "write", engine: input.engine ?? "auto", prompt,
     requestId: `studio:${input.projectId}:${input.track}:${input.requestId}` });
   if (!result.ok) return result;
   // A link failure must never turn a completed, billed generation into a retryable 503.

@@ -55,3 +55,8 @@ The owner asked both systems to collaborate. This first vertical slice connects 
 ## Release and next work
 
 Review this isolated draft PR. After dependency checks are authorized, run full typecheck, lint, identity/access suites, Studio tests and production build on the exact candidate. Use synthetic two-client DB tests, verify output recovery and replay handling, and test mobile UI. Keep the rollout flag off until the exact revision and runtime configuration are verified. Coordinate the separate private KnowledgeAI PRs before adding confidential retrieval. Next build durable job leases, approved asset storage and render workers around this V1 control plane.
+
+
+## Superseding design/agent checkpoint
+
+The next source slice adds the redesigned interface, versioned manual scenes, Social caption track, bounded draft-agent queue/worker and selected-account Social approval handoff. Read [DESIGN_AGENT_CHECKPOINT.md](DESIGN_AGENT_CHECKPOINT.md) for current behavior, 19 passing focused tests, synthetic browser evidence and unresolved release gates. Earlier statements about missing browser testing and unattended scheduling describe the first slice; a worker route now exists but no scheduler is activated. External publication and private retrieval remain unavailable.
