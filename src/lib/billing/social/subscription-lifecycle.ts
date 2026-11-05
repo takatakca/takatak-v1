@@ -239,7 +239,7 @@ export function resolveEffectiveSocialEntitlements(input: {
       ? 'social_custom'
       : paid ? input.planCode : SOCIAL_UNSUBSCRIBED_PLAN_CODE,
     addOns: billingExempt
-      ? { xAccountAllowance: 100, advancedAnalytics: true }
+      ? { xAccountAllowance: 1, advancedAnalytics: true }
       : paid ? input.addOns : undefined,
     customBrandAllowance: paid ? input.customBrandAllowance : undefined,
   });
