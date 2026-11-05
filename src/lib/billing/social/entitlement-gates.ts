@@ -49,6 +49,7 @@ export async function loadClientSocialEntitlementContext(
   });
 
   return resolveEffectiveSocialEntitlements({
+    clientId,
     status: subscription?.status,
     planCode: subscription?.planCode,
     cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,
