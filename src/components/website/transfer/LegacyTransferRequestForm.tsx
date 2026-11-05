@@ -162,8 +162,8 @@ export function LegacyTransferRequestForm() {
       <label className="mt-6 flex items-start gap-3 text-sm leading-6 text-[#B8C4D3]">
         <input type="checkbox" required checked={consent} onChange={(event) => setConsent(event.target.checked)}
           className="mt-1 h-4 w-4 shrink-0 accent-[#1F8BFF]" />
-        <span>Je confirme être autorisé à demander le transfert et j'accepte d'être contacté
-          pour cette demande. Cela n'autorise pas encore TAKATAK à modifier mon DNS,
+        <span>Je confirme être autorisé à demander le transfert et j&apos;accepte d&apos;être contacté
+          pour cette demande. Cela n&apos;autorise pas encore TAKATAK à modifier mon DNS,
           déplacer mon site ou transférer mon domaine.</span>
       </label>
       {error ? <p role="alert" className="mt-5 text-sm font-semibold text-red-200">{error}</p> : null}
@@ -174,7 +174,7 @@ export function LegacyTransferRequestForm() {
       </button>
       <p className="mt-4 text-xs leading-6 text-[#B8C4D3]">
         Vos coordonnées sont utilisées pour traiter cette demande, pas pour prélever un paiement.
-        N'inscrivez jamais de mots de passe, de codes de transfert EPP ni de renseignements bancaires ici.
+        N&apos;inscrivez jamais de mots de passe, de codes de transfert EPP ni de renseignements bancaires ici.
       </p>
     </form>
   );
