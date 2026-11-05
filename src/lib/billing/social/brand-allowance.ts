@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { isBillingExemptWorkspace } from '@/lib/billing/billing-exemption-policy';
+
 import type { Prisma } from '@prisma/client';
 
 import {
@@ -83,7 +85,11 @@ async function loadAllowanceContext(db: DbClient, clientId: string) {
     lifecycle.displayKey,
   );
   const override = testBrandAllowance(clientId);
-  const allowance = override === null ? normalAllowance : Math.max(normalAllowance, override);
+  // Protect explicitly exempt workspaces even if the persisted subscription is
+  // missing, expired, or a legacy status. Never grant this to user/profile IDs.
+  // This is platform feature capacity, not authorization for external purchases.
+  const exemptAllowance = isBillingExemptWorkspace(clientId) ? 50 : 0;
+  const allowance = Math.max(normalAllowance, exemptAllowance, override ?? 0);
 
   return {
     brands,
