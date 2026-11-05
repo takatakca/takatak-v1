@@ -13,6 +13,7 @@ import { getAiStudioOverviewData } from "@/lib/ai/ai-data";
 export const dynamic = "force-dynamic";
 
 const TOOLS = [
+  { label: "TAKATAKSTUDIO", href: "/dashboard/studio", note: "Video scripts, book outlines and lyrics with TAK-TAK" },
   { label: "Content Generator", href: "/dashboard/ai-studio/content-generator", note: "Captions, hashtags, hooks, CTAs" },
   { label: "Campaign Builder", href: "/dashboard/ai-studio/campaign-builder", note: "Campaign plans and post ideas" },
   { label: "Video Ideas", href: "/dashboard/ai-studio/video-ideas", note: "Reels/TikTok concepts and scripts" },
