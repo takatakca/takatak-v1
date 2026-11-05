@@ -1,4 +1,5 @@
 import "server-only";
+import { isBillingExemptWorkspace } from "@/lib/billing/billing-exemption-policy";
 import { randomUUID } from "node:crypto";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/billing/social/stripe-client";
@@ -13,6 +14,7 @@ export function monitoringBillingEnabled() {
 }
 
 export async function startMonitoringCheckout(clientId: string, domainId: string, accepted: boolean) {
+  if (isBillingExemptWorkspace(clientId)) throw new ServiceError('forbidden', 'Monitoring is included for this billing-exempt workspace; no checkout required.');
   if (!accepted) throw new ServiceError("invalid_input", "Confirm the recurring price and service terms.");
   if (!monitoringBillingEnabled()) throw new ServiceError("unavailable", "Monitoring enrollment is not open yet.");
   const db = monitoringDb();

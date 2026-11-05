@@ -66,6 +66,7 @@ async function loadAllowanceContext(db: DbClient, clientId: string) {
   ]);
 
   const { lifecycle, entitlements } = resolveEffectiveSocialEntitlements({
+    clientId,
     status: subscription?.status,
     planCode: subscription?.planCode,
     cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,

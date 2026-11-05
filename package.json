@@ -81,6 +81,7 @@
     "qa:social-entitlements": "tsx scripts/verify-social-entitlements.ts",
     "qa:social-access-policy": "tsx scripts/verify-social-connection-access-policy.ts",
     "qa:social-lifecycle": "tsx scripts/verify-social-subscription-lifecycle.ts",
+    "qa:billing-exemption": "tsx scripts/verify-workspace-billing-exemption.ts",
     "qa:social-brand-allowance": "tsx scripts/verify-social-brand-allowance.ts",
     "qa:social-entitlement-gates": "tsx scripts/verify-social-entitlement-gates.ts",
     "qa:social-billing-banner": "tsx scripts/verify-social-billing-banner.ts",

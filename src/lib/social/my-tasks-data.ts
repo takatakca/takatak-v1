@@ -95,6 +95,7 @@ export async function getMyTasksPageData(
     ]);
 
     const { entitlements } = resolveEffectiveSocialEntitlements({
+      clientId: access.activeClientId,
       status: subscription?.status,
       planCode: subscription?.planCode,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,
