@@ -18,6 +18,8 @@ on:
       - "src/app/dashboard/local-listings/reviews/**"
       - "scripts/review-cockpit-tests.ts"
       - "scripts/review-approval-tests.ts"
+      - "scripts/review-draft-edit-tests.ts"
+      - "scripts/review-draft-action-tests.ts"
       - "scripts/review-publisher-tests.ts"
       - "scripts/review-google-publication-tests.ts"
       - "scripts/review-qmaps-api-tests.ts"
@@ -58,6 +60,8 @@ jobs:
       - run: npm run db:generate
       - run: npm run qa:review-cockpit
       - run: npm run qa:review-approval
+      - run: npm run qa:review-draft-edit
+      - run: npm run qa:review-draft-actions
       - run: npm run qa:review-publisher
       - run: npm run qa:review-google-publication
       - run: npm run qa:review-qmaps-api

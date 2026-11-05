@@ -29,10 +29,10 @@ export function ReviewDraftForm({
       >
         <Sparkles className="h-3 w-3" />
         {pending
-          ? "Queueing…"
+          ? "Mise en file…"
           : state.ok === true
-            ? "Draft queued"
-            : "Request AI draft"}
+            ? "Brouillon demandé"
+            : "Demander une réponse IA"}
       </button>
       <span className="block text-[11px] text-slate-600">
         Tarif catalogue de génération :{" "}
@@ -42,10 +42,13 @@ export function ReviewDraftForm({
       </span>
       {state.ok === true && (
         <p role="status" className="text-xs text-slate-600">
-          Request queued in the existing AI workforce. No reply has been
-          generated or published yet.{" "}
-          <Link className="underline" href="/dashboard/growth/ai-engine">
-            View runs and approvals
+          Demande enregistrée. La génération et la publication restent à
+          confirmer.{" "}
+          <Link
+            className="underline"
+            href="/dashboard/growth/reviews#review-approvals"
+          >
+            Ouvrir le studio de réponses
           </Link>
         </p>
       )}

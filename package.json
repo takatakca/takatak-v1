@@ -167,7 +167,9 @@
     "qa:review-cockpit": "tsx --require ./scripts/register-server-only.cjs scripts/review-cockpit-tests.ts",
     "qa:review-approval": "tsx --require ./scripts/register-server-only.cjs scripts/review-approval-tests.ts",
     "qa:review-publisher": "tsx --require ./scripts/register-server-only.cjs scripts/review-publisher-tests.ts",
-    "qa:review-google-publication": "tsx --require ./scripts/register-server-only.cjs scripts/review-google-publication-tests.ts"
+    "qa:review-google-publication": "tsx --require ./scripts/register-server-only.cjs scripts/review-google-publication-tests.ts",
+    "qa:review-draft-edit": "tsx --require ./scripts/register-server-only.cjs scripts/review-draft-edit-tests.ts",
+    "qa:review-draft-actions": "tsx scripts/review-draft-action-tests.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",

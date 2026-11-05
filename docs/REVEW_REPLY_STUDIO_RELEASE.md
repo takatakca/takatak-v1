@@ -1,0 +1,33 @@
+# TAKATAK Review — édition et traitement des réponses
+
+Signé REVEW · 2026-11-05 · `codex/review-ecosystem`
+
+## Avant
+
+Continuer le parcours Review déjà livré, sans créer une deuxième application ni toucher au projet TAKATAK Studio distinct. Dernières instructions, journal, tableau public et PR ouverts lus. L'utilisateur demande de poursuivre le déploiement et la qualité du produit. Le backend, les droits, l'autorité d'abonnement et les reçus fournisseurs TAKATAK restent les références.
+
+## Pendant
+
+Le travail porte sur la file de réponses IA et son éditeur: choisir un avis, conserver le commentaire original sous les yeux, modifier le brouillon, enregistrer puis approuver exactement sa version enregistrée. Une modification manuelle ne génère pas une nouvelle réponse IA et ne débite pas de crédits.
+
+L'action serveur reprend l'espace et le profil de la session et exige `manage_reputation` et `approve_content`, plus la fonctionnalité IA applicable pour enregistrer/approuver. Le refus reste possible après expiration d'une offre. Aucun champ du formulaire ne choisit le client destinataire. Les erreurs d'accès, d'offre, de stockage et de revalidation retournent un message générique sans détails internes.
+
+Le service permet seulement l'édition d'un run Review en attente d'approbation, avec le jeton de version courant et un avis source encore accessible. La version2 reste liée à son empreinte source. Les textes approuvés ou associés à une tentative de publication restent immuables. Les limites et la normalisation de Google/QMAPS sont appliquées avant stockage sans troncature silencieuse. Un brouillon généré vide ou invalide peut être réparé par un texte manuel valide.
+
+L'enregistrement conserve les autres champs de sortie et l'entrée du run, vérifie le statut, le temps et les valeurs JSON avant écriture, puis relit la version persistée. L'approbation vérifie aussi les valeurs JSON, ce qui protège une décision contre une édition concurrente dans la même milliseconde. Les audits contiennent des identifiants et empreintes, pas le commentaire ni la réponse en clair. Une modification vide de sens après normalisation ne provoque pas d'écriture ni d'audit supplémentaire.
+
+L'interface conserve les textes non enregistrés en mémoire par demande pendant la navigation et les filtres. Elle ne stocke pas les avis dans localStorage. Le composant est lié à l’identifiant de l’espace actif pour vider sa mémoire locale lors d’un changement d’espace. Une version entrante différente exige un rechargement explicite et ne remplace pas le texte local. Les modifications non enregistrées bloquent l'approbation. Une sauvegarde réussie fournit le texte canonique et son nouveau jeton. Le refus, les états incomplets, les confirmations de source et les crédits déclarés restent distincts.
+
+## Validation
+
+Contrôles locaux exécutés: 24 cas d’édition (versions, concurrence dans une même milliseconde, refus d’un texte déjà approuvé, portée source, audits et erreurs), 15 cas des vraies actions serveur avec dépendances simulées (session, permissions, offre, injection, échecs et cache), plus les 197 contrôles Review existants et 7 flux de contrat QMAPS. Total: 236 contrôles et 7 flux inter-dépôts réussis. Le navigateur exerce le vrai composant React avec actions serveur simulées: édition puis approbation du nouveau hash, réponses de sauvegarde/RSC dans les deux ordres, navigation pendant une sauvegarde, texte local conservé, versions obsolètes, réparation d’un brouillon vide, droits et preuve de publication. Les tests navigateur passent sur ordinateur et mobile, sans débordement horizontal; le scan axe du composant retourne zéro violation WCAG2A/AA/2.1AA. Cela ne constitue pas une conformité globale. [Capture ordinateur](screenshots/review-studio-desktop-synthetic.png), [capture mobile](screenshots/review-studio-mobile-synthetic.png). CI du commit exact à compléter. Les tests de service et de navigateur synthétiques ne constituent pas une recette de production. Aucun avis public, génération payante ou débit réel n'est effectué pendant cette validation.
+
+## Déploiement et accès constatés
+
+Le chemin existant est l'application Coolify `takatakca/takatak-v1`, branche main, port3000 et santé stricte `/api/health/ready`. Le workflow automatique ne s'exécute que pour la CI verte du main courant et sa configuration de production existante; une mise en file ne prouve pas un déploiement réussi. Le workflow cPanel n'est pas un remplacement de Coolify.
+
+Dans cette session, le réseau actif refuse l'API GitHub, TAKATAK.CA et les hôtes de déploiement. Git natif reste utilisable pour livrer la branche. L'absence de secrets locaux ne permet pas de déduire l'état des secrets GitHub/Coolify distants. Les hôtes `coolify.takatak.ca` et `review.takatak.ca` ont été ajoutés au brouillon réseau existant en conservant ses autres destinations; enregistrement confirmé, application/publication de l'environnement encore nécessaire dans ses paramètres. Aucun contournement du proxy n'est utilisé.
+
+Le main `728e16f` est vérifié par sa [CI complète verte](https://github.com/takatakca/takatak-v1/actions/runs/42054124319),9m44s; ce résultat de base ne remplace pas la nouvelle CI de la branche Review. Ce main contient aussi la migration de sécurité `20261104080000_security_checks`, issue d'un autre travail. Vérifier son état de production dans le processus de release existant avant toute promotion de main; Review n'ajoute pas de migration. Les cinq fonctions Edge QMAPS doivent être déployées séparément du frontend, avec les secrets serveur concordants et le vrai projet Supabase confirmé. Voir [le raccordement QMAPS et le domaine Review](REVEW_QMAPS_AGENT_RELEASE.md) et [les contrats d'approbation/publication](REVEW_REVIEW_APPROVAL_RELEASE.md).
+
+Notes GitHub versionnées et copie locale Drive-ready; aucune copie n'est déclarée envoyée à Drive sans outil et preuve de lecture. Aucun compte Gmail, tâche récurrente, worker ou fournisseur supplémentaire n'est activé par ce travail. — REVEW

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { ReviewApprovalCenter } from "@/components/reputation/review-approval-center";
 import { getReviewApprovals } from "@/lib/reputation/review-approval-service";
-import { decideReviewDraftAction } from "./review-draft-actions";
+import {
+  decideReviewDraftAction,
+  saveReviewDraftAction,
+} from "./review-draft-actions";
 import { QmapsReviewConnection } from "@/components/reputation/qmaps-review-connection";
 import { getQmapsReviewConnections } from "@/lib/qmaps/review-sync";
 import { ReviewWorkspaceNavigation } from "@/components/reputation/review-workspace-navigation";
@@ -155,6 +158,7 @@ export default async function ReputationPage({
         approvals={
           scoped ? (
             <ReviewApprovalCenter
+              key={access.activeClientId}
               runs={approvals || []}
               canApprove={
                 canManage && hasEffectivePermission(access, "approve_content")
@@ -162,6 +166,7 @@ export default async function ReputationPage({
               canManage={canManage}
               unavailable={approvals === null}
               decisionAction={decideReviewDraftAction}
+              editAction={saveReviewDraftAction}
             />
           ) : (
             <HonestyNote>

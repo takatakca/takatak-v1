@@ -1,5 +1,5 @@
 import "server-only";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { getPrisma } from "@/lib/db/prisma";
 import { QMAPS_BUSINESS_ID } from "@/lib/qmaps/bridge";
 import {
@@ -28,6 +28,10 @@ export type ReviewApprovalRun = {
 };
 export type ReviewDraftDecisionState =
   { ok: null } | { ok: false; error: string } | { ok: true; message: string };
+export type ReviewDraftEditState =
+  | { ok: null }
+  | { ok: false; error: string }
+  | { ok: true; message: string; draft: string; draftHash: string };
 const object = (v: unknown): Record<string, unknown> =>
   v && typeof v === "object" && !Array.isArray(v)
     ? (v as Record<string, unknown>)
@@ -46,6 +50,9 @@ const validDate = (value: unknown): value is string =>
   typeof value === "string" &&
   value.length <= 64 &&
   Number.isFinite(Date.parse(value));
+const jsonVersion = (value: Prisma.JsonValue | null) => ({
+  equals: value === null ? Prisma.AnyNull : (value as Prisma.InputJsonValue),
+});
 export async function getReviewApprovals(
   clientId: string,
   database?: PrismaClient,
@@ -250,6 +257,8 @@ export async function decideReviewDraft(
         agentKey: "review_responder",
         status: "awaiting_approval",
         updatedAt: row.updatedAt,
+        input: jsonVersion(row.input),
+        output: jsonVersion(row.output),
       },
       data: {
         status: next,
@@ -301,6 +310,150 @@ export async function decideReviewDraft(
           : internal
             ? "Brouillon validé pour le suivi interne; aucune réponse publique n’est envoyée."
             : "Texte approuvé. Le service de traitement configuré peut l’exécuter; la publication n’est pas encore confirmée.",
+    };
+  });
+}
+
+/** Save an unapproved reply without freezing it, publishing it or using credits. */
+export async function saveReviewDraft(
+  clientId: string,
+  profileId: string,
+  runId: string,
+  expectedHash: string,
+  text: unknown,
+  database?: PrismaClient,
+): Promise<ReviewDraftEditState> {
+  if (
+    ![clientId, profileId, runId].every((id) => QMAPS_BUSINESS_ID.test(id)) ||
+    !SHA256.test(expectedHash)
+  )
+    return { ok: false, error: "Choisissez un brouillon valide." };
+  const db = database ?? getPrisma();
+  if (!db) return { ok: false, error: "La base de réponses est indisponible." };
+  return db.$transaction(async (tx) => {
+    const row = await tx.aiAgentRun.findFirst({
+      where: {
+        id: runId,
+        clientId,
+        agentKey: "review_responder",
+        status: "awaiting_approval",
+      },
+      select: { input: true, output: true, updatedAt: true },
+    });
+    if (!row)
+      return {
+        ok: false as const,
+        error: "Cette demande n’attend plus de modification.",
+      };
+    const input = object(row.input),
+      source = sourceOf(input),
+      output = object(row.output),
+      previous = source ? canonicalReviewReply(source, output.reply) : null;
+    if (hash(row.updatedAt, previous, row.input) !== expectedHash)
+      return {
+        ok: false as const,
+        error: "Le brouillon a changé. Actualisez avant de le modifier.",
+      };
+    if (
+      !source ||
+      (input.reviewWorkflowVersion !== undefined &&
+        input.reviewWorkflowVersion !== 1 &&
+        input.reviewWorkflowVersion !== 2) ||
+      (input.reviewApproval !== undefined && input.reviewApproval !== null) ||
+      (input.reviewPublication !== undefined &&
+        input.reviewPublication !== null)
+    )
+      return {
+        ok: false as const,
+        error: "Ce traitement ne permet plus de modifier le texte.",
+      };
+    const reply = canonicalReviewReply(source, text);
+    if (!reply)
+      return {
+        ok: false as const,
+        error:
+          source === "qmaps"
+            ? "Saisissez une réponse valide de 1 à 2 000 caractères."
+            : "Saisissez une réponse valide de 1 à 4 000 caractères.",
+      };
+    const reviewId = input.reviewResponseId;
+    const current =
+      typeof reviewId === "string" && QMAPS_BUSINESS_ID.test(reviewId)
+        ? await resolveReviewTarget(tx, clientId, source, reviewId)
+        : null;
+    if (
+      !current ||
+      current.id !== reviewId ||
+      current.source !== source ||
+      (input.reviewWorkflowVersion === 2 &&
+        input.reviewContentHash !== current.fingerprint)
+    )
+      return {
+        ok: false as const,
+        error:
+          "L’avis source n’est plus valide. Actualisez ou rejetez ce brouillon.",
+      };
+    if (reply === previous)
+      return {
+        ok: true as const,
+        message:
+          "Le texte est déjà enregistré; aucune modification nécessaire.",
+        draft: reply,
+        draftHash: expectedHash,
+      };
+    const updated = await tx.aiAgentRun.updateMany({
+      where: {
+        id: runId,
+        clientId,
+        agentKey: "review_responder",
+        status: "awaiting_approval",
+        updatedAt: row.updatedAt,
+        input: jsonVersion(row.input),
+        output: jsonVersion(row.output),
+      },
+      data: {
+        output: { ...output, reply } as Prisma.InputJsonObject,
+      },
+    });
+    if (updated.count !== 1)
+      return {
+        ok: false as const,
+        error: "Le brouillon a changé. Actualisez avant de le modifier.",
+      };
+    const saved = await tx.aiAgentRun.findFirst({
+      where: {
+        id: runId,
+        clientId,
+        agentKey: "review_responder",
+        status: "awaiting_approval",
+      },
+      select: { input: true, output: true, updatedAt: true },
+    });
+    const savedReply = saved
+      ? canonicalReviewReply(source, object(saved.output).reply)
+      : null;
+    if (!saved || savedReply !== reply)
+      throw new Error("review_draft_edit_not_persisted");
+    await tx.auditLog.create({
+      data: {
+        clientId,
+        profileId,
+        action: "reputation.draft.edit",
+        entityType: "ai_agent_run",
+        entityId: runId,
+        metadata: {
+          source,
+          previousReplyHash: previous ? reviewReplyHash(previous) : null,
+          replyHash: reviewReplyHash(savedReply),
+          edited: 1,
+        },
+      },
+    });
+    return {
+      ok: true as const,
+      message: "Brouillon enregistré. Relisez-le avant de l’approuver.",
+      draft: savedReply,
+      draftHash: hash(saved.updatedAt, savedReply, saved.input),
     };
   });
 }

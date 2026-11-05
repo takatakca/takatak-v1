@@ -826,6 +826,8 @@ async function main() {
           reviewId,
         );
         const hash = await decisionHash(state);
+        const previousInput = structuredClone(state.runs[0].input);
+        const previousOutput = structuredClone(state.runs[0].output);
         const result = await decideReviewDraft(
           tenant,
           actor,
@@ -853,6 +855,8 @@ async function main() {
           agentKey: "review_responder",
           status: "awaiting_approval",
           updatedAt: when,
+          input: { equals: previousInput },
+          output: { equals: previousOutput },
         });
         assert.equal(state.transactions, 1);
         assert.equal(state.audits.length, 1);
