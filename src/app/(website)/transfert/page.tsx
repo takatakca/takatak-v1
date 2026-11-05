@@ -24,7 +24,7 @@ export default function TransferRequestPage() {
         <p className="mt-5 max-w-3xl text-base leading-8 text-[#B8C4D3] sm:text-lg">
           Vous utilisiez notre ancienne plateforme? Remplissez ce formulaire pour demander le
           transfert de votre site Web, de votre domaine ou des deux vers TAKATAK.CA.
-          Votre site actuel et vos courriels restent inchangés tant que la migration n'est pas approuvée.
+          Votre site actuel et vos courriels restent inchangés tant que la migration n&apos;est pas approuvée.
         </p>
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_270px]">
           <LegacyTransferRequestForm />
@@ -32,9 +32,9 @@ export default function TransferRequestPage() {
             <ShieldCheck className="h-7 w-7 text-[#29C3FF]" aria-hidden="true" />
             <h2 className="mt-3 text-lg font-bold">Sans interruption surprise</h2>
             <p className="mt-3 text-sm leading-7 text-[#B8C4D3]">
-              Une demande n'est pas un transfert automatique. Notre équipe vérifie d'abord
-              l'identité du titulaire, les services concernés, les modalités et les frais applicables.
-              Aucun paiement n'est prélevé par ce formulaire.
+              Une demande n&apos;est pas un transfert automatique. Notre équipe vérifie d&apos;abord
+              l&apos;identité du titulaire, les services concernés, les modalités et les frais applicables.
+              Aucun paiement n&apos;est prélevé par ce formulaire.
             </p>
             <p className="mt-4 text-sm leading-7 text-[#B8C4D3]">
               Ne fournissez jamais de mot de passe, de code EPP, de clé API ou de données bancaires
