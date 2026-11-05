@@ -116,6 +116,7 @@ export async function getPlansBillingPageData(
     ]);
 
     const { lifecycle, entitlements } = resolveEffectiveSocialEntitlements({
+      clientId: access.activeClientId,
       status: client.subscription?.status,
       planCode: client.subscription?.planCode,
       cancelAtPeriodEnd: client.subscription?.cancelAtPeriodEnd,
