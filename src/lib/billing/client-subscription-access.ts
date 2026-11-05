@@ -1,10 +1,10 @@
+import { isBillingExemptWorkspace } from '@/lib/billing/billing-exemption-policy';
 import "server-only";
 
 import type { Prisma } from "@prisma/client";
 
 import {
   evaluateClientSocialConnectionAccess,
-  isSocialConnectionSetupClient,
 } from "@/lib/billing/client-subscription-access-policy";
 import { assertClientCanConnectSocialNetwork } from "@/lib/billing/social/entitlement-gates";
 import { ServiceError } from "@/lib/services/service-error";
@@ -52,9 +52,8 @@ export async function assertClientCanConnectSocial(
   clientId: string,
   options?: AssertClientCanConnectSocialOptions,
 ): Promise<void> {
-  // This bypass permits connection setup only. Publishing, analytics,
-  // reports, competitors, team, API, add-ons and Stripe remain gated.
-  if (isSocialConnectionSetupClient(clientId)) {
+  // The workspace allowlist is the billing exemption authority.
+  if (isBillingExemptWorkspace(clientId)) {
     return;
   }
 
