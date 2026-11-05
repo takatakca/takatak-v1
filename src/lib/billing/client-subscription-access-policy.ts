@@ -30,9 +30,6 @@ export const SOCIAL_CONNECTION_DEV_BYPASS_ENV = 'SOCIAL_CONNECTION_DEV_BYPASS';
 export const SOCIAL_CONNECTION_SETUP_CLIENT_IDS_ENV =
   'SOCIAL_CONNECTION_SETUP_CLIENT_IDS';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function readEnv(name: string): string | undefined {
   return process.env[name];
 }
