@@ -1,5 +1,7 @@
 import "server-only";
 
+import { isBillingExemptWorkspace } from "@/lib/billing/billing-exemption-policy";
+
 import { Prisma } from "@prisma/client";
 import type Stripe from "stripe";
 
@@ -26,6 +28,7 @@ export function growthWebhookSecret(): string {
 }
 
 export async function startPlanCheckout(input: { clientId: string; planKey: string; origin: string }): Promise<string> {
+  if (isBillingExemptWorkspace(input.clientId)) throw new Error('billing_exempt_no_checkout_required');
   const plan = billablePlan(input.planKey);
   if (!plan) throw new Error("unknown_plan");
   const prisma = requirePrisma();

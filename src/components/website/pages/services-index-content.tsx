@@ -2,8 +2,9 @@
 
 import { ArrowRight } from "lucide-react";
 import { Link } from "@/lib/website/nav";
-import { formatCAD, cadenceLabel } from "@/lib/website/pricing";
+import { formatCAD, cadenceKeys } from "@/lib/website/pricing";
 import { servicePages } from "@/lib/website/service-pages";
+import type { TranslationKey } from "@/lib/website/i18n";
 import { useLanguage } from "@/lib/website/use-language";
 
 export function ServicesIndexContent() {
@@ -56,7 +57,7 @@ export function ServicesIndexContent() {
                         <span className="text-sm font-bold text-foreground">
                           {t("service.startingAt")} {formatCAD(amount)}
                           <span className="text-xs font-medium text-muted-foreground">
-                            {cadence ? cadenceLabel(cadence) : ""}
+                            {cadence ? t(cadenceKeys[cadence] as TranslationKey) : ""}
                           </span>
                         </span>
                       )}

@@ -55,6 +55,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Workspace billing exemption isolation
+        run: npm run qa:billing-exemption
+
       - name: Strict runtime health readiness safeguards
         run: npx tsx scripts/verify-runtime-readiness.ts
 
@@ -428,6 +431,21 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:newsletter-db
+
+      - name: TAK-TAK answer (credits debited once, saved output, refund on failure) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:takbot-run-db
+
+      - name: Homepage promo codes (FIRST10 once per account, seasonal dates) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:promotions-db
+
+      - name: Security screens (support identity check, new-device sign-in, match the number) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:security-checks-db
 
       - name: AI provider keys against the ephemeral database
         env:

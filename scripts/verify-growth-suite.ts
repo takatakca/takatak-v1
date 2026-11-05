@@ -75,7 +75,7 @@ function verifyCatalog(): void {
   }
   pass("connectors are well-formed and link to real routes");
 
-  assert.equal(AI_PROVIDERS.length, 13, "AI roster has 13 engines");
+  assert.equal(AI_PROVIDERS.length, 14, "AI roster has 14 engines");
   for (const agent of AI_AGENTS) {
     for (const key of agent.connectorKeys) assert.ok(connectorByKey(key), `${agent.key} uses known connector ${key}`);
     for (const key of agent.creditActionKeys) {

@@ -299,7 +299,8 @@ function InboxPreview({ lang }: { lang: "en" | "fr" }) {
 }
 
 /** Newsletter sign-up: its own unchecked consent box, double opt-in, proof kept server-side. */
-export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) {
+/** `titleAs="h1"` on its own page (/infolettre), h2 inside the homepage. */
+export function NewsletterSignup({ sourcePage = "/", titleAs = "h2" }: { sourcePage?: string; titleAs?: "h1" | "h2" }) {
   const { lang } = useCopy();
   return (
     <section id="infolettre" aria-labelledby="newsletter-title" className="hp-bg hp-live px-4 py-14 sm:py-20" style={{ scrollMarginTop: "calc(var(--tk-header-h, 64px) + 56px)" }}>
@@ -311,7 +312,7 @@ export function NewsletterSignup({ sourcePage = "/" }: { sourcePage?: string }) 
 
         <Rise className="min-w-0">
           <Eyebrow>{t.eyebrow[lang]}</Eyebrow>
-          <TwoTone id="newsletter-title" lead={t.lead[lang]} rest={t.rest[lang]} />
+          <TwoTone id="newsletter-title" as={titleAs} lead={t.lead[lang]} rest={t.rest[lang]} />
           <p className="hp-ink-2 mt-6 max-w-xl text-[17px] leading-8">{t.body[lang]}</p>
 
           <NewsletterForm sourcePage={sourcePage} />

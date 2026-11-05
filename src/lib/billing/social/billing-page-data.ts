@@ -28,6 +28,7 @@ export type PlansBillingPageData =
       subscriptionStatus: string;
       subscriptionStatusLabel: string;
       subscriptionAccess: SocialSubscriptionAccess;
+      billingExempt: boolean;
       cancelAtPeriodEnd: boolean;
       currentPeriodEnd: string | null;
       entitlements: SocialEntitlements;
@@ -115,7 +116,8 @@ export async function getPlansBillingPageData(
       }),
     ]);
 
-    const { lifecycle, entitlements } = resolveEffectiveSocialEntitlements({
+    const { lifecycle, entitlements, billingExempt } = resolveEffectiveSocialEntitlements({
+      clientId: access.activeClientId,
       status: client.subscription?.status,
       planCode: client.subscription?.planCode,
       cancelAtPeriodEnd: client.subscription?.cancelAtPeriodEnd,
@@ -142,10 +144,11 @@ export async function getPlansBillingPageData(
       billingCountry: client.billingCountry || 'Canada',
       invoiceEmails,
       planCode: entitlements.planCode,
-      planName: entitlements.planName,
+      planName: billingExempt ? 'Internal — Billing exempt' : entitlements.planName,
       subscriptionStatus: lifecycle.status ?? 'missing',
       subscriptionStatusLabel: lifecycle.label,
       subscriptionAccess: lifecycle.access,
+      billingExempt,
       cancelAtPeriodEnd: Boolean(client.subscription?.cancelAtPeriodEnd),
       currentPeriodEnd:
         client.subscription?.currentPeriodEnd?.toISOString() ?? null,
@@ -162,8 +165,8 @@ export async function getPlansBillingPageData(
         brands: brandFreeze.brands,
       },
       xAccountCount,
-      checkoutLive: isSocialStripeCheckoutLive(),
-      addonCheckoutLive: isSocialStripeAddonCheckoutLive(),
+      checkoutLive: !billingExempt && isSocialStripeCheckoutLive(),
+      addonCheckoutLive: !billingExempt && isSocialStripeAddonCheckoutLive(),
       stripeCustomerReady: Boolean(client.subscription?.externalCustomerId),
       stripeSubscriptionReady: Boolean(
         client.subscription?.externalSubscriptionId,

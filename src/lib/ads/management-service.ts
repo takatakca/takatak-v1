@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isBillingExemptWorkspace } from "@/lib/billing/billing-exemption-policy";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 
@@ -145,8 +146,8 @@ export async function createAdsCampaign(
 
   const requiredFeature = requiredFeatureForScope(input.scope);
   if (
-    !subscription ||
-    !adsSubscriptionAllows(subscription, requiredFeature)
+    !isBillingExemptWorkspace(clientId) &&
+    (!subscription || !adsSubscriptionAllows(subscription, requiredFeature))
   ) {
     throw new ServiceError(
       "forbidden",
@@ -295,11 +296,12 @@ export async function updateAdsCampaignStatus(
     });
 
     if (
-      !subscription ||
-      !adsSubscriptionAllows(
-        subscription,
-        requiredFeatureForScope(campaign.scope),
-      )
+      !isBillingExemptWorkspace(clientId) &&
+      (!subscription ||
+        !adsSubscriptionAllows(
+          subscription,
+          requiredFeatureForScope(campaign.scope),
+        ))
     ) {
       throw new ServiceError(
         "forbidden",

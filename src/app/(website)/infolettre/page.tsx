@@ -15,7 +15,7 @@ export default function NewsletterPage() {
   return (
     <div className="tk-page">
       <HomeThemeRoot>
-        <NewsletterSignup sourcePage="/infolettre" />
+        <NewsletterSignup sourcePage="/infolettre" titleAs="h1" />
       </HomeThemeRoot>
     </div>
   );

@@ -11,7 +11,6 @@ import {
   MessageSquare,
   RefreshCw,
   ShieldCheck,
-  Star,
 } from "lucide-react";
 
 import { ServiceThumbnail } from "@/components/website/marketplace/ServiceThumbnail";
@@ -197,20 +196,6 @@ export function GigDetailClient({
             </h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-500">
-              <Star
-                size={14}
-                className="fill-slate-950 text-slate-950"
-              />
-
-              <span className="font-semibold text-slate-950">
-                {pkg.rating.toFixed(1)}
-              </span>
-
-              <span>
-                ({pkg.reviews} reviews)
-              </span>
-
-              <span>·</span>
               <span>
                 Delivered through TAKATAK
               </span>

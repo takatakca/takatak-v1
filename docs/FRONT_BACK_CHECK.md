@@ -3,6 +3,14 @@
 Owner's order: everything the homepage offers must work in the dashboard, tested, no mock-ups.
 Each line below was run against a real Postgres database (local, and in CI on the ephemeral database).
 
+**Summary (2026-11-03 11:45 UTC):** 17 rows checked.
+- **13 work in code:** each is proven by a test (in CI on a real database where there is one) or by reading the code.
+- **1 was fixed today and still needs a live check:** the plan is now kept after sign-up.
+- **1 is off until a setting:** deal alerts by browser notification.
+- **2 need your decision:** "Parler à une personne", and the hosting checkout page.
+- **1 wording decision:** FIRST10 counts once per account, but the offer text says "par entreprise".
+- **Production settings:** several things work only once their settings are on in Coolify (see below).
+
 | Homepage action | What happens on the server | Proof | Status |
 |---|---|---|---|
 | TAK-TAK bar or one of the 6 chips → "Préparer ma demande" → "Oui, envoyer" | `POST /api/public/website-requests` → one **Lead** in the TAKATAK agency workspace, source "takatak.ca website", plus an audit entry and an in-app notification (no contact details in it) | Browser run: reference `53469AA8` shown, lead in the database and in `/dashboard/leads/inbox`. `npm run qa:website-lead-inbox-db` (CI step) | Works |
@@ -10,8 +18,17 @@ Each line below was run against a real Postgres database (local, and in CI on th
 | Domain search request | Lead with the domain, same inbox | `qa:website-lead-inbox-db` | Works |
 | Plan built on the homepage → `/register` → account created | **Was lost** (it stayed in the browser). Now: on the first dashboard visit, `PlanHandoff` sends it once as a Lead (title "Forfait choisi sur takatak.ca · …", category `homepage-plan`, promo code if any), tied to the signed-in account; the client sees the reference | `qa:website-lead-inbox-db` (server path). The banner itself needs a signed-in account (not testable here without Supabase) | Fixed, to check live |
 | TAK-TAK live trial (signed-in) | Trial credits granted once ever in the visitor's own ledger; the sign-up is one Lead in the agency inbox (source "TAK bot trial"); owner can switch it off | `npm run qa:takbot-trial-db` (CI step) | Works (needs an economy engine key in production) |
+| TAK-TAK answering (signed-in, trial or bought credits) | Credits are debited once from the visitor's own ledger, the answer is saved in the client's file (AI Studio → saved outputs, source `takbot`), a resend is never charged twice, a provider failure is refunded and saves nothing, no credits = refused before any AI call | `npm run qa:takbot-run-db` (CI step; the AI provider is a local stand-in, the rest is the real path) | Works (needs an engine key in production) |
+| Promo codes: FIRST10 (10 % first service) and seasonal codes | Quoted by the server, never by the browser. FIRST10 is used once per account (claim + use in the audit log, with the order reference); a second order pays full price; another account keeps its own discount; a seasonal code (e.g. BF2026) is refused before its dates | `npm run qa:promotions-db` (CI step) + `qa:promotions` | Works. Wording: the offer says "une utilisation par entreprise", the server counts **per account** (two accounts of one business could each use it). Owner: keep the wording or ask for a per-business rule |
 | Newsletter sign-up (homepage, CASL) | One Lead "takatak.ca newsletter" with the exact consent text as proof; only the confirm link sent for it confirms it; unsubscribe archives it at once; only a confirmed address may be emailed; every step in the audit log | `npm run qa:newsletter-db` (CI step) | Works (needs the settings below) |
 | "Créer un logo" chip | TAK-TAK links to the real page `/marketplace/gigs/logo-design` (200) | `qa:concierge` + browser run | Works |
+| "Parler à une personne" (hero, TAK-TAK drawer, bottom-right button) | With no live-chat tool set, a small "Soutien TAKATAK" panel opens. "Demander une soumission" → `/marketplace/post-project` → Lead in the inbox. "Écrire au soutien" is a `mailto:` link: it opens the visitor's own email app, and nothing reaches the dashboard (some visitors have no email app set up) | Code read (`LiveChatLauncher.tsx`, `chat-provider.ts`); the post-project form uses the same intake | **Owner decision** (see below) |
+| Hosting "Commander Portfolio / Bronze / Silver / Gold" (homepage pricing) | Saves the chosen plan in the browser, then `/checkout` (sign-in first). There, hosting is ordered in the Upmind window; when Upmind is not set, a hosting request goes to the inbox (`HostingRequestFallback`). **The chosen plan is never read back**: the visitor lands on an older English page ("Checkout: Get Started With Your Domain & Hosting Journey") and picks the plan again | Code read (`PricingTabs.tsx` writes `hostingPlan`; nothing reads it; `checkout-client.tsx`, `upmind-hosting-plans.tsx`) | **Owner decision** (see below) |
+| Marketplace package order (`/checkout` after a package) | Sign-in required; `package_order` priced by the server from the catalog (static prices when the database has none), promo checked server-side → Lead | `qa:website-leads` (pricing), `qa:lead-order-billing-db` (won order → billing queue) | Works |
+| Phone section: "Trouvez votre numéro maintenant" (search, hold a number 10 minutes) | Calls MIMT's API (`https://api.mimt.ca`): `GET /v1/public/numbers/search`, `POST/GET/DELETE /v1/public/numbers/holds`, in `takatakca/mimtcaapp` `apps/api/src/routes/numberPicker.ts`; the 10 minutes is the shared `NUMBER_HOLD_MINUTES` on both sides | 20/20 tests of `apps/api/test/numberPicker.test.ts` pass on MIMT `main` `1c33e7e` (run 2026-11-03 08:46 UTC). The live API cannot be reached from the cloud session | Works in code; live check is the owner's |
+| "Créer mon compte" (hero, section bar, plan dock) | `/register` → `POST /api/auth/register` → one-time code by email → account and profile | CI step "Application-flow tests (memory OTP adapter)" (`qa:ephemeral-app-flow`) on the ephemeral database | Works (needs the sign-in email sender in production) |
+| Offer countdown ("se termine dans …") | `GET /api/promotions/active`: only campaigns running right now, computed by the server from the calendar (`seasons.ts`); outside a campaign nothing is shown | `qa:promotions` (calendar dates, windows) + `qa:promotions-db` (a seasonal code is refused before its dates) | Works |
+| Deal alerts by browser notification | Off until the VAPID key pair is set; the button only shows when it works | `qa:push` | Off: owner sets `PUSH_VAPID_PUBLIC_KEY` / `PUSH_VAPID_PRIVATE_KEY` |
 | "Finaliser ma commande" | `/commander` order funnel → `/register?plan=…&promo=…` | Existing funnel tests (`qa:order-funnel`) | Works |
 
 ## What the owner must have in production (Coolify)
@@ -22,6 +39,22 @@ Each line below was run against a real Postgres database (local, and in CI on th
 - For the TAK-TAK trial: one economy engine key (Groq, Gemini, DeepSeek or OpenAI) saved in AI provider keys.
 - For the newsletter: `NEWSLETTER_TOKEN_SECRET` (32+ characters), `NEWSLETTER_SENDER_ADDRESS` (the postal address
   shown in each email, CASL) and the email sender already used for sign-in codes (SendGrid or Gmail SMTP).
+
+## Owner decision: a real "talk to a person"
+
+The site already supports a live-chat tool. Two options:
+1. **No code:** set one public key in Coolify (`NEXT_PUBLIC_CRISP_WEBSITE_ID`, `NEXT_PUBLIC_TIDIO_PUBLIC_KEY`,
+   `NEXT_PUBLIC_INTERCOM_APP_ID` or `NEXT_PUBLIC_HUBSPOT_PORTAL_ID`). Every "Parler à une personne" button then opens
+   that chat, with the page and request already written in.
+2. **Small change (needs your OK, it touches the support panel):** replace the `mailto:` button with a two-line
+   message box that sends to the same intake, so the message lands in the Lead Inbox like the others.
+
+## Owner decision: the hosting order page
+
+When a visitor clicks "Commander Silver" on the homepage, `/checkout` should open on Silver, in French, with the
+price they saw. Today it opens an older English page with a domain search first, and the plan must be picked again.
+Proposal (touches the checkout page, so it needs your OK): read the saved plan, scroll to it and highlight it, and
+translate the page (FR first, EN alongside). Upmind stays the billing system; nothing changes in it.
 
 ## One-minute live test (owner)
 
