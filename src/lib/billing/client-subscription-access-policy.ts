@@ -1,3 +1,4 @@
+import { isBillingExemptWorkspace } from '@/lib/billing/billing-exemption-policy';
 import type { SubscriptionStatus } from '@prisma/client';
 
 import { resolveSocialSubscriptionLifecycle } from '@/lib/billing/social/subscription-lifecycle';
@@ -67,23 +68,14 @@ function isTruthyServerFlag(value: string | null | undefined): boolean {
  * Remove a Client UUID from the environment variable when setup is finished.
  * Invalid values are ignored and browser/request values are never accepted.
  */
+/** Compatibility alias for the permanent, workspace-wide exemption. */
 export function isSocialConnectionSetupClient(
   clientId: string,
   configuredClientIds: string | null | undefined = readEnv(
     SOCIAL_CONNECTION_SETUP_CLIENT_IDS_ENV,
   ),
 ): boolean {
-  const normalizedClientId = clientId.trim().toLowerCase();
-
-  if (!UUID_PATTERN.test(normalizedClientId) || !configuredClientIds) {
-    return false;
-  }
-
-  return configuredClientIds
-    .split(',')
-    .map((value) => value.trim().toLowerCase())
-    .filter((value) => UUID_PATTERN.test(value))
-    .includes(normalizedClientId);
+  return isBillingExemptWorkspace(clientId, configuredClientIds);
 }
 
 /**
