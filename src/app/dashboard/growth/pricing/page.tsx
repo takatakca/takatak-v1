@@ -1,4 +1,5 @@
 import { GrowthHeader, HonestyNote } from "@/components/growth/growth-header";
+import { isBillingExemptWorkspace } from "@/lib/billing/billing-exemption-policy";
 import { Badge } from "@/components/ui/badge";
 import { activeGrowthPlans, growthEntitlementsEnforced } from "@/lib/billing/growth/entitlements";
 import { growthBillingEnabled } from "@/lib/billing/growth/stripe";
@@ -35,7 +36,8 @@ const BILLING_NOTICES: Record<string, { ok: boolean; text: string }> = {
 export default async function GrowthPricingPage({ searchParams }: { searchParams: Promise<{ billing?: string }> }) {
   const { access } = await requireGrowthAccess("/dashboard/growth/pricing");
   const notice = BILLING_NOTICES[(await searchParams).billing ?? ""] ?? null;
-  const canBuy = growthBillingEnabled() && access.mode === "client_scoped" && hasEffectivePermission(access, "manage_settings");
+  const exempt = access.mode === "client_scoped" && isBillingExemptWorkspace(access.activeClientId);
+  const canBuy = !exempt && growthBillingEnabled() && access.mode === "client_scoped" && hasEffectivePermission(access, "manage_settings");
   let active: string[] = [];
   if (access.mode === "client_scoped") {
     try {
@@ -45,6 +47,8 @@ export default async function GrowthPricingPage({ searchParams }: { searchParams
     }
   }
 
+  if (exempt) active = [ALL_IN_BUNDLE.key, ...SERVICE_PLANS.map((plan) => plan.key)];
+
   const separateTotal = SERVICE_PLANS.reduce((sum, p) => sum + p.monthlyCad, 0);
 
   return (
@@ -52,7 +56,7 @@ export default async function GrowthPricingPage({ searchParams }: { searchParams
       <GrowthHeader
         title="Plans & Pricing"
         description="TAKATAK is the one-stop shop: each tool below replaces a separate subscription, and the bundle covers everything."
-        badges={[canBuy ? { label: "Online checkout", tone: "success" } : { label: "Draft pricing", tone: "warning" }]}
+        badges={[exempt ? { label: "Internal · Billing exempt", tone: "success" } : canBuy ? { label: "Online checkout", tone: "success" } : { label: "Draft pricing", tone: "warning" }]}
         actions={
           canBuy && active.length ? (
             <form action={openBillingPortalAction}>
@@ -132,7 +136,9 @@ export default async function GrowthPricingPage({ searchParams }: { searchParams
       </Card>
 
       <HonestyNote>
-        {canBuy
+        {exempt
+          ? "All TAKATAK Growth subscription features are included for this billing-exempt workspace. Metered third-party usage remains subject to its own cost policies."
+          : canBuy
           ? "Subscriptions are billed monthly in CAD by Stripe and can be canceled anytime from Manage billing."
           : "Prices are draft values in src/lib/growth/plans.ts and src/lib/growth/ai-engine.ts for the owner to confirm. Nothing on this page charges a card until GROWTH_BILLING_ENABLED is turned on."}
         {growthEntitlementsEnforced() ? " Features unlock with their plan." : " During the pilot every feature stays unlocked."}
