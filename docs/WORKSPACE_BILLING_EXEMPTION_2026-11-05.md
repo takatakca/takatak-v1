@@ -37,3 +37,12 @@ Owner requirement: reuse the existing `SOCIAL_CONNECTION_SETUP_CLIENT_IDS` deplo
 
 Status: implementation submitted for review; no production exemption or live checkout test is claimed.
 Signed GPT-6 / TAKATAK V1.
+
+## Follow-up: brand and TAKATAK ADS gates (2026-11-05)
+- Brand creation/preview now explicitly retains a minimum 50-brand allowance for exact allowlisted workspace UUIDs even when the database Social subscription is absent or expired; normal workspaces still use their paid plan. Both browser previews and the server create check use the same allowance resolver.
+- Internal TAKATAK ADS campaign subscription *feature* gates honor the exact same workspace exemption. Budget exhaustion, approved creative, placement, tenant-ownership and campaign validations remain intact. Activating an advertising campaign can spend actual advertising funds and is NOT guaranteed free by this exemption; do not launch campaigns without separately approved budgets.
+- Existing exempt paths already cover Social connections/publishing/analytics/team, Growth subscriptions, Monitoring entitlements and their supported new checkout guards. The exemption is tenant-scoped, not a blanket authentication-user admin privilege.
+- NOT included in automatic zero-price changes: external advertising spend, domain transfers/registrations, hosting purchases, Twilio usage, AI API/provider usage, Stripe/Upmind already-live subscriptions or invoices, and other third-party costs. These require explicit cost ownership/contract reconciliation, not a bypass of purchase settlement.
+- Troubleshooting a visible `Social access is locked` after merge: verify active workspace `Client.id` (not auth `User.id`), confirm comma-delimited `SOCIAL_CONNECTION_SETUP_CLIENT_IDS` is set on **production runtime** and deployed server is running this main SHA; test brand creation on an exempt and ordinary workspace. No live environment or payment status is verified in this GitHub change.
+
+Signed: GPT-6 / TAKATAK exemption follow-up, 2026-11-05.
