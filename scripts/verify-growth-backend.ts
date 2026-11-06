@@ -23,7 +23,7 @@ import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/repu
 import { decideReviewDraft, getReviewApprovals, saveReviewDraft } from "../src/lib/reputation/review-approval-service";
 import { publishReviewRunReply } from "../src/lib/reputation/review-publisher";
 import { generateReviewRunDraft } from "../src/lib/reputation/review-generation";
-import { publishApprovedReviewDraft } from "../src/lib/reputation/review-native-publication";
+import { publishApprovedReviewDraft, type ReviewNativePublicationDependencies } from "../src/lib/reputation/review-native-publication";
 import { resolveReviewTarget } from "../src/lib/reputation/review-target";
 import { parseAudienceRule, parseCollectPayload } from "../src/lib/analytics/parse";
 import {
@@ -855,7 +855,7 @@ async function main(): Promise<void> {
       assert.equal((await decideReviewDraft(b.id, staffProfileId, nativeRequest.runId, "approve", nativePending.draftHash, prisma)).ok, true);
       const nativeApproved = (await getReviewApprovals(b.id)).find(run => run.id === nativeRequest.runId);
       assert.ok(nativeApproved?.draftHash && nativeApproved.status === "approved");
-      const nativePublisher = { database: prisma, publisher: (runId: string, text: string, deps: Parameters<typeof publishReviewRunReply>[2]) => publishReviewRunReply(runId, text, { ...deps, ...publisher }) };
+      const nativePublisher: ReviewNativePublicationDependencies = { database: prisma, publisher: (runId, text, deps) => publishReviewRunReply(runId, text, { ...deps, ...publisher }) };
       const putCount = calls.filter(call => call.method === "PUT").length;
       assert.equal((await publishApprovedReviewDraft(a.id, staffProfileId, nativeRequest.runId, nativeApproved.draftHash, nativePublisher)).ok, false);
       const nativePublished = await publishApprovedReviewDraft(b.id, staffProfileId, nativeRequest.runId, nativeApproved.draftHash, nativePublisher);

@@ -44,7 +44,13 @@ const jsonVersion = (value: Prisma.JsonValue | null) => ({
   equals: value === null ? Prisma.AnyNull : (value as Prisma.InputJsonValue),
 });
 
-function approvedBinding(inputValue: unknown) {
+function approvedBinding(inputValue: unknown): {
+  source: "google" | "qmaps";
+  reviewId: string;
+  reply: string;
+  replyHash: string;
+  targetHash: string;
+} | null {
   const input = object(inputValue),
     approval = object(input.reviewApproval),
     source = input.source;
