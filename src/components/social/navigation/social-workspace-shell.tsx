@@ -1346,10 +1346,12 @@ function ModuleDrawer({
 function SocialTopbar({
   data,
   onOpenMobile,
+  onAddBrand,
   hideSidebar,
 }: {
   data: SocialShellData;
   onOpenMobile: () => void;
+  onAddBrand: () => void;
   hideSidebar: boolean;
 }) {
   const pathname = usePathname();
@@ -1446,7 +1448,7 @@ function SocialTopbar({
             </Link>
           ) : null}
 
-          <BrandSelector data={data} onAddBrand={() => setAddBrandOpen(true)} />
+          <BrandSelector data={data} onAddBrand={onAddBrand} />
 
           <button
             type="button"
@@ -1866,6 +1868,7 @@ export function SocialWorkspaceShell({
     >
       <SocialTopbar
         data={effectiveData}
+        onAddBrand={() => setAddBrandOpen(true)}
         hideSidebar={hideSidebar}
         onOpenMobile={() => {
           setMobileOpen(true);
