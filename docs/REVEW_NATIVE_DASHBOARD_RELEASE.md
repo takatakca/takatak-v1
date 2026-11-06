@@ -1,0 +1,31 @@
+# TAKATAK Review — dashboard natif premium
+
+Signé REVEW · 2026-11-06 · `codex/review-premium-ready`
+
+## Avant
+
+Le propriétaire demande le dashboard premium dans TAKATAK.CA, dans le dépôt `takatak-v1`, puis sa livraison sur main. Le main de départ est `52290cd`; sa CI complète `42260584073` est verte. Le tableau commun et les notes du dépôt ont été lus. Le travail Social/TAKATAK Studio du propriétaire reste distinct. La configuration active refuse l’accès réseau à TAKATAK.CA et à Coolify; Git natif et les pages publiques GitHub restent utilisables. Aucun déploiement en ligne ne peut être affirmé sur cette seule preuve.
+
+## Pendant
+
+Les entrées Reviews du menu et de l’accueil ouvrent maintenant le dashboard natif `/dashboard/growth/reviews`. L’ancien écran QMAPS conserve son accès et propose le lien vers le dashboard. Le cockpit ouvre son propre studio, et chaque avis est relié à son traitement par sa source et son identifiant local. Un lien vers une demande précise ouvre ce traitement, même hors des filtres courants; une demande absente ou malformée affiche son indisponibilité sans sélectionner un autre client. Les filtres et textes non enregistrés restent en mémoire pendant la navigation, puis sont vidés au changement d’espace.
+
+Le parcours natif devient : avis → demande gratuite → génération explicite → édition/enregistrement → approbation humaine → publication explicite. La génération utilise la configuration et le transport existants d’AI Studio, avec les clés administrateur stockées côté serveur et les variables serveur de secours existantes. Elle ne s’active que si `AI_STUDIO_GENERATION_ENABLED=true`, un fournisseur valide et son modèle sont configurés. Une absence de configuration laisse la demande en file sans débit. La clé fournisseur ne quitte jamais le serveur vers le navigateur.
+
+Une génération utilise l’action `review_reply` du registre central, soit actuellement un crédit. Les reprises sont liées à la demande persistée; elles ne relancent pas le fournisseur. La limite configurée est appliquée aux tentatives natives Review par espace sur 24 heures glissantes, sous le verrou existant du réglage de l’agent. Le registre des tentatives Review est distinct des travaux marketing AI Studio. Les réponses invalides, avis modifiés et refus du fournisseur donnent lieu à compensation unique quand l’absence de brouillon sauvegardé est prouvée. Une écriture incertaine conserve ses traces pour réconciliation; elle ne provoque pas une nouvelle génération automatique.
+
+Le service reprend l’avis source autorisé, son empreinte, les réglages et les droits d’offre. Il protège sa prise en charge contre les workers concurrents et leurs rapports obsolètes. Le texte retourné respecte les limites de sa source sans troncature. Le brouillon sauvegardé attend toujours une décision humaine, même si un ancien réglage de l’agent permettait un mode automatique. Les audits contiennent des identifiants et empreintes, pas le texte privé ni les clés.
+
+La publication native est réservée au texte Google/QMAPS déjà approuvé. L’action exige les permissions de gestion et d’approbation ainsi que les fonctionnalités de l’espace courant. La version affichée, le texte figé et l’avis source sont revérifiés avant de prendre le traitement approuvé. Le publisher existant garde la responsabilité de la requête fournisseur et de son reçu durable. La publication n’est annoncée que si ce reçu correspond exactement à la source, à l’avis, au texte et à la cible approuvés. Un envoi incertain n’est jamais renvoyé aveuglément. L’approbation d’un commentaire TAKATAK reste un suivi interne; elle n’invente pas un canal public. La publication et les corrections manuelles ne débitent aucun nouveau crédit.
+
+Les données indépendantes du dashboard sont chargées en parallèle avec leurs états d’erreur propres. Aucune nouvelle migration ni dépendance n’est ajoutée.
+
+## Validation et livraison
+
+Validation locale : les236 contrôles existants et82 nouveaux contrôles passent, soit318 cas, plus lint des sources modifiées et contrôle des espaces Git. Les nouveaux cas comprennent23 cycles de génération,15 contrôles des vraies actions serveur,36 contrôles de publication native et8 cas de navigation/identité source. Le navigateur exerce les vrais composants React avec actions simulées : lien exact depuis la demande, cible absente sans sélection de secours, génération et publication en cours pendant un aller-retour, double soumission bloquée, bon hash publié, texte local conservé, décisions et erreurs, droits limités. La régression complète de l’éditeur passe également. Ordinateur1440px et mobile390px : aucun débordement horizontal, zéro violation axe sur le composant testé. [Capture ordinateur fictive](screenshots/review-premium-flow-desktop-synthetic.png) · [capture mobile fictive](screenshots/review-premium-flow-mobile-synthetic.png). La recette PostgreSQL éphémère de la CI générale est étendue à la vraie prise en charge native, au registre de crédit et à sa compensation, à la limite quotidienne, au refus d’un rapport de worker concurrent, à l’approbation humaine et à la publication/reprise avec reçu durable. Les fournisseurs des tests sont simulés; aucun avis réel n’est publié et aucune dépense fournisseur réelle n’est réalisée dans cette session. Les résultats exacts de CI seront ajoutés après les contrôles.
+
+## Mise en ligne
+
+La route native utilise le même layout, la session, les rôles et les données de `takatak-v1`. Les connecteurs Google et QMAPS exigent leurs autorisations et configurations réelles; les cinq fonctions Edge QMAPS restent un déploiement séparé. Les autres plateformes du catalogue conservent leurs capacités et restrictions documentées, sans prétendre à une API de réponse universelle.
+
+Le workflow Coolify existant ne déploie qu’après la CI verte du main courant, avec son activation explicite et ses secrets de production. Son dernier passage après le main de départ était ignoré. Le push GitHub ne prouve pas la révision servie par TAKATAK.CA. Cette session ne modifie ni les secrets, ni les migrations de production, ni le domaine. La copie signée destinée à Google Drive est préparée localement, NON ENVOYÉE faute de connecteur disponible. Aucun compte Gmail ou robot n’est connecté par ce travail. — REVEW

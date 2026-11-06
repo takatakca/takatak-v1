@@ -103,7 +103,7 @@ export const NAV_SECTIONS: NavSection[] = [
       ] },
       { label: "Social Media", href: "/dashboard/social", icon: Share2, hasDropdown: true },
       { label: "TAKATAK ADS", href: "/dashboard/advertising", icon: Megaphone },
-      { label: "Reviews", href: "/dashboard/local-listings/reviews", icon: Star, hasDropdown: true },
+      { label: "Reviews", href: "/dashboard/growth/reviews", icon: Star, hasDropdown: true },
       { label: "Local Listings", href: "/dashboard/local-listings", icon: MapPin },
       { label: "Leads", href: "/dashboard/leads", icon: Filter },
       { label: "AI Studio", href: "/dashboard/ai-studio", icon: Sparkles },

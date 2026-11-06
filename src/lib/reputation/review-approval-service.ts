@@ -43,8 +43,11 @@ function sourceOf(input: Record<string, unknown>): ReviewDraftSource | null {
       ? "takatak"
       : null;
 }
-const hash = (updatedAt: Date, reply: string | null, input: unknown) =>
-  reviewReplyHash(JSON.stringify([updatedAt.toISOString(), reply, input]));
+export const reviewDraftVersionHash = (
+  updatedAt: Date,
+  reply: string | null,
+  input: unknown,
+) => reviewReplyHash(JSON.stringify([updatedAt.toISOString(), reply, input]));
 const SHA256 = /^[a-f0-9]{64}$/;
 const validDate = (value: unknown): value is string =>
   typeof value === "string" &&
@@ -108,7 +111,7 @@ export async function getReviewApprovals(
         ? "L’avis source n’est plus accessible dans cet espace."
         : changed
           ? "L’avis a changé depuis la demande. Générez un nouveau brouillon."
-          : !reply
+          : !reply && row.status !== "queued" && row.status !== "running"
             ? "Aucun texte de réponse valide n’a été retourné."
             : null;
       let publishedAt: string | null = null;
@@ -164,7 +167,7 @@ export async function getReviewApprovals(
         rating: current?.rating ?? null,
         status: row.status,
         draft: reply,
-        draftHash: hash(row.updatedAt, reply, row.input),
+        draftHash: reviewDraftVersionHash(row.updatedAt, reply, row.input),
         creditsDebited: row.creditsDebited,
         createdAt: row.createdAt.toISOString(),
         decidedAt: row.decidedAt?.toISOString() ?? null,
@@ -220,7 +223,9 @@ export async function decideReviewDraft(
       reply = source
         ? canonicalReviewReply(source, object(row.output).reply)
         : null;
-    if (hash(row.updatedAt, reply, row.input) !== expectedHash)
+    if (
+      reviewDraftVersionHash(row.updatedAt, reply, row.input) !== expectedHash
+    )
       return {
         ok: false as const,
         error: "Le brouillon a changé. Actualisez avant de décider.",
@@ -349,7 +354,10 @@ export async function saveReviewDraft(
       source = sourceOf(input),
       output = object(row.output),
       previous = source ? canonicalReviewReply(source, output.reply) : null;
-    if (hash(row.updatedAt, previous, row.input) !== expectedHash)
+    if (
+      reviewDraftVersionHash(row.updatedAt, previous, row.input) !==
+      expectedHash
+    )
       return {
         ok: false as const,
         error: "Le brouillon a changé. Actualisez avant de le modifier.",
@@ -453,7 +461,11 @@ export async function saveReviewDraft(
       ok: true as const,
       message: "Brouillon enregistré. Relisez-le avant de l’approuver.",
       draft: savedReply,
-      draftHash: hash(saved.updatedAt, savedReply, saved.input),
+      draftHash: reviewDraftVersionHash(
+        saved.updatedAt,
+        savedReply,
+        saved.input,
+      ),
     };
   });
 }

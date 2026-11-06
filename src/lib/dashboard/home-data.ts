@@ -172,7 +172,7 @@ const EMPTY: Omit<DashboardHomeData, "source" | "sourceLabel" | "range" | "welco
     {
       key: "reviews",
       label: "Reviews",
-      href: "/dashboard/local-listings/reviews",
+      href: "/dashboard/growth/reviews",
       detail: "No review sources connected",
       platforms: [],
       status: "not_connected",
@@ -416,7 +416,7 @@ export async function getDashboardHomeData(options: {
       {
         key: "reviews",
         label: "Reviews",
-        href: "/dashboard/local-listings/reviews",
+        href: "/dashboard/growth/reviews",
         detail:
           liveReviewSources.length > 0
             ? [...new Set(liveReviewSources.map((listing) => listing.platformName))].join(", ")

@@ -33,6 +33,13 @@ import {
   type ReviewRecord,
 } from "@/lib/reputation/cockpit-model";
 import { REVIEW_SOURCES, reviewSource } from "@/lib/reputation/sources";
+import {
+  REVIEW_TREATMENT_LABELS,
+  reviewApprovalHash,
+  reviewTreatmentForRecord,
+} from "@/lib/reputation/workspace-navigation";
+import { navigateReviewWorkspace } from "./review-workspace-navigation";
+import type { ReviewApprovalRun } from "./review-approval-center";
 
 function ReviewSelection({
   review,
@@ -221,10 +228,12 @@ export function ReviewCockpit({
   snapshot,
   canManage,
   googleDrafts = {},
+  approvalRuns = [],
 }: {
   snapshot: CockpitSnapshot | null;
   canManage: boolean;
   googleDrafts?: Record<string, { status: string; text: string }>;
+  approvalRuns?: ReviewApprovalRun[];
 }) {
   const [layout, setLayout] = useReviewLayout();
   const [source, setSource] = useState("all"),
@@ -269,6 +278,14 @@ export function ReviewCockpit({
   const selectedIndex = selected
     ? visible.findIndex((review) => review.key === selected.key)
     : -1;
+  const selectedTreatment = selected
+    ? reviewTreatmentForRecord(selected, approvalRuns)
+    : null;
+  const hasActiveTreatment =
+    selectedTreatment &&
+    ["queued", "running", "awaiting_approval", "approved", "executing"].includes(
+      selectedTreatment.status,
+    );
   function selectReview(key: string) {
     setSelectedKey(key);
     setExpanded(null);
@@ -308,7 +325,11 @@ export function ReviewCockpit({
             </p>
           </div>
           <Link
-            href="/dashboard/growth/ai-engine"
+            href={reviewApprovalHash()}
+            onNavigate={(event) => {
+              event.preventDefault();
+              navigateReviewWorkspace(reviewApprovalHash());
+            }}
             className="inline-flex items-center gap-2 rounded-xl border border-blue-800 bg-blue-950 px-4 py-2 text-xs text-blue-100"
           >
             <Sparkles className="h-4 w-4" /> AI reply workspace{" "}
@@ -565,8 +586,41 @@ export function ReviewCockpit({
                     <p className="mt-4 whitespace-pre-wrap break-words text-sm leading-7 text-slate-700">
                       {r.text || "No written comment."}
                     </p>
+                    {selectedTreatment && (
+                      <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-semibold text-blue-900">
+                            Réponse IA liée à cet avis
+                          </p>
+                          <Badge>
+                            {REVIEW_TREATMENT_LABELS[selectedTreatment.status] ||
+                              "État à vérifier"}
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-xs leading-6 text-slate-600">
+                          {selectedTreatment.publishedAt
+                            ? "La publication de cette réponse est confirmée par la source."
+                            : "Consultez le traitement, relisez le brouillon et choisissez la prochaine action dans le studio."}
+                        </p>
+                        <Link
+                          href={reviewApprovalHash(selectedTreatment.id)}
+                          onNavigate={(event) => {
+                            event.preventDefault();
+                            navigateReviewWorkspace(
+                              reviewApprovalHash(selectedTreatment.id),
+                            );
+                          }}
+                          className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#1565D8] px-3 py-2 text-xs font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                        >
+                          <Sparkles aria-hidden className="h-3.5 w-3.5" />
+                          Ouvrir cette réponse
+                          <ArrowUpRight aria-hidden className="h-3.5 w-3.5" />
+                        </Link>
+                      </div>
+                    )}
                     {r.origin === "external" &&
                       r.source === "google" &&
+                      !selectedTreatment &&
                       googleDrafts[r.id] && (
                         <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
                           <p className="text-xs font-semibold text-blue-900">
@@ -654,6 +708,7 @@ export function ReviewCockpit({
                       )}
                       {r.canDraft &&
                         canManage &&
+                        !hasActiveTreatment &&
                         (r.origin === "feedback" ||
                           r.origin === "external" ||
                           r.origin === "listing") && (

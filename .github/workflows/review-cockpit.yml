@@ -1,7 +1,7 @@
 name: REVEW cockpit checks
 on:
   push:
-    branches: [codex/review-ecosystem]
+    branches: [codex/review-ecosystem, codex/review-premium-ready]
   pull_request:
     paths:
       - "src/lib/reputation/**"
@@ -20,6 +20,10 @@ on:
       - "scripts/review-approval-tests.ts"
       - "scripts/review-draft-edit-tests.ts"
       - "scripts/review-draft-action-tests.ts"
+      - "scripts/review-generation-tests.ts"
+      - "scripts/review-generation-action-tests.ts"
+      - "scripts/review-native-publication-tests.ts"
+      - "scripts/review-workspace-navigation-tests.ts"
       - "scripts/review-publisher-tests.ts"
       - "scripts/review-google-publication-tests.ts"
       - "scripts/review-qmaps-api-tests.ts"
@@ -62,6 +66,10 @@ jobs:
       - run: npm run qa:review-approval
       - run: npm run qa:review-draft-edit
       - run: npm run qa:review-draft-actions
+      - run: npm run qa:review-generation
+      - run: npm run qa:review-generation-actions
+      - run: npm run qa:review-native-publication
+      - run: npm run qa:review-workspace-navigation
       - run: npm run qa:review-publisher
       - run: npm run qa:review-google-publication
       - run: npm run qa:review-qmaps-api

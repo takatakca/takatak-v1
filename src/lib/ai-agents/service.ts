@@ -218,6 +218,14 @@ export interface ClaimedRun {
 export async function claimNextAgentRun(now = new Date()): Promise<ClaimedRun | null> {
   const prisma = requirePrisma();
   const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
+  // Native generation may have spent before its response was lost: never regenerate it.
+  await prisma.aiAgentRun.updateMany({
+    where: {
+      status: "running", claimedAt: { lt: staleBefore },
+      input: { path: ["reviewGeneration", "owner"], equals: "native_review_v1" },
+    },
+    data: { status: "failed", completedAt: now, error: "generation_interrupted: verify the generation receipt and credit ledger before any new request" },
+  });
   await prisma.aiAgentRun.updateMany({ where: { status: "running", claimedAt: { lt: staleBefore } }, data: { status: "queued", claimedAt: null } });
   await prisma.aiAgentRun.updateMany({
     where: { status: "executing", claimedAt: { lt: staleBefore } },
@@ -232,6 +240,7 @@ export async function claimNextAgentRun(now = new Date()): Promise<ClaimedRun | 
     WHERE r."id" = (
       SELECT "id" FROM "ai_agent_runs"
       WHERE "status" IN ('queued', 'approved')
+        AND ("status" = 'approved' OR COALESCE("input"->'reviewGeneration'->>'owner', '') <> 'native_review_v1')
       ORDER BY "createdAt"
       LIMIT 1
       FOR UPDATE SKIP LOCKED
@@ -274,6 +283,13 @@ export async function reportAgentRun(
   const run = await prisma.aiAgentRun.findUnique({ where: { id: runId }, select: { status: true, clientId: true, agentKey: true, input: true } });
   if (!run) return { ok: false, code: "not_found" };
   if (run.status !== "running" && run.status !== "executing") return { ok: false, code: "not_claimed" };
+  const nativeInput = run.input && typeof run.input === "object" && !Array.isArray(run.input)
+    ? run.input as Record<string, unknown> : {};
+  const generation = nativeInput.reviewGeneration;
+  if ((run.status === "running" && generation && typeof generation === "object" &&
+      !Array.isArray(generation) && (generation as Record<string, unknown>).owner === "native_review_v1") ||
+    (run.status === "executing" && nativeInput.reviewNativePublication != null))
+    return { ok: false, code: "not_claimed" };
 
   let next: AiAgentRunStatus;
   if (!report.succeeded) next = "failed";
@@ -288,7 +304,10 @@ export async function reportAgentRun(
   }
   const terminal = next === "completed" || next === "failed";
   const updated = await prisma.aiAgentRun.updateMany({
-    where: { id: runId, status: run.status },
+    where: {
+      id: runId, status: run.status,
+      input: { equals: run.input === null ? Prisma.AnyNull : run.input as Prisma.InputJsonValue },
+    },
     data: {
       status: next,
       ...(output !== undefined ? { output } : {}),
