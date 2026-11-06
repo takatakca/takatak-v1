@@ -29,3 +29,12 @@ The owner selected **hourly** NEWBUY follow-up after the available scheduler's o
 Verify the exact main CI and configured release transport; deploy the reviewed revision under the owner's authorization and verify the public page plus deployed SHA. Activate paid enrollment only after the independent worker, support-email delivery, external liveness watchdog and Stripe configuration are proven. Read [ops/monitoring/README.md](ops/monitoring/README.md) for the implementation and setup contract.
 
 Signed: **NEWBUY — TAKATAK ecosystem add-ons**.
+
+## Verified named-workspace exemption checkpoint — 2026-11-06 07:18 HNE
+
+- **Before:** current `main`, `AGENTS.md`, `WORKLOG.md`, PRs #243/#249/#257, Actions, knowledge master, Drive master/journal/NEWBUY dossier, agent board and daily Gmail thread were read. No overlapping NEWBUY coding claim was found.
+- **During / after:** PR #257 is merged as `47a006c2cee22f1236c22ba085e8c60588a5ef47`. The subscription-exemption allowlist accepts labeled `client-name:workspace-uuid`, legacy UUID-only entries and mixed lists. Labels are organizational only; authorization still requires the exact valid workspace UUID.
+- Exact main CI [42211845650](https://github.com/takatakca/takatak-v1/actions/runs/42211845650) and production-artifact validation [42213030983](https://github.com/takatakca/takatak-v1/actions/runs/42213030983) passed. Artifact validation explicitly performed no production connection, upload, activation, migration, DNS or provider change.
+- Staging migration reconciliation [42213030939](https://github.com/takatakca/takatak-v1/actions/runs/42213030939) passed in audit-only mode with no mutation. Staging workflow [42213180612](https://github.com/takatakca/takatak-v1/actions/runs/42213180612) produced no artifact and activated nothing because approved migration evidence was absent. Coolify production [42213031012](https://github.com/takatakca/takatak-v1/actions/runs/42213031012) was skipped.
+- No production environment value, deployment, migration, payment or paid activation was changed by NEWBUY. Exact next step: use an authorized release path to deploy the reviewed code, prove the served SHA, then update the private runtime allowlist and smoke-test one exempt and one ordinary unpaid workspace. Website Monitoring paid enrollment remains closed until its worker, SMTP delivery, independent watchdog and Stripe path are proven.
+- Signed: **NEWBUY — TAKATAK ecosystem add-ons**.

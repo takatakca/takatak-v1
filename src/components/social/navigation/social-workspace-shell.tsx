@@ -379,7 +379,7 @@ function ConnectedPlatformIcons({ platforms }: { platforms: string[] }) {
   );
 }
 
-function BrandSelector({ data }: { data: SocialShellData }) {
+function BrandSelector({ data, onAddBrand }: { data: SocialShellData; onAddBrand: () => void }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -664,13 +664,11 @@ function BrandSelector({ data }: { data: SocialShellData }) {
           className="absolute right-0 top-[52px] z-50 w-[300px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.22)]"
         >
           {data.canManageBrands ? (
-            <Link
-              href={withSocialPreview(
-                '/dashboard/social?addBrand=1',
-                searchParams,
-              )}
+            <button
+              type="button"
               onClick={() => {
                 setOpen(false);
+                onAddBrand();
               }}
               className="flex items-center gap-3 border-b border-slate-100 px-4 py-3.5 text-[15px] font-medium text-slate-900 transition hover:bg-slate-50"
             >
@@ -678,7 +676,7 @@ function BrandSelector({ data }: { data: SocialShellData }) {
                 <Plus className="h-5 w-5" strokeWidth={2} />
               </span>
               Add brand
-            </Link>
+            </button>
           ) : null}
 
           <div className="max-h-80 overflow-y-auto py-1">
@@ -1348,10 +1346,12 @@ function ModuleDrawer({
 function SocialTopbar({
   data,
   onOpenMobile,
+  onAddBrand,
   hideSidebar,
 }: {
   data: SocialShellData;
   onOpenMobile: () => void;
+  onAddBrand: () => void;
   hideSidebar: boolean;
 }) {
   const pathname = usePathname();
@@ -1448,7 +1448,7 @@ function SocialTopbar({
             </Link>
           ) : null}
 
-          <BrandSelector data={data} />
+          <BrandSelector data={data} onAddBrand={onAddBrand} />
 
           <button
             type="button"
@@ -1815,7 +1815,7 @@ export function SocialWorkspaceShell({
     setAddBrandOpen(true);
     // Do not history.replaceState — Next.js patches it and re-fetches the
     // dynamic RSC payload in a loop (ACTION_RESTORE / spawnDynamicRequests).
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -1868,6 +1868,7 @@ export function SocialWorkspaceShell({
     >
       <SocialTopbar
         data={effectiveData}
+        onAddBrand={() => setAddBrandOpen(true)}
         hideSidebar={hideSidebar}
         onOpenMobile={() => {
           setMobileOpen(true);
