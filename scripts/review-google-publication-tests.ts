@@ -11,6 +11,7 @@ const reviewId = "22222222-2222-4222-8222-222222222222";
 const otherId = "33333333-3333-4333-8333-333333333333";
 const sourceTime = "2026-01-02T12:34:56.123456789Z";
 const comment = "Bonjour,\n\nMerci de votre visite.";
+const syntheticToken = "synthetic-token-not-a-live-credential";
 type StoredReview = {
   id: string;
   clientId: string;
@@ -91,7 +92,7 @@ function fixture(overrides: Partial<StoredReview> = {}) {
       assert.equal(tenant, clientId);
       return {
         ok: true as const,
-        token: "synthetic-token-not-a-live-credential",
+        token: syntheticToken,
       };
     },
   };
@@ -109,7 +110,7 @@ function fixture(overrides: Partial<StoredReview> = {}) {
       assert.ok(init?.signal);
       assert.equal(
         new Headers(init?.headers).get("authorization"),
-        "Bearer synthetic-token-not-a-live-credential",
+        `Bearer ${syntheticToken}`,
       );
       assert.deepEqual(JSON.parse(String(init?.body)), { comment });
       return typeof response === "function" ? response() : response;

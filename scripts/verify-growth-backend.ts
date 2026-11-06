@@ -20,6 +20,9 @@ import {
   updateFeedbackStatus,
 } from "../src/lib/reputation/service";
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
+import { decideReviewDraft, getReviewApprovals, saveReviewDraft } from "../src/lib/reputation/review-approval-service";
+import { publishReviewRunReply } from "../src/lib/reputation/review-publisher";
+import { resolveReviewTarget } from "../src/lib/reputation/review-target";
 import { parseAudienceRule, parseCollectPayload } from "../src/lib/analytics/parse";
 import {
   createAnalyticsSite,
@@ -107,6 +110,7 @@ async function main(): Promise<void> {
   const tag = `growth-qa-${randomUUID().slice(0, 8)}`;
   const a = await prisma.client.create({ data: { name: `${tag}-a` }, select: { id: true } });
   const b = await prisma.client.create({ data: { name: `${tag}-b` }, select: { id: true } });
+  let reviewActorId: string | null = null;
 
   try {
     // ------------------------------------------------------------ reputation
@@ -463,7 +467,12 @@ async function main(): Promise<void> {
     assert.ok(low1.ok && low2.ok && good.ok);
     const responderRuns = await prisma.aiAgentRun.findMany({ where: { clientId: b.id, agentKey: "review_responder" }, orderBy: { createdAt: "asc" } });
     assert.equal(responderRuns.length, 2, "each low rating queues a draft reply; 4–5★ do not");
-    assert.deepEqual(responderRuns[0].input, { reviewResponseId: low1.responseId, rating: 2, feedback: "Trop cher", businessName: "B Shop" });
+    const lowTarget = await resolveReviewTarget(prisma, b.id, "takatak", low1.responseId);
+    assert.ok(lowTarget, "the queued draft refers to an owned canonical source review");
+    assert.deepEqual(responderRuns[0].input, {
+      reviewResponseId: low1.responseId, rating: 2, feedback: "Trop cher", businessName: "B Shop",
+      source: "takatak", reviewWorkflowVersion: 2, reviewContentHash: lowTarget.fingerprint,
+    });
     assert.equal(responderRuns[0].trigger, "low_rating");
     pass("1–3★ ratings automatically queue the Review Responder");
 
@@ -721,7 +730,13 @@ async function main(): Promise<void> {
         return new Response("{}", { status: 404 });
       };
 
-      const staffProfileId = randomUUID();
+      const reviewer = await prisma.profile.create({
+        data: { authUserId: randomUUID(), email: `${tag}-reviewer@example.test`, status: "active" },
+        select: { id: true },
+      });
+      const staffProfileId = reviewer.id;
+      reviewActorId = reviewer.id;
+      await prisma.clientMembership.create({ data: { clientId: b.id, profileId: staffProfileId, role: "manager" } });
       const consentUrl = new URL(await startGoogleBusinessConnect({ clientId: b.id, profileId: staffProfileId, origin: "https://takatak.ca" }));
       assert.equal(consentUrl.host, "accounts.google.com");
       assert.equal(consentUrl.searchParams.get("scope"), "https://www.googleapis.com/auth/business.manage");
@@ -762,22 +777,47 @@ async function main(): Promise<void> {
       const gRun = await prisma.aiAgentRun.findFirstOrThrow({ where: { clientId: b.id, agentKey: "review_responder", input: { path: ["reviewResponseId"], equals: lowReview.id } } });
       assert.equal((gRun.input as Record<string, unknown>).source, "google");
       const claimG = await claimNextAgentRun();
-      assert.equal(claimG?.runId, gRun.id);
+      assert.ok(claimG && claimG.runId === gRun.id);
+      assert.equal(claimG.requireApproval, true, "version2 generation requires an actual human decision");
       await reportAgentRun(gRun.id, { succeeded: true, output: { reply: "Désolé pour l'attente, Marc." } });
       assert.equal((await getGoogleBusinessSnapshot(b.id)).reviews.find((r) => r.id === lowReview.id)?.aiDraft?.text, "Désolé pour l'attente, Marc.");
       assert.equal((await authorizeAgentRun(gRun.id, "review_responder")).ok, false, "cannot publish before approval");
-      await decideAgentRun(b.id, gRun.id, true, null);
+      const pending = (await getReviewApprovals(b.id)).find((run) => run.id === gRun.id);
+      assert.ok(pending?.draftHash && pending.status === "awaiting_approval");
+      assert.ok(!(await getReviewApprovals(a.id)).some((run) => run.id === gRun.id), "the other tenant cannot read the draft");
+      const editedReply = "Désolé pour l'attente, Marc. Notre équipe fera le suivi.";
+      const creditsBeforeReply = (await getCreditSnapshot(b.id)).balance;
+      assert.equal((await saveReviewDraft(a.id, staffProfileId, gRun.id, pending.draftHash, editedReply, prisma)).ok, false, "the other tenant cannot edit this draft");
+      const edited = await saveReviewDraft(b.id, staffProfileId, gRun.id, pending.draftHash, editedReply, prisma);
+      assert.ok(edited.ok && edited.draft === editedReply);
+      assert.notEqual(edited.draftHash, pending.draftHash, "editing creates a new persisted decision version");
+      assert.equal((await decideReviewDraft(b.id, staffProfileId, gRun.id, "approve", pending.draftHash, prisma)).ok, false, "the superseded draft cannot be approved");
+      assert.equal((await decideReviewDraft(a.id, staffProfileId, gRun.id, "approve", edited.draftHash, prisma)).ok, false, "the other tenant cannot approve this draft");
+      assert.equal((await decideReviewDraft(b.id, staffProfileId, gRun.id, "approve", edited.draftHash, prisma)).ok, true);
+      const approved = await prisma.aiAgentRun.findUniqueOrThrow({ where: { id: gRun.id } });
+      assert.equal((approved.input as { reviewApproval: { replyText: string } }).reviewApproval.replyText, editedReply, "approval freezes the edited text");
+      assert.equal(calls.filter((call) => call.method === "PUT").length, 0, "saving and approving never publish a response");
       const execG = await claimNextAgentRun();
-      assert.equal(execG?.phase, "execute");
+      assert.ok(execG && execG.phase === "execute");
+      assert.equal(execG.runId, gRun.id);
       const gAuth = await authorizeAgentRun(gRun.id, "review_responder");
       assert.ok(gAuth.ok && gAuth.run.canAct);
       assert.deepEqual(await replyToGoogleReview(a.id, lowReview.id, "spoof", fakeGoogle), { ok: false, reason: "not_found" }, "tenant A cannot reply on B's Google review");
-      assert.deepEqual(await replyToGoogleReview(b.id, lowReview.id, "Désolé pour l'attente, Marc.", fakeGoogle), { ok: true });
+      const publisher = { database: prisma, googleReply: (clientId: string, reviewId: string, text: string) => replyToGoogleReview(clientId, reviewId, text, fakeGoogle) };
+      assert.deepEqual(await publishReviewRunReply(gRun.id, "Désolé pour l'attente, Marc.", publisher), { ok: false, code: "draft_mismatch" }, "execution cannot send the superseded generated text");
+      const publication = await publishReviewRunReply(gRun.id, editedReply, publisher);
+      assert.ok(publication.ok && !publication.replayed);
       const put = calls.find((c) => c.method === "PUT");
-      assert.ok(put && put.url === "https://mybusiness.googleapis.com/v4/accounts/111/locations/222/reviews/g1/reply" && JSON.parse(put.body).comment === "Désolé pour l'attente, Marc.");
-      assert.equal((await prisma.externalReview.findUniqueOrThrow({ where: { id: lowReview.id } })).replyComment, "Désolé pour l'attente, Marc.");
-      await reportAgentRun(gRun.id, { succeeded: true });
-      pass("AI reply is drafted, approved, then published to the right Google review; tenant-locked");
+      assert.ok(put && put.url === "https://mybusiness.googleapis.com/v4/accounts/111/locations/222/reviews/g1/reply" && JSON.parse(put.body).comment === editedReply);
+      assert.equal((await prisma.externalReview.findUniqueOrThrow({ where: { id: lowReview.id } })).replyComment, editedReply);
+      await reportAgentRun(gRun.id, { succeeded: true, output: { summary: "Synthetic execution completed." } });
+      const replayedPublication = await publishReviewRunReply(gRun.id, editedReply, publisher);
+      assert.ok(replayedPublication.ok && replayedPublication.replayed && replayedPublication.confirmedAt === publication.confirmedAt);
+      assert.equal(calls.filter((call) => call.method === "PUT").length, 1, "a terminal replay never sends a second public reply");
+      const confirmed = (await getReviewApprovals(b.id)).find((run) => run.id === gRun.id);
+      assert.ok(confirmed && confirmed.draft === editedReply && confirmed.publishedAt === publication.confirmedAt, "the frozen edited reply and confirmed source receipt survive the final worker summary");
+      assert.equal((await getCreditSnapshot(b.id)).balance, creditsBeforeReply, "editing, approval, publication and replay never debit credits");
+      pass("Review v2 reply is edited, version-approved and source-confirmed through the native publisher; tenant isolation and replay hold on the real DB with synthetic Google");
 
       assert.equal(await disconnectGoogleBusiness(b.id, fakeGoogle), true);
       assert.ok(calls.some((c) => c.url.startsWith("https://oauth2.googleapis.com/revoke")), "token revoked at Google");
@@ -873,6 +913,7 @@ async function main(): Promise<void> {
     }
   } finally {
     await prisma.client.deleteMany({ where: { id: { in: [a.id, b.id] } } });
+    if (reviewActorId) await prisma.profile.deleteMany({ where: { id: reviewActorId } });
     await disconnectPrisma();
   }
   console.log("\nGrowth Suite backend: all checks passed.");
