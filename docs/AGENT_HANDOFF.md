@@ -4,7 +4,7 @@
 Repository takatakca/takatak-v1; initial main 4706dad5d6f7d361e28f54f0ea20a4e58896288c, integration base bae2445711f2aeb6c7a527759936bd7bf277ca6c. Re-query main before every push.
 
 ## Last completed task and current task
-PR #235 reviewed and merged. Current isolated branch combines reviewed JSON stream bounds, ADS privacy/viewability/budget controls, passive readiness SHA proof, read-only Facturations visibility, R2F offline contract, historical research and continuity. Phone validation retains CA/NG/INTL. #242 functionality was already on main; only ancestry/journal reconciliation is needed.
+PR #235 reviewed and merged. Current isolated branch combines reviewed JSON stream bounds, ADS privacy/viewability/budget controls, passive readiness SHA proof, read-only Facturations visibility, R2F offline contract, historical research and continuity. Phone validation retains CA/NG/INTL. The scoped SEO receipt viewer (#196) is included, but backend migration/readiness and real receipts remain unverified. #242 functionality was already on main; only ancestry/journal reconciliation is needed.
 
 ## Files modified
 Changes are confined to the reviewed PR files and additive conflict resolutions. Schema, migrations, package-lock and Dockerfile are unchanged from the integration base. The final pull request records the complete diff and source revision.
