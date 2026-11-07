@@ -38,7 +38,7 @@ export const takbotModeCopy: Record<TakbotMode, { name: Bi; hint: Bi; placeholde
 
 export const takbotCopy = {
   meta: {
-    title: "TAK-TAK — one AI, every engine",
+    title: "TAK-TAK — une IA, tous les moteurs · one AI, every engine",
     description: "TAK-TAK is TAKATAK's master AI bot. Ask once; it relays to Claude, ChatGPT, Gemini, Mistral and more. Pay with credits.",
   },
   hero: {
@@ -125,6 +125,13 @@ export const ENGINE_BEST_FOR_FR: Record<string, string> = {
   deepseek: "Production en volume à faible coût",
   groq: "Réponses de clavardage très rapides",
   ollama: "Modèles ouverts (gpt-oss, Kimi, GLM, DeepSeek) à faible coût",
+  moonshot: "Longs documents et tâches d’agent",
+  zai: "Rédaction multilingue et code à faible coût",
+  together: "Des centaines de modèles ouverts avec une seule clé",
+  openrouter: "Une seule clé pour la plupart des modèles commerciaux et ouverts",
+  cerebras: "Réponses très rapides sur des modèles ouverts",
+  sambanova: "Réponses rapides avec Llama, GLM et gpt-oss",
+  deepinfra: "DeepSeek et modèles ouverts à faible coût",
   cohere: "Classement, vecteurs et tri des avis",
   elevenlabs: "Voix hors champ et voix téléphoniques IA",
   runway: "Courtes vidéos pour pubs et réseaux sociaux",
@@ -134,4 +141,10 @@ export const ENGINE_BEST_FOR_FR: Record<string, string> = {
 
 export function engineBestFor(key: string, bestFor: string, lang: "en" | "fr"): string {
   return lang === "fr" ? ENGINE_BEST_FOR_FR[key] ?? bestFor : bestFor;
+}
+
+/** Engine names keep the brand; only the "(open models)" / "(all models)" note is translated. */
+export function engineName(name: string, lang: "en" | "fr"): string {
+  if (lang !== "fr") return name;
+  return name.replace("(open models)", "(modèles ouverts)").replace("(all models)", "(tous les modèles)");
 }

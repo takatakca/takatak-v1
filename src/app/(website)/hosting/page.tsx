@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CategorySalesPage } from "@/components/website/premium/CategorySalesPage";
 
 export const metadata: Metadata = {
-  title: "Web Hosting",
+  title: "Hébergement web · Web hosting",
   description: "Managed hosting with free SSL, daily backups, business email and cPanel, supported by people in Canada.",
   alternates: { canonical: "/hosting" },
 };

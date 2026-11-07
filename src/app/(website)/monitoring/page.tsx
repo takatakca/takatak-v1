@@ -4,7 +4,7 @@ import { monitoringBillingEnabled } from "@/lib/monitoring/billing";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
-  title: "Website Monitoring",
+  title: "Surveillance de site web · Website monitoring",
   description: "Website availability checks, confirmed outage alerts and monthly reports. A TAKATAK add-on with one account and centralized billing.",
   alternates: { canonical: "/monitoring" },
 };
