@@ -161,6 +161,8 @@
 - 2026-10-15 | ChatGPT/GitHub agent | fix/master-api-bounded-json-20261015 → PR #184 | PR open / CI pending | Bound existing 1LV master API streaming JSON body before allocation, reject malformed length/content-type, add regression tests; preserve 1LV identity and auth boundaries | CI check; coordinator review/merge only after green CI under owner release lock
 
 - 2026-10-14 | ChatGPT/GitHub agent | fix/ads-public-payload-bounds-20261014 → PR #179 | PR open / CI pending | Bound and validate public ADS serve/event JSON bodies, sanitize coarse context on server, reject malformed codes/tokens, add synthetic regression checks to CI | open PR; fix CI if needed; coordinator review/merge after green CI
+
+- 2026-10-14 | ChatGPT/GitHub agent | fix/ads-cpc-budget-atomic-cap-20261014 → PR #180 | PR open / CI pending | Atomically limit CPC charge increments to remaining ad campaign budget, preserving click events and adding boundary tests | open PR, review CI, coordinator merge only after approval
 - 2026-10-11 | ChatGPT/GitHub agent | fix/takatak-phone-country-otp-20261011 → PR #174 | PR / auth QA passed; full CI in progress | Nigerian +234 phone OTP selector and strict E.164; refuse unverified recovery email for email-session login; regression tests | Owner review/merge after full CI; manual TAKATAK production promotion; verify Supabase Twilio provider and geo permissions without sharing secrets
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
