@@ -47,3 +47,7 @@ Le propriétaire autorise explicitement le push sur main. Les quatre commits du 
 ### Intégration main
 
 Le code Review validé est intégré en avance rapide à main, en conservant tous les commits du main6739ca5. Cette promotion est expressément autorisée par le propriétaire. Seules ces notes s’ajoutent au candidat01334c7 testé; aucun code applicatif ne change entre ce candidat et le commit de promotion. [Code main](https://github.com/takatakca/takatak-v1/tree/main) · [CI de main](https://github.com/takatakca/takatak-v1/actions?query=branch%3Amain+workflow%3ACI). La CI de main et les conditions existantes du workflow Coolify restent obligatoires. Une mise à jour de main ne prouve pas la mise en ligne; aucune activation fournisseur, fonction QMAPS, migration de production ou dépense n’est réalisée par ce push de code. Notes signées GitHub et copie Drive-ready locale. — REVEW
+
+## Suite native premium — 2026-11-07 UTC
+
+La navigation principale, les liens vers le traitement exact, la génération native avec le registre de crédits et la publication explicite du texte approuvé sont livrés dans la [release du dashboard natif](REVEW_NATIVE_DASHBOARD_RELEASE.md). Ce document donne les contrôles exacts du candidat9883b2e et les limites de mise en ligne. — REVEW
