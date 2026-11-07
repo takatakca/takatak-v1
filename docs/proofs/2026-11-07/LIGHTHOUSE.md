@@ -37,3 +37,25 @@ Phone performance of the homepage (52 to 74): long page; proposal 4 of the inven
 decision, as noted on 2026-11-04.
 
 — signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-07 18:17 UTC
+
+## Other public pages (check-in of 18:43 UTC, main 44f43df1)
+
+| Page | Phone | Desktop |
+|---|---|---|
+| `/pricing` | 89 · 100 · 100 · 100 | 100 · 100 · 100 · 100 |
+| `/clover` | 86 · 100 · 100 · 100 | 99 · 100 · 100 · 100 |
+| `/foodhub` | 86 · 100 · 100 · 100 | 99 · 100 · 100 · 100 |
+| `/takbot` | 86 · 100 · 100 · 100 | 99 · 100 · 100 · 100 |
+| `/services/websites` | 86 · 100 · 100 · 100 | 99 · 100 · 100 · 100 |
+| `/services/marketing` | 87 · 100 · 100 · 100 | 100 · 100 · 100 · 100 |
+| `/deals` | 91 · 100 · 100 · 100 | 100 · 100 · 100 · 100 |
+| `/free-tools` | 93 · 100 · 100 · 100 | 100 · 100 · 100 · 100 |
+| `/hosting` | 85 · 100 · 100 · 100 | 99 · 100 · 100 · 100 |
+| `/domain` | 84 · 100 · 100 · 100 | 99 · 100 · 100 · 100 |
+
+Accessibility, best practices and SEO are 100 on every page. Phone performance is in line with 2026-11-04 (no
+regression). Its limit is the paint of the text heading (the largest element) on simulated slow 4G: about 0.45 s server
+time, then 3 render-blocking stylesheets and the page script; the heading itself is not animated. Inlining the CSS was
+tried on 2026-11-04 and made phone scores worse.
+
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-07 18:53 UTC
