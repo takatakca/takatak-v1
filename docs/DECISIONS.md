@@ -1,3 +1,20 @@
+# TAKATAK V1 — Decisions
+
+## Technical constraints
+Preserve independent products, tenant boundaries, private credentials, historical notes and concurrent work. Resolve merge conflicts by understanding both changes; never replace newer source with an obsolete branch. No force pushes, blind migrations or invented integration status. Tests and actual served SHA are separate evidence.
+
+## Decisions pending
+Draft features, independent backend dependencies, live customer/provider tests and paid activation remain separate from this source-release operation. Existing Social/Studio implementation ownership is preserved.
+
+## Owner authorization — 2026-11-07
+The owner explicitly requested all GitHub repositories be reviewed, merged and pushed one by one, starting with BESOINAVOCAT, and required signed notes before, during and after coding. Codex coordinates this release operation under that instruction; earlier generic coordinator-only wording is not a request for repeated permission. Technical readiness, data preservation and actual production verification still apply. See issue #259. Signed: Codex.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # TAKATAK V1 / SEOTAKATAK integration decisions
 
 For the SEO work tracked in PR #182:

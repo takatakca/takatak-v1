@@ -1,3 +1,17 @@
+# TAKATAK V1 — Executable Task Queue
+
+## Safe work cycle
+Review current main, AGENTS, WORKLOG, active PRs and foodhubca#105 before changing files. Respect active Social/Studio ownership. Reconcile reviewed changes on a separate branch, preserve newer source and all agent notes, run focused and complete CI, merge only the reviewed tested revision, then verify the actual runtime SHA and readiness. Leave signed before/during/after GitHub and Drive notes.
+
+## Current next actions
+Finish integration checks, publish the review branch and observe Node22 CI. Reconcile any concurrent main changes before release. Let Coolify finish its existing serial queue; verify the resulting production SHA instead of starting a competing deployment. Drafts and integration/migration dependencies remain explicit separate work; no paid activation, social publication, DNS or live migration is implied.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # REVEW review API follow-up — 2026-10-31
 
 - Focused CI passed on 8c3cfb8 (https://github.com/takatakca/takatak-v1/actions/runs/41190779123); coordinator review/merge only.

@@ -1,3 +1,32 @@
+# TAKATAK V1 — Agent Handoff
+
+## Repository and immutable baseline
+Repository takatakca/takatak-v1; initial main 4706dad5d6f7d361e28f54f0ea20a4e58896288c, integration base bae2445711f2aeb6c7a527759936bd7bf277ca6c. Re-query main before every push.
+
+## Last completed task and current task
+PR #235 reviewed and merged. Current isolated branch combines reviewed JSON stream bounds, ADS privacy/viewability/budget controls, passive readiness SHA proof, read-only Facturations visibility, R2F offline contract, historical research and continuity. Phone validation retains CA/NG/INTL. #242 functionality was already on main; only ancestry/journal reconciliation is needed.
+
+## Files modified
+Changes are confined to the reviewed PR files and additive conflict resolutions. Schema, migrations, package-lock and Dockerfile are unchanged from the integration base. The final pull request records the complete diff and source revision.
+
+## Verification performed
+Initial integrated typecheck and lint passed locally (Node24). Eleven passive-readiness/SDK Node tests and nine targeted stream/billing/master-API suites passed. Phone normalization regressions passed. Full final Node22 CI/build/database suites remain to verify; these local results are not production acceptance.
+
+## Known blockers
+Draft and active Social/Studio work stays separate; old Food Hub and infrastructure proposals require reconciliation with the current independent services. MIMT/SEO/R2F runtime dependencies require their own contracts, readiness and migration evidence. No external-provider delivery is claimed.
+
+## Exact next action
+Finish checks on the final integration, publish branch and verify exact CI, then merge under the owner's explicit sequential-release authorization. Observe native Coolify queue and prove runtime SHA plus strict readiness. Append the final receipt in issue #259 and the signed Drive journal.
+
+## Restart model
+No autonomous agent restart or schedule is created by this work. Resume from issue #259, current branch, WORKLOG and real CI/deployment state.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # REVEW review cockpit handoff — 2026-10-31
 
 Branch `codex/review-ecosystem`, based on main 35c62f0. Native V1 review cockpit, private unified feed, capability registry, existing AI queue action and tighter QMAPS reply ownership/acknowledgement. No migration or deployment. Main details and counterpart links: [REVEW_REVIEW_ECOSYSTEM.md](REVEW_REVIEW_ECOSYSTEM.md). Local 15 cockpit, 4 QMAPS bridge and 13 QMAPS sync checks passed; Prisma/Growth-wide checks blocked by engine-host 403. Gmail/Drive/scheduling tools unavailable; no 30-minute email task is active. CI on source 8c3cfb8 passed: https://github.com/takatakca/takatak-v1/actions/runs/41190779123 (real Prisma generation, tests, full typecheck/lint/build). Next: coordinator reviews the feature branch; no deployment by REVEW. — REVEW

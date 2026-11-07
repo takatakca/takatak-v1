@@ -1,3 +1,17 @@
+# TAKATAK V1 — Project Status
+
+## Source of truth
+GitHub main and exact CI/runtime evidence are authoritative. Initial main was 4706dad; owner-authorized coordination note 7c086815 and concurrent Facebook fix d21709e were preserved. PR #235 merged as bae2445. The separate codex/sequential-release-20261107 branch reconciles reviewed older changes; it is not yet merged or deployed.
+
+## Release / live status
+The actual takatak.ca DNS target is VPS1 (209.145.49.63), existing application lt05flq7furdzxfqtmfmujek. Native Coolify push deployment is active even though the GitHub Coolify workflow skips. Deployment of 7c086815 finished healthy; d21709e was building and bae2445 queued at inspection. VPS2 retains an older instance; do not create duplicate applications or change DNS. Database, Supabase and process readiness passed. No schema migration or provider activation is included in this reconciliation.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # REVEW reputation scope — 2026-10-31
 
 Implementation on `codex/review-ecosystem`: unified private first-party/Google/QMAPS view in the existing master dashboard; source-capability inventory covers 12 review/social platforms; scoped CSV and existing AI draft queue integration. QMAPS/FLEXS API request notes published on their `revew/review-api-handoff` branches. Source CI passed on 8c3cfb8 (https://github.com/takatakca/takatak-v1/actions/runs/41190779123); code is not merged/deployed and external vendor APIs are not newly connected. Google Drive note upload and email coordination remain unavailable to this session. [Evidence and limits](REVEW_REVIEW_ECOSYSTEM.md). — REVEW

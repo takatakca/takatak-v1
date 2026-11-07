@@ -1,3 +1,20 @@
+# TAKATAK V1 — Deployment
+
+## Verified architecture and constraints
+Actual takatak.ca target on 2026-11-07: VPS1 209.145.49.63, Coolify application lt05flq7furdzxfqtmfmujek, repository main, root Dockerfile, internal port3000. The older VPS2 application is not the current DNS target. Preserve both existing configurations and mail/DNS. Native Coolify webhook deploys pushes serially; GitHub skipped deployment jobs do not mean native deployment is disabled.
+
+## Operator prerequisites
+Exact reviewed revision, complete green Node22 CI, no unreviewed schema delta, healthy current release and retained rollback image/configuration. Review actual database backup/migration state before any schema operation. Credentials stay in the existing private runtime; never emit their values. Current integration adds no migration or startup migration command.
+
+## Authorized promotion procedure
+The owner expressly authorized reviewed merges/pushes/deploys one repository at a time. Merge the tested integration without force-push, let the existing native deployment queue complete, and verify image/source SHA, trusted HTTPS and process/database/Supabase readiness. Preserve existing workers/flags and do not activate providers or payments. If health regresses, use the retained previous verified image/configuration through the same controller. A successful public health probe does not prove authenticated tenant isolation or provider delivery.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # SEO integration release — TAKATAK V1
 
 This is a **SEO-scope supplement**. The general release runbooks remain `docs/TAKATAK_PRODUCTION_PROMOTION.md`, `docs/TAKATAK_V1_ENVIRONMENT_MATRIX.md` and `WORKLOG.md`.
