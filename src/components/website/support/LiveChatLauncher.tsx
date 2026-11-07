@@ -84,7 +84,7 @@ export function LiveChatLauncher() {
         <button
           type="button"
           onClick={() => (open ? setOpen(false) : openLiveChat({ page: typeof location !== "undefined" ? location.pathname : undefined, lang }))}
-          aria-label={open ? t("chat.close") : t("chat.launcher")}
+          aria-label={open ? t("chat.close") : `${t("home.hero.ctaChat")} · ${t("chat.launcher")}`}
           className="ml-auto flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-18px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03]"
         >
           <Headset size={16} /> <span className="hidden sm:inline">{t("home.hero.ctaChat")}</span>
