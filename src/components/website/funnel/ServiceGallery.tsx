@@ -302,8 +302,8 @@ export function ServiceGallery() {
                   if (!drag.current?.moved) setOpen({ c, origin: originOf(e.currentTarget) });
                 }}
                 className="absolute inset-0 z-[2] flex flex-col p-7 pb-[92px] text-left text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
-                aria-label={`${homeV2.services.open[lang]}: ${name}`}
               >
+                <span className="sr-only">{homeV2.services.open[lang]} · </span>
                 <span className="text-[13px] font-semibold text-white/85">
                   {name} · <span className="font-normal text-white/70">{AVAIL[c.availability][lang]}</span>
                 </span>
@@ -319,7 +319,7 @@ export function ServiceGallery() {
                   type="button"
                   onClick={() => plan.toggle(c.key)}
                   aria-pressed={inPlan}
-                  aria-label={`${inPlan ? homeCopy.services.added[lang] : homeCopy.services.add[lang]}: ${name}`}
+                  aria-label={`${inPlan ? homeV3.added[lang] : homeV3.addAll[lang]} · ${name}`}
                   className={`inline-flex h-11 items-center gap-1.5 rounded-full px-4 text-[13.5px] font-semibold transition-all ${
                     inPlan ? "bg-emerald-500 text-white" : "bg-white text-[#0B0D12] hover:scale-[1.04]"
                   }`}
