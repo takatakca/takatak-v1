@@ -6,6 +6,7 @@ import hashlib
 import hmac
 from pathlib import Path
 import smtplib
+import sqlite3
 import tempfile
 import unittest
 from unittest.mock import Mock
@@ -81,6 +82,42 @@ class MonitorTests(unittest.TestCase):
         self.assertEqual(ids[0], ids[1])
         self.assertEqual(smtp.starttls.call_count, 2)
         self.assertEqual(self.db.execute("SELECT sent FROM outbox").fetchone()[0], 1)
+
+    def test_alert_names_configured_probe_path(self):
+        for offset in range(3):
+            monitor.record(self.db, "takatak.ca", 1000 + offset * 300, BAD, path="/api/health/ready")
+        self.assertEqual(self.db.execute("SELECT path FROM outbox").fetchone()[0], "/api/health/ready")
+        env = dict.fromkeys(["SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "MONITOR_FROM", "MONITOR_TO"], "owner@example.com")
+        smtp = Mock()
+        smtp.__enter__ = Mock(return_value=smtp)
+        smtp.__exit__ = Mock(return_value=False)
+        smtp.send_message.return_value = {}
+        self.assertTrue(monitor.deliver(self.db, env, Mock(return_value=smtp)))
+        message = smtp.send_message.call_args.args[0]
+        self.assertEqual(message["Subject"], "TAKATAK Monitor: DOWN takatak.ca/api/health/ready")
+        self.assertIn("https://takatak.ca/api/health/ready\n", message.get_content())
+        self.assertNotIn("https://takatak.ca/\n", message.get_content())
+
+    def test_legacy_outbox_defaults_missing_probe_path(self):
+        legacy = sqlite3.connect(self.root / "legacy.sqlite3")
+        legacy.executescript("""
+            CREATE TABLE samples (
+                host TEXT NOT NULL, at INTEGER NOT NULL, ok INTEGER NOT NULL,
+                status INTEGER, latency_ms INTEGER NOT NULL, reason TEXT NOT NULL,
+                PRIMARY KEY (host, at));
+            CREATE TABLE state (
+                host TEXT PRIMARY KEY, stable TEXT NOT NULL,
+                failures INTEGER NOT NULL, successes INTEGER NOT NULL);
+            CREATE TABLE outbox (
+                id INTEGER PRIMARY KEY, host TEXT NOT NULL, at INTEGER NOT NULL,
+                event TEXT NOT NULL, sent INTEGER NOT NULL DEFAULT 0);
+        """)
+        legacy.execute("INSERT INTO outbox(host,at,event) VALUES ('example.com', 1, 'DOWN')")
+        legacy.commit()
+        legacy.close()
+        db = monitor.open_db(self.root / "legacy.sqlite3")
+        self.addCleanup(db.close)
+        self.assertEqual(db.execute("SELECT path FROM outbox").fetchone()[0], "/")
 
     def test_month_boundaries_and_unknown_site_coverage(self):
         at = int(dt.datetime(2026, 10, 31, 23, 55, tzinfo=monitor.UTC).timestamp())

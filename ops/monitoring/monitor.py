@@ -117,12 +117,17 @@ def open_db(path):
             failures INTEGER NOT NULL, successes INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS outbox (
             id INTEGER PRIMARY KEY, host TEXT NOT NULL, at INTEGER NOT NULL,
-            event TEXT NOT NULL, sent INTEGER NOT NULL DEFAULT 0);
+            event TEXT NOT NULL, sent INTEGER NOT NULL DEFAULT 0,
+            path TEXT NOT NULL DEFAULT '/');
     """)
+    # Volumes created before probe paths were stored still have the old outbox.
+    if "path" not in {row[1] for row in db.execute("PRAGMA table_info(outbox)")}:
+        db.execute("ALTER TABLE outbox ADD COLUMN path TEXT NOT NULL DEFAULT '/'")
+        db.commit()
     return db
 
 
-def record(db, host, at, result, interval=300):
+def record(db, host, at, result, interval=300, path="/"):
     ok, status, latency, reason = result
     with db:
         last = db.execute("SELECT MAX(at) FROM samples WHERE host=?", (host,)).fetchone()[0]
@@ -145,15 +150,15 @@ def record(db, host, at, result, interval=300):
             stable = "up"
         db.execute("INSERT OR REPLACE INTO state VALUES (?,?,?,?)", (host, stable, failures, successes))
         if event:
-            db.execute("INSERT INTO outbox(host,at,event) VALUES (?,?,?)", (host, at, event))
-            print(json.dumps({"host": host, "at": at, "event": event}), flush=True)
+            db.execute("INSERT INTO outbox(host,at,event,path) VALUES (?,?,?,?)", (host, at, event, path))
+            print(json.dumps({"host": host, "at": at, "event": event, "path": path}), flush=True)
 
 
 def deliver(db, env=os.environ, smtp_factory=smtplib.SMTP):
     required = ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "MONITOR_FROM", "MONITOR_TO")
     if not all(env.get(key) for key in required):
         return False  # Persistent queue remains unsent; never claim delivery.
-    pending = db.execute("SELECT id,host,at,event FROM outbox WHERE sent=0 ORDER BY id LIMIT 20").fetchall()
+    pending = db.execute("SELECT id,host,at,event,path FROM outbox WHERE sent=0 ORDER BY id LIMIT 20").fetchall()
     if not pending:
         return True
     try:
@@ -162,12 +167,14 @@ def deliver(db, env=os.environ, smtp_factory=smtplib.SMTP):
             smtp.starttls(context=ssl.create_default_context())
             smtp.ehlo()
             smtp.login(env["SMTP_USER"], env["SMTP_PASSWORD"])
-            for alert_id, host, at, event in pending:
+            for alert_id, host, at, event, path in pending:
+                checked = path if isinstance(path, str) and path.startswith("/") and not path.startswith("//") else "/"
+                target = host if checked == "/" else f"{host}{checked}"
                 message = EmailMessage()
                 message["From"], message["To"] = env["MONITOR_FROM"], env["MONITOR_TO"]
-                message["Subject"] = f"TAKATAK Monitor: {event} {host}"
+                message["Subject"] = f"TAKATAK Monitor: {event} {target}"
                 message["Message-ID"] = f"<takatak-monitor-{host}-{at}-{event}@{host}>"
-                message.set_content(f"{event}: https://{host}/\nObserved: {dt.datetime.fromtimestamp(at, UTC).isoformat()}\n"
+                message.set_content(f"{event}: https://{host}{checked}\nObserved: {dt.datetime.fromtimestamp(at, UTC).isoformat()}\n"
                                     "Confirmed by consecutive checks. Verify the website before acting.\nSigned: Codex MONITOR\n")
                 if smtp.send_message(message):
                     raise smtplib.SMTPException("recipient refused")
@@ -293,7 +300,7 @@ def run_cycle(db, config, output, probe_fn=probe, dashboard_fn=dashboard_request
                 continue  # Failed/expired payment or unavailable authorization never enables paid checks.
         at = int(time.time())
         result = probe_fn(site["hostname"], path=site.get("path", "/"))
-        record(db, site["hostname"], at, result, config["interval_seconds"])
+        record(db, site["hostname"], at, result, config["interval_seconds"], site.get("path", "/"))
         if site.get("domain_asset_id"):
             if not dashboard_fn(site, snapshot_payload(db, site, at, result, config["interval_seconds"])):
                 print(json.dumps({"host": site["hostname"], "dashboard_sync": "retry_next_cycle"}), flush=True)
