@@ -63,7 +63,7 @@ function dailySeries(metric: Metric, points: YoutubeGrowthDay[]): Array<{ label:
     : points.map((point) => ({ label: point.day, value: point[metric] }));
 }
 
-function TrendGraph({ series, metric }: { series: Array<{ label: string; value: number | null }>; metric: Metric }) {
+function TrendGraph({ series, metric }: { series: Array<{ label: string; value: number | null }>; metric: Metric | "gained" | "lost" | "uploads" }) {
   const known = series.filter((point): point is { label: string; value: number } => point.value !== null);
   if (metric === "videos") {
     return <p className="flex min-h-[230px] items-center justify-center text-center text-sm text-slate-500">Channel video count is a current total; a daily upload history is not available in this report.</p>;
@@ -100,7 +100,7 @@ function TrendGraph({ series, metric }: { series: Array<{ label: string; value: 
   const ticks = [0, 1, 2, 3, 4];
   return (
     <div className="w-full overflow-x-auto">
-      <svg viewBox={"0 0 " + width + " " + height} role="img" aria-label={"YouTube " + (metric === "subscribers" ? "daily net subscriber change" : metric === "views" ? "daily video views" : "estimated daily revenue") + " trend"} className="w-full min-w-[420px]">
+      <svg viewBox={"0 0 " + width + " " + height} role="img" aria-label={"YouTube " + (metric === "subscribers" ? "daily net subscriber change" : metric === "views" ? "daily video views" : metric === "gained" ? "daily gained subscribers" : metric === "lost" ? "daily lost subscribers" : metric === "uploads" ? "daily video uploads" : "estimated daily revenue") + " trend"} className="w-full min-w-[420px]">
         {ticks.map((tick) => {
           const value = rangeMin + (rangeMax - rangeMin) * (4 - tick) / 4;
           const yy = y(value);
@@ -170,6 +170,7 @@ export function YoutubeAnalyticsDashboard({
   const [days, setDays] = useState<ReportDays>(30);
   const [compare, setCompare] = useState(false);
   const [metric, setMetric] = useState<Metric>("subscribers");
+  const [balanceMetric, setBalanceMetric] = useState<"gained" | "lost" | "uploads">("gained");
   const [data, setData] = useState<ReportResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [refreshCounter, refresh] = useState(0);
@@ -205,6 +206,19 @@ export function YoutubeAnalyticsDashboard({
 
   const current = data?.current;
   const series = useMemo(() => current ? dailySeries(metric, current.points) : [], [current, metric]);
+  const subscriberBalanceSeries = useMemo(() => {
+    if (!current) return [];
+    if (balanceMetric === "gained" || balanceMetric === "lost") {
+      return current.points.map((point) => ({ label: point.day, value: point[balanceMetric] }));
+    }
+    const videos = data?.videos?.ok ? data.videos.report.published.videos : [];
+    return current.points.map((point) => ({
+      label: point.day,
+      value: data?.videos?.ok
+        ? videos.filter((video) => video.publishedAt.slice(0, 10) === point.day).length
+        : null,
+    }));
+  }, [current, data?.videos, balanceMetric]);
 
   function scrollToSection(id: string) {
     setActiveSection(id);
@@ -310,6 +324,41 @@ export function YoutubeAnalyticsDashboard({
             {displayDate(current.range.start)} – {displayDate(current.range.end)} · Retrieved {new Intl.DateTimeFormat("en-CA", { dateStyle: "medium", timeStyle: "short" }).format(new Date(current.retrievedAt))}
           </p> : null}
           {data?.previous ? <p className="mt-3 text-xs text-slate-500">Previous period: {displayNumber(data.previous.totals.views)} views, {displayNumber(data.previous.totals.subscriberChange)} net subscribers.</p> : null}
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
+          <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <h3 className="text-lg font-medium">Balance of Subscribers</h3>
+            {current ? (
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: "gained", title: "Gained", value: current.totals.gained },
+                  { key: "lost", title: "Lost", value: current.totals.lost },
+                  { key: "uploads", title: "Videos", value: data?.videos?.ok ? data.videos.report.published.count : null },
+                ] as const).map((item) => (
+                  <button type="button" key={item.key}
+                    aria-pressed={balanceMetric === item.key}
+                    onClick={() => setBalanceMetric(item.key)}
+                    className={"rounded-xl border px-4 py-3 text-center focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 " +
+                      (balanceMetric === item.key ? "border-[#1565D8] bg-[#EAF4FF]" : "border-slate-200 bg-slate-50 hover:bg-slate-100")}>
+                    <span className="block text-xl font-semibold">{displayNumber(item.value)}</span>
+                    <span className="block text-xs text-slate-600">{item.title}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          {isLocked ? (
+            <p className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">A TAKATAK Social subscription is required for subscriber analytics.</p>
+          ) : current ? (
+            <TrendGraph series={subscriberBalanceSeries} metric={balanceMetric} />
+          ) : (
+            <p className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">
+              {data?.message ?? "Subscriber balance will load from YouTube."}
+            </p>
+          )}
+          {data?.videos?.ok && data.videos.report.published.limited ? (
+            <p className="mt-2 text-xs text-amber-800">Upload totals are limited to the first 200 recent videos available through YouTube.</p>
+          ) : null}
         </div>
       </section>
 
