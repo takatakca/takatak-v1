@@ -229,7 +229,7 @@ export function KioskScene() {
                   <span className="block truncate text-[11.5px] font-semibold text-white">
                     {o.source.name} · #{o.id}
                   </span>
-                  <span className="flex items-center gap-1 truncate text-[10.5px] text-white/50">
+                  <span className="flex items-center gap-1 truncate text-[10.5px] text-white/65">
                     {(() => {
                       const m = MODES[o.id % MODES.length];
                       return <m.Icon size={10} className="shrink-0" aria-hidden />;
