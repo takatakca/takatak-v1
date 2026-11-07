@@ -145,7 +145,7 @@ export function PrivacyManagerView() {
         <h2 className="text-lg font-semibold text-foreground">{COPY.exercise[lang]}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {COPY.emailBefore[lang]}{" "}
-          <a href="mailto:support@takatak.ca" className="text-primary hover:underline">
+          <a href="mailto:support@takatak.ca" className="text-primary underline underline-offset-2">
             support@takatak.ca
           </a>{" "}
           {COPY.emailAfter[lang]}

@@ -908,7 +908,7 @@ export function PostProjectForm({
                     {option.label}
                   </span>
 
-                  <span className="mt-0.5 block text-xs text-slate-500">
+                  <span className="mt-0.5 block text-xs text-slate-600">
                     {option.description}
                   </span>
                 </span>

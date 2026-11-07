@@ -205,7 +205,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
         <div className={box}>
           <p className="px-2 pt-1.5 text-[9px] font-bold" style={{ color: a }}>{w(lang, "Nouvelle campagne", "New campaign")}</p>
           <div className="grid gap-1 px-2 pt-1 text-[9px]">
-            <span className={`rounded px-1.5 py-0.5 transition-all duration-300 ${f >= 1 ? "text-white" : "bg-slate-100 text-slate-500"}`} style={f >= 1 ? { background: a } : undefined}>
+            <span className={`rounded px-1.5 py-0.5 transition-all duration-300 ${f >= 1 ? "text-white" : "bg-slate-100 text-slate-600"}`} style={f >= 1 ? { background: a } : undefined}>
               {w(lang, "Segment : clients fidèles", "Segment: loyal customers")}
             </span>
             <span className={`flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-slate-700 transition-opacity duration-300 ${f >= 2 ? "opacity-100" : "opacity-0"}`}>
