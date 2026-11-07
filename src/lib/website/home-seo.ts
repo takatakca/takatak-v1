@@ -7,6 +7,13 @@ export function homeLanguage(value: unknown): HomeLanguage {
   return value === "fr" ? "fr" : "en";
 }
 
+/** Homepage always has a language. Other paths follow an explicit ?lang= only. */
+export function requestPresentationLanguage(pathname: string, langParam: unknown): HomeLanguage | null {
+  if (pathname === "/") return homeLanguage(langParam);
+  if (langParam === "fr" || langParam === "en") return langParam;
+  return null;
+}
+
 export const HOME_SEO = {
   en: {
     title: "TAKATAK — Websites, Hosting & Digital Marketing in Montréal",

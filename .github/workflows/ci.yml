@@ -51,6 +51,9 @@ jobs:
       - name: Agent continuation documentation safeguards
         run: npm run qa:handoff
 
+      - name: Login language FR and EN
+        run: npm run qa:login-language
+
       - name: Static RLS checks
         run: npm run qa:rls:static
 
