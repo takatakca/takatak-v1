@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { YoutubeAnalyticsDashboard } from "@/components/social/platforms/youtube-analytics-dashboard";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -93,6 +94,11 @@ export function YoutubeConnectPage({
   profileImageUrl = null,
   resolutionIssue = null,
   needsSelectionConnectionId = null,
+  billingExempt,
+  hasPaidPlan,
+  analyticsHistoryDays,
+  canCompare,
+  billingHref,
 }: {
   activeBrandId: string | null;
   canManage: boolean;
@@ -102,6 +108,11 @@ export function YoutubeConnectPage({
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
   needsSelectionConnectionId?: string | null;
+  billingExempt: boolean;
+  hasPaidPlan: boolean;
+  analyticsHistoryDays: number | null;
+  canCompare: boolean;
+  billingHref: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -277,7 +288,7 @@ export function YoutubeConnectPage({
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             {isConnected
-              ? "Channel connected. Analytics will appear here after the next sync step."
+              ? "Channel connected. Browse your YouTube analytics below."
               : "Your saved YouTube history remains stored. Reconnect the same account to restore only that account’s analytics."}
           </p>
           {!isConnected ? (
@@ -292,6 +303,15 @@ export function YoutubeConnectPage({
             </Link>
           ) : null}
         </section>
+        {isConnected ? (
+          <YoutubeAnalyticsDashboard
+            billingExempt={billingExempt}
+            hasPaidPlan={hasPaidPlan}
+            historyDays={analyticsHistoryDays}
+            canCompare={canCompare}
+            billingHref={billingHref}
+          />
+        ) : null}
       </div>
     );
   }
