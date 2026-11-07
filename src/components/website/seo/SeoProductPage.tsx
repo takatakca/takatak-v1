@@ -29,7 +29,7 @@ import { NavyBackdrop } from "@/components/website/premium/ui";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { SEO_FREE_TOOLS, type SeoTool } from "@/lib/seo/free-tools-catalog";
 import { SEO_CATEGORY_FR, SEO_TOOL_FR } from "@/lib/seo/free-tools-fr";
-import { MARKETPLACE_PACKAGES } from "@/lib/website/marketplace-packages";
+import type { MarketplaceCard } from "@/lib/website/marketplace-cards";
 import { fastestDelivery, packageTitle, startingPrice } from "@/lib/website/marketplace-i18n";
 import { Link } from "@/lib/website/nav";
 import { useInViewport } from "@/lib/website/use-in-viewport";
@@ -166,7 +166,6 @@ const SCREENS: { screen: T; shows: T; state: State }[] = [
   { screen: { fr: "SEO · Liens", en: "SEO · Backlinks" }, shows: { fr: "Liens gagnés, vérifiés par une source indépendante", en: "Earned links, verified by an independent source" }, state: "planned" },
 ];
 
-const START_PACKAGES = ["local-seo-setup", "gbp-optimization", "citation-package", "qmaps-listing-setup"];
 
 const NEVER: T[] = [
   { fr: "Aucune première place garantie sur Google : personne ne peut la promettre honnêtement.", en: "No guaranteed first place on Google: nobody can honestly promise it." },
@@ -255,13 +254,12 @@ function HeroScreen() {
 }
 
 /** The full SEO TAKATAK product page (/seo): what it does today, how, for how much, and what it never does. */
-export function SeoProductPage() {
+export function SeoProductPage({ packages }: { packages: MarketplaceCard[] }) {
   const { tx, lang } = useLanguage();
   useHeaderHeight();
   const liveTools = SEO_FREE_TOOLS.filter((t) => t.mode !== "provider").length;
   const providerTools = SEO_FREE_TOOLS.length - liveTools;
   const categories = Array.from(new Set(SEO_FREE_TOOLS.map((t) => t.category)));
-  const packages = START_PACKAGES.map((id) => MARKETPLACE_PACKAGES.find((p) => p.id === id)).filter((p): p is (typeof MARKETPLACE_PACKAGES)[number] => Boolean(p));
   const toolName = (t: SeoTool) => (lang === "fr" ? SEO_TOOL_FR[t.id]?.title ?? t.title : t.title);
 
   return (
@@ -480,7 +478,7 @@ export function SeoProductPage() {
             <Link
               key={p.id}
               to="/marketplace/gigs/$id"
-              params={{ id: p.slug }}
+              params={{ id: p.id }}
               className="group flex items-center justify-between gap-4 rounded-2xl bg-white/[0.04] px-5 py-4 ring-1 ring-white/10 transition-all hover:-translate-y-0.5 hover:bg-white/[0.07] hover:ring-sky-300/40"
             >
               <span>
