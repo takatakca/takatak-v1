@@ -4,6 +4,7 @@ import { HERO_CHIPS, normalize, respond, suggest, understand } from "../src/lib/
 import { FICHE_ORDER, answer, emptyFiche, fichePayload, question } from "../src/lib/website/sales-fiche";
 import { resolveIntent } from "../src/lib/website/service-intent";
 import { MARKETPLACE_PACKAGES } from "../src/lib/website/marketplace-packages";
+import { MARKETPLACE_PACKAGES as REAL_PACKAGES } from "../src/lib/website/marketplace-catalog";
 import { PACKAGE_TITLE_FR, formatCad, startingPrice } from "../src/lib/website/marketplace-i18n";
 import { SEO_FREE_TOOLS } from "../src/lib/seo/free-tools-catalog";
 
@@ -76,6 +77,7 @@ assert.equal(resolveIntent("Je veux un site web premium pour mon restaurant").in
 
 // Header mega-menu: every package has a French name, prices read "249 $" in French.
 for (const p of MARKETPLACE_PACKAGES) assert.ok(PACKAGE_TITLE_FR[p.id], `French title missing for ${p.id}`);
+for (const p of REAL_PACKAGES) assert.ok(PACKAGE_TITLE_FR[p.id], `French title missing for ${p.id} (real catalog)`);
 assert.equal(formatCad(24900, "fr"), "249\u00a0$");
 assert.equal(formatCad(124900, "en"), "$1,249");
 assert.ok(startingPrice({ tiers: [{ priceCents: 50000 }, { priceCents: 24900 }] } as never, "fr").startsWith("dès 249"));

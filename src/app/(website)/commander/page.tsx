@@ -4,7 +4,7 @@ import { OrderFunnel } from "@/components/website/funnel/OrderFunnel";
 import { HomeThemeRoot } from "@/lib/website/home-theme";
 
 export const metadata: Metadata = {
-  title: "Order",
+  title: "Commander · Order",
   robots: { index: false, follow: true },
 };
 

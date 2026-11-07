@@ -2,12 +2,26 @@
 // show "Online ads setup" or "$249". The package catalog keeps its English
 // fields (API parity); this file adds the visitor-facing French words.
 
-import type { MarketplacePackageDetail } from "@/lib/website/marketplace-packages";
 
 type Lang = "fr" | "en";
 
 /** French title of every package in MARKETPLACE_PACKAGES (checked by scripts/concierge-tests.ts). */
 export const PACKAGE_TITLE_FR: Record<string, string> = {
+  // Real catalog (marketplace-catalog.ts) ids without a demo twin.
+  "tiktok-ads": "Publicité TikTok",
+  "retargeting-campaign": "Campagne de reciblage",
+  "advertising-audit": "Audit et optimisation publicitaires",
+  "monthly-social-posting": "Publication mensuelle sur les réseaux sociaux",
+  "reels-shorts-plan": "Plan de contenu Reels et Shorts",
+  "social-strategy": "Stratégie pour les réseaux sociaux",
+  "mobile-app-prototype": "Prototype d'application mobile",
+  "page-layout": "Mise en page professionnelle",
+  "virtual-assistant": "Assistance virtuelle",
+  "local-seo": "SEO local et fiche Google Business",
+  "ai-assistant": "Mise en place d'un assistant IA",
+  "content-writing": "Rédaction de contenu web",
+  "ecommerce-store": "Boutique Shopify ou WooCommerce",
+  "lead-campaign": "Campagne de prospects qualifiés",
   "website-starter": "Site web d'entreprise, forfait de départ",
   "website-restaurant": "Site web de restaurant",
   "landing-page": "Page d'atterrissage qui convertit",
@@ -56,8 +70,20 @@ export const PACKAGE_TITLE_FR: Record<string, string> = {
   "website-copywriting": "Rédaction de site web",
 };
 
-export function packageTitle(p: Pick<MarketplacePackageDetail, "id" | "title">, lang: Lang): string {
+export function packageTitle(p: { id: string; title: string }, lang: Lang): string {
   return lang === "fr" ? (PACKAGE_TITLE_FR[p.id] ?? p.title) : p.title;
+}
+
+const TIER_NAME_FR: Record<string, string> = {
+  Basic: "Base",
+  Standard: "Standard",
+  Premium: "Premium",
+  Business: "Affaires",
+};
+
+/** Display name of a package tier; the English name stays the stored key. */
+export function tierName(name: string, lang: Lang): string {
+  return lang === "fr" ? (TIER_NAME_FR[name] ?? name) : name;
 }
 
 /** "249 $" in French (Québec style, non-breaking space), "$249" in English. */
@@ -67,13 +93,13 @@ export function formatCad(cents: number, lang: Lang): string {
 }
 
 /** "dès 249 $" / "from $249", from the cheapest tier. */
-export function startingPrice(p: Pick<MarketplacePackageDetail, "tiers">, lang: Lang): string {
+export function startingPrice(p: { tiers: readonly { priceCents: number }[] }, lang: Lang): string {
   const cents = Math.min(...p.tiers.map((t) => t.priceCents));
   return `${lang === "fr" ? "dès" : "from"} ${formatCad(cents, lang)}`;
 }
 
 /** "Livré en 2 jours" / "2-day delivery", from the fastest tier. */
-export function fastestDelivery(p: Pick<MarketplacePackageDetail, "tiers">, lang: Lang): string {
+export function fastestDelivery(p: { tiers: readonly { deliveryDays: number }[] }, lang: Lang): string {
   const d = Math.min(...p.tiers.map((t) => t.deliveryDays));
   if (lang === "fr") return d <= 1 ? "Livré en 1 jour" : `Livré en ${d} jours`;
   return d <= 1 ? "1-day delivery" : `${d}-day delivery`;

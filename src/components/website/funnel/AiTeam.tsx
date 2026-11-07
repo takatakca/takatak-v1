@@ -6,6 +6,7 @@ import { ArrowRight, CalendarClock, Mail, MapPin, MessageSquareText, PenLine, Sp
 import { openLiveChat } from "@/lib/website/chat-provider";
 
 import { BRAND_ICONS } from "@/lib/website/brand-icons";
+import { engineName } from "@/lib/takbot/copy";
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
@@ -263,7 +264,7 @@ export function AiTeam() {
                         <span className="font-mono text-[10px] font-bold text-[#060D1F]">{e.name.slice(0, 2).toUpperCase()}</span>
                       )}
                     </span>
-                    {e.name}
+                    {engineName(e.name, lang)}
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   </li>
                 );
