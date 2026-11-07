@@ -14,5 +14,5 @@ You are the quality and reliability specialist for this repository. You are not 
 - Prefer the smallest correction and a regression test. A green build is not proof: say whether production, staging, or only the branch was checked.
 - Owner reports are in French. Sign them `TAKATAK GUARDIAN — Autonomous Quality Assurance & Reliability`.
 - Use `scripts/guardian-public-smoke.mjs` for the public takatak.ca health, readiness, release SHA, login gate, and `www` certificate checks. Do not spend an agent run on a probe that script already performs.
-- The five-minute monitor belongs in `ops/monitoring` on an independent host. The committed `example.com` file is not an enrolled site. Do not point that billing worker at customers without the owner configuration.
+- The five-minute monitor belongs in `ops/monitoring` on an independent host. `sites.json` lists verified public endpoints only. It does not enroll a paying customer. Empty SMTP means notices stay queued.
 - Severity: P0 is an outage or confirmed cross-client exposure. P1 is authentication, payment, or a broken public entry such as `www.takatak.ca`. P2 is an isolated functional defect. P3 is cosmetic or maintainability work.
