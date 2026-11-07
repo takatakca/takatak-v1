@@ -75,6 +75,40 @@ async function main() {
   const ollamaDenied = await relayPrompt({ engine: ollama, mode: "chat", apiKey: "bad", prompt: "x" }, async () => new Response("{}", { status: 401 }), {});
   assert.deepEqual(ollamaDenied, { ok: false, code: "auth" });
 
+  // OpenAI-compatible engines added 2026-11-07: each answers inline with its documented endpoint and a Bearer key.
+  const COMPAT_2026_11: Record<string, string> = {
+    moonshot: "https://api.moonshot.ai/v1/chat/completions",
+    zai: "https://api.z.ai/api/paas/v4/chat/completions",
+    together: "https://api.together.ai/v1/chat/completions",
+    openrouter: "https://openrouter.ai/api/v1/chat/completions",
+    cerebras: "https://api.cerebras.ai/v1/chat/completions",
+    sambanova: "https://api.sambanova.ai/v1/chat/completions",
+    deepinfra: "https://api.deepinfra.com/v1/openai/chat/completions",
+  };
+  for (const [key, url] of Object.entries(COMPAT_2026_11)) {
+    const engine = takbotEngine(key);
+    assert.ok(engine, `${key} is a TAK-TAK engine`);
+    assert.equal(engine!.relay, "openai_compat", `${key} relays inline`);
+    assert.equal(engine!.endpoint, url, `${key} endpoint`);
+    assert.ok(engine!.defaultModel, `${key} has a default model`);
+    const picked = routeTakbotRequest({ mode: "chat", engine: key, connected: new Set([key]) });
+    assert.ok(picked.ok && picked.engine.key === key, `${key} can be picked by name`);
+    const alone = routeTakbotRequest({ mode: "write", engine: "auto", connected: new Set([key]) });
+    assert.ok(alone.ok && alone.engine.key === key, `${key} answers on auto when it is the only key`);
+    let seenUrl = "";
+    let seenAuth = "";
+    const run = await relayPrompt({ engine: engine!, mode: "chat", apiKey: "k-test", prompt: "x" }, async (u, init) => {
+      seenUrl = u;
+      seenAuth = (init.headers as Record<string, string>).Authorization;
+      return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 });
+    }, {});
+    assert.deepEqual(run, { ok: true, text: "ok" });
+    assert.equal(seenUrl, url);
+    assert.equal(seenAuth, "Bearer k-test");
+  }
+  // Media providers are key slots only: never offered as TAK-TAK chat engines.
+  for (const key of ["luma", "bfl", "ideogram", "deepgram", "assemblyai", "mureka"]) assert.equal(takbotEngine(key), null, `${key} is not a chat engine`);
+
   console.log("takbot tests: OK");
 }
 

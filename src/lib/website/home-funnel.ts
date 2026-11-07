@@ -4,6 +4,7 @@
 // Product statuses come from each product's own repository README.
 
 import type { CategoryKey } from "./core-categories";
+import { AI_PROVIDERS } from "@/lib/growth/ai-engine";
 import type { Bi } from "./service-pages";
 
 export type HomeSectionId = "services" | "plan" | "takbot" | "team" | "phone" | "suite" | "pricing" | "faq";
@@ -303,7 +304,7 @@ export const homeV2 = {
     },
     proof: [
       { value: "10", label: { en: "services, one account", fr: "services, un seul compte" } },
-      { value: "14", label: { en: "AI engines behind TAK-TAK", fr: "moteurs d’IA derrière TAK-TAK" } },
+      { value: String(AI_PROVIDERS.length), label: { en: "AI engines behind TAK-TAK", fr: "moteurs d’IA derrière TAK-TAK" } },
       { value: "9", label: { en: "social networks connected", fr: "réseaux sociaux branchés" } },
       { value: "FR · EN", label: { en: "team in Montréal", fr: "équipe à Montréal" } },
     ],
