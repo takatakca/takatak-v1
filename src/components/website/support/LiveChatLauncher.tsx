@@ -35,7 +35,7 @@ export function LiveChatLauncher() {
   if (external && !open) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 print:hidden">
+    <div className="tk-chat-launcher fixed bottom-4 right-4 z-50 print:hidden">
       {open && (
         <div
           role="dialog"

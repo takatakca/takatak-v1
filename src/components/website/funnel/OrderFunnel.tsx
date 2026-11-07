@@ -611,7 +611,7 @@ export function OrderFunnel() {
       </div>
 
       {/* Mobile total bar */}
-      <div className="hp-line fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t px-4 py-3 lg:hidden" style={{ background: "var(--hp-bg)" }}>
+      <div className="tk-bottom-bar hp-line fixed inset-x-0 bottom-0 z-40 flex items-center justify-between gap-3 border-t px-4 py-3 lg:hidden" style={{ background: "var(--hp-bg)" }}>
         <span className="hp-ink text-[14px]">
           {C.first[lang]} <strong className="tabular-nums">{money(lang, totals.first)}</strong>
         </span>
