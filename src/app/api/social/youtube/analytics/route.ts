@@ -6,6 +6,8 @@ import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-requ
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { resolveCanonicalYoutubeDashboard } from "@/lib/social/connections/youtube-dashboard-resolve";
 import { getYoutubeCommunitySnapshot } from "@/lib/social/providers/youtube-community-analytics";
+import { getYoutubeVideoPerformance } from "@/lib/social/providers/youtube-video-performance";
+import { isServiceError } from "@/lib/services/service-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -62,10 +64,25 @@ export async function GET(request: NextRequest) {
     const previous = compare
       ? await getYoutubeCommunitySnapshot({ ...options, previousPeriod: true })
       : null;
+    // Community remains usable when the optional video breakdown fails.
+    const videos = await getYoutubeVideoPerformance({
+      clientId: options.clientId,
+      brandId: options.businessBrandId,
+      connectionId: options.connectionId,
+      socialAccountId: options.socialAccountId,
+      range: current.range,
+    }).then((report) => ({ ok: true as const, report }))
+      .catch((error: unknown) => ({
+        ok: false as const,
+        message: isServiceError(error)
+          ? error.message
+          : "YouTube video performance is temporarily unavailable.",
+      }));
     return jsonResponse({
       ok: true,
       current,
       previous,
+      videos,
     }, 200);
   } catch (error) {
     return handleApiError("youtube-community-analytics", error, "YouTube analytics could not be loaded.");
