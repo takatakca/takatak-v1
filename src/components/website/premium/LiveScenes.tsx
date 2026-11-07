@@ -216,7 +216,7 @@ export function LiveScreen({ scene, step, business, lang }: { scene: Scene; step
         <div className={`absolute inset-x-4 bottom-16 rounded-2xl bg-white p-3 shadow-lg transition-all duration-500 sm:bottom-20 ${step >= 2 ? "opacity-100" : "opacity-0"}`}>
           <p className="text-[13px] font-bold text-slate-900">{business}</p>
           <p className="mt-0.5 text-[11.5px] text-slate-600">
-            <span className="text-[#E7A008]">★★★★★</span> · {fr ? "Ouvert · Heures des fêtes à jour" : "Open · Holiday hours updated"}
+            {fr ? "Ouvert · Heures des fêtes à jour" : "Open · Holiday hours updated"}
           </p>
         </div>
         <Toast show={step === 3}>{fr ? "Fiche à jour partout" : "Listing updated everywhere"}</Toast>

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { ArrowRight, Camera, Check, Clock, MapPin, Phone, Plus, Sparkles, Star, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, Camera, Check, Clock, MapPin, Phone, Plus, Sparkles, UtensilsCrossed } from "lucide-react";
 
 import { money } from "@/components/website/premium/ui";
 import { pricing } from "@/lib/website/pricing";
@@ -132,12 +132,7 @@ export function ListingDemo() {
         <div className="p-2.5 sm:p-3">
           <p className="text-[14px] font-bold text-slate-900">{T.name[lang]}</p>
           <p className="mt-0.5 flex items-center gap-1 text-[11.5px] text-slate-600">
-            <span className="flex">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <Star key={i} size={12} className={`fill-current transition-colors duration-300 ${seen ? "text-[#E7A008]" : "text-slate-200"}`} style={{ transitionDelay: `${i * 120}ms` }} aria-hidden />
-              ))}
-            </span>
-            4,9 · {T.cat[lang]}
+            {T.cat[lang]}
           </p>
           <div className="mt-2 grid gap-0.5">
             <Row show={b >= 2} active={b === 2} icon={UtensilsCrossed}>
