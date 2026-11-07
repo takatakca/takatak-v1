@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { YoutubeCommunitySnapshot, YoutubeGrowthDay } from "@/lib/social/providers/youtube-community-analytics";
 import { YoutubeVideoSectionView } from "@/components/social/platforms/youtube-video-sections";
+import { YoutubeCompetitorsSection } from "@/components/social/platforms/youtube-competitors-section";
 import type { YoutubeVideoPerformance } from "@/lib/social/providers/youtube-video-performance";
 
 type ReportResponse = {
@@ -167,12 +168,14 @@ export function YoutubeAnalyticsDashboard({
   historyDays,
   canCompare,
   billingHref,
+  canManage,
 }: {
   billingExempt: boolean;
   hasPaidPlan: boolean;
   historyDays: number | null;
   canCompare: boolean;
   billingHref: string;
+  canManage: boolean;
 }) {
   const [range, setRange] = useState(() => recentRange(30));
   const [draftStart, setDraftStart] = useState(() => recentRange(30).start);
@@ -437,8 +440,13 @@ export function YoutubeAnalyticsDashboard({
         locked={isLocked}
         error={data?.videos && !data.videos.ok ? data.videos.message : data?.message ?? null}
       />
-      {/* Competitors content will be built from the owner's remaining screenshots. */}
-      <section id="competitors" aria-label="Competitors" className="scroll-mt-36" />
+      <YoutubeCompetitorsSection
+        locked={isLocked}
+        exempt={billingExempt}
+        canManage={canManage}
+        billingHref={billingHref}
+        range={range}
+      />
     </div>
   );
 }
