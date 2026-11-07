@@ -61,9 +61,9 @@ check("YouTube start scopes do not include Business Profile", () => {
   );
   assert(
     GOOGLE_OAUTH_YOUTUBE_SCOPES.includes(
-      "https://www.googleapis.com/auth/yt-analytics.readonly",
+      "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
     ),
-    "yt-analytics.readonly",
+    "yt-analytics-monetary.readonly",
   );
   assert(
     !GOOGLE_OAUTH_START_SCOPES.some((scope) =>
