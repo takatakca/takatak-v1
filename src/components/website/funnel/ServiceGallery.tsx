@@ -274,8 +274,8 @@ export function ServiceGallery() {
               aria-roledescription="slide"
               aria-label={`${i + 1} / ${total} · ${name}`}
               data-flipped={flipped === c.key}
-              className={`hp-flip group relative h-[580px] w-[82vw] max-w-[420px] shrink-0 transition-[transform,opacity] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] sm:w-[420px] ${
-                on ? "scale-100 opacity-100" : "scale-[0.95] opacity-75 hover:opacity-100"
+              className={`hp-flip group relative h-[580px] w-[82vw] max-w-[420px] shrink-0 transition-[transform,filter] duration-700 ease-[cubic-bezier(.2,.8,.2,1)] sm:w-[420px] ${
+                on ? "scale-100" : "scale-[0.95] brightness-[0.88] saturate-[0.9] hover:brightness-100 hover:saturate-100"
               }`}
             >
               <div className="hp-flip-inner">
@@ -289,7 +289,7 @@ export function ServiceGallery() {
                 sizes="420px"
                 className="absolute inset-0 transition-transform duration-[1.4s] ease-[cubic-bezier(.2,.8,.2,1)] group-hover:scale-[1.04]"
               />
-              <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(0_0_0/0.45)_0%,transparent_28%,transparent_45%,rgb(0_0_0/0.85)_100%)]" />
+              <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgb(0_0_0/0.62)_0%,rgb(0_0_0/0.18)_22%,transparent_34%,transparent_45%,rgb(0_0_0/0.85)_100%)]" />
               {CLIP_KEYS.has(c.key) && (
                 <span className="absolute inset-x-0 top-[34%] z-[1]">
                   <PlayBadge label={lang === "fr" ? "Voir la vidéo" : "Watch the video"} />
@@ -304,7 +304,7 @@ export function ServiceGallery() {
                 className="absolute inset-0 z-[2] flex flex-col p-7 pb-[92px] text-left text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
               >
                 <span className="sr-only">{homeV2.services.open[lang]} · </span>
-                <span className="text-[13px] font-semibold text-white/85">
+                <span className="text-[13px] font-semibold text-white [text-shadow:0_1px_8px_rgb(0_0_0/0.55)]">
                   {name} · <span className="font-normal text-white/70">{AVAIL[c.availability][lang]}</span>
                 </span>
                 <span className="mt-auto">
