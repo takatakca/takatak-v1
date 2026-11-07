@@ -38,6 +38,13 @@ const DURATION_OPTIONS: { days: ReportDays; label: string }[] = [
   { days: 365, label: "Last 365 days" },
 ];
 
+function recentRange(days: number): { start: string; end: string } {
+  const now = new Date();
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
+  const start = new Date(end.getTime() - (days - 1) * 86_400_000);
+  return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+}
+
 function displayNumber(value: number | null | undefined): string {
   return value === null || value === undefined
     ? "—"
@@ -167,7 +174,11 @@ export function YoutubeAnalyticsDashboard({
   canCompare: boolean;
   billingHref: string;
 }) {
-  const [days, setDays] = useState<ReportDays>(30);
+  const [range, setRange] = useState(() => recentRange(30));
+  const [draftStart, setDraftStart] = useState(() => recentRange(30).start);
+  const [draftEnd, setDraftEnd] = useState(() => recentRange(30).end);
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [periodError, setPeriodError] = useState<string | null>(null);
   const [compare, setCompare] = useState(false);
   const [metric, setMetric] = useState<Metric>("subscribers");
   const [balanceMetric, setBalanceMetric] = useState<"gained" | "lost" | "uploads">("gained");
@@ -177,11 +188,13 @@ export function YoutubeAnalyticsDashboard({
   const [showHelp, setShowHelp] = useState(true);
   const [activeSection, setActiveSection] = useState<string>("community");
   const isLocked = !hasPaidPlan;
-  const rangeIsAllowed = historyDays === null || days <= historyDays;
+  const latest = recentRange(1).end;
+  const rangeIsAllowed = historyDays === null ||
+    Date.parse(range.start + "T00:00:00Z") >= Date.parse(recentRange(historyDays).start + "T00:00:00Z");
   const fetchReport = useCallback(async (controller: AbortController) => {
     setBusy(true);
     try {
-      const params = new URLSearchParams({ days: String(days) });
+      const params = new URLSearchParams({ start: range.start, end: range.end });
       if (compare && canCompare) params.set("compare", "previous");
       const response = await fetch("/api/social/youtube/analytics?" + params, {
         signal: controller.signal,
@@ -196,7 +209,7 @@ export function YoutubeAnalyticsDashboard({
     } finally {
       if (!controller.signal.aborted) setBusy(false);
     }
-  }, [days, compare, canCompare]);
+  }, [range.start, range.end, compare, canCompare]);
   useEffect(() => {
     if (isLocked || !rangeIsAllowed) return;
     const controller = new AbortController();
@@ -238,22 +251,70 @@ export function YoutubeAnalyticsDashboard({
           ))}
         </div>
         <div className="flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-            Main period
-            <span className="relative inline-flex items-center">
-              <CalendarDays aria-hidden="true" className="pointer-events-none absolute left-3 h-4 w-4" />
-              <select value={days} onChange={(event) => setDays(Number(event.target.value) as ReportDays)}
-                disabled={isLocked}
-                className="h-10 appearance-none rounded-lg border border-slate-300 bg-white pl-9 pr-8 text-sm text-slate-900">
-                {DURATION_OPTIONS.map((option) =>
-                  <option key={option.days} value={option.days} disabled={historyDays !== null && option.days > historyDays}>
+          <div className="relative flex flex-col gap-1 text-xs font-medium text-slate-600">
+            <span>Main period</span>
+            <button type="button" onClick={() => {
+                setDraftStart(range.start);
+                setDraftEnd(range.end);
+                setPeriodError(null);
+                setPeriodOpen((open) => !open);
+              }}
+              aria-expanded={periodOpen}
+              disabled={isLocked}
+              className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 hover:bg-slate-50 disabled:opacity-50">
+              <CalendarDays aria-hidden="true" size={17} />
+              {displayDate(range.start)} – {displayDate(range.end)}
+              <ChevronDown aria-hidden="true" size={16} />
+            </button>
+            {periodOpen ? <div className="absolute right-0 top-full z-30 mt-2 w-[min(340px,90vw)] rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+              <p className="mb-3 text-sm font-semibold text-slate-950">Choose reporting period</p>
+              <div className="mb-4 grid grid-cols-2 gap-2">
+                {DURATION_OPTIONS.map((option) => (
+                  <button type="button" key={option.days}
+                    disabled={historyDays !== null && option.days > historyDays}
+                    onClick={() => {
+                      const next = recentRange(option.days);
+                      setRange(next);
+                      setDraftStart(next.start);
+                      setDraftEnd(next.end);
+                      setPeriodOpen(false);
+                    }}
+                    className="rounded-lg border border-slate-200 p-2 text-left text-xs hover:border-blue-400 disabled:opacity-40">
                     {option.label}
-                  </option>
-                )}
-              </select>
-              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 h-4 w-4" />
-            </span>
-          </label>
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-xs font-medium text-slate-600">From
+                  <input type="date" value={draftStart} max={latest} onChange={(event) => setDraftStart(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm text-slate-950" />
+                </label>
+                <label className="text-xs font-medium text-slate-600">To
+                  <input type="date" value={draftEnd} max={latest} onChange={(event) => setDraftEnd(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-slate-300 p-2 text-sm text-slate-950" />
+                </label>
+              </div>
+              {periodError ? <p role="alert" className="mt-2 text-xs text-rose-700">{periodError}</p> : null}
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <button type="button" onClick={() => setPeriodOpen(false)} className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">Cancel</button>
+                <button type="button" onClick={() => {
+                  const startMs = Date.parse(draftStart + "T00:00:00Z");
+                  const endMs = Date.parse(draftEnd + "T00:00:00Z");
+                  const days = Math.round((endMs - startMs) / 86_400_000) + 1;
+                  const earliest = recentRange(historyDays ?? 365).start;
+                  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) ||
+                      startMs > endMs || draftEnd > latest || days < 1 || days > 365 ||
+                      (historyDays !== null && draftStart < earliest)) {
+                    setPeriodError("Choose a valid range of up to 365 days within your plan's history allowance.");
+                    return;
+                  }
+                  setRange({ start: draftStart, end: draftEnd });
+                  setPeriodError(null);
+                  setPeriodOpen(false);
+                }} className="rounded-lg bg-[#1565D8] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0E4BA7]">Apply</button>
+              </div>
+            </div> : null}
+          </div>
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
             Comparison period
             <span className="relative inline-flex items-center">
