@@ -471,6 +471,9 @@ jobs:
           NODE_ENV: development
         run: npm run qa:ai-provider-keys-db
 
+      - name: Build diagnostic privacy and classification checks
+        run: node scripts/build-diagnostics-tests.cjs
+
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
@@ -478,24 +481,14 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
         shell: bash
         run: |
+          node scripts/report-build-diagnostics.cjs --resources before
           set +e
           npm run build 2>&1 | tee "$RUNNER_TEMP/revew-build.log"
           build_status=${PIPESTATUS[0]}
           set -e
           if [ "$build_status" -ne 0 ]; then
-            if grep -Eqi 'Failed to (fetch|download).*font|next/font.*(error|failed)|fonts.googleapis.com' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::External font download errors were detected in the build output."
-            elif grep -Eqi 'Error occurred prerendering|prerender-error' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A prerendering error was detected in the build output."
-            elif grep -Eqi 'Module not found|MODULE_NOT_FOUND|Cannot find module|Can.t resolve' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A module resolution error was detected in the build output."
-            elif grep -Eqi 'Type error:|error TS[0-9]{4}' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A type error was detected in the build output."
-            elif grep -Eqi '(missing|required|not configured).*(NEXT_PUBLIC|SUPABASE|DATABASE_URL)|(NEXT_PUBLIC|SUPABASE|DATABASE_URL).*(missing|required|not configured)' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A required runtime or public configuration error was detected in the build output."
-            else
-              echo "::error title=Production build diagnostic::The build failed outside the recognized diagnostic categories; authenticated logs are required."
-            fi
+            node scripts/report-build-diagnostics.cjs "$RUNNER_TEMP/revew-build.log" "$build_status" || true
+            node scripts/report-build-diagnostics.cjs --resources after || true
           fi
           exit "$build_status"
 
