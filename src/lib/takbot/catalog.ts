@@ -149,4 +149,24 @@ export const TAKBOT_PACKS = AI_CREDIT_PACKS;
 
 export const TAKBOT_ACTIONS = AI_CREDIT_ACTIONS;
 
+/** French names of the credit actions (the dashboard list keeps its English labels). */
+const ACTION_LABEL_FR: Record<string, string> = {
+  social_caption: "Légende et mots-clics",
+  multi_platform_post: "Une publication adaptée à chaque réseau",
+  review_reply: "Réponse à un avis",
+  chat_reply: "Réponse clavardage ou WhatsApp",
+  ad_copy_set: "Textes d’annonces (5 titres, 3 descriptions)",
+  seo_audit_summary: "Plan d’action SEO",
+  blog_article: "Article de blogue SEO (~1 000 mots)",
+  image: "Image générée",
+  voice_over: "Voix hors champ (par minute)",
+  short_video: "Vidéo courte (jusqu’à 15 s)",
+  monthly_report_summary: "Résumé du rapport mensuel",
+};
+
+/** A credit action's name in the visitor's language. */
+export function takbotActionLabel(action: { key: string; label: string }, lang: string): string {
+  return lang === "fr" ? ACTION_LABEL_FR[action.key] ?? action.label : action.label;
+}
+
 export const MAX_PROMPT_CHARS = 4000;

@@ -538,7 +538,7 @@ export function SeoProductPage({ packages }: { packages: MarketplaceCard[] }) {
 
       {/* 9. FAQ */}
       <Section id="seo-faq" tinted title={tx({ fr: "Questions fréquentes", en: "Frequently asked questions" })}>
-        <div className="mx-auto grid max-w-3xl gap-3">
+        <div className="grid max-w-3xl gap-3">
           {FAQ.map((f) => (
             <details key={f.q.en} className="tk-faq tk-glass group rounded-2xl px-5 py-4 open:bg-white/[0.06]">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-[15px] font-semibold">

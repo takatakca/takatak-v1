@@ -1171,7 +1171,8 @@ html[data-promo-open] .tk-plan-dock { opacity: 0 !important; pointer-events: non
 .hp-kiosk-roll { animation: hp-kiosk-roll 14s linear infinite; }
 @keyframes hp-kiosk-roll { to { transform: translateY(-50%); } }
 .hp-ticket-in { animation: hp-ticket-in 0.55s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
-@keyframes hp-ticket-in { from { opacity: 0; transform: translateX(24px) scale(0.96); box-shadow: 0 0 0 2px rgb(41 195 255 / 0.8); } }
+/* Revealed by a clip, never by transparency: the text keeps its full contrast while it slides in. */
+@keyframes hp-ticket-in { from { clip-path: inset(0 0 0 100% round 12px); transform: translateX(24px) scale(0.96); box-shadow: 0 0 0 2px rgb(41 195 255 / 0.8); } to { clip-path: inset(0 0 0 0 round 12px); } }
 @media (prefers-reduced-motion: reduce) { .hp-kiosk-roll, .hp-ticket-in { animation: none; } }
 
 /* Telecom scene (TelecomScene.tsx): light runs along the wires. */
