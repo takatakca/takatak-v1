@@ -1,3 +1,27 @@
+# Social publishing engine handoff — 2026-11-06
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Owner directive of
+2026-11-06 (P0: Social Manager + Studio, Metricool-level). Read
+`docs/SOCIAL_STUDIO_GAP_ASSESSMENT_2026-11-06.md` (current state with evidence) and
+`docs/SOCIAL_PUBLISHING_ENGINE.md` (design, rules, operations) first.
+
+- Branch `p0/social-publishing-engine-20261106` from main `52290cda`. No schema change.
+- Delivered: approval decisions, durable publication jobs on the existing `Job` model,
+  Facebook Page Graph adapter (feed/photo, verify, reconcile), publish-now / schedule /
+  cancel / receipt API, cron and ops-worker ticks, My tasks and Posts actions,
+  `npm run qa:social-publishing` (20 checks) in CI.
+- Not done: live Facebook publication (owner step on an authorized Page), production
+  cron trigger on Coolify, real-database lease test, other networks' publishing,
+  Studio PR #256 fixes listed in the gap assessment, FR copy on legacy Social pages.
+- Exact next step: owner enables the cron trigger and publishes one test post; then
+  P0-D (Studio draft → selected Facebook account → approve → publish) and the
+  per-connection capability profile (P0-B).
+- Rules kept: V1 identity/billing authority, `SOCIAL_CONNECTION_SETUP_CLIENT_IDS`
+  through existing gates, X paid API off, no dependency installation outside the
+  existing lockfile, no merge/deploy claimed.
+
+---
+
 # REVEW review cockpit handoff — 2026-10-31
 
 Branch `codex/review-ecosystem`, based on main 35c62f0. Native V1 review cockpit, private unified feed, capability registry, existing AI queue action and tighter QMAPS reply ownership/acknowledgement. No migration or deployment. Main details and counterpart links: [REVEW_REVIEW_ECOSYSTEM.md](REVEW_REVIEW_ECOSYSTEM.md). Local 15 cockpit, 4 QMAPS bridge and 13 QMAPS sync checks passed; Prisma/Growth-wide checks blocked by engine-host 403. Gmail/Drive/scheduling tools unavailable; no 30-minute email task is active. CI on source 8c3cfb8 passed: https://github.com/takatakca/takatak-v1/actions/runs/41190779123 (real Prisma generation, tests, full typecheck/lint/build). Next: coordinator reviews the feature branch; no deployment by REVEW. — REVEW
