@@ -66,6 +66,17 @@ export function AnimatedPromoInvite() {
 
   const suppressed = isAuthenticated || FORM_PAGES.some((page) => pathname.startsWith(page));
 
+  // While the full card is open, bottom bars (the homepage plan dock) step aside so nothing overlaps.
+  const cardOpen = open && !mini && !suppressed;
+  useEffect(() => {
+    if (!cardOpen) return;
+    const root = document.documentElement;
+    root.dataset.promoOpen = "1";
+    return () => {
+      delete root.dataset.promoOpen;
+    };
+  }, [cardOpen]);
+
   useEffect(() => {
     if (suppressed || armed.current) return;
     if (alreadySeen() || isPhone()) return;

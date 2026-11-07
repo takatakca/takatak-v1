@@ -211,9 +211,9 @@ export function TakbotSection() {
             <ul className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
               {TAKBOT_PACKS.map((p, i) => (
                 <li key={p.key} className={`hp-glow relative flex flex-col rounded-[20px] p-5 ring-1 ${i === best ? "bg-white/[0.07] ring-[#29C3FF]/50" : "bg-white/[0.03] ring-white/10"}`}>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                     <p className="text-[14px] font-semibold text-white">{p.label}</p>
-                    {i === best && <span className="rounded-full bg-[#29C3FF]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#7FD8FF]">{t.best[lang]}</span>}
+                    {i === best && <span className="whitespace-nowrap rounded-full bg-[#29C3FF]/15 px-2 py-0.5 text-[10.5px] font-semibold text-[#7FD8FF]">{t.best[lang]}</span>}
                   </div>
                   <p className="mt-3 text-[13px] text-white/55">
                     {p.credits.toLocaleString(lang === "fr" ? "fr-CA" : "en-CA")} {t.credits[lang]}

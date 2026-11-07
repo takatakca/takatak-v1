@@ -1160,7 +1160,12 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .sc[data-s=""] *, .sc:not([data-s]) * { transition: none !important; animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .sc * { transition: none !important; animation: none !important; }
+  /* Without the pop animation, show the finished state instead of leaving it hidden. */
+  .sc[data-s*="0"] .sc-pop { opacity: 1; transform: none; }
 }
+
+/* The new-client card (AnimatedPromoInvite.tsx) and the plan dock never overlap: the dock waits until the card folds. */
+html[data-promo-open] .tk-plan-dock { opacity: 0 !important; pointer-events: none !important; }
 
 /* Kiosk scene (KioskScene.tsx): the menu rolls; a new kitchen ticket slides in. */
 .hp-kiosk-roll { animation: hp-kiosk-roll 14s linear infinite; }

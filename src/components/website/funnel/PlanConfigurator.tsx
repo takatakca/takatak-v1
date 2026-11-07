@@ -1,14 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { ArrowDown, ArrowRight, Check, Headset } from "lucide-react";
 
-import { cadenceSuffix, money, useCopy } from "@/components/website/premium/ui";
+import { accentStyle, cadenceSuffix, CategoryIcon, money, useCopy } from "@/components/website/premium/ui";
 import { ANNUAL_PREPAY_PERCENT, annualPrepayQuote } from "@/lib/promotions/catalog";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { CORE_CATEGORIES, type CoreCategory } from "@/lib/website/core-categories";
 import { BUSINESS_TYPES, GOALS, fill, homeCopy, homeV2 } from "@/lib/website/home-funnel";
-import { SERVICE_MEDIA } from "@/lib/website/home-media";
 import { useHomePlan } from "@/lib/website/home-plan";
 import { MIMT_PLAN_LIST } from "@/lib/website/mimt-plans";
 import { Link } from "@/lib/website/nav";
@@ -83,7 +81,6 @@ export function PlanConfigurator() {
             <ul className="hp-divide hp-line mt-8 border-y">
               {CORE_CATEGORIES.map((c) => {
                 const on = plan.has(c.key);
-                const media = SERVICE_MEDIA[c.key];
                 // The phone is MIMT, sold in the MIMT app: this row opens the phone chapter instead of the cart.
                 if (c.key === "voip") {
                   return (
@@ -96,8 +93,8 @@ export function PlanConfigurator() {
                         }}
                         className="group flex w-full items-center gap-4 py-4 text-left"
                       >
-                        <span className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl ring-2 ring-[var(--hp-cta)]">
-                          <Image src={media.photo} alt="" fill sizes="44px" className="object-cover" style={{ objectPosition: media.focus, transform: `scale(${media.zoom})` }} />
+                        <span className="shrink-0 rounded-2xl ring-2 ring-[var(--hp-cta)] ring-offset-2 ring-offset-[var(--hp-bg)]" style={accentStyle(c)}>
+                          <CategoryIcon category={c} size={44} />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="hp-ink block text-[16px] font-semibold">{tk(`cat.${c.key}.name`)}</span>
@@ -120,8 +117,11 @@ export function PlanConfigurator() {
                       onClick={() => plan.toggle(c.key)}
                       className="group flex w-full items-center gap-4 py-4 text-left"
                     >
-                      <span className={`relative h-11 w-11 shrink-0 overflow-hidden rounded-xl transition-all duration-300 ${on ? "opacity-100 ring-2 ring-[var(--hp-cta)]" : "opacity-60 grayscale"}`}>
-                        <Image src={media.photo} alt="" fill sizes="44px" className="object-cover" style={{ objectPosition: media.focus, transform: `scale(${media.zoom})` }} />
+                      <span
+                        className={`shrink-0 rounded-2xl transition-all duration-300 ${on ? "ring-2 ring-[var(--hp-cta)] ring-offset-2 ring-offset-[var(--hp-bg)]" : "opacity-80 group-hover:opacity-100"}`}
+                        style={accentStyle(c)}
+                      >
+                        <CategoryIcon category={c} size={44} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className={`block text-[16px] font-semibold transition-colors ${on ? "hp-ink" : "hp-ink-2"}`}>{tk(`cat.${c.key}.name`)}</span>
