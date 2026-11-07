@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Read-only readiness probe for a live TAKATAK deployment. Sends no email and
-// no SMS, reads no data, and needs no secrets.
+// Passive read-only readiness probe by default. Explicit --active-probes
+// enables synthetic login POST and unsigned webhook POST probes. Never
+// attempts a real SMS or changes provider settings.
 //
-//   node scripts/ops/live-readiness.mjs --origin https://staging.takatak.ca
+//   node scripts/ops/live-readiness.mjs --origin https://takatak.ca
+//   node scripts/ops/live-readiness.mjs --origin https://takatak.ca --active-probes
 //
 // Checks: health; email sign-in configuration (by asking for a code for an
 // address that cannot exist: a configured server answers "not found", an
@@ -11,6 +13,7 @@
 // configuration (each answers "not configured" until its secrets are set).
 
 import { randomUUID } from "node:crypto";
+import { assessLiveReadiness } from "./readiness-contract.mjs";
 
 function arg(name) {
   const i = process.argv.indexOf(name);
@@ -25,6 +28,13 @@ try {
   process.exit(1);
 }
 
+const activeProbes = process.argv.includes("--active-probes");
+const expectReleaseSha = process.argv.includes("--expect-sha");
+const expectedSha = arg("--expect-sha");
+if (expectReleaseSha && !/^[0-9a-f]{40}$/.test(expectedSha ?? "")) {
+  console.error("--expect-sha requires an exact 40-character lowercase Git commit SHA");
+  process.exit(2);
+}
 const results = [];
 function line(state, label, detail) {
   results.push(state);
@@ -41,18 +51,33 @@ async function request(path, init = {}) {
     } catch {
       json = null;
     }
-    return { status: response.status, json, text };
+    return {
+      status: response.status, json, text,
+      releaseSha: response.headers.get("X-TAKATAK-Release"),
+    };
   } catch (error) {
-    return { status: 0, json: null, text: String(error) };
+    return { status: 0, json: null, text: String(error), releaseSha: null };
   }
 }
 
 console.log(`TAKATAK readiness: ${origin}\n`);
 
 const ready = await request("/api/health/ready");
-line(ready.json?.ok ? "OK" : "FAIL", "health", ready.json ? JSON.stringify(ready.json.checks ?? ready.json) : `HTTP ${ready.status}`);
+const readiness = assessLiveReadiness(ready);
+line(readiness.ok ? "OK" : "FAIL", "health", readiness.reason);
+const observedSha = ready.releaseSha;
+if (expectReleaseSha) {
+  line(observedSha === expectedSha ? "OK" : "FAIL", "release SHA",
+    observedSha === expectedSha ? `exact ${expectedSha}` :
+      observedSha ? "release header does not match expected commit" : "release header missing");
+} else if (observedSha && /^[0-9a-f]{40}$/.test(observedSha)) {
+  line("INFO", "release SHA", `reported ${observedSha}; no expected SHA supplied`);
+} else {
+  line("INFO", "release SHA", "not attested; use --expect-sha after an authorized deploy");
+}
 
 // Email sign-in: an address that cannot exist never receives anything.
+if (activeProbes) {
 const probe = await request("/api/auth/login", {
   method: "POST",
   headers: { "Content-Type": "application/json", Accept: "application/json", Origin: origin, Referer: `${origin}/login` },
@@ -61,6 +86,9 @@ const probe = await request("/api/auth/login", {
 if (probe.json?.code === "configuration_unavailable") line("FAIL", "email sign-in", "EMAIL_USER / EMAIL_PASSWORD (or SendGrid) missing on this server");
 else if (probe.json?.code === "email_not_found") line("OK", "email sign-in", "mail provider configured");
 else line("WARN", "email sign-in", `unexpected answer HTTP ${probe.status} ${probe.json?.code ?? ""}`);
+} else {
+  line("INFO", "email sign-in", "login POST skipped (pass --active-probes to opt in)");
+}
 
 // Phone sign-in: the login page's Supabase project and its public auth settings.
 const login = await request("/login");
@@ -81,7 +109,7 @@ if (!login.text.includes("TAKATAK SMS") && !chunks.length) {
   try {
     const settings = await (await fetch(`${supabaseUrl}/auth/v1/settings`, { headers: { apikey: publicKey }, signal: AbortSignal.timeout(15_000) })).json();
     const ref = supabaseUrl.slice(8, 28);
-    if (settings.external?.phone) line("OK", "phone sign-in", `Supabase ${ref}: Phone provider on (${settings.sms_provider})`);
+    if (settings.external?.phone) line("INFO", "phone sign-in", `Supabase ${ref}: public Phone setting enabled; actual SMS delivery untested`);
     else line("FAIL", "phone sign-in", `Supabase ${ref}: Phone provider OFF — run scripts/ops/supabase-phone-auth.mjs --project ${ref} --apply`);
   } catch {
     line("WARN", "phone sign-in", "could not read Supabase auth settings");
@@ -96,6 +124,7 @@ if (script.status !== 200) {
   line("OK", "Growth embeds", "takatak-analytics.js served");
   const gateway = await request("/api/ai/credits/balance?clientId=00000000-0000-4000-8000-000000000000");
   line(gateway.status === 401 ? "OK" : gateway.status === 503 ? "TODO" : "WARN", "AI gateway API", gateway.status === 503 ? "TAKATAK_AI_GATEWAY_TOKEN not set" : `HTTP ${gateway.status}`);
+  if (activeProbes) {
   const cron = await request("/api/cron/growth-agents");
   line(cron.status === 401 ? "OK" : "WARN", "growth cron", cron.status === 401 ? "protected (needs CRON_SECRET)" : `HTTP ${cron.status}`);
   for (const [path, label] of [
@@ -105,8 +134,11 @@ if (script.status !== 200) {
     const hook = await request(path, { method: "POST", body: "{}" });
     line(hook.status === 400 ? "OK" : hook.status === 503 ? "TODO" : "WARN", label, hook.status === 503 ? "webhook secret not set" : `HTTP ${hook.status} (rejects unsigned calls)`);
   }
+  } else {
+    line("INFO", "growth cron/webhooks", "active endpoint probes skipped");
+  }
 }
 
 const failed = results.filter((r) => r === "FAIL").length;
-console.log(failed ? `\n${failed} blocking problem(s).` : "\nNo blocking problem found.");
+console.log(failed ? `\n${failed} blocking problem(s) in checks performed.` : "\nNo blocking problem found in checks performed (not a deployment/SMS E2E certification).");
 process.exit(failed ? 1 : 0);
