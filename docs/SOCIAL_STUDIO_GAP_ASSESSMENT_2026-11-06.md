@@ -47,9 +47,13 @@ publishing adapter and no publishing worker existed under `src/lib/social`.
 
 Instagram, Threads, YouTube, TikTok, Twitch, Google Business, Meta Ads, Google Ads,
 Looker Studio, web, blog. Their tokens, scopes and expiry are stored on
-`SocialProviderConnection` + `SocialCredential`; a per-connection capability profile
-API (scopes → read/publish/inbox/analytics) does not exist yet and is the next
-connector task (P0-B).
+`SocialProviderConnection` + `SocialCredential`. The per-connection capability
+profile (token health, granted/missing scopes, publish/analytics/inbox state and the
+action to enable it) now ships on this branch in
+`src/lib/social/connections/capability-profile.ts`, is returned with every
+connection summary, exposed at `GET /api/social/connections/[id]/capabilities`,
+and rendered on the Accounts manager (P0-B first slice; it describes stored
+state and does not call providers).
 
 ## 5. What must be repaired or authorized to publish professionally
 

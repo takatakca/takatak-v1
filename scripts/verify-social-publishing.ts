@@ -21,6 +21,7 @@ import {
   SOCIAL_PUBLICATION_RECEIPT_VERSION,
 } from "../src/lib/social/publishing/publication-model";
 import { accountPublishReady, chooseHandoffAccount } from "../src/lib/ai/handoff";
+import { assessTokenHealth, describeConnectionCapabilities } from "../src/lib/social/connections/capability-profile";
 import {
   isSocialPublicationJobMetadata,
   publicationContentHash,
@@ -403,6 +404,48 @@ const deps = (db: PublicationDb, transport: FacebookPublishTransport) => ({
     assert.deepEqual(chooseHandoffAccount(accounts, "missing", null), { ok: false, reason: "account_unavailable" });
     const none = chooseHandoffAccount([], null, null);
     assert.deepEqual(none, { ok: true, account: null });
+  });
+
+  await check("capability profile reports honest states per provider", () => {
+    const base = {
+      status: "connected",
+      hasCredential: true,
+      accessTokenExpiresAt: new Date(NOW.getTime() + 30 * 24 * 3_600_000).toISOString(),
+      refreshTokenExpiresAt: null,
+      lastErrorCode: null,
+      externalSubjectId: "subject",
+      now: NOW,
+    };
+    const page = { platform: "facebook", status: "connected", accessStatus: "selected", accountType: "facebook_page", canPublish: true };
+    const meta = describeConnectionCapabilities({ ...base, provider: "meta", scopes: ["public_profile", "pages_show_list", "pages_read_engagement", "pages_manage_posts", "read_insights"], accounts: [page] });
+    assert.equal(meta.tokenHealth, "healthy");
+    assert.equal(meta.capabilities.find((c) => c.key === "publish")?.state, "available");
+    assert.equal(meta.capabilities.find((c) => c.key === "analytics")?.state, "available");
+    assert.equal(meta.capabilities.find((c) => c.key === "inbox")?.state, "not_built");
+    assert.equal(meta.reconnectRequired, false);
+    const noScope = describeConnectionCapabilities({ ...base, provider: "meta", scopes: ["pages_read_engagement"], accounts: [page] });
+    const publish = noScope.capabilities.find((c) => c.key === "publish");
+    assert.equal(publish?.state, "missing_scope");
+    assert.deepEqual(publish?.missingScopes, ["pages_manage_posts"]);
+    assert.equal(noScope.reconnectRequired, true);
+    const noPage = describeConnectionCapabilities({ ...base, provider: "meta", scopes: ["pages_manage_posts", "pages_read_engagement", "read_insights"], accounts: [] });
+    assert.equal(noPage.capabilities.find((c) => c.key === "publish")?.action, "select_account");
+    const noTask = describeConnectionCapabilities({ ...base, provider: "meta", scopes: ["pages_manage_posts", "pages_read_engagement", "read_insights"], accounts: [{ ...page, canPublish: false }] });
+    assert.equal(noTask.capabilities.find((c) => c.key === "publish")?.state, "missing_scope");
+    const ig = describeConnectionCapabilities({ ...base, provider: "instagram", scopes: ["instagram_business_basic", "instagram_business_manage_insights"], accounts: [] });
+    assert.equal(ig.capabilities.find((c) => c.key === "publish")?.state, "not_built");
+    assert.ok(ig.missingScopes.includes("instagram_business_content_publish"));
+    const x = describeConnectionCapabilities({ ...base, provider: "x", scopes: ["tweet.read", "users.read"], accounts: [] });
+    assert.equal(x.capabilities.find((c) => c.key === "publish")?.state, "blocked_cost");
+    const tiktok = describeConnectionCapabilities({ ...base, provider: "tiktok", scopes: ["user.info.stats", "video.list"], accounts: [] });
+    assert.equal(tiktok.capabilities.find((c) => c.key === "media_video")?.state, "needs_app_review");
+    const expired = describeConnectionCapabilities({ ...base, provider: "meta", accessTokenExpiresAt: new Date(NOW.getTime() - 1000).toISOString(), scopes: ["pages_manage_posts", "pages_read_engagement", "read_insights"], accounts: [page] });
+    assert.equal(expired.tokenHealth, "expired");
+    assert.equal(expired.capabilities.find((c) => c.key === "publish")?.state, "needs_reconnect");
+    assert.equal(assessTokenHealth({ ...base, accessTokenExpiresAt: new Date(NOW.getTime() + 3_600_000).toISOString() }), "expiring_soon");
+    assert.equal(assessTokenHealth({ ...base, status: "disconnected" }), "missing");
+    assert.equal(assessTokenHealth({ ...base, lastErrorCode: "oauth_error" }), "error");
+    assert.equal(describeConnectionCapabilities({ ...base, provider: "unknown_provider", scopes: [], accounts: [] }).capabilities.length, 0);
   });
 
   await check("source guards: no migration, no token in logs, cron and worker wired", () => {

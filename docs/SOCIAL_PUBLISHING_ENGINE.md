@@ -17,7 +17,9 @@ billing or connection system.
 | Worker tick | `runSocialPublicationWorkerTick` wired into `GET/POST /api/cron/social-sync-jobs` and `scripts/run-social-sync-worker.ts` | IMPLEMENTED; production trigger is an owner step (below) |
 | Publish now / schedule / cancel / receipt | `POST|DELETE|GET /api/social/posts/[postId]/publish` | IMPLEMENTED AND TESTED (route contracts) |
 | UI actions on My tasks and Posts | `src/components/social/publication-actions.tsx`, `my-tasks-view.tsx`, `post-list.tsx` | IMPLEMENTED; browser QA pending |
-| Other networks (Instagram, Threads, TikTok, YouTube, Pinterest, X, Bluesky, LinkedIn, Google Business) | — | NOT BUILT for publishing (connectors exist for OAuth, sync and analytics only) |
+| Per-connection capability profile (token health, granted/missing scopes, what works, what to do) | `src/lib/social/connections/capability-profile.ts`, `GET /api/social/connections/[connectionId]/capabilities`, strip in the Accounts manager | IMPLEMENTED AND TESTED (describes stored state; no provider call) |
+| AI Studio handoff chooses the delivery account (defaults to a publish-ready Facebook Page) | `src/lib/ai/handoff.ts` (`chooseHandoffAccount`), Saved outputs card | IMPLEMENTED AND TESTED |
+| Other networks (Instagram, Threads, TikTok, YouTube, Pinterest, X, Bluesky, LinkedIn, Google Business) | — | NOT BUILT for publishing (connectors exist for OAuth, sync and analytics only); the capability profile states the exact missing scope or blocker per provider |
 
 No Prisma schema change. Job type `approve_post` with `metadata.source = "social_publication_v1"`
 is the publication delivery job; `PostStatus` keeps its existing values and the finer
