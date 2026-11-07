@@ -55,7 +55,7 @@ function metric(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-async function providerJson(url: URL, init: RequestInit): Promise<ProviderObject> {
+export async function providerJson(url: URL, init: RequestInit): Promise<ProviderObject> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15_000);
   try {
@@ -98,7 +98,7 @@ function dates(days: number, endingAt = new Date()): { start: string; end: strin
   return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
 }
 
-async function credentialToken(clientId: string, connectionId: string): Promise<{ token: string; scopes: string[] }> {
+export async function credentialToken(clientId: string, connectionId: string): Promise<{ token: string; scopes: string[] }> {
   const prisma = getPrisma();
   if (!prisma) throw new ServiceError("unavailable", "Connection database unavailable.", { status: 503 });
   const connection = await prisma.socialProviderConnection.findFirst({
