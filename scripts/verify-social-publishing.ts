@@ -16,13 +16,14 @@ import {
   canQueuePublication,
   parseScheduleRequest,
   publicationBackoffMs,
-  publicationContentHash,
   readPublicationReceipt,
   withPublicationReceipt,
   SOCIAL_PUBLICATION_RECEIPT_VERSION,
 } from "../src/lib/social/publishing/publication-model";
+import { accountPublishReady, chooseHandoffAccount } from "../src/lib/ai/handoff";
 import {
   isSocialPublicationJobMetadata,
+  publicationContentHash,
   processSocialPublicationJob,
   queueSocialPostPublication,
   type PublicationDb,
@@ -381,6 +382,28 @@ const deps = (db: PublicationDb, transport: FacebookPublishTransport) => ({
   assert.deepEqual(await queueSocialPostPublication({ clientId: CLIENT, socialPostId: "post-1", requestedByProfileId: null, scheduledFor: NOW }, { db: done.db, now: () => NOW }), { ok: false, reason: "already_published" });
   assert.equal(pending.jobs.length + done.jobs.length, 0);
 });
+
+  await check("AI Studio handoff targets a publish-ready Facebook Page and validates explicit choices", () => {
+    assert.equal(accountPublishReady({ platform: "facebook", accountType: "facebook_page", accessStatus: "selected", metadata: { canPublish: true } }), true);
+    assert.equal(accountPublishReady({ platform: "facebook", accountType: "facebook_page", accessStatus: "selected", metadata: { canPublish: false } }), false);
+    assert.equal(accountPublishReady({ platform: "instagram", accountType: null, accessStatus: "selected", metadata: null }), false);
+    const older = new Date(NOW.getTime() - 60_000);
+    const accounts = [
+      { id: "ig", platform: "instagram", status: "connected", businessBrandId: "b1", publishReady: false, updatedAt: NOW },
+      { id: "fb", platform: "facebook", status: "connected", businessBrandId: "b1", publishReady: true, updatedAt: older },
+      { id: "other-brand", platform: "facebook", status: "connected", businessBrandId: "b2", publishReady: true, updatedAt: NOW },
+      { id: "expired", platform: "facebook", status: "expired", businessBrandId: "b1", publishReady: true, updatedAt: NOW },
+    ];
+    const auto = chooseHandoffAccount(accounts, null, "b1");
+    assert.equal(auto.ok && auto.account?.id, "fb");
+    const explicit = chooseHandoffAccount(accounts, "ig", "b1");
+    assert.equal(explicit.ok && explicit.account?.id, "ig");
+    assert.deepEqual(chooseHandoffAccount(accounts, "other-brand", "b1"), { ok: false, reason: "account_unavailable" });
+    assert.deepEqual(chooseHandoffAccount(accounts, "expired", "b1"), { ok: false, reason: "account_unavailable" });
+    assert.deepEqual(chooseHandoffAccount(accounts, "missing", null), { ok: false, reason: "account_unavailable" });
+    const none = chooseHandoffAccount([], null, null);
+    assert.deepEqual(none, { ok: true, account: null });
+  });
 
   await check("source guards: no migration, no token in logs, cron and worker wired", () => {
   const jobs = readFileSync("src/lib/social/publishing/publication-jobs.ts", "utf8");

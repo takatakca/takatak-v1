@@ -8,7 +8,7 @@
 
 import "server-only";
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 
 import { loadClientSocialEntitlementContext } from "@/lib/billing/social/entitlement-gates";
@@ -36,7 +36,7 @@ import {
   assessPublicationReadiness,
   canQueuePublication,
   publicationBackoffMs,
-  publicationContentHash,
+  publicationContentMaterial,
   readPublicationReceipt,
   receiptNeedsReconciliation,
   record,
@@ -54,6 +54,14 @@ export type SocialPublicationJobMetadata = {
   requestedByProfileId: string | null;
   requestedAt: string;
 };
+
+export function publicationContentHash(input: {
+  caption: string;
+  link?: string | null;
+  mediaUrls?: string[];
+}): string {
+  return createHash("sha256").update(publicationContentMaterial(input)).digest("hex");
+}
 
 export function isSocialPublicationJobMetadata(value: unknown): value is SocialPublicationJobMetadata {
   const raw = record(value);

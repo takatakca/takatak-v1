@@ -5,8 +5,9 @@
 // is the only evidence that may mark a post `published`. A Job row
 // (type `approve_post`, metadata.source = SOCIAL_PUBLICATION_JOB_SOURCE) is the
 // durable queue entry with lease/attempt columns. No schema change.
-
-import { createHash } from "node:crypto";
+//
+// This module is imported by client components for labels and types, so it
+// must stay free of Node-only imports; hashing lives in publication-jobs.ts.
 
 export const SOCIAL_PUBLICATION_JOB_SOURCE = "social_publication_v1" as const;
 export const SOCIAL_PUBLICATION_RECEIPT_VERSION = 1 as const;
@@ -97,18 +98,17 @@ export function canonicalCaption(caption: string): string {
   return caption.replace(/\r\n/g, "\n").trim();
 }
 
-export function publicationContentHash(input: {
+/** Canonical bytes that identify one publication's content (hashed server-side). */
+export function publicationContentMaterial(input: {
   caption: string;
   link?: string | null;
   mediaUrls?: string[];
 }): string {
-  const hash = createHash("sha256");
-  hash.update(canonicalCaption(input.caption));
-  hash.update("\u0000");
-  hash.update(input.link?.trim() ?? "");
-  hash.update("\u0000");
-  hash.update((input.mediaUrls ?? []).map((url) => url.trim()).join("\n"));
-  return hash.digest("hex");
+  return [
+    canonicalCaption(input.caption),
+    input.link?.trim() ?? "",
+    (input.mediaUrls ?? []).map((url) => url.trim()).join("\n"),
+  ].join("\u0000");
 }
 
 /** Read a durable receipt; anything malformed is treated as absent. */
