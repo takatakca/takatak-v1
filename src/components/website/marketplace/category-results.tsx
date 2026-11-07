@@ -175,14 +175,6 @@ export function CategoryResults({
         );
         break;
 
-      case "rating":
-        result.sort(
-          (left, right) =>
-            right.rating -
-            left.rating,
-        );
-        break;
-
       default:
         break;
     }
