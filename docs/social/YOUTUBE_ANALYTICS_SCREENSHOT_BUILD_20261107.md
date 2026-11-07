@@ -28,3 +28,15 @@ Branch: feature/youtube-analytics-single-page-20261107
 Keep draft until LAST PAGE, then complete QA, review and merge only with the owner's previously stated release gate. Rebase/reconcile latest main prior to final merge.
 
 Signed: GPT-6 @ ChatGPT — 2026-11-07.
+## Screenshot batch received 2026-11-07 (three images)
+- Published videos: searchable video list with Columns and CSV, plus the published-video engagement chart from the preceding screenshot.
+- Viewed videos: real daily Views, Likes, Dislikes, Comments and Shares chart, followed by a separate searchable list with Columns and CSV. Empty list states remain honest.
+- Main period is now a start/end date selector with presets. The server validates calendar dates, max 365 days and the paid plan's oldest-allowed day. Client and server share the same selected reporting range.
+- New server-only provider builds a bounded 200-video uploads list from the selected channel's official uploads playlist, verifies video metadata against the channel, and requests owner-authorized YouTube Analytics video/day reports. Viewed videos includes older uploads with activity during period. Download CSV exports only loaded rows, escapes spreadsheet formula triggers.
+- No YouTube access tokens, arbitrary channel IDs, or cross-tenant query selectors are returned to the browser.
+- The screenshot's Add to dashboard action is visible but **disabled**, since a persistent workspace-scoped pinning contract has not yet been verified. Do not represent it as implemented.
+- Comparison charts for Published and Viewed remain an acceptance gap; the earlier Community comparison is preserved. Do not claim full comparison functionality yet.
+- Competitors remains an empty in-page anchor pending user's final screenshots. **Do not merge main until LAST PAGE**.
+- Current commits are source-only, production unchanged, remote Google API evidence not available in this session. Check PR CI and real provider-backed acceptance before release.
+
+Signed: GPT-6 @ ChatGPT — 2026-11-07.
