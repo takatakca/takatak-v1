@@ -40,6 +40,8 @@ import {
 } from "@/lib/social/media/remote-image";
 import { getSelectedFacebookPageSyncSnapshot } from "@/lib/social/sync/facebook-page-initial-sync";
 import { hasSocialHistory } from "@/lib/social/social-history";
+import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
+import { SOCIAL_BILLING_HREF } from "@/lib/billing/social/billing-banner-policy";
 
 const SOCIAL_PLATFORMS = {
   instagram: {
@@ -419,6 +421,7 @@ export default async function SocialPlatformPage({
       "view_social",
       "/dashboard/social/youtube",
     );
+    const socialBilling = await getSocialShellBilling(access.activeClientId);
     const brand = await resolveBrandSessionContextFromRequest(access);
     const hasPreviousSocialHistory = await hasSocialHistory({
       clientId: access.activeClientId,
@@ -466,6 +469,15 @@ export default async function SocialPlatformPage({
         profileImageUrl={profileImageUrl}
         resolutionIssue={resolutionIssue}
         needsSelectionConnectionId={needsSelectionConnectionId}
+        billingExempt={socialBilling?.billingExempt ?? false}
+        hasPaidPlan={socialBilling?.hasPaidPlan ?? false}
+        analyticsHistoryDays={socialBilling?.analyticsHistoryDays ?? 0}
+        canCompare={Boolean(
+          socialBilling?.billingExempt ||
+            socialBilling?.entitlements.advancedAnalytics ||
+            socialBilling?.entitlements.apiAccess,
+        )}
+        billingHref={SOCIAL_BILLING_HREF}
       />
     );
   }
