@@ -3,6 +3,8 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { AI_CREDIT_ACTIONS } from "@/lib/growth/ai-engine";
+import { reviewApprovalHash } from "@/lib/reputation/workspace-navigation";
+import { navigateReviewWorkspace } from "./review-workspace-navigation";
 import {
   requestReviewDraftAction,
   type ReviewDraftState,
@@ -46,9 +48,13 @@ export function ReviewDraftForm({
           confirmer.{" "}
           <Link
             className="underline"
-            href="/dashboard/growth/reviews#review-approvals"
+            href={reviewApprovalHash(state.runId)}
+            onNavigate={(event) => {
+              event.preventDefault();
+              navigateReviewWorkspace(reviewApprovalHash(state.runId));
+            }}
           >
-            Ouvrir le studio de réponses
+            Ouvrir cette réponse dans le studio
           </Link>
         </p>
       )}

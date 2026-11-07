@@ -15,12 +15,25 @@ import {
   Save,
   Search,
   ShieldCheck,
+  Sparkles,
+  Send,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { reviewSource } from "@/lib/reputation/sources";
 import { canonicalReviewReply } from "@/lib/reputation/review-target-model";
+import { AI_CREDIT_ACTIONS } from "@/lib/growth/ai-engine";
+import {
+  reviewApprovalHash,
+  reviewApprovalTarget,
+} from "@/lib/reputation/workspace-navigation";
+import {
+  navigateReviewWorkspace,
+  useReviewWorkspaceHash,
+} from "./review-workspace-navigation";
+import type { ReviewDraftGenerationState } from "@/lib/reputation/review-generation";
+import type { ReviewDraftPublicationState } from "@/lib/reputation/review-native-publication";
 
 export type ReviewApprovalRun = {
   id: string;
@@ -72,6 +85,23 @@ type EditorSession = {
   revision: number;
 };
 type Sessions = Record<string, EditorSession>;
+type OperationKind = "generation" | "publication";
+type OperationState = ReviewDraftGenerationState | ReviewDraftPublicationState;
+type OperationAction = (
+  previous: OperationState,
+  form: FormData,
+) => Promise<OperationState>;
+type OperationSession = { pending: boolean; result: OperationState };
+type OperationSessions = Record<
+  string,
+  Partial<Record<OperationKind, OperationSession>>
+>;
+const EMPTY_OPERATION: OperationSession = {
+  pending: false,
+  result: { ok: null },
+};
+const GENERATION_CREDITS =
+  AI_CREDIT_ACTIONS.find((action) => action.key === "review_reply")?.credits ?? 1;
 
 const PROCESSING = new Set(["queued", "running", "approved", "executing"]);
 const FINISHED = new Set(["completed", "rejected", "canceled"]);
@@ -183,6 +213,114 @@ function Timestamp({ value }: { value: string }) {
   );
 }
 
+function ReviewOperationForm({
+  run,
+  kind,
+  operation,
+  busy,
+  disabled,
+  action: serverAction,
+  onPending,
+  onResult,
+}: {
+  run: ReviewApprovalRun;
+  kind: OperationKind;
+  operation: OperationSession;
+  busy: boolean;
+  disabled: boolean;
+  action: OperationAction;
+  onPending: (pending: boolean) => void;
+  onResult: (result: OperationState) => void;
+}) {
+  const [, action, actionPending] = useActionState(
+    async (_previous: OperationState, form: FormData): Promise<OperationState> => {
+      try {
+        const result = await serverAction({ ok: null }, form);
+        onResult(result);
+        return result;
+      } catch {
+        const result = {
+          ok: false as const,
+          error:
+            kind === "generation"
+              ? "Le résultat de génération n’a pas pu être confirmé. Actualisez avant de réessayer."
+              : "La publication n’a pas pu être confirmée. Vérifiez le traitement et la source avant toute nouvelle tentative.",
+        };
+        onResult(result);
+        return result;
+      } finally {
+        onPending(false);
+      }
+    },
+    { ok: null },
+  );
+  const pending = busy || actionPending;
+  const generation = kind === "generation";
+  return (
+    <form
+      action={action}
+      onSubmit={(event) => {
+        if (pending || disabled || operation.result.ok === true) {
+          event.preventDefault();
+          return;
+        }
+        onPending(true);
+      }}
+      aria-busy={pending}
+      className="space-y-3 rounded-xl border border-blue-200 bg-blue-50 p-4"
+    >
+      <input type="hidden" name="runId" value={run.id} />
+      {!generation && (
+        <input
+          type="hidden"
+          name="expectedDraftHash"
+          value={run.draftHash ?? ""}
+        />
+      )}
+      <p className="text-xs font-semibold text-blue-900">
+        {generation ? "Créer le brouillon avec l’IA" : "Publier le texte approuvé"}
+      </p>
+      <p className="text-xs leading-6 text-slate-600">
+        {generation
+          ? `La mise en file est gratuite. Tarif de génération : ${GENERATION_CREDITS} crédit${GENERATION_CREDITS === 1 ? "" : "s"}. Relisez le brouillon avant de l’approuver; cette action ne publie rien.`
+          : "La publication utilise uniquement la réponse approuvée et enregistrée. Aucun crédit IA supplémentaire. La confirmation de la source est vérifiée séparément."}
+      </p>
+      <button
+        type="submit"
+        disabled={pending || disabled || operation.result.ok === true}
+        className={primary}
+      >
+        {generation ? (
+          <Sparkles aria-hidden className="h-4 w-4" />
+        ) : (
+          <Send aria-hidden className="h-4 w-4" />
+        )}
+        {operation.pending || actionPending
+          ? generation
+            ? "Génération…"
+            : "Publication…"
+          : operation.result.ok === true
+            ? generation
+              ? "Brouillon généré"
+              : "Source confirmée"
+            : generation
+              ? `Générer · ${GENERATION_CREDITS} crédit${GENERATION_CREDITS === 1 ? "" : "s"}`
+              : "Publier la réponse approuvée"}
+      </button>
+      {operation.result.ok === true && (
+        <p role="status" className="text-xs leading-6 text-blue-900">
+          {operation.result.message}
+        </p>
+      )}
+      {operation.result.ok === false && (
+        <p role="alert" className="text-xs leading-6 text-rose-800">
+          {operation.result.error}
+        </p>
+      )}
+    </form>
+  );
+}
+
 function ReviewEditor({
   run,
   session,
@@ -196,6 +334,12 @@ function ReviewEditor({
   onDecision,
   onFailure,
   onPending,
+  canManage,
+  generationAction,
+  publicationAction,
+  operations,
+  onOperationPending,
+  onOperationResult,
 }: {
   run: ReviewApprovalRun;
   session: EditorSession;
@@ -216,6 +360,12 @@ function ReviewEditor({
   ) => void;
   onFailure: (error: string) => void;
   onPending: (pending: boolean) => void;
+  canManage: boolean;
+  generationAction?: OperationAction;
+  publicationAction?: OperationAction;
+  operations: Partial<Record<OperationKind, OperationSession>>;
+  onOperationPending: (kind: OperationKind, pending: boolean) => void;
+  onOperationResult: (kind: OperationKind, result: OperationState) => void;
 }) {
   const statusKey = effectiveStatus(run, session);
   const status = STATUS[statusKey] ?? {
@@ -297,7 +447,11 @@ function ReviewEditor({
     },
     { ok: null },
   );
-  const pending = actionPending || session.pending;
+  const pending =
+    actionPending ||
+    session.pending ||
+    !!operations.generation?.pending ||
+    !!operations.publication?.pending;
   const confirmed = sourceConfirmed(run);
   const feedback = session.decision?.message || session.message;
   const error =
@@ -341,6 +495,45 @@ function ReviewEditor({
               "Le contenu de cet avis n’est plus disponible dans cet espace."}
           </p>
         </div>
+
+        {run.status === "queued" && canManage && generationAction && (
+          <ReviewOperationForm
+            run={run}
+            kind="generation"
+            operation={operations.generation ?? EMPTY_OPERATION}
+            busy={pending}
+            disabled={isRefreshing || !!run.blockedReason || !run.reviewText}
+            action={generationAction}
+            onPending={(value) => onOperationPending("generation", value)}
+            onResult={(result) => onOperationResult("generation", result)}
+          />
+        )}
+
+        {run.status === "approved" &&
+          statusKey === "approved" &&
+          run.source !== "takatak" &&
+          canDecide &&
+          publicationAction && (
+            <ReviewOperationForm
+              run={run}
+              kind="publication"
+              operation={operations.publication ?? EMPTY_OPERATION}
+              busy={pending}
+              disabled={
+                isRefreshing ||
+                dirty ||
+                session.needsReload ||
+                session.text !== run.draft ||
+                session.savedDraft !== run.draft ||
+                !!run.blockedReason ||
+                !run.draftHash ||
+                !run.draft
+              }
+              action={publicationAction}
+              onPending={(value) => onOperationPending("publication", value)}
+              onResult={(result) => onOperationResult("publication", result)}
+            />
+          )}
 
         <form
           action={action}
@@ -435,11 +628,12 @@ function ReviewEditor({
               </p>
             </div>
           )}
-          {statusKey === "awaiting_approval" && blockedReason && (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-900">
-              {blockedReason}
-            </p>
-          )}
+          {["queued", "awaiting_approval", "approved"].includes(statusKey) &&
+            blockedReason && (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-6 text-amber-900">
+                {blockedReason}
+              </p>
+            )}
 
           {editable && (
             <>
@@ -500,10 +694,21 @@ function ReviewEditor({
             </>
           )}
           {!editable && (dirty || stale) && (
-            <p className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-6 text-slate-600">
-              Ce traitement ne permet plus de modifier le texte. Votre version
-              locale reste visible ci-dessus.
-            </p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs leading-6 text-slate-600">
+              <p>
+                Ce traitement ne permet plus de modifier le texte. Votre version
+                locale reste visible ci-dessus.
+              </p>
+              <button
+                type="button"
+                disabled={pending || isRefreshing}
+                onClick={onReload}
+                className={button + " mt-3"}
+              >
+                <RefreshCw aria-hidden className="h-4 w-4" />
+                Charger la réponse enregistrée
+              </button>
+            </div>
           )}
           {feedback && (
             <p
@@ -564,6 +769,8 @@ export function ReviewApprovalCenter({
   canManage,
   decisionAction,
   editAction,
+  generationAction,
+  publicationAction,
   unavailable = false,
 }: {
   runs: ReviewApprovalRun[];
@@ -571,12 +778,20 @@ export function ReviewApprovalCenter({
   canManage: boolean;
   decisionAction: DecisionAction;
   editAction: EditAction;
+  generationAction?: OperationAction;
+  publicationAction?: OperationAction;
   unavailable?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const [group, setGroup] = useState<StatusGroup>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<Sessions>({});
+  const [operations, setOperations] = useState<OperationSessions>({});
+  const workspaceHash = useReviewWorkspaceHash();
+  const target = reviewApprovalTarget(workspaceHash);
+  const targetedRun = target.runId
+    ? runs.find((run) => run.id === target.runId)
+    : undefined;
   const [isRefreshing, startRefresh] = useTransition();
   const router = useRouter();
   const refresh = () => startRefresh(() => router.refresh());
@@ -615,9 +830,14 @@ export function ReviewApprovalCenter({
           a.id.localeCompare(b.id),
       );
   }, [runs, query, group, sessions]);
-  const selected = shown.find((run) => run.id === selectedId) ?? shown[0];
+  const targetOutsideFilters =
+    targetedRun && !shown.some((run) => run.id === targetedRun.id);
+  const queue = targetOutsideFilters ? [targetedRun, ...shown] : shown;
+  const selected = target.requested
+    ? targetedRun
+    : queue.find((run) => run.id === selectedId) ?? queue[0];
   const selectedIndex = selected
-    ? shown.findIndex((run) => run.id === selected.id)
+    ? queue.findIndex((run) => run.id === selected.id)
     : -1;
   const session = selected
     ? (sessions[selected.id] ?? newSession(selected))
@@ -634,8 +854,8 @@ export function ReviewApprovalCenter({
     return item && item.text !== item.savedDraft;
   }).length;
   const nextAwaiting = [
-    ...shown.slice(selectedIndex + 1),
-    ...shown.slice(0, Math.max(0, selectedIndex)),
+    ...queue.slice(selectedIndex + 1),
+    ...queue.slice(0, Math.max(0, selectedIndex)),
   ].find(
     (run) => effectiveStatus(run, sessions[run.id]) === "awaiting_approval",
   );
@@ -646,6 +866,22 @@ export function ReviewApprovalCenter({
     setSessions((previous) => ({
       ...previous,
       [run.id]: update(previous[run.id] ?? newSession(run)),
+    }));
+  const selectRun = (id: string) => {
+    setSelectedId(id);
+    navigateReviewWorkspace(reviewApprovalHash(id));
+  };
+  const updateOperation = (
+    runId: string,
+    kind: OperationKind,
+    update: (previous: OperationSession) => OperationSession,
+  ) =>
+    setOperations((previous) => ({
+      ...previous,
+      [runId]: {
+        ...previous[runId],
+        [kind]: update(previous[runId]?.[kind] ?? EMPTY_OPERATION),
+      },
     }));
 
   return (
@@ -764,7 +1000,8 @@ export function ReviewApprovalCenter({
                   role="status"
                   className="text-xs tabular-nums text-slate-600"
                 >
-                  {shown.length} sur {runs.length} traitements chargés
+                  {shown.length} sur {runs.length} traitements correspondent aux
+                  filtres
                 </p>
               </div>
               {unsaved > 0 && (
@@ -776,6 +1013,24 @@ export function ReviewApprovalCenter({
                     : "réponse locale non enregistrée"}{" "}
                   · conservées pendant votre navigation dans ce studio.
                 </p>
+              )}
+
+              {targetOutsideFilters && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs leading-6 text-blue-900">
+                  <p role="status">
+                    Le traitement demandé est affiché directement. Vos filtres
+                    restent appliqués au reste de la file.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigateReviewWorkspace(reviewApprovalHash())
+                    }
+                    className="mt-2 min-h-10 rounded font-semibold underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                  >
+                    Revenir à la file filtrée
+                  </button>
+                </div>
               )}
 
               {selected && session ? (
@@ -793,7 +1048,7 @@ export function ReviewApprovalCenter({
                       </p>
                     </div>
                     <div className="max-h-44 overflow-y-auto p-2 sm:max-h-72 xl:max-h-[720px]">
-                      {shown.map((run) => {
+                      {queue.map((run) => {
                         const status = STATUS[
                           effectiveStatus(run, sessions[run.id])
                         ] ?? { label: "État à vérifier" };
@@ -805,7 +1060,7 @@ export function ReviewApprovalCenter({
                             key={run.id}
                             type="button"
                             aria-pressed={run.id === selected.id}
-                            onClick={() => setSelectedId(run.id)}
+                            onClick={() => selectRun(run.id)}
                             className={[
                               "mb-1 block w-full rounded-xl border p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600",
                               run.id === selected.id
@@ -853,21 +1108,21 @@ export function ReviewApprovalCenter({
                           aria-label="Réponse précédente"
                           disabled={selectedIndex <= 0}
                           onClick={() =>
-                            setSelectedId(shown[selectedIndex - 1].id)
+                            selectRun(queue[selectedIndex - 1].id)
                           }
                           className={button}
                         >
                           <ChevronLeft aria-hidden className="h-4 w-4" />
                         </button>
                         <span className="text-xs tabular-nums text-slate-600">
-                          {selectedIndex + 1} / {shown.length}
+                          {selectedIndex + 1} / {queue.length}
                         </span>
                         <button
                           type="button"
                           aria-label="Réponse suivante"
-                          disabled={selectedIndex >= shown.length - 1}
+                          disabled={selectedIndex >= queue.length - 1}
                           onClick={() =>
-                            setSelectedId(shown[selectedIndex + 1].id)
+                            selectRun(queue[selectedIndex + 1].id)
                           }
                           className={button}
                         >
@@ -878,7 +1133,7 @@ export function ReviewApprovalCenter({
                         type="button"
                         disabled={!nextAwaiting}
                         onClick={() =>
-                          nextAwaiting && setSelectedId(nextAwaiting.id)
+                          nextAwaiting && selectRun(nextAwaiting.id)
                         }
                         className={button}
                       >
@@ -891,9 +1146,26 @@ export function ReviewApprovalCenter({
                       run={selected}
                       session={session}
                       canDecide={canDecide}
+                      canManage={canManage}
                       isRefreshing={isRefreshing}
                       decisionAction={decisionAction}
                       editAction={editAction}
+                      generationAction={generationAction}
+                      publicationAction={publicationAction}
+                      operations={operations[selected.id] ?? {}}
+                      onOperationPending={(kind, value) =>
+                        updateOperation(selected.id, kind, (previous) => ({
+                          ...previous,
+                          pending: value,
+                        }))
+                      }
+                      onOperationResult={(kind, result) => {
+                        updateOperation(selected.id, kind, (previous) => ({
+                          ...previous,
+                          result,
+                        }));
+                        refresh();
+                      }}
                       onChange={(value) =>
                         updateSession(selected, (previous) => ({
                           ...previous,
@@ -969,25 +1241,33 @@ export function ReviewApprovalCenter({
                     className="mx-auto h-6 w-6 text-slate-500"
                   />
                   <h3 className="mt-3 text-sm font-semibold text-slate-900">
-                    {runs.length
-                      ? "Aucun traitement ne correspond aux filtres"
-                      : "Aucun traitement de réponse enregistré"}
+                    {target.requested
+                      ? "Cette réponse n’est pas disponible dans cet espace"
+                      : runs.length
+                        ? "Aucun traitement ne correspond aux filtres"
+                        : "Aucun traitement de réponse enregistré"}
                   </h3>
                   <p className="mx-auto mt-2 max-w-lg text-xs leading-6 text-slate-600">
-                    {runs.length
-                      ? "Essayez un autre texte ou affichez tous les états. Vos modifications locales sont conservées."
-                      : "Demandez un brouillon depuis un avis pris en charge pour suivre sa génération et son approbation ici."}
+                    {target.requested
+                      ? "Le lien demandé ne correspond à aucun traitement chargé et autorisé. Actualisez la file ou revenez à tous les traitements; aucune autre réponse n’a été ouverte à sa place."
+                      : runs.length
+                        ? "Essayez un autre texte ou affichez tous les états. Vos modifications locales sont conservées."
+                        : "Demandez un brouillon depuis un avis pris en charge pour suivre sa génération et son approbation ici."}
                   </p>
-                  {runs.length > 0 && (
+                  {(runs.length > 0 || target.requested) && (
                     <button
                       type="button"
                       onClick={() => {
                         setQuery("");
                         setGroup("all");
+                        if (target.requested)
+                          navigateReviewWorkspace(reviewApprovalHash());
                       }}
                       className={button + " mt-4"}
                     >
-                      Réinitialiser les filtres
+                      {target.requested
+                        ? "Afficher tous les traitements"
+                        : "Réinitialiser les filtres"}
                     </button>
                   )}
                 </div>

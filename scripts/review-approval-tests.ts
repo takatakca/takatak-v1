@@ -742,6 +742,13 @@ async function main() {
         let rows = await getReviewApprovals(tenant, state.database);
         assert.equal(rows[0].draft, null);
         assert.equal(rows[0].publishedAt, null);
+        assert.equal(rows[0].blockedReason, null, "a valid queued review remains eligible for native generation");
+        state.runs[0].status = "running";
+        rows = await getReviewApprovals(tenant, state.database);
+        assert.equal(rows[0].blockedReason, null, "missing output is expected while generation is in progress");
+        state.runs[0].status = "awaiting_approval";
+        rows = await getReviewApprovals(tenant, state.database);
+        assert.ok(rows[0].blockedReason, "a human decision still requires an actual valid draft");
         state.runs[0].status = "completed";
         state.runs[0].output = { reply: draft };
         rows = await getReviewApprovals(tenant, state.database);

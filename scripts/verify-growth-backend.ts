@@ -22,6 +22,8 @@ import {
 import { parsePublicRatingInput, parseReviewProfileInput } from "../src/lib/reputation/validation";
 import { decideReviewDraft, getReviewApprovals, saveReviewDraft } from "../src/lib/reputation/review-approval-service";
 import { publishReviewRunReply } from "../src/lib/reputation/review-publisher";
+import { generateReviewRunDraft } from "../src/lib/reputation/review-generation";
+import { publishApprovedReviewDraft, type ReviewNativePublicationDependencies } from "../src/lib/reputation/review-native-publication";
 import { resolveReviewTarget } from "../src/lib/reputation/review-target";
 import { parseAudienceRule, parseCollectPayload } from "../src/lib/analytics/parse";
 import {
@@ -818,6 +820,78 @@ async function main(): Promise<void> {
       assert.ok(confirmed && confirmed.draft === editedReply && confirmed.publishedAt === publication.confirmedAt, "the frozen edited reply and confirmed source receipt survive the final worker summary");
       assert.equal((await getCreditSnapshot(b.id)).balance, creditsBeforeReply, "editing, approval, publication and replay never debit credits");
       pass("Review v2 reply is edited, version-approved and source-confirmed through the native publisher; tenant isolation and replay hold on the real DB with synthetic Google");
+
+      // Native dashboard path: the actual ledger and SQL claims, with only provider transport simulated.
+      const nativeTarget = await resolveReviewTarget(prisma, b.id, "google", lowReview.id);
+      assert.ok(nativeTarget);
+      await grantCredits({ clientId: b.id, credits: 3, reason: "grant", idempotencyKey: `${tag}-native-review` });
+      const nativeBalance = (await getCreditSnapshot(b.id)).balance;
+      const nativeRequest = await requestAgentRun(b.id, "review_responder", { trigger: "review_cockpit", context: {
+        reviewResponseId: lowReview.id, source: "google", reviewWorkflowVersion: 2,
+        reviewContentHash: nativeTarget.fingerprint,
+      } }, staffProfileId);
+      assert.ok(nativeRequest.ok);
+      let nativeCalls = 0;
+      const nativeText = "Merci de votre retour. Notre équipe a pris connaissance de votre commentaire.";
+      const nativeGeneration = {
+        database: prisma,
+        loadConfig: async () => ({ enabled: true as const, provider: "openai" as const, apiKey: "synthetic-".repeat(4), model: "synthetic-model", dailyLimit: 50 }),
+        call: async () => {
+          nativeCalls++;
+          assert.deepEqual(await reportAgentRun(nativeRequest.runId, { succeeded: true, output: { reply: "stale external worker" } }), { ok: false, code: "not_claimed" });
+          return { ok: true as const, text: nativeText, inputTokens: 40, outputTokens: 20 };
+        },
+      };
+      assert.equal((await generateReviewRunDraft(a.id, staffProfileId, nativeRequest.runId, nativeGeneration)).ok, false);
+      const nativeDraft = await generateReviewRunDraft(b.id, staffProfileId, nativeRequest.runId, nativeGeneration);
+      assert.ok(nativeDraft.ok && nativeDraft.creditsDebited === 1);
+      const nativeReplay = await generateReviewRunDraft(b.id, staffProfileId, nativeRequest.runId, nativeGeneration);
+      assert.ok(nativeReplay.ok && nativeReplay.replayed);
+      assert.equal(nativeCalls, 1, "a saved native generation cannot call the provider twice");
+      assert.equal((await getCreditSnapshot(b.id)).balance, nativeBalance - 1, "native generation uses exactly one review_reply credit");
+      const nativePending = (await getReviewApprovals(b.id)).find(run => run.id === nativeRequest.runId);
+      assert.ok(nativePending?.draftHash && nativePending.status === "awaiting_approval" && nativePending.draft === nativeText);
+      assert.equal((await publishApprovedReviewDraft(b.id, staffProfileId, nativeRequest.runId, nativePending.draftHash, { database: prisma })).ok, false, "a native draft cannot bypass human approval");
+      assert.equal((await decideReviewDraft(b.id, staffProfileId, nativeRequest.runId, "approve", nativePending.draftHash, prisma)).ok, true);
+      const nativeApproved = (await getReviewApprovals(b.id)).find(run => run.id === nativeRequest.runId);
+      assert.ok(nativeApproved?.draftHash && nativeApproved.status === "approved");
+      const nativePublisher: ReviewNativePublicationDependencies = { database: prisma, publisher: (runId, text, deps) => publishReviewRunReply(runId, text, { ...deps, ...publisher }) };
+      const putCount = calls.filter(call => call.method === "PUT").length;
+      assert.equal((await publishApprovedReviewDraft(a.id, staffProfileId, nativeRequest.runId, nativeApproved.draftHash, nativePublisher)).ok, false);
+      const nativePublished = await publishApprovedReviewDraft(b.id, staffProfileId, nativeRequest.runId, nativeApproved.draftHash, nativePublisher);
+      assert.ok(nativePublished.ok);
+      const nativePublicationReplay = await publishApprovedReviewDraft(b.id, staffProfileId, nativeRequest.runId, nativeApproved.draftHash, nativePublisher);
+      assert.ok(nativePublicationReplay.ok && nativePublicationReplay.replayed);
+      assert.equal(calls.filter(call => call.method === "PUT").length, putCount + 1, "native publication/replay sends exactly one frozen source reply");
+      assert.equal((await getCreditSnapshot(b.id)).balance, nativeBalance - 1, "human approval and native publication are not charged again");
+      assert.equal((await prisma.aiAgentRun.findUniqueOrThrow({ where: { id: nativeRequest.runId } })).status, "completed");
+      const currentNativeTarget = await resolveReviewTarget(prisma, b.id, "google", lowReview.id);
+      assert.ok(currentNativeTarget);
+      const failedNativeRequest = await requestAgentRun(b.id, "review_responder", { trigger: "review_cockpit", context: {
+        reviewResponseId: lowReview.id, source: "google", reviewWorkflowVersion: 2,
+        reviewContentHash: currentNativeTarget.fingerprint,
+      } }, staffProfileId);
+      assert.ok(failedNativeRequest.ok);
+      const failedNative = await generateReviewRunDraft(b.id, staffProfileId, failedNativeRequest.runId, {
+        ...nativeGeneration,
+        call: async () => ({ ok: false as const, code: "provider_error" as const }),
+      });
+      assert.ok(!failedNative.ok && failedNative.code === "provider_failed");
+      assert.equal((await getCreditSnapshot(b.id)).balance, nativeBalance - 1, "a refused native generation refunds its real ledger debit");
+      assert.equal((await generateReviewRunDraft(b.id, staffProfileId, failedNativeRequest.runId, nativeGeneration)).ok, false, "a failed receipt is not a new generation authorization");
+      const limitedNativeRequest = await requestAgentRun(b.id, "review_responder", { trigger: "review_cockpit", context: {
+        reviewResponseId: lowReview.id, source: "google", reviewWorkflowVersion: 2,
+        reviewContentHash: currentNativeTarget.fingerprint,
+      } }, staffProfileId);
+      assert.ok(limitedNativeRequest.ok);
+      const limitedNative = await generateReviewRunDraft(b.id, staffProfileId, limitedNativeRequest.runId, {
+        ...nativeGeneration,
+        loadConfig: async () => ({ ...(await nativeGeneration.loadConfig()), dailyLimit: 1 }),
+      });
+      assert.ok(!limitedNative.ok && limitedNative.code === "daily_limit", "native receipt accounting enforces the real per-workspace rolling limit");
+      assert.equal(nativeCalls, 1, "failure and daily cap do not invoke the successful synthetic provider");
+      assert.equal((await getCreditSnapshot(b.id)).balance, nativeBalance - 1);
+      pass("Native Review dashboard generates once with its real review credit, requires human approval and publishes once with a durable source receipt");
 
       assert.equal(await disconnectGoogleBusiness(b.id, fakeGoogle), true);
       assert.ok(calls.some((c) => c.url.startsWith("https://oauth2.googleapis.com/revoke")), "token revoked at Google");

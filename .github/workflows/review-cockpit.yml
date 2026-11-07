@@ -1,7 +1,7 @@
 name: REVEW cockpit checks
 on:
   push:
-    branches: [codex/review-ecosystem]
+    branches: [codex/review-ecosystem, codex/review-premium-ready]
   pull_request:
     paths:
       - "src/lib/reputation/**"
@@ -20,6 +20,12 @@ on:
       - "scripts/review-approval-tests.ts"
       - "scripts/review-draft-edit-tests.ts"
       - "scripts/review-draft-action-tests.ts"
+      - "scripts/review-generation-tests.ts"
+      - "scripts/review-generation-action-tests.ts"
+      - "scripts/review-native-publication-tests.ts"
+      - "scripts/review-workspace-navigation-tests.ts"
+      - "scripts/report-build-diagnostics.cjs"
+      - "scripts/build-diagnostics-tests.cjs"
       - "scripts/review-publisher-tests.ts"
       - "scripts/review-google-publication-tests.ts"
       - "scripts/review-qmaps-api-tests.ts"
@@ -62,6 +68,10 @@ jobs:
       - run: npm run qa:review-approval
       - run: npm run qa:review-draft-edit
       - run: npm run qa:review-draft-actions
+      - run: npm run qa:review-generation
+      - run: npm run qa:review-generation-actions
+      - run: npm run qa:review-native-publication
+      - run: npm run qa:review-workspace-navigation
       - run: npm run qa:review-publisher
       - run: npm run qa:review-google-publication
       - run: npm run qa:review-qmaps-api
@@ -83,26 +93,19 @@ jobs:
       - run: npm run typecheck
       - name: Lint changed review boundaries
         run: npx eslint next.config.ts src/lib/security/https-redirect.ts "src/app/(website)/reviews" src/components/brand/brand-hero-backdrop.tsx src/components/website/home/HomeHero.tsx src/lib/reputation src/components/reputation src/app/api/reputation src/app/dashboard/growth/reviews src/app/dashboard/local-listings/reviews src/components/local-listings/qmaps-reply-form.tsx src/lib/qmaps src/app/api/ai/reviews src/app/dashboard/growth/ai-engine/actions.ts src/lib/ai-agents/service.ts src/lib/integrations/google-business/service.ts scripts/review-cockpit-tests.ts
+      - name: Build diagnostic privacy and classification checks
+        run: node scripts/build-diagnostics-tests.cjs
+
       - name: Build (webpack)
         shell: bash
         run: |
+          node scripts/report-build-diagnostics.cjs --resources before
           set +e
           npm run build 2>&1 | tee "$RUNNER_TEMP/revew-build.log"
           build_status=${PIPESTATUS[0]}
           set -e
           if [ "$build_status" -ne 0 ]; then
-            if grep -Eqi 'Failed to (fetch|download).*font|next/font.*(error|failed)|fonts.googleapis.com' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::External font download errors were detected in the build output."
-            elif grep -Eqi 'Error occurred prerendering|prerender-error' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A prerendering error was detected in the build output."
-            elif grep -Eqi 'Module not found|MODULE_NOT_FOUND|Cannot find module|Can.t resolve' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A module resolution error was detected in the build output."
-            elif grep -Eqi 'Type error:|error TS[0-9]{4}' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A type error was detected in the build output."
-            elif grep -Eqi '(missing|required|not configured).*(NEXT_PUBLIC|SUPABASE|DATABASE_URL)|(NEXT_PUBLIC|SUPABASE|DATABASE_URL).*(missing|required|not configured)' "$RUNNER_TEMP/revew-build.log"; then
-              echo "::error title=Production build diagnostic::A required runtime or public configuration error was detected in the build output."
-            else
-              echo "::error title=Production build diagnostic::The build failed outside the recognized diagnostic categories; authenticated logs are required."
-            fi
+            node scripts/report-build-diagnostics.cjs "$RUNNER_TEMP/revew-build.log" "$build_status" || true
+            node scripts/report-build-diagnostics.cjs --resources after || true
           fi
           exit "$build_status"

@@ -2,6 +2,10 @@
 
 import { useEffect, useSyncExternalStore, type ReactNode } from "react";
 import { Inbox, Send, Upload, PlugZap, ClipboardCheck } from "lucide-react";
+import {
+  REVIEW_WORKSPACE_EVENT,
+  reviewSectionFromHash,
+} from "@/lib/reputation/workspace-navigation";
 
 const SECTIONS = [
   { id: "inbox", hash: "review-inbox", label: "Inbox", icon: Inbox },
@@ -32,19 +36,27 @@ const SECTIONS = [
 ] as const;
 type SectionId = (typeof SECTIONS)[number]["id"];
 
-function sectionFromHash(hash: string): SectionId | undefined {
-  if (hash === "#first-party-feedback") return "requests";
-  return SECTIONS.find((section) => `#${section.hash}` === hash)?.id;
-}
 function subscribe(listener: () => void) {
   window.addEventListener("hashchange", listener);
   window.addEventListener("popstate", listener);
-  window.addEventListener("revew:navigate", listener);
+  window.addEventListener(REVIEW_WORKSPACE_EVENT, listener);
   return () => {
     window.removeEventListener("hashchange", listener);
     window.removeEventListener("popstate", listener);
-    window.removeEventListener("revew:navigate", listener);
+    window.removeEventListener(REVIEW_WORKSPACE_EVENT, listener);
   };
+}
+
+export function useReviewWorkspaceHash() {
+  return useSyncExternalStore(subscribe, () => window.location.hash, () => "");
+}
+
+/** Keep mounted inbox/editor state while making exact-run links shareable. */
+export function navigateReviewWorkspace(hash: string) {
+  if (!reviewSectionFromHash(hash)) return;
+  if (window.location.hash !== hash)
+    window.history.pushState(null, "", hash);
+  window.dispatchEvent(new Event(REVIEW_WORKSPACE_EVENT));
 }
 
 /** Panels remain mounted so navigation preserves review filters and unsent form edits. */
@@ -63,21 +75,17 @@ export function ReviewWorkspaceNavigation({
   connections: ReactNode;
   initialSection?: SectionId;
 }) {
-  const active = useSyncExternalStore(
-    subscribe,
-    () => sectionFromHash(window.location.hash) || initialSection,
-    () => initialSection,
-  );
+  const hash = useReviewWorkspaceHash();
+  const active = reviewSectionFromHash(hash) || initialSection;
   useEffect(() => {
-    const hash = window.location.hash;
-    if (!sectionFromHash(hash)) return;
+    if (!reviewSectionFromHash(hash)) return;
     const frame = requestAnimationFrame(() =>
       document
-        .getElementById(hash.slice(1))
+        .getElementById(hash.split("?", 1)[0].slice(1))
         ?.scrollIntoView({ block: "start" }),
     );
     return () => cancelAnimationFrame(frame);
-  }, [active]);
+  }, [active, hash]);
   const content = { inbox, approvals, requests, import: imports, connections };
   return (
     <div className="space-y-5">
@@ -96,11 +104,7 @@ export function ReviewWorkspaceNavigation({
               key={section.id}
               aria-pressed={active === section.id}
               aria-controls={section.hash}
-              onClick={() => {
-                if (window.location.hash !== `#${section.hash}`)
-                  window.history.pushState(null, "", `#${section.hash}`);
-                window.dispatchEvent(new Event("revew:navigate"));
-              }}
+              onClick={() => navigateReviewWorkspace(`#${section.hash}`)}
               className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:text-sm ${active === section.id ? "bg-[#1565D8] text-white" : "text-slate-600 hover:bg-slate-50"}`}
             >
               <section.icon aria-hidden className="h-4 w-4 shrink-0" />

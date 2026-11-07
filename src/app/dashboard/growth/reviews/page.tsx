@@ -3,6 +3,8 @@ import { ReviewApprovalCenter } from "@/components/reputation/review-approval-ce
 import { getReviewApprovals } from "@/lib/reputation/review-approval-service";
 import {
   decideReviewDraftAction,
+  generateReviewDraftAction,
+  publishReviewDraftAction,
   saveReviewDraftAction,
 } from "./review-draft-actions";
 import { QmapsReviewConnection } from "@/components/reputation/qmaps-review-connection";
@@ -39,6 +41,15 @@ import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 export const dynamic = "force-dynamic";
 
+function readRecords<T>(
+  result: PromiseSettledResult<T>,
+  error: string,
+): T | null {
+  if (result.status === "fulfilled") return result.value;
+  console.error(error);
+  return null;
+}
+
 export default async function ReputationPage({
   searchParams,
 }: {
@@ -54,61 +65,58 @@ export default async function ReputationPage({
   const canManage =
     scoped && hasEffectivePermission(access, "manage_reputation");
   let approvals: Awaited<ReturnType<typeof getReviewApprovals>> | null = null;
-  if (scoped) {
-    try {
-      approvals = await getReviewApprovals(access.activeClientId);
-    } catch {
-      console.error("[reputation] approval data unavailable");
-    }
-  }
   let snapshot: ReputationSnapshot | null = null;
   let google: GoogleBusinessSnapshot | null = null;
-  let unavailable = false;
-  let googleUnavailable = false;
   let cockpit: CockpitSnapshot | null = null;
   let qmapsConnections: Awaited<
     ReturnType<typeof getQmapsReviewConnections>
   > | null = null;
-  if (scoped) {
-    try {
-      qmapsConnections = await getQmapsReviewConnections(access.activeClientId);
-    } catch {
-      console.error("[reputation] QMAPS connections unavailable");
-    }
-  }
   let importLocations: Awaited<
     ReturnType<typeof getReviewImportLocations>
   > | null = null;
-  if (canManage) {
-    try {
-      importLocations = await getReviewImportLocations(access.activeClientId!);
-    } catch {
-      console.error("[reputation] import locations unavailable");
-    }
-  }
+  let unavailable = false;
+  let googleUnavailable = false;
   if (scoped) {
-    const [reputationResult, googleResult] = await Promise.allSettled([
+    const [
+      approvalResult,
+      reputationResult,
+      googleResult,
+      cockpitResult,
+      qmapsResult,
+      importResult,
+    ] = await Promise.allSettled([
+      getReviewApprovals(access.activeClientId),
       getReputationSnapshot(access.activeClientId),
       getGoogleBusinessSnapshot(access.activeClientId),
+      getReviewCockpit(access.activeClientId),
+      getQmapsReviewConnections(access.activeClientId),
+      canManage
+        ? getReviewImportLocations(access.activeClientId)
+        : Promise.resolve(null),
     ]);
-    if (reputationResult.status === "fulfilled")
-      snapshot = reputationResult.value;
-    else {
-      unavailable = true;
-      console.error("[reputation] request snapshot unavailable");
-    }
-    if (googleResult.status === "fulfilled") google = googleResult.value;
-    else {
-      googleUnavailable = true;
-      console.error("[reputation] Google snapshot unavailable");
-    }
-  }
-  if (scoped) {
-    try {
-      cockpit = await getReviewCockpit(access.activeClientId);
-    } catch {
-      console.error("[reputation] cockpit unavailable");
-    }
+    approvals = readRecords(
+      approvalResult,
+      "[reputation] approval data unavailable",
+    );
+    snapshot = readRecords(
+      reputationResult,
+      "[reputation] request snapshot unavailable",
+    );
+    google = readRecords(
+      googleResult,
+      "[reputation] Google snapshot unavailable",
+    );
+    cockpit = readRecords(cockpitResult, "[reputation] cockpit unavailable");
+    qmapsConnections = readRecords(
+      qmapsResult,
+      "[reputation] QMAPS connections unavailable",
+    );
+    importLocations = readRecords(
+      importResult,
+      "[reputation] import locations unavailable",
+    );
+    unavailable = reputationResult.status === "rejected";
+    googleUnavailable = googleResult.status === "rejected";
   }
   const connectors = getConnectorStatuses().filter(
     (c) =>
@@ -146,8 +154,14 @@ export default async function ReputationPage({
         initialSection={googleNotice ? "connections" : "inbox"}
         inbox={
           <ReviewCockpit
+            key={
+              access.mode === "client_scoped"
+                ? access.activeClientId
+                : "unscoped"
+            }
             snapshot={cockpit}
             canManage={canManage}
+            approvalRuns={approvals || []}
             googleDrafts={Object.fromEntries(
               (google?.reviews || []).flatMap((review) =>
                 review.aiDraft ? [[review.id, review.aiDraft]] : [],
@@ -167,6 +181,8 @@ export default async function ReputationPage({
               unavailable={approvals === null}
               decisionAction={decideReviewDraftAction}
               editAction={saveReviewDraftAction}
+              generationAction={generateReviewDraftAction}
+              publicationAction={publishReviewDraftAction}
             />
           ) : (
             <HonestyNote>

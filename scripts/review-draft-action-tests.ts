@@ -124,6 +124,16 @@ function fixture() {
         return scenario.decisionResult;
       },
     },
+    "@/lib/reputation/review-generation": {
+      generateReviewRunDraft: async () => {
+        throw new Error("Draft edit/decision tests must not generate content");
+      },
+    },
+    "@/lib/reputation/review-native-publication": {
+      publishApprovedReviewDraft: async () => {
+        throw new Error("Draft edit/decision tests must not publish content");
+      },
+    },
   };
   const module = { exports: {} as Record<string, unknown> };
   runInNewContext(
