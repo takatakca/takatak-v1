@@ -221,7 +221,8 @@ export async function getYoutubeCommunitySnapshot(options: {
   businessBrandId: string;
   connectionId: string;
   socialAccountId: string;
-  days: 7 | 30 | 90 | 365;
+  days: number;
+  range?: { start: string; end: string };
   previousPeriod?: boolean;
 }): Promise<YoutubeCommunitySnapshot> {
   const prisma = getPrisma();
@@ -247,7 +248,14 @@ export async function getYoutubeCommunitySnapshot(options: {
   const baseEnd = options.previousPeriod
     ? new Date(Date.now() - options.days * 86_400_000)
     : new Date();
-  const range = dates(options.days, baseEnd);
+  const range = options.range
+    ? options.previousPeriod
+      ? {
+          start: new Date(Date.parse(options.range.start + "T00:00:00Z") - options.days * 86_400_000).toISOString().slice(0, 10),
+          end: new Date(Date.parse(options.range.end + "T00:00:00Z") - options.days * 86_400_000).toISOString().slice(0, 10),
+        }
+      : options.range
+    : dates(options.days, baseEnd);
   const channelUrl = new URL(DATA_API);
   channelUrl.searchParams.set("part", "statistics,snippet");
   channelUrl.searchParams.set("mine", "true");
