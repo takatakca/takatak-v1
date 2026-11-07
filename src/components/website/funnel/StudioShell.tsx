@@ -20,7 +20,7 @@ import {
   Wand2,
 } from "lucide-react";
 
-import { TAKBOT_ACTIONS, TAKBOT_MODES, creditsFor } from "@/lib/takbot/catalog";
+import { TAKBOT_ACTIONS, TAKBOT_MODES, creditsFor, takbotActionLabel } from "@/lib/takbot/catalog";
 import { takbotModeCopy } from "@/lib/takbot/copy";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { WALL_AI, WALL_GROWTH, WALL_HOUSE, WALL_TOTAL } from "@/lib/website/connector-wall";
@@ -52,19 +52,6 @@ const SPACE: { key: Pane; icon: typeof Search; label: T; tag?: T }[] = [
 ];
 
 /** French names of the real AI actions (src/lib/growth/ai-engine.ts). */
-const SKILL_FR: Record<string, string> = {
-  social_caption: "Légende et mots-clics",
-  multi_platform_post: "Une publication adaptée à chaque réseau",
-  review_reply: "Réponse à un avis",
-  chat_reply: "Réponse clavardage ou WhatsApp",
-  ad_copy_set: "Textes d’annonces (5 titres, 3 descriptions)",
-  seo_audit_summary: "Plan d’action SEO",
-  blog_article: "Article de blogue SEO (~1 000 mots)",
-  image: "Image générée",
-  voice_over: "Voix hors champ (par minute)",
-  short_video: "Vidéo courte (jusqu’à 15 s)",
-  monthly_report_summary: "Résumé du rapport mensuel",
-};
 
 const MEDIA: Record<"image" | "voice" | "video", { prompts: T[]; options: T[]; hint: T }> = {
   image: {
@@ -257,7 +244,7 @@ function SpacePane({ pane }: { pane: Exclude<Pane, TryMode | "image" | "voice" |
             <li key={a.key} className="flex items-center justify-between gap-3 rounded-xl bg-white/[0.04] px-3 py-2 ring-1 ring-white/10">
               <span className="flex min-w-0 items-center gap-2 text-[13px] text-white/85">
                 <Wand2 size={13} className="shrink-0 text-[#29C3FF]" aria-hidden />
-                <span className="truncate">{lang === "fr" ? SKILL_FR[a.key] ?? a.label : a.label}</span>
+                <span className="truncate">{takbotActionLabel(a, lang)}</span>
               </span>
               <span className="shrink-0 text-[12px] tabular-nums text-white/50">
                 {a.credits} {lang === "fr" ? (a.credits > 1 ? "crédits" : "crédit") : a.credits > 1 ? "credits" : "credit"}

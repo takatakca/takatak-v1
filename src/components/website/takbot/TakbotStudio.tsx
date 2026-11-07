@@ -6,7 +6,7 @@ import { ArrowRight, Bot, Check, ChevronDown, Coins, Headset, Loader2, Moon, Sea
 import { MODE_ICONS } from "@/components/website/funnel/TakbotSection";
 import { Aurora } from "@/components/website/funnel/primitives";
 import { money } from "@/components/website/premium/ui";
-import { TAKBOT_ACTIONS, TAKBOT_ENGINES, TAKBOT_MODES, TAKBOT_PACKS, MAX_PROMPT_CHARS, creditsFor, type TakbotMode } from "@/lib/takbot/catalog";
+import { TAKBOT_ACTIONS, TAKBOT_ENGINES, TAKBOT_MODES, TAKBOT_PACKS, MAX_PROMPT_CHARS, creditsFor, takbotActionLabel, type TakbotMode } from "@/lib/takbot/catalog";
 import { engineBestFor, engineName, takbotCopy, takbotModeCopy } from "@/lib/takbot/copy";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { fill } from "@/lib/website/home-funnel";
@@ -444,7 +444,7 @@ export function TakbotStudio() {
               <ul className="mt-4 grid gap-2">
                 {TAKBOT_ACTIONS.map((a) => (
                   <li key={a.key} className="flex items-baseline justify-between gap-3 border-b border-[var(--hp-line)] pb-2 text-[13px]">
-                    <span className="hp-ink-2">{a.label}</span>
+                    <span className="hp-ink-2">{takbotActionLabel(a, lang)}</span>
                     <span className="shrink-0 font-bold tabular-nums hp-ink">{a.credits}</span>
                   </li>
                 ))}
