@@ -23,6 +23,13 @@ const SECTION_LINKS = [
   { id: "competitors", title: "Competitors" },
 ] as const;
 
+const METRIC_BACKGROUNDS: Record<Metric, string> = {
+  subscribers: "border-[#A7B5FF] bg-[#E9EBFF]",
+  views: "border-[#A7DCC1] bg-[#E5F5E8]",
+  revenue: "border-[#D5B8DB] bg-[#F3E7F4]",
+  videos: "border-[#F4CA77] bg-[#FFF0CC]",
+};
+
 const METRICS = [
   { id: "subscribers", label: "Subscribers", totalKey: "subscribers", accent: "blue" },
   { id: "views", label: "Video views", totalKey: "views", accent: "cyan" },
@@ -151,8 +158,8 @@ function MetricCards({ snapshot, selected, onSelect }: {
         aria-pressed={selected === metric.id}
         className={"min-w-0 rounded-xl border px-3 py-3 text-center transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 " + (
           selected === metric.id
-            ? "border-[#1F8BFF] bg-[#EAF4FF] shadow-sm"
-            : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+            ? METRIC_BACKGROUNDS[metric.id] + " ring-2 ring-[#1565D8] ring-offset-1 shadow-sm"
+            : METRIC_BACKGROUNDS[metric.id] + " hover:brightness-[0.98]"
         )}
       >
         <span className="block text-2xl font-semibold tabular-nums text-slate-950">{metric.id === "revenue" ? displayCurrency(values[metric.id]) : displayNumber(values[metric.id])}</span>
@@ -169,6 +176,8 @@ export function YoutubeAnalyticsDashboard({
   canCompare,
   billingHref,
   canManage,
+  profileImageUrl,
+  connectedLabel,
 }: {
   billingExempt: boolean;
   hasPaidPlan: boolean;
@@ -176,6 +185,8 @@ export function YoutubeAnalyticsDashboard({
   canCompare: boolean;
   billingHref: string;
   canManage: boolean;
+  profileImageUrl: string | null;
+  connectedLabel: string | null;
 }) {
   const [range, setRange] = useState(() => recentRange(30));
   const [draftStart, setDraftStart] = useState(() => recentRange(30).start);
@@ -189,6 +200,7 @@ export function YoutubeAnalyticsDashboard({
   const [busy, setBusy] = useState(false);
   const [refreshCounter, refresh] = useState(0);
   const [showHelp, setShowHelp] = useState(true);
+  const [showViewsNote, setShowViewsNote] = useState(true);
   const [activeSection, setActiveSection] = useState<string>("community");
   const isLocked = !hasPaidPlan;
   const latest = recentRange(1).end;
@@ -352,11 +364,26 @@ export function YoutubeAnalyticsDashboard({
         <button type="button" aria-label="Dismiss reporting notice" onClick={() => setShowHelp(false)} className="rounded px-2 py-1 font-medium hover:bg-blue-100">×</button>
       </div> : null}
 
+      {showViewsNote ? (
+        <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+          <CircleAlert aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+          <p className="flex-1">YouTube reporting definitions and availability can change. Compare metrics using the same date range and data source; current lifetime channel totals are not historical period figures.</p>
+          <button type="button" aria-label="Dismiss views notice" onClick={() => setShowViewsNote(false)}
+            className="rounded px-2 py-1 text-amber-900 hover:bg-amber-100">×</button>
+        </div>
+      ) : null}
+
       <section id="community" aria-labelledby="youtube-community-heading" className="scroll-mt-36 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="youtube-community-heading" className="text-2xl font-semibold">Community</h2>
           <div className="flex items-center gap-3 text-sm">
-            {current ? <span className="text-slate-500">{current.channel.name}</span> : null}
+            <span className="inline-flex items-center gap-2 text-slate-600">
+              {profileImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profileImageUrl} alt="" referrerPolicy="no-referrer" className="h-8 w-8 rounded-full object-cover" />
+              ) : null}
+              <span>{current?.channel.name ?? connectedLabel ?? "YouTube channel"}</span>
+            </span>
             {hasPaidPlan ? <button type="button" onClick={() => refresh((count) => count+1)} disabled={busy} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-2 text-[#1565D8] hover:bg-blue-50 disabled:opacity-50">
               <RefreshCw aria-hidden="true" size={15} /> Refresh
             </button> : null}
