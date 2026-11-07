@@ -39,7 +39,7 @@ const OPTIONS: Option[] = [
   { key: "vm", Icon: Voicemail, title: { fr: "Boîte vocale → texte", en: "Voicemail → text" }, detail: { fr: "« Bonjour, je voudrais une soumission… »", en: "“Hi, I'd like a quote…”" }, x: 3, y: 58 },
   { key: "sms", Icon: MessageSquareText, title: { fr: "Textos et MMS", en: "Texts and MMS" }, detail: { fr: "Depuis votre numéro d'affaires", en: "From your business number" }, x: 6, y: 83 },
   { key: "video", Icon: Video, title: { fr: "Réunion vidéo", en: "Video meeting" }, detail: { fr: "4 personnes · lien invité", en: "4 people · guest link" }, x: 70, y: 4 },
-  { key: "ai", Icon: Sparkles, title: { fr: "Réceptionniste IA", en: "AI receptionist" }, detail: { fr: "Répond, trie, prend le message", en: "Answers, sorts, takes the message" }, x: 74, y: 31 },
+  { key: "ai", Icon: Sparkles, title: { fr: "Réceptionniste IA", en: "AI receptionist" }, detail: { fr: "Répond, trie, prend le message", en: "Answers, sorts, takes the message" }, x: 73, y: 31 },
   { key: "forward", Icon: PhoneForwarded, title: { fr: "Renvoi d'appels", en: "Call forwarding" }, detail: { fr: "Vers votre cellulaire ou l'équipe", en: "To your cell or the team" }, x: 71, y: 58 },
   { key: "calendar", Icon: CalendarCheck, title: { fr: "Google Agenda", en: "Google Calendar" }, detail: { fr: "Appels et résumés dans l'agenda", en: "Calls and summaries in the calendar" }, x: 68, y: 83 },
 ];
@@ -143,7 +143,7 @@ function OptionCard({ o, lang, shown, active, style, className = "" }: { o: Opti
           ))}
         </div>
       ) : (
-        <p className="mt-1.5 truncate text-[12px] text-white/60">{o.detail[lang]}</p>
+        <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-white/65">{o.detail[lang]}</p>
       )}
     </div>
   );

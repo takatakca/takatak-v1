@@ -5,16 +5,20 @@ import {
   Banknote,
   BarChart3,
   Bike,
+  CalendarClock,
   Check,
   Clock3,
   CreditCard,
   Gift,
   Hand,
+  Megaphone,
   MessageCircle,
+  MousePointerClick,
   Percent,
   Phone,
   Send,
   Star,
+  type LucideIcon,
 } from "lucide-react";
 
 import { SUITE_GROUPS, type SuiteProduct } from "@/lib/website/home-funnel";
@@ -52,6 +56,33 @@ const ACCENT_INK: Record<string, string> = {
   rew4rd: "#C2410C",
   ch4t: "#0F766E",
 };
+
+/** Each app's icon, drawn on its accent like an app on a tablet's home screen. */
+const ICON: Record<string, LucideIcon> = {
+  c4isse: CreditCard,
+  t4ctile: MousePointerClick,
+  "4ccounting": BarChart3,
+  tr4cker: Bike,
+  st4ff: CalendarClock,
+  m4rketing: Megaphone,
+  loy4lty: Star,
+  rew4rd: Gift,
+  ch4t: MessageCircle,
+};
+
+export function AppIcon({ app, size = 36 }: { app: string; size?: number }) {
+  const Icon = ICON[app] ?? Star;
+  return (
+    <span
+      className="relative grid shrink-0 place-items-center overflow-hidden rounded-[30%] text-white shadow-[0_8px_18px_-10px_rgb(6_13_31/0.8)]"
+      style={{ width: size, height: size, background: `linear-gradient(145deg, ${ACCENT[app] ?? "#1F8BFF"}, ${ACCENT_INK[app] ?? "#1565D8"})` }}
+      aria-hidden
+    >
+      <span className="absolute inset-x-0 top-0 h-1/2 bg-white/15" />
+      <Icon size={Math.round(size * 0.5)} strokeWidth={2.2} className="relative" />
+    </span>
+  );
+}
 
 const w = (lang: Lang, fr: string, en: string) => (lang === "fr" ? fr : en);
 
@@ -215,7 +246,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
           <span className={`absolute right-2 top-1.5 transition-transform duration-500 ${f === 3 ? "-translate-y-1 translate-x-1" : ""}`} aria-hidden>
             <Send size={11} style={{ color: a }} />
           </span>
-          <Done show={f === 3}>{w(lang, "Envoyée, avec consentement", "Sent, with consent")}</Done>
+          <Done show={f === 3}>{w(lang, "Envoyée aux abonnés", "Sent to subscribers")}</Done>
         </div>
       );
     case "loy4lty":
@@ -235,7 +266,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
           <p className={`px-2 pt-1 text-[9px] font-semibold transition-opacity duration-300 ${f >= 2 ? "opacity-100" : "opacity-0"}`} style={{ color: a }}>
             +1 {w(lang, "point", "point")}
           </p>
-          <Done show={f === 3}>{w(lang, "Récompense débloquée", "Reward unlocked")}</Done>
+          <Done show={f === 3}>{w(lang, "Récompense gagnée", "Reward unlocked")}</Done>
         </div>
       );
     case "rew4rd":
@@ -252,7 +283,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
               {w(lang, "Solde rechargeable", "Reloadable balance")}
             </span>
           </span>
-          <Done show={f === 3}>{w(lang, "Payé en partie avec la carte", "Part paid with the card")}</Done>
+          <Done show={f === 3}>{w(lang, "Payé avec la carte", "Paid with the card")}</Done>
         </div>
       );
     case "ch4t":
@@ -276,7 +307,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
             </span>
           )}
           <MessageCircle size={10} className="absolute right-1.5 top-1.5" style={{ color: a }} aria-hidden />
-          <Done show={f === 3}>{w(lang, "Réglé, avec le contexte Clover", "Solved, with Clover context")}</Done>
+          <Done show={f === 3}>{w(lang, "Réglé avec Clover", "Solved with Clover")}</Done>
         </div>
       );
   }
@@ -296,7 +327,7 @@ export function CloverSuite({ statusLabel }: { statusLabel: ReactNode }) {
   }, [reduced, seen]);
 
   return (
-    <div ref={ref} className="relative z-[2] mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div ref={ref} className="relative z-[2] mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3 [&>*]:min-w-0">
       {APPS.map((p: SuiteProduct, i) => {
         // Each card runs a beat behind the previous one, so they never flip together.
         const f = (reduced ? 3 : (tick + i * 3) % 4) as F;
@@ -304,26 +335,29 @@ export function CloverSuite({ statusLabel }: { statusLabel: ReactNode }) {
           <a
             key={p.key}
             href={`/clover#${p.key}`}
-            className="group/app flex items-center gap-3 rounded-2xl p-2.5 ring-1 ring-[var(--hp-line)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-22px_var(--hp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hp-info)]"
+            className="group/app relative flex items-center gap-4 overflow-hidden rounded-[22px] bg-[var(--hp-bg)] p-3 ring-1 ring-[var(--hp-line)] transition-[box-shadow,transform] duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-22px_var(--hp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--hp-info)]"
           >
+            <span
+              aria-hidden
+              className="pointer-events-none absolute -left-10 -top-10 h-32 w-32 rounded-full opacity-[0.14] blur-2xl transition-opacity duration-300 group-hover/app:opacity-25"
+              style={{ background: ACCENT[p.key] }}
+            />
             <div
-              className="h-[92px] w-[120px] shrink-0 rounded-[14px] p-1 shadow-[0_10px_24px_-14px_rgb(6_13_31/0.7)]"
+              className="relative h-[108px] w-[136px] shrink-0 rounded-[16px] p-1 shadow-[0_14px_28px_-16px_rgb(6_13_31/0.75)] sm:h-[118px] sm:w-[156px]"
               style={{ background: `linear-gradient(160deg, #1B2436, #0B1220)` }}
               aria-hidden
             >
               <Mini app={p.key} f={f} lang={lang} />
             </div>
-            <div className="min-w-0">
-              <p className="flex items-center gap-1.5 text-[14px] font-extrabold tracking-[0.06em] hp-ink">
-                <span className="h-2 w-2 rounded-full" style={{ background: ACCENT[p.key] }} aria-hidden />
-                {p.name}
-              </p>
+            <div className="relative min-w-0">
+              <AppIcon app={p.key} size={34} />
+              <p className="mt-2 text-[14px] font-extrabold tracking-[0.06em] hp-ink">{p.name}</p>
               <p className="mt-0.5 text-[13px] leading-5 hp-ink-2">{p.desc[lang]}</p>
             </div>
           </a>
         );
       })}
-      <div className="sm:col-span-2 lg:col-span-3">{statusLabel}</div>
+      <div className="md:col-span-2 xl:col-span-3">{statusLabel}</div>
     </div>
   );
 }

@@ -133,13 +133,13 @@ export function AiTeam() {
                       <a.Icon size={18} aria-hidden />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="hp-ink flex flex-wrap items-center gap-2 text-[15px] font-semibold">
-                        {a.name[lang]}
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-semibold ${s.cls}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="hp-ink text-[15px] font-semibold leading-snug">{a.name[lang]}</p>
+                        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-semibold ${s.cls}`}>
                           {(live || a.status === "online") && <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />}
                           {s.label[lang]}
                         </span>
-                      </p>
+                      </div>
                       <p className="hp-ink-2 mt-1 text-[14px]">
                         {a.task[lang]}
                         {live && !reduced ? dots : ""}

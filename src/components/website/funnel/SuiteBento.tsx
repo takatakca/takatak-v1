@@ -84,7 +84,7 @@ function Tile({
  * A real screenshot of the TAKATAK app in a slim browser frame. On hover the
  * picture scrolls slowly so more of the real page shows.
  */
-function Shot({ src, url, alt, className = "h-[220px]" }: { src: string; url: string; alt: string; className?: string }) {
+function Shot({ src, url, alt, className = "h-[220px]", position = "object-top" }: { src: string; url: string; alt: string; className?: string; position?: string }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-[var(--hp-line)] shadow-[0_24px_50px_-30px_rgb(6_13_31/0.45)]">
       <div className="flex items-center gap-2 border-b border-black/5 bg-[#F6F7F9] px-3 py-2">
@@ -96,7 +96,7 @@ function Shot({ src, url, alt, className = "h-[220px]" }: { src: string; url: st
         <span className="truncate text-[11px] text-black/45">{url}</span>
       </div>
       <div className={`hp-materialize relative overflow-hidden ${className}`}>
-        <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 640px, 100vw" className="hp-shot object-cover object-top" />
+        <Image src={src} alt={alt} fill sizes="(min-width: 1024px) 640px, 100vw" className={`hp-shot object-cover ${position}`} />
       </div>
     </div>
   );
@@ -179,7 +179,7 @@ export function SuiteBento() {
             <Tile
               p={product("academy")}
               className="h-full"
-              visual={<Shot src="/media/product/shot-academy.webp" url="TAKATAK Academy" alt={lang === "fr" ? "La page d’accueil de TAKATAK Academy" : "The TAKATAK Academy home page"} className="h-[180px]" />}
+              visual={<Shot src="/media/product/shot-academy.webp" url="TAKATAK Academy" alt={lang === "fr" ? "La page d’accueil de TAKATAK Academy" : "The TAKATAK Academy home page"} className="h-[180px]" position="object-left-top" />}
             />
           </Rise>
           <Rise className="hp-build md:col-span-2 lg:col-span-4">
@@ -192,7 +192,7 @@ export function SuiteBento() {
               <button
                 type="button"
                 onClick={() => setClip(true)}
-                className="relative z-[2] mt-4 inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-semibold hp-ghost hover:bg-[var(--hp-line)]"
+                className="relative z-[2] mt-4 inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-[13.5px] font-semibold hp-ghost ring-1 ring-[var(--hp-line)] hover:bg-[var(--hp-line)]"
               >
                 <Play size={14} className="fill-current" aria-hidden />
                 {lang === "fr" ? "Voir la vidéo · 14 s" : "Watch the video · 14 s"}
