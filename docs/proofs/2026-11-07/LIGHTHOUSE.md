@@ -96,4 +96,4 @@ decision (SEO owner); not changed here.
 The remaining 0.031 on every page comes from the new-client offer bar that appears above the header after load
 (header area, not touched).
 
-— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-07 22:55 UTC
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-07 22:54 UTC
