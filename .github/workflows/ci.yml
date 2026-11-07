@@ -9,6 +9,8 @@ on:
       - master
       - fix/auth-identity-deployment-hardening
       - codex/rentauto-integration
+      - codex/review-ecosystem
+      - codex/review-premium-ready
   workflow_dispatch:
 
 jobs:
@@ -49,8 +51,31 @@ jobs:
       - name: Static RLS checks
         run: npm run qa:rls:static
 
+      - name: Review cockpit normalization, isolation boundaries and provider capabilities
+        run: npm run qa:review-cockpit
+
+      - name: Review approval, editing, publication and source integrity
+        run: |
+          npm run qa:review-approval
+          npm run qa:review-draft-edit
+          npm run qa:review-draft-actions
+          npm run qa:review-generation
+          npm run qa:review-generation-actions
+          npm run qa:review-native-publication
+          npm run qa:review-workspace-navigation
+          npm run qa:review-publisher
+          npm run qa:review-google-publication
+          npm run qa:review-qmaps-api
+          npm run qa:review-qmaps-visibility
+          npm run qa:review-agent-tools
+          npm run qa:review-import-model
+          npm run qa:review-import-service
+
       - name: Typecheck
         run: npm run typecheck
+
+      - name: Workspace billing exemption isolation
+        run: npm run qa:billing-exemption
 
       - name: Strict runtime health readiness safeguards
         run: npx tsx scripts/verify-runtime-readiness.ts
@@ -446,12 +471,26 @@ jobs:
           NODE_ENV: development
         run: npm run qa:ai-provider-keys-db
 
+      - name: Build diagnostic privacy and classification checks
+        run: node scripts/build-diagnostics-tests.cjs
+
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
           NEXT_PUBLIC_SUPABASE_URL: https://pcjfahhlozsseqqevimi.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
-        run: npm run build
+        shell: bash
+        run: |
+          node scripts/report-build-diagnostics.cjs --resources before
+          set +e
+          npm run build 2>&1 | tee "$RUNNER_TEMP/revew-build.log"
+          build_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$build_status" -ne 0 ]; then
+            node scripts/report-build-diagnostics.cjs "$RUNNER_TEMP/revew-build.log" "$build_status" || true
+            node scripts/report-build-diagnostics.cjs --resources after || true
+          fi
+          exit "$build_status"
 
       - name: Hashed external detection and compiled-module loading
         run: npm run check:modules

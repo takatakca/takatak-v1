@@ -246,6 +246,7 @@ export async function getWorkspaceTeamData(
     }
 
     const { entitlements } = resolveEffectiveSocialEntitlements({
+      clientId: client.id,
       status: client.subscription?.status,
       planCode: client.subscription?.planCode,
       cancelAtPeriodEnd: client.subscription?.cancelAtPeriodEnd,

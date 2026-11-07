@@ -19,7 +19,6 @@ export function RequestLinkForm({
 }) {
   const [state, formAction, pending] = useActionState(createReviewRequestAction, initialState);
   const [copied, setCopied] = useState(false);
-  const profileName = (id: string) => profiles.find((p) => p.id === id)?.name ?? "our team";
   const [profileId, setProfileId] = useState(profiles[0]?.id ?? "");
   const [channel, setChannel] = useState("sms");
   const [sendNow, setSendNow] = useState(false);
@@ -27,7 +26,7 @@ export function RequestLinkForm({
 
   const message =
     state.ok === true
-      ? `Bonjour${state.recipientName ? ` ${state.recipientName}` : ""} ! Merci d’avoir choisi ${profileName(profileId)}. Auriez-vous 30 secondes pour nous donner votre avis ? ${state.url}`
+      ? `Bonjour${state.recipientName ? ` ${state.recipientName}` : ""} ! Merci d’avoir choisi ${state.profileName}. Auriez-vous 30 secondes pour nous donner votre avis ? ${state.url}`
       : "";
 
   return (

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { readBoundedText } from "@/lib/http/read-bounded-text";
 import { jsonResponse, handleApiError } from "@/lib/security/api-response";
-import { hostname, monitoringEntitled, record, snapshotSchema, uuid, verifySnapshotSignature } from "@/lib/monitoring/policy";
+import { hostname, monitoringWorkspaceEntitled, record, snapshotSchema, uuid, verifySnapshotSignature } from "@/lib/monitoring/policy";
 import { monitoringDb, updateMonitoringMetadata } from "@/lib/monitoring/store";
 
 export const runtime = "nodejs";
@@ -27,14 +27,14 @@ export async function POST(request: Request) {
     // The operator's per-domain key selects exactly one stored domain; clients cannot submit a workspace id.
     const domain = await monitoringDb().domainAsset.findUnique({ where: { id: id.data! }, select: { id: true, clientId: true, domainName: true, metadata: true, client: { select: { status: true } } } });
     if (!domain || domain.domainName !== parsed.data.hostname) return jsonResponse({ ok: false }, 403);
-    const enabled = !["paused", "archived"].includes(domain.client.status) && monitoringEntitled(record(domain.metadata).monitoringBilling);
+    const enabled = !["paused", "archived"].includes(domain.client.status) && monitoringWorkspaceEntitled(domain.clientId, record(domain.metadata).monitoringBilling);
     if (input.kind === "authorization") return jsonResponse({ ok: true, enabled }, 200);
     if (!enabled) return jsonResponse({ ok: false, enabled: false }, 403);
     const snapshot = snapshotSchema.parse(input);
     if (Math.abs(Date.now() / 1000 - snapshot.observedAt) > 1800) return jsonResponse({ ok: false }, 400);
     await updateMonitoringMetadata(domain.clientId, domain.id, metadata => {
       // Re-check entitlement inside the optimistic update to handle concurrent cancellations.
-      if (!monitoringEntitled(metadata.monitoringBilling)) throw new Error("monitoring_inactive");
+      if (!monitoringWorkspaceEntitled(domain.clientId, metadata.monitoringBilling)) throw new Error("monitoring_inactive");
       const previous = snapshotSchema.safeParse(metadata.monitoringSnapshot);
       if (previous.success && previous.data.observedAt >= snapshot.observedAt) return metadata;
       return { ...metadata, monitoringSnapshot: snapshot };

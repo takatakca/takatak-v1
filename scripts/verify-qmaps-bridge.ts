@@ -43,7 +43,7 @@ check("the admin screen and the reply action do not add a migration", () => {
   const page = readFileSync("src/app/dashboard/admin/qmaps/page.tsx", "utf8");
   assert.match(action, /provider: "qmaps"/);
   assert.match(action, /postQmaps\("takatak-link-business"/);
-  assert.match(reply, /postQmaps\("takatak-reply-review"/);
+  assert.match(reply, /postQmaps\("takatak-reply-review-v2"/);
   assert.match(page, /Confirmé sur QMAPS/);
   assert.doesNotMatch(`${action}\n${reply}`, /prisma\/migrations/);
 });

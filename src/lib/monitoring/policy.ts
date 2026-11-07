@@ -1,3 +1,4 @@
+import { isBillingExemptWorkspace } from '@/lib/billing/billing-exemption-policy';
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
@@ -45,6 +46,13 @@ export function snapshotState(value: MonitoringSnapshot | null, now = Date.now()
 export function monitoringEntitled(billing: unknown, now = Date.now()): boolean {
   const value = record(billing);
   return value.status === "active" && typeof value.paidUntil === "number" && value.paidUntil * 1000 > now;
+}
+
+/** TAKATAK-funded monitoring may be used without a customer subscription. */
+export function monitoringWorkspaceEntitled(
+  clientId: string, billing: unknown, now = Date.now(),
+): boolean {
+  return isBillingExemptWorkspace(clientId) || monitoringEntitled(billing, now);
 }
 
 export function monitoringDomainWhere(clientId: string, domainAssetId?: string) {

@@ -34,17 +34,41 @@ const nextConfig: NextConfig = {
   // Production builds MUST use webpack (`next build --webpack`). Next.js 16
   // Turbopack rewrites these to hashed aliases such as
   // `@prisma/client-<hash>` which do not exist in node_modules.
-  serverExternalPackages: ["@prisma/client", "prisma", "@prisma/adapter-pg", "pg"],
+  serverExternalPackages: [
+    "@prisma/client",
+    "prisma",
+    "@prisma/adapter-pg",
+    "pg",
+  ],
   // Dev-only access logger. Production Next builds do not emit this logger;
   // production first-hop protection requires META_OAUTH_REDIRECT_URI → relay.
   logging: {
     incomingRequests: {
-      ignore: [
-        /\/api\/social\/callback\//,
-      ],
+      ignore: [/\/api\/social\/callback\//],
     },
   },
 
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/",
+          has: [{ type: "host" as const, value: "review\\.takatak\\.ca" }],
+          destination: "/reviews",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
+  async redirects() {
+    return ["dashboard", "login", "register", "signup", "auth", "oauth"].map((route) => ({
+      source: `/${route}/:path*`,
+      has: [{ type: "host" as const, value: "review\\.takatak\\.ca" }],
+      destination: `https://takatak.ca/${route}/:path*`,
+      permanent: false,
+    }));
+  },
   async headers() {
     const privateNoStore = [
       {

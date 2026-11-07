@@ -4,7 +4,7 @@ import "server-only";
 // Every dashboard read/write takes the caller's activeClientId and scopes by it.
 // Public functions resolve the tenant from the profile slug only.
 
-import { Prisma } from "@prisma/client";
+import { Prisma, type ReviewChannel, type ReviewRequestStatus } from "@prisma/client";
 
 import { triggerLowRatingResponder } from "@/lib/ai-agents/service";
 import { getPrisma } from "@/lib/db/prisma";
@@ -29,6 +29,19 @@ function requirePrisma() {
 // ------------------------------------------------------------- dashboard
 
 export interface ReputationSnapshot {
+  requestHistory: Array<{
+    id: string;
+    profileName: string;
+    channel: ReviewChannel;
+    status: ReviewRequestStatus;
+    deliveryStatus: string | null;
+    recipientMasked: string | null;
+    createdAt: Date;
+    sentAt: Date | null;
+    openedAt: Date | null;
+    ratedAt: Date | null;
+    expiresAt: Date;
+  }>;
   profiles: Array<{
     id: string;
     name: string;
@@ -73,7 +86,7 @@ export interface ReputationSnapshot {
 
 export async function getReputationSnapshot(clientId: string): Promise<ReputationSnapshot> {
   const prisma = requirePrisma();
-  const [profiles, responses, requestGroups, ratingGroups, publicClicks, openFeedback, brands] = await Promise.all([
+  const [profiles, responses, requestGroups, ratingGroups, publicClicks, openFeedback, brands, requestHistory] = await Promise.all([
     prisma.reviewProfile.findMany({
       where: { clientId },
       orderBy: { createdAt: "asc" },
@@ -115,6 +128,24 @@ export async function getReputationSnapshot(clientId: string): Promise<Reputatio
     prisma.reviewResponse.count({ where: { clientId, publicLinkClickedAt: { not: null } } }),
     prisma.reviewResponse.count({ where: { clientId, status: { not: "resolved" }, rating: { lte: 3 } } }),
     prisma.businessBrand.findMany({ where: { clientId }, select: { id: true, name: true }, orderBy: { name: "asc" } }),
+    prisma.reviewRequest.findMany({
+      where: { clientId, profile: { clientId } },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: 50,
+      select: {
+        id: true,
+        channel: true,
+        status: true,
+        deliveryStatus: true,
+        recipientMasked: true,
+        createdAt: true,
+        sentAt: true,
+        openedAt: true,
+        ratedAt: true,
+        expiresAt: true,
+        profile: { select: { name: true } },
+      },
+    }),
   ]);
 
   // Review Responder drafts, matched to the review they answer.
@@ -145,6 +176,19 @@ export async function getReputationSnapshot(clientId: string): Promise<Reputatio
   const requests = Object.values(byStatus).reduce((a, b) => a + b, 0);
 
   return {
+    requestHistory: requestHistory.map((request) => ({
+      id: request.id,
+      profileName: request.profile.name,
+      channel: request.channel,
+      status: request.status,
+      deliveryStatus: request.deliveryStatus,
+      recipientMasked: request.recipientMasked,
+      createdAt: request.createdAt,
+      sentAt: request.sentAt,
+      openedAt: request.openedAt,
+      ratedAt: request.ratedAt,
+      expiresAt: request.expiresAt,
+    })),
     profiles: profiles.map((p) => ({
       id: p.id,
       name: p.name,

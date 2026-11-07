@@ -1,3 +1,6 @@
+# REVEW review cockpit handoff — 2026-10-31
+
+Branch `codex/review-ecosystem`, based on main 35c62f0. Native V1 review cockpit, private unified feed, capability registry, existing AI queue action and tighter QMAPS reply ownership/acknowledgement. No migration or deployment. Main details and counterpart links: [REVEW_REVIEW_ECOSYSTEM.md](REVEW_REVIEW_ECOSYSTEM.md). Local 15 cockpit, 4 QMAPS bridge and 13 QMAPS sync checks passed; Prisma/Growth-wide checks blocked by engine-host 403. Gmail/Drive/scheduling tools unavailable; no 30-minute email task is active. CI on source 8c3cfb8 passed: https://github.com/takatakca/takatak-v1/actions/runs/41190779123 (real Prisma generation, tests, full typecheck/lint/build). Next: coordinator reviews the feature branch; no deployment by REVEW. — REVEW
 ## Latest TAKATAK.ca homepage SEO handoff — 2026-11-02
 
 Signed: Codex SEO @ ChatGPT Work. Owner authorized full control and asked this agent to add itself for completion.

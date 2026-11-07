@@ -69,13 +69,13 @@ export function PlansBillingView({
       <CheckoutReturnNotice />
       <CurrentPlanCard data={data} canManage={canManage} />
       <BrandFreezePanel data={data} canManage={canManage} />
-      <AddOnsRow data={data} canManage={canManage} />
-      <section className="rounded-xl border border-slate-200 bg-white p-6">
+      {!data.billingExempt ? <AddOnsRow data={data} canManage={canManage} /> : null}
+      {!data.billingExempt ? <section className="rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="text-lg font-semibold text-slate-900">Website Monitoring add-on</h2>
         <p className="mt-2 text-sm text-slate-600">Availability checks, confirmed alerts and monthly reports. $5 CAD per website / month plus applicable taxes, billed separately through your TAKATAK account.</p>
         <Link href="/dashboard/web-hosting/monitoring" className="mt-4 inline-block font-semibold text-[#1565D8]">Manage monitoring &amp; subscription →</Link>
-      </section>
-      <PlanCatalog data={data} canManage={canManage} />
+      </section> : null}
+      {!data.billingExempt ? <PlanCatalog data={data} canManage={canManage} /> : null}
       <PaymentsHistory />
       <BillingInformationForm data={data} canManage={canManage} />
     </div>
@@ -237,13 +237,13 @@ function CurrentPlanCard({
           </p>
         </div>
         <div className="flex flex-col items-stretch gap-2 sm:items-end">
-          <a
+          {!data.billingExempt ? <a
             href="#plan-catalog"
             className="inline-flex h-10 items-center justify-center rounded-md bg-[#2a1728] px-4 text-sm font-semibold text-white"
           >
             View plans
-          </a>
-          {data.subscriptionAccess === 'paid' ? (
+          </a> : null}
+          {data.subscriptionAccess === 'paid' && !data.billingExempt ? (
             <CancelSubscriptionButton
               checkoutLive={data.checkoutLive}
               stripeCustomerReady={data.stripeCustomerReady}
@@ -279,7 +279,9 @@ function CurrentPlanCard({
         </div>
         <div>{postsLabel(data.entitlements.monthlyPostAllowance)}</div>
       </dl>
-      {!data.checkoutLive ? (
+      {data.billingExempt ? (
+        <p className="mt-4 text-xs text-slate-600">No TAKATAK Social subscription payment is required for this workspace.</p>
+      ) : !data.checkoutLive ? (
         <p className="mt-4 text-xs text-slate-400">
           Checkout is not live yet. Add Stripe keys and Price IDs to enable
           Upgrade. Viewing plans does not charge this workspace.

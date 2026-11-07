@@ -271,6 +271,7 @@ export function FacebookPageSyncDashboard({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [syncTimedOut, setSyncTimedOut] = useState(false);
   const [awaitingStart, setAwaitingStart] = useState(
     initialSyncStatus === "idle" || initialSyncStatus === "syncing",
   );
@@ -369,6 +370,7 @@ export function FacebookPageSyncDashboard({
 
         setError(null);
         setSync(body.sync);
+        if (!stillInFlight(body.sync)) setSyncTimedOut(false);
         setMetrics(Array.isArray(body.metrics) ? body.metrics : []);
         setCompareMetrics(
           Array.isArray(body.compareMetrics) ? body.compareMetrics : [],
@@ -391,6 +393,7 @@ export function FacebookPageSyncDashboard({
     if (busyAction !== null) return;
 
     setBusyAction("sync");
+    setSyncTimedOut(false);
     setError(null);
 
     try {
@@ -431,6 +434,7 @@ export function FacebookPageSyncDashboard({
     const startedAt = Date.now();
     let waitingForStart = true;
     setAwaitingStart(true);
+    setSyncTimedOut(false);
     const poll = setInterval(() => {
       void (async () => {
         const next = await loadStatus();
@@ -457,6 +461,7 @@ export function FacebookPageSyncDashboard({
       })();
     }, SYNC_POLL_MS);
     const limit = window.setTimeout(() => {
+      setSyncTimedOut(true);
       setAwaitingStart(false);
       clearInterval(poll);
     }, SYNC_POLL_TIMEOUT_MS);
@@ -536,6 +541,7 @@ export function FacebookPageSyncDashboard({
 
     const beginPoll = (initialWaitingForStart: boolean) => {
       waitingForStart = initialWaitingForStart;
+      setSyncTimedOut(false);
       startedAt = Date.now();
       timer = setInterval(() => {
         void (async () => {
@@ -556,6 +562,7 @@ export function FacebookPageSyncDashboard({
       }, SYNC_POLL_MS);
       timeout = setTimeout(() => {
         if (cancelled) return;
+        setSyncTimedOut(true);
         setAwaitingStart(false);
         stopTimer();
       }, SYNC_POLL_TIMEOUT_MS);
@@ -616,7 +623,7 @@ export function FacebookPageSyncDashboard({
 
   const jobActive = isActiveSyncJob(sync?.operation);
   const syncInProgress =
-    awaitingStart || status === "syncing" || jobActive;
+    !syncTimedOut && (awaitingStart || status === "syncing" || jobActive);
   const refreshingWithData = metricsConfirmed && jobActive;
 
   const impressions =
@@ -842,6 +849,22 @@ export function FacebookPageSyncDashboard({
           <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#f4f5f7] px-4 py-3 text-sm text-[#505761]">
             <Loader2 className="h-4 w-4 animate-spin" />
             Synchronizing Page identity and engagement metrics…
+          </div>
+        ) : null}
+
+        {syncTimedOut && (status === "syncing" || jobActive) ? (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
+            Facebook synchronization has not completed. The background worker may be delayed or unavailable.
+            {sync?.operation?.jobStatus === "queued" && sync.operation.attempts === 0
+              ? " The job is queued but has not started; check the Social sync worker schedule."
+              : " Check the worker status before retrying to avoid duplicate requests."}
+            <button
+              type="button"
+              onClick={() => { setSyncTimedOut(false); void loadStatus(); }}
+              className="ml-2 font-semibold underline"
+            >
+              Check status
+            </button>
           </div>
         ) : null}
 

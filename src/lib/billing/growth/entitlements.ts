@@ -1,5 +1,7 @@
 import "server-only";
 
+import { isBillingExemptWorkspace } from "@/lib/billing/billing-exemption-policy";
+
 import { getPrisma } from "@/lib/db/prisma";
 
 import { ACTIVE_STATUSES, planUnlocks, type GrowthFeature } from "./policy";
@@ -20,6 +22,7 @@ export async function activeGrowthPlans(clientId: string): Promise<string[]> {
 }
 
 export async function clientHasGrowthFeature(clientId: string, feature: GrowthFeature): Promise<boolean> {
+  if (isBillingExemptWorkspace(clientId)) return true;
   if (!growthEntitlementsEnforced()) return true;
   return planUnlocks(await activeGrowthPlans(clientId), feature);
 }
