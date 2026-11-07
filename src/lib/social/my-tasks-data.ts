@@ -2,7 +2,9 @@ import "server-only";
 
 import { resolveEffectiveSocialEntitlements } from "@/lib/billing/social";
 import { getPrisma } from "@/lib/db/prisma";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
+import { readPublicationReceipt } from "@/lib/social/publishing/publication-model";
 
 export type MyTasksTab = "open" | "pending" | "rejected" | "approved";
 
@@ -28,6 +30,16 @@ export type MyTaskItem = {
   captionPreview: string;
   platform: string;
   brandName: string | null;
+  socialPostId: string;
+  postStatus: string;
+  scheduledAt: string | null;
+  publication: {
+    state: "sending" | "confirmed" | "failed" | "uncertain" | "needs_reconnect" | null;
+    remotePostId: string | null;
+    permalinkUrl: string | null;
+    errorMessage: string | null;
+    confirmedAt: string | null;
+  } | null;
 };
 
 export type MyTasksPageData =
@@ -35,6 +47,7 @@ export type MyTasksPageData =
       source: "database";
       approvalsEnabled: boolean;
       planName: string;
+      canReview: boolean;
       tasks: MyTaskItem[];
     }
   | {
@@ -84,7 +97,14 @@ export async function getMyTasksPageData(
           comments: true,
           requestedAt: true,
           socialPost: {
-            select: { caption: true, platform: true },
+            select: {
+              id: true,
+              caption: true,
+              platform: true,
+              status: true,
+              scheduledAt: true,
+              metadata: true,
+            },
           },
           businessBrand: {
             select: { name: true },
@@ -110,15 +130,31 @@ export async function getMyTasksPageData(
       source: "database",
       approvalsEnabled: entitlements.approvals,
       planName: entitlements.planName,
-      tasks: approvals.map((approval) => ({
-        id: approval.id,
-        status: approval.status,
-        comments: approval.comments,
-        requestedAt: approval.requestedAt.toISOString().slice(0, 10),
-        captionPreview: captionPreview(approval.socialPost.caption),
-        platform: approval.socialPost.platform,
-        brandName: approval.businessBrand?.name ?? null,
-      })),
+      canReview: hasEffectivePermission(access, "approve_content"),
+      tasks: approvals.map((approval) => {
+        const receipt = readPublicationReceipt(approval.socialPost.metadata);
+        return {
+          id: approval.id,
+          status: approval.status,
+          comments: approval.comments,
+          requestedAt: approval.requestedAt.toISOString().slice(0, 10),
+          captionPreview: captionPreview(approval.socialPost.caption),
+          platform: approval.socialPost.platform,
+          brandName: approval.businessBrand?.name ?? null,
+          socialPostId: approval.socialPost.id,
+          postStatus: approval.socialPost.status,
+          scheduledAt: approval.socialPost.scheduledAt?.toISOString() ?? null,
+          publication: receipt
+            ? {
+                state: receipt.state,
+                remotePostId: receipt.remotePostId,
+                permalinkUrl: receipt.permalinkUrl,
+                errorMessage: receipt.errorMessage,
+                confirmedAt: receipt.confirmedAt,
+              }
+            : null,
+        };
+      }),
     };
   } catch (error) {
     console.error(
