@@ -134,6 +134,9 @@ jobs:
       - name: CUBAFOOD master contract safeguards (offline, no live route)
         run: npm run qa:cubafood-contract
 
+      - name: TAKATAK master API bounded JSON safeguards
+        run: npx tsx --require ./scripts/register-server-only.cjs scripts/master-api-request-body-tests.ts
+
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
