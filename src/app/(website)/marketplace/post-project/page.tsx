@@ -4,7 +4,7 @@ import { PostProjectForm } from "@/components/website/marketplace/post-project-f
 import { getWebsiteSession } from "@/lib/website/website-session";
 
 export const metadata: Metadata = {
-  title: "Post a project",
+  title: "Publier un projet · Post a project",
   alternates: { canonical: "/marketplace/post-project" },
 };
 
