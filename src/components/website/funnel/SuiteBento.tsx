@@ -229,7 +229,7 @@ export function SuiteBento() {
                     {lang === "fr" ? "Tout sur SEO TAKATAK" : "All about SEO TAKATAK"} <ArrowUpRight size={15} aria-hidden />
                   </a>
                 </div>
-                <Shot src="/media/product/shot-seo.webp" url="takatak.ca/dashboard/seo" alt={lang === "fr" ? "L’audit SEO du tableau de bord TAKATAK" : "The SEO audit in the TAKATAK dashboard"} className="h-[260px]" />
+                <Shot src="/media/product/shot-seo.webp" url="takatak.ca/dashboard/seo" alt={lang === "fr" ? "L’audit SEO du tableau de bord TAKATAK" : "The SEO audit in the TAKATAK dashboard"} className="h-[260px]" position="object-left-top" />
               </div>
             </Tile>
           </Rise>

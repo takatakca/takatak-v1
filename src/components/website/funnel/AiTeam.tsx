@@ -104,7 +104,7 @@ export function AiTeam() {
   return (
     <Section id={sectionId("team")} labelledBy="home-team-title" className="hp-bg hp-live py-16 sm:py-24">
       <div ref={ref} className="mx-auto max-w-7xl px-4">
-        <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="grid grid-cols-1 items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
           <Rise className="relative max-w-3xl">
             <div aria-hidden className="pointer-events-none absolute -top-4 right-0 lg:hidden">
               <RobotMascot size={72} title="TAK-TAK" />
@@ -118,11 +118,11 @@ export function AiTeam() {
           </Rise>
         </div>
 
-        <div className="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           {/* Agents with their status, as an example week */}
           <div>
           <p className="hp-ink-3 mb-3 text-[12.5px]">{T.example[lang]}</p>
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {AGENTS.map((a, i) => {
               const s = STATUS[a.status];
               const live = a.status === "working";
@@ -159,7 +159,7 @@ export function AiTeam() {
               <p className="flex items-center gap-2 text-[14px] font-semibold">
                 <CalendarClock size={16} aria-hidden /> {T.posts[lang]}
               </p>
-              <ul className="mt-4 grid gap-2.5">
+              <ul className="mt-4 grid grid-cols-1 gap-2.5">
                 {POSTS.map((p, i) => {
                   const icon = BRAND_ICONS[p.net];
                   const state = i === writingIdx ? POST_STATE.writing : POST_STATE[p.state === "writing" ? "queued" : p.state];
@@ -197,7 +197,7 @@ export function AiTeam() {
 
         {/* AIOS: the next agent, one per restaurant (in preparation) */}
         <Rise className="mt-6">
-          <div className="hp-glow relative grid items-center gap-5 overflow-hidden rounded-[26px] bg-[linear-gradient(120deg,#060D1F,#0B1B3D_55%,#1565D8)] p-5 text-white sm:p-7 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <div className="hp-glow relative grid grid-cols-1 items-center gap-5 overflow-hidden rounded-[26px] bg-[linear-gradient(120deg,#060D1F,#0B1B3D_55%,#1565D8)] p-5 text-white sm:p-7 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
             <div aria-hidden className="hidden lg:block">
               <RobotMascot size={92} title="AIOS" />
             </div>

@@ -180,7 +180,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
             <span className="flex justify-between">{w(lang, "TPS · TVQ", "GST · QST")}<span className="h-1.5 w-7 self-center rounded bg-slate-200" /></span>
             <span className="flex justify-between">{w(lang, "Pourboires", "Tips")}<span className="h-1.5 w-5 self-center rounded bg-slate-200" /></span>
           </div>
-          <Done show={f === 3}>{w(lang, "Export comptable prêt", "Accounting export ready")}</Done>
+          <Done show={f === 3}>{w(lang, "Export comptable", "Export ready")}</Done>
         </div>
       );
     case "tr4cker": {
@@ -203,7 +203,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
             <Clock3 size={9} className="mr-0.5 inline" aria-hidden />
             {f === 3 ? w(lang, "Arrivé", "Arrived") : w(lang, "En route", "On the way")}
           </span>
-          <Done show={f === 3}>{w(lang, "Livré · pourboire et avis", "Delivered · tip and review")}</Done>
+          <Done show={f === 3}>{w(lang, "Livré · pourboire", "Delivered · tipped")}</Done>
         </div>
       );
     }
@@ -246,7 +246,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
           <span className={`absolute right-2 top-1.5 transition-transform duration-500 ${f === 3 ? "-translate-y-1 translate-x-1" : ""}`} aria-hidden>
             <Send size={11} style={{ color: a }} />
           </span>
-          <Done show={f === 3}>{w(lang, "Envoyée aux abonnés", "Sent to subscribers")}</Done>
+          <Done show={f === 3}>{w(lang, "Campagne envoyée", "Campaign sent")}</Done>
         </div>
       );
     case "loy4lty":
@@ -266,7 +266,7 @@ export function Mini({ app, f, lang }: { app: string; f: F; lang: Lang }) {
           <p className={`px-2 pt-1 text-[9px] font-semibold transition-opacity duration-300 ${f >= 2 ? "opacity-100" : "opacity-0"}`} style={{ color: a }}>
             +1 {w(lang, "point", "point")}
           </p>
-          <Done show={f === 3}>{w(lang, "Récompense gagnée", "Reward unlocked")}</Done>
+          <Done show={f === 3}>{w(lang, "Cadeau débloqué", "Reward unlocked")}</Done>
         </div>
       );
     case "rew4rd":
@@ -343,7 +343,7 @@ export function CloverSuite({ statusLabel }: { statusLabel: ReactNode }) {
               style={{ background: ACCENT[p.key] }}
             />
             <div
-              className="relative h-[108px] w-[136px] shrink-0 rounded-[16px] p-1 shadow-[0_14px_28px_-16px_rgb(6_13_31/0.75)] sm:h-[118px] sm:w-[156px]"
+              className="relative h-[112px] w-[144px] shrink-0 rounded-[16px] p-1 shadow-[0_14px_28px_-16px_rgb(6_13_31/0.75)] sm:h-[118px] sm:w-[156px]"
               style={{ background: `linear-gradient(160deg, #1B2436, #0B1220)` }}
               aria-hidden
             >

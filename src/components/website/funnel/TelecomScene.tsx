@@ -74,7 +74,7 @@ export function TelecomScene() {
 
   return (
     <div ref={ref} className="relative">
-      <span className="absolute bottom-0 left-1/2 z-[3] -translate-x-1/2 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60 lg:bottom-auto lg:top-[-6px]">{T.demo[lang]}</span>
+      <span className="absolute left-1/2 top-[-6px] z-[3] hidden -translate-x-1/2 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60 lg:block">{T.demo[lang]}</span>
 
       {/* Desktop stage: phone in the middle, options around it, light running along the wires */}
       <div className="relative hidden h-[560px] lg:block">
@@ -105,6 +105,7 @@ export function TelecomScene() {
 
       {/* Mobile and tablet: phone, then the options in a grid */}
       <div className="lg:hidden">
+        <span className="mx-auto mb-4 block w-fit rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{T.demo[lang]}</span>
         <Handset lang={lang} onCall={onCall} secs={secs} reduced={reduced} className="mx-auto" small />
         <div className="mt-6 grid grid-cols-2 gap-2.5 [&>*]:min-w-0">
           {OPTIONS.map((o, i) => (

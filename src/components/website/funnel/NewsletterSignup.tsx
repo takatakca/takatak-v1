@@ -268,7 +268,7 @@ function InboxPreview({ lang }: { lang: "en" | "fr" }) {
         </p>
         <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{lang === "fr" ? "Aperçu" : "Preview"}</span>
       </div>
-      <ul className="relative mt-5 grid gap-3">
+      <ul className="relative mt-5 grid grid-cols-1 gap-3">
         {INBOX.map((m, i) => (
           <li
             key={m.subject.fr}
