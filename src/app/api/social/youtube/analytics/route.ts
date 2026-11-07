@@ -12,8 +12,16 @@ import { isServiceError } from "@/lib/services/service-error";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type AllowedDays = 7 | 30 | 90 | 365;
-const ALLOWED_DAYS = new Set([7, 30, 90, 365]);
+function parseDay(value: string | null): Date | null {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const parsed = new Date(value + "T00:00:00.000Z");
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? parsed : null;
+}
+function yesterdayUtc(): Date {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1));
+}
+function isoDay(date: Date): string { return date.toISOString().slice(0, 10); }
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,13 +36,29 @@ export async function GET(request: NextRequest) {
       return jsonResponse({ ok: false, message: "An active Social subscription is required to view YouTube analytics." }, 403);
     }
 
-    const days = Number(request.nextUrl.searchParams.get("days") ?? "30");
-    if (!ALLOWED_DAYS.has(days)) {
-      return jsonResponse({ ok: false, message: "Choose a supported reporting period." }, 400);
+    const latest = yesterdayUtc();
+    const urlStart = request.nextUrl.searchParams.get("start");
+    const urlEnd = request.nextUrl.searchParams.get("end");
+    if ((urlStart === null) !== (urlEnd === null)) {
+      return jsonResponse({ ok: false, message: "Provide both start and end dates." }, 400);
+    }
+    const end = urlEnd ? parseDay(urlEnd) : latest;
+    const start = urlStart
+      ? parseDay(urlStart)
+      : new Date(latest.getTime() - 29 * 86_400_000);
+    if (!start || !end || start > end || end > latest) {
+      return jsonResponse({ ok: false, message: "Choose a valid date range ending no later than yesterday." }, 400);
+    }
+    const days = Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1;
+    if (days < 1 || days > 365) {
+      return jsonResponse({ ok: false, message: "YouTube analytics supports up to 365 days per request." }, 400);
     }
     const allowedHistory = billing.analyticsHistoryDays;
-    if (typeof allowedHistory === "number" && days > allowedHistory) {
-      return jsonResponse({ ok: false, message: "Your subscription does not include this reporting period." }, 403);
+    const earliest = typeof allowedHistory === "number"
+      ? new Date(latest.getTime() - (allowedHistory - 1) * 86_400_000)
+      : null;
+    if (earliest && start < earliest) {
+      return jsonResponse({ ok: false, message: "Your subscription does not include this analytics history." }, 403);
     }
     const compare = request.nextUrl.searchParams.get("compare") === "previous";
     const canCompare = billing.billingExempt ||
@@ -58,7 +82,8 @@ export async function GET(request: NextRequest) {
       businessBrandId: brand.activeBrandId,
       connectionId: youtube.connectionId,
       socialAccountId: youtube.socialAccountId,
-      days: days as AllowedDays,
+      days,
+      range: { start: isoDay(start), end: isoDay(end) },
     };
     const current = await getYoutubeCommunitySnapshot(options);
     const previous = compare
