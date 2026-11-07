@@ -4,12 +4,15 @@ import { ArrowUpRight, CalendarDays, ChevronDown, CircleAlert, Info, RefreshCw }
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { YoutubeCommunitySnapshot, YoutubeGrowthDay } from "@/lib/social/providers/youtube-community-analytics";
+import { YoutubeVideoSectionView } from "@/components/social/platforms/youtube-video-sections";
+import type { YoutubeVideoPerformance } from "@/lib/social/providers/youtube-video-performance";
 
 type ReportResponse = {
   ok?: boolean;
   message?: string;
   current?: YoutubeCommunitySnapshot;
   previous?: YoutubeCommunitySnapshot | null;
+  videos?: { ok: true; report: YoutubeVideoPerformance } | { ok: false; message: string };
 };
 
 const SECTION_LINKS = [
@@ -310,10 +313,21 @@ export function YoutubeAnalyticsDashboard({
         </div>
       </section>
 
-      {/* Content under each remaining section is delivered incrementally from
-          the owner's next screenshots. This is one page, not separate routes. */}
-      <section id="published-videos" aria-label="Published videos" className="scroll-mt-36" />
-      <section id="viewed-videos" aria-label="Viewed videos" className="scroll-mt-36" />
+      <YoutubeVideoSectionView
+        kind="published"
+        data={data?.videos?.ok ? data.videos.report.published : null}
+        busy={busy}
+        locked={isLocked}
+        error={data?.videos && !data.videos.ok ? data.videos.message : data?.message ?? null}
+      />
+      <YoutubeVideoSectionView
+        kind="viewed"
+        data={data?.videos?.ok ? data.videos.report.viewed : null}
+        busy={busy}
+        locked={isLocked}
+        error={data?.videos && !data.videos.ok ? data.videos.message : data?.message ?? null}
+      />
+      {/* Competitors content will be built from the owner's remaining screenshots. */}
       <section id="competitors" aria-label="Competitors" className="scroll-mt-36" />
     </div>
   );
