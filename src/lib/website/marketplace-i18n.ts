@@ -60,6 +60,18 @@ export function packageTitle(p: Pick<MarketplacePackageDetail, "id" | "title">, 
   return lang === "fr" ? (PACKAGE_TITLE_FR[p.id] ?? p.title) : p.title;
 }
 
+const TIER_NAME_FR: Record<string, string> = {
+  Basic: "Base",
+  Standard: "Standard",
+  Premium: "Premium",
+  Business: "Affaires",
+};
+
+/** Display name of a package tier; the English name stays the stored key. */
+export function tierName(name: string, lang: Lang): string {
+  return lang === "fr" ? (TIER_NAME_FR[name] ?? name) : name;
+}
+
 /** "249 $" in French (Québec style, non-breaking space), "$249" in English. */
 export function formatCad(cents: number, lang: Lang): string {
   const n = Math.round(cents / 100).toLocaleString(lang === "fr" ? "fr-CA" : "en-CA", { maximumFractionDigits: 0 });
