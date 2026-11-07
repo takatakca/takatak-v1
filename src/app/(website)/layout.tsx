@@ -5,10 +5,7 @@ import type {
 import type { ReactNode } from "react";
 import { headers } from "next/headers";
 import { HOME_LANGUAGE_HEADER, HOME_SEO } from "@/lib/website/home-seo";
-import {
-  Inter,
-  Montserrat,
-} from "next/font/google";
+import localFont from "next/font/local";
 
 import { SiteShell } from "@/components/website/layout/SiteShell";
 import { PromoTopBar } from "@/components/website/promotions/PromoTopBar";
@@ -22,15 +19,19 @@ import { WebsiteProviders } from "@/lib/website/website-providers";
 
 import "./website.css";
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "../../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
   display: "swap",
   variable: "--font-website-body",
 });
 
 // Headings: Montserrat, the closest free match to the brand wordmark (BRAND.md).
-const montserrat = Montserrat({
-  subsets: ["latin"],
+const montserrat = localFont({
+  src: "../../../node_modules/@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
   display: "swap",
   variable: "--font-website-display",
 });

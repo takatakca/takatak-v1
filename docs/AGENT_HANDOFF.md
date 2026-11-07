@@ -30,6 +30,17 @@ Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @
 # REVEW review cockpit handoff — 2026-10-31
 
 Branch `codex/review-ecosystem`, based on main 35c62f0. Native V1 review cockpit, private unified feed, capability registry, existing AI queue action and tighter QMAPS reply ownership/acknowledgement. No migration or deployment. Main details and counterpart links: [REVEW_REVIEW_ECOSYSTEM.md](REVEW_REVIEW_ECOSYSTEM.md). Local 15 cockpit, 4 QMAPS bridge and 13 QMAPS sync checks passed; Prisma/Growth-wide checks blocked by engine-host 403. Gmail/Drive/scheduling tools unavailable; no 30-minute email task is active. CI on source 8c3cfb8 passed: https://github.com/takatakca/takatak-v1/actions/runs/41190779123 (real Prisma generation, tests, full typecheck/lint/build). Next: coordinator reviews the feature branch; no deployment by REVEW. — REVEW
+
+## Local-font build portability — 2026-11-04
+
+Branch `feature/cloud-local-fonts`, based on latest main `b853bb6` (PR248), fixes the recorded intermittent Google font fetch failures using the same five families from locked official Fontsource packages and `next/font/local`. Four loader modules preserve existing CSS variables, variable weights, both serif styles and the latest preload choices. Original font licenses are public assets. Authentication/master API behavior, schema and migrations are untouched.
+
+Full production build/TypeScript and105 static pages, standalone tsc, source/module checks, access/auth/identity, website SEO/theme pass. Lint0errors/12existingwarnings; targetedsource/verifier clean. Actual production-app HTTP/Chromium evidence verifies6 exact font assets,5 licenses and3 page states, with no externalfontrequests/pageerrors. See [local font record](LOCAL_FONTS.md) and [sanitized proof](proofs/2026-11-04/local-fonts/README.md).
+
+The normal Prisma checksum-stamp subcheck remains skipped under the genuine official types-only cloud bootstrap; DB/runtime/migration and production release are not proven. PR API is blocked by current environment policy; next is coordinator review/CI/PR release once access is available. No main merge or deployment performed.
+
+— signé : Codex build continuation @ Codex cloud · 2026-11-04
+
 ## Latest TAKATAK.ca homepage SEO handoff — 2026-11-02
 
 Signed: Codex SEO @ ChatGPT Work. Owner authorized full control and asked this agent to add itself for completion.
