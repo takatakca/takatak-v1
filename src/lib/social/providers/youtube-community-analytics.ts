@@ -18,6 +18,8 @@ const YOUTUBE_SCOPE = "https://www.googleapis.com/auth/youtube.readonly";
 export type YoutubeGrowthDay = {
   day: string;
   subscribers: number | null;
+  gained: number | null;
+  lost: number | null;
   views: number | null;
   revenue: number | null;
 };
@@ -30,6 +32,8 @@ export type YoutubeCommunitySnapshot = {
   };
   totals: {
     subscriberChange: number | null;
+    gained: number | null;
+    lost: number | null;
     views: number | null;
     revenue: number | null;
   };
@@ -274,10 +278,12 @@ export async function getYoutubeCommunitySnapshot(options: {
       day: key,
       views: row ? row[0] : null,
       subscribers: row ? row[1] - row[2] : null,
+      gained: row ? row[1] : null,
+      lost: row ? row[2] : null,
       revenue: revenue ? revenue[0] : null,
     });
   }
-  function sumPresent(key: "views" | "subscribers" | "revenue"): number | null {
+  function sumPresent(key: "views" | "subscribers" | "gained" | "lost" | "revenue"): number | null {
     const values = points.map((point) => point[key]).filter((value): value is number => value !== null);
     return values.length ? values.reduce((a, b) => a + b, 0) : null;
   }
@@ -289,6 +295,8 @@ export async function getYoutubeCommunitySnapshot(options: {
     },
     totals: {
       subscriberChange: sumPresent("subscribers"),
+      gained: sumPresent("gained"),
+      lost: sumPresent("lost"),
       views: sumPresent("views"),
       revenue: sumPresent("revenue"),
     },
