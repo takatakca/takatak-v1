@@ -40,3 +40,25 @@ Signed: GPT-6 @ ChatGPT — 2026-11-07.
 - Current commits are source-only, production unchanged, remote Google API evidence not available in this session. Check PR CI and real provider-backed acceptance before release.
 
 Signed: GPT-6 @ ChatGPT — 2026-11-07.
+
+
+## Full-page structure review — owner zoomed-out screenshot, 2026-11-07
+**Explicit updated release gate: DO NOT MERGE YET.** The owner supplied a browser zoomed-out capture to show the complete page order, NOT a request to make page content tiny. Await separate release instruction after visual QA.
+
+### Source-verified layout
+- SocialWorkspaceShell retains its own left social-platform navigation and top product chrome. Connected YouTube renders YoutubeAnalyticsDashboard in the existing social page with up-to-1600px main content width.
+- Sticky in-page tabs: Community, Published videos, Viewed videos, Competitors; shared main/comparison reporting period on the right; titles scroll to section IDs (not route changes).
+- Before the sections: TAKATAK plan gating notice only for locked non-exempt clients, then contextual API/reporting notices.
+- Community contains Growth chart followed by Balance of Subscribers chart.
+- Published videos contains KPI/chart then its own List of videos, search/columns/CSV and disabled-until-wired Add to dashboard button.
+- Viewed videos contains KPI/chart then its own List of videos, search/columns/CSV.
+- Competitors contains plan gate only when required, searchable table, multi-select competitor filter, columns, CSV, public video list, add/favorite/remove and pagination.
+- Source uses ordinary desktop text metrics (12–24px Tailwind scales), 230px minimum chart areas, max-width content and horizontal overflow on narrow charts/tables; no CSS zoom or transform scaling added.
+
+### Not yet proven
+- A source-only comparison is not a rendered screenshot comparison. No browser screenshot of the draft branch at 100% zoom has been verified. Do not claim pixel parity or responsive visual acceptance.
+- Paid/exempt/locked UI and API behavior, real channel/competitor data, comparison coverage, and provider-specific errors need connected-account end-to-end validation.
+- Mark the design review incomplete until a 100%-zoom preview is checked on desktop and phone (navigation, sticky positioning, chart/table widths, overflow, cards, empty states, font readability).
+- The PR remains DRAFT and unmerged despite previous receipt of the last functional screenshots. Explicit newer instruction to hold overrides earlier merge-on-LAST-PAGE plan.
+
+Signed: GPT-6 @ ChatGPT — 2026-11-07.
