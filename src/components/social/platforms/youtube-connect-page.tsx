@@ -310,6 +310,7 @@ export function YoutubeConnectPage({
             historyDays={analyticsHistoryDays}
             canCompare={canCompare}
             billingHref={billingHref}
+            canManage={canManage}
           />
         ) : null}
       </div>
