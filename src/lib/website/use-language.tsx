@@ -11,6 +11,7 @@ import {
 } from "react";
 import {
   detectLanguage,
+  isLanguage,
   storeLanguage,
   translate,
   pick,
@@ -39,7 +40,15 @@ export function LanguageProvider({ children, initialLanguage }: { children: Reac
   }, [initialLanguage]);
 
   useEffect(() => {
-    if (initialLanguage) setLangState(initialLanguage);
+    if (!initialLanguage) return;
+    setLangState(initialLanguage);
+    // The homepage gets its language from the address (?lang=fr): remember it, so the next pages open in it too.
+    try {
+      const fromUrl = new URL(window.location.href).searchParams.get("lang");
+      if (isLanguage(fromUrl)) storeLanguage(fromUrl);
+    } catch {
+      /* malformed URL: nothing to remember */
+    }
   }, [initialLanguage]);
 
   useEffect(() => {
