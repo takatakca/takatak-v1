@@ -1,5 +1,7 @@
 # TAKATAK V1 — Agent Handoff
 
+Guardian audit, 2026-11-07T20:43Z. Live `https://takatak.ca/api/health/ready` was ok and served `6488d57e24885011034ff95b3578646f39d86ce6`, the same SHA as `main`. `www.takatak.ca` presented a Traefik default certificate and, once TLS errors were ignored, Coolify returned 503 because the domain is not configured. No hosting, schema, or deployment change was made. The public probe is `scripts/guardian-public-smoke.mjs`. Next: the owner attaches `www` to the existing Coolify application and issues a trusted certificate. Signed: TAKATAK GUARDIAN.
+
 ## Repository and immutable baseline
 Repository takatakca/takatak-v1; initial main 4706dad5d6f7d361e28f54f0ea20a4e58896288c, integration base bae2445711f2aeb6c7a527759936bd7bf277ca6c. Re-query main before every push.
 

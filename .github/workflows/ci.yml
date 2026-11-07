@@ -51,6 +51,9 @@ jobs:
       - name: Agent continuation documentation safeguards
         run: npm run qa:handoff
 
+      - name: Public guardian smoke decisions
+        run: npm run qa:guardian
+
       - name: Static RLS checks
         run: npm run qa:rls:static
 

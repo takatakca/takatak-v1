@@ -1,5 +1,7 @@
 # TAKATAK V1 — Project Status
 
+Guardian checkpoint — 2026-11-07T20:43Z. Production apex `takatak.ca` on 209.145.49.63 answered ready with database and Supabase ok at SHA `6488d57e24885011034ff95b3578646f39d86ce6`. The GitHub production workflow stayed skipped; native Coolify is what served that SHA. `www.takatak.ca` is not a working entry. Signed: TAKATAK GUARDIAN.
+
 ## Source of truth
 GitHub main and exact CI/runtime evidence are authoritative. Initial main was 4706dad; owner-authorized coordination note 7c086815 and concurrent Facebook fix d21709e were preserved. PR #235 merged as bae2445. The separate codex/sequential-release-20261107 branch reconciles reviewed older changes; it is not yet merged or deployed.
 

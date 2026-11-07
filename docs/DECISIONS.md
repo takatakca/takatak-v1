@@ -6,6 +6,8 @@ Preserve independent products, tenant boundaries, private credentials, historica
 ## Decisions pending
 Draft features, independent backend dependencies, live customer/provider tests and paid activation remain separate from this source-release operation. Existing Social/Studio implementation ownership is preserved.
 
+Guardian, 2026-11-07, still pending a human decision: whether `www.takatak.ca` should redirect to the apex on the existing Coolify application, and whether native Coolify auto-deploy should remain active while `COOLIFY_TAKATAK_AUTODEPLOY_ENABLED` is not `true`. This audit does not make either change.
+
 ## Owner authorization — 2026-11-07
 The owner explicitly requested all GitHub repositories be reviewed, merged and pushed one by one, starting with BESOINAVOCAT, and required signed notes before, during and after coding. Codex coordinates this release operation under that instruction; earlier generic coordinator-only wording is not a request for repeated permission. Technical readiness, data preservation and actual production verification still apply. See issue #259. Signed: Codex.
 

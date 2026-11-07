@@ -1,0 +1,44 @@
+# Classical public probe. It does not deploy, log in, or call an AI agent.
+# The daily run is expected to fail until www.takatak.ca has a trusted certificate
+# and Coolify answers it. Unit tests do not contact production.
+name: TAKATAK GUARDIAN public smoke
+
+on:
+  pull_request:
+    paths:
+      - scripts/guardian-public-smoke.mjs
+      - scripts/guardian-public-smoke.test.mjs
+      - .github/workflows/guardian-public-smoke.yml
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-guardian-public-smoke
+  cancel-in-progress: false
+
+jobs:
+  decisions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.23.2
+      - run: node --test scripts/guardian-public-smoke.test.mjs
+
+  production:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.23.2
+      - name: Probe public takatak.ca
+        run: node scripts/guardian-public-smoke.mjs --live
