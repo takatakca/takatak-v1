@@ -14,6 +14,7 @@ import {
   matchesAdsTargeting,
   parseAdsTargetingRules,
 } from "./targeting";
+import { maxCpcSpendBeforeClick } from "./cpc-budget-policy";
 import { createAdsTrackingGrant } from "./tracking-token";
 import type {
   AdsFeature,
@@ -366,6 +367,7 @@ export async function recordPublicAdsEvent(
       id: true,
       pricingModel: true,
       bidCents: true,
+      budgetCents: true,
     },
   });
   if (!campaign) {
@@ -394,17 +396,29 @@ export async function recordPublicAdsEvent(
 
       if (
         input.eventType === "click" &&
-        campaign.pricingModel === "cpc" &&
-        (campaign.bidCents ?? 0) > 0
+        campaign.pricingModel === "cpc"
       ) {
-        await tx.adCampaign.update({
-          where: { id: campaign.id },
-          data: {
-            spentCents: {
-              increment: campaign.bidCents ?? 0,
+        const maximumStartingSpend = maxCpcSpendBeforeClick(
+          campaign.budgetCents,
+          campaign.bidCents,
+        );
+
+        if (maximumStartingSpend !== null) {
+          // A conditional database update is atomic across concurrent clicks:
+          // only a click that still fits the remaining budget may be billed.
+          // The genuine event is recorded even if the budget is exhausted.
+          await tx.adCampaign.updateMany({
+            where: {
+              id: campaign.id,
+              spentCents: { lte: maximumStartingSpend },
             },
-          },
-        });
+            data: {
+              spentCents: {
+                increment: campaign.bidCents!,
+              },
+            },
+          });
+        }
       }
     });
   } catch (error) {
