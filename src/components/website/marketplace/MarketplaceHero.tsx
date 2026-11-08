@@ -32,16 +32,16 @@ const COPY = {
   title2: { fr: "pour chaque service.", en: "for any service." },
   lead: {
     fr: "Sites web, image de marque, contenu, marketing, automatisation et plus, livrés par TAKATAK avec un paiement protégé sur chaque projet.",
-    en: "Websites, branding, content, marketing, automation and more — delivered through TAKATAK with escrow protection on every project.",
+    en: "Websites, branding, content, marketing, automation and more — delivered through TAKATAK with a protected payment on every project.",
   },
   placeholder: { fr: "Rechercher « logo »", en: 'Search for "logo design"' },
   search: { fr: "Rechercher", en: "Search" },
   popular: { fr: "Populaires :", en: "Popular:" },
   escrow: {
     fr: "Paiement protégé : l’argent n’est versé qu’une fois le travail approuvé.",
-    en: "Escrow protection — funds only released when you approve the work.",
+    en: "Protected payment: the freelancer is paid only once you approve the work.",
   },
-  badge: { fr: "Paiement protégé TAKATAK", en: "TAKATAK escrow" },
+  badge: { fr: "Paiement protégé TAKATAK", en: "TAKATAK protected payment" },
 } as const;
 
 export function MarketplaceHero({ cards }: { cards: MarketplaceCard[] }) {
@@ -52,9 +52,10 @@ export function MarketplaceHero({ cards }: { cards: MarketplaceCard[] }) {
   });
   const [q, setQ] = useState("");
   const navigate = useNavigate();
+  // An empty search opens every service instead of doing nothing.
   const go = (term: string = q) => {
-    if (!term.trim()) return;
-    void navigate({ to: "/marketplace/search", search: { q: term } as never });
+    const t = term.trim();
+    void navigate({ to: "/marketplace/search", search: (t ? { q: t } : {}) as never });
   };
   return (
     <section className="brand-dark border-b border-border relative overflow-hidden">

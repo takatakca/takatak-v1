@@ -27,14 +27,14 @@ const cols: { title: Bi; links: FooterLink[] }[] = [
       { to: "/marketplace", label: { en: "How TAKATAK works", fr: "Comment fonctionne TAKATAK" } },
       { to: "/marketplace/post-project", label: { en: "Post a project", fr: "Décrire un projet" } },
       { to: "/dashboard", label: { en: "Manage projects", fr: "Gérer mes projets" } },
-      { to: "/dashboard/support", label: { en: "Support", fr: "Soutien" } },
+      { to: "/contact", label: { en: "Support", fr: "Soutien" } },
     ],
   },
   {
     title: { en: "For Groupe TAKATAK Freelancers", fr: "Pour les pigistes de Groupe TAKATAK" },
     links: [
       // There is no freelancer area yet (the old /dashboard/freelancer/* links were 404s): applications go to the team.
-      { to: "mailto:support@takatak.ca?subject=Devenir%20pigiste%20%C2%B7%20Become%20a%20freelancer", label: { en: "Become a freelancer", fr: "Devenir pigiste" } },
+      { to: "/freelancers", label: { en: "Become a freelancer", fr: "Devenir pigiste" } },
     ],
   },
   {
@@ -61,7 +61,8 @@ const cols: { title: Bi; links: FooterLink[] }[] = [
   {
     title: { en: "Company", fr: "Entreprise" },
     links: [
-      { to: "/", label: { en: "About TAKATAK", fr: "À propos de TAKATAK" } },
+      { to: "/about", label: { en: "About TAKATAK", fr: "À propos de TAKATAK" } },
+      { to: "/contact", label: { en: "Contact", fr: "Nous joindre" } },
       // Shown once src/lib/website/owned-brands.ts lists a confirmed brand.
       ...(hasOwnedBrands ? [{ to: "/ecosystem", label: { en: "Our brands", fr: "Nos marques" } }] : []),
       { to: "/deals", label: { en: "Today's Deals", fr: "Offres du jour" } },

@@ -36,6 +36,9 @@ const STATIC_PAGES: Record<string, string> = {
   "/search": "search/page.tsx",
   "/takbot": "takbot/page.tsx",
   "/infolettre": "infolettre/page.tsx",
+  "/about": "about/page.tsx",
+  "/contact": "contact/page.tsx",
+  "/freelancers": "freelancers/page.tsx",
 };
 const DYNAMIC_PAGES: Record<string, string> = {
   "/services/${service.slug}": "services/[slug]/page.tsx",
