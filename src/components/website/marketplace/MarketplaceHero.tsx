@@ -52,9 +52,10 @@ export function MarketplaceHero({ cards }: { cards: MarketplaceCard[] }) {
   });
   const [q, setQ] = useState("");
   const navigate = useNavigate();
+  // An empty search opens every service instead of doing nothing.
   const go = (term: string = q) => {
-    if (!term.trim()) return;
-    void navigate({ to: "/marketplace/search", search: { q: term } as never });
+    const t = term.trim();
+    void navigate({ to: "/marketplace/search", search: (t ? { q: t } : {}) as never });
   };
   return (
     <section className="brand-dark border-b border-border relative overflow-hidden">

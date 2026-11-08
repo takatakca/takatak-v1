@@ -10,8 +10,10 @@ Run on a local production build of `main` (takatak.ca itself is not reachable fr
 | Source scan | Every literal internal link in the public site code, matched against the app's routes | 1 dead link: menu "Partenaire / pigiste" → `/dashboard/freelancer` (no such page) |
 | Server crawl | Every page reachable from `/`, `/?lang=fr`, `/?lang=en` and the sitemap, every `<a href>` followed, status of each target | 101 internal URLs, 0 errors |
 | Browser render | 96 pages rendered in French after the page scripts run (links that only appear after loading included) | 166 link targets, 0 errors, 0 script errors |
-| Button pass | Every visible button on 21 key pages clicked on a fresh load; a click that changes nothing is flagged | see below |
-| Message box | Contact page and support panel: validation, intake off (email fallback), intake on (reference shown) | see below |
+| Button pass | Every visible button on 20 pages clicked on a fresh load (dialog, menu, selection, scroll, page change or request counted as an effect) | 87 buttons; 1 dead (empty Marketplace search, fixed); 5 flagged were tabs already selected (`/services/websites` "Design", `/takbot` "Clavarder", `/domain` "Recherche", `/hosting` "Votre forfait", `/services/voip` "Parcours d'appel"): correct |
+| Homepage | 175 buttons, checked the way a visitor uses them | Service cards: flip, "Ajouter à mon forfait", "Voir le détail" (pop-up, Escape closes it in 0.5–1.2 s), "Retour à la photo" all work; carousel arrows and pause work; plan bar "Commander" opens the order sheet; 44 of 47 other buttons clicked (the 3 others are the plan bar sliding in, a test timing artefact); 0 page errors |
+| Message box | Contact page and support panel | Empty → "Écrivez quelques mots…"; no contact → "Ajoutez un courriel ou un numéro…"; intake off (local 503 `not_enabled`) → message ready in an email; intake on (200) → "Message reçu" + reference |
+| Accessibility | axe-core WCAG A/AA, desktop 1366 and phone 390 | `/contact`, `/about`, `/freelancers`, `/pricing`, and the open support panel: no violation |
 
 ## Found and fixed in this PR
 
@@ -25,6 +27,9 @@ Run on a local production build of `main` (takatak.ca itself is not reachable fr
 | No contact page | Nowhere to write to TAKATAK without an email app | `/contact` with the message box (subject, message, name, business, email or phone), support email, Montréal, links to start a project, client support and pricing; `?topic=billing` preselects a subject |
 | Marketplace, English | "Escrow protection", "TAKATAK escrow", "held in escrow", "Get paid automatically on approval": no escrow account and no automatic payout exist in the code or database (TK-019 in `docs/DEV-TODO.md`) | Same promise as the French page: "Protected payment", "TAKATAK holds the payment", "Get paid once the client approves" |
 | Footer "Entreprise" | No contact link | "Nous joindre / Contact" added |
+| Marketplace search | "Rechercher" with nothing typed did nothing | Opens the full Marketplace search (every service) |
+| Contact messages (review) | A second, different message within 15 minutes would have been collapsed into the first (same title) | The title quotes the start of the message; only a repeated send of the same message is collapsed (`qa:website-leads`) |
+| `/checkout` order | The order was filed as English even from the French page | The visitor's language is sent with the order |
 | Sitemap | — | `/about`, `/contact`, `/freelancers` listed, with canonical URLs (checked by `qa:website-seo`) |
 
 Messages from the box are recorded as project requests with the category `contact-question`, `contact-support`,
@@ -53,4 +58,7 @@ Messages from the box are recorded as project requests with the category `contac
 | French legal pages | `/terms`, `/privacy`, `/privacy-policy`, `/terms-of-service`, `/data-deletion` are English only | Owner's consent to write the French text |
 | Support hours | The support panel says "En semaine, 9 h à 18 h (HE)" | Confirm or give the real hours |
 
-— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-08 06:10 UTC
+Screenshots: `about-fr-desktop.png`, `contact-fr-desktop.png`, `freelancers-en-desktop.png`,
+`support-panel-fr-phone.png`, `contact-sent-fr.png` (intake on), `contact-intake-off-fr.png` (intake off).
+
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-08 06:28 UTC
