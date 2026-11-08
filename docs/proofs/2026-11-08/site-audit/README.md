@@ -72,4 +72,4 @@ Screenshots: `about-fr-desktop.png`, `contact-fr-desktop.png`, `freelancers-en-d
 | Support panel | Showed "Page : … · Langue : …" (meant for the team) | Still sent to the team; the visitor only sees their own request |
 | Support panel | Closing it froze the page ~0.5 s (site-wide loading overlay) | The launcher is out of that overlay |
 
-— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-08 06:55 UTC
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-08 06:50 UTC
