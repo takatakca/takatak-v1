@@ -17,3 +17,14 @@ export type ContactTopic = keyof typeof CONTACT_TOPICS;
 export function contactCategory(topic: ContactTopic): string {
   return `contact-${topic}`;
 }
+
+/**
+ * Lead title for a message. It quotes the start of the message so the intake's duplicate check
+ * (same contact, same title, 15 minutes) only collapses a repeated send of the same message, never a
+ * second, different message. The closing quote keeps a short message from matching a longer one.
+ */
+export function contactTitle(topic: ContactTopic, message: string): string {
+  const oneLine = message.replace(/\s+/g, " ").trim();
+  const excerpt = oneLine.length > 90 ? `${oneLine.slice(0, 90).trimEnd()}…` : oneLine;
+  return `Contact · ${CONTACT_TOPICS[topic].en} · « ${excerpt} »`;
+}

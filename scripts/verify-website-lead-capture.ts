@@ -22,7 +22,7 @@ import {
 } from "../src/lib/website-leads/store";
 import { priceMarketplaceOrder } from "../src/lib/website-leads/package-pricing";
 import { leadAlertEmail } from "../src/lib/website-leads/notify";
-import { CONTACT_TOPICS, contactCategory, type ContactTopic } from "../src/lib/website/contact-topics";
+import { CONTACT_TOPICS, contactCategory, contactTitle, type ContactTopic } from "../src/lib/website/contact-topics";
 import { ACCEPTED_EXTENSIONS } from "../src/lib/website-leads/attachment-rules";
 import {
   checkAttachment,
@@ -192,7 +192,7 @@ async function main() {
   await check("contact and freelancer messages reach the leads inbox as project requests", () => {
     for (const topic of Object.keys(CONTACT_TOPICS) as ContactTopic[]) {
       const message = validateWebsiteRequest({
-        kind: "project_request", title: `Contact · ${CONTACT_TOPICS[topic].en}`, category: contactCategory(topic),
+        kind: "project_request", title: contactTitle(topic, "Bonjour, j’ai une question."), category: contactCategory(topic),
         message: "Bonjour, j’ai une question.\n\n— Demande : site web", email: "client@example.test",
         language: "fr", sourcePage: "/contact", website: "",
       });
@@ -297,6 +297,33 @@ async function main() {
     const later = new Date(now.getTime() + DUPLICATE_WINDOW_MS + 1);
     const fresh = await recordWebsiteRequest(fake.db, { ...base, now: later, request: domainInput() });
     assert.equal(fresh.duplicate, false);
+  });
+
+  await check("a second, different contact message is stored; the same message sent twice is not", async () => {
+    const now = new Date("2026-11-08T12:00:00Z");
+    const fake = fakeDb(now);
+    const base = { clientId: CLIENT, authUserId: null, sourceHash: "h", now };
+    const contact = (message: string) => {
+      const v = validateWebsiteRequest({
+        kind: "project_request", title: contactTitle("support", message), category: contactCategory("support"),
+        message, email: "client@example.test", language: "fr", sourcePage: "/contact",
+      });
+      assert.ok(v.ok);
+      return v.ok ? v.value : (null as never);
+    };
+    const first = await recordWebsiteRequest(fake.db, { ...base, request: contact("Ma facture est fausse.") });
+    const again = await recordWebsiteRequest(fake.db, { ...base, request: contact("Ma facture est fausse.") });
+    assert.equal(again.duplicate, true);
+    assert.equal(again.leadId, first.leadId);
+    const second = await recordWebsiteRequest(fake.db, { ...base, request: contact("Autre question : mon domaine.") });
+    assert.equal(second.duplicate, false);
+    // A short message is not swallowed by an earlier, longer one that starts the same way.
+    const longer = await recordWebsiteRequest(fake.db, { ...base, request: contact("Bonjour, mon site est en panne depuis ce matin.") });
+    const shorter = await recordWebsiteRequest(fake.db, { ...base, request: contact("Bonjour") });
+    assert.equal(longer.duplicate, false);
+    assert.equal(shorter.duplicate, false);
+    assert.equal(fake.leads.length, 4);
+    assert.ok(contactTitle("partner", "x".repeat(400)).length <= 160);
   });
 
   await check("workspace-wide flood cap stops intake", async () => {

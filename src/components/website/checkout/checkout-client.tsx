@@ -96,6 +96,7 @@ function MarketplaceOrder({
       tierName: selection.tierName,
       addons: selection.addons.map((item) => item.label),
       promoCode: selection.promoCode ?? undefined,
+      language: lang,
       sourcePage: "/checkout",
     });
     setSending(false);

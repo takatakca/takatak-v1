@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle2, Mail } from "lucide-react";
 import { useId, useState } from "react";
 
 import { useAuth } from "@/lib/website/auth-context";
-import { CONTACT_TOPICS, contactCategory, type ContactTopic } from "@/lib/website/contact-topics";
+import { CONTACT_TOPICS, contactCategory, contactTitle, type ContactTopic } from "@/lib/website/contact-topics";
 import { SUPPORT_EMAIL } from "@/lib/website/live-chat-config";
 import { useLanguage } from "@/lib/website/use-language";
 import { submitWebsiteRequest } from "@/lib/website/website-requests";
@@ -99,7 +99,7 @@ export function ContactForm({
     setStatus("sending");
     const result = await submitWebsiteRequest({
       kind: "project_request",
-      title: `Contact · ${CONTACT_TOPICS[topic].en}`,
+      title: contactTitle(topic, message),
       category: contactCategory(topic),
       message: fullMessage,
       name: name.trim() || undefined,
