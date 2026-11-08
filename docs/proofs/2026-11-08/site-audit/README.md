@@ -57,8 +57,19 @@ Messages from the box are recorded as project requests with the category `contac
 | Production deploy switch | `main` is verified on staging, production stays "skipped" | `COOLIFY_TAKATAK_AUTODEPLOY_ENABLED` and the 2 Coolify secrets |
 | French legal pages | `/terms`, `/privacy`, `/privacy-policy`, `/terms-of-service`, `/data-deletion` are English only | Owner's consent to write the French text |
 | Support hours | The support panel says "En semaine, 9 h à 18 h (HE)" | Confirm or give the real hours |
+| "Facturation" labelled "Disponible maintenant" | `/services/billing` promises online card payments paid to the client's account; the feature behind it (Stripe Connect, `docs/CLIENT_INVOICING_STRIPE_CONNECT.md`) is off unless `CLIENT_INVOICING_ENABLED` is set, which cannot be seen from here | Confirm it is on in production, or the label should become "Accès anticipé" |
 
 Screenshots: `about-fr-desktop.png`, `contact-fr-desktop.png`, `freelancers-en-desktop.png`,
 `support-panel-fr-phone.png`, `contact-sent-fr.png` (intake on), `contact-intake-off-fr.png` (intake off).
 
 — signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-08 06:28 UTC
+
+## Follow-up (PR #279)
+
+| Where | Problem | Fix |
+|---|---|---|
+| `/contact`, `/freelancers`, `/transfert` | The "10 % de rabais" invite slid over the form | Added to the form pages where it stays off |
+| Support panel | Showed "Page : … · Langue : …" (meant for the team) | Still sent to the team; the visitor only sees their own request |
+| Support panel | Closing it froze the page ~0.5 s (site-wide loading overlay) | The launcher is out of that overlay |
+
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-08 06:55 UTC
