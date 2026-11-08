@@ -26,7 +26,7 @@ function markSeen() {
 }
 
 /** Pages where visitors are filling in a form: the invite never interrupts them. */
-const FORM_PAGES = ["/signup", "/register", "/login", "/otp", "/checkout", "/dashboard", "/marketplace/post-project", "/privacy-manager"];
+const FORM_PAGES = ["/signup", "/register", "/login", "/otp", "/checkout", "/dashboard", "/marketplace/post-project", "/privacy-manager", "/contact", "/freelancers", "/transfert"];
 
 function isTyping(): boolean {
   const active = document.activeElement;
