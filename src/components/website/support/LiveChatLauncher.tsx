@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "@/lib/website/nav";
-import { Headset, Mail, MessageSquare, X } from "lucide-react";
-import { getLiveChatConfig, SUPPORT_EMAIL } from "@/lib/website/live-chat-config";
+import { Headset, MessageSquare, X } from "lucide-react";
+import { ContactForm } from "@/components/website/support/ContactForm";
+import { getLiveChatConfig } from "@/lib/website/live-chat-config";
 import { loadLiveChat, openLiveChat, TAKATAK_CHAT_EVENT } from "@/lib/website/chat-provider";
 import { useLanguage } from "@/lib/website/use-language";
 
@@ -54,7 +55,7 @@ export function LiveChatLauncher() {
               <X size={16} />
             </button>
           </div>
-          <div className="space-y-3 p-4">
+          <div className="max-h-[min(70vh,34rem)] space-y-3 overflow-y-auto p-4">
             {context && (
               <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
                 {context}
@@ -63,12 +64,8 @@ export function LiveChatLauncher() {
             <p className="text-sm text-muted-foreground">
               {t("chat.intro")}
             </p>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(t("chat.subject"))}&body=${encodeURIComponent(context ?? "")}`}
-              className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              <Mail size={15} /> {t("chat.email")}
-            </a>
+            {/* A real message box: the message lands in the TAKATAK leads inbox, read by a person. */}
+            <ContactForm compact context={context} defaultTopic="question" />
             <Link
               to="/marketplace/post-project"
               onClick={() => setOpen(false)}

@@ -22,6 +22,7 @@ import {
 } from "../src/lib/website-leads/store";
 import { priceMarketplaceOrder } from "../src/lib/website-leads/package-pricing";
 import { leadAlertEmail } from "../src/lib/website-leads/notify";
+import { CONTACT_TOPICS, contactCategory, type ContactTopic } from "../src/lib/website/contact-topics";
 import { ACCEPTED_EXTENSIONS } from "../src/lib/website-leads/attachment-rules";
 import {
   checkAttachment,
@@ -185,6 +186,22 @@ async function main() {
     if (project.ok) {
       assert.equal(project.value.project?.budgetCents, 150000);
       assert.equal(project.value.phone, "+1 514 555 0100");
+    }
+  });
+
+  await check("contact and freelancer messages reach the leads inbox as project requests", () => {
+    for (const topic of Object.keys(CONTACT_TOPICS) as ContactTopic[]) {
+      const message = validateWebsiteRequest({
+        kind: "project_request", title: `Contact · ${CONTACT_TOPICS[topic].en}`, category: contactCategory(topic),
+        message: "Bonjour, j’ai une question.\n\n— Demande : site web", email: "client@example.test",
+        language: "fr", sourcePage: "/contact", website: "",
+      });
+      assert.ok(message.ok, topic);
+      if (message.ok) {
+        assert.equal(message.value.project?.category, contactCategory(topic));
+        assert.ok(hasContact(message.value));
+        assert.equal(message.honeypot, false);
+      }
     }
   });
 
