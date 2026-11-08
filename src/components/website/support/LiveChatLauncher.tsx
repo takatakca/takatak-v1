@@ -16,7 +16,9 @@ import { useLanguage } from "@/lib/website/use-language";
 export function LiveChatLauncher() {
   const [external, setExternal] = useState(false);
   const [open, setOpen] = useState(false);
+  // Full context (page, language, request) goes to the team with the message; the visitor only sees their request.
   const [context, setContext] = useState<string | null>(null);
+  const [request, setRequest] = useState<string | null>(null);
   const { t, lang } = useLanguage();
 
   useEffect(() => {
@@ -25,8 +27,9 @@ export function LiveChatLauncher() {
     if (cfg.external) loadLiveChat();
 
     const onOpen = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { message?: string } | undefined;
+      const detail = (e as CustomEvent).detail as { message?: string; query?: string } | undefined;
       setContext(detail?.message ?? null);
+      setRequest(detail?.query?.trim() || null);
       setOpen(true);
     };
     window.addEventListener(TAKATAK_CHAT_EVENT, onOpen);
@@ -36,7 +39,8 @@ export function LiveChatLauncher() {
   if (external && !open) return null;
 
   return (
-    <div className="tk-chat-launcher fixed bottom-4 right-4 z-50 print:hidden">
+    // data-no-pending: opening and closing the panel loads nothing, so the site-wide loading overlay stays away.
+    <div data-no-pending className="tk-chat-launcher fixed bottom-4 right-4 z-50 print:hidden">
       {open && (
         <div
           role="dialog"
@@ -56,9 +60,9 @@ export function LiveChatLauncher() {
             </button>
           </div>
           <div className="max-h-[min(70vh,34rem)] space-y-3 overflow-y-auto p-4">
-            {context && (
+            {request && (
               <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-                {context}
+                {t("chat.context", { query: request })}
               </p>
             )}
             <p className="text-sm text-muted-foreground">
