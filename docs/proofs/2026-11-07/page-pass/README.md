@@ -20,3 +20,16 @@ screenshot again. Header, top menus, header search and QMAPS are not touched.
 - Every page captured: no horizontal overflow, no page error.
 
 — signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-07 20:36 UTC
+
+## Follow-up (PR #273)
+
+| Page | Seen | Fix |
+|---|---|---|
+| `/services` index | Plain white page; prices written the English way ("$19.99", "$1,999") | Navy design, an icon per service, prices in the visitor's language |
+| `/domain` | Mockups said "yourbrand" in French | "votremarque" |
+| `/hosting` | Plan mockup said "80 GB SSD" in French | "80 Go SSD" |
+| `/deals` | Single offer card alone in a two-column grid | Centred |
+
+Screenshots: `services-index-fr.png`, `domain-deals-hosting-fr.png`. axe-core on `/services`, desktop and phone: no violation.
+
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-07 20:55 UTC

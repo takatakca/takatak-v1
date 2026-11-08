@@ -1167,6 +1167,11 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 /* The new-client card (AnimatedPromoInvite.tsx) and the plan dock never overlap: the dock waits until the card folds. */
 html[data-promo-open] .tk-plan-dock { opacity: 0 !important; pointer-events: none !important; }
 
+/* A page with a fixed bottom bar (the order total on /commander): the support button sits above it, never on it. */
+@media (max-width: 1023px) {
+  body:has(.tk-bottom-bar) .tk-chat-launcher { bottom: 5rem; }
+}
+
 /* Kiosk scene (KioskScene.tsx): the menu rolls; a new kitchen ticket slides in. */
 .hp-kiosk-roll { animation: hp-kiosk-roll 14s linear infinite; }
 @keyframes hp-kiosk-roll { to { transform: translateY(-50%); } }
