@@ -9,6 +9,8 @@ import { HOME_SEO, homeLanguage, homeMetadata } from "../src/lib/website/home-se
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LanguageProvider, useLanguage } from "../src/lib/website/use-language";
+import { servicePages } from "../src/lib/website/service-pages";
+import sitemap from "../src/app/sitemap";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -127,6 +129,23 @@ check("sitemap pages and the canonical list stay in sync", () => {
   const sitemap = readFileSync("src/app/sitemap.ts", "utf8");
   const listed = [...sitemap.matchAll(/^\s+"(\/[^"]*|)",$/gm)].map((m) => m[1] || "/");
   assert.deepEqual([...listed].sort(), Object.keys(STATIC_PAGES).sort());
+});
+
+// Search Console, 2026-11-09: "Duplicate, Google chose different canonical than user".
+// /services/domains and /services/hosting showed the /domain and /hosting pages a second time.
+check("each page has one address: service aliases redirect permanently and stay out of the sitemap", () => {
+  const config = readFileSync("next.config.ts", "utf8");
+  const entries = sitemap().map((entry) => entry.url);
+  assert.equal(new Set(entries).size, entries.length, "no address is listed twice");
+  const paths = entries.map((url) => new URL(url).pathname);
+  const moved = servicePages.filter((service) => service.route !== `/services/${service.slug}`);
+  assert.deepEqual(moved.map((service) => service.route).sort(), ["/domain", "/hosting"]);
+  for (const service of moved) {
+    const alias = `/services/${service.slug}`;
+    assert.ok(config.includes(`{ source: "${alias}", destination: "${service.route}", permanent: true }`), `${alias} redirects`);
+    assert.ok(service.route in STATIC_PAGES, `${service.route} is an indexable page`);
+    assert.ok(!paths.includes(alias), `${alias} is not in the sitemap`);
+  }
 });
 
 check("page titles do not repeat the brand added by the title template", () => {

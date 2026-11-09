@@ -62,12 +62,21 @@ const nextConfig: NextConfig = {
     };
   },
   async redirects() {
-    return ["dashboard", "login", "register", "signup", "auth", "oauth"].map((route) => ({
+    // The domain and hosting pages live at /domain and /hosting. /services/domains and
+    // /services/hosting showed the same page at a second address, which Google Search Console
+    // reported as "Duplicate, Google chose different canonical than user" (2026-11-09).
+    // The query string (?lang=fr) is passed through.
+    const duplicateServicePages = [
+      { source: "/services/domains", destination: "/domain", permanent: true },
+      { source: "/services/hosting", destination: "/hosting", permanent: true },
+    ];
+    const reviewHost = ["dashboard", "login", "register", "signup", "auth", "oauth"].map((route) => ({
       source: `/${route}/:path*`,
       has: [{ type: "host" as const, value: "review\\.takatak\\.ca" }],
       destination: `https://takatak.ca/${route}/:path*`,
       permanent: false,
     }));
+    return [...duplicateServicePages, ...reviewHost];
   },
   async headers() {
     const privateNoStore = [
