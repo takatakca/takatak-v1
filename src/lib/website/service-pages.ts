@@ -28,7 +28,7 @@ export interface ServicePackage {
 
 export interface ServicePage {
   slug: string;              // route path segment under /services/
-  route: string;             // full route path
+  route: string;             // the page's one public address (/domain and /hosting for those two; /services/<slug> redirects there)
   eyebrow: Bi;
   title: Bi;
   tagline: Bi;
@@ -68,7 +68,7 @@ function pack(
 export const servicePages: readonly ServicePage[] = [
   {
     slug: "domains",
-    route: "/services/domains",
+    route: "/domain",
     eyebrow: bi("Infrastructure", "Infrastructure"),
     title: bi("Domain names", "Noms de domaine"),
     tagline: bi(
@@ -115,7 +115,7 @@ export const servicePages: readonly ServicePage[] = [
   },
   {
     slug: "hosting",
-    route: "/services/hosting",
+    route: "/hosting",
     eyebrow: bi("Infrastructure", "Infrastructure"),
     title: bi("Web hosting", "Hébergement web"),
     tagline: bi(
