@@ -1002,6 +1002,10 @@ export default async function SocialPlatformPage({
   const connectionHref = `/dashboard/social/${encodeURIComponent(
     platform,
   )}?connections=open`;
+  // Pinterest and LinkedIn have no statistics import. Bluesky also lands here
+  // while it is not connected, and its statistics are imported once it is.
+  const statisticsImported =
+    platform !== "pinterest" && platform !== "linkedin";
 
   return (
     <div className="space-y-6">
@@ -1040,7 +1044,9 @@ export default async function SocialPlatformPage({
         </h2>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          {`TAKATAK does not import ${configuration.name} statistics yet. This page will only show real information from the official ${configuration.name} API.`}
+          {statisticsImported
+            ? `Connect the account to see its statistics. TAKATAK shows only real information from the official ${configuration.name} API.`
+            : `TAKATAK does not import ${configuration.name} statistics yet. This page will only show real information from the official ${configuration.name} API.`}
         </p>
       </section>
     </div>
