@@ -67,7 +67,7 @@ const SOCIAL_PLATFORMS = {
   linkedin: {
     name: "LinkedIn",
     description:
-      "Understand your LinkedIn audience, company activity and content performance.",
+      "LinkedIn cannot be connected yet.",
   },
   threads: {
     name: "Threads",
@@ -87,7 +87,7 @@ const SOCIAL_PLATFORMS = {
   pinterest: {
     name: "Pinterest",
     description:
-      "Analyze Pinterest profile, board and pin performance.",
+      "Connect a Pinterest account to this brand. TAKATAK does not import Pinterest statistics yet.",
   },
   twitch: {
     name: "Twitch",
@@ -1002,6 +1002,10 @@ export default async function SocialPlatformPage({
   const connectionHref = `/dashboard/social/${encodeURIComponent(
     platform,
   )}?connections=open`;
+  // Pinterest and LinkedIn have no statistics import. Bluesky also lands here
+  // while it is not connected, and its statistics are imported once it is.
+  const statisticsImported =
+    platform !== "pinterest" && platform !== "linkedin";
 
   return (
     <div className="space-y-6">
@@ -1019,19 +1023,18 @@ export default async function SocialPlatformPage({
 
       <section className="rounded-2xl border border-[#b8c1ff] bg-[#f0f1ff] px-6 py-7">
         <h2 className="text-xl font-semibold text-slate-950">
-          {`Connect your ${configuration.name} account`}
+          {`${configuration.name} account`}
         </h2>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Authorize and import a real provider account before analytics can be
-          displayed.
+          Connect or manage the account for this brand in Connections.
         </p>
 
         <Link
           href={connectionHref}
           className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-[#4934d4] px-5 text-sm font-semibold text-white transition hover:bg-[#3e2bc0]"
         >
-          {`Connect ${configuration.name}`}
+          Open connections
         </Link>
       </section>
 
@@ -1041,8 +1044,9 @@ export default async function SocialPlatformPage({
         </h2>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          TAKATAK will populate this page only with real information received
-          from the official provider API.
+          {statisticsImported
+            ? `Connect the account to see its statistics. TAKATAK shows only real information from the official ${configuration.name} API.`
+            : `TAKATAK does not import ${configuration.name} statistics yet. This page will only show real information from the official ${configuration.name} API.`}
         </p>
       </section>
     </div>
