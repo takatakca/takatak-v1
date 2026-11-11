@@ -127,7 +127,10 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: "Learning",
-    items: [{ label: "TAKATAK Academy", href: "/dashboard/academy", icon: GraduationCap }],
+    items: [
+      { label: "TAKATAK Academy", href: "/dashboard/academy", icon: GraduationCap },
+      { label: "BEH4VIOR", href: "/dashboard/beh4vior", icon: Star },
+    ],
   },
   {
     title: "Services",
