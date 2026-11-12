@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { TriangleAlert } from "lucide-react";
 import { Link } from "@/lib/website/nav";
-import { MasterPhoneLoginForm } from "@/components/auth/master-phone-login-form";
+import { EmailGoogleAuthForm } from "@/components/auth/email-google-auth-form";
 import { isSupabaseConfigured } from "@/lib/auth/env";
 
 export const metadata = {
@@ -17,12 +17,12 @@ export default function LoginPage() {
       <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
         <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sign in with your verified mobile number, or use an email address you have already confirmed in Account settings.
+          Sign in with a code sent to your email, or continue with Google. No password needed.
         </p>
         <div className="mt-6">
           {configured ? (
             <Suspense>
-              <MasterPhoneLoginForm />
+              <EmailGoogleAuthForm mode="login" />
             </Suspense>
           ) : (
             <div className="space-y-3 text-center">
