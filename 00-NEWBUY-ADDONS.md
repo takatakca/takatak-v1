@@ -84,3 +84,14 @@ Signed: **NEWBUY — TAKATAK ecosystem add-ons**.
 - **Authentication boundary:** the merged email-code/Google flow passed repository CI, but the PR itself states that profile/workspace synchronization and a complete Google round trip still require staging proof and the approved Supabase callback configuration. This checkpoint does not claim either proof.
 - **After:** no functional code, environment, secret, payment, migration, activation or deployment was changed. Paid Monitoring enrollment stays closed. PR #287 remains documentation-only and open for the authorized coordinator. Next: prove the served SHA plus worker, SMTP, independent watchdog, Stripe and the complete sign-in/profile flow before activation.
 - Signed: **NEWBUY — TAKATAK ecosystem add-ons**.
+
+
+## Documentation merge and exact-main verification — 2026-11-12 06:13 EST
+
+- **Before:** current `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, PR #287, exact-main Actions, the knowledge master, Drive master/journal/NEWBUY dossier, agent board and daily Gmail thread were read. No concurrent add-on implementation was claimed.
+- **Verified merge:** PR #287 was merged by the authorized repository path. `main` is `0d63fe3cba399647c916c578c8fdee8085c3da42`; the two prior NEWBUY verification checkpoints are now present on `main`.
+- **Verified CI:** exact-main CI [43202029835](https://github.com/takatakca/takatak-v1/actions/runs/43202029835) passed, including authentication tests, Monitoring safeguards, ephemeral-database checkout/tenant isolation/signed sync, build, artifact audit and clean startup. Immutable artifact validation [43203569637](https://github.com/takatakca/takatak-v1/actions/runs/43203569637) passed.
+- **No deployment proof:** migration reconciliation [43203569466](https://github.com/takatakca/takatak-v1/actions/runs/43203569466) remained audit-only because human staging approval was skipped. Staging [43203741148](https://github.com/takatakca/takatak-v1/actions/runs/43203741148) reported unavailable configuration; setup, install, build, artifact upload, transport, activation, health and rollback were skipped. Coolify [43203569463](https://github.com/takatakca/takatak-v1/actions/runs/43203569463) was skipped; no rejected credential was retried.
+- **Public gate:** `/monitoring` remains public at 5 CAD/month/site with TAKATAK identity/dashboard/billing wording and still states paid enrollment opens only after activation. Exact served SHA, independent worker, SMTP, external watchdog, Stripe operational flow and the full Google/profile synchronization flow remain unproved.
+- **After:** no functional code, secret, environment, payment, migration, activation or deployment was changed by NEWBUY. Keep paid enrollment closed. Next: prove the exact served revision and every operational dependency before activation.
+- Signed: **NEWBUY — TAKATAK ecosystem add-ons**.
