@@ -103,6 +103,51 @@ export function OtpForm() {
     setError(null);
 
     try {
+      if (provider === "supabase-email" && email) {
+        // Email code through the TAKATAK identity (owner order 2026-11-12: email and Google only).
+        const supabase = createSupabaseBrowserClient();
+        if (!supabase) {
+          setError("TAKATAK authentication is not configured.");
+          return;
+        }
+
+        const { data, error: verifyError } = await supabase.auth.verifyOtp({
+          email,
+          token: digits.join(""),
+          type: "email",
+        });
+
+        if (verifyError || !data.session || !data.user) {
+          setError(
+            verifyError?.message?.toLowerCase().includes("expired")
+              ? "That code has expired. Request a new code."
+              : "The code is invalid or has expired.",
+          );
+          setAttempts((current) => current + 1);
+          return;
+        }
+
+        const syncResponse = await fetch("/api/auth/sync-profile", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { Accept: "application/json" },
+        });
+        const syncResult = await parseAuthResponse(syncResponse);
+        if (!syncResult.ok) {
+          setError(
+            formatAuthErrorMessage(syncResult) ||
+              "Your email was verified, but TAKATAK could not finalize your profile.",
+          );
+          return;
+        }
+
+        sessionStorage.removeItem("verifyEmail");
+        sessionStorage.removeItem("verifyPhone");
+        sessionStorage.removeItem("otpAttempts");
+        window.location.assign(next);
+        return;
+      }
+
       if (provider === "supabase-phone" && phone) {
         const supabase = createSupabaseBrowserClient();
         if (!supabase) {
@@ -280,6 +325,24 @@ export function OtpForm() {
     setCanResend(false);
 
     try {
+      if (provider === "supabase-email" && email) {
+        const response = await fetch("/api/auth/email-code", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const result = await parseAuthResponse(response);
+        if (!result.ok) {
+          setError(formatAuthErrorMessage(result));
+          setCanResend(true);
+          return;
+        }
+        setAttempts(0);
+        setLocked(false);
+        return;
+      }
+
       if (provider === "supabase-phone" && phone) {
         const supabase = createSupabaseBrowserClient();
         if (!supabase) {
