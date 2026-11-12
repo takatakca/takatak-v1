@@ -1,5 +1,9 @@
 # TAKATAK V1 — Agent Handoff
 
+## 2026-11-12 — Claude (Anthropic): email code or Google only on takatak.ca
+
+Owner order: no phone sign-in on any website for now. `/login` and `/register` offer only an email code or Google; the SMS routes answer 410 unless `TAKATAK_PHONE_LOGIN=true`; the phone forms stay in the repo, switched off. Details, proof and what is not proven locally (profile sync needs the database): `docs/EMAIL_GOOGLE_ONLY_LOGIN.md`. This pauses the phone-first plan in `docs/mimt/README.md` until the owner says otherwise. Release stays with the coordinator workflow.
+
 ## Repository and immutable baseline
 Repository takatakca/takatak-v1; initial main 4706dad5d6f7d361e28f54f0ea20a4e58896288c, integration base bae2445711f2aeb6c7a527759936bd7bf277ca6c. Re-query main before every push.
 

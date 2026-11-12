@@ -17,6 +17,14 @@ export const dynamic = "force-dynamic";
  * response is lost, the first attempt may already have sent a paid SMS.
  */
 async function requestSmsLogin(request: NextRequest) {
+  // Owner order 2026-11-12: email and Google only. Phone sign-in stays in the code, switched
+  // off until TAKATAK_PHONE_LOGIN=true (docs/mimt/AUTH_AND_CRM.md).
+  if (process.env.TAKATAK_PHONE_LOGIN !== "true") {
+    return authErrorResponse("Phone sign-in is turned off. Sign in with your email or Google.", 410, {
+      code: "invalid_request",
+    });
+  }
+
   const parsed = await readTrustedJsonBody(request, 1000);
   if (!parsed.ok) return parsed.response;
 

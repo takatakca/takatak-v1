@@ -1,6 +1,7 @@
 import { TriangleAlert } from "lucide-react";
 import { Link } from "@/lib/website/nav";
-import { MasterPhoneRegistrationForm } from "@/components/auth/master-phone-registration-form";
+import { EmailGoogleAuthForm } from "@/components/auth/email-google-auth-form";
+import { Suspense } from "react";
 import { SignupPromoPanel } from "@/components/website/promotions/SignupPromoPanel";
 import { PlanCarryOver } from "@/components/website/funnel/PlanCarryOver";
 import { isSupabaseConfigured } from "@/lib/auth/env";
@@ -24,13 +25,15 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
       <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
         <h1 className="text-2xl font-bold text-foreground">Start with TAKATAK</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create your TAKATAK account. We will send a one-time password to
-          your email.
+          Create your TAKATAK account with a code sent to your email, or
+          continue with Google.
         </p>
         <div className="mt-6">
           <PlanCarryOver />
           {configured ? (
-            <MasterPhoneRegistrationForm nextPath={next} />
+            <Suspense>
+              <EmailGoogleAuthForm mode="register" nextPath={next} />
+            </Suspense>
           ) : (
             <div className="space-y-3 text-center">
               <TriangleAlert className="mx-auto h-6 w-6 text-warning" />
