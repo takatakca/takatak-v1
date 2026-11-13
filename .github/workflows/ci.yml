@@ -161,6 +161,9 @@ jobs:
       - name: AI Studio approval handoff
         run: npm run qa:ai-handoff
 
+      - name: Social publishing engine (approvals, Facebook adapter, durable worker)
+        run: npm run qa:social-publishing
+
       - name: Lead detail actions
         run: npm run qa:lead-actions
 

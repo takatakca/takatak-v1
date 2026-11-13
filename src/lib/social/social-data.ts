@@ -4,6 +4,7 @@
 import { analyticsHistoryCutoffForClient } from "@/lib/billing/social/entitlement-gates";
 import { getPrisma } from "@/lib/db/prisma";
 import { clientWhere, resolveDataScope } from "@/lib/security/data-scope";
+import { readPublicationReceipt } from "@/lib/social/publishing/publication-model";
 import type { TenantAccess } from "@/lib/security/tenant-access";
 import type {
   AnalyticsSummary,
@@ -35,15 +36,27 @@ const MOCK_CAMPAIGNS: CampaignSummary[] = [
 ];
 
 const MOCK_POSTS: PostSummary[] = [
-  { id: "m_p1", platform: "instagram", captionPreview: "[Foundation draft] This week's featured dish — placeholder caption…", status: "draft", campaignName: "Restaurant Weekly Promo Foundation", brandName: "Montreal Restaurant Hub Demo", scheduledAt: null, approvalStatus: null },
-  { id: "m_p2", platform: "facebook", captionPreview: "[Foundation] Weekend special announcement — awaiting client approval.", status: "pending_approval", campaignName: "Restaurant Weekly Promo Foundation", brandName: "Montreal Restaurant Hub Demo", scheduledAt: null, approvalStatus: "pending" },
-  { id: "m_p3", platform: "linkedin", captionPreview: "[Foundation approved] One dashboard for all your business services…", status: "approved", campaignName: "TAKATAK SaaS Awareness Foundation", brandName: "TAKATAK Demo Brand", scheduledAt: null, approvalStatus: null },
-  { id: "m_p4", platform: "tiktok", captionPreview: "[Foundation draft — video idea] Behind-the-scenes kitchen prep concept…", status: "draft", campaignName: "Restaurant Weekly Promo Foundation", brandName: "Montreal Restaurant Hub Demo", scheduledAt: null, approvalStatus: null },
+  { id: "m_p1", platform: "instagram", captionPreview: "[Foundation draft] This week's featured dish — placeholder caption…", status: "draft", campaignName: "Restaurant Weekly Promo Foundation", brandName: "Montreal Restaurant Hub Demo", scheduledAt: null, approvalStatus: null , publication: null},
+  { id: "m_p2", platform: "facebook", captionPreview: "[Foundation] Weekend special announcement — awaiting client approval.", status: "pending_approval", campaignName: "Restaurant Weekly Promo Foundation", brandName: "Montreal Restaurant Hub Demo", scheduledAt: null, approvalStatus: "pending" , publication: null},
+  { id: "m_p3", platform: "linkedin", captionPreview: "[Foundation approved] One dashboard for all your business services…", status: "approved", campaignName: "TAKATAK SaaS Awareness Foundation", brandName: "TAKATAK Demo Brand", scheduledAt: null, approvalStatus: null , publication: null},
+  { id: "m_p4", platform: "tiktok", captionPreview: "[Foundation draft — video idea] Behind-the-scenes kitchen prep concept…", status: "draft", campaignName: "Restaurant Weekly Promo Foundation", brandName: "Montreal Restaurant Hub Demo", scheduledAt: null, approvalStatus: null , publication: null},
 ];
 
 const MOCK_APPROVALS: ApprovalSummary[] = [
   { id: "m_a1", status: "pending", comments: "Foundation seed — awaiting client review.", requestedAt: "2026-07-10", postCaptionPreview: "[Foundation] Weekend special announcement — awaiting client approval.", postPlatform: "facebook", brandName: "Montreal Restaurant Hub Demo" },
 ];
+
+function publicationSummary(metadata: unknown): PostSummary["publication"] {
+  const receipt = readPublicationReceipt(metadata);
+  if (!receipt) return null;
+  return {
+    state: receipt.state,
+    remotePostId: receipt.remotePostId,
+    permalinkUrl: receipt.permalinkUrl,
+    errorMessage: receipt.errorMessage,
+    confirmedAt: receipt.confirmedAt,
+  };
+}
 
 function preview(caption: string): string {
   return caption.length > 80 ? `${caption.slice(0, 77)}…` : caption;
@@ -223,6 +236,7 @@ export async function getSocialPostsData(access?: TenantAccess): Promise<SourceM
           campaignName: p.campaign?.name ?? null, brandName: p.businessBrand?.name ?? null,
           scheduledAt: p.scheduledAt?.toISOString().slice(0, 10) ?? null,
           approvalStatus: p.approvals[0]?.status ?? null,
+          publication: publicationSummary(p.metadata),
         })),
       };
     } catch (error) {

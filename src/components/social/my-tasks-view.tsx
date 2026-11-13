@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
-import { PLATFORM_LABELS } from "@/lib/social/status";
+import { PublicationActions } from "@/components/social/publication-actions";
+import { PLATFORM_LABELS, POST_STATUS_LABELS } from "@/lib/social/status";
 import type {
   MyTaskItem,
   MyTasksPageData,
@@ -140,7 +141,7 @@ export function MyTasksView({
         {items.length > 0 ? (
           <ul className="mt-6 space-y-3">
             {items.map((task) => (
-              <TaskRow key={task.id} task={task} />
+              <TaskRow key={task.id} task={task} canReview={data.canReview} />
             ))}
           </ul>
         ) : (
@@ -161,12 +162,14 @@ export function MyTasksView({
   );
 }
 
-function TaskRow({ task }: { task: MyTaskItem }) {
+function TaskRow({ task, canReview }: { task: MyTaskItem; canReview: boolean }) {
   return (
     <li className="rounded-xl border border-slate-200 bg-white px-4 py-3">
       <p className="text-xs font-medium text-slate-500">
         {PLATFORM_LABELS[task.platform] ?? task.platform}
         {task.brandName ? ` · ${task.brandName}` : ""}
+        {" · "}
+        <span className="text-slate-400">{POST_STATUS_LABELS[task.postStatus] ?? task.postStatus}</span>
       </p>
       <p className="mt-1 text-sm text-slate-800">{task.captionPreview}</p>
       {task.comments ? (
@@ -174,7 +177,17 @@ function TaskRow({ task }: { task: MyTaskItem }) {
       ) : null}
       <p className="mt-2 text-[11px] text-slate-400">
         Requested {task.requestedAt}
+        {task.scheduledAt ? ` · Scheduled ${task.scheduledAt.slice(0, 16).replace("T", " ")} UTC` : ""}
       </p>
+      <PublicationActions
+        postId={task.socialPostId}
+        postStatus={task.postStatus}
+        platform={task.platform}
+        approvalStatus={task.status}
+        publication={task.publication}
+        canReview={canReview}
+        canPublish={canReview}
+      />
     </li>
   );
 }

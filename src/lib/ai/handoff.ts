@@ -1,9 +1,60 @@
 // TK-069 — Send one saved AI Studio draft into the social approval queue.
 // Uses SocialPost, Approval, and SavedAiOutput.metadata. No new table.
 
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient, SocialPlatform } from "@prisma/client";
 
-export type HandoffCode = "sent" | "already" | "refused" | "unavailable" | "denied";
+export type HandoffCode = "sent" | "already" | "refused" | "unavailable" | "denied" | "account_unavailable";
+
+export type HandoffAccountOption = {
+  id: string;
+  platform: string;
+  status: string;
+  businessBrandId: string | null;
+  /** True when the connected account can publish through TAKATAK today (Facebook Page with publishing access). */
+  publishReady: boolean;
+  updatedAt: Date;
+};
+
+export function accountPublishReady(account: {
+  platform: string;
+  accountType: string | null;
+  accessStatus: string | null;
+  metadata: unknown;
+}): boolean {
+  if (account.platform !== "facebook" || account.accountType !== "facebook_page") return false;
+  if (account.accessStatus !== "selected") return false;
+  const metadata =
+    account.metadata && typeof account.metadata === "object" && !Array.isArray(account.metadata)
+      ? (account.metadata as Record<string, unknown>)
+      : {};
+  return metadata.canPublish !== false;
+}
+
+/**
+ * Pick the delivery target for a handed-off draft. An explicit request must
+ * match a connected account of the workspace (and of the draft's brand when
+ * both are known); otherwise prefer a publish-ready Facebook Page, then the
+ * most recently updated connected account, then none (platform "web").
+ */
+export function chooseHandoffAccount(
+  accounts: HandoffAccountOption[],
+  requestedId: string | null,
+  businessBrandId: string | null,
+): { ok: true; account: HandoffAccountOption | null } | { ok: false; reason: "account_unavailable" } {
+  const connected = accounts.filter(
+    (account) =>
+      account.status === "connected" &&
+      (!businessBrandId || !account.businessBrandId || account.businessBrandId === businessBrandId),
+  );
+  if (requestedId) {
+    const match = connected.find((account) => account.id === requestedId);
+    return match ? { ok: true, account: match } : { ok: false, reason: "account_unavailable" };
+  }
+  const ready = connected.filter((account) => account.publishReady).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  if (ready[0]) return { ok: true, account: ready[0] };
+  const recent = [...connected].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  return { ok: true, account: recent[0] ?? null };
+}
 
 export type HandoffDecision =
   | { action: "already_sent"; socialPostId: string }
@@ -64,6 +115,12 @@ export function handoffNotice(code: string | undefined): { tone: "ok" | "warn"; 
         fr: "L'envoi est indisponible pour le moment.",
         en: "Sending is unavailable right now.",
       };
+    case "account_unavailable":
+      return {
+        tone: "warn",
+        fr: "Ce compte social n'est pas connecté à cet espace ou à cette marque. Choisissez un autre compte.",
+        en: "That social account is not connected to this workspace or brand. Choose another account.",
+      };
     default:
       return null;
   }
@@ -82,7 +139,13 @@ function metadataObject(value: unknown): Record<string, string | number | boolea
 
 export async function commitSavedOutputHandoff(
   prisma: PrismaClient,
-  input: { outputId: string; clientIds: string[] | null; profileId: string | null },
+  input: {
+    outputId: string;
+    clientIds: string[] | null;
+    profileId: string | null;
+    /** Explicit delivery target chosen by the user; validated against the workspace. */
+    socialAccountId?: string | null;
+  },
 ): Promise<{ code: HandoffCode }> {
   const output = await prisma.savedAiOutput.findFirst({
     where: {
@@ -163,28 +226,58 @@ export async function commitSavedOutputHandoff(
         }
       }
 
-      const account = await tx.socialAccount.findFirst({
-        where: {
-          clientId: current.clientId,
-          status: "connected",
-          ...(current.businessBrandId ? { businessBrandId: current.businessBrandId } : {}),
+      const candidates = await tx.socialAccount.findMany({
+        where: { clientId: current.clientId, status: "connected" },
+        select: {
+          id: true,
+          platform: true,
+          status: true,
+          businessBrandId: true,
+          accountType: true,
+          accessStatus: true,
+          metadata: true,
+          updatedAt: true,
         },
-        select: { id: true, platform: true },
         orderBy: { updatedAt: "desc" },
+        take: 50,
       });
+      const choice = chooseHandoffAccount(
+        candidates.map((candidate) => ({
+          id: candidate.id,
+          platform: candidate.platform,
+          status: candidate.status,
+          businessBrandId: candidate.businessBrandId,
+          publishReady: accountPublishReady(candidate),
+          updatedAt: candidate.updatedAt,
+        })),
+        input.socialAccountId ?? null,
+        current.businessBrandId,
+      );
+      if (!choice.ok) {
+        // Release the claim so the draft can be sent again with another account.
+        await tx.savedAiOutput.updateMany({
+          where: { id: current.id, clientId: current.clientId, status: "sent_to_approval" },
+          data: { status: current.status === "saved" ? "saved" : "draft" },
+        });
+        code = "account_unavailable";
+        return;
+      }
+      const account = choice.account;
 
       const post = await tx.socialPost.create({
         data: {
           clientId: current.clientId,
           businessBrandId: current.businessBrandId,
           socialAccountId: account?.id ?? null,
-          platform: account?.platform ?? "web",
+          platform: (account?.platform ?? "web") as SocialPlatform,
           caption: current.content.trim().slice(0, CAPTION_LIMIT),
           status: "pending_approval",
           metadata: {
             source: "ai_studio",
             savedOutputId: current.id,
             title: current.title.slice(0, 200),
+            targetSocialAccountId: account?.id ?? null,
+            targetPublishReady: account?.publishReady ?? false,
           },
         },
       });

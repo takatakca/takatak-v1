@@ -5,6 +5,7 @@ import {
 
 import { jsonResponse } from "@/lib/security/api-response";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
+import { runSocialPublicationWorkerTick } from "@/lib/social/publishing/publication-jobs";
 import { runFacebookPageSyncWorkerTick } from "@/lib/social/sync/facebook-page-sync-job";
 
 export const runtime = "nodejs";
@@ -64,6 +65,9 @@ async function handle(request: NextRequest): Promise<NextResponse> {
       processJobs: true,
     });
 
+    // Due social publications (approved + scheduled posts) share this tick.
+    const publications = await runSocialPublicationWorkerTick({ limit: 5 });
+
     logSocialOAuthEvent("facebook-page-sync", {
       stage: "cron",
       outcome: "ok",
@@ -84,6 +88,13 @@ async function handle(request: NextRequest): Promise<NextResponse> {
         released: result.released,
         failed: result.failed,
         competitors,
+        publications: {
+          claimed: publications.claimed,
+          published: publications.published,
+          failed: publications.failed,
+          uncertain: publications.uncertain,
+          blocked: publications.blocked,
+        },
       },
       200,
     );
