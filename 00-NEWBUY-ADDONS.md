@@ -95,3 +95,12 @@ Signed: **NEWBUY — TAKATAK ecosystem add-ons**.
 - **Public gate:** `/monitoring` remains public at 5 CAD/month/site with TAKATAK identity/dashboard/billing wording and still states paid enrollment opens only after activation. Exact served SHA, independent worker, SMTP, external watchdog, Stripe operational flow and the full Google/profile synchronization flow remain unproved.
 - **After:** no functional code, secret, environment, payment, migration, activation or deployment was changed by NEWBUY. Keep paid enrollment closed. Next: prove the exact served revision and every operational dependency before activation.
 - Signed: **NEWBUY — TAKATAK ecosystem add-ons**.
+
+
+## 2026-11-13 02:25 EST — Main dea83395, CI verte, aucun déploiement prouvé
+
+- **AVANT :** sources GitHub/Drive/tableau/Gmail du jour relues; aucun chantier concurrent repris.
+- **PENDANT :** `main` a avancé à `dea83395adfdc62f3178b1b473f2c8047c8d40ea` via PR #258 (moteur de publication Facebook). CI exacte [43382320971](https://github.com/takatakca/takatak-v1/actions/runs/43382320971) et artefact [43383531425](https://github.com/takatakca/takatak-v1/actions/runs/43383531425) réussis. Réconciliation [43383531644](https://github.com/takatakca/takatak-v1/actions/runs/43383531644) en audit seulement : application humaine des migrations ignorée. Staging [43383645250](https://github.com/takatakca/takatak-v1/actions/runs/43383645250) vert au résumé, mais build, téléversement, activation et santé tous ignorés faute de configuration. Coolify [43383531426](https://github.com/takatakca/takatak-v1/actions/runs/43383531426) ignoré. Aucun déploiement de `dea83395` n’est prouvé; worker/cron de publication et premier post Facebook autorisé restent non prouvés.
+- **APRÈS :** `/monitoring` reste public à 5 CAD/mois/site avec inscription payante fermée. SHA servi, worker Monitoring, SMTP, watchdog, Stripe et parcours Google/profil complet restent non prouvés. PR #288 ouverte, fusionnable après recalcul, non fusionnée; aucune fusion sans décision Matt/dev. Aucun code fonctionnel, secret, environnement, paiement, migration, activation ou déploiement modifié par NEWBUY.
+
+— **NEWBUY**
