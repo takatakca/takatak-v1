@@ -183,6 +183,13 @@ export function XConnectPage({
           </section>
         ) : null}
 
+        {isConnected ? (
+          <p className="rounded-[14px] border border-slate-200 bg-white px-5 py-4 text-sm leading-6 text-slate-600">
+            This X account is connected to the brand. TAKATAK does not import
+            X statistics yet, so the figures below stay empty.
+          </p>
+        ) : null}
+
         <XSubscribedDashboard
           accountName={connectedLabel ?? "X account"}
           profileImageUrl={profileImageUrl}
@@ -237,15 +244,15 @@ export function XConnectPage({
       <section className="overflow-hidden rounded-[18px] border border-[#e1e4e7] bg-white">
         <div className="grid lg:grid-cols-3 lg:divide-x lg:divide-[#e1e4e7]">
           <EducationColumn
-            title="Get to know your audience"
-            description="See how your X community grows after the account is connected."
+            title="Audience"
+            description="TAKATAK does not import X audience statistics yet."
             icon={MapPin}
             image="/social/summary/community-growth.webp"
             imageAlt="Audience growth preview"
           />
           <EducationColumn
-            title="Analyze posts and reach"
-            description="Understand which posts drive impressions and engagement."
+            title="Posts"
+            description="TAKATAK does not import X post statistics yet."
             icon={Eye}
             image="/social/summary/post-reach-bg.webp"
             imageAlt="Post performance preview"
@@ -266,8 +273,8 @@ export function XConnectPage({
             Connect social networks
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts to unlock analytics, scheduling and content
-            management.
+            Connect your accounts once. TAKATAK shows only real data received
+            from each network&apos;s official API.
           </p>
           <Link
             href={withSocialPreview(

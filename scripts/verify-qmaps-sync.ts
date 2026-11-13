@@ -22,6 +22,7 @@ const ENV = {
 const BUSINESS = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const OTHER_BUSINESS = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const REVIEW = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const LISTING = "22222222-2222-4222-8222-222222222222";
 const CLIENT = "11111111-1111-4111-8111-111111111111";
 
 let passed = 0;
@@ -82,7 +83,7 @@ type Row = Record<string, unknown> & { id: string };
 
 function fakeDb(linked: boolean) {
   const listings: Row[] = linked
-    ? [{ id: "listing-1", clientId: CLIENT, businessBrandId: null, provider: "qmaps", metadata: { note: "linked", qmapsBusinessId: BUSINESS } }]
+    ? [{ id: LISTING, clientId: CLIENT, businessBrandId: null, provider: "qmaps", metadata: { note: "linked", qmapsBusinessId: BUSINESS } }]
     : [];
   const reviews: Row[] = [];
   const events: Row[] = [];
@@ -114,7 +115,7 @@ function fakeDb(linked: boolean) {
         return reviews.find((r) => matches(r, where)) ?? null;
       },
       async create({ data }: { data: Record<string, unknown> }) {
-        const row = { ...data, id: `review-${++seq}` } as Row;
+        const row = { ...data, id: typeof data.id === "string" ? data.id : `review-${++seq}` } as Row;
         reviews.push(row);
         return { id: row.id };
       },
@@ -272,7 +273,7 @@ async function main() {
     assert.equal(fake.reviews.length, 1);
     const review = fake.reviews[0];
     assert.equal(review.clientId, CLIENT);
-    assert.equal(review.localListingId, "listing-1");
+    assert.equal(review.localListingId, LISTING);
     assert.equal(review.provider, "qmaps");
     assert.equal(review.sentiment, "negative");
     assert.equal(review.status, "needs_review");

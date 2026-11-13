@@ -16,6 +16,16 @@ export function isLanguage(value: unknown): value is Language {
 
 export function detectLanguage(): Language {
   if (typeof window === "undefined") return "en";
+  // A link that says which language to open (?lang=fr or ?lang=en) wins, and is remembered for the next pages.
+  try {
+    const fromUrl = new URL(window.location.href).searchParams.get("lang");
+    if (isLanguage(fromUrl)) {
+      storeLanguage(fromUrl);
+      return fromUrl;
+    }
+  } catch {
+    /* malformed URL: fall through */
+  }
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (isLanguage(stored)) return stored;

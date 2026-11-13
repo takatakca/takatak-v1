@@ -3,6 +3,59 @@
 
   var DEFAULT_VIEWABILITY_MS = 1000;
   var DEFAULT_THRESHOLD = 0.5;
+  var activeRenders = new WeakMap();
+  var contextLimits = Object.freeze({
+    country: 80,
+    region: 120,
+    city: 120,
+    postalPrefix: 3,
+    category: 120,
+    locale: 16,
+    device: 24,
+  });
+
+  // Allow coarse contextual fields only: no arbitrary PII or fingerprints.
+  function cleanContext(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    var result = {};
+    Object.keys(contextLimits).forEach(function (key) {
+      if (!Object.prototype.hasOwnProperty.call(value, key)) return;
+      if (typeof value[key] !== "string") return;
+      var text = value[key].trim().slice(0, contextLimits[key]);
+      if (key === "postalPrefix") {
+        text = value[key].replace(/[^a-z0-9]/gi, "").slice(0, 3).toUpperCase();
+      }
+      if (key === "device" && !/^(mobile|desktop|tablet)$/i.test(text)) return;
+      if (text) result[key] = text;
+    });
+    return result;
+  }
+
+  function isHttpUrl(value) {
+    if (typeof value !== "string") return false;
+    try {
+      var url = new URL(value);
+      return url.protocol === "https:" || url.protocol === "http:";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function collapse(container) {
+    container.hidden = true;
+    container.removeAttribute("data-takatak-ad-filled");
+  }
+
+  function clear(element) {
+    var container =
+      typeof element === "string" ? document.querySelector(element) : element;
+    if (!container) return;
+    var previous = activeRenders.get(container);
+    if (previous && previous.cancel) previous.cancel();
+    activeRenders.delete(container);
+    container.textContent = "";
+    collapse(container);
+  }
 
   function normalizeOrigin(value) {
     return String(value || "").replace(/\/$/, "");
@@ -33,7 +86,7 @@
       {
         trackingToken: ad.trackingToken,
         eventType: eventType,
-        context: context || {},
+        context: cleanContext(context),
       },
       eventType === "click",
     ).catch(function () {});
@@ -47,7 +100,7 @@
     var link = document.createElement("a");
     link.href = ad.clickUrl || ad.destinationUrl;
     link.rel = "sponsored noopener noreferrer";
-    link.target = options.target || "_blank";
+    link.target = options.target === "_self" ? "_self" : "_blank";
     link.style.display = "block";
     link.style.textDecoration = "none";
     link.style.color = "inherit";
@@ -115,36 +168,73 @@
     return link;
   }
 
-  function trackViewability(container, apiOrigin, ad, context, options) {
-    if (!("IntersectionObserver" in window)) {
-      emit(apiOrigin, ad, "impression", context);
-      return;
-    }
+  function trackViewability(container, apiOrigin, ad, context, options, state) {
+    // Do not count an impression if the browser cannot measure viewability.
+    if (!("IntersectionObserver" in window)) return function () {};
 
     var timer = null;
+    var observer = null;
+    var visible = false;
     var sent = false;
-    var observer = new IntersectionObserver(
-      function (entries) {
-        var entry = entries[0];
-        if (!entry || sent) return;
+    var requestedMs = Number(options.viewabilityMs);
+    var duration = Number.isFinite(requestedMs)
+      ? Math.min(60000, Math.max(DEFAULT_VIEWABILITY_MS, requestedMs))
+      : DEFAULT_VIEWABILITY_MS;
 
-        if (entry.isIntersecting && entry.intersectionRatio >= DEFAULT_THRESHOLD) {
-          if (!timer) {
-            timer = window.setTimeout(function () {
-              sent = true;
-              observer.disconnect();
-              emit(apiOrigin, ad, "impression", context);
-            }, options.viewabilityMs || DEFAULT_VIEWABILITY_MS);
-          }
-        } else if (timer) {
-          window.clearTimeout(timer);
-          timer = null;
-        }
-      },
-      { threshold: [DEFAULT_THRESHOLD] },
-    );
+    function stopTimer() {
+      if (timer !== null) window.clearTimeout(timer);
+      timer = null;
+    }
 
+    function currentAndVisible() {
+      return (
+        activeRenders.get(container) === state &&
+        !document.hidden &&
+        !container.hidden &&
+        visible
+      );
+    }
+
+    function schedule() {
+      if (sent || !currentAndVisible()) {
+        stopTimer();
+        return;
+      }
+      if (timer !== null) return;
+      timer = window.setTimeout(function () {
+        timer = null;
+        if (!currentAndVisible() || sent) return;
+        sent = true;
+        cancel();
+        emit(apiOrigin, ad, "impression", context);
+      }, duration);
+    }
+
+    function onVisibilityChange() {
+      schedule();
+    }
+
+    function cancel() {
+      stopTimer();
+      if (observer) observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      window.removeEventListener("pagehide", cancel);
+    }
+
+    observer = new IntersectionObserver(function (entries) {
+      for (var i = 0; i < entries.length; i += 1) {
+        if (entries[i].target !== container) continue;
+        visible =
+          entries[i].isIntersecting &&
+          entries[i].intersectionRatio >= DEFAULT_THRESHOLD;
+        schedule();
+      }
+    }, { threshold: [0, DEFAULT_THRESHOLD, 1] });
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    window.addEventListener("pagehide", cancel);
     observer.observe(container);
+    return cancel;
   }
 
   async function render(options) {
@@ -158,16 +248,20 @@
       throw new Error("TAKATAK ADS: placement element not found.");
     }
 
-    container.hidden = true;
-    container.removeAttribute("data-takatak-ad-filled");
+    var previous = activeRenders.get(container);
+    if (previous && previous.cancel) previous.cancel();
+    var state = { cancel: null };
+    activeRenders.set(container, state);
+    collapse(container);
 
     var apiOrigin = normalizeOrigin(options.apiOrigin || window.location.origin);
     var publisherCode = safeText(options.publisherCode);
     var placementCode = safeText(options.placementCode);
+    var context = cleanContext(options.context);
 
-    if (!publisherCode || !placementCode) {
+    if (!isHttpUrl(apiOrigin) || !publisherCode || !placementCode) {
       throw new Error(
-        "TAKATAK ADS: publisherCode and placementCode are required.",
+        "TAKATAK ADS: valid apiOrigin, publisherCode and placementCode are required.",
       );
     }
 
@@ -177,38 +271,43 @@
         {
           publisherCode: publisherCode,
           placementCode: placementCode,
-          context: options.context || {},
+          context: context,
         },
         false,
       );
       var payload = await response.json();
 
+      // A slower, older request must never overwrite a newer placement.
+      if (activeRenders.get(container) !== state) return null;
       if (!response.ok || !payload || !payload.filled || !payload.ad) {
-        container.hidden = true;
+        collapse(container);
         return null;
       }
 
       var ad = payload.ad;
-      var link = renderCreative(container, ad, options);
+      if (!isHttpUrl(ad.destinationUrl) ||
+          (ad.clickUrl && !isHttpUrl(ad.clickUrl))) {
+        collapse(container);
+        return null;
+      }
+      if (ad.imageUrl && !isHttpUrl(ad.imageUrl)) {
+        ad = Object.assign({}, ad, { imageUrl: null });
+      }
 
+      var link = renderCreative(container, ad, options);
       link.addEventListener("click", function () {
-        emit(apiOrigin, ad, "click", options.context || {});
+        emit(apiOrigin, ad, "click", context);
       });
 
-      trackViewability(
-        container,
-        apiOrigin,
-        ad,
-        options.context || {},
-        options,
+      state.cancel = trackViewability(
+        container, apiOrigin, ad, context, options, state,
       );
-
       return ad;
     } catch (_) {
-      container.hidden = true;
+      if (activeRenders.get(container) === state) collapse(container);
       return null;
     }
   }
 
-  window.TAKATAKAds = Object.freeze({ render: render });
+  window.TAKATAKAds = Object.freeze({ render: render, clear: clear });
 })();

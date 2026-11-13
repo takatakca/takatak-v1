@@ -39,8 +39,8 @@ export interface TakbotModeDef {
 }
 
 export const TAKBOT_MODES: readonly TakbotModeDef[] = [
-  { key: "chat", actionKey: "chat_reply", autoOrder: ["anthropic", "openai", "gemini", "mistral", "groq", "ollama", "deepseek", "xai"], inline: true },
-  { key: "write", actionKey: "ad_copy_set", autoOrder: ["anthropic", "openai", "mistral", "gemini", "ollama", "deepseek"], inline: true },
+  { key: "chat", actionKey: "chat_reply", autoOrder: ["anthropic", "openai", "gemini", "mistral", "groq", "ollama", "deepseek", "xai", "moonshot", "zai", "together", "openrouter", "cerebras", "sambanova", "deepinfra"], inline: true },
+  { key: "write", actionKey: "ad_copy_set", autoOrder: ["anthropic", "openai", "mistral", "gemini", "ollama", "deepseek", "moonshot", "zai", "together", "openrouter", "cerebras", "sambanova", "deepinfra"], inline: true },
   { key: "research", actionKey: "seo_audit_summary", autoOrder: ["perplexity", "gemini", "anthropic", "openai"], inline: true },
   { key: "image", actionKey: "image", autoOrder: ["openai", "stability", "gemini"], inline: false },
   { key: "voice", actionKey: "voice_over", autoOrder: ["elevenlabs", "openai", "heygen"], inline: false },
@@ -55,6 +55,14 @@ const OPENAI_COMPAT: Record<string, { endpoint: string; model: string }> = {
   groq: { endpoint: "https://api.groq.com/openai/v1/chat/completions", model: "llama-3.3-70b-versatile" },
   // OpenAI-compatible Ollama Cloud endpoint (docs.ollama.com/api/openai-compatibility, checked 2026-11-04).
   ollama: { endpoint: "https://ollama.com/v1/chat/completions", model: "gpt-oss:120b" },
+  // Checked against each provider's docs and public model lists on 2026-11-07.
+  moonshot: { endpoint: "https://api.moonshot.ai/v1/chat/completions", model: "kimi-k3.1-pro" },
+  zai: { endpoint: "https://api.z.ai/api/paas/v4/chat/completions", model: "glm-5.3" },
+  together: { endpoint: "https://api.together.ai/v1/chat/completions", model: "moonshotai/Kimi-K3" },
+  openrouter: { endpoint: "https://openrouter.ai/api/v1/chat/completions", model: "openai/gpt-oss-120b" },
+  cerebras: { endpoint: "https://api.cerebras.ai/v1/chat/completions", model: "qwen-3.8-27b" },
+  sambanova: { endpoint: "https://api.sambanova.ai/v1/chat/completions", model: "Meta-Llama-3.3-70B-Instruct" },
+  deepinfra: { endpoint: "https://api.deepinfra.com/v1/openai/chat/completions", model: "deepseek-ai/DeepSeek-V4-Flash-0731" },
   perplexity: { endpoint: "https://api.perplexity.ai/chat/completions", model: "sonar" },
 };
 
@@ -140,5 +148,25 @@ export function routeTakbotRequest(input: {
 export const TAKBOT_PACKS = AI_CREDIT_PACKS;
 
 export const TAKBOT_ACTIONS = AI_CREDIT_ACTIONS;
+
+/** French names of the credit actions (the dashboard list keeps its English labels). */
+const ACTION_LABEL_FR: Record<string, string> = {
+  social_caption: "Légende et mots-clics",
+  multi_platform_post: "Une publication adaptée à chaque réseau",
+  review_reply: "Réponse à un avis",
+  chat_reply: "Réponse clavardage ou WhatsApp",
+  ad_copy_set: "Textes d’annonces (5 titres, 3 descriptions)",
+  seo_audit_summary: "Plan d’action SEO",
+  blog_article: "Article de blogue SEO (~1 000 mots)",
+  image: "Image générée",
+  voice_over: "Voix hors champ (par minute)",
+  short_video: "Vidéo courte (jusqu’à 15 s)",
+  monthly_report_summary: "Résumé du rapport mensuel",
+};
+
+/** A credit action's name in the visitor's language. */
+export function takbotActionLabel(action: { key: string; label: string }, lang: string): string {
+  return lang === "fr" ? ACTION_LABEL_FR[action.key] ?? action.label : action.label;
+}
 
 export const MAX_PROMPT_CHARS = 4000;

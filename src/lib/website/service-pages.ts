@@ -1,6 +1,7 @@
 // Bilingual content model for TAKATAK service product pages.
 // Pricing always comes from src/lib/pricing.ts — never hardcode amounts here.
 import { pricing, type Cadence } from "./pricing";
+import { fr as FR } from "./translations/fr";
 
 export type Bi<T = string> = { en: T; fr: T };
 
@@ -27,7 +28,7 @@ export interface ServicePackage {
 
 export interface ServicePage {
   slug: string;              // route path segment under /services/
-  route: string;             // full route path
+  route: string;             // the page's one public address (/domain and /hosting for those two; /services/<slug> redirects there)
   eyebrow: Bi;
   title: Bi;
   tagline: Bi;
@@ -48,6 +49,11 @@ function suffixOf(entry: unknown): string | undefined {
   return typeof s === "string" ? s : undefined;
 }
 
+/** French name of a pricing tier, from the same translations /pricing uses; English name when none exists. */
+function frTier(group: string, key: string, fallback: string): string {
+  return (FR as Record<string, string>)[`tier.${group}.${key}`] ?? fallback;
+}
+
 function pack(
   key: string,
   en: string,
@@ -62,7 +68,7 @@ function pack(
 export const servicePages: readonly ServicePage[] = [
   {
     slug: "domains",
-    route: "/services/domains",
+    route: "/domain",
     eyebrow: bi("Infrastructure", "Infrastructure"),
     title: bi("Domain names", "Noms de domaine"),
     tagline: bi(
@@ -109,7 +115,7 @@ export const servicePages: readonly ServicePage[] = [
   },
   {
     slug: "hosting",
-    route: "/services/hosting",
+    route: "/hosting",
     eyebrow: bi("Infrastructure", "Infrastructure"),
     title: bi("Web hosting", "Hébergement web"),
     tagline: bi(
@@ -180,7 +186,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Analytics and search basics included", "Analytique et bases du référencement incluses"),
       bi("Hosting, domain and email handled together", "Hébergement, domaine et courriel gérés ensemble"),
     ],
-    packages: pricing.websites.map((w) => pack(w.key, w.name, w.name, w.amount, w.cadence as Cadence)),
+    packages: pricing.websites.map((w) => pack(w.key, w.name, frTier("websites", w.key, w.name), w.amount, w.cadence as Cadence)),
     faq: [
       {
         q: bi("How long does a website take?", "Combien de temps prend un site web ?"),
@@ -225,7 +231,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Full ownership of final assets", "Propriété complète des fichiers finaux"),
       bi("Optional matching website design", "Design de site assorti en option"),
     ],
-    packages: pricing.branding.map((b) => pack(b.key, b.name, b.name, b.amount, b.cadence as Cadence)),
+    packages: pricing.branding.map((b) => pack(b.key, b.name, frTier("branding", b.key, b.name), b.amount, b.cadence as Cadence)),
     faq: [
       {
         q: bi("How many concepts do I see?", "Combien de concepts vais-je voir ?"),
@@ -270,7 +276,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Analytics and crash reporting configured", "Analytique et rapports d'erreurs configurés"),
       bi("Maintenance and update plans available", "Forfaits d'entretien et de mises à jour offerts"),
     ],
-    packages: pricing.apps.map((a) => pack(a.key, a.name, a.name, a.amount, a.cadence as Cadence, suffixOf(a))),
+    packages: pricing.apps.map((a) => pack(a.key, a.name, frTier("apps", a.key, a.name), a.amount, a.cadence as Cadence, suffixOf(a))),
     faq: [
       {
         q: bi("Do I need a developer account?", "Ai-je besoin d'un compte développeur ?"),
@@ -315,7 +321,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Ad spend stays in your own account", "Le budget publicitaire reste dans votre compte"),
       bi("No long-term lock-in", "Aucun engagement à long terme"),
     ],
-    packages: pricing.marketing.map((m) => pack(m.key, m.name, m.name, m.amount, m.cadence as Cadence, suffixOf(m))),
+    packages: pricing.marketing.map((m) => pack(m.key, m.name, frTier("marketing", m.key, m.name), m.amount, m.cadence as Cadence, suffixOf(m))),
     faq: [
       {
         q: bi("Is ad spend included?", "Le budget publicitaire est-il inclus ?"),
@@ -359,7 +365,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Channel-appropriate formats", "Formats adaptés à chaque plateforme"),
       bi("Monthly performance summary", "Sommaire de performance mensuel"),
     ],
-    packages: pricing.social.map((s) => pack(s.key, s.name, s.name, s.amount, s.cadence as Cadence)),
+    packages: pricing.social.map((s) => pack(s.key, s.name, frTier("social", s.key, s.name), s.amount, s.cadence as Cadence)),
     faq: [
       {
         q: bi("Which platforms do you cover?", "Quelles plateformes couvrez-vous ?"),
@@ -403,7 +409,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Review monitoring and response guidance", "Suivi des avis et aide aux réponses"),
       bi("Multi-location support", "Prise en charge multi-succursales"),
     ],
-    packages: pricing.local.map((l) => pack(l.key, l.name, l.name, l.amount, l.cadence as Cadence)),
+    packages: pricing.local.map((l) => pack(l.key, l.name, frTier("local", l.key, l.name), l.amount, l.cadence as Cadence)),
     faq: [
       {
         q: bi("How long until I rank better locally?", "Combien de temps avant de mieux ressortir localement ?"),
@@ -447,7 +453,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Automated first response", "Première réponse automatisée"),
       bi("Pay-per-lead option available", "Option de paiement par prospect offerte"),
     ],
-    packages: pricing.leads.map((l) => pack(l.key, l.name, l.name, l.amount, l.cadence as Cadence)),
+    packages: pricing.leads.map((l) => pack(l.key, l.name, frTier("leads", l.key, l.name), l.amount, l.cadence as Cadence)),
     faq: [
       {
         q: bi("What counts as a qualified lead?", "Qu'est-ce qu'un prospect qualifié ?"),
@@ -559,7 +565,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Saved library of outputs", "Bibliothèque de résultats"),
       bi("Assistants and automations built by our team", "Assistants et automatisations conçus par notre équipe"),
     ],
-    packages: pricing.ai.map((a) => pack(a.key, a.name, a.name, a.amount, a.cadence as Cadence, suffixOf(a))),
+    packages: pricing.ai.map((a) => pack(a.key, a.name, frTier("ai", a.key, a.name), a.amount, a.cadence as Cadence, suffixOf(a))),
     faq: [],
     cta: { label: bi("Request early access", "Demander l'accès anticipé"), to: "/marketplace/post-project" },
   },
@@ -619,7 +625,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Documented workflows you own", "Flux documentés qui vous appartiennent"),
       bi("Scales from one task to full operations", "Évolue d'une tâche à des opérations complètes"),
     ],
-    packages: pricing.ai.map((a) => pack(a.key, a.name, a.name, a.amount, a.cadence as Cadence, suffixOf(a))),
+    packages: pricing.ai.map((a) => pack(a.key, a.name, frTier("ai", a.key, a.name), a.amount, a.cadence as Cadence, suffixOf(a))),
     faq: [
       {
         q: bi("What can be automated first?", "Que peut-on automatiser en premier ?"),
@@ -663,7 +669,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Usage and quality reporting", "Rapports d'utilisation et de qualité"),
       bi("No customer data resold", "Aucune revente de données clients"),
     ],
-    packages: pricing.ai.map((a) => pack(a.key, a.name, a.name, a.amount, a.cadence as Cadence, suffixOf(a))),
+    packages: pricing.ai.map((a) => pack(a.key, a.name, frTier("ai", a.key, a.name), a.amount, a.cadence as Cadence, suffixOf(a))),
     faq: [
       {
         q: bi("Will it answer wrong?", "Peut-il répondre incorrectement ?"),
@@ -707,7 +713,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Recurring schedules supported", "Tâches récurrentes prises en charge"),
       bi("Approval before payment is released", "Approbation avant le versement du paiement"),
     ],
-    packages: pricing.admin.map((a) => pack(a.key, a.name, a.name, a.amount, a.cadence as Cadence)),
+    packages: pricing.admin.map((a) => pack(a.key, a.name, frTier("admin", a.key, a.name), a.amount, a.cadence as Cadence)),
     faq: [
       {
         q: bi("Can you sign an NDA?", "Pouvez-vous signer une entente de confidentialité ?"),
@@ -752,7 +758,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("Editable source files on request", "Fichiers sources modifiables sur demande"),
       bi("Fast turnaround for promotions", "Délais rapides pour les promotions"),
     ],
-    packages: pricing.design.map((d) => pack(d.key, d.name, d.name, d.amount, d.cadence as Cadence)),
+    packages: pricing.design.map((d) => pack(d.key, d.name, frTier("design", d.key, d.name), d.amount, d.cadence as Cadence)),
     faq: [
       {
         q: bi("Do you handle printing?", "Gérez-vous l'impression ?"),
@@ -797,7 +803,7 @@ export const servicePages: readonly ServicePage[] = [
       bi("TAKATAK support if something goes wrong", "Soutien TAKATAK en cas de problème"),
       bi("Single billing with your other services", "Facturation unique avec vos autres services"),
     ],
-    packages: pricing.admin.map((a) => pack(a.key, a.name, a.name, a.amount, a.cadence as Cadence)),
+    packages: pricing.admin.map((a) => pack(a.key, a.name, frTier("admin", a.key, a.name), a.amount, a.cadence as Cadence)),
     faq: [
       {
         q: bi("How are specialists selected?", "Comment les spécialistes sont-ils choisis ?"),

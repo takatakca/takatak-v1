@@ -68,6 +68,7 @@ function Stars({ n, className = "" }: { n: number; className?: string }) {
 
 function DomainSearchMock() {
   const { tk, lang } = useCopy();
+  const brand = lang === "fr" ? "votremarque" : "yourbrand";
   const price = money(lang, pricing.domain.register.amount);
   const rows = [
     { tld: "ca", ok: true },
@@ -79,7 +80,7 @@ function DomainSearchMock() {
     <Window title="takatak.ca / domain">
       <div className="flex items-center gap-2 rounded-lg border border-white/12 bg-white/[0.05] px-2.5 py-2">
         <Globe2 size={14} className="text-[var(--tk-accent)]" aria-hidden />
-        <span className="font-medium text-white text-sm">yourbrand</span>
+        <span className="font-medium text-white text-sm">{brand}</span>
         <span className="ml-auto inline-flex items-center gap-1 rounded-md bg-[var(--tk-accent)] px-2 py-1 font-bold text-[#04122B] text-[11px]">
           <Search size={11} aria-hidden /> .ca
         </span>
@@ -93,7 +94,7 @@ function DomainSearchMock() {
             }`}
           >
             <StatusDot tone={r.ok ? "ok" : "muted"} />
-            <span className="font-semibold text-white">yourbrand.{r.tld}</span>
+            <span className="font-semibold text-white">{brand}.{r.tld}</span>
             <span className="text-white/50">{r.ok ? tk("mock.available") : tk("mock.taken")}</span>
             {r.ok && (
               <>
@@ -114,11 +115,12 @@ function DomainSearchMock() {
 }
 
 function DnsMock() {
-  const { tk } = useCopy();
+  const { tk, lang } = useCopy();
+  const brand = lang === "fr" ? "votremarque" : "yourbrand";
   const rows = [
     ["A", "@", "192.0.2.10"],
-    ["CNAME", "www", "yourbrand.ca"],
-    ["MX", "@", "mail.yourbrand.ca"],
+    ["CNAME", "www", `${brand}.ca`],
+    ["MX", "@", `mail.${brand}.ca`],
     ["TXT", "@", "v=spf1 include:…"],
   ];
   return (
@@ -167,7 +169,7 @@ function ServerMock() {
           <li className="rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-2">
             <div className="flex justify-between text-white/70">
               <span>{tk("mock.storage")}</span>
-              <span>{silver.features[1]}</span>
+              <span>{tk("cat.hosting.tier.silver.f2")}</span>
             </div>
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
               <div className="tk-accent-bg h-full w-[34%] rounded-full" />

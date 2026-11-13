@@ -35,7 +35,7 @@ export const dynamic = "force-dynamic";
 const STATE_LABELS: Record<FacturationsOverview["env"]["state"], string> = {
   disabled: "Disabled",
   not_configured: "Not configured",
-  configured_untested: "Configured",
+  configured_untested: "Configured — connection not yet verified",
 };
 
 const FAILURE_LABELS: Record<FacturationsFailureKind, string> = {
@@ -117,6 +117,14 @@ export default async function AdminBillingPage() {
     loadQueue(),
   ]);
   const isOwner = overview.actorRole === "OWNER";
+  // A configured endpoint is not evidence of an authenticated live link.
+  // Only successful, tenant-scoped remote reads can earn a green indicator.
+  const connectionVerified =
+    overview.env.enabled &&
+    overview.env.configured &&
+    overview.capabilities.available &&
+    overview.dashboard.available &&
+    overview.drafts.available;
   const now = new Date();
 
   return (
@@ -133,8 +141,8 @@ export default async function AdminBillingPage() {
           <CardHeader title="Facturations connection" subtitle="Server-to-server, signed 60-second identity." />
           <CardBody className="space-y-2 text-sm text-slate-600">
             <div className="flex items-center gap-2">
-              <Badge tone={overview.env.state === "configured_untested" ? "success" : "warning"}>
-                {STATE_LABELS[overview.env.state]}
+              <Badge tone={connectionVerified ? "success" : "warning"}>
+                {connectionVerified ? "Connected — read-only verified" : STATE_LABELS[overview.env.state]}
               </Badge>
               {overview.actorRole ? <Badge tone="accent">You act as {overview.actorRole}</Badge> : null}
             </div>

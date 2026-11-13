@@ -17,6 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 
+import { AppIcon } from "@/components/website/funnel/CloverSuite";
 import { KioskScene } from "@/components/website/funnel/KioskScene";
 import { Reveal } from "@/components/website/home/Reveal";
 import { useHeaderHeight } from "@/components/website/premium/CategoryNavigator";
@@ -240,7 +241,8 @@ export function FoodHubPage() {
             { k: "4ccounting", t: { fr: "4CCOUNTING · vos livres", en: "4CCOUNTING · your books" }, d: { fr: "Les ventes des plateformes entrent dans vos rapports TPS et TVQ.", en: "Platform sales go into your GST and QST reports." } },
           ].map((c) => (
             <Link key={c.k} to={`/clover#${c.k}`} className="tk-glass tk-lift group block rounded-2xl p-6">
-              <h3 className="text-lg font-bold">{tx(c.t)}</h3>
+              <AppIcon app={c.k} size={44} />
+              <h3 className="mt-4 text-lg font-bold">{tx(c.t)}</h3>
               <p className="mt-2 text-[15px] leading-6 text-white/65">{tx(c.d)}</p>
               <span className="mt-4 inline-flex items-center gap-1 text-[14px] font-semibold text-sky-300 group-hover:underline">
                 {tx({ fr: "Voir l’application", en: "See the app" })} <ArrowRight size={14} aria-hidden />
@@ -251,7 +253,7 @@ export function FoodHubPage() {
       </Section>
 
       <Section id="fh-faq" title={tx({ fr: "Questions fréquentes", en: "Frequently asked questions" })}>
-        <div className="mx-auto grid max-w-3xl gap-3">
+        <div className="grid max-w-3xl gap-3">
           {FAQ.map((f) => (
             <details key={f.q.en} className="tk-faq tk-glass group rounded-2xl px-5 py-4 open:bg-white/[0.06]">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-[15px] font-semibold">

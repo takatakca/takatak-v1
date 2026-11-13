@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getPrisma } from "@/lib/db/prisma";
 import { redirect } from "next/navigation";
 
 import { parseScheduleInput } from "@/lib/ai-agents/schedule";
@@ -135,6 +136,8 @@ export async function decideAgentRunAction(formData: FormData): Promise<void> {
   const access = await scoped("approve_content");
   const runId = String(formData.get("runId") ?? "");
   if (!access || !UUID.test(runId)) return;
+  const review = await getPrisma()?.aiAgentRun.findFirst({ where: { id: runId, clientId: access.activeClientId, agentKey: "review_responder" }, select: { id: true } });
+  if (review) redirect("/dashboard/growth/reviews#review-approvals");
   await decideAgentRun(access.activeClientId, runId, formData.get("decision") === "approve", access.profileId);
   revalidatePath(AGENT_PATH);
 }

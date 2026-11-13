@@ -12,8 +12,25 @@ import {
 
 const MAX_MB = MAX_ATTACHMENT_BYTES / (1024 * 1024);
 
-function sizeLabel(bytes: number): string {
-  return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+const COPY = {
+  select: { fr: "Choisir des fichiers de référence", en: "Select reference files" },
+  rules: {
+    fr: "Jusqu’à {n} fichiers, {mb} Mo chacun : PDF, images, Word, Excel, PowerPoint ou texte. Ils sont envoyés en privé à TAKATAK avec votre projet.",
+    en: "Up to {n} files, {mb} MB each: PDF, images, Word, Excel, PowerPoint or text. They are sent privately to TAKATAK with your project.",
+  },
+  type: { fr: "type refusé", en: "type not accepted" },
+  size: { fr: "plus de {mb} Mo", en: "over {mb} MB" },
+  limit: { fr: "limite de {n} fichiers", en: "limit of {n} files" },
+  notAdded: { fr: "Non ajoutés : {list}.", en: "Not added: {list}." },
+  remove: { fr: "Retirer {name}", en: "Remove {name}" },
+} as const;
+
+const fill = (text: string, vars: Record<string, string | number>) =>
+  text.replace(/\{(\w+)\}/g, (_, key: string) => String(vars[key] ?? ""));
+
+function sizeLabel(bytes: number, lang: "fr" | "en"): string {
+  const [mb, kb] = lang === "fr" ? ["Mo", "Ko"] : ["MB", "KB"];
+  return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} ${mb}` : `${Math.max(1, Math.round(bytes / 1024))} ${kb}`;
 }
 
 /** Reference files picked by the visitor; sent with the project after it is received. */
@@ -21,7 +38,9 @@ export function FileUploadPanel({
   files,
   onChange,
   disabled = false,
+  lang = "en",
 }: {
+  lang?: "fr" | "en";
   files: File[];
   onChange: (files: File[]) => void;
   disabled?: boolean;
@@ -32,13 +51,13 @@ export function FileUploadPanel({
     const skipped: string[] = [];
     const next = [...files];
     for (const file of selected) {
-      if (!hasAcceptedExtension(file.name)) skipped.push(`${file.name} (type not accepted)`);
-      else if (file.size === 0 || file.size > MAX_ATTACHMENT_BYTES) skipped.push(`${file.name} (over ${MAX_MB} MB)`);
+      if (!hasAcceptedExtension(file.name)) skipped.push(`${file.name} (${COPY.type[lang]})`);
+      else if (file.size === 0 || file.size > MAX_ATTACHMENT_BYTES) skipped.push(`${file.name} (${fill(COPY.size[lang], { mb: MAX_MB })})`);
       else if (next.some((f) => f.name === file.name && f.size === file.size)) continue;
-      else if (next.length >= MAX_ATTACHMENTS_PER_LEAD) skipped.push(`${file.name} (limit of ${MAX_ATTACHMENTS_PER_LEAD} files)`);
+      else if (next.length >= MAX_ATTACHMENTS_PER_LEAD) skipped.push(`${file.name} (${fill(COPY.limit[lang], { n: MAX_ATTACHMENTS_PER_LEAD })})`);
       else next.push(file);
     }
-    setNotice(skipped.length ? `Not added: ${skipped.join(", ")}.` : null);
+    setNotice(skipped.length ? fill(COPY.notAdded[lang], { list: skipped.join(", ") }) : null);
     onChange(next);
   }
 
@@ -46,10 +65,9 @@ export function FileUploadPanel({
     <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">
       <label className={`flex flex-col items-center justify-center py-4 text-center ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}>
         <Upload size={22} className="text-primary" />
-        <span className="mt-2 text-sm font-medium text-slate-700">Select reference files</span>
+        <span className="mt-2 text-sm font-medium text-slate-700">{COPY.select[lang]}</span>
         <span className="mt-1 text-xs text-slate-500">
-          Up to {MAX_ATTACHMENTS_PER_LEAD} files, {MAX_MB} MB each: PDF, images, Word, Excel, PowerPoint or text.
-          They are sent privately to TAKATAK with your project.
+          {fill(COPY.rules[lang], { n: MAX_ATTACHMENTS_PER_LEAD, mb: MAX_MB })}
         </span>
         <input
           type="file"
@@ -76,13 +94,13 @@ export function FileUploadPanel({
               <span className="inline-flex min-w-0 items-center gap-2 text-slate-700">
                 <File size={13} className="shrink-0" />
                 <span className="truncate">{fileItem.name}</span>
-                <span className="shrink-0 text-slate-400">{sizeLabel(fileItem.size)}</span>
+                <span className="shrink-0 text-slate-400">{sizeLabel(fileItem.size, lang)}</span>
               </span>
               <button
                 type="button"
                 disabled={disabled}
                 onClick={() => onChange(files.filter((_, fileIndex) => fileIndex !== index))}
-                aria-label={`Remove ${fileItem.name}`}
+                aria-label={fill(COPY.remove[lang], { name: fileItem.name })}
                 className="text-slate-400 transition hover:text-slate-950"
               >
                 <X size={14} />

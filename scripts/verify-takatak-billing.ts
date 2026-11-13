@@ -622,6 +622,49 @@ function verifyStaticGuards(): void {
   pass("queue table: RLS on, no Data API grants/policies, immutable fed drafts, no deletes, CAD only");
 }
 
+function verifyAdminFacturationsActivation(): void {
+  const nav = read("src/lib/dashboard/dashboard-config.ts");
+  const sidebar = read("src/components/layout/dashboard-sidebar.tsx");
+  const adminPage = read("src/app/dashboard/admin/billing/page.tsx");
+  const adminLayout = read("src/app/dashboard/admin/layout.tsx");
+
+  // Explicit owner/admin navigation; no broader workspace navigation.
+  assert.ok(
+    nav.includes('href: "/dashboard/admin/billing"'),
+    "Facturations administration must be discoverable from the main sidebar",
+  );
+  assert.ok(
+    sidebar.includes('item.href.startsWith("/dashboard/admin/")') &&
+      sidebar.includes('session.platformRole === "owner" || session.platformRole === "admin"'),
+    "platform administration links must remain limited to owner/admin",
+  );
+  assert.ok(
+    adminLayout.includes("await requireAdminAccess()"),
+    "a guessed URL must still be denied server-side",
+  );
+  pass("Facturations administration is navigable only for TAKATAK platform administrators");
+
+  // Do not report connectivity based solely on populated env variables.
+  assert.ok(
+    adminPage.includes("overview.capabilities.available") &&
+      adminPage.includes("overview.dashboard.available") &&
+      adminPage.includes("overview.drafts.available") &&
+      adminPage.includes('tone={connectionVerified ? "success" : "warning"}'),
+    "green connection indicator must require real authenticated remote reads",
+  );
+  assert.ok(
+    adminPage.includes("Configured — connection not yet verified") &&
+      adminPage.includes("Connected — read-only verified"),
+    "display must distinguish configuration from verified read access",
+  );
+  assert.ok(
+    adminPage.includes("requireAdminAccess()") &&
+      adminPage.includes("getFacturationsOverview(access)"),
+    "the page must remain role-gated and read through the server bridge",
+  );
+  pass("read-only connection indicator is green only after verified server-to-server responses");
+}
+
 verifyDraftValidation();
 verifyEstimateParity();
 verifyServiceToken();
@@ -632,5 +675,6 @@ verifyContract();
 verifyEnvironment();
 verifyMoneyInput();
 verifyStaticGuards();
+verifyAdminFacturationsActivation();
 
 console.log("\nTAKATAK BILLING (FACTURATIONS) SAFEGUARDS: ALL PASSED");

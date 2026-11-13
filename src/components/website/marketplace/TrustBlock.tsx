@@ -7,7 +7,7 @@ import { useLanguage } from "@/lib/website/use-language";
 const ITEMS = [
   {
     icon: ShieldCheck,
-    t: { fr: "Paiement protégé", en: "Escrow protection" },
+    t: { fr: "Paiement protégé", en: "Protected payment" },
     d: { fr: "Le paiement est retenu par TAKATAK et versé à votre approbation.", en: "Payment is held by TAKATAK and released on approval." },
   },
   {

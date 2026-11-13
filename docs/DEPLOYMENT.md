@@ -1,3 +1,20 @@
+# TAKATAK V1 — Deployment
+
+## Verified architecture and constraints
+Actual takatak.ca target on 2026-11-07: VPS1 209.145.49.63, Coolify application lt05flq7furdzxfqtmfmujek, repository main, root Dockerfile, internal port3000. The older VPS2 application is not the current DNS target. Preserve both existing configurations and mail/DNS. Native Coolify webhook deploys pushes serially; GitHub skipped deployment jobs do not mean native deployment is disabled.
+
+## Operator prerequisites
+Exact reviewed revision, complete green Node22 CI, no unreviewed schema delta, healthy current release and retained rollback image/configuration. Review actual database backup/migration state before any schema operation. Credentials stay in the existing private runtime; never emit their values. Current integration adds no migration or startup migration command.
+
+## Authorized promotion procedure
+The owner expressly authorized reviewed merges/pushes/deploys one repository at a time. Merge the tested integration without force-push, let the existing native deployment queue complete, and verify image/source SHA, trusted HTTPS and process/database/Supabase readiness. Preserve existing workers/flags and do not activate providers or payments. If health regresses, use the retained previous verified image/configuration through the same controller. A successful public health probe does not prove authenticated tenant isolation or provider delivery.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # SEO integration release — TAKATAK V1
 
 This is a **SEO-scope supplement**. The general release runbooks remain `docs/TAKATAK_PRODUCTION_PROMOTION.md`, `docs/TAKATAK_V1_ENVIRONMENT_MATRIX.md` and `WORKLOG.md`.
@@ -34,3 +51,11 @@ After an approved backend database/HTTPS deployment and coordinator-approved V1 
 ### Paginated workspace SEO JSON export smoke
 
 On an approved staging-only SEO backend with migrations and current client A/B accounts, visit `/dashboard/seo/exports` under client A and `view_reports` permission. Download every page of sites, opportunities, prospects and briefs from `/api/seo/workspace/export/[collection]?offset=N`, following `nextOffset` only while `hasMore=true`; verify private/no-store headers, no reviewer IDs/DNS secrets and no rows belonging to B. A viewer lacking `view_reports` must not access export UI or route; an import-only backend token must be forbidden. When there are more than 200 rows, verify the second page continues correctly and no response exceeds its fixed page limit. No live export, migration or deployment is claimed.
+
+### SEO deletion receipts release gate — PR #196
+
+V1 only supplies the authorized UI/bridge; the SEO API is a separately deployed Docker service. The owner must first approve an existing/non-billable Supabase project and migrations 0001→0002→0003→0004, configure a Coolify HTTPS app and GitHub production vars/secrets, and verify the backend `/ready` on the exact commit. The PR #196 manager dashboard at `/dashboard/seo/deletions` may merge/deploy only via TAKATAK V1's designated coordinator after complete CI. In approved staging: confirm viewer denied, another client B sees no A receipts, fake/invalid offsets rejected, and an authorized manager sees actual receipt counts after deleting a disposable test site. It is an operational log, not an erasure compliance certificate. Do not run SQL against TAKATAK's master identity database or publish a fake receipt.
+
+### Latest release status (2026-10-16)
+
+PR #196 full branch CI passed: SHA `90f8fdeef6ea499e99f796c3563cefa4f6c8a6e9`, run `38884438610`; the PR is open and ready for V1 coordinator review, not merged. The SEOTAKATAK backend main SHA `b41eae7f4981f325668065ce4fc4e7e3a5860710` passed CI `38885243320`, but Coolify deploy `38885295728` failed. Owner-approved SQL 0004 and live /ready plus two-tenant staging deletion audit are still mandatory.

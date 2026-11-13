@@ -51,7 +51,7 @@ export function DealsBoard({ campaigns }: { campaigns: Campaign[] }) {
           <p className="hp-ink-2 mx-auto mt-3 max-w-2xl text-[17px] leading-8">{COPY.lead[lang]}</p>
         </div>
 
-        <ul className="mt-12 grid gap-4 md:grid-cols-2">
+        <ul className={`mt-12 grid gap-4 ${campaigns.length > 0 ? "md:grid-cols-2" : "mx-auto max-w-md"}`}>
           <li className="hp-card flex flex-col rounded-3xl p-6">
             <p className="hp-accent text-[14px] font-semibold">{COPY.first.name[lang]}</p>
             <p className="hp-display hp-ink mt-2 text-[44px] leading-none">−{PROMO_PERCENT} %</p>

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { ArrowRight, Check, ChevronDown, KeyRound, Network, Play, ShieldCheck, Unplug } from "lucide-react";
 
-import { ACCENT, APPS, Mini, type F } from "@/components/website/funnel/CloverSuite";
+import { ACCENT, APPS, AppIcon, Mini, type F } from "@/components/website/funnel/CloverSuite";
 import { ClipModal } from "@/components/website/funnel/MediaLoop";
 import { Reveal } from "@/components/website/home/Reveal";
 import { useHeaderHeight } from "@/components/website/premium/CategoryNavigator";
@@ -134,13 +134,17 @@ function useTick(active: boolean) {
   return reduced ? null : tick;
 }
 
+/** Size a mini screen is laid out at before it is enlarged: wide enough for every label, in French and English. */
+const MINI_W = 148;
+const MINI_H = 110;
+
 /** A mini screen, enlarged (DOM, so it stays sharp). */
 function BigScreen({ app, f, scale = 2 }: { app: string; f: F; scale?: number }) {
   const { lang } = useLanguage();
   return (
     <div className="rounded-[22px] bg-[linear-gradient(160deg,#1B2436,#0B1220)] p-2 shadow-[0_40px_80px_-30px_rgb(0_0_0/0.8)] ring-1 ring-white/10" aria-hidden>
-      <div className="overflow-hidden rounded-[14px]" style={{ width: 112 * scale, height: 84 * scale }}>
-        <div style={{ width: 112, height: 84, transform: `scale(${scale})`, transformOrigin: "top left" }}>
+      <div className="overflow-hidden rounded-[14px]" style={{ width: MINI_W * scale, height: MINI_H * scale }}>
+        <div style={{ width: MINI_W, height: MINI_H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
           <Mini app={app} f={f} lang={lang} />
         </div>
       </div>
@@ -162,10 +166,10 @@ function AppSection({ index }: { index: number }) {
       <div ref={ref} className={`mx-auto grid max-w-6xl items-center gap-10 px-4 lg:grid-cols-2 ${flip ? "lg:[&>*:first-child]:order-2" : ""}`}>
         <Reveal className="flex justify-center">
           <div className="hidden sm:block">
-            <BigScreen app={p.key} f={f} scale={3.2} />
+            <BigScreen app={p.key} f={f} scale={2.4} />
           </div>
           <div className="sm:hidden">
-            <BigScreen app={p.key} f={f} scale={2.5} />
+            <BigScreen app={p.key} f={f} scale={1.9} />
           </div>
         </Reveal>
         <Reveal delay={80}>
@@ -241,7 +245,11 @@ export function CloverSuitePage() {
             <div className="grid grid-cols-3 gap-3 sm:gap-4">
               {APPS.map((p, i) => (
                 <a key={p.key} href={`#${p.key}`} className="group block rounded-2xl p-1.5 transition-transform hover:-translate-y-1" aria-label={p.name}>
-                  <div className="aspect-[4/3] rounded-[14px] bg-[linear-gradient(160deg,#1B2436,#0B1220)] p-1 ring-1 ring-white/10" aria-hidden>
+                  {/* Phones: the app icons, like a tablet's home screen; larger screens: the moving mini screens. */}
+                  <div className="grid aspect-square place-items-center rounded-[20px] bg-white/[0.04] ring-1 ring-white/10 transition-colors group-hover:bg-white/[0.08] sm:hidden" aria-hidden>
+                    <AppIcon app={p.key} size={52} />
+                  </div>
+                  <div className="hidden aspect-[4/3] rounded-[14px] bg-[linear-gradient(160deg,#1B2436,#0B1220)] p-1 ring-1 ring-white/10 sm:block" aria-hidden>
                     <Mini app={p.key} f={(tick === null ? 3 : (tick + i * 3) % 4) as F} lang={lang} />
                   </div>
                   <span className="mt-1.5 flex items-center gap-1.5 text-[12px] font-bold tracking-[0.06em] text-white/85">
@@ -300,11 +308,11 @@ export function CloverSuitePage() {
             ))}
           </ul>
           <Reveal className="mt-6">
-            <p className="flex flex-wrap items-center gap-2 text-[14.5px] text-white/65">
-              {tx({ fr: "Au centre :", en: "At the centre:" })}
-              <Link to="/#suite" className="inline-flex items-center gap-1 font-semibold text-sky-300 hover:underline">
+            <p className="text-[14.5px] leading-7 text-white/65">
+              {tx({ fr: "Au centre :", en: "At the centre:" })}{" "}
+              <Link to="/foodhub" className="inline-flex items-center gap-1 font-semibold text-sky-300 hover:underline">
                 TAKATAK Food Hub <ArrowRight size={14} aria-hidden />
-              </Link>
+              </Link>{" "}
               {tx({ fr: "· une tablette pour toutes vos commandes.", en: "· one tablet for every order." })}
             </p>
           </Reveal>

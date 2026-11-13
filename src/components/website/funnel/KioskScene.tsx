@@ -124,8 +124,8 @@ export function KioskScene() {
     });
 
   return (
-    <div ref={ref} className="relative flex h-full items-center overflow-hidden rounded-2xl bg-[linear-gradient(160deg,#0A1630,#060D1F)] p-4 sm:p-6">
-      <span className="absolute right-3 top-3 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{T.demo[lang]}</span>
+    <div ref={ref} className="relative flex h-full items-center overflow-hidden rounded-2xl bg-[linear-gradient(160deg,#0A1630,#060D1F)] p-4 pt-11 sm:p-6">
+      <span className="absolute right-3 top-3 z-[3] rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{T.demo[lang]}</span>
       <div className="grid w-full grid-cols-1 items-center gap-4 sm:grid-cols-[190px_minmax(0,1fr)] [&>*]:min-w-0">
         {/* The kiosk on its stand */}
         <div className="mx-auto flex w-[200px] flex-col items-center sm:mx-0 sm:w-full">
@@ -229,7 +229,7 @@ export function KioskScene() {
                   <span className="block truncate text-[11.5px] font-semibold text-white">
                     {o.source.name} · #{o.id}
                   </span>
-                  <span className="flex items-center gap-1 truncate text-[10.5px] text-white/50">
+                  <span className="flex items-center gap-1 truncate text-[10.5px] text-white/65">
                     {(() => {
                       const m = MODES[o.id % MODES.length];
                       return <m.Icon size={10} className="shrink-0" aria-hidden />;

@@ -6,6 +6,7 @@ import { ArrowRight, Check, GraduationCap, Inbox, Loader2, MailCheck, Phone, Tag
 import { useCopy } from "@/components/website/premium/ui";
 import { NEWSLETTER_TOPICS, TOPIC_LABELS, type NewsletterTopic } from "@/lib/newsletter/topics";
 import { Link } from "@/lib/website/nav";
+import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { Eyebrow, Rise, TwoTone, useSeen } from "./primitives";
 import { PushAlert } from "./PushAlert";
 
@@ -249,13 +250,15 @@ const INBOX = [
 /** A dark inbox where one email per newsletter topic arrives, labelled as a preview. */
 function InboxPreview({ lang }: { lang: "en" | "fr" }) {
   const { ref, seen } = useSeen<HTMLDivElement>();
+  const reduced = useReducedMotion();
+  // All three emails stay in the inbox; the newest one (highlighted) moves down the list.
   const [n, setN] = useState(0);
   useEffect(() => {
-    if (!seen) return;
-    const t = window.setInterval(() => setN((v) => (v + 1) % (INBOX.length + 2)), 1600);
+    if (!seen || reduced) return;
+    const t = window.setInterval(() => setN((v) => (v + 1) % INBOX.length), 2400);
     return () => window.clearInterval(t);
-  }, [seen]);
-  const shown = Math.min(INBOX.length, n + 1);
+  }, [seen, reduced]);
+  const shown = n + 1;
   return (
     <div ref={ref} className="relative overflow-hidden rounded-[32px] bg-[linear-gradient(160deg,#0B1B3F,#060D1F_65%)] p-5 shadow-[0_50px_120px_-40px_rgb(6_13_31/0.8)] sm:p-7">
       <span aria-hidden className="absolute -left-20 -top-20 h-72 w-72 rounded-full bg-[#1E6BFF]/25 blur-3xl" />
@@ -265,11 +268,11 @@ function InboxPreview({ lang }: { lang: "en" | "fr" }) {
         </p>
         <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{lang === "fr" ? "Aperçu" : "Preview"}</span>
       </div>
-      <ul className="relative mt-5 grid gap-3">
+      <ul className="relative mt-5 grid grid-cols-1 gap-3">
         {INBOX.map((m, i) => (
           <li
             key={m.subject.fr}
-            className={`rounded-2xl p-4 transition-all duration-700 ${i < shown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"} ${
+            className={`rounded-2xl p-4 transition-all duration-700 ${i === shown - 1 ? "-translate-y-0.5 scale-[1.01]" : "scale-100"} ${
               i === shown - 1 ? "bg-white text-[#060D1F] shadow-[0_24px_60px_-24px_rgb(41_195_255/0.6)]" : "bg-white/[0.06] text-white ring-1 ring-white/10"
             }`}
           >

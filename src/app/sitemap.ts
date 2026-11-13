@@ -25,6 +25,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/services",
     "/privacy-manager",
     "/search",
+    "/about",
+    "/contact",
+    "/freelancers",
   ];
 
   return [
@@ -47,8 +50,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
 
-    ...servicePages.map((service) => ({
-      url: `${baseUrl}/services/${service.slug}`,
+    // Services whose page lives elsewhere (/domain, /hosting) are listed once, above.
+    ...servicePages.filter((service) => service.route === `/services/${service.slug}`).map((service) => ({
+      url: `${baseUrl}${service.route}`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
       priority: 0.7,

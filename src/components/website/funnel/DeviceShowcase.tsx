@@ -91,7 +91,7 @@ export function DeviceShowcase() {
       <div aria-hidden className="absolute left-1/2 top-40 h-[480px] w-[880px] -translate-x-1/2 rounded-full bg-[#1F8BFF]/20 blur-[140px]" />
       <div className="relative mx-auto max-w-7xl px-4">
         <Rise className="mx-auto max-w-3xl text-center">
-          <div className="hp" data-theme="dark">
+          <div className="hp !bg-transparent" data-theme="dark">
             <Eyebrow>{T.eyebrow[lang]}</Eyebrow>
             <TwoTone id="home-devices-title" lead={T.lead[lang]} rest={T.rest[lang]} size="md" />
           </div>
@@ -127,7 +127,7 @@ export function DeviceShowcase() {
           {/* Floating real screenshot: reviews */}
           <div className="absolute -left-2 bottom-10 hidden w-[28%] overflow-hidden rounded-2xl bg-white shadow-[0_30px_80px_-30px_rgb(0_0_0/0.8)] ring-1 ring-white/10 md:block">
             <div className="relative aspect-[4/3]">
-              <Image src="/media/product/shot-reviews.webp" alt={lang === "fr" ? "Les avis dans le tableau de bord TAKATAK" : "Reviews in the TAKATAK dashboard"} fill sizes="300px" className="object-cover object-top" />
+              <Image src="/media/product/shot-reviews.webp" alt={lang === "fr" ? "Les avis dans le tableau de bord TAKATAK" : "Reviews in the TAKATAK dashboard"} fill sizes="300px" className="object-cover object-left-top" />
             </div>
           </div>
         </Rise>
@@ -148,7 +148,7 @@ export function DeviceShowcase() {
                 <span className="mt-0.5 text-[13px] text-[#B8C4D3]">{s.line[lang]}</span>
               </>
             );
-            const cls = "group hp-glow flex h-full flex-col rounded-[20px] bg-white/[0.04] p-4 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08] hover:ring-[#29C3FF]/40";
+            const cls = "group hp-glow flex h-full w-full flex-col rounded-[20px] bg-white/[0.04] p-4 ring-1 ring-white/10 transition-colors hover:bg-white/[0.08] hover:ring-[#29C3FF]/40";
             return (
               <Rise as="li" key={s.key} delay={i * 50} className="hp-build">
                 {s.to ? (

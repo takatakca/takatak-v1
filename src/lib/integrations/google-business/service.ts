@@ -7,6 +7,8 @@ import "server-only";
 // Every function takes an optional fetch implementation so the whole flow can
 // be exercised against simulated Google responses in QA.
 
+import type { PrismaClient } from "@prisma/client";
+
 import { triggerLowRatingResponder } from "@/lib/ai-agents/service";
 import { getPrisma } from "@/lib/db/prisma";
 
@@ -288,30 +290,149 @@ export async function syncGoogleReviews(clientId: string, fetchImpl: FetchLike =
   return { ok: true, locations: locations.length, imported, updated, triggered };
 }
 
-/** Posts (or replaces) the public reply on a Google review of this client. */
+export type GoogleReplyDependencies = {
+  database?: PrismaClient;
+  accessToken?: (
+    clientId: string,
+    fetchImpl: FetchLike,
+  ) => Promise<{ ok: true; token: string } | { ok: false; reason: string }>;
+};
+
+const MAX_REPLY_ACK_BYTES = 32 * 1024;
+
+/** Google returns the exact persisted ReviewReply, not merely an acceptance code. */
+export function parseGoogleReviewReplyAck(
+  value: unknown,
+  expectedComment: string,
+): { comment: string; updateTime: Date } | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  if (row.comment !== expectedComment || typeof row.updateTime !== "string")
+    return null;
+  const stamp =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?(Z|[+-]\d{2}:\d{2})$/.exec(
+      row.updateTime,
+    );
+  if (!stamp || !Number.isFinite(Date.parse(row.updateTime))) return null;
+  const year = Number(stamp[1]),
+    month = Number(stamp[2]),
+    day = Number(stamp[3]);
+  if (
+    year < 1970 ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > new Date(Date.UTC(year, month, 0)).getUTCDate() ||
+    Number(stamp[4]) > 23 ||
+    Number(stamp[5]) > 59 ||
+    Number(stamp[6]) > 59
+  )
+    return null;
+  return { comment: expectedComment, updateTime: new Date(row.updateTime) };
+}
+
+async function readGoogleReplyAck(response: Response): Promise<unknown> {
+  if (
+    Number(response.headers.get("content-length")) > MAX_REPLY_ACK_BYTES ||
+    !response.body
+  )
+    throw new Error("invalid_reply_ack");
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_REPLY_ACK_BYTES) throw new Error("invalid_reply_ack");
+      chunks.push(value);
+    }
+  } finally {
+    await reader.cancel().catch(() => {});
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+}
+
+/** Posts an exact bounded reply on this tenant's native Google review. */
 export async function replyToGoogleReview(
   clientId: string,
   externalReviewRowId: string,
   comment: string,
   fetchImpl: FetchLike = fetch,
+  dependencies: GoogleReplyDependencies = {},
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const text = comment.trim().slice(0, 4000);
+  const text = typeof comment === "string" ? comment.trim() : "";
   if (!text) return { ok: false, reason: "empty_reply" };
-  const prisma = requirePrisma();
+  if (text.length > 4000) return { ok: false, reason: "reply_too_long" };
+  const prisma = dependencies.database ?? requirePrisma();
   const review = await prisma.externalReview.findFirst({
-    where: { id: externalReviewRowId, clientId },
-    select: { id: true, externalId: true, location: { select: { resourceName: true } } },
+    where: {
+      id: externalReviewRowId,
+      clientId,
+      source: "google",
+      location: { clientId },
+    },
+    select: {
+      id: true,
+      externalId: true,
+      location: { select: { clientId: true, resourceName: true } },
+    },
   });
-  if (!review) return { ok: false, reason: "not_found" };
-  const auth = await accessTokenFor(clientId, fetchImpl);
+  if (
+    !review ||
+    review.id !== externalReviewRowId ||
+    review.location.clientId !== clientId ||
+    !/^accounts\/[0-9]+\/locations\/[0-9]+$/.test(review.location.resourceName)
+  )
+    return { ok: false, reason: "not_found" };
+  const auth = await (dependencies.accessToken ?? accessTokenFor)(
+    clientId,
+    fetchImpl,
+  );
   if (!auth.ok) return auth;
-  const res = await call(fetchImpl, `https://mybusiness.googleapis.com/v4/${review.location.resourceName}/reviews/${encodeURIComponent(review.externalId)}/reply`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${auth.token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ comment: text }),
+  let ack: { comment: string; updateTime: Date } | null;
+  try {
+    const res = await call(
+      fetchImpl,
+      `https://mybusiness.googleapis.com/v4/${review.location.resourceName}/reviews/${encodeURIComponent(review.externalId)}/reply`,
+      {
+        method: "PUT",
+        redirect: "error",
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ comment: text }),
+      },
+    );
+    if (res.status !== 200) return { ok: false, reason: `reply_${res.status}` };
+    ack = parseGoogleReviewReplyAck(await readGoogleReplyAck(res), text);
+    if (!ack) return { ok: false, reason: "reply_unconfirmed" };
+  } catch {
+    // A network/acknowledgment failure does not prove the source did not write.
+    return { ok: false, reason: "reply_unconfirmed" };
+  }
+  // A later source reply may finish locally before this acknowledgment arrives.
+  // Keep the local projection monotonic and never write through a moved tenant.
+  // Zero changes still means this particular remote operation was acknowledged.
+  await prisma.externalReview.updateMany({
+    where: {
+      id: review.id,
+      clientId,
+      externalId: review.externalId,
+      source: "google",
+      location: { clientId, resourceName: review.location.resourceName },
+      OR: [{ replyUpdatedAt: null }, { replyUpdatedAt: { lte: ack.updateTime } }],
+    },
+    data: { replyComment: ack.comment, replyUpdatedAt: ack.updateTime },
   });
-  if (!res.ok) return { ok: false, reason: `reply_${res.status}` };
-  await prisma.externalReview.update({ where: { id: review.id }, data: { replyComment: text, replyUpdatedAt: new Date() } });
   return { ok: true };
 }
 

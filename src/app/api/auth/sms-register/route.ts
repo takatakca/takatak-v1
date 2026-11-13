@@ -12,6 +12,14 @@ export const dynamic = "force-dynamic";
 
 /** Request one registration OTP through the TAKATAK origin, never automatically retry. */
 async function requestRegistrationOtp(request: NextRequest) {
+  // Owner order 2026-11-12: email and Google only. Phone sign-in stays in the code, switched
+  // off until TAKATAK_PHONE_LOGIN=true (docs/mimt/AUTH_AND_CRM.md).
+  if (process.env.TAKATAK_PHONE_LOGIN !== "true") {
+    return authErrorResponse("Phone sign-in is turned off. Sign in with your email or Google.", 410, {
+      code: "invalid_request",
+    });
+  }
+
   const parsed = await readTrustedJsonBody(request, 2000);
   if (!parsed.ok) return parsed.response;
   const body = parsed.body as { phone?: unknown; firstName?: unknown; lastName?: unknown; acceptedTerms?: unknown } | null;

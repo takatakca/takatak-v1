@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { Montserrat } from "next/font/google";
+import localFont from "next/font/local";
 
-const montserrat = Montserrat({
-  subsets: ["latin"],
+const montserrat = localFont({
+  src: "../../../node_modules/@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2",
+  style: "normal",
   display: "swap",
-  weight: ["400", "600", "800"],
+  weight: "100 900",
 });
 
 export default function OAuthLayout({ children }: { children: ReactNode }) {

@@ -9,6 +9,7 @@ import {
   getMarketplacePackages,
   MARKETPLACE_CATEGORIES,
 } from "@/lib/website/marketplace-catalog";
+import { categoryName } from "@/lib/website/marketplace-i18n";
 
 export function generateStaticParams() {
   return MARKETPLACE_CATEGORIES.map(
@@ -37,7 +38,12 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${category.name} — Marketplace`,
+    title: (() => {
+      const fr = categoryName(category.slug, category.name, "fr");
+      return fr === category.name
+        ? `${category.name} — Place de marché · Marketplace`
+        : `${fr} · ${category.name} — Place de marché · Marketplace`;
+    })(),
     description: `Browse ${category.name} packages on the TAKATAK marketplace.`,
     alternates: { canonical: `/marketplace/category/${category.slug}` },
   };

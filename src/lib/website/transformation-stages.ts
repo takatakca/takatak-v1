@@ -52,7 +52,7 @@ export const TRANSFORMATION_STAGES: readonly TransformationStage[] = [
       { icon: Globe, label: { en: "Domain", fr: "Domaine" }, to: "/domain" },
       { icon: Server, label: { en: "Hosting", fr: "Hébergement" }, to: "/hosting" },
       { icon: Layout, label: { en: "Website", fr: "Site web" }, to: "/services/websites" },
-      { icon: Mail, label: { en: "Business email", fr: "Courriel d'affaires" }, to: "/services/hosting" },
+      { icon: Mail, label: { en: "Business email", fr: "Courriel d'affaires" }, to: "/hosting" },
     ],
     beats: [
       { label: { en: "Business name entered", fr: "Nom d'entreprise saisi" }, status: "checking" },
