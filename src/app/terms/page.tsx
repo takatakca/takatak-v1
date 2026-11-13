@@ -165,6 +165,38 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-lg font-semibold text-slate-900">
+              TikTok accounts connected to TAKATAK
+            </h2>
+            <p className="mt-2">
+              You may connect your TikTok account to TAKATAK only if
+              you have authority to do so. TikTok features are
+              subject to TikTok&apos;s applicable terms, policies,
+              permissions, and service availability. You control which
+              permissions you approve in the TikTok authorization
+              flow and may revoke access through TikTok or disconnect
+              the account from TAKATAK.
+            </p>
+            <p className="mt-3">
+              Do not use TAKATAK to publish content you do not have
+              rights to use or to violate TikTok&apos;s platform rules.
+              TikTok is a separate third-party service, not operated
+              by TAKATAK. Review the{" "}
+              <a href="https://www.tiktok.com/legal/terms-of-service"
+                 target="_blank" rel="noreferrer"
+                 className="font-semibold text-indigo-600 hover:text-indigo-500">
+                TikTok Terms of Service
+              </a>
+              {" "}and{" "}
+              <a href="https://www.tiktok.com/legal/privacy-policy"
+                 target="_blank" rel="noreferrer"
+                 className="font-semibold text-indigo-600 hover:text-indigo-500">
+                TikTok Privacy Policy
+              </a>.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-lg font-semibold text-slate-900">
               9. Service availability
             </h2>
 

@@ -6,10 +6,11 @@ import {
   MasterApiUnavailableError,
 } from "@/lib/integrations/master-api/errors";
 import {
-  authorizeMasterRequest,
+  authorizeMasterScope,
   masterApiError,
   readMasterJson,
 } from "@/lib/integrations/master-api/http";
+import { MASTER_API_ROUTE_SCOPES } from "@/lib/integrations/master-api/scope";
 import { resolveVerifiedPhoneIdentity } from "@/lib/integrations/master-api/identity";
 import { verifyTakatakPhoneOtp } from "@/lib/integrations/master-api/supabase-phone";
 
@@ -17,8 +18,8 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const unauthorized = authorizeMasterRequest(request);
-  if (unauthorized) return unauthorized;
+  const auth = authorizeMasterScope(request, MASTER_API_ROUTE_SCOPES.otpVerify);
+  if (auth.response) return auth.response;
 
   try {
     const { body } = await readMasterJson(request);

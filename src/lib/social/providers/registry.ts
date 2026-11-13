@@ -132,7 +132,7 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
     provider: "pinterest",
     label: "Pinterest",
     description:
-      "Pinterest boards, Pins, publishing, and analytics.",
+      "Pinterest accounts through OAuth. Facebook is not required.",
     platforms: ["pinterest"],
     authorizationType:
       "oauth2",
@@ -140,8 +140,8 @@ export const SOCIAL_PROVIDER_REGISTRY: Record<
       "PINTEREST_APP_ID",
       "PINTEREST_APP_SECRET",
     ],
-    implemented: false,
-    connectable: false,
+    implemented: true,
+    connectable: true,
     supportsMultipleAccounts: false,
   },
 

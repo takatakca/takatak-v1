@@ -100,6 +100,7 @@ export default async function SocialLayout({
         platforms: definition.platforms,
         implemented: readiness.implemented,
         connectable: readiness.connectable && planAllowsConnect,
+        planAllowed: planAllowsConnect,
         configured: readiness.configured,
         supportsMultipleAccounts: readiness.supportsMultipleAccounts,
         state: readiness.state,

@@ -9,6 +9,8 @@ on:
       - master
       - fix/auth-identity-deployment-hardening
       - codex/rentauto-integration
+      - codex/review-ecosystem
+      - codex/review-premium-ready
   workflow_dispatch:
 
 jobs:
@@ -29,6 +31,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Workflow concurrency stays isolated by branch
+        run: node scripts/workflow-concurrency-guard.mjs
+
       - name: Set up Node 22.23.x
         uses: actions/setup-node@v5
         with:
@@ -46,20 +51,52 @@ jobs:
       - name: Required source files are tracked
         run: npm run check:sources
 
+      - name: Agent continuation documentation safeguards
+        run: npm run qa:handoff
+
       - name: Static RLS checks
         run: npm run qa:rls:static
+
+      - name: Review cockpit normalization, isolation boundaries and provider capabilities
+        run: npm run qa:review-cockpit
+
+      - name: Review approval, editing, publication and source integrity
+        run: |
+          npm run qa:review-approval
+          npm run qa:review-draft-edit
+          npm run qa:review-draft-actions
+          npm run qa:review-generation
+          npm run qa:review-generation-actions
+          npm run qa:review-native-publication
+          npm run qa:review-workspace-navigation
+          npm run qa:review-publisher
+          npm run qa:review-google-publication
+          npm run qa:review-qmaps-api
+          npm run qa:review-qmaps-visibility
+          npm run qa:review-agent-tools
+          npm run qa:review-import-model
+          npm run qa:review-import-service
 
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Workspace billing exemption isolation
+        run: npm run qa:billing-exemption
+
       - name: Strict runtime health readiness safeguards
         run: npx tsx scripts/verify-runtime-readiness.ts
+
+      - name: Website monitoring dashboard and signed-sync safeguards
+        run: node --import tsx --require ./scripts/register-server-only.cjs scripts/monitoring-tests.ts
 
       - name: Lint
         run: npm run lint
 
       - name: Facebook content ingest safeguards
         run: npm run qa:social-step8-content
+
+      - name: X connection and paid API cost safeguards
+        run: npm run qa:social-x-cost
 
       - name: Authentication tests
         run: npm run test:auth
@@ -91,6 +128,9 @@ jobs:
       - name: TAKATAK community content moderation safeguards
         run: npm run qa:content-contributions
 
+      - name: R2F opportunity lifecycle contract
+        run: npm run qa:r2f-opportunity-contract
+
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
@@ -102,6 +142,9 @@ jobs:
 
       - name: CUBAFOOD master contract safeguards (offline, no live route)
         run: npm run qa:cubafood-contract
+
+      - name: TAKATAK master API bounded JSON safeguards
+        run: npx tsx --require ./scripts/register-server-only.cjs scripts/master-api-request-body-tests.ts
 
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
@@ -157,14 +200,23 @@ jobs:
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
+      - name: Workspace JSON request body bounds
+        run: npx tsx scripts/verify-write-request-stream.ts
+
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
+
+      - name: Public ADS endpoint limits and privacy checks
+        run: npx tsx scripts/ads-public-request-tests.ts
 
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
 
       - name: AI provider keys safeguards
         run: npm run qa:ai-provider-keys
+
+      - name: TAKATAK ADS CPC atomic budget safeguards
+        run: npx tsx scripts/ads-cpc-budget-policy-tests.ts
 
       - name: GROUPE TAKATAK billing (Facturations) safeguards
         run: npm run qa:billing
@@ -196,6 +248,9 @@ jobs:
 
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
+
+      - name: Passive live readiness safety regression
+        run: node --test scripts/ops/live-readiness.test.mjs
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
@@ -398,6 +453,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:client-invoices-db
 
+      - name: Monitoring checkout, tenant isolation and signed sync against ephemeral database
+        env:
+          NODE_ENV: development
+        run: node --import tsx --require ./scripts/register-server-only.cjs scripts/monitoring-db-tests.ts
+
       - name: GROUPE TAKATAK billing ecosystem feed against the ephemeral database
         env:
           NODE_ENV: development
@@ -408,17 +468,61 @@ jobs:
           NODE_ENV: development
         run: npm run qa:lead-order-billing-db
 
+      - name: Homepage assistant request → Lead Inbox against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:website-lead-inbox-db
+
+      - name: TAK-TAK homepage trial (credits once, lead in inbox) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:takbot-trial-db
+
+      - name: Homepage newsletter (double opt-in, unsubscribe, inbox) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:newsletter-db
+
+      - name: TAK-TAK answer (credits debited once, saved output, refund on failure) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:takbot-run-db
+
+      - name: Homepage promo codes (FIRST10 once per account, seasonal dates) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:promotions-db
+
+      - name: Security screens (support identity check, new-device sign-in, match the number) against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: npm run qa:security-checks-db
+
       - name: AI provider keys against the ephemeral database
         env:
           NODE_ENV: development
         run: npm run qa:ai-provider-keys-db
+
+      - name: Build diagnostic privacy and classification checks
+        run: node scripts/build-diagnostics-tests.cjs
 
       - name: Build (webpack)
         env:
           NEXT_PUBLIC_APP_URL: https://takatak.ca
           NEXT_PUBLIC_SUPABASE_URL: https://pcjfahhlozsseqqevimi.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PRODUCTION_SUPABASE_ANON_KEY }}
-        run: npm run build
+        shell: bash
+        run: |
+          node scripts/report-build-diagnostics.cjs --resources before
+          set +e
+          npm run build 2>&1 | tee "$RUNNER_TEMP/revew-build.log"
+          build_status=${PIPESTATUS[0]}
+          set -e
+          if [ "$build_status" -ne 0 ]; then
+            node scripts/report-build-diagnostics.cjs "$RUNNER_TEMP/revew-build.log" "$build_status" || true
+            node scripts/report-build-diagnostics.cjs --resources after || true
+          fi
+          exit "$build_status"
 
       - name: Hashed external detection and compiled-module loading
         run: npm run check:modules

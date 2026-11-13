@@ -9,6 +9,8 @@ import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AccessDenied } from "@/components/security/access-denied";
 import { MembershipRequired } from "@/components/security/membership-required";
 import { CheckNetworkScreen } from "@/components/network/check-network-screen";
+import { PlanHandoff } from "@/components/dashboard/plan-handoff";
+import { SecurityPrompts } from "@/components/security/security-prompts";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { AUTH_STATUS_HEADER } from "@/lib/auth/session-user";
 import { getServerAccessContext } from "@/lib/security/access-context";
@@ -83,7 +85,14 @@ export default async function DashboardLayout({
       
       case "client_not_allowed":
       case "membership_missing":
-        return <MembershipRequired email={displayEmail} />;
+        // A new client without a workspace yet: the plan they built on takatak.ca still reaches the team.
+        return (
+          <>
+            <MembershipRequired email={displayEmail} />
+            <PlanHandoff />
+            <SecurityPrompts />
+          </>
+        );
       case "profile_disabled":
         return <AccessDenied title="Account disabled" message="This account is disabled. Contact your TAKATAK administrator." />;
       case "profile_missing":
@@ -247,6 +256,9 @@ export default async function DashboardLayout({
       unreadNotificationCount={unreadNotificationCount}
     >
       {children}
+      {access.mode === "client_scoped" ? <PlanHandoff /> : null}
+      {/* Security screens: support identity checks and new-device sign-ins (not in the foundation demo). */}
+      {access.mode !== "foundation_demo" ? <SecurityPrompts /> : null}
     </DashboardShell>
   );
 }

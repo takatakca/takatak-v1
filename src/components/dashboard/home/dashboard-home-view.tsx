@@ -306,7 +306,7 @@ export function DashboardHomeView({
           <div className="flex items-center justify-between px-5 py-4">
             <h3 className="text-sm font-semibold text-slate-900">Recent Reviews</h3>
             <Link
-              href="/dashboard/local-listings/reviews"
+              href="/dashboard/growth/reviews"
               className="text-sm font-medium text-slate-500 hover:text-slate-800"
             >
               See all reviews

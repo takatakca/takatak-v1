@@ -51,13 +51,15 @@ type DirectAccountPlatform =
   | "threads"
   | "tiktok"
   | "x"
-  | "twitch";
+  | "twitch"
+  | "pinterest";
 
 function providerLabel(platform: DirectAccountPlatform): string {
   if (platform === "instagram") return "Instagram";
   if (platform === "threads") return "Threads";
   if (platform === "x") return "X";
   if (platform === "twitch") return "Twitch";
+  if (platform === "pinterest") return "Pinterest";
   return "TikTok";
 }
 
@@ -66,6 +68,7 @@ function accountTypeForPlatform(platform: DirectAccountPlatform): string {
   if (platform === "threads") return "threads_profile";
   if (platform === "x") return "x_user";
   if (platform === "twitch") return "twitch_channel";
+  if (platform === "pinterest") return "pinterest_account";
   return "tiktok_user";
 }
 
@@ -350,7 +353,7 @@ async function persistConnectedDirectAccount(options: {
 export async function processDirectAccountOAuthCallback(options: {
   provider: Extract<
     SocialConnectionProviderValue,
-    "instagram" | "threads" | "tiktok" | "x" | "twitch"
+    "instagram" | "threads" | "tiktok" | "x" | "twitch" | "pinterest"
   >;
   rawQuery: Record<string, string | undefined>;
   profileId: string | null;

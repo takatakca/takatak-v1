@@ -5,11 +5,29 @@
 2026-10-20 | Codex | feat/takatak-inventory → PR #218 | done: research and EDI blueprint added | Assessed owner-provided Orderful reference, document flows, packaging/lot/SSCC gaps and current pricing; API docs returned 403 | select provider and first retailer program, obtain sandbox/partner specs; no service activated
 2026-10-20 | Codex | feat/takatak-inventory → PR #218 | PR open; local checks passed, CI pending | Native product/SKU/barcode inventory, workspace permissions, atomic stock ledger and local PostgreSQL concurrency tests | coordinator reviews PR and migration before release; no hosted migration, merge or deploy
 - 2026-10-16 | ChatGPT/GitHub agent | fix/auth-origin-json-bounds-20261015 → PR #187 | current-main reconciled / CI pending | Auth bounded JSON, trusted CSRF origin, invited password update guard, forgery regression tests; retained current master integrations | verify latest CI, coordinator reviews; no production deploy
+
+- 2026-10-16 | ChatGPT/GitHub agent | fix/read-only-live-readiness-20261016 → PR #199 | CI verifying exact-head code | Make live-readiness GET-only by default, require strict HTTP DB/Auth checks and compare optional full Coolify SOURCE_COMMIT SHA; mock-only regression tests | check full CI on latest SHA, repair failures only on PR branch; coordinator merges/deploys and verifies actual production SHA
+
+- 2026-10-16 | ChatGPT/GitHub agent | feat/r2f-opportunity-contract-20261015 → PR #193 | PR open; CI verifying | Resumed prior Phase 2 typed R2F lifecycle/public-safe projection, aligned with current main, wired deterministic tests and retained master identity boundary; no adapter, SQL or public route | check exact-head CI, fix branch if red; coordinator reviews before merge
+
+- 2026-10-16 | ChatGPT/GitHub agent | docs/agent-continuity-gates-20261014 → PR #178 | current-main reconciliation / CI pending | Preserve all current #192 provider packages and #197/#198 Coolify changes; retain five handoff docs and qa:handoff; PR #199 passive live probes under CI | verify exact-head CI, coordinator reviews before merge
+
+2026-10-16 | ChatGPT/GitHub agent | feat/seotakatak-deletion-receipts-20261016 → PR #196 | Ready for coordinator review / full CI passed 38884438610 | Client-scoped SEO site deletion receipts dashboard and signed server-side read; SQL 0004 backend reviewed in disposable Postgres | Coordinator reviews after full V1 CI; backend owner approves DB/Coolify
+
 - 2026-10-13 | codex | codex/expose-r2nette-sync-20261013 → PR #175 | PR / CI in progress | Expose the existing tested R2NETTE signed event receiver under /api/integrations/r2nette/events; no schema or public-site changes | coordinator reviews only after CI; do not merge/deploy from this session
 - 2026-10-15 | ChatGPT/GitHub agent | feat/cubafood-master-contract-20261015 → PR #185 | PR open / CI pending | Define issue #161 CUBAFOOD master event contract and HMAC primitives with strict opaque payload schemas, CI tests and an activation runbook; no live endpoint or secret | verify PR CI; coordinator review, then implement entitlement and replay ledger only after owner contract approval
 - 2026-10-15 | ChatGPT/GitHub Academy agent | feat/academy-dashboard-bridge-20261015 → PR pending | ready for PR / not deployed | Academy dashboard nav + free-only one-time launch/exchange SSO bridge, no V1 migration, no billing activations | coordinator reviews PR; owner configures Academy HTTPS callback and dedicated service token, then tests actual launch/exchange
 - 2026-10-15 | ChatGPT/GitHub agent | fix/strict-runtime-readiness-20261015 → PR #188 | PR open / CI pending | Reject /api/health/ready as not-ready when DB or Supabase config is missing; preserve diagnostic checks, add CI regression and Docker health contract | verify strict readiness CI on final SHA; release coordinator reviews then merges, no direct deployment
 - 2026-10-14 | ChatGPT/GitHub agent | deploy/coolify-direct-takatakca-20261014 → PR #181 | PR open; CI pending | Direct-production Coolify Node22 Dockerfile, strict DB/Auth health, deployment guide for takatak.ca; no staging, migration, main merge or DNS changes | release coordinator reviews/merges after green CI; Coolify admin login/config and production safety gates remain before deploy
+- 2026-10-15 | ChatGPT/GitHub agent | fix/workspace-json-stream-bounds-20261015 → PR #186 | PR open / CI pending | Bound readJsonBody shared dashboard write payloads during streaming instead of after request.text; preserve origin checks, add security regression and CI | monitor full CI; coordinator reviews/merges only after green checks
+
+- 2026-10-15 | ChatGPT/GitHub agent | fix/master-api-bounded-json-20261015 → PR #184 | PR open / CI pending | Bound existing 1LV master API streaming JSON body before allocation, reject malformed length/content-type, add regression tests; preserve 1LV identity and auth boundaries | CI check; coordinator review/merge only after green CI under owner release lock
+
+- 2026-10-14 | ChatGPT/GitHub agent | fix/ads-public-payload-bounds-20261014 → PR #179 | PR open / CI pending | Bound and validate public ADS serve/event JSON bodies, sanitize coarse context on server, reject malformed codes/tokens, add synthetic regression checks to CI | open PR; fix CI if needed; coordinator review/merge after green CI
+
+- 2026-10-14 | ChatGPT/GitHub agent | fix/ads-cpc-budget-atomic-cap-20261014 → PR #180 | PR open / CI pending | Atomically limit CPC charge increments to remaining ad campaign budget, preserving click events and adding boundary tests | open PR, review CI, coordinator merge only after approval
+
+2026-10-14 | ChatGPT/GitHub agent | fix/ads-sdk-privacy-viewability-20261014 → PR #176 | PR open / CI pending | Harden publisher ADS browser SDK: allowlisted coarse context, measured viewability, safe destinations, stale-response guard, unmount cleanup, regression QA and integration docs | coordinator reviews and merges after CI; publish SDK with next authorized release
 - 2026-10-11 | ChatGPT/GitHub agent | fix/takatak-phone-country-otp-20261011 → PR #174 | PR / auth QA passed; full CI in progress | Nigerian +234 phone OTP selector and strict E.164; refuse unverified recovery email for email-session login; regression tests | Owner review/merge after full CI; manual TAKATAK production promotion; verify Supabase Twilio provider and geo permissions without sharing secrets
 - 2026-10-10 | ChatGPT/GitHub agent | feat/revers-experience-bridge → PR #162 | TESTED / CI IN PROGRESS | Added REVERS entitlement, one-time launch/exchange, signed event intake and nonce replay protection; corrected migration order and typecheck issues | wait for CI; owner merges PR #162 only after checks are green
 # Work log
@@ -30,6 +48,8 @@
 - 2026-10-15 | GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | DNS ownership flow implemented; CI ongoing | Client manager-only TXT record challenge and verification, server-only signed bridge, SQL migration 0002 pending owner approval | Check newest V1 CI; coordinator-only merge/promotion; configure separate backend per SEOTAKATAK issue #1
 
 - 2026-10-15 | ChatGPT/GitHub agent | feat/seotakatak-free-tools-20261015 → PR #182 | CI IN PROGRESS / NOT DEPLOYED | Public 23-tool catalog, active workspace permissions, verified Search Console import, signed backend API, scoped SEO report + real query table, private CSV, editorial backlink prospect forms/status and handoff docs | check latest PR CI; only V1 coordinator merges/promotes; separate SEO Coolify configuration blocked in takatakca/SEOTAKATAK#1
+
+- 2026-10-11 | ChatGPT (Twilio/OTP validation) | fix/twilio-otp-e164-validation-20261011 → PR #173 | PR open / CI running | Harden phone E.164 validation for TAKATAK Supabase OTP; regression tests, no production change | verify CI, then review PR before merging
 
 Newest first, one line per piece of work. Rule: `AGENTS.md` › Work log rule.
 Format: `YYYY-MM-DD | agent | branch → PR | status | what | next step`
@@ -119,3 +139,13 @@ Each item is something only a person can do: a secret, an approval, a merge, an 
 - 2026-10-08 | claude (session 01KBGh1v) | claude/agent-worklog-rule → #130 | merged | Work log rule, this log, stop reminder (rule also in the other 31 TAKATAK repos; Facturations via PR #162) | upload a production build to put it live
 - 2026-10-08 | claude (session 01KBGh1v) | claude/website-lead-capture → #134 | merged | Website forms + checkout → Leads, notifications, file uploads, lead page | set WEBSITE_LEADS_* env; approve migration 20261008090000 for production
 - 2026-10-08 | claude (session 01KBGh1v) | claude/repo-hygiene → #133 | merged | Removed 9 stray backups, compact promo invite, lint | none
+- 2026-10-31 | TWILO | Ordres permanents d'Irqc (02h43) : revue 30 min (cron twilo-30min-self-review — FAIT / RELU / OUBLIÉ→NOTÉ, rapport signé — TWILO dans fil COORDINATION AGENTS), notes avant/pendant/après le code, anti-doublon, livre-cerveau Drive « 00 — CERVEAU TWILO — LIS-MOI EN PREMIER ». Note Drive : « 2026-10-31 02-45 — Coordination — JOURNAL — TWILO — ÉTAPE (revue 30 min + livre-cerveau) ». AGENTS.md (workspace) mis à jour.
+## 2026-11-03 08:00 EST — TWILO — Registre maître recheck menus restaurants LIVRÉ
+
+Registre demandé par Irqc le 2026-10-31 ~03:12, gelé à aujourd'hui et livré.
+- Fichier : `goals/restaurant-menu-cloning-completion/files/recheck-ledger-2026-11-03.md`
+- Drive : « 2026-11-03 08-00 — Restaurants — JOURNAL — TWILO — ÉTAPE (registre recheck) »
+- État gelé : 2/45 DoorDash clonés ; seules completes : Nutrition Shake 2/2, Pizza Algérie Uber 193/193 ; 6 rechecks ouverts (R-1..R-6, dont les 55 refus Skip du 3 nov.) ; 4 décisions Irqc toujours dues (Hochelaga, DoorDash vs Uber, note de complétion, Lévesque).
+- Critères proof-of-done par magasin définis dans le registre.
+
+— TWILO

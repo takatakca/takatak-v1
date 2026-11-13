@@ -6,20 +6,23 @@ import { WebsiteAuthProvider } from "@/lib/website/auth-context";
 import { CatalogPricingProvider } from "@/lib/website/catalog-pricing-context";
 import type { CatalogPriceRow } from "@/lib/website/catalog-prices";
 import { LanguageProvider } from "@/lib/website/use-language";
+import type { Language } from "@/lib/website/i18n";
 
 export function WebsiteProviders({
   isAuthenticated,
   email = null,
   catalogRows = [],
+  initialLanguage,
   children,
 }: {
   isAuthenticated: boolean;
   email?: string | null;
   catalogRows?: readonly CatalogPriceRow[];
+  initialLanguage?: Language;
   children: ReactNode;
 }) {
   return (
-    <LanguageProvider>
+    <LanguageProvider initialLanguage={initialLanguage}>
       <CatalogPricingProvider rows={catalogRows}>
         <WebsiteAuthProvider isAuthenticated={isAuthenticated} email={email}>
           {children}

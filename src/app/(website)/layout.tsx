@@ -3,10 +3,9 @@ import type {
   Viewport,
 } from "next";
 import type { ReactNode } from "react";
-import {
-  Inter,
-  Montserrat,
-} from "next/font/google";
+import { headers } from "next/headers";
+import { HOME_LANGUAGE_HEADER, HOME_SEO } from "@/lib/website/home-seo";
+import localFont from "next/font/local";
 
 import { SiteShell } from "@/components/website/layout/SiteShell";
 import { PromoTopBar } from "@/components/website/promotions/PromoTopBar";
@@ -17,30 +16,32 @@ import { getWebsiteSession } from "@/lib/website/website-session";
 import { loadPublicCatalogRows } from "@/lib/website/load-public-catalog";
 import { getApplicationOrigin } from "@/lib/config/app-origin";
 import { WebsiteProviders } from "@/lib/website/website-providers";
-import { UpmindHeadScripts } from "@/components/website/domain/upmind-head-scripts";
 
 import "./website.css";
 
-const inter = Inter({
-  subsets: ["latin"],
+const inter = localFont({
+  src: "../../../node_modules/@fontsource-variable/inter/files/inter-latin-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
   display: "swap",
   variable: "--font-website-body",
 });
 
 // Headings: Montserrat, the closest free match to the brand wordmark (BRAND.md).
-const montserrat = Montserrat({
-  subsets: ["latin"],
+const montserrat = localFont({
+  src: "../../../node_modules/@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
   display: "swap",
   variable: "--font-website-display",
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "TAKATAK — Websites, domains, hosting & growth",
+    default: "TAKATAK — Websites, Hosting & Digital Marketing in Montréal",
     template: "%s — TAKATAK",
   },
-  description:
-    "Find the right service, launch your digital foundation, and connect websites, hosting, marketing, leads, communications and automation in one professional experience.",
+  description: HOME_SEO.en.description,
   applicationName: "TAKATAK",
   authors: [{ name: "TAKATAK" }],
   creator: "TAKATAK",
@@ -54,15 +55,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "TAKATAK",
-    title: "TAKATAK — Business services marketplace",
-    description:
-      "Managed online services for growing businesses.",
+    title: HOME_SEO.en.title,
+    description: HOME_SEO.en.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: "TAKATAK — Business services marketplace",
-    description:
-      "TAKATAK automates business services, from domains and hosting to AI-driven marketing and a freelancer marketplace.",
+    title: HOME_SEO.en.title,
+    description: HOME_SEO.en.description,
   },
 };
 
@@ -79,13 +78,14 @@ export default async function WebsiteLayout({
 }) {
   const session = await getWebsiteSession();
   const catalogRows = await loadPublicCatalogRows();
+  const homeLocale = (await headers()).get(HOME_LANGUAGE_HEADER);
 
   return (
     <div
       className={`website-surface ${inter.variable} ${montserrat.variable}`}
     >
-      <UpmindHeadScripts />
       <WebsiteProviders
+        initialLanguage={homeLocale === "fr" ? "fr" : homeLocale === "en" ? "en" : undefined}
         isAuthenticated={session.isAuthenticated}
         email={session.email}
         catalogRows={catalogRows}

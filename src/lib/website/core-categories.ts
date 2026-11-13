@@ -177,11 +177,12 @@ export const SOCIAL_NETWORKS_LIVE = [
   "X",
   "Bluesky",
   "Twitch",
+  "Pinterest",
   "Google Business Profile",
 ] as const;
 
 /** In the provider registry but not implemented yet. */
-export const SOCIAL_NETWORKS_SOON = ["LinkedIn", "Pinterest"] as const;
+export const SOCIAL_NETWORKS_SOON = ["LinkedIn"] as const;
 
 /** Ad platforms with a live account connection (registry: meta_ads, google_ads). */
 export const AD_PLATFORMS_LIVE = ["Meta Ads", "Google Ads"] as const;
@@ -543,24 +544,27 @@ export const CORE_CATEGORIES: readonly CoreCategory[] = [
     icon: PhoneCall,
     accent: "#4D9DFF",
     accent2: "#B69CFF",
-    availability: "planned",
+    availability: "live",
     views: [
       { id: "flow", mock: "callFlow" },
       { id: "office", image: img("voip") },
     ],
     included: [
-      { icon: Hash, soon: true },
-      { icon: Bot, soon: true },
-      { icon: Users, soon: true },
-      { icon: Voicemail, soon: true },
-      { icon: PhoneForwarded, soon: true },
+      { icon: Hash },
+      { icon: Bot },
+      { icon: Users },
+      { icon: Voicemail },
+      { icon: PhoneForwarded },
       { icon: Headset },
     ],
     steps: 4,
     faqs: 4,
+    // Sold in the MIMT app (src/lib/website/mimt-plans.ts), never in a TAKATAK cart: "planned" keeps it out
+    // of carts and order totals, and its label (cat.planned) reads "MIMT · from $0". Voip is the only
+    // category using it; give a new planned category its own label before reusing it.
     pricing: { kind: "planned" },
     from: "planned",
-    primary: { labelKey: "cat.voip.cta", to: "/marketplace/post-project" },
+    primary: { labelKey: "cat.voip.cta", to: "/#home-phone" },
     secondary: { labelKey: "cat.voip.cta2", to: "", action: "chat" },
   },
 ];

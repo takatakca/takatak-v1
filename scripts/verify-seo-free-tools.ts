@@ -19,7 +19,8 @@ assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="text").length,2);
 assert.equal(SEO_FREE_TOOLS.filter(t=>t.mode==="provider").length,8);
 
 const privatePage=source("src/app/dashboard/seo/free-tools/page.tsx");
-const publicPage=source("src/app/(website)/free-tools/page.tsx");
+// The public page renders FreeToolsBoard (French and English copy).
+const publicPage=source("src/app/(website)/free-tools/page.tsx")+source("src/components/website/seo/FreeToolsBoard.tsx");
 const action=source("src/app/dashboard/seo/free-tools/actions.ts");
 const portfolio=source("src/lib/seo/seotakatak-bridge.ts");
 assert.match(privatePage,/requireGrowthAccess\(/,"Dashboard route uses existing TAKATAK Auth");
@@ -82,4 +83,11 @@ assert.match(exportsPage,/requireGrowthAccess/,"Workspace export dashboard requi
 assert.match(exportsPage,/view_reports/,"Workspace export dashboard requires report permission");
 assert.match(exportsRoute,/getSeoWorkspaceExportPage/,"JSON download route uses authorized backend");
 assert.match(exportsRoute,/Cache-Control.*private, no-store/,"Workspace exports must not be cached");
+const deletionPage=source("src/app/dashboard/seo/deletions/page.tsx");
+assert.match(portfolio,/getSeoDeletionReceipts/,"Server-only bridge reads scoped deletion receipts");
+assert.match(portfolio,/deletionReceiptsPath/,"Audit API paths must be strictly allowlisted");
+assert.match(portfolio,/manage_integrations/,"Audit requires client-scoped manage permission");
+assert.match(portfolioPage,/\/dashboard\/seo\/deletions/,"Portfolio links to deletion receipts");
+assert.match(deletionPage,/requireGrowthAccess/,"Deletion receipts require TAKATAK Auth");
+assert.match(deletionPage,/operational database receipts/,"Audit UI does not claim regulatory erasure certification");
 console.log("SEO free tools: 23 catalog entries and TAKATAK access contracts PASS");

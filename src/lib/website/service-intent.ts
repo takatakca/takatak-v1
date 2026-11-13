@@ -45,6 +45,13 @@ const rules: readonly Rule[] = [
     keywords: ["voip", "phone", "telephone", "téléphone", "calls", "call routing", "ivr", "business number", "sip", "numéro professionnel", "numero de telephone", "appels"],
   },
   {
+    intent: "reviews",
+    label: "Reviews and reputation",
+    labelFr: "Avis et réputation",
+    to: "/services/reviews",
+    keywords: ["review", "reviews", "rating", "ratings", "reputation", "stars", "trustpilot", "yelp", " avis", "d'avis", "étoiles", "etoiles", "réputation", "commentaires clients"],
+  },
+  {
     intent: "local_visibility",
     label: "QMAPS — Local visibility",
     labelFr: "QMAPS — Visibilité locale",

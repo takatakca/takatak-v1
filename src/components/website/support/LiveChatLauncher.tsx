@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "@/lib/website/nav";
-import { Headset, Mail, MessageSquare, X } from "lucide-react";
-import { getLiveChatConfig, SUPPORT_EMAIL } from "@/lib/website/live-chat-config";
+import { Headset, MessageSquare, X } from "lucide-react";
+import { ContactForm } from "@/components/website/support/ContactForm";
+import { getLiveChatConfig } from "@/lib/website/live-chat-config";
 import { loadLiveChat, openLiveChat, TAKATAK_CHAT_EVENT } from "@/lib/website/chat-provider";
 import { useLanguage } from "@/lib/website/use-language";
 
@@ -15,7 +16,9 @@ import { useLanguage } from "@/lib/website/use-language";
 export function LiveChatLauncher() {
   const [external, setExternal] = useState(false);
   const [open, setOpen] = useState(false);
+  // Full context (page, language, request) goes to the team with the message; the visitor only sees their request.
   const [context, setContext] = useState<string | null>(null);
+  const [request, setRequest] = useState<string | null>(null);
   const { t, lang } = useLanguage();
 
   useEffect(() => {
@@ -24,8 +27,9 @@ export function LiveChatLauncher() {
     if (cfg.external) loadLiveChat();
 
     const onOpen = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { message?: string } | undefined;
+      const detail = (e as CustomEvent).detail as { message?: string; query?: string } | undefined;
       setContext(detail?.message ?? null);
+      setRequest(detail?.query?.trim() || null);
       setOpen(true);
     };
     window.addEventListener(TAKATAK_CHAT_EVENT, onOpen);
@@ -35,7 +39,8 @@ export function LiveChatLauncher() {
   if (external && !open) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 print:hidden">
+    // data-no-pending: opening and closing the panel loads nothing, so the site-wide loading overlay stays away.
+    <div data-no-pending className="tk-chat-launcher fixed bottom-4 right-4 z-50 print:hidden">
       {open && (
         <div
           role="dialog"
@@ -54,21 +59,17 @@ export function LiveChatLauncher() {
               <X size={16} />
             </button>
           </div>
-          <div className="space-y-3 p-4">
-            {context && (
+          <div className="max-h-[min(70vh,34rem)] space-y-3 overflow-y-auto p-4">
+            {request && (
               <p className="rounded-lg border border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
-                {context}
+                {t("chat.context", { query: request })}
               </p>
             )}
             <p className="text-sm text-muted-foreground">
               {t("chat.intro")}
             </p>
-            <a
-              href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(t("chat.subject"))}&body=${encodeURIComponent(context ?? "")}`}
-              className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-            >
-              <Mail size={15} /> {t("chat.email")}
-            </a>
+            {/* A real message box: the message lands in the TAKATAK leads inbox, read by a person. */}
+            <ContactForm compact context={context} defaultTopic="question" />
             <Link
               to="/marketplace/post-project"
               onClick={() => setOpen(false)}
@@ -84,7 +85,7 @@ export function LiveChatLauncher() {
         <button
           type="button"
           onClick={() => (open ? setOpen(false) : openLiveChat({ page: typeof location !== "undefined" ? location.pathname : undefined, lang }))}
-          aria-label={open ? t("chat.close") : t("chat.launcher")}
+          aria-label={open ? t("chat.close") : `${t("home.hero.ctaChat")} · ${t("chat.launcher")}`}
           className="ml-auto flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-[0_18px_40px_-18px_rgba(0,0,0,0.6)] transition-transform hover:scale-[1.03]"
         >
           <Headset size={16} /> <span className="hidden sm:inline">{t("home.hero.ctaChat")}</span>

@@ -26,17 +26,23 @@ function markSeen() {
 }
 
 /** Pages where visitors are filling in a form: the invite never interrupts them. */
-const FORM_PAGES = ["/signup", "/register", "/login", "/otp", "/checkout", "/dashboard", "/marketplace/post-project", "/privacy-manager"];
+const FORM_PAGES = ["/signup", "/register", "/login", "/otp", "/checkout", "/dashboard", "/marketplace/post-project", "/privacy-manager", "/contact", "/freelancers", "/transfert"];
 
 function isTyping(): boolean {
   const active = document.activeElement;
   return active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement || active instanceof HTMLSelectElement;
 }
 
+/** Phones already see the offer in the top banner; a sheet over a third of the screen is too much. */
+function isPhone(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches;
+}
+
 /**
- * Animated new-client invite. Appears once per visitor after 10s or 35% scroll
- * (never over a form being filled in), captures an email and hands off to
- * signup with the FIRST10 intent preserved. Compact on small screens.
+ * Animated new-client invite. Appears once per visitor, only after 35% scroll
+ * (well past the hero, never over a form being filled in), captures an email
+ * and hands off to signup with the FIRST10 intent preserved. Not on phones:
+ * the top banner carries the same offer there (inventory 2026-11-03, item 1).
  */
 export function AnimatedPromoInvite() {
   const { t } = useLanguage();
@@ -44,14 +50,36 @@ export function AnimatedPromoInvite() {
   const { isAuthenticated } = useAuth();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
+  const [mini, setMini] = useState(false);
   const [email, setEmail] = useState("");
   const armed = useRef(false);
+  const touched = useRef(false);
+
+  // After 15 s without a touch it folds into a small pill, so it never hides the page.
+  useEffect(() => {
+    if (!open || mini) return;
+    const t = window.setTimeout(() => {
+      if (!touched.current) setMini(true);
+    }, 15_000);
+    return () => window.clearTimeout(t);
+  }, [open, mini]);
 
   const suppressed = isAuthenticated || FORM_PAGES.some((page) => pathname.startsWith(page));
 
+  // While the full card is open, bottom bars (the homepage plan dock) step aside so nothing overlaps.
+  const cardOpen = open && !mini && !suppressed;
+  useEffect(() => {
+    if (!cardOpen) return;
+    const root = document.documentElement;
+    root.dataset.promoOpen = "1";
+    return () => {
+      delete root.dataset.promoOpen;
+    };
+  }, [cardOpen]);
+
   useEffect(() => {
     if (suppressed || armed.current) return;
-    if (alreadySeen()) return;
+    if (alreadySeen() || isPhone()) return;
     const state = getPromoState();
     if (state.status === "claimed" || state.status === "used") return;
 
@@ -76,10 +104,8 @@ export function AnimatedPromoInvite() {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       if (max > 0 && window.scrollY / max >= 0.35) show();
     };
-    const timer = window.setTimeout(show, 10_000);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
-      window.clearTimeout(timer);
       window.clearTimeout(retry);
       window.removeEventListener("scroll", onScroll);
     };
@@ -104,9 +130,38 @@ export function AnimatedPromoInvite() {
     });
   };
 
+  if (mini) {
+    return (
+      <div className="pointer-events-none fixed bottom-0 left-0 z-[60] px-3 pb-20 sm:px-4 sm:pb-6 sm:pl-6">
+        <div className="tk-rise-in pointer-events-auto flex items-center gap-1 rounded-full border border-primary/40 bg-card py-1 pl-1 pr-1.5 shadow-[var(--shadow-glow)]">
+          <button
+            type="button"
+            onClick={() => {
+              touched.current = true;
+              setMini(false);
+            }}
+            className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-[12.5px] font-semibold text-primary"
+          >
+            <Gift size={14} aria-hidden /> {PROMO_CODE}
+          </button>
+          <button type="button" onClick={close} aria-label={t("promo.invite.dismiss")} className="grid h-7 w-7 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground">
+            <X size={14} />
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center px-3 pb-20 sm:justify-start sm:px-4 sm:pb-6 sm:pl-6">
-      <div className="tk-rise-in pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-primary/40 bg-card shadow-[var(--shadow-glow)]">
+      <div
+        onPointerDown={() => {
+          touched.current = true;
+        }}
+        onFocusCapture={() => {
+          touched.current = true;
+        }}
+        className="tk-rise-in pointer-events-auto w-full max-w-sm overflow-hidden rounded-2xl border border-primary/40 bg-card shadow-[var(--shadow-glow)]">
         <div className="relative p-4 sm:p-5">
           <button
             type="button"

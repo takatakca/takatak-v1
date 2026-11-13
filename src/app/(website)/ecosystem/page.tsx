@@ -4,7 +4,7 @@ import { OwnedBrandsContent } from "@/components/website/pages/owned-brands-cont
 import { hasOwnedBrands } from "@/lib/website/owned-brands";
 
 export const metadata: Metadata = {
-  title: "Our brands",
+  title: "Nos marques · Our brands",
   description: "GROUPE TAKATAK proudly owns and operates these brands.",
   alternates: { canonical: "/ecosystem" },
   // Kept out of search results until the owner's registry confirms at least one brand.

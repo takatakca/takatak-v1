@@ -3,6 +3,7 @@
 import { Link, useRouterState } from "@/lib/website/nav";
 import { useEffect, useState } from "react";
 import { X, Sparkles } from "lucide-react";
+import { useLanguage } from "@/lib/website/use-language";
 import {
   getPromoState,
   markModalShown,
@@ -10,7 +11,31 @@ import {
   wasModalShown,
 } from "@/lib/website/promotions";
 
+const C = {
+  title: { fr: "Une offre pour les nouveaux clients", en: "A new client offer from TAKATAK" },
+  body1: { fr: "Créez votre compte et votre ", en: "Create your account and your " },
+  credit: { fr: "crédit de 10 % sur votre premier service", en: "10% first-service credit" },
+  body2: { fr: " est gardé dans votre tableau de bord, prêt pour votre première commande admissible.", en: " is saved in your dashboard, ready for your first eligible order." },
+  points: {
+    fr: ["Un seul rabais par nouveau client", "S’applique à votre première commande de service TAKATAK admissible", "Calculé au paiement, sans surprise sur le total"],
+    en: ["One discount per new client", "Applies to your first eligible TAKATAK service order", "Calculated at checkout — no fine print on totals"],
+  },
+  claim: { fr: "Obtenir 10 %", en: "Claim 10% off" },
+  later: { fr: "Continuer la visite", en: "Continue browsing" },
+  close: { fr: "Fermer", en: "Close" },
+} as const;
+
+/** The small invite already showed the same offer: one promo per visitor is enough. */
+function inviteSeen(): boolean {
+  try {
+    return Boolean(localStorage.getItem("takatak.promo.invite.seen"));
+  } catch {
+    return false;
+  }
+}
+
 export function SignupPromoModal() {
+  const { lang } = useLanguage();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [open, setOpen] = useState(false);
 
@@ -22,20 +47,20 @@ export function SignupPromoModal() {
 
     let opened = false;
     const openOnce = (reason: string) => {
-      if (opened) return;
+      if (opened || inviteSeen()) return;
       opened = true;
       setOpen(true);
       markModalShown();
       trackPromo("signup_promo_viewed", { reason });
     };
 
-    const t = window.setTimeout(() => openOnce("dwell_20s"), 20_000);
+    // Only when a desktop visitor heads for the tab bar, never on a timer: the
+    // top banner already shows the offer, and phones have no exit intent.
     const exitHandler = (e: MouseEvent) => {
       if (e.clientY <= 0) openOnce("exit_intent");
     };
     document.addEventListener("mouseleave", exitHandler);
     return () => {
-      window.clearTimeout(t);
       document.removeEventListener("mouseleave", exitHandler);
     };
   }, [pathname]);
@@ -53,7 +78,7 @@ export function SignupPromoModal() {
       <div className="absolute inset-0 bg-black/60" onClick={close} />
       <div className="relative w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-2xl">
         <button
-          aria-label="Close"
+          aria-label={C.close[lang]}
           onClick={close}
           className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
         >
@@ -63,15 +88,17 @@ export function SignupPromoModal() {
           <Sparkles size={20} />
         </div>
         <h2 id="promo-modal-title" className="mt-4 text-xl font-semibold text-foreground">
-          A new client offer from TAKATAK
+          {C.title[lang]}
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Create your account and your <span className="font-semibold text-foreground">10% first-service credit</span> is saved in your dashboard, ready for your first eligible order.
+          {C.body1[lang]}
+          <span className="font-semibold text-foreground">{C.credit[lang]}</span>
+          {C.body2[lang]}
         </p>
         <ul className="mt-4 space-y-2 text-sm text-foreground/90">
-          <li>• One discount per new client</li>
-          <li>• Applies to your first eligible TAKATAK service order</li>
-          <li>• Calculated at checkout — no fine print on totals</li>
+          {C.points[lang].map((p) => (
+            <li key={p}>• {p}</li>
+          ))}
         </ul>
         <div className="mt-6 flex flex-col sm:flex-row gap-2">
           <Link
@@ -80,13 +107,13 @@ export function SignupPromoModal() {
             onClick={() => trackPromo("signup_promo_claimed", { surface: "modal" })}
             className="flex-1 text-center px-4 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:opacity-90"
           >
-            Claim 10% off
+            {C.claim[lang]}
           </Link>
           <button
             onClick={close}
             className="px-4 py-2.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted/40"
           >
-            Continue browsing
+            {C.later[lang]}
           </button>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { FaSearch } from "react-icons/fa";
 
 import { UpmindDac } from "@/components/website/domain/upmind-dac";
 import { PlaceholderRow } from "@/components/website/domain/placeholder-row";
+import { useLanguage } from "@/lib/website/use-language";
 import styles from "./domain-search-desk.module.css";
 
 export function DomainSearchDesk({
@@ -12,6 +13,7 @@ export function DomainSearchDesk({
 }: {
   clientId?: string | null;
 }) {
+  const { lang } = useLanguage();
   const [hasTyped, setHasTyped] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -63,8 +65,8 @@ export function DomainSearchDesk({
                 >
                   <FaSearch />
                 </h2>
-                <h3>Search & Secure Your Domain Now</h3>
-                <p>(Integrated with instant availability check & proceed)</p>
+                <h3>{lang === "fr" ? "Cherchez et réservez votre domaine" : "Search & Secure Your Domain Now"}</h3>
+                <p>{lang === "fr" ? "(Disponibilité vérifiée à l’instant, puis commande)" : "(Integrated with instant availability check & proceed)"}</p>
               </div>
             </div>
           </div>

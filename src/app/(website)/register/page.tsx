@@ -1,8 +1,11 @@
 import { TriangleAlert } from "lucide-react";
 import { Link } from "@/lib/website/nav";
-import { MasterPhoneRegistrationForm } from "@/components/auth/master-phone-registration-form";
+import { EmailGoogleAuthForm } from "@/components/auth/email-google-auth-form";
+import { Suspense } from "react";
 import { SignupPromoPanel } from "@/components/website/promotions/SignupPromoPanel";
+import { PlanCarryOver } from "@/components/website/funnel/PlanCarryOver";
 import { isSupabaseConfigured } from "@/lib/auth/env";
+import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 
 export const metadata = {
   title: "Create account",
@@ -12,8 +15,9 @@ export const metadata = {
   },
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const configured = isSupabaseConfigured();
+  const next = sanitizeNextPath((await searchParams).next);
 
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-8 px-4 py-16 lg:grid-cols-[1fr_1.1fr]">
@@ -21,12 +25,15 @@ export default function RegisterPage() {
       <div className="rounded-2xl border border-border bg-card p-8 shadow-[var(--shadow-card)]">
         <h1 className="text-2xl font-bold text-foreground">Start with TAKATAK</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Create your TAKATAK account. We will send a one-time password to
-          your email.
+          Create your TAKATAK account with a code sent to your email, or
+          continue with Google.
         </p>
         <div className="mt-6">
+          <PlanCarryOver />
           {configured ? (
-            <MasterPhoneRegistrationForm />
+            <Suspense>
+              <EmailGoogleAuthForm mode="register" nextPath={next} />
+            </Suspense>
           ) : (
             <div className="space-y-3 text-center">
               <TriangleAlert className="mx-auto h-6 w-6 text-warning" />
@@ -42,7 +49,7 @@ export default function RegisterPage() {
         </div>
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link to="/login" className="text-primary">
+          <Link to={next === "/dashboard" ? "/login" : `/login?next=${encodeURIComponent(next)}`} className="text-primary">
             Sign in
           </Link>
         </p>

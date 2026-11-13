@@ -123,6 +123,25 @@ export function collectEnvPreflight(): PreflightResult {
         : undefined,
   }));
 
+  // ON2GO (slice 6): each child application holds its own master API key; the ON2GO launch bridge has its own
+  // service token and an https callback. All optional: absent means that integration is off.
+  for (const name of ["TAKATAK_ON2GO_API_KEY", "TAKATAK_FOODHUB_API_KEY", "TAKATAK_ON2GO_SERVICE_TOKEN"]) {
+    const length = process.env[name]?.trim().length ?? 0;
+    checks.push(check(name, "optional", {
+      formatOk: !present(name) || length >= 32,
+      message: present(name) && length < 32 ? `${name} must be at least 32 characters` : undefined,
+    }));
+  }
+  {
+    const raw = process.env.ON2GO_EXPERIENCE_CALLBACK_URL?.trim() ?? "";
+    let https = false;
+    try { https = new URL(raw).protocol === "https:"; } catch { https = false; }
+    checks.push(check("ON2GO_EXPERIENCE_CALLBACK_URL", "optional", {
+      formatOk: !present("ON2GO_EXPERIENCE_CALLBACK_URL") || https,
+      message: present("ON2GO_EXPERIENCE_CALLBACK_URL") && !https ? "ON2GO_EXPERIENCE_CALLBACK_URL must be an https URL" : undefined,
+    }));
+  }
+
   const stripeEnabled =
     present("STRIPE_SECRET_KEY") || present("STRIPE_WEBHOOK_SECRET");
   if (stripeEnabled) {

@@ -1,0 +1,27 @@
+name: Monitoring pilot checks
+on:
+  pull_request:
+    paths:
+      - ops/monitoring/**
+      - .github/workflows/monitoring-pilot.yml
+  push:
+    branches: [main]
+    paths:
+      - ops/monitoring/**
+      - .github/workflows/monitoring-pilot.yml
+permissions:
+  contents: read
+jobs:
+  monitor-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s ops/monitoring -p 'test_*.py' -v
+      - run: python ops/monitoring/monitor.py validate --config ops/monitoring/sites.json
+      - run: cp ops/monitoring/.env.example ops/monitoring/.env
+      - run: docker compose -f ops/monitoring/compose.yaml config --quiet
+      - run: docker compose -f ops/monitoring/compose.yaml build

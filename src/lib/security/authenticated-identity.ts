@@ -217,6 +217,8 @@ export const HIGH_RISK_PATH_PREFIXES = [
   "/api/account",
   "/api/team",
   "/api/admin",
+  "/api/oauth",
+  "/oauth",
   "/dashboard/admin",
   "/dashboard/billing",
   "/dashboard/team",

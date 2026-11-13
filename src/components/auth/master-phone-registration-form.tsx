@@ -10,6 +10,7 @@ import {
   validateLastName,
 } from "@/lib/auth/registration-validation";
 import { normalizePhone, validatePhone, type PhoneCountry } from "@/lib/auth/otp/phone";
+import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 
 type Values = {
   firstName: string;
@@ -25,7 +26,7 @@ const INITIAL: Values = {
   acceptedTerms: false,
 };
 
-export function MasterPhoneRegistrationForm() {
+export function MasterPhoneRegistrationForm({ nextPath = "/dashboard" }: { nextPath?: string } = {}) {
   const router = useRouter();
   const inFlight = useRef(false);
   const [values, setValues] = useState<Values>(INITIAL);
@@ -100,6 +101,8 @@ export function MasterPhoneRegistrationForm() {
     const otpUrl = new URL("/otp", window.location.origin);
     otpUrl.searchParams.set("phone", phone);
     otpUrl.searchParams.set("provider", "supabase-phone");
+    const next = sanitizeNextPath(nextPath);
+    if (next !== "/dashboard") otpUrl.searchParams.set("next", next);
     router.push(`${otpUrl.pathname}${otpUrl.search}`);
   }
 

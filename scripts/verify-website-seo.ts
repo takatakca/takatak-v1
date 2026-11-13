@@ -5,6 +5,12 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { httpsRedirectTarget } from "../src/lib/security/https-redirect";
 import { websiteStructuredData } from "../src/lib/website/structured-data";
+import { HOME_SEO, homeLanguage, homeMetadata } from "../src/lib/website/home-seo";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { LanguageProvider, useLanguage } from "../src/lib/website/use-language";
+import { servicePages } from "../src/lib/website/service-pages";
+import sitemap from "../src/app/sitemap";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -23,12 +29,18 @@ const STATIC_PAGES: Record<string, string> = {
   "/marketplace/post-project": "marketplace/post-project/page.tsx",
   "/domain": "domain/page.tsx",
   "/hosting": "hosting/page.tsx",
+  "/monitoring": "monitoring/page.tsx",
   "/deals": "deals/page.tsx",
   "/pricing": "pricing/page.tsx",
   "/free-tools": "free-tools/page.tsx",
   "/services": "services/page.tsx",
   "/privacy-manager": "privacy-manager/page.tsx",
   "/search": "search/page.tsx",
+  "/takbot": "takbot/page.tsx",
+  "/infolettre": "infolettre/page.tsx",
+  "/about": "about/page.tsx",
+  "/contact": "contact/page.tsx",
+  "/freelancers": "freelancers/page.tsx",
 };
 const DYNAMIC_PAGES: Record<string, string> = {
   "/services/${service.slug}": "services/[slug]/page.tsx",
@@ -89,10 +101,10 @@ check("proxy applies the HTTPS redirect first, with a permanent 308", () => {
 });
 
 check("homepage title fits search results (≤ 65 characters)", () => {
-  const home = readFileSync(`${WEBSITE}/page.tsx`, "utf8");
-  const title = home.match(/title: \{ absolute: "([^"]+)" \}/)?.[1];
-  assert.ok(title, "absolute homepage title");
-  assert.ok(title.length >= 15 && title.length <= 65, `${title.length} characters`);
+  for (const copy of Object.values(HOME_SEO)) {
+    assert.ok(copy.title.length >= 50 && copy.title.length <= 65, `${copy.title.length} characters`);
+    assert.ok(copy.description.length >= 140 && copy.description.length <= 165, `${copy.description.length} characters`);
+  }
   const layout = readFileSync(`${WEBSITE}/layout.tsx`, "utf8");
   const fallback = layout.match(/default: "([^"]+)"/)?.[1];
   assert.ok(fallback && fallback.length <= 65);
@@ -100,6 +112,10 @@ check("homepage title fits search results (≤ 65 characters)", () => {
 
 check("every indexable page declares its canonical URL", () => {
   for (const [route, file] of Object.entries(STATIC_PAGES)) {
+    if (route === "/") {
+      assert.equal(homeMetadata("en", "https://takatak.ca").alternates?.canonical, "/");
+      continue;
+    }
     const source = readFileSync(`${WEBSITE}/${file}`, "utf8");
     assert.ok(source.includes(`canonical: "${route}"`), `${route} in ${file}`);
   }
@@ -113,6 +129,23 @@ check("sitemap pages and the canonical list stay in sync", () => {
   const sitemap = readFileSync("src/app/sitemap.ts", "utf8");
   const listed = [...sitemap.matchAll(/^\s+"(\/[^"]*|)",$/gm)].map((m) => m[1] || "/");
   assert.deepEqual([...listed].sort(), Object.keys(STATIC_PAGES).sort());
+});
+
+// Search Console, 2026-11-09: "Duplicate, Google chose different canonical than user".
+// /services/domains and /services/hosting showed the /domain and /hosting pages a second time.
+check("each page has one address: service aliases redirect permanently and stay out of the sitemap", () => {
+  const config = readFileSync("next.config.ts", "utf8");
+  const entries = sitemap().map((entry) => entry.url);
+  assert.equal(new Set(entries).size, entries.length, "no address is listed twice");
+  const paths = entries.map((url) => new URL(url).pathname);
+  const moved = servicePages.filter((service) => service.route !== `/services/${service.slug}`);
+  assert.deepEqual(moved.map((service) => service.route).sort(), ["/domain", "/hosting"]);
+  for (const service of moved) {
+    const alias = `/services/${service.slug}`;
+    assert.ok(config.includes(`{ source: "${alias}", destination: "${service.route}", permanent: true }`), `${alias} redirects`);
+    assert.ok(service.route in STATIC_PAGES, `${service.route} is an indexable page`);
+    assert.ok(!paths.includes(alias), `${alias} is not in the sitemap`);
+  }
 });
 
 check("page titles do not repeat the brand added by the title template", () => {
@@ -136,12 +169,44 @@ check("homepage JSON-LD describes the organization and site, and cannot break ou
   assert.equal(json.includes("<"), false);
   const data = JSON.parse(json);
   const types = data["@graph"].map((node: { "@type": string }) => node["@type"]);
-  assert.deepEqual(types, ["Organization", "WebSite"]);
+  assert.deepEqual([...types].sort(), ["Organization", "WebPage", "WebSite"]);
   assert.equal(data["@graph"][0].url, "https://takatak.ca");
-  assert.match(data["@graph"][1].potentialAction.target.urlTemplate, /^https:\/\/takatak\.ca\/search\?q=/);
+  const site = data["@graph"].find((node: { "@type": string }) => node["@type"] === "WebSite");
+  assert.match(site.potentialAction.target.urlTemplate, /^https:\/\/takatak\.ca\/search\?q=/);
   const home = readFileSync(`${WEBSITE}/page.tsx`, "utf8");
   assert.match(home, /type="application\/ld\+json"/);
-  assert.match(home, /websiteStructuredData\(getApplicationOrigin\(\)\)/);
+  assert.match(home, /websiteStructuredData\(getApplicationOrigin\(\), lang\)/);
+});
+
+check("language URLs have reciprocal alternates, canonical and localized sharing metadata", () => {
+  for (const lang of ["en", "fr"] as const) {
+    const metadata = homeMetadata(lang, "https://takatak.ca/");
+    assert.deepEqual(metadata.alternates?.languages, {
+      "en-CA": "https://takatak.ca/", "fr-CA": "https://takatak.ca/?lang=fr", "x-default": "https://takatak.ca/",
+    });
+    assert.equal(metadata.description, HOME_SEO[lang].description);
+    assert.equal(metadata.openGraph?.description, metadata.description);
+    assert.equal(metadata.twitter?.description, metadata.description);
+    const data = JSON.parse(websiteStructuredData("https://takatak.ca/", lang));
+    const page = data["@graph"].find((node: { "@type": string }) => node["@type"] === "WebPage");
+    assert.equal(page.inLanguage, `${lang}-CA`);
+    assert.equal(page.description, metadata.description);
+    assert.equal(page.url, lang === "fr" ? "https://takatak.ca/?lang=fr" : "https://takatak.ca/");
+    assert.equal(page.about["@id"], "https://takatak.ca/#organization");
+  }
+  assert.equal(homeLanguage(["fr", "en"]), "en");
+  assert.equal(homeLanguage("<script>"), "en");
+});
+
+check("French and English content render correctly before JavaScript runs", () => {
+  function Probe() {
+    const { lang, tx } = useLanguage();
+    return createElement("p", { lang }, tx({ en: "Your business", fr: "Votre entreprise" }));
+  }
+  for (const lang of ["en", "fr"] as const) {
+    const html = renderToStaticMarkup(createElement(LanguageProvider, { initialLanguage: lang, children: createElement(Probe) }));
+    assert.equal(html, lang === "fr" ? '<p lang="fr">Votre entreprise</p>' : '<p lang="en">Your business</p>');
+  }
 });
 
 console.log(`\n${passed} website SEO checks passed.`);

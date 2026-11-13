@@ -4,7 +4,11 @@
 // `x-forwarded-proto`. A redirect is issued only when that header explicitly
 // says "http", so HTTPS traffic and local development can never loop.
 
-const PUBLIC_HOSTS = new Set(["takatak.ca", "www.takatak.ca"]);
+const PUBLIC_HOSTS = new Set([
+  "takatak.ca",
+  "www.takatak.ca",
+  "review.takatak.ca",
+]);
 
 /** Paths answered over plain HTTP: liveness probes and certificate checks. */
 function isExemptPath(pathname: string): boolean {
@@ -22,10 +26,12 @@ export function httpsRedirectTarget(input: {
   production: boolean;
 }): string | null {
   if (!input.production) return null;
-  if (input.headers.get("x-forwarded-proto")?.trim().toLowerCase() !== "http") return null;
+  if (input.headers.get("x-forwarded-proto")?.trim().toLowerCase() !== "http")
+    return null;
   if (isExemptPath(input.pathname)) return null;
 
-  const rawHost = input.headers.get("x-forwarded-host") ?? input.headers.get("host") ?? "";
+  const rawHost =
+    input.headers.get("x-forwarded-host") ?? input.headers.get("host") ?? "";
   const host = rawHost.split(",")[0].trim().toLowerCase().replace(/:80$/, "");
   if (!PUBLIC_HOSTS.has(host)) return null;
 
