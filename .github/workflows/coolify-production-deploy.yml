@@ -10,8 +10,11 @@ on:
 permissions:
   contents: read
 
+# A newly queued run replaces a pending run of the same group. A run that can
+# only skip (not a successful push CI of main) gets a group of its own, so it
+# cannot cancel a pending production deploy of main. Deploy conditions unchanged.
 concurrency:
-  group: takatak-coolify-production
+  group: takatak-coolify-production${{ (github.event.workflow_run.conclusion != 'success' || github.event.workflow_run.event != 'push' || github.event.workflow_run.head_branch != 'main') && format('-skip-{0}', github.run_id) || '' }}
   cancel-in-progress: false
 
 jobs:

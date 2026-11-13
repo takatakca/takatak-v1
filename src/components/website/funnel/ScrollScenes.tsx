@@ -61,7 +61,7 @@ const T = {
 
 function Toast({ children }: { children: React.ReactNode }) {
   return (
-    <span className="sc-on3 absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-xl bg-emerald-500/95 px-3 py-2 text-[12.5px] font-semibold text-white shadow-[0_12px_30px_-10px_rgb(16_185_129/0.8)]">
+    <span className="sc-on3 absolute inset-x-3 bottom-3 flex items-center gap-2 rounded-xl bg-emerald-700 px-3 py-2 text-[12.5px] font-semibold text-white shadow-[0_12px_30px_-10px_rgb(16_185_129/0.8)]">
       <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/25">
         <Check size={12} strokeWidth={3} aria-hidden />
       </span>
@@ -172,7 +172,7 @@ function ReviewScene({ lang }: { lang: Lang }) {
         ))}
       </div>
       <div className="sc-on2 mt-2.5 rounded-xl rounded-tl-sm bg-[#EEF3FA] p-2">
-        <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#1E6BFF]">
+        <p className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-[#1557D6]">
           <Sparkles size={10} aria-hidden /> {t.ai[lang]}
         </p>
         <p className="mt-1 text-[11.5px] text-slate-800">
@@ -227,9 +227,9 @@ function ListingScene({ lang }: { lang: Lang }) {
       <div className="sc-on1 absolute inset-x-3 bottom-14 rounded-xl bg-white p-2.5 shadow-lg">
         <p className="text-[12.5px] font-bold text-slate-900">{t.name[lang]}</p>
         <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-600">
-          <span className="text-[#E7A008]">★★★★★</span> 4,9 · {t.open[lang]}
+          {t.open[lang]}
         </p>
-        <p className="sc-on2 mt-1 inline-flex items-center gap-1 rounded-md bg-[#1E6BFF]/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-[#1E6BFF]">{t.holiday[lang]}</p>
+        <p className="sc-on2 mt-1 inline-flex items-center gap-1 rounded-md bg-[#1E6BFF]/10 px-1.5 py-0.5 text-[10.5px] font-semibold text-[#1557D6]">{t.holiday[lang]}</p>
       </div>
       <Toast>{t.done[lang]}</Toast>
     </div>

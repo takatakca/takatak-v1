@@ -1,3 +1,17 @@
+# TAKATAK V1 — Project Status
+
+## Source of truth
+GitHub main and exact CI/runtime evidence are authoritative. Initial main was 4706dad; owner-authorized coordination note 7c086815 and concurrent Facebook fix d21709e were preserved. PR #235 merged as bae2445. The separate codex/sequential-release-20261107 branch reconciles reviewed older changes; it is not yet merged or deployed.
+
+## Release / live status
+The actual takatak.ca DNS target is VPS1 (209.145.49.63), existing application lt05flq7furdzxfqtmfmujek. Native Coolify push deployment is active even though the GitHub Coolify workflow skips. Deployment of 7c086815 finished healthy; d21709e was building and bae2445 queued at inspection. VPS2 retains an older instance; do not create duplicate applications or change DNS. Database, Supabase and process readiness passed. No schema migration or provider activation is included in this reconciliation.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # REVEW reputation scope — 2026-10-31
 
 Implementation on `codex/review-ecosystem`: unified private first-party/Google/QMAPS view in the existing master dashboard; source-capability inventory covers 12 review/social platforms; scoped CSV and existing AI draft queue integration. QMAPS/FLEXS API request notes published on their `revew/review-api-handoff` branches. Source CI passed on 8c3cfb8 (https://github.com/takatakca/takatak-v1/actions/runs/41190779123); code is not merged/deployed and external vendor APIs are not newly connected. Google Drive note upload and email coordination remain unavailable to this session. [Evidence and limits](REVEW_REVIEW_ECOSYSTEM.md). — REVEW
@@ -39,3 +53,11 @@ PR #182 now offers `Export site SEO data (JSON)` in an authenticated client's si
 ## Paged workspace SEO export — 2026-10-15
 
 PR #182 now includes `/dashboard/seo/exports` and `/api/seo/workspace/export/[collection]`. An authenticated user with active TAKATAK `client_scoped` workspace and `view_reports` can select sites, Search Console opportunities, editorial backlink prospects or content briefs, then download successive private JSON pages of up to 200 records. Backend returns `hasMore` and `nextOffset`, validates collection and offset, filters tenant based on the signed server JWT, and requests an allowlist of safe database fields. The browser never receives the signing secret. Users must collect all pages; changes between pages can cause inconsistent coverage and **this is not a transactionally consistent account backup or a full TAKATAK cross-product export**. Backend SHA `fd0ff79f` CI `38844277527` passed; newest V1 CI status needs final confirmation. No production data exported during development.
+
+## 2026-10-16 — SEO deletion receipt dashboard (PR #196, not merged)
+
+A separate feature branch `feat/seotakatak-deletion-receipts-20261016`, [PR #196](https://github.com/takatakca/takatak-v1/pull/196) **draft**, extends the already merged SEO portfolio with a manager-only `/dashboard/seo/deletions` page. The server-only `getSeoDeletionReceipts` bridge accepts only a validated API path and a TAKATAK `client_scoped` workspace with `view_dashboard` plus `manage_integrations`. Requests are signed for the active tenant and return only receipt UUID, deleted site UUID, timestamp and deleted SEO child-row counts; the backend restricts `actor_subject` to its database. The page expressly says these operational receipts are not certified full erasure across TAKATAK products. No production SEO service is online: backend new SQL `0004_site_deletion_receipts.sql` has only been tested on disposable PostgreSQL, and Coolify secrets/approved database remain missing. **Do not merge/deploy without designated V1 coordinator authorization and green full CI.**
+
+### PR #196 complete CI milestone (2026-10-16)
+
+The deletion receipts V1 branch `90f8fdeef6ea499e99f796c3563cefa4f6c8a6e9` passed full GitHub CI run `38884438610`, including SEO contract tests, typecheck, lint, webpack and project validations. PR #196 was explicitly marked **ready for review** but remains open/unmerged; only the V1 coordinator may merge and deploy. The independent backend SEO source `b41eae7f` passed CI `38885243320`, but its Coolify production job failed and migration 0004 is not applied live. No production SEO receipts were verified.

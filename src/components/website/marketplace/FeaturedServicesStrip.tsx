@@ -3,13 +3,14 @@
 import { ArrowUpRight } from "lucide-react";
 
 import { categoryName, formatCad } from "@/lib/website/marketplace-i18n";
-import { MARKETPLACE_PACKAGES, type ThumbKind } from "@/lib/website/marketplace-packages";
+import type { MarketplaceThumbnail } from "@/lib/website/marketplace-catalog";
+import type { MarketplaceCard } from "@/lib/website/marketplace-cards";
 import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { ServiceThumbnail } from "./ServiceThumbnail";
 
 /** Categories shown here; the "from" price is the cheapest tier in the catalog for that category. */
-const FEATURED: { slug: string; thumb: ThumbKind }[] = [
+const FEATURED: { slug: string; thumb: MarketplaceThumbnail }[] = [
   { slug: "website_design", thumb: "website" },
   { slug: "logo_design", thumb: "logo" },
   { slug: "social_media_content", thumb: "social" },
@@ -26,17 +27,17 @@ const COPY = {
   from: { fr: "Dès", en: "From" },
 } as const;
 
-function cheapest(slug: string): { cents: number; name: string } | null {
-  const inCategory = MARKETPLACE_PACKAGES.filter((p) => p.category === slug);
+function cheapest(cards: readonly MarketplaceCard[], slug: string): { cents: number; name: string } | null {
+  const inCategory = cards.filter((p) => p.category === slug);
   if (!inCategory.length) return null;
   const cents = Math.min(...inCategory.flatMap((p) => p.tiers.map((t) => t.priceCents)));
   return { cents, name: inCategory[0].categoryName };
 }
 
-export function FeaturedServicesStrip() {
+export function FeaturedServicesStrip({ cards }: { cards: MarketplaceCard[] }) {
   const { lang } = useLanguage();
   const rows = FEATURED.flatMap((f) => {
-    const c = cheapest(f.slug);
+    const c = cheapest(cards, f.slug);
     return c ? [{ ...f, ...c }] : [];
   });
   return (

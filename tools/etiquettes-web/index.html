@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="fr-CA">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>TakaTak — Étiquettes</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f5f8fc;
+        color: #13213a;
+        font:
+          15px system-ui,
+          sans-serif;
+      }
+      header {
+        background: #060d1f;
+        color: #f5f8fc;
+        padding: 20px max(24px, calc((100vw - 1200px) / 2));
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .brand {
+        font-weight: 800;
+        letter-spacing: 2px;
+      }
+      .brand span {
+        color: #29c3ff;
+      }
+      main {
+        max-width: 1200px;
+        margin: 32px auto;
+        padding: 0 20px;
+      }
+      h1 {
+        font-size: 30px;
+        letter-spacing: -1px;
+        margin: 0 0 8px;
+      }
+      h2 {
+        font-size: 18px;
+        margin: 0 0 18px;
+      }
+      p {
+        line-height: 1.6;
+      }
+      .muted {
+        color: #5c6a80;
+      }
+      .card {
+        background: white;
+        border: 1px solid #dbe3ed;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 6px 24px #13213a06;
+      }
+      .login {
+        max-width: 430px;
+        margin: 70px auto;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1.15fr;
+        gap: 24px;
+        margin-top: 24px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        font-size: 13px;
+        margin: 14px 0;
+      }
+      input,
+      select,
+      textarea {
+        display: block;
+        width: 100%;
+        font: inherit;
+        color: #13213a;
+        background: white;
+        border: 1px solid #bac8d9;
+        border-radius: 8px;
+        padding: 11px;
+        margin-top: 6px;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 70px;
+      }
+      button {
+        font: 600 14px system-ui;
+        cursor: pointer;
+        border: 1px solid #ccd6e3;
+        border-radius: 9px;
+        padding: 11px 16px;
+        background: white;
+        color: #13213a;
+      }
+      button.primary {
+        background: #1565d8;
+        color: white;
+        border-color: #1565d8;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: wait;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+      }
+      .preview {
+        overflow: auto;
+        background: #edf1f6;
+        border-radius: 10px;
+        padding: 18px;
+        margin-top: 16px;
+      }
+      .preview svg {
+        display: block;
+        width: 100%;
+        min-width: 450px;
+        background: white;
+      }
+      .status {
+        padding: 12px 16px;
+        background: #eaf3ff;
+        border-radius: 9px;
+        margin: 18px 0;
+        font-size: 14px;
+        white-space: pre-line;
+      }
+      details {
+        margin-top: 18px;
+        border-top: 1px solid #dbe3ed;
+        padding-top: 18px;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 700;
+      }
+      small {
+        display: block;
+        line-height: 1.5;
+        font-weight: 400;
+        color: #5c6a80;
+        margin-top: 5px;
+      }
+      .check {
+        display: flex;
+        align-items: start;
+        gap: 9px;
+        font-weight: 400;
+        line-height: 1.5;
+      }
+      .check input {
+        width: 18px;
+        flex-shrink: 0;
+        margin: 2px 0;
+      }
+      #messages {
+        min-height: 24px;
+        margin: 12px 0;
+        color: #174d91;
+      }
+      #login-error {
+        color: #b42318;
+      }
+      a {
+        color: #1565d8;
+      }
+      [hidden] {
+        display: none !important;
+      }
+      .steps {
+        font-size: 13px;
+        color: #5c6a80;
+        margin-top: 24px;
+      }
+      .sticky {
+        position: sticky;
+        top: 24px;
+        align-self: start;
+      }
+      footer {
+        margin-top: 24px;
+        color: #5c6a80;
+        font-size: 12px;
+      }
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        .sticky {
+          position: static;
+        }
+        h1 {
+          font-size: 26px;
+        }
+        .card {
+          padding: 18px;
+        }
+        header {
+          padding: 18px 20px;
+        }
+        .row {
+          grid-template-columns: 1fr 1fr;
+        }
+        .login {
+          margin: 35px auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="brand">TAKATAK <span>ÉTIQUETTES</span></div>
+      <button id="logout" hidden>Déconnexion</button>
+    </header>
+    <main>
+      <section id="login" class="card login">
+        <h1>Votre atelier d’étiquettes.</h1>
+        <p class="muted">
+          Connectez-vous, créez votre étiquette et imprimez-la. Tout se fait
+          ici.
+        </p>
+        <form id="login-form">
+          <label
+            >Nom d’utilisateur<input
+              name="username"
+              autocomplete="username"
+              required /></label
+          ><label
+            >Mot de passe<input
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required /></label
+          ><button class="primary" type="submit">Se connecter</button>
+          <p id="login-error" role="alert"></p>
+        </form>
+        <small
+          >Espace privé de démonstration. Ne pas y saisir de données
+          sensibles.</small
+        >
+      </section>
+      <section id="app" hidden>
+        <h1>Une étiquette. Prête à imprimer.</h1>
+        <p class="muted">
+          Votre produit, votre code-barres, votre présentation.
+        </p>
+        <div class="actions">
+          <select
+            id="saved"
+            aria-label="Étiquettes sauvegardées"
+            style="max-width: 320px; margin: 0"
+          >
+            <option value="">Mes étiquettes sauvegardées</option></select
+          ><button id="new">Nouvelle étiquette</button>
+        </div>
+        <div class="grid">
+          <form id="editor" class="card">
+            <h2>1. Votre produit</h2>
+            <label
+              >Marque<input
+                id="brand"
+                value="MIEL AISSA"
+                maxlength="160"
+                required /></label
+            ><label
+              >Nom du produit en français<input
+                id="nameFr"
+                value="Miel"
+                maxlength="160"
+                required
+            /></label>
+            <div class="row">
+              <label
+                >Poids net confirmé<input
+                  id="size"
+                  placeholder="Ex. 250 g"
+                  maxlength="80"
+                  required /></label
+              ><label
+                >Référence interne (SKU)<input
+                  id="sku"
+                  value="AISSA"
+                  maxlength="40"
+                  required
+              /></label>
+            </div>
+            <label
+              >Ingrédients en français<textarea
+                id="ingredientsFr"
+                placeholder="À confirmer selon votre recette"
+                maxlength="600"
+              ></textarea></label
+            ><label
+              >Entreprise et adresse<textarea id="business" maxlength="600">
+MIEL AISSA
+5837 Rue Jean-Talon E
+H1S 1M4
+MIELAISSA.CA</textarea
+              ><small
+                >Complétez le nom légal, la municipalité et la province.</small
+              ></label
+            ><label
+              >Origine confirmée<input
+                id="origin"
+                placeholder="Pays et mentions d’origine justifiées"
+                maxlength="160"
+            /></label>
+            <div class="row">
+              <label
+                >Numéro de lot<input
+                  id="lot"
+                  maxlength="100"
+                  placeholder="Ex. LOT-2026-001" /></label
+              ><label
+                >Date / meilleur avant<input
+                  id="bestBefore"
+                  maxlength="100"
+                  placeholder="Si applicable"
+              /></label>
+            </div>
+            <h2 style="margin-top: 28px">2. Votre code-barres</h2>
+            <label
+              >UPC / EAN attribué par GS1<input
+                id="gtin"
+                inputmode="numeric"
+                maxlength="13"
+                placeholder="12 ou 13 chiffres — facultatif pour un essai"
+              /><small
+                >Sans numéro GS1 : le PDF utilise votre SKU interne et porte la
+                mention ÉPREUVE.</small
+              ></label
+            ><label class="check"
+              ><input id="gs1Confirmed" type="checkbox" />Je confirme que ce
+              numéro GS1 est attribué à ce produit et à mon entreprise.</label
+            >
+            <details>
+              <summary>Format du pot et impression</summary>
+              <div class="row">
+                <label
+                  >Largeur de l’étiquette (mm)<input
+                    id="widthMm"
+                    type="number"
+                    min="90"
+                    max="350"
+                    step=".1"
+                    value="180" /></label
+                ><label
+                  >Hauteur (mm)<input
+                    id="heightMm"
+                    type="number"
+                    min="40"
+                    max="150"
+                    step=".1"
+                    value="80"
+                /></label>
+              </div>
+              <small
+                >Dimensions d’essai : mesurez votre pot avant l’impression
+                finale.</small
+              ><label
+                >Forme du pot<select id="jarShape">
+                  <option value="round">Rond</option>
+                  <option value="hexagonal">Hexagonal</option>
+                </select></label
+              ><label
+                >Largeur d’une face plate (mm)<input
+                  id="flatFaceWidthMm"
+                  type="number"
+                  min="0"
+                  max="150"
+                  step=".1"
+                  value="0"
+                /><small
+                  >Nécessaire pour vérifier le placement sur un pot
+                  hexagonal.</small
+                ></label
+              ><label
+                >PSE vérifiée (cm²)<input
+                  id="principalDisplayAreaCm2"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  step=".1"
+                  value="0"
+                /><small
+                  >Principale surface exposée du contenant, déterminée selon les
+                  règles applicables.</small
+                ></label
+              >
+              <div class="row">
+                <label
+                  >Résolution<select id="dpi">
+                    <option>203</option>
+                    <option selected>300</option>
+                    <option>600</option>
+                  </select></label
+                ><label
+                  >Orientation des barres<select id="orientation">
+                    <option value="ladder">Échelle</option>
+                    <option value="fence">Verticale</option>
+                  </select></label
+                >
+              </div>
+              <label
+                >Présentation<select id="theme">
+                  <option value="honey">Ivoire, noir et or</option>
+                  <option value="mono">Noir et blanc</option>
+                  <option value="blue">Bleu</option>
+                </select></label
+              ><label
+                >Support PDF<select id="paper">
+                  <option value="letter">Lettre — feuille adhésive</option>
+                  <option value="a4">A4 — feuille adhésive</option>
+                  <option value="roll">Rouleau aux dimensions exactes</option>
+                </select></label
+              >
+            </details>
+            <details>
+              <summary>Mentions alimentaires et dossier Québec</summary>
+              <p class="muted">
+                À compléter avant une vente. Les cases enregistrent votre
+                vérification et ne constituent pas une certification.
+              </p>
+              <label
+                >Catégorie / classement confirmé<input
+                  id="grade"
+                  maxlength="100" /></label
+              ><label
+                >Couleur confirmée<input id="colour" maxlength="100" /></label
+              ><label
+                >Conservation et autres mentions<textarea
+                  id="storage"
+                  maxlength="400"
+                ></textarea></label
+              ><label
+                >Valeur nutritive<select id="nutritionStatus">
+                  <option value="unreviewed">À faire vérifier</option>
+                  <option value="provided">Tableau approuvé fourni</option>
+                  <option value="exempt">
+                    Exemption vérifiée et documentée
+                  </option>
+                </select></label
+              ><label
+                >Tableau approuvé (PNG / JPEG)<input
+                  id="nutrition-file"
+                  type="file"
+                  accept="image/png,image/jpeg" /></label
+              ><label
+                >Largeur du tableau (mm)<input
+                  id="nutritionWidthMm"
+                  type="number"
+                  min="15"
+                  max="100"
+                  value="40" /></label
+              ><label
+                >Justification de l’exemption<textarea
+                  id="nutritionExemption"
+                  maxlength="600"
+                ></textarea>
+              </label>
+              <div id="quebec"></div>
+              <label class="check"
+                ><input id="textReviewed" type="checkbox" />J’ai vérifié les
+                textes, les mentions, les surfaces réglementaires et l’épreuve
+                imprimée sur le vrai contenant.</label
+              ><a
+                href="https://inspection.canada.ca/fr/etiquetage-aliment/etiquetage/industrie/miel"
+                target="_blank"
+                rel="noopener"
+                >Exigences officielles de l’ACIA pour le miel</a
+              >
+            </details>
+          </form>
+          <section class="card sticky">
+            <h2>3. Aperçu et impression</h2>
+            <p class="muted">
+              Sauvegardez votre modèle. Téléchargez le PDF, puis imprimez à 100
+              %.
+            </p>
+            <div class="preview" id="preview" aria-live="polite"></div>
+            <div id="readiness" class="status"></div>
+            <div class="actions">
+              <button class="primary" id="save">Sauvegarder</button
+              ><button id="pdf">Télécharger le PDF</button>
+            </div>
+            <p id="messages" role="status"></p>
+            <details>
+              <summary>Tester une lecture de scanner</summary>
+              <label
+                >Scannez le code imprimé<input
+                  id="scan"
+                  autocomplete="off"
+                  placeholder="Cliquez ici puis scannez"
+              /></label>
+              <p id="scan-result" role="status"></p>
+            </details>
+            <footer>
+              Le numéro GS1 doit être référencé par chaque détaillant. Une
+              épreuve n’est pas une autorisation de vente. Cet espace d’essai
+              est indépendant du tableau de bord principal.
+            </footer>
+          </section>
+        </div>
+      </section>
+    </main>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

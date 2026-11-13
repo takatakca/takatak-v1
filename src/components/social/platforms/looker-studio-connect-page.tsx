@@ -410,8 +410,8 @@ export function LookerStudioConnectPage({
             Connect social networks
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts to unlock analytics, scheduling and content
-            management.
+            Connect your accounts once. TAKATAK shows only real data received
+            from each network&apos;s official API.
           </p>
           <Link
             href={withSocialPreview(

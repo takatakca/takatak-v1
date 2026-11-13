@@ -793,6 +793,9 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .tk-modal-in { animation: tk-modal-in 0.5s var(--tk-ease) both; }
 @keyframes tk-fade-in { from { opacity: 0; } to { opacity: 1; } }
 .tk-fade-in { animation: tk-fade-in 0.35s ease both; }
+/* Text that changes in a loop: revealed by a clip, never transparent, so its contrast stays full (scanners sample it mid-animation). */
+@keyframes tk-text-in { from { clip-path: inset(0 0 100% 0); transform: translateY(0.4em); } to { clip-path: inset(0); transform: none; } }
+.tk-text-in { animation: tk-text-in 0.35s ease both; }
 
 @keyframes tk-flow { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
 .tk-flow { stroke-dasharray: 4 8; animation: tk-flow 0.9s linear infinite; }
@@ -801,7 +804,7 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 
 @media (prefers-reduced-motion: reduce) {
   .tk-rise { opacity: 1; transform: none; transition: none; }
-  .tk-modal-in, .tk-fade-in, .tk-flow { animation: none !important; }
+  .tk-modal-in, .tk-fade-in, .tk-text-in, .tk-flow { animation: none !important; }
   .tk-card-shine::before { display: none; }
 }
 
@@ -1157,13 +1160,24 @@ html:has(.tk-page) .website-surface footer { margin-top: 0; }
 .sc[data-s=""] *, .sc:not([data-s]) * { transition: none !important; animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .sc * { transition: none !important; animation: none !important; }
+  /* Without the pop animation, show the finished state instead of leaving it hidden. */
+  .sc[data-s*="0"] .sc-pop { opacity: 1; transform: none; }
+}
+
+/* The new-client card (AnimatedPromoInvite.tsx) and the plan dock never overlap: the dock waits until the card folds. */
+html[data-promo-open] .tk-plan-dock { opacity: 0 !important; pointer-events: none !important; }
+
+/* A page with a fixed bottom bar (the order total on /commander): the support button sits above it, never on it. */
+@media (max-width: 1023px) {
+  body:has(.tk-bottom-bar) .tk-chat-launcher { bottom: 5rem; }
 }
 
 /* Kiosk scene (KioskScene.tsx): the menu rolls; a new kitchen ticket slides in. */
 .hp-kiosk-roll { animation: hp-kiosk-roll 14s linear infinite; }
 @keyframes hp-kiosk-roll { to { transform: translateY(-50%); } }
 .hp-ticket-in { animation: hp-ticket-in 0.55s cubic-bezier(0.2, 0.9, 0.2, 1) both; }
-@keyframes hp-ticket-in { from { opacity: 0; transform: translateX(24px) scale(0.96); box-shadow: 0 0 0 2px rgb(41 195 255 / 0.8); } }
+/* Revealed by a clip, never by transparency: the text keeps its full contrast while it slides in. */
+@keyframes hp-ticket-in { from { clip-path: inset(0 0 0 100% round 12px); transform: translateX(24px) scale(0.96); box-shadow: 0 0 0 2px rgb(41 195 255 / 0.8); } to { clip-path: inset(0 0 0 0 round 12px); } }
 @media (prefers-reduced-motion: reduce) { .hp-kiosk-roll, .hp-ticket-in { animation: none; } }
 
 /* Telecom scene (TelecomScene.tsx): light runs along the wires. */

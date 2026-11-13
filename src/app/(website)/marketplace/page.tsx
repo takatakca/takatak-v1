@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { MarketplaceLanding } from "@/components/website/marketplace/MarketplaceLanding";
+import { loadMarketplaceCards } from "@/lib/website/load-marketplace-cards";
 
 export const metadata: Metadata = {
   title: "Place de marché · Marketplace",
@@ -9,6 +10,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/marketplace" },
 };
 
-export default function MarketplacePage() {
-  return <MarketplaceLanding />;
+export default async function MarketplacePage() {
+  return <MarketplaceLanding cards={await loadMarketplaceCards()} />;
 }

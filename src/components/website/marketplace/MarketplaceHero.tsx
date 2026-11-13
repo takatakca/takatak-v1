@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Clock, Search, ShieldCheck } from "lucide-react";
 
 import { fastestDelivery, packageTitle, startingPrice } from "@/lib/website/marketplace-i18n";
-import { getPackage } from "@/lib/website/marketplace-packages";
+import type { MarketplaceCard } from "@/lib/website/marketplace-cards";
 import { useNavigate } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { ServiceThumbnail } from "./ServiceThumbnail";
@@ -19,41 +19,43 @@ const QUICK_PICKS = [
   { q: "Menu design", fr: "Menu de restaurant", en: "Menu design" },
 ];
 
-/** Real packages from the catalog: their own title, starting price and fastest delivery. */
+/** Real packages from the catalog (marketplace-catalog.ts ids): their own title, starting price and fastest delivery. */
 const HERO_COLLAGE = [
   { id: "website-starter", pos: "top-0 left-0 w-[56%] rotate-[-3deg] z-20" },
   { id: "logo-design", pos: "top-[6%] right-0 w-[42%] rotate-[4deg] z-10" },
-  { id: "local-seo-setup", pos: "bottom-[-4%] left-[4%] w-[42%] rotate-[2deg] z-30" },
-  { id: "app-ui-prototype", pos: "bottom-[2%] right-[0%] w-[42%] rotate-[-4deg] z-20" },
-].flatMap((c) => {
-  const pkg = getPackage(c.id);
-  return pkg ? [{ ...c, pkg }] : [];
-});
+  { id: "local-seo", pos: "bottom-[-4%] left-[4%] w-[42%] rotate-[2deg] z-30" },
+  { id: "mobile-app-prototype", pos: "bottom-[2%] right-[0%] w-[42%] rotate-[-4deg] z-20" },
+];
 
 const COPY = {
   title1: { fr: "Le bon pigiste", en: "Find the right freelancer" },
   title2: { fr: "pour chaque service.", en: "for any service." },
   lead: {
     fr: "Sites web, image de marque, contenu, marketing, automatisation et plus, livrés par TAKATAK avec un paiement protégé sur chaque projet.",
-    en: "Websites, branding, content, marketing, automation and more — delivered through TAKATAK with escrow protection on every project.",
+    en: "Websites, branding, content, marketing, automation and more — delivered through TAKATAK with a protected payment on every project.",
   },
   placeholder: { fr: "Rechercher « logo »", en: 'Search for "logo design"' },
   search: { fr: "Rechercher", en: "Search" },
   popular: { fr: "Populaires :", en: "Popular:" },
   escrow: {
     fr: "Paiement protégé : l’argent n’est versé qu’une fois le travail approuvé.",
-    en: "Escrow protection — funds only released when you approve the work.",
+    en: "Protected payment: the freelancer is paid only once you approve the work.",
   },
-  badge: { fr: "Paiement protégé TAKATAK", en: "TAKATAK escrow" },
+  badge: { fr: "Paiement protégé TAKATAK", en: "TAKATAK protected payment" },
 } as const;
 
-export function MarketplaceHero() {
+export function MarketplaceHero({ cards }: { cards: MarketplaceCard[] }) {
   const { lang } = useLanguage();
+  const collage = HERO_COLLAGE.flatMap((c) => {
+    const pkg = cards.find((card) => card.id === c.id);
+    return pkg ? [{ ...c, pkg }] : [];
+  });
   const [q, setQ] = useState("");
   const navigate = useNavigate();
+  // An empty search opens every service instead of doing nothing.
   const go = (term: string = q) => {
-    if (!term.trim()) return;
-    void navigate({ to: "/marketplace/search", search: { q: term } as never });
+    const t = term.trim();
+    void navigate({ to: "/marketplace/search", search: (t ? { q: t } : {}) as never });
   };
   return (
     <section className="brand-dark border-b border-border relative overflow-hidden">
@@ -115,7 +117,7 @@ export function MarketplaceHero() {
           <div className="relative h-[520px] w-full">
             {/* soft backdrop */}
             <div className="absolute inset-6 rounded-3xl bg-white/[0.04] border border-white/10" />
-            {HERO_COLLAGE.map((c) => (
+            {collage.map((c) => (
               <div
                 key={c.id}
                 className={`absolute ${c.pos} rounded-xl border border-black/5 bg-white overflow-hidden shadow-[0_28px_56px_-24px_rgba(0,0,0,0.6)] hover:rotate-0 transition-transform duration-300`}
@@ -141,7 +143,7 @@ export function MarketplaceHero() {
         {/* Mobile collage — stacked tilted cards */}
         <div className="lg:hidden">
           <div className="relative h-[320px] w-full mt-2">
-            {HERO_COLLAGE.slice(0, 3).map((c, i) => (
+            {collage.slice(0, 3).map((c, i) => (
               <div
                 key={c.id}
                 className="absolute rounded-xl border border-black/5 bg-white overflow-hidden shadow-[0_22px_44px_-18px_rgba(0,0,0,0.55)]"

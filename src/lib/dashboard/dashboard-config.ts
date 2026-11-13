@@ -86,6 +86,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Clients", href: "/dashboard/clients", icon: Users },
       { label: "Businesses / Brands", href: "/dashboard/brands", icon: Building2 },
+      { label: "Inventory", href: "/dashboard/inventory", icon: Tags },
       { label: "Locations", href: "/dashboard/locations", icon: MapPinned },
       { label: "Services", href: "/dashboard/services", icon: ListChecks },
     ],
@@ -127,7 +128,10 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: "Learning",
-    items: [{ label: "TAKATAK Academy", href: "/dashboard/academy", icon: GraduationCap }],
+    items: [
+      { label: "TAKATAK Academy", href: "/dashboard/academy", icon: GraduationCap },
+      { label: "BEH4VIOR", href: "/dashboard/beh4vior", icon: Star },
+    ],
   },
   {
     title: "Services",
@@ -193,6 +197,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Integrations", href: "/dashboard/integrations", icon: PlugZap },
       { label: "Jobs", href: "/dashboard/jobs", icon: CalendarClock },
       { label: "Activity", href: "/dashboard/activity", icon: History },
+      { label: "Facturations — Administration", href: "/dashboard/admin/billing", icon: Receipt },
       { label: "Admin", href: "/dashboard/admin", icon: Briefcase },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },
     ],

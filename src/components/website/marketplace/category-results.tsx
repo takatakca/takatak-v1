@@ -23,9 +23,9 @@ const COPY = {
   back: { fr: "← Place de marché", en: "← Marketplace" },
   lead: {
     fr: "Des pigistes TAKATAK vérifiés, avec un contenu clair, des prix fixes et un paiement protégé.",
-    en: "Vetted TAKATAK freelancers, with clear scope, fixed prices and escrow protection.",
+    en: "Vetted TAKATAK freelancers, with clear scope, fixed prices and a protected payment.",
   },
-  escrow: { fr: "Paiement protégé", en: "Escrow protected" },
+  escrow: { fr: "Paiement protégé", en: "Protected payment" },
   delivery: { fr: "Livraison en {min} à {max} jours", en: "Delivery in {min}–{max} days" },
   deliveryOne: { fr: "Livraison en {min} jours", en: "Delivery in {min} days" },
   verified: { fr: "Vérifié par Groupe TAKATAK", en: "Verified by Groupe TAKATAK" },
@@ -172,14 +172,6 @@ export function CategoryResults({
           (left, right) =>
             getDeliveryDays(left) -
             getDeliveryDays(right),
-        );
-        break;
-
-      case "rating":
-        result.sort(
-          (left, right) =>
-            right.rating -
-            left.rating,
         );
         break;
 

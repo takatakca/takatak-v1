@@ -1,3 +1,17 @@
+# TAKATAK V1 — Executable Task Queue
+
+## Safe work cycle
+Review current main, AGENTS, WORKLOG, active PRs and foodhubca#105 before changing files. Respect active Social/Studio ownership. Reconcile reviewed changes on a separate branch, preserve newer source and all agent notes, run focused and complete CI, merge only the reviewed tested revision, then verify the actual runtime SHA and readiness. Leave signed before/during/after GitHub and Drive notes.
+
+## Current next actions
+Finish integration checks, publish the review branch and observe Node22 CI. Reconcile any concurrent main changes before release. Let Coolify finish its existing serial queue; verify the resulting production SHA instead of starting a competing deployment. Drafts and integration/migration dependencies remain explicit separate work; no paid activation, social publication, DNS or live migration is implied.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # REVEW review API follow-up — 2026-10-31
 
 - Focused CI passed on 8c3cfb8 (https://github.com/takatakca/takatak-v1/actions/runs/41190779123); coordinator review/merge only.
@@ -31,3 +45,10 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [ ] Obtain database approval for migration 0003 after 0001+0002 and test real draft-review transitions.
 - [ ] Extend true backlink-provider evidence, original CMS publishing with verified ownership/consent and observed LLM citation integrations; don't label placeholders as live.
 - [ ] Schedule imports with quota/rate limiting, per-site logs and approvals once V1 auth/go-live is stable.
+
+
+- [x] Add a separate PR #196 with signed, tenant-scoped deletion receipt viewer for managers; preserve existing SEO portfolio and TAKATAK Auth.
+- [x] Verify PR #196 code/docs full CI 38884438610 and mark ready for designated V1 coordinator review.
+- [ ] Designated V1 coordinator reviews/merges PR #196, deploys approved V1 release and validates SEO staging/production receipts; not delegated to this development agent.
+- [ ] Owner approves existing/non-billable SEO PostgreSQL and `sql/0004_site_deletion_receipts.sql` after 0001→0003; run manager/viewer/client B negative tests and disposable staging site deletion.
+- [ ] Agree a written retention policy for SEO deletion receipts, backup purge/subject access and cross-product erasure boundaries before regulated use.

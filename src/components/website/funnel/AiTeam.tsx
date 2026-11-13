@@ -6,6 +6,7 @@ import { ArrowRight, CalendarClock, Mail, MapPin, MessageSquareText, PenLine, Sp
 import { openLiveChat } from "@/lib/website/chat-provider";
 
 import { BRAND_ICONS } from "@/lib/website/brand-icons";
+import { engineName } from "@/lib/takbot/copy";
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
 import { sectionId } from "./HomeSectionNav";
@@ -103,7 +104,7 @@ export function AiTeam() {
   return (
     <Section id={sectionId("team")} labelledBy="home-team-title" className="hp-bg hp-live py-16 sm:py-24">
       <div ref={ref} className="mx-auto max-w-7xl px-4">
-        <div className="grid items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
+        <div className="grid grid-cols-1 items-end gap-8 lg:grid-cols-[minmax(0,1fr)_auto]">
           <Rise className="relative max-w-3xl">
             <div aria-hidden className="pointer-events-none absolute -top-4 right-0 lg:hidden">
               <RobotMascot size={72} title="TAK-TAK" />
@@ -117,11 +118,11 @@ export function AiTeam() {
           </Rise>
         </div>
 
-        <div className="mt-10 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
           {/* Agents with their status, as an example week */}
           <div>
           <p className="hp-ink-3 mb-3 text-[12.5px]">{T.example[lang]}</p>
-          <ul className="grid gap-3 sm:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {AGENTS.map((a, i) => {
               const s = STATUS[a.status];
               const live = a.status === "working";
@@ -132,13 +133,13 @@ export function AiTeam() {
                       <a.Icon size={18} aria-hidden />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="hp-ink flex flex-wrap items-center gap-2 text-[15px] font-semibold">
-                        {a.name[lang]}
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-semibold ${s.cls}`}>
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="hp-ink text-[15px] font-semibold leading-snug">{a.name[lang]}</p>
+                        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-[11.5px] font-semibold ${s.cls}`}>
                           {(live || a.status === "online") && <span aria-hidden className="h-1.5 w-1.5 animate-pulse rounded-full bg-current" />}
                           {s.label[lang]}
                         </span>
-                      </p>
+                      </div>
                       <p className="hp-ink-2 mt-1 text-[14px]">
                         {a.task[lang]}
                         {live && !reduced ? dots : ""}
@@ -158,7 +159,7 @@ export function AiTeam() {
               <p className="flex items-center gap-2 text-[14px] font-semibold">
                 <CalendarClock size={16} aria-hidden /> {T.posts[lang]}
               </p>
-              <ul className="mt-4 grid gap-2.5">
+              <ul className="mt-4 grid grid-cols-1 gap-2.5">
                 {POSTS.map((p, i) => {
                   const icon = BRAND_ICONS[p.net];
                   const state = i === writingIdx ? POST_STATE.writing : POST_STATE[p.state === "writing" ? "queued" : p.state];
@@ -196,7 +197,7 @@ export function AiTeam() {
 
         {/* AIOS: the next agent, one per restaurant (in preparation) */}
         <Rise className="mt-6">
-          <div className="hp-glow relative grid items-center gap-5 overflow-hidden rounded-[26px] bg-[linear-gradient(120deg,#060D1F,#0B1B3D_55%,#1565D8)] p-5 text-white sm:p-7 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+          <div className="hp-glow relative grid grid-cols-1 items-center gap-5 overflow-hidden rounded-[26px] bg-[linear-gradient(120deg,#060D1F,#0B1B3D_55%,#1565D8)] p-5 text-white sm:p-7 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
             <div aria-hidden className="hidden lg:block">
               <RobotMascot size={92} title="AIOS" />
             </div>
@@ -263,7 +264,7 @@ export function AiTeam() {
                         <span className="font-mono text-[10px] font-bold text-[#060D1F]">{e.name.slice(0, 2).toUpperCase()}</span>
                       )}
                     </span>
-                    {e.name}
+                    {engineName(e.name, lang)}
                     <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   </li>
                 );

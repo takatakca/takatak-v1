@@ -17,8 +17,14 @@ permissions:
   contents: read
   actions: read
 
+# Same isolation as artifact validation: a skipped PR parent must not cancel
+# the in-progress staging release of main. Manual dispatch uses the ref name.
+# The parent (Reconcile) is itself started by workflow_run, so its head_branch
+# is always main, even when the chain began from a pull request's CI. A run
+# whose parent did not succeed only skips: it gets a group of its own, so it
+# cannot cancel main's release (it did on 2026-11-10 for aab7ea98).
 concurrency:
-  group: takatak-staging-release
+  group: takatak-staging-release-${{ github.event.workflow_run.head_branch || github.ref_name }}${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion != 'success' && format('-skip-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 env:

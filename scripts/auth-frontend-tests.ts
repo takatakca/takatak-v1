@@ -89,9 +89,53 @@ async function main() {
     resolve(process.cwd(), "src/components/auth/master-phone-registration-form.tsx"),
     "utf8",
   );
+  // The phone form itself stays in the repo (switched off), but the login opens on email.
+  const loginPage = readFileSync(resolve(process.cwd(), "src/app/(website)/login/page.tsx"), "utf8");
+  const registerPage = readFileSync(resolve(process.cwd(), "src/app/(website)/register/page.tsx"), "utf8");
+  const emailGoogleForm = readFileSync(resolve(process.cwd(), "src/components/auth/email-google-auth-form.tsx"), "utf8");
+  const emailCodeRoute = readFileSync(resolve(process.cwd(), "src/app/api/auth/email-code/route.ts"), "utf8");
+  const otpForm = readFileSync(resolve(process.cwd(), "src/components/auth/otp-form.tsx"), "utf8");
+  const smsRegisterRoute = readFileSync(resolve(process.cwd(), "src/app/api/auth/sms-register/route.ts"), "utf8");
   assert(
-    "login opens on the mobile number",
-    loginForm.includes('useState<Mode>("phone")'),
+    "login and register offer only an email code or Google (owner order 2026-11-12)",
+    loginPage.includes("EmailGoogleAuthForm") &&
+      registerPage.includes("EmailGoogleAuthForm") &&
+      !loginPage.includes("MasterPhoneLoginForm") &&
+      !registerPage.includes("MasterPhoneRegistrationForm") &&
+      !emailGoogleForm.includes("type=\"tel\"") &&
+      !emailGoogleForm.toLowerCase().includes("sms"),
+  );
+  assert(
+    "Google sign-in starts with Supabase OAuth and returns through the existing /auth/callback",
+    emailGoogleForm.includes('provider: "google"') &&
+      emailGoogleForm.includes("signInWithOAuth(") &&
+      emailGoogleForm.includes('"/auth/callback"'),
+  );
+  assert(
+    "email code goes through a same-origin backend, creates the account for a new address, and is not replayed",
+    emailGoogleForm.includes('fetch("/api/auth/email-code"') &&
+      !emailGoogleForm.includes("signInWithOtp(") &&
+      emailCodeRoute.includes("shouldCreateUser: true") &&
+      emailCodeRoute.includes("readTrustedJsonBody(") &&
+      !emailCodeRoute.includes("setTimeout("),
+  );
+  assert(
+    "registration requires the terms before either method starts",
+    emailGoogleForm.includes("requireTerms()") &&
+      emailGoogleForm.includes('mode === "register"'),
+  );
+  assert(
+    "the code is verified as an email OTP, then the profile is synchronized",
+    otpForm.includes('provider === "supabase-email"') &&
+      otpForm.includes('type: "email"') &&
+      otpForm.indexOf('type: "email"') < otpForm.indexOf("/api/auth/sync-profile"),
+  );
+  assert(
+    "SMS login and SMS registration answer 410 unless TAKATAK_PHONE_LOGIN=true",
+    smsLoginRoute.includes('process.env.TAKATAK_PHONE_LOGIN !== "true"') &&
+      smsRegisterRoute.includes('process.env.TAKATAK_PHONE_LOGIN !== "true"') &&
+      smsLoginRoute.includes("410") &&
+      smsRegisterRoute.includes("410"),
   );
   assert(
     "registration does not submit an unverified recovery email",

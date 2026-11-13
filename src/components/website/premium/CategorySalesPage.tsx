@@ -235,8 +235,8 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
                     </>
                   )}
                 </div>
-                <figcaption className="flex items-center justify-between gap-3 px-3 pb-2 pt-3.5">
-                  <span className="text-sm font-semibold text-white">{tk(`cat.${k}.view.${view.id}`)}</span>
+                <figcaption className="flex items-baseline justify-between gap-3 px-3 pb-2 pt-3.5">
+                  <span className="shrink-0 text-sm font-semibold text-white">{tk(`cat.${k}.view.${view.id}`)}</span>
                   <span className="text-right text-[13px] text-white/55">{tk(`cat.${k}.cap.${view.id}`)}</span>
                 </figcaption>
               </figure>
@@ -252,7 +252,7 @@ export function CategorySalesPage({ categoryKey }: { categoryKey: CategoryKey })
 
       {/* 7. FAQ */}
       <Section id="faq" title={tk("cat.page.faq")}>
-        <div className="mx-auto grid max-w-3xl gap-3">
+        <div className="grid max-w-3xl gap-3">
           {Array.from({ length: category.faqs }, (_, i) => (
             <details key={i} className="tk-faq tk-glass group rounded-2xl px-5 py-4 open:bg-white/[0.06]">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-left text-[15px] font-semibold text-white">

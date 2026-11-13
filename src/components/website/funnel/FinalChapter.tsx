@@ -45,7 +45,7 @@ export function FinalChapter() {
               </button>
             </div>
           </div>
-          <RevealMedia radius={0} className="min-h-[320px] lg:min-h-[560px]">
+          <RevealMedia radius={0} className="min-h-[440px] sm:min-h-[400px] lg:min-h-[560px]">
             <SceneReel />
           </RevealMedia>
         </div>

@@ -39,7 +39,7 @@ const OPTIONS: Option[] = [
   { key: "vm", Icon: Voicemail, title: { fr: "Boîte vocale → texte", en: "Voicemail → text" }, detail: { fr: "« Bonjour, je voudrais une soumission… »", en: "“Hi, I'd like a quote…”" }, x: 3, y: 58 },
   { key: "sms", Icon: MessageSquareText, title: { fr: "Textos et MMS", en: "Texts and MMS" }, detail: { fr: "Depuis votre numéro d'affaires", en: "From your business number" }, x: 6, y: 83 },
   { key: "video", Icon: Video, title: { fr: "Réunion vidéo", en: "Video meeting" }, detail: { fr: "4 personnes · lien invité", en: "4 people · guest link" }, x: 70, y: 4 },
-  { key: "ai", Icon: Sparkles, title: { fr: "Réceptionniste IA", en: "AI receptionist" }, detail: { fr: "Répond, trie, prend le message", en: "Answers, sorts, takes the message" }, x: 74, y: 31 },
+  { key: "ai", Icon: Sparkles, title: { fr: "Réceptionniste IA", en: "AI receptionist" }, detail: { fr: "Répond, trie, prend le message", en: "Answers, sorts, takes the message" }, x: 73, y: 31 },
   { key: "forward", Icon: PhoneForwarded, title: { fr: "Renvoi d'appels", en: "Call forwarding" }, detail: { fr: "Vers votre cellulaire ou l'équipe", en: "To your cell or the team" }, x: 71, y: 58 },
   { key: "calendar", Icon: CalendarCheck, title: { fr: "Google Agenda", en: "Google Calendar" }, detail: { fr: "Appels et résumés dans l'agenda", en: "Calls and summaries in the calendar" }, x: 68, y: 83 },
 ];
@@ -74,7 +74,7 @@ export function TelecomScene() {
 
   return (
     <div ref={ref} className="relative">
-      <span className="absolute bottom-0 left-1/2 z-[3] -translate-x-1/2 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60 lg:bottom-auto lg:top-[-6px]">{T.demo[lang]}</span>
+      <span className="absolute left-1/2 top-[-6px] z-[3] hidden -translate-x-1/2 rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60 lg:block">{T.demo[lang]}</span>
 
       {/* Desktop stage: phone in the middle, options around it, light running along the wires */}
       <div className="relative hidden h-[560px] lg:block">
@@ -105,6 +105,7 @@ export function TelecomScene() {
 
       {/* Mobile and tablet: phone, then the options in a grid */}
       <div className="lg:hidden">
+        <span className="mx-auto mb-4 block w-fit rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/60">{T.demo[lang]}</span>
         <Handset lang={lang} onCall={onCall} secs={secs} reduced={reduced} className="mx-auto" small />
         <div className="mt-6 grid grid-cols-2 gap-2.5 [&>*]:min-w-0">
           {OPTIONS.map((o, i) => (
@@ -143,7 +144,7 @@ function OptionCard({ o, lang, shown, active, style, className = "" }: { o: Opti
           ))}
         </div>
       ) : (
-        <p className="mt-1.5 truncate text-[12px] text-white/60">{o.detail[lang]}</p>
+        <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-white/65">{o.detail[lang]}</p>
       )}
     </div>
   );

@@ -1,0 +1,164 @@
+{
+  "ok": true,
+  "sourceSha256": {
+    "src/app/layout.tsx": "fb3973e6169c87421e0d70ab693afb639292a4971fe127e317e08e0dc25f08c8",
+    "src/app/(website)/layout.tsx": "619bfc3a2ddebb77ca56f2831eee62633f6d378930ba340f07315fdf3ee3ee03",
+    "src/app/oauth/layout.tsx": "c66a709ebcbf4ee8d9b3862e96740afae1745d920a8d31061ac350e100244f82",
+    "src/lib/website/home-fonts.ts": "be4bfb3e372e0e6c463270c5803e1394de680d863b929027f0db9b76dcb6d88a",
+    "package-lock.json": "812dbdf358823c8f7cfbd84b81b7dd126655e09342ede44a6952deed4fd57424"
+  },
+  "sourceGit": {
+    "head": "b853bb6b5ac2261d284f38cf83fc005ff100330b",
+    "trackedChanges": true
+  },
+  "buildId": "O8iUIdTLEm18s_1-O8dUf",
+  "families": 5,
+  "assets": [
+    {
+      "family": "Geist",
+      "emitted": "9ff55a8a9670220d-s.woff2",
+      "sha256": "19f9c92546aa300c312235e3125af1b81394d8db9a4bc4a425cd5b641d2d54e1",
+      "bytes": 29400,
+      "frenchGlyphCoverage": true
+    },
+    {
+      "family": "Geist Mono",
+      "emitted": "125b055e8623e92e-s.woff2",
+      "sha256": "684ad5b531f81d43c1e8c7038262d5db7cdc1f68006e04d6c7769efa8d33c8cc",
+      "bytes": 23128,
+      "frenchGlyphCoverage": true
+    },
+    {
+      "family": "Inter",
+      "emitted": "6c596dfcddeca1e9-s.p.woff2",
+      "sha256": "3100e775e8616cd2611beecfa23a4263d7037586789b43f035236a2e6fbd4c62",
+      "bytes": 48256,
+      "frenchGlyphCoverage": true
+    },
+    {
+      "family": "Montserrat",
+      "emitted": "a838cfed199e32f6-s.p.woff2",
+      "sha256": "06b16db7a969135d48d38c49183be7fb88d4452e2a3011957c7851941f4e4879",
+      "bytes": 37956,
+      "frenchGlyphCoverage": true
+    },
+    {
+      "family": "Instrument Serif",
+      "emitted": "e872e3f251959e82-s.woff2",
+      "sha256": "5eb09b5ac0e28b67c2f041c8ba6d244604ca0c0980d65912ab2d47fed84ddc31",
+      "bytes": 21032,
+      "frenchGlyphCoverage": true
+    },
+    {
+      "family": "Instrument Serif italic",
+      "emitted": "7cb8e1b9ab81be17-s.woff2",
+      "sha256": "5a51946dfffa82972bc98745359c46761515641fda557c25116459a9f83da4a7",
+      "bytes": 22128,
+      "frenchGlyphCoverage": true
+    }
+  ],
+  "emittedFontResponses": 6,
+  "originalLicenseResponses": 5,
+  "browserStates": [
+    {
+      "url": "/?lang=en",
+      "width": 1440,
+      "lang": "en",
+      "fonts": [
+        {
+          "label": "Geist",
+          "loaded": true
+        },
+        {
+          "label": "Geist Mono",
+          "loaded": true
+        },
+        {
+          "label": "Inter",
+          "loaded": true
+        },
+        {
+          "label": "Montserrat",
+          "loaded": true
+        },
+        {
+          "label": "Instrument Serif",
+          "loaded": true
+        }
+      ],
+      "preloadedFonts": [
+        "/_next/static/media/6c596dfcddeca1e9-s.p.woff2",
+        "/_next/static/media/a838cfed199e32f6-s.p.woff2"
+      ],
+      "fontRequests": [
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829"
+      ]
+    },
+    {
+      "url": "/?lang=fr",
+      "width": 390,
+      "lang": "fr",
+      "fonts": [
+        {
+          "label": "Geist",
+          "loaded": true
+        },
+        {
+          "label": "Geist Mono",
+          "loaded": true
+        },
+        {
+          "label": "Inter",
+          "loaded": true
+        },
+        {
+          "label": "Montserrat",
+          "loaded": true
+        },
+        {
+          "label": "Instrument Serif",
+          "loaded": true
+        }
+      ],
+      "preloadedFonts": [
+        "/_next/static/media/6c596dfcddeca1e9-s.p.woff2",
+        "/_next/static/media/a838cfed199e32f6-s.p.woff2"
+      ],
+      "fontRequests": [
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829",
+        "http://127.0.0.1:4829"
+      ]
+    },
+    {
+      "url": "/oauth/consent?lang=fr",
+      "width": 390,
+      "lang": "en",
+      "fonts": [
+        {
+          "label": "OAuth Montserrat",
+          "loaded": true
+        }
+      ],
+      "preloadedFonts": [
+        "/_next/static/media/a838cfed199e32f6-s.p.woff2"
+      ],
+      "fontRequests": [
+        "http://127.0.0.1:4829"
+      ]
+    }
+  ],
+  "pageErrors": [],
+  "externalFontRequests": 0,
+  "externalOtherRequestsBlocked": 0,
+  "databaseRuntimeVerified": false,
+  "productionVerified": false
+}

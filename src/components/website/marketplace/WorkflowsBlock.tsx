@@ -10,7 +10,7 @@ type Bi = { fr: string; en: string };
 const CLIENT: Bi[] = [
   { fr: "Publiez un projet ou choisissez un forfait", en: "Post a project or pick a package" },
   { fr: "On vous jumelle avec un pigiste", en: "Get matched with a freelancer" },
-  { fr: "Financez l’étape : le paiement est retenu", en: "Fund the milestone — held in escrow" },
+  { fr: "Financez l’étape : le paiement est retenu", en: "Fund the milestone: TAKATAK holds the payment" },
   { fr: "Révisez les livraisons et demandez des corrections", en: "Review deliveries and request revisions" },
   { fr: "Approuvez pour verser le paiement", en: "Approve to release payment" },
 ];
@@ -19,7 +19,7 @@ const FREELANCER: Bi[] = [
   { fr: "Proposez votre candidature à Groupe TAKATAK", en: "Apply to join the Groupe TAKATAK roster" },
   { fr: "Recevez des mandats de clients vérifiés", en: "Get matched with vetted client briefs" },
   { fr: "Livrez dans l’espace du projet", en: "Deliver in the project workspace" },
-  { fr: "Soyez payé à l’approbation", en: "Get paid automatically on approval" },
+  { fr: "Soyez payé à l’approbation", en: "Get paid once the client approves" },
   { fr: "Bâtissez une réputation vérifiée", en: "Build a verified reputation" },
 ];
 
@@ -32,8 +32,7 @@ const COPY = {
   become: { fr: "Devenir pigiste", en: "Become a freelancer" },
 } as const;
 
-// Same address as the site footer until a freelancer sign-up page exists.
-const BECOME_FREELANCER = "mailto:support@takatak.ca?subject=Devenir%20pigiste%20%C2%B7%20Become%20a%20freelancer";
+const BECOME_FREELANCER = "/freelancers";
 
 export function WorkflowsBlock() {
   const { lang } = useLanguage();

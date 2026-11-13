@@ -26,7 +26,7 @@ function markSeen() {
 }
 
 /** Pages where visitors are filling in a form: the invite never interrupts them. */
-const FORM_PAGES = ["/signup", "/register", "/login", "/otp", "/checkout", "/dashboard", "/marketplace/post-project", "/privacy-manager"];
+const FORM_PAGES = ["/signup", "/register", "/login", "/otp", "/checkout", "/dashboard", "/marketplace/post-project", "/privacy-manager", "/contact", "/freelancers", "/transfert"];
 
 function isTyping(): boolean {
   const active = document.activeElement;
@@ -65,6 +65,17 @@ export function AnimatedPromoInvite() {
   }, [open, mini]);
 
   const suppressed = isAuthenticated || FORM_PAGES.some((page) => pathname.startsWith(page));
+
+  // While the full card is open, bottom bars (the homepage plan dock) step aside so nothing overlaps.
+  const cardOpen = open && !mini && !suppressed;
+  useEffect(() => {
+    if (!cardOpen) return;
+    const root = document.documentElement;
+    root.dataset.promoOpen = "1";
+    return () => {
+      delete root.dataset.promoOpen;
+    };
+  }, [cardOpen]);
 
   useEffect(() => {
     if (suppressed || armed.current) return;

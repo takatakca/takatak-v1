@@ -6,8 +6,8 @@ import { ArrowRight, Bot, Check, ChevronDown, Coins, Headset, Loader2, Moon, Sea
 import { MODE_ICONS } from "@/components/website/funnel/TakbotSection";
 import { Aurora } from "@/components/website/funnel/primitives";
 import { money } from "@/components/website/premium/ui";
-import { TAKBOT_ACTIONS, TAKBOT_ENGINES, TAKBOT_MODES, TAKBOT_PACKS, MAX_PROMPT_CHARS, creditsFor, type TakbotMode } from "@/lib/takbot/catalog";
-import { engineBestFor, takbotCopy, takbotModeCopy } from "@/lib/takbot/copy";
+import { TAKBOT_ACTIONS, TAKBOT_ENGINES, TAKBOT_MODES, TAKBOT_PACKS, MAX_PROMPT_CHARS, creditsFor, takbotActionLabel, type TakbotMode } from "@/lib/takbot/catalog";
+import { engineBestFor, engineName, takbotCopy, takbotModeCopy } from "@/lib/takbot/copy";
 import { openLiveChat } from "@/lib/website/chat-provider";
 import { fill } from "@/lib/website/home-funnel";
 import { useHomeTheme } from "@/lib/website/home-theme";
@@ -80,7 +80,7 @@ export function TakbotStudio() {
   const modeDef = TAKBOT_MODES.find((m) => m.key === mode)!;
   const connected = useMemo(() => new Set(catalog?.engines.filter((e) => e.connected).map((e) => e.key) ?? []), [catalog]);
   const engines = TAKBOT_ENGINES.filter((e) => e.modes.includes(mode));
-  const filtered = engines.filter((e) => `${e.name} ${e.bestFor} ${engineBestFor(e.key, e.bestFor, lang)}`.toLowerCase().includes(query.trim().toLowerCase()));
+  const filtered = engines.filter((e) => `${e.name} ${engineName(e.name, lang)} ${e.bestFor} ${engineBestFor(e.key, e.bestFor, lang)}`.toLowerCase().includes(query.trim().toLowerCase()));
   const selected = engine === "auto" ? null : TAKBOT_ENGINES.find((e) => e.key === engine) ?? null;
   const session = catalog?.session;
   const balance = turns.findLast((t) => typeof t.balance === "number")?.balance ?? session?.balance ?? null;
@@ -236,7 +236,7 @@ export function TakbotStudio() {
                                 >
                                   <span className={`h-2 w-2 shrink-0 rounded-full ${live ? "bg-emerald-500" : "bg-[var(--hp-line)]"}`} aria-hidden />
                                   <span className="min-w-0 flex-1">
-                                    <span className="block text-[13px] font-semibold hp-ink">{e.name}</span>
+                                    <span className="block text-[13px] font-semibold hp-ink">{engineName(e.name, lang)}</span>
                                     {e.bestFor && <span className="block truncate text-[11.5px] hp-ink-3">{engineBestFor(e.key, e.bestFor, lang)}</span>}
                                   </span>
                                   {on && <Check size={14} className="hp-accent" aria-hidden />}
@@ -360,7 +360,7 @@ export function TakbotStudio() {
               return (
                 <li key={e.key} className="hp-raised rounded-2xl p-4">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold hp-ink">{e.name}</p>
+                    <p className="font-bold hp-ink">{engineName(e.name, lang)}</p>
                     <span
                       className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${
                         !catalog ? "border-[var(--hp-line)] hp-ink-3" : live ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200" : "border-[var(--hp-line)] hp-ink-2"
@@ -444,7 +444,7 @@ export function TakbotStudio() {
               <ul className="mt-4 grid gap-2">
                 {TAKBOT_ACTIONS.map((a) => (
                   <li key={a.key} className="flex items-baseline justify-between gap-3 border-b border-[var(--hp-line)] pb-2 text-[13px]">
-                    <span className="hp-ink-2">{a.label}</span>
+                    <span className="hp-ink-2">{takbotActionLabel(a, lang)}</span>
                     <span className="shrink-0 font-bold tabular-nums hp-ink">{a.credits}</span>
                   </li>
                 ))}

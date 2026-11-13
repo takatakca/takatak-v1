@@ -31,6 +31,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Workflow concurrency stays isolated by branch
+        run: node scripts/workflow-concurrency-guard.mjs
+
       - name: Set up Node 22.23.x
         uses: actions/setup-node@v5
         with:
@@ -47,6 +50,9 @@ jobs:
 
       - name: Required source files are tracked
         run: npm run check:sources
+
+      - name: Agent continuation documentation safeguards
+        run: npm run qa:handoff
 
       - name: Static RLS checks
         run: npm run qa:rls:static
@@ -122,6 +128,9 @@ jobs:
       - name: TAKATAK community content moderation safeguards
         run: npm run qa:content-contributions
 
+      - name: R2F opportunity lifecycle contract
+        run: npm run qa:r2f-opportunity-contract
+
       - name: Rentauto synchronization safeguards
         run: npm run qa:rentauto-sync
 
@@ -133,6 +142,9 @@ jobs:
 
       - name: CUBAFOOD master contract safeguards (offline, no live route)
         run: npm run qa:cubafood-contract
+
+      - name: TAKATAK master API bounded JSON safeguards
+        run: npx tsx --require ./scripts/register-server-only.cjs scripts/master-api-request-body-tests.ts
 
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
@@ -185,17 +197,29 @@ jobs:
       - name: QMAPS listings and reviews sync safeguards
         run: npm run qa:qmaps-sync
 
+      - name: Inventory validation, barcode encoding and permissions
+        run: npm run qa:inventory && npm run qa:inventory-labels
+
       - name: Access-control matrix (pure logic, no DB)
         run: npm run qa:access
 
+      - name: Workspace JSON request body bounds
+        run: npx tsx scripts/verify-write-request-stream.ts
+
       - name: TAKATAK ADS safeguards
         run: npm run qa:ads
+
+      - name: Public ADS endpoint limits and privacy checks
+        run: npx tsx scripts/ads-public-request-tests.ts
 
       - name: TAKATAK Growth Suite safeguards
         run: npm run qa:growth-suite
 
       - name: AI provider keys safeguards
         run: npm run qa:ai-provider-keys
+
+      - name: TAKATAK ADS CPC atomic budget safeguards
+        run: npx tsx scripts/ads-cpc-budget-policy-tests.ts
 
       - name: GROUPE TAKATAK billing (Facturations) safeguards
         run: npm run qa:billing
@@ -227,6 +251,9 @@ jobs:
 
       - name: Readiness report (static, no secrets)
         run: npm run qa:readiness
+
+      - name: Passive live readiness safety regression
+        run: node --test scripts/ops/live-readiness.test.mjs
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
@@ -399,6 +426,11 @@ jobs:
             echo "::error title=qa:tenant-isolation::$(grep -E 'FAIL |crashed|Error' /tmp/qa-tenant.log | tail -n 40 | tr '\n' ' | ')"
             exit "$status"
           fi
+
+      - name: Inventory isolation and concurrent stock adjustments on ephemeral DB
+        env:
+          NODE_ENV: development
+        run: npm run qa:inventory-db
 
       - name: Growth Suite backend (reputation + AI credits) on ephemeral DB
         env:

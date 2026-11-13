@@ -22,9 +22,53 @@ Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Owner directive of
 
 ---
 
+# TAKATAK V1 — Agent Handoff
+
+## 2026-11-12 — Claude (Anthropic): email code or Google only on takatak.ca
+
+Owner order: no phone sign-in on any website for now. `/login` and `/register` offer only an email code or Google; the SMS routes answer 410 unless `TAKATAK_PHONE_LOGIN=true`; the phone forms stay in the repo, switched off. Details, proof and what is not proven locally (profile sync needs the database): `docs/EMAIL_GOOGLE_ONLY_LOGIN.md`. This pauses the phone-first plan in `docs/mimt/README.md` until the owner says otherwise. Release stays with the coordinator workflow.
+
+## Repository and immutable baseline
+Repository takatakca/takatak-v1; initial main 4706dad5d6f7d361e28f54f0ea20a4e58896288c, integration base bae2445711f2aeb6c7a527759936bd7bf277ca6c. Re-query main before every push.
+
+## Last completed task and current task
+PR #235 reviewed and merged. Current isolated branch combines reviewed JSON stream bounds, ADS privacy/viewability/budget controls, passive readiness SHA proof, read-only Facturations visibility, R2F offline contract, historical research and continuity. Phone validation retains CA/NG/INTL. The scoped SEO receipt viewer (#196) is included, but backend migration/readiness and real receipts remain unverified. #242 functionality was already on main; only ancestry/journal reconciliation is needed.
+
+## Files modified
+Changes are confined to the reviewed PR files and additive conflict resolutions. Schema, migrations, package-lock and Dockerfile are unchanged from the integration base. The final pull request records the complete diff and source revision.
+
+## Verification performed
+Initial integrated typecheck and lint passed locally (Node24). Eleven passive-readiness/SDK Node tests and nine targeted stream/billing/master-API suites passed. Phone normalization regressions passed. Full final Node22 CI/build/database suites remain to verify; these local results are not production acceptance.
+
+## Known blockers
+Draft and active Social/Studio work stays separate; old Food Hub and infrastructure proposals require reconciliation with the current independent services. MIMT/SEO/R2F runtime dependencies require their own contracts, readiness and migration evidence. No external-provider delivery is claimed.
+
+## Exact next action
+Finish checks on the final integration, publish branch and verify exact CI, then merge under the owner's explicit sequential-release authorization. Observe native Coolify queue and prove runtime SHA plus strict readiness. Append the final receipt in issue #259 and the signed Drive journal.
+
+## Restart model
+No autonomous agent restart or schedule is created by this work. Resume from issue #259, current branch, WORKLOG and real CI/deployment state.
+
+Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
+
+---
+
+## Earlier notes preserved
+
 # REVEW review cockpit handoff — 2026-10-31
 
 Branch `codex/review-ecosystem`, based on main 35c62f0. Native V1 review cockpit, private unified feed, capability registry, existing AI queue action and tighter QMAPS reply ownership/acknowledgement. No migration or deployment. Main details and counterpart links: [REVEW_REVIEW_ECOSYSTEM.md](REVEW_REVIEW_ECOSYSTEM.md). Local 15 cockpit, 4 QMAPS bridge and 13 QMAPS sync checks passed; Prisma/Growth-wide checks blocked by engine-host 403. Gmail/Drive/scheduling tools unavailable; no 30-minute email task is active. CI on source 8c3cfb8 passed: https://github.com/takatakca/takatak-v1/actions/runs/41190779123 (real Prisma generation, tests, full typecheck/lint/build). Next: coordinator reviews the feature branch; no deployment by REVEW. — REVEW
+
+## Local-font build portability — 2026-11-04
+
+Branch `feature/cloud-local-fonts`, based on latest main `b853bb6` (PR248), fixes the recorded intermittent Google font fetch failures using the same five families from locked official Fontsource packages and `next/font/local`. Four loader modules preserve existing CSS variables, variable weights, both serif styles and the latest preload choices. Original font licenses are public assets. Authentication/master API behavior, schema and migrations are untouched.
+
+Full production build/TypeScript and105 static pages, standalone tsc, source/module checks, access/auth/identity, website SEO/theme pass. Lint0errors/12existingwarnings; targetedsource/verifier clean. Actual production-app HTTP/Chromium evidence verifies6 exact font assets,5 licenses and3 page states, with no externalfontrequests/pageerrors. See [local font record](LOCAL_FONTS.md) and [sanitized proof](proofs/2026-11-04/local-fonts/README.md).
+
+The normal Prisma checksum-stamp subcheck remains skipped under the genuine official types-only cloud bootstrap; DB/runtime/migration and production release are not proven. PR API is blocked by current environment policy; next is coordinator review/CI/PR release once access is available. No main merge or deployment performed.
+
+— signé : Codex build continuation @ Codex cloud · 2026-11-04
+
 ## Latest TAKATAK.ca homepage SEO handoff — 2026-11-02
 
 Signed: Codex SEO @ ChatGPT Work. Owner authorized full control and asked this agent to add itself for completion.
@@ -32,6 +76,25 @@ Signed: Codex SEO @ ChatGPT Work. Owner authorized full control and asked this a
 2026-11-02 | Codex SEO @ ChatGPT Work | main ← PR #244 | merged a429e391; full source CI 41409704490 PASS; not verified live | bilingual homepage SEO, schema/images and accurate catalog values; 00-SEO-CONTINUITY.md | next: authenticated Coolify deployment, live EN/FR HTTP acceptance, official social profiles/assets and new Semrush audit
 
 This section supersedes older homepage deployment-status notes below. Source and full CI are verified; production and a new external score are not. Secure Coolify sign-in was cancelled and was not retried. Read 00-SEO-CONTINUITY.md and docs/seo/SEMRUSH_AUDIT_2026-11-02.md. Preserve other active PRs. No credentials or permissions were changed.
+
+# TAKATAK-V1 — Facturations checkpoint, 2026-11-01
+
+This scope is independent from the SEO handoff below; do not overwrite the SEO agent's PR #182 work.
+
+## 2026-11-01 — Facturations in TAKATAK-V1: owner activation request
+
+**What exists on `main` already:** authenticated platform admin at `/dashboard/admin/billing`, central B2B invoice-request queue, signed client to `/integration/v1/*` (read-only discovery/drafts and OWNER-gated creation of **drafts only**), separately authorized customer invoice area at `/dashboard/invoices`, provider reconciliation and Stripe integration with separate gates. This does **not** mean the standalone Facturations service or Wave issuance is live. All resources are tenant-scoped; food receipts in QCMEV and Food Hub are distinct.
+
+**Increment in branch `fix/facturations-admin-activation-guard-20261101`:**
+- `src/lib/dashboard/dashboard-config.ts`: visible platform-owner/admin navigation `Facturations — Administration` → `/dashboard/admin/billing`. Existing sidebar `session.platformRole` gate and `admin/layout.tsx` server guard remain in force.
+- `src/app/dashboard/admin/billing/page.tsx`: a configured server-side environment is **not** green. Green requires successful signed remote capability, dashboard, and draft-list reads; status explicitly states read-only, not payment/issuance.
+- `scripts/verify-takatak-billing.ts`: regression checks for the admin guard, navigation, real-remote-read-only success semantics. `npm run qa:billing` is the relevant CI command.
+- `WORKLOG.md` and `docs/AGENT_HANDOFF.md`: checkpoint, exact pushed SHA and results.
+
+**Live activation still blocked:** `FACTURATIONS_INTEGRATION_ENABLED=1`, exact `FACTURATIONS_ORIGIN` over HTTPS, matching server-only `FACTURATIONS_INTEGRATION_HMAC_SECRET`, issuer/audience and Facturations `WAVE_BUSINESS_ID` mapping are required on **both server configurations**; project-private HTTPS, dedicated Facturations PostgreSQL, backup/restore and verified remote readiness must exist. Do not commit secret values or set NEXT_PUBLIC variables. The main Facturations branch remains independent with unmerged PRs #164/#166/#171. Its `FACTURATIONS_INTEGRATION_WRITES_ENABLED=1` additionally gates only draft creation and cannot be enabled without specific validation. Wave issuance, delivery, client emails, real Stripe payments/refunds remain disabled pending separate owner approval and GO/NO-GO. This work does not merge or deploy any repo and cannot verify a live Facturations release SHA.
+
+**Next:** inspect CI of the exact branch HEAD, repair any failed check, request coordinator review/merge. Only the authorized operator may set runtime flags/secrets and test isolated service-to-service calls. Then verify production `/dashboard/admin/billing` with actual owner session and Facturations read status, and the live TAKATAK release SHA.
+
 
 ---
 
@@ -145,3 +208,24 @@ This section supersedes older homepage deployment-status notes below. Source and
 - **Actual deployment:** SEO Coolify deployment fails, most recently due the missing GitHub environment `COOLIFY_API_URL`. Existing/non-billable DB with owner-approved SQL 0001→0002→0003, Coolify app+token+UUID+HTTPS and designated V1 coordinator merge remain necessary. Issue `takatakca/SEOTAKATAK#1`. No secrets, production migrations, or external orchestrator configured.
 - **Verifications:** backend `npm run check`, isolated Postgres 16 schema smoke, shell syntax and Docker build passed via CI. V1 CI tests Typecheck, lint, `qa:seo-free-tools`, ephemeral DB and webpack; check latest result for export UI. No real provider-backed queries/production data inspected.
 - **Next exact action:** inspect newest PR #182 CI run for export dashboard; correct any regression on its feature branch, then present green PR for coordinator review. Once infrastructure owner sets Coolify/database, validate real /ready, two-client paginated exports, DNS proof, GSC ingestion and exact deployed SHA. Independent backlog: formal retention rules and auditable erasure receipts.
+
+## 2026-10-16 — active handoff: SEOTAKATAK deletion receipts PR #196
+
+- **Last completed work:** on isolated feature branch `feat/seotakatak-deletion-receipts-20261016`, implemented manager-only SEO receipt viewer `src/app/dashboard/seo/deletions/page.tsx`, signed `getSeoDeletionReceipts` in `src/lib/seo/seotakatak-bridge.ts`, portfolio link in `src/app/dashboard/seo/portfolio/page.tsx`, and `scripts/verify-seo-free-tools.ts` contract tests. New draft PR #196 opened; no V1 main commit/merge/deploy performed by this agent.
+- **Last V1 code SHA:** `d691f021dc4ea9b5ba660415c962f543f87ee956`; PR #196 CI run `38883949951` in progress as initially checked. Typecheck passed, later lint/contract/build must be confirmed. The following docs commit moves branch SHA; inspect GitHub head. V1 prior SEO PR #182 was **merged** 2026-10-16, and V1 branch full CI `38844695036` passed before merger.
+- **Backend dependency:** `takatakca/SEOTAKATAK` introduced atomic site deletion and SQL `0004_site_deletion_receipts.sql`. Real PostgreSQL 16 CI on `02f2c0120f495a52b8ab42612676b8559ebb53d8` **passed** run `38883517261`. A follow-up privacy serializer code commit `b550b5700639ecfbf62df98649eca9b2843f856a` **passed** run `38884081285`. The backend docs commit after this is newer. SQL 0004 has NOT been migrated live.
+- **Permissions:** current TAKATAK session + selected `client_scoped` workspace and `manage_integrations`; backend JWT signed with `seo:manage`. Manager sees receipt ID/date/site ID and deleted SEO record counts only. The stored actor profile ID remains server-only. No TAKATAK master customer data deletion is implied.
+- **Files changed:** four V1 SEO code/contract files plus `WORKLOG.md` and all five required `docs/*` handoff files. Backend counterpart: `src/app.mjs`, `src/store.mjs`, site serializer/tests, SQL 0004 and schema smoke.
+- **Current task:** inspect PR #196 full CI to completion, correct any failing Next.js typecheck/lint/security/webpack test on its feature branch; then hand green PR to designated V1 coordinator for review. Do NOT merge or deploy to V1 main here.
+- **Production reality:** SEO Coolify job still fails due missing GitHub production `COOLIFY_API_URL`; existing/non-billable PostgreSQL and all four SQL migrations require owner approval. SEOTAKATAK issue #1 tracks this. Neither live SEO /ready nor client A/B deletion receipt smoke was verified. No secrets or autonomous restart orchestrator configured.
+- **Next exact action:** check newest V1 CI after this docs commit, repair any regression, then coordinator reviews PR. Separately ensure backend migrations and Coolify setup are approved and run staging-only deletion with receipt, two-tenant isolation, /ready and exact Git SHA checks before production claims. Retention and backup erasure policy needs owner/legal sign-off.
+
+## 2026-10-16 latest PR #196 validation checkpoint
+
+- **Last finished task:** all SEO deletion receipt manager UI/bridge/contract files and required docs are pushed on `feat/seotakatak-deletion-receipts-20261016`; PR #196 was changed from draft to **ready for V1 coordinator review** after full CI success. No V1 main merge or deployment performed by this agent.
+- **Last fully tested V1 branch SHA:** `90f8fdeef6ea499e99f796c3563cefa4f6c8a6e9`, GitHub CI **PASS** run `38884438610`. This additional docs-only handoff commit will advance the branch and run CI again; check the current branch head and latest CI before approving.
+- **V1 files:** `src/lib/seo/seotakatak-bridge.ts`, `src/app/dashboard/seo/portfolio/page.tsx`, `src/app/dashboard/seo/deletions/page.tsx`, `scripts/verify-seo-free-tools.ts`, `WORKLOG.md`, and required five docs. Typecheck, lint, SEO contracts, webpack and other full checks succeeded on the prior branch SHA.
+- **Backend dependency:** `takatakca/SEOTAKATAK` code/docs SHA `b41eae7f4981f325668065ce4fc4e7e3a5860710` passed CI `38885243320`, including SQL 0001→0004 in disposable PostgreSQL and privacy field/log tests. Backend Coolify job `38885295728` **failed** due missing production Coolify config. SQL 0004 and earlier migrations have **not** been applied to any approved live DB.
+- **Current task:** designated V1 coordinator reviews PR #196. Next coding agent should inspect latest CI first, correct any failing checks, and only act on authorized feature branches. No unapproved V1 main merges, server secrets or production migrations.
+- **Access and environment blockers:** Coolify HTTPS origin/app UUID/scoped token + health endpoint via GitHub environment `production`; owner-approved existing/non-billable PostgreSQL applying migration 0001→0004; matching V1 service-token signing key. Central TAKATAK identity must remain unchanged and tenant data isolated.
+- **Exact next action:** verify latest PR #196 CI after this handoff docs commit, hand green PR to coordinator, then conduct disposable-site receipt and cross-tenant staging tests once authorized infrastructure is running. Do not claim legal erasure certification or successful production deployment. An external coding-agent restart orchestrator was not installed or verified.

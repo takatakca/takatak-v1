@@ -55,14 +55,13 @@ export async function readJsonBody(
     };
   }
 
-  const contentType =
-    request.headers.get("content-type") ?? "";
+  const contentType = request.headers
+    .get("content-type")
+    ?.split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
 
-  if (
-    !contentType
-      .toLowerCase()
-      .startsWith("application/json")
-  ) {
+  if (contentType !== "application/json") {
     return {
       ok: false,
       status: 415,
@@ -70,44 +69,57 @@ export async function readJsonBody(
     };
   }
 
-  const declaredLength = Number(
-    request.headers.get("content-length") ?? "0",
-  );
+  const lengthHeader = request.headers.get("content-length");
+  if (lengthHeader !== null) {
+    const length = Number(lengthHeader);
+    if (!Number.isSafeInteger(length) || length < 0) {
+      return { ok: false, status: 400, message: "Invalid request size." };
+    }
+    if (length > maximumBytes) {
+      return { ok: false, status: 413, message: "The request is too large." };
+    }
+  }
 
-  if (
-    Number.isFinite(declaredLength) &&
-    declaredLength > maximumBytes
-  ) {
+  if (!request.body) {
     return {
       ok: false,
-      status: 413,
-      message: "The request is too large.",
+      status: 400,
+      message: "The request body could not be read.",
     };
   }
 
-  let rawBody: string;
-
+  // Restrict in-memory allocation while streaming, even if Content-Length
+  // was omitted or deliberately understated by a malicious client.
+  const reader = request.body.getReader();
+  const chunks: Buffer[] = [];
+  let receivedBytes = 0;
   try {
-    rawBody = await request.text();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      receivedBytes += value.byteLength;
+      if (receivedBytes > maximumBytes) {
+        await reader.cancel().catch(() => undefined);
+        return {
+          ok: false,
+          status: 413,
+          message: "The request is too large.",
+        };
+      }
+      chunks.push(Buffer.from(value));
+    }
   } catch {
     return {
       ok: false,
       status: 400,
-      message:
-        "The request body could not be read.",
+      message: "The request body could not be read.",
     };
+  } finally {
+    reader.releaseLock();
   }
 
-  if (
-    Buffer.byteLength(rawBody, "utf8") >
-    maximumBytes
-  ) {
-    return {
-      ok: false,
-      status: 413,
-      message: "The request is too large.",
-    };
-  }
+  const rawBody = Buffer.concat(chunks, receivedBytes).toString("utf8");
 
   try {
     return {

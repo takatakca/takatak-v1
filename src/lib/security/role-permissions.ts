@@ -17,6 +17,7 @@ export const WORKSPACE_ROLE_ORDER: RoleKey[] = [
 
 export const VIEW_PERMISSION_LABELS: Partial<Record<Permission, string>> = {
   view_dashboard: "Analytics view",
+  view_inventory: "Inventory view",
   view_social: "Social view",
   view_reports: "Reports view",
   view_team: "Team view",
@@ -26,6 +27,7 @@ export const VIEW_PERMISSION_LABELS: Partial<Record<Permission, string>> = {
 
 export const EDIT_PERMISSION_LABELS: Partial<Record<Permission, string>> = {
   manage_clients: "Clients",
+  manage_inventory: "Inventory products and stock",
   manage_brands: "Brands",
   manage_services: "Services",
   manage_integrations: "Integrations",
