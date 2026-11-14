@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createSupabaseServerClient, getSessionUser } from "@/lib/auth/supabase-server";
 import { originFromRequest } from "@/lib/config/app-origin";
-import { isTrustedRequestOrigin } from "@/lib/auth/trusted-origin";
 import {
   consentLanguage,
   consentLoginPath,
   consentPagePath,
   escapeConsentHtml,
+  isConsentPostAllowed,
   parseAuthorizationId,
   safeOAuthRedirectTarget,
   type ConsentLanguage,
@@ -41,7 +41,7 @@ const NOTICE = {
 
 export async function POST(request: NextRequest) {
   const language = consentLanguage(request.nextUrl.searchParams.get("lang"));
-  if (!isTrustedRequestOrigin(request) || !isSameSite(request)) {
+  if (!isConsentPostAllowed(request)) {
     return notice(language, "origin", 403);
   }
 
@@ -87,11 +87,6 @@ export async function POST(request: NextRequest) {
   const target = safeOAuthRedirectTarget(result.data.redirect_url);
   if (!target) return notice(chosenLanguage, "unsafe", 400, authorizationId);
   return seeOther(target);
-}
-
-function isSameSite(request: NextRequest): boolean {
-  const site = request.headers.get("sec-fetch-site");
-  return site === null || site === "same-origin";
 }
 
 async function readConsentForm(
