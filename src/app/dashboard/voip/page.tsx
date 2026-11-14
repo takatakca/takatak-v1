@@ -1,7 +1,9 @@
 // Business phone (VoIP) dashboard shell.
 // VoIP belongs to MIMT, an independent telecom app. TAKATAK only shows an
-// authorized overview, and this page has no MIMT client yet: every section
-// is an honest empty state. No phone numbers, calls or usage are invented.
+// authorized overview. Gate 3 (src/lib/voip/mimt-client.ts) reads the MIMT
+// address and access key from the server environment. voip-status.ts still
+// reports only not configured or configured and not tested. Assigned numbers
+// render only when that check returns them. Every other section stays empty.
 // Access is guarded by src/app/dashboard/layout.tsx like the sibling pages.
 import {
   AlertTriangle,
@@ -17,7 +19,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { getSessionUser } from "@/lib/auth/supabase-server";
 import { SUPPORT_EMAIL } from "@/lib/website/live-chat-config";
+import { probeMimtOverview } from "@/lib/voip/mimt-client";
 import { getVoipConnectionStatus } from "@/lib/voip/voip-status";
 
 export const dynamic = "force-dynamic";
@@ -75,8 +79,12 @@ const OWNER_STEPS = [
 const SALES_HREF =
   "mailto:" + SUPPORT_EMAIL + "?subject=" + encodeURIComponent("Business phone (VoIP)");
 
-export default function VoipOverviewPage() {
+export default async function VoipOverviewPage() {
   const status = getVoipConnectionStatus();
+  const session = await getSessionUser();
+  const globalUserId = session && typeof session.id === "string" ? session.id : "";
+  const overview = globalUserId ? await probeMimtOverview({ globalUserId }) : null;
+  const numbers = overview && overview.connected ? overview.numbers : [];
   const notConfigured = status.state === "not_configured";
   const BannerIcon = notConfigured ? AlertTriangle : Info;
 
@@ -137,7 +145,15 @@ export default function VoipOverviewPage() {
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200">
                   <Icon className="h-4 w-4" aria-hidden="true" />
                 </span>
-                <p className="text-sm text-slate-500">{EMPTY_STATE}.</p>
+                {s.title === "Phone numbers" && numbers.length > 0 ? (
+                  <ul className="space-y-1 text-sm text-slate-700">
+                    {numbers.map((n) => (
+                      <li key={n.phone_number_id}>{n.e164}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-slate-500">{EMPTY_STATE}.</p>
+                )}
               </CardBody>
             </Card>
           );
