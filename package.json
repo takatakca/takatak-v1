@@ -166,6 +166,7 @@
     "ahmv:team-feed:provision": "tsx --require ./scripts/register-server-only.cjs scripts/provision-ahmv-team-feed.ts",
     "qa:production-release": "node --test scripts/production-release.test.mjs scripts/production-rollback.test.mjs && python3 scripts/production-archive.test.py && node scripts/check-production-workflow.cjs",
     "qa:revers-experience": "tsx scripts/revers-experience-bridge-tests.ts",
+    "qa:knowledgeai-issuer": "tsx scripts/knowledgeai-issuer-tests.ts",
     "qa:review-import-model": "tsx scripts/review-import-tests.ts",
     "qa:review-import-service": "tsx --require ./scripts/register-server-only.cjs scripts/review-import-service-tests.ts",
     "qa:review-qmaps-contract": "tsx --require ./scripts/register-server-only.cjs scripts/review-qmaps-contract-tests.ts",
@@ -185,6 +186,7 @@
     "qa:inventory": "tsx scripts/inventory-tests.ts",
     "qa:inventory-db": "tsx --require ./scripts/register-server-only.cjs scripts/inventory-db-tests.ts",
     "qa:inventory-labels": "tsx scripts/inventory-label-tests.ts"
+
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
