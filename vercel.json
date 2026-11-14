@@ -3,6 +3,14 @@
     {
       "path": "/api/cron/social-sync-jobs",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/food-hub/cron/sync",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/food-hub/cron/reports",
+      "schedule": "5 12 * * *"
     }
   ]
 }

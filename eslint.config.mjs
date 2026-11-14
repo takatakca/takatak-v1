@@ -36,6 +36,19 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    // Food Hub parses untyped third-party payloads (Uber Eats, DoorDash,
+    // SkipTheDishes, Too Good To Go, Clover). Keep `any` visible as a warning
+    // there instead of failing CI; everything else stays strict.
+    files: [
+      "src/lib/food-hub/**/*.ts",
+      "src/app/api/food-hub/**/*.ts",
+      "src/app/dashboard/food-hub/**/*.tsx",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

@@ -118,6 +118,8 @@
     "qa:qmaps-sync": "tsx --require ./scripts/register-server-only.cjs scripts/verify-qmaps-sync.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",
     "qa:1lv-legacy-upgrade": "tsx scripts/ci-check-one-lv-legacy-upgrade.ts",
+    "qa:food-hub": "tsx --require ./scripts/register-server-only.cjs scripts/food-hub-tests.ts",
+    "food-hub:setup": "node scripts/food-hub-setup.mjs",
     "qa:ahmv-schedule-feed": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-schedule-feed-tests.ts",
     "qa:ahmv-team-games": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-team-games-tests.ts",
     "qa:ahmv-control-plane": "tsx --require ./scripts/register-server-only.cjs scripts/ahmv-managed-association-control-tests.ts",
@@ -191,6 +193,7 @@
     "qa:inventory-labels": "tsx scripts/inventory-label-tests.ts"
 
 
+
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",
@@ -204,6 +207,7 @@
     "@prisma/client": "6.19.3",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.110.2",
+    "fflate": "^0.8.3",
     "lucide-react": "^1.24.0",
     "next": "16.2.10",
     "pdf-lib": "1.17.1",
