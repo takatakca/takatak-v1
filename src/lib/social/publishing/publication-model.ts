@@ -16,6 +16,9 @@ export const SOCIAL_PUBLICATION_LEASE_MS = 120_000;
 export const SOCIAL_PUBLICATION_CAPTION_LIMIT = 8_000;
 /** Facebook Page feed posts accept up to 63,206 characters; keep a product cap. */
 export const FACEBOOK_FEED_MESSAGE_LIMIT = 8_000;
+/** Bluesky posts (app.bsky.feed.post) accept at most 300 graphemes and 3,000 UTF-8 bytes. */
+export const BLUESKY_POST_GRAPHEME_LIMIT = 300;
+export const BLUESKY_POST_BYTE_LIMIT = 3_000;
 /** Reconciliation looks this far back before the attempt start for a matching post. */
 export const SOCIAL_RECONCILE_LOOKBACK_MS = 10 * 60_000;
 
@@ -36,13 +39,32 @@ export type PublicationErrorCategory =
   | "not_configured"
   | "unknown";
 
+/** Provider connections that own a publishing adapter. */
+export type PublicationProvider = "meta" | "bluesky";
+/** SocialPost.platform values that can be published automatically. */
+export type PublicationPlatform = "facebook" | "bluesky";
+
+const PLATFORM_PROVIDER: Record<PublicationPlatform, PublicationProvider> = {
+  facebook: "meta",
+  bluesky: "bluesky",
+};
+
+/** The provider connection a publishable platform is delivered through, or null. */
+export function publicationProviderForPlatform(platform: string): PublicationProvider | null {
+  return platform === "facebook" || platform === "bluesky" ? PLATFORM_PROVIDER[platform] : null;
+}
+
+export function isPublishablePlatform(platform: string): platform is PublicationPlatform {
+  return publicationProviderForPlatform(platform) !== null;
+}
+
 export type PublicationReceipt = {
   version: typeof SOCIAL_PUBLICATION_RECEIPT_VERSION;
   attemptId: string;
   jobId: string | null;
   state: PublicationState;
-  provider: "meta";
-  platform: "facebook";
+  provider: PublicationProvider;
+  platform: PublicationPlatform;
   targetExternalId: string;
   contentHash: string;
   startedAt: string;
@@ -98,6 +120,46 @@ export function canonicalCaption(caption: string): string {
   return caption.replace(/\r\n/g, "\n").trim();
 }
 
+type GraphemeSegmenter = { segment: (input: string) => Iterable<unknown> };
+type GraphemeSegmenterCtor = new (locale?: string, options?: { granularity: "grapheme" }) => GraphemeSegmenter;
+
+/** User-perceived characters (what Bluesky counts), with a code-point fallback. */
+export function countGraphemes(text: string): number {
+  const SegmenterCtor = (Intl as unknown as { Segmenter?: GraphemeSegmenterCtor }).Segmenter;
+  if (SegmenterCtor) {
+    let count = 0;
+    for (const _segment of new SegmenterCtor(undefined, { granularity: "grapheme" }).segment(text)) count += 1;
+    return count;
+  }
+  return Array.from(text).length;
+}
+
+export function utf8ByteLength(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
+/**
+ * The exact text sent to Bluesky: the canonical caption, plus the link on its
+ * own line when the caption does not already contain it. Used for the request,
+ * the length check and reconciliation so all three agree.
+ */
+export function composeBlueskyPostText(input: { caption: string; link?: string | null }): string {
+  const caption = canonicalCaption(input.caption);
+  const link = input.link?.trim() ?? "";
+  if (!link || caption.includes(link)) return caption;
+  return caption ? `${caption}\n\n${link}` : link;
+}
+
+export function blueskyTextWithinLimits(text: string): boolean {
+  return countGraphemes(text) <= BLUESKY_POST_GRAPHEME_LIMIT && utf8ByteLength(text) <= BLUESKY_POST_BYTE_LIMIT;
+}
+
+/** The optional https link stored on a post (SocialPost.metadata.link). */
+export function readPostLink(metadata: unknown): string | null {
+  const link = record(metadata).link;
+  return typeof link === "string" && /^https:\/\/[^\s]{1,2000}$/.test(link) ? link : null;
+}
+
 /** Canonical bytes that identify one publication's content (hashed server-side). */
 export function publicationContentMaterial(input: {
   caption: string;
@@ -117,7 +179,7 @@ export function readPublicationReceipt(metadata: unknown): PublicationReceipt | 
   if (raw.version !== SOCIAL_PUBLICATION_RECEIPT_VERSION) return null;
   if (typeof raw.attemptId !== "string" || !raw.attemptId) return null;
   if (!STATES.includes(raw.state as PublicationState)) return null;
-  if (raw.provider !== "meta" || raw.platform !== "facebook") return null;
+  if (!isPublishablePlatform(String(raw.platform)) || raw.provider !== publicationProviderForPlatform(String(raw.platform))) return null;
   if (typeof raw.targetExternalId !== "string" || !raw.targetExternalId) return null;
   if (typeof raw.contentHash !== "string" || !/^[0-9a-f]{64}$/.test(raw.contentHash)) return null;
   if (!iso(raw.startedAt)) return null;
@@ -126,8 +188,8 @@ export function readPublicationReceipt(metadata: unknown): PublicationReceipt | 
     attemptId: raw.attemptId,
     jobId: typeof raw.jobId === "string" ? raw.jobId : null,
     state: raw.state as PublicationState,
-    provider: "meta",
-    platform: "facebook",
+    provider: raw.provider as PublicationProvider,
+    platform: raw.platform as PublicationPlatform,
     targetExternalId: raw.targetExternalId,
     contentHash: raw.contentHash,
     startedAt: raw.startedAt,
@@ -184,7 +246,7 @@ export function assessPublicationReadiness(input: {
   }
   if (post.status === "blocked_by_plan") return { ok: false, reason: "blocked_by_plan" };
   if (post.status !== "scheduled") return { ok: false, reason: "not_scheduled" };
-  if (post.platform !== "facebook") return { ok: false, reason: "unsupported_platform" };
+  if (!isPublishablePlatform(post.platform)) return { ok: false, reason: "unsupported_platform" };
   if (!post.socialAccountId) return { ok: false, reason: "no_account" };
   if (input.latestApprovalStatus && input.latestApprovalStatus !== "approved") {
     return { ok: false, reason: "approval_not_approved" };
@@ -194,7 +256,13 @@ export function assessPublicationReadiness(input: {
   }
   const caption = canonicalCaption(post.caption);
   if (!caption) return { ok: false, reason: "empty_caption" };
-  if (caption.length > FACEBOOK_FEED_MESSAGE_LIMIT) return { ok: false, reason: "caption_too_long" };
+  if (post.platform === "bluesky") {
+    if (!blueskyTextWithinLimits(composeBlueskyPostText({ caption, link: readPostLink(post.metadata) }))) {
+      return { ok: false, reason: "caption_too_long" };
+    }
+  } else if (caption.length > FACEBOOK_FEED_MESSAGE_LIMIT) {
+    return { ok: false, reason: "caption_too_long" };
+  }
   if (receipt?.state === "needs_reconnect") return { ok: false, reason: "needs_reconnect" };
   if (receipt?.state === "sending") {
     const started = Date.parse(receipt.startedAt);
@@ -312,10 +380,10 @@ export const BLOCK_REASON_LABELS: Record<PublicationBlockReason, { en: string; f
   blocked_by_plan: { en: "Your plan cannot publish this post yet.", fr: "Votre forfait ne permet pas encore cette publication." },
   approval_missing: { en: "An approval is required before publishing.", fr: "Une approbation est requise avant de publier." },
   approval_not_approved: { en: "The latest review did not approve this post.", fr: "La dernière révision n'a pas approuvé cette publication." },
-  no_account: { en: "Choose a connected Facebook Page first.", fr: "Choisissez d'abord une Page Facebook connectée." },
-  unsupported_platform: { en: "Only Facebook Pages can be published automatically for now.", fr: "Seules les Pages Facebook peuvent être publiées automatiquement pour l'instant." },
+  no_account: { en: "Choose a connected Facebook Page or Bluesky account first.", fr: "Choisissez d'abord une Page Facebook ou un compte Bluesky connecté." },
+  unsupported_platform: { en: "Only Facebook Pages and Bluesky accounts can be published automatically for now.", fr: "Seules les Pages Facebook et les comptes Bluesky peuvent être publiés automatiquement pour l'instant." },
   empty_caption: { en: "The caption is empty.", fr: "La légende est vide." },
-  caption_too_long: { en: "The caption is too long for Facebook.", fr: "La légende est trop longue pour Facebook." },
+  caption_too_long: { en: "The caption is too long for this network (Bluesky: 300 characters).", fr: "La légende est trop longue pour ce réseau (Bluesky : 300 caractères)." },
   publication_in_flight: { en: "A publication attempt is already running.", fr: "Une tentative de publication est déjà en cours." },
-  needs_reconnect: { en: "Reconnect the Facebook Page with publishing access.", fr: "Reconnectez la Page Facebook avec l'accès de publication." },
+  needs_reconnect: { en: "Reconnect the account with publishing access.", fr: "Reconnectez le compte avec l'accès de publication." },
 };

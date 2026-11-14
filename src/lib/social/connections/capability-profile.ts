@@ -129,7 +129,8 @@ const RULES: Record<string, Rule[]> = {
     { key: "analytics", scopes: ["tweet.read", "users.read"], built: "cost", label: ANALYTICS, whenBuilt: L("Profile and post reads.", "Lecture du profil et des publications."), whenMissing: L("Paid X reads are off until a budget is approved.", "Les lectures X payantes sont désactivées jusqu'à l'approbation d'un budget.") },
   ],
   bluesky: [
-    { key: "publish", scopes: [], built: "no", label: PUBLISH, whenBuilt: ROADMAP, whenMissing: L("Bluesky posting needs no extra scope; the adapter is planned next (free, no app review).", "La publication Bluesky n'exige aucune portée supplémentaire ; l'adaptateur est prévu ensuite (gratuit, sans revue).") },
+    { key: "publish", scopes: ["atproto", "transition:generic"], built: "yes", label: PUBLISH, whenBuilt: L("Text posts (300 characters, links as facets) on the connected account, verified with the record URI. No app review, no per-call cost.", "Publications texte (300 caractères, liens en facettes) sur le compte connecté, vérifiées avec l'URI de l'enregistrement. Sans revue d'application ni coût par appel."), whenMissing: L("Reconnect Bluesky and grant write access (atproto transition:generic).", "Reconnectez Bluesky et accordez l'accès en écriture (atproto transition:generic).") },
+    { key: "schedule", scopes: ["atproto", "transition:generic"], built: "yes", label: SCHEDULE, whenBuilt: L("TAKATAK's scheduler publishes approved posts at the chosen time.", "Le planificateur TAKATAK publie les publications approuvées à l'heure choisie."), whenMissing: L("Requires Bluesky write access.", "Nécessite l'accès en écriture Bluesky.") },
     { key: "analytics", scopes: [], built: "yes", label: ANALYTICS, whenBuilt: L("Profile statistics.", "Statistiques du profil."), whenMissing: L("Reconnect Bluesky.", "Reconnectez Bluesky.") },
   ],
   twitch: [
