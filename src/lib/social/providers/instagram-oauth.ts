@@ -10,10 +10,44 @@ export const INSTAGRAM_OAUTH_AUTHORIZE_HOST =
 export const INSTAGRAM_OAUTH_CALLBACK_PATH =
   "/api/social/callback/instagram";
 
+/** Default scopes for a new Instagram Login connection (identity + insights). */
 export const INSTAGRAM_OAUTH_START_SCOPES = [
   "instagram_business_basic",
   "instagram_business_manage_insights",
 ] as const;
+
+/** Scope that lets TAKATAK publish media on the professional account. */
+export const INSTAGRAM_OAUTH_PERMISSION_PUBLISH =
+  "instagram_business_content_publish" as const;
+
+/**
+ * Scopes requested by the "Grant publishing" action on an existing
+ * connection (incremental authorization). Instagram re-issues a token that
+ * carries the union of granted permissions, so the basic scopes stay listed.
+ */
+export const INSTAGRAM_OAUTH_PUBLISHING_SCOPES = [
+  ...INSTAGRAM_OAUTH_START_SCOPES,
+  INSTAGRAM_OAUTH_PERMISSION_PUBLISH,
+] as const;
+
+/**
+ * `instagram_basic_insights` is the default for every new connection and must
+ * stay so until the owner confirms Meta app review approved
+ * `instagram_business_content_publish`; `instagram_publishing` is only used
+ * by the explicit Grant publishing action on an existing connection.
+ */
+export type InstagramOAuthScopeSet =
+  | "instagram_basic_insights"
+  | "instagram_publishing";
+
+export function resolveInstagramOAuthScopes(
+  scopeSet: InstagramOAuthScopeSet = "instagram_basic_insights",
+): readonly string[] {
+  if (scopeSet === "instagram_publishing") {
+    return INSTAGRAM_OAUTH_PUBLISHING_SCOPES;
+  }
+  return INSTAGRAM_OAUTH_START_SCOPES;
+}
 
 function trimEnv(name: string): string | null {
   const value = process.env[name]?.trim();
@@ -93,6 +127,7 @@ export function getInstagramGraphApiVersion(): string {
 
 export function buildInstagramAuthorizationUrl(options: {
   state: string;
+  scopeSet?: InstagramOAuthScopeSet;
 }): string {
   if (!options.state.trim()) {
     throw new ServiceError(
@@ -107,7 +142,10 @@ export function buildInstagramAuthorizationUrl(options: {
   url.searchParams.set("redirect_uri", getInstagramOAuthRedirectUri());
   url.searchParams.set("state", options.state);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", INSTAGRAM_OAUTH_START_SCOPES.join(","));
+  url.searchParams.set(
+    "scope",
+    resolveInstagramOAuthScopes(options.scopeSet).join(","),
+  );
 
   if (url.origin !== INSTAGRAM_OAUTH_AUTHORIZE_HOST) {
     throw new ServiceError(

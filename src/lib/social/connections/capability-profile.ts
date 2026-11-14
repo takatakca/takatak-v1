@@ -23,7 +23,15 @@ export type CapabilityState =
   | "not_built"
   | "unsupported";
 
-export type CapabilityAction = "none" | "reconnect" | "select_account" | "takatak_roadmap" | "provider_review" | "owner_budget";
+export type CapabilityAction =
+  | "none"
+  | "reconnect"
+  | "select_account"
+  /** Incremental authorization on the existing connection (no disconnect). */
+  | "grant_scope"
+  | "takatak_roadmap"
+  | "provider_review"
+  | "owner_budget";
 
 export type ConnectionCapability = {
   key: CapabilityKey;
@@ -99,7 +107,8 @@ const RULES: Record<string, Rule[]> = {
     { key: "inbox", scopes: ["pages_manage_engagement"], built: "no", label: INBOX, whenBuilt: ROADMAP, whenMissing: L("Needs pages_manage_engagement and the TAKATAK inbox (planned).", "Nécessite pages_manage_engagement et la boîte de réception TAKATAK (prévue).") },
   ],
   instagram: [
-    { key: "publish", scopes: ["instagram_business_content_publish"], built: "no", label: PUBLISH, whenBuilt: ROADMAP, whenMissing: L("Needs instagram_business_content_publish (incremental authorization) and the Instagram publishing adapter (next).", "Nécessite instagram_business_content_publish (autorisation incrémentale) et l'adaptateur de publication Instagram (prochaine étape).") },
+    { key: "publish", scopes: ["instagram_business_content_publish"], built: "yes", label: PUBLISH, whenBuilt: L("Image and Reels posts (one public media URL) on the selected professional account, verified with the Instagram media id.", "Publications image et Reels (une URL média publique) sur le compte professionnel choisi, vérifiées avec l'identifiant média Instagram."), whenMissing: L("Use Grant publishing to add instagram_business_content_publish to this connection. Meta app review of that permission is an owner step; until approved, only app testers can grant it.", "Utilisez Accorder la publication pour ajouter instagram_business_content_publish à cette connexion. La revue Meta de cette permission est une étape du propriétaire ; avant l'approbation, seuls les testeurs de l'application peuvent l'accorder.") },
+    { key: "schedule", scopes: ["instagram_business_content_publish"], built: "yes", label: SCHEDULE, whenBuilt: L("TAKATAK's scheduler publishes approved Instagram posts at the chosen time.", "Le planificateur TAKATAK publie les publications Instagram approuvées à l'heure choisie."), whenMissing: L("Requires publishing access.", "Nécessite l'accès de publication.") },
     { key: "analytics", scopes: ["instagram_business_manage_insights"], built: "yes", label: ANALYTICS, whenBuilt: L("Account and media insights.", "Statistiques du compte et des médias."), whenMissing: L("Reconnect Instagram and grant insights.", "Reconnectez Instagram et accordez les statistiques.") },
     { key: "inbox", scopes: ["instagram_business_manage_messages", "instagram_business_manage_comments"], built: "no", label: INBOX, whenBuilt: ROADMAP, whenMissing: L("Needs messaging and comment permissions plus Meta app review.", "Nécessite les permissions de messages et commentaires et la revue d'application Meta.") },
   ],
@@ -196,9 +205,24 @@ export function describeConnectionCapabilities(input: CapabilityProfileInput): C
       reconnectRequired = true;
     } else if (!hasScopes(input.scopes, rule.scopes)) {
       state = "missing_scope";
-      action = "reconnect";
       missingScopes.forEach((scope) => missing.add(scope));
-      reconnectRequired = true;
+      if (input.provider === "instagram" && (rule.key === "publish" || rule.key === "schedule")) {
+        // Incremental authorization keeps the connection; no reconnect needed.
+        action = "grant_scope";
+      } else {
+        action = "reconnect";
+        reconnectRequired = true;
+      }
+    } else if ((rule.key === "publish" || rule.key === "schedule") && input.provider === "instagram") {
+      const account = selected.find((item) => item.platform === "instagram");
+      if (!account) {
+        state = "needs_reconnect";
+        action = "select_account";
+        detail = L("Select the Instagram professional account to publish to.", "Choisissez le compte professionnel Instagram de destination.");
+      } else {
+        state = "available";
+        detail = rule.whenBuilt;
+      }
     } else if ((rule.key === "publish" || rule.key === "schedule") && input.provider === "meta") {
       const page = selected.find((account) => account.platform === "facebook" && account.accountType === "facebook_page");
       if (!page) {
