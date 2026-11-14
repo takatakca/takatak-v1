@@ -24,11 +24,14 @@ import {
   type SocialPlatformKey,
 } from "@/components/social/navigation/social-platform-icon";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { PublicationActions } from "@/components/social/publication-actions";
 import { SOCIAL_BILLING_HREF } from "@/lib/billing/social/billing-banner-policy";
+import { PUBLICATION_STATE_LABELS } from "@/lib/social/publishing/publication-model";
 import { POST_STATUS_LABELS } from "@/lib/social/status";
-import type {
-  PlanningPageData,
-  PlanningPost,
+import {
+  groupPlanningPosts,
+  type PlanningPageData,
+  type PlanningPost,
 } from "@/lib/social/planning/planning-types";
 
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
@@ -37,7 +40,7 @@ const TIME_COL = 72;
 
 const TABS = [
   { id: "calendar", label: "Calendar", premium: false },
-  { id: "list", label: "List", premium: false },
+  { id: "list", label: "Scheduled & published", premium: false },
   { id: "library", label: "Posts library", premium: true },
   { id: "autolists", label: "Autolists", premium: false },
   { id: "deleted", label: "Deleted posts", premium: false },
@@ -174,9 +177,11 @@ function heatColor(dayIndex: number, hour: number): string {
 export function SocialPlanningView({
   data,
   canCreate,
+  canPublish = false,
 }: {
   data: PlanningPageData;
   canCreate: boolean;
+  canPublish?: boolean;
 }) {
   const searchParams = useSearchParams();
   const billingHref = withSocialPreview(SOCIAL_BILLING_HREF, searchParams);
@@ -615,9 +620,10 @@ export function SocialPlanningView({
         </>
       ) : tab === "list" ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <PlanningList
-            posts={scheduled}
-            empty="No scheduled posts in this workspace yet."
+          <ScheduledPublishedPanel
+            posts={visiblePosts}
+            now={now}
+            canPublish={canPublish}
           />
         </div>
       ) : tab === "library" ? (
@@ -676,8 +682,23 @@ export function SocialPlanningView({
   );
 }
 
+function chipMarker(post: PlanningPost): { symbol: string; className: string; title: string } | null {
+  const state = post.publication?.state ?? null;
+  if (post.status === "published" || state === "confirmed") {
+    return { symbol: "✓", className: "text-emerald-600", title: "Published (verified)" };
+  }
+  if (post.status === "failed" || state === "failed" || state === "needs_reconnect") {
+    return { symbol: "!", className: "text-rose-600", title: "Publication failed" };
+  }
+  if (state === "uncertain" || state === "sending") {
+    return { symbol: "…", className: "text-amber-600", title: "Publishing / awaiting verification" };
+  }
+  return null;
+}
+
 function CalendarPostChip({ post }: { post: PlanningPost }) {
   const platform = asPlatform(post.platform);
+  const marker = chipMarker(post);
   return (
     <div className="group/post relative mb-0.5">
       <div className="flex cursor-default items-center gap-1 rounded-md bg-white/90 px-1.5 py-1 shadow-sm">
@@ -687,6 +708,11 @@ function CalendarPostChip({ post }: { post: PlanningPost }) {
         <span className="truncate text-[11px] text-[#1d1d1f]">
           {post.caption || "Untitled post"}
         </span>
+        {marker ? (
+          <span className={`ml-auto shrink-0 text-[11px] font-bold ${marker.className}`} title={marker.title} aria-label={marker.title}>
+            {marker.symbol}
+          </span>
+        ) : null}
       </div>
       <span
         role="tooltip"
@@ -740,6 +766,105 @@ function PlanningList({
         );
       })}
     </ul>
+  );
+}
+
+function formatWhen(value: string | null): string {
+  if (!value) return "Unscheduled";
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function ScheduledPublishedPanel({
+  posts,
+  now,
+  canPublish,
+}: {
+  posts: PlanningPost[];
+  now: Date;
+  canPublish: boolean;
+}) {
+  const groups = groupPlanningPosts(posts, now);
+  const total = groups.upcoming.length + groups.attention.length + groups.published.length + groups.inProgress.length;
+  if (total === 0) {
+    return (
+      <EmptyPanel text="No scheduled or published posts yet. Approve a post, then choose Publish now or Schedule." />
+    );
+  }
+  const sections: Array<{ key: string; title: string; hint: string; posts: PlanningPost[] }> = [
+    { key: "attention", title: "Needs attention", hint: "Failed, waiting for a reconnection, or awaiting verification.", posts: groups.attention },
+    { key: "inProgress", title: "Publishing", hint: "Scheduled time reached; the worker is delivering or verifying.", posts: groups.inProgress },
+    { key: "upcoming", title: "Upcoming", hint: "Scheduled posts, earliest first.", posts: groups.upcoming },
+    { key: "published", title: "Published", hint: "Verified with the provider's post id.", posts: groups.published },
+  ];
+  return (
+    <div className="space-y-6 bg-white px-1 py-3">
+      {sections
+        .filter((section) => section.posts.length > 0)
+        .map((section) => (
+          <section key={section.key} aria-label={section.title}>
+            <h3 className="px-2 text-sm font-semibold text-[#1d1d1f]">
+              {section.title}
+              <span className="ml-2 text-xs font-normal text-slate-400">{section.posts.length}</span>
+            </h3>
+            <p className="px-2 text-xs text-slate-400">{section.hint}</p>
+            <ul className="mt-2 divide-y divide-slate-100">
+              {section.posts.map((post) => {
+                const platform = asPlatform(post.platform);
+                const state = post.publication?.state ?? null;
+                return (
+                  <li key={post.id} className="px-2 py-3">
+                    <div className="flex items-start gap-3">
+                      {platform ? (
+                        <SocialPlatformIcon platform={platform} className="mt-0.5 h-4 w-4 shrink-0" />
+                      ) : (
+                        <span className="w-4 shrink-0" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm text-[#1d1d1f]">{post.caption || "Untitled post"}</p>
+                        <p className="mt-0.5 text-xs text-slate-400">
+                          {POST_STATUS_LABELS[post.status] ?? post.status}
+                          {" · "}
+                          {post.status === "published" && post.publishedAt
+                            ? `Published ${formatWhen(post.publishedAt)}`
+                            : formatWhen(post.scheduledAt)}
+                          {state && state !== "confirmed" ? ` · ${PUBLICATION_STATE_LABELS[state].en}` : ""}
+                          {post.publication?.errorMessage ? ` — ${post.publication.errorMessage}` : ""}
+                        </p>
+                        {post.publication?.permalinkUrl ? (
+                          <a
+                            href={post.publication.permalinkUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-1 inline-block text-xs font-medium text-[#0a1f44] underline"
+                          >
+                            Open on {platform ?? post.platform}
+                          </a>
+                        ) : null}
+                        {canPublish && section.key !== "published" ? (
+                          <PublicationActions
+                            postId={post.id}
+                            postStatus={post.status}
+                            platform={post.platform}
+                            approvalStatus={post.approvalStatus}
+                            publication={post.publication}
+                            canReview={false}
+                            canPublish
+                          />
+                        ) : null}
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))}
+    </div>
   );
 }
 

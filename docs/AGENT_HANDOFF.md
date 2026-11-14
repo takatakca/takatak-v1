@@ -1,3 +1,23 @@
+# Scheduled & published view handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Follows the merged
+PR #258 (Facebook Page publishing engine, main `dea83395`).
+
+- Branch `p1/scheduled-published-view-20261113` → PR #292: calendar tab
+  "Scheduled & published" grouped by needs-attention / publishing / upcoming /
+  published with receipts, provider permalinks and inline publish, schedule and
+  cancel actions; chip markers on the week grid. No schema change.
+- Checks: `npm run qa:social-publishing` 23 pass; typecheck clean for changed files.
+- Parallel sessions (started by the owner on 2026-11-13, restarted after the
+  usage limit on 2026-11-14): Bluesky adapter, Instagram adapter, Studio PR #256
+  hardening. Each opens its own PR; the two adapters both touch
+  `src/lib/social/publishing/publication-jobs.ts`, so merge them one at a time.
+- Still owner steps: Coolify scheduled task calling `GET /api/cron/social-sync-jobs`
+  with the `CRON_SECRET` bearer every minute, and the first live Facebook Page
+  post to turn the engine VERIFIED LIVE. Production deploy stays manual and gated.
+
+---
+
 # Social publishing engine handoff — 2026-11-06
 
 Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Owner directive of
