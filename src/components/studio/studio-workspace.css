@@ -15,3 +15,7 @@
 .ts-app-card a>svg,.ts-footer a>svg,.ts-footer button>svg,.ts-subtle>svg,.ts-start-links a>svg,.ts-project-info em>svg,.ts-connected-heading a>svg{display:inline-block;vertical-align:-2px;margin-left:4px}.ts-sidebar-bottom a>span>svg,.ts-link-arrow>svg{display:block}.ts-cost-disclosure{line-height:1.9;margin-top:10px!important}.ts-main .ts-message{font-size:12px;line-height:1.8}.ts-job-status.needs-review{color:#e0be89;border-color:#755d3c}
 @media(max-width:900px){.ts-sidebar{transition:none!important}.ts-drawer-backdrop{transition:none}.ts-sidebar.is-open{left:0;right:auto;transform:none}.ts-sidebar:not(.is-open){visibility:hidden}}
 @media(max-width:600px){.ts-scene-stage{max-height:360px;overflow:auto}.ts-stage-caption{max-height:300px;overflow:auto;padding-bottom:12px;margin-bottom:42px}.ts-stage-time{position:absolute;bottom:13px;left:23px}.ts-agent-budget .ts-cost-disclosure{font-size:10px;color:#93a9c5}.ts-sidebar .ts-sidebar-brand .ts-wordmark{max-width:calc(100% - 45px)}}
+
+/* Language toggle (FR/EN) next to the credit chip. */
+.ts-lang{display:inline-flex;align-items:center;height:30px;padding:0 12px;border:1px solid var(--ts-line);border-radius:999px;background:transparent;color:#bfd1e7;font-size:11px;letter-spacing:.3px;transition:border-color .2s,color .2s}
+.ts-lang:hover{border-color:var(--ts-blue);color:var(--ts-text)}
