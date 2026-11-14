@@ -1,32 +1,26 @@
-# Instagram publishing handoff — 2026-11-14
+# Bluesky publishing adapter handoff — 2026-11-14
 
-Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Builds on PR #258 (merged at
-`dea83395`). Read `docs/SOCIAL_PUBLISHING_ENGINE.md` ("Instagram" section) first.
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC, side session). Builds on the
+merged Facebook publishing engine (PR #258, main `dea83395`); read
+`docs/SOCIAL_PUBLISHING_ENGINE.md` first.
 
-- Branch `claude/vigilant-panini-3acb80` → PR #294, from main `69837d2a`. No schema change,
-  no new dependency, no provider spend, tokens never in URLs or logs.
-- Delivered: `instagram_publishing` scope set and `startInstagramPublishingAuthorization`
-  (incremental authorization on the existing Instagram Login connection, selected account
-  preserved) with `POST /api/social/connections/[connectionId]/instagram/publishing` and a
-  "Grant publishing" button; `src/lib/social/publishing/instagram-publisher.ts` (container →
-  bounded status poll → `media_publish` → permalink, reconcile by caption since attempt start,
-  Meta error classification); `publication-model.ts` / `publication-jobs.ts` extended additively
-  for `platform = "instagram"` (`PUBLICATION_TARGETS` map, `resolvePublishTarget` switch,
-  `media_required` block reason, 2,200-character caption limit); capability profile reports
-  Instagram publish/schedule as `available` / `missing_scope` (action `grant_scope`) /
-  `select_account`; `npm run qa:social-publishing` now 36 checks, including worker dispatch
-  with a real encrypted credential under a test key for both Facebook and Instagram.
-- Fixed in passing: publication jobs stored `Job.provider = "meta"`, which is not a value of
-  the `Provider` enum; they now store `internal` like the Facebook Page sync job.
-- Not done: Meta app review of `instagram_business_content_publish` (owner step; until
-  approved only app testers can grant it), first live Instagram post, browser QA of the
-  Grant publishing button, Studio handoff defaulting to Instagram (explicit account choice
-  works), media hosting (the post must already carry one public https media URL).
-- Exact next step: owner submits the permission for app review or adds a tester account,
-  presses Grant publishing on the Instagram connection, approves one test post with one
-  public image URL and presses Publish now; confirm the receipt's media id and permalink on
-  the account. Record in WORKLOG and the Drive dossier. Then Threads/Bluesky adapters on the
-  same contract.
+- Branch `claude/awesome-poincare-bf9729` from main `dea83395`, PR #293. No schema change, no new
+  dependency (`@atproto/oauth-client-node` already in the lockfile), no provider spend.
+- Delivered: `src/lib/social/publishing/bluesky-publisher.ts` (text post with link facets,
+  verify by record URI, reconcile by author feed, 300-grapheme / 3,000-byte cap, injectable
+  transport, no token handling); `publication-jobs.ts` provider switch (`meta` | `bluesky`
+  receipts, Bluesky credential = DID + connected connection with `atproto transition:generic`,
+  DPoP session restored from the encrypted `BlueskyOAuthStore`, SDK imported lazily);
+  `publication-model.ts` platform map, grapheme helpers, bilingual labels; capability profile
+  Bluesky `publish`/`schedule` available; `social-connection-data.ts` counts the session store
+  as the Bluesky credential; publish buttons shown for Bluesky posts;
+  `npm run qa:social-publishing` 36 checks (14 new) green; `npm run typecheck` green.
+- Not done: live Bluesky publication (owner step: connect an owned account, approve and
+  publish one test post, confirm the `at://` URI opens on bsky.app); image blobs and link-card
+  embeds; `chooseHandoffAccount` still prefers Facebook Pages for Studio handoffs; the first
+  live Facebook post from PR #258 is also still pending.
+- Rules kept: V1 identity/billing authority, existing entitlement gates, no merge/deploy
+  claimed, nothing secret in the board or this file.
 
 ---
 
