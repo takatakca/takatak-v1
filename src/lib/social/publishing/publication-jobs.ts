@@ -16,6 +16,7 @@ import { evaluateWorkspaceWriteAccess } from "@/lib/billing/social/entitlement-g
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
+import { INSTAGRAM_OAUTH_PERMISSION_PUBLISH } from "@/lib/social/providers/instagram-oauth";
 import { META_OAUTH_PERMISSION_PUBLISH } from "@/lib/social/providers/meta-pages";
 import {
   buildSocialCredentialAad,
@@ -34,6 +35,11 @@ import {
   type BlueskyPublishTransport,
 } from "@/lib/social/publishing/bluesky-publisher";
 import {
+  publishInstagramMedia,
+  reconcileInstagramMedia,
+  type InstagramPublishTransport,
+} from "@/lib/social/publishing/instagram-publisher";
+import {
   SOCIAL_PUBLICATION_JOB_SOURCE,
   SOCIAL_PUBLICATION_LEASE_MS,
   SOCIAL_PUBLICATION_MAX_ATTEMPTS,
@@ -42,6 +48,7 @@ import {
   assessPublicationReadiness,
   canQueuePublication,
   isPublishablePlatform,
+  isVideoMediaUrl,
   publicationBackoffMs,
   publicationContentMaterial,
   publicationProviderForPlatform,
@@ -125,6 +132,10 @@ export type PublicationWorkerDependencies = {
    * tests inject a fake. Throws when the session cannot be restored.
    */
   blueskyTransportFor?: (target: BlueskyPublicationTarget) => Promise<BlueskyPublishTransport>;
+  /** Instagram Graph transport; same request shape as `transport`. */
+  instagramTransport?: InstagramPublishTransport;
+  /** Container status polling wait; tests inject an instant one. */
+  sleep?: (ms: number) => Promise<void>;
   now?: () => Date;
   /** Re-checks workspace write access at dispatch time. Default uses billing entitlements. */
   workspaceCanWrite?: (clientId: string) => Promise<{ allowed: true } | { allowed: false; message: string }>;
@@ -471,12 +482,14 @@ function readMediaUrls(value: unknown): string[] {
 
 type ResolvedCredential =
   | { ok: true; kind: "facebook"; pageId: string; accessToken: string }
+  | { ok: true; kind: "instagram"; igUserId: string; accessToken: string }
   | { ok: true; kind: "bluesky"; target: BlueskyPublicationTarget }
   | { ok: false; message: string };
 
 /** Pick the provider credential for the post's platform. */
 function resolveCredential(post: LoadedPost): ResolvedCredential {
   if (post.platform === "bluesky") return resolveBlueskyCredential(post);
+  if (post.platform === "instagram") return resolveInstagramCredential(post);
   return resolvePageCredential(post);
 }
 
@@ -506,6 +519,49 @@ function resolveBlueskyCredential(post: LoadedPost): ResolvedCredential {
     return { ok: false, message: "The Bluesky account identity is missing. Reconnect to continue." };
   }
   return { ok: true, kind: "bluesky", target: { clientId: connection.clientId, connectionId: connection.id, did } };
+}
+
+/** Resolve the user token for a connected, selected Instagram professional account (Instagram Login). */
+function resolveInstagramCredential(post: LoadedPost): ResolvedCredential {
+  const account = post.socialAccount;
+  if (!account || account.platform !== "instagram" || account.status !== "connected") {
+    return { ok: false, message: "The Instagram account is not connected." };
+  }
+  const connection = account.providerConnection;
+  if (connection && connection.provider === "meta") {
+    return { ok: false, message: "This Instagram account is linked through a Facebook Page. Connect it with Instagram Login to publish from TAKATAK." };
+  }
+  if (!connection || connection.provider !== "instagram" || connection.status !== "connected" || !connection.credential || connection.credential.status !== "active") {
+    return { ok: false, message: "Instagram authorization is missing. Reconnect to continue." };
+  }
+  if (connection.clientId !== post.clientId) {
+    return { ok: false, message: "The connection does not belong to this workspace." };
+  }
+  if (!connection.scopes.includes(INSTAGRAM_OAUTH_PERMISSION_PUBLISH)) {
+    return { ok: false, message: `Publishing permission (${INSTAGRAM_OAUTH_PERMISSION_PUBLISH}) was not granted. Use Grant publishing on the Instagram connection.` };
+  }
+  let payload;
+  try {
+    payload = decryptSocialTokenPayload(
+      {
+        ciphertext: connection.credential.encryptedPayload,
+        iv: connection.credential.iv,
+        authTag: connection.credential.authTag,
+        keyVersion: connection.credential.keyVersion,
+      },
+      buildSocialCredentialAad({ clientId: connection.clientId, connectionId: connection.id, provider: connection.provider }),
+    );
+  } catch {
+    return { ok: false, message: "Instagram credentials could not be read. Reconnect to continue." };
+  }
+  const igUserId = account.externalAccountId?.trim() ?? "";
+  if (!igUserId || !payload.accessToken?.trim()) {
+    return { ok: false, message: "The Instagram credential is missing. Reconnect to continue." };
+  }
+  if (payload.providerAccountId && payload.providerAccountId !== igUserId) {
+    return { ok: false, message: "The Instagram credential belongs to another account. Reconnect to continue." };
+  }
+  return { ok: true, kind: "instagram", igUserId, accessToken: payload.accessToken };
 }
 
 /** Resolve the Page credential for a connected, selected Facebook Page. */
@@ -621,8 +677,8 @@ export async function processSocialPublicationJob(
   const previous = readiness.receipt;
   const platform: PublicationPlatform = isPublishablePlatform(post.platform) ? post.platform : "facebook";
   const provider: PublicationProvider = publicationProviderForPlatform(platform) ?? "meta";
-  const providerLabel = platform === "bluesky" ? "Bluesky" : "Facebook";
-  const logStage = platform === "bluesky" ? "bluesky_post" : "facebook_feed";
+  const providerLabel = platform === "bluesky" ? "Bluesky" : platform === "instagram" ? "Instagram" : "Facebook";
+  const logStage = platform === "bluesky" ? "bluesky_post" : platform === "instagram" ? "instagram_media" : "facebook_feed";
 
   if (!credential.ok) {
     const receipt: PublicationReceipt = {
@@ -679,13 +735,20 @@ export async function processSocialPublicationJob(
     }
   }
 
+  const instagramTransport = dependencies.instagramTransport ?? (transport as InstagramPublishTransport | undefined);
+
   // Reconcile an ambiguous earlier attempt before sending anything new.
   if (previous && receiptNeedsReconciliation(previous) && previous.contentHash === contentHash) {
     const since = new Date(Date.parse(previous.startedAt) - SOCIAL_RECONCILE_LOOKBACK_MS);
     const found =
       credential.kind === "bluesky" && blueskyTransport
         ? await reconcileBlueskyPost({ did: credential.target.did, text: post.caption, link, since }, blueskyTransport)
-        : credential.kind === "facebook"
+        : credential.kind === "instagram"
+          ? await reconcileInstagramMedia(
+              { igUserId: credential.igUserId, accessToken: credential.accessToken, caption: post.caption, since },
+              instagramTransport,
+            )
+          : credential.kind === "facebook"
           ? await reconcileFacebookPagePost(
               { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, since },
               transport,
@@ -745,7 +808,19 @@ export async function processSocialPublicationJob(
   const result =
     credential.kind === "bluesky" && blueskyTransport
       ? await publishBlueskyPost({ did: credential.target.did, text: post.caption, link, createdAt: at() }, blueskyTransport)
-      : credential.kind === "facebook"
+      : credential.kind === "instagram"
+        ? await publishInstagramMedia(
+            {
+              igUserId: credential.igUserId,
+              accessToken: credential.accessToken,
+              caption: post.caption,
+              imageUrl: mediaUrls[0] && !isVideoMediaUrl(mediaUrls[0]) ? mediaUrls[0] : null,
+              videoUrl: mediaUrls[0] && isVideoMediaUrl(mediaUrls[0]) ? mediaUrls[0] : null,
+            },
+            instagramTransport,
+            dependencies.sleep,
+          )
+        : credential.kind === "facebook"
         ? await publishFacebookPagePost(
             { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, link, photoUrl: mediaUrls[0] ?? null },
             transport,

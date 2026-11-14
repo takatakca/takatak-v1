@@ -16,6 +16,8 @@ export const SOCIAL_PUBLICATION_LEASE_MS = 120_000;
 export const SOCIAL_PUBLICATION_CAPTION_LIMIT = 8_000;
 /** Facebook Page feed posts accept up to 63,206 characters; keep a product cap. */
 export const FACEBOOK_FEED_MESSAGE_LIMIT = 8_000;
+/** Instagram captions accept up to 2,200 characters. */
+export const INSTAGRAM_CAPTION_LIMIT = 2_200;
 /** Bluesky posts (app.bsky.feed.post) accept at most 300 graphemes and 3,000 UTF-8 bytes. */
 export const BLUESKY_POST_GRAPHEME_LIMIT = 300;
 export const BLUESKY_POST_BYTE_LIMIT = 3_000;
@@ -40,22 +42,41 @@ export type PublicationErrorCategory =
   | "unknown";
 
 /** Provider connections that own a publishing adapter. */
-export type PublicationProvider = "meta" | "bluesky";
+export type PublicationProvider = "meta" | "instagram" | "bluesky";
 /** SocialPost.platform values that can be published automatically. */
-export type PublicationPlatform = "facebook" | "bluesky";
+export type PublicationPlatform = "facebook" | "instagram" | "bluesky";
 
 const PLATFORM_PROVIDER: Record<PublicationPlatform, PublicationProvider> = {
   facebook: "meta",
+  instagram: "instagram",
   bluesky: "bluesky",
 };
 
 /** The provider connection a publishable platform is delivered through, or null. */
 export function publicationProviderForPlatform(platform: string): PublicationProvider | null {
-  return platform === "facebook" || platform === "bluesky" ? PLATFORM_PROVIDER[platform] : null;
+  return platform === "facebook" || platform === "instagram" || platform === "bluesky" ? PLATFORM_PROVIDER[platform] : null;
 }
 
 export function isPublishablePlatform(platform: string): platform is PublicationPlatform {
   return publicationProviderForPlatform(platform) !== null;
+}
+
+/** Caption limit enforced before dispatch, per platform. */
+export function publicationCaptionLimit(platform: PublicationPlatform): number {
+  return platform === "instagram" ? INSTAGRAM_CAPTION_LIMIT : FACEBOOK_FEED_MESSAGE_LIMIT;
+}
+
+/** Public https media URLs stored on the post (at most one is used today). */
+export function readPublicationMediaUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string" && /^https:\/\//.test(item)).slice(0, 1);
+}
+
+const VIDEO_URL = /\.(mp4|mov|m4v)(\?[^\s]*)?$/i;
+
+/** Whether a media URL should be published as a video (Instagram Reel). */
+export function isVideoMediaUrl(url: string): boolean {
+  return VIDEO_URL.test(url.trim());
 }
 
 export type PublicationReceipt = {
@@ -84,6 +105,8 @@ export type SocialPostLike = {
   platform: string;
   socialAccountId: string | null;
   metadata: unknown;
+  /** Optional: Instagram requires one public https media URL. */
+  mediaUrls?: unknown;
 };
 
 export const record = (value: unknown): Record<string, unknown> =>
@@ -226,6 +249,7 @@ export type PublicationBlockReason =
   | "unsupported_platform"
   | "empty_caption"
   | "caption_too_long"
+  | "media_required"
   | "publication_in_flight"
   | "needs_reconnect";
 
@@ -260,8 +284,11 @@ export function assessPublicationReadiness(input: {
     if (!blueskyTextWithinLimits(composeBlueskyPostText({ caption, link: readPostLink(post.metadata) }))) {
       return { ok: false, reason: "caption_too_long" };
     }
-  } else if (caption.length > FACEBOOK_FEED_MESSAGE_LIMIT) {
+  } else if (caption.length > publicationCaptionLimit(post.platform as PublicationPlatform)) {
     return { ok: false, reason: "caption_too_long" };
+  }
+  if (post.platform === "instagram" && readPublicationMediaUrls(post.mediaUrls).length === 0) {
+    return { ok: false, reason: "media_required" };
   }
   if (receipt?.state === "needs_reconnect") return { ok: false, reason: "needs_reconnect" };
   if (receipt?.state === "sending") {
@@ -380,10 +407,11 @@ export const BLOCK_REASON_LABELS: Record<PublicationBlockReason, { en: string; f
   blocked_by_plan: { en: "Your plan cannot publish this post yet.", fr: "Votre forfait ne permet pas encore cette publication." },
   approval_missing: { en: "An approval is required before publishing.", fr: "Une approbation est requise avant de publier." },
   approval_not_approved: { en: "The latest review did not approve this post.", fr: "La dernière révision n'a pas approuvé cette publication." },
-  no_account: { en: "Choose a connected Facebook Page or Bluesky account first.", fr: "Choisissez d'abord une Page Facebook ou un compte Bluesky connecté." },
-  unsupported_platform: { en: "Only Facebook Pages and Bluesky accounts can be published automatically for now.", fr: "Seules les Pages Facebook et les comptes Bluesky peuvent être publiés automatiquement pour l'instant." },
+  no_account: { en: "Choose a connected Facebook Page, Instagram account or Bluesky account first.", fr: "Choisissez d'abord une Page Facebook, un compte Instagram ou un compte Bluesky connecté." },
+  unsupported_platform: { en: "Only Facebook Pages, Instagram professional accounts and Bluesky accounts can be published automatically for now.", fr: "Seules les Pages Facebook, les comptes professionnels Instagram et les comptes Bluesky peuvent être publiés automatiquement pour l'instant." },
   empty_caption: { en: "The caption is empty.", fr: "La légende est vide." },
   caption_too_long: { en: "The caption is too long for this network (Bluesky: 300 characters).", fr: "La légende est trop longue pour ce réseau (Bluesky : 300 caractères)." },
+  media_required: { en: "Instagram needs one public image or video URL; text-only posts are not supported.", fr: "Instagram exige une URL d'image ou de vidéo publique ; les publications texte seules ne sont pas prises en charge." },
   publication_in_flight: { en: "A publication attempt is already running.", fr: "Une tentative de publication est déjà en cours." },
   needs_reconnect: { en: "Reconnect the account with publishing access.", fr: "Reconnectez le compte avec l'accès de publication." },
 };
