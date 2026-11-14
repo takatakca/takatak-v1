@@ -1,6 +1,108 @@
+# Bluesky publishing adapter handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC, side session). Builds on the
+merged Facebook publishing engine (PR #258, main `dea83395`); read
+`docs/SOCIAL_PUBLISHING_ENGINE.md` first.
+
+- Branch `claude/awesome-poincare-bf9729` from main `dea83395`, PR #293. No schema change, no new
+  dependency (`@atproto/oauth-client-node` already in the lockfile), no provider spend.
+- Delivered: `src/lib/social/publishing/bluesky-publisher.ts` (text post with link facets,
+  verify by record URI, reconcile by author feed, 300-grapheme / 3,000-byte cap, injectable
+  transport, no token handling); `publication-jobs.ts` provider switch (`meta` | `bluesky`
+  receipts, Bluesky credential = DID + connected connection with `atproto transition:generic`,
+  DPoP session restored from the encrypted `BlueskyOAuthStore`, SDK imported lazily);
+  `publication-model.ts` platform map, grapheme helpers, bilingual labels; capability profile
+  Bluesky `publish`/`schedule` available; `social-connection-data.ts` counts the session store
+  as the Bluesky credential; publish buttons shown for Bluesky posts;
+  `npm run qa:social-publishing` 36 checks (14 new) green; `npm run typecheck` green.
+- Not done: live Bluesky publication (owner step: connect an owned account, approve and
+  publish one test post, confirm the `at://` URI opens on bsky.app); image blobs and link-card
+  embeds; `chooseHandoffAccount` still prefers Facebook Pages for Studio handoffs; the first
+  live Facebook post from PR #258 is also still pending.
+- Rules kept: V1 identity/billing authority, existing entitlement gates, no merge/deploy
+  claimed, nothing secret in the board or this file.
+# Instagram publishing handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Builds on PR #258 (merged at
+`dea83395`). Read `docs/SOCIAL_PUBLISHING_ENGINE.md` ("Instagram" section) first.
+
+- Branch `claude/vigilant-panini-3acb80` → PR #294, from main `69837d2a`. No schema change,
+  no new dependency, no provider spend, tokens never in URLs or logs.
+- Delivered: `instagram_publishing` scope set and `startInstagramPublishingAuthorization`
+  (incremental authorization on the existing Instagram Login connection, selected account
+  preserved) with `POST /api/social/connections/[connectionId]/instagram/publishing` and a
+  "Grant publishing" button; `src/lib/social/publishing/instagram-publisher.ts` (container →
+  bounded status poll → `media_publish` → permalink, reconcile by caption since attempt start,
+  Meta error classification); `publication-model.ts` / `publication-jobs.ts` extended additively
+  for `platform = "instagram"` (`PUBLICATION_TARGETS` map, `resolvePublishTarget` switch,
+  `media_required` block reason, 2,200-character caption limit); capability profile reports
+  Instagram publish/schedule as `available` / `missing_scope` (action `grant_scope`) /
+  `select_account`; `npm run qa:social-publishing` now 36 checks, including worker dispatch
+  with a real encrypted credential under a test key for both Facebook and Instagram.
+- Fixed in passing: publication jobs stored `Job.provider = "meta"`, which is not a value of
+  the `Provider` enum; they now store `internal` like the Facebook Page sync job.
+- Not done: Meta app review of `instagram_business_content_publish` (owner step; until
+  approved only app testers can grant it), first live Instagram post, browser QA of the
+  Grant publishing button, Studio handoff defaulting to Instagram (explicit account choice
+  works), media hosting (the post must already carry one public https media URL).
+- Exact next step: owner submits the permission for app review or adds a tester account,
+  presses Grant publishing on the Instagram connection, approves one test post with one
+  public image URL and presses Publish now; confirm the receipt's media id and permalink on
+  the account. Record in WORKLOG and the Drive dossier. Then Threads/Bluesky adapters on the
+  same contract.
+
+
+---
+
+# Scheduled & published view handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Follows the merged
+PR #258 (Facebook Page publishing engine, main `dea83395`).
+
+- Branch `p1/scheduled-published-view-20261113` → PR #292: calendar tab
+  "Scheduled & published" grouped by needs-attention / publishing / upcoming /
+  published with receipts, provider permalinks and inline publish, schedule and
+  cancel actions; chip markers on the week grid. No schema change.
+- Checks: `npm run qa:social-publishing` 23 pass; typecheck clean for changed files.
+- Parallel sessions (started by the owner on 2026-11-13, restarted after the
+  usage limit on 2026-11-14): Bluesky adapter, Instagram adapter, Studio PR #256
+  hardening. Each opens its own PR; the two adapters both touch
+  `src/lib/social/publishing/publication-jobs.ts`, so merge them one at a time.
+- Still owner steps: Coolify scheduled task calling `GET /api/cron/social-sync-jobs`
+  with the `CRON_SECRET` bearer every minute, and the first live Facebook Page
+  post to turn the engine VERIFIED LIVE. Production deploy stays manual and gated.
+
+---
+
+# Social publishing engine handoff — 2026-11-06
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Owner directive of
+2026-11-06 (P0: Social Manager + Studio, Metricool-level). Read
+`docs/SOCIAL_STUDIO_GAP_ASSESSMENT_2026-11-06.md` (current state with evidence) and
+`docs/SOCIAL_PUBLISHING_ENGINE.md` (design, rules, operations) first.
+
+- Branch `p0/social-publishing-engine-20261106` from main `52290cda`. No schema change.
+- Delivered: approval decisions, durable publication jobs on the existing `Job` model,
+  Facebook Page Graph adapter (feed/photo, verify, reconcile), publish-now / schedule /
+  cancel / receipt API, cron and ops-worker ticks, My tasks and Posts actions,
+  `npm run qa:social-publishing` (20 checks) in CI.
+- Not done: live Facebook publication (owner step on an authorized Page), production
+  cron trigger on Coolify, real-database lease test, other networks' publishing,
+  Studio PR #256 fixes listed in the gap assessment, FR copy on legacy Social pages.
+- Exact next step: owner enables the cron trigger and publishes one test post; then
+  P0-D (Studio draft → selected Facebook account → approve → publish) and the
+  per-connection capability profile (P0-B).
+- Rules kept: V1 identity/billing authority, `SOCIAL_CONNECTION_SETUP_CLIENT_IDS`
+  through existing gates, X paid API off, no dependency installation outside the
+  existing lockfile, no merge/deploy claimed.
+
+---
+
 # TAKATAK V1 — Agent Handoff
 
-Guardian audit, 2026-11-07T20:43Z. Live `https://takatak.ca/api/health/ready` was ok and served `6488d57e24885011034ff95b3578646f39d86ce6`, the same SHA as `main`. `www.takatak.ca` presented a Traefik default certificate and, once TLS errors were ignored, Coolify returned 503 because the domain is not configured. No hosting, schema, or deployment change was made. The public probe is `scripts/guardian-public-smoke.mjs`. Next: the owner attaches `www` to the existing Coolify application and issues a trusted certificate. Signed: TAKATAK GUARDIAN.
+## 2026-11-12 — Claude (Anthropic): email code or Google only on takatak.ca
+
+Owner order: no phone sign-in on any website for now. `/login` and `/register` offer only an email code or Google; the SMS routes answer 410 unless `TAKATAK_PHONE_LOGIN=true`; the phone forms stay in the repo, switched off. Details, proof and what is not proven locally (profile sync needs the database): `docs/EMAIL_GOOGLE_ONLY_LOGIN.md`. This pauses the phone-first plan in `docs/mimt/README.md` until the owner says otherwise. Release stays with the coordinator workflow.
 
 ## Repository and immutable baseline
 Repository takatakca/takatak-v1; initial main 4706dad5d6f7d361e28f54f0ea20a4e58896288c, integration base bae2445711f2aeb6c7a527759936bd7bf277ca6c. Re-query main before every push.
@@ -203,3 +305,16 @@ This scope is independent from the SEO handoff below; do not overwrite the SEO a
 - **Current task:** designated V1 coordinator reviews PR #196. Next coding agent should inspect latest CI first, correct any failing checks, and only act on authorized feature branches. No unapproved V1 main merges, server secrets or production migrations.
 - **Access and environment blockers:** Coolify HTTPS origin/app UUID/scoped token + health endpoint via GitHub environment `production`; owner-approved existing/non-billable PostgreSQL applying migration 0001→0004; matching V1 service-token signing key. Central TAKATAK identity must remain unchanged and tenant data isolated.
 - **Exact next action:** verify latest PR #196 CI after this handoff docs commit, hand green PR to coordinator, then conduct disposable-site receipt and cross-tenant staging tests once authorized infrastructure is running. Do not claim legal erasure certification or successful production deployment. An external coding-agent restart orchestrator was not installed or verified.
+
+## 2026-11-14 — Studio PR #256 audit hardening (PR #295)
+
+Claude Fable 5.1 (Claude Code desktop side session). Branch `fix/studio-audit-hardening-20261113`, cut from `feat/takatakstudio-v1-workspace-20261105` with `origin/main` dea83395 merged (WORKLOG/handoff conflicts: both sides kept). PR #295 targets the #256 branch so #256 stays the integration point. Flags `TAKATAK_STUDIO_ENABLED` / `TAKATAK_STUDIO_AGENT_ENABLED` unchanged (off). No schema migration, no dependency install, no deploy, no live verification.
+
+- **Done:** audit items a–i. Pure policy in `src/lib/studio/agent-jobs.ts` (job whitelist, blocking failures, operator reconcile metadata), `src/lib/studio/limits.ts` (2 open plans, 50 projects/24 h, balance precheck, in-memory limiter), `src/lib/studio/worker.ts` (`dispatchedAt` before the provider call, expired-lease recovery after 60 s grace, non-billable refusal list), `src/lib/studio/i18n.ts` (FR/EN strings, server-code mapping). Routes: `GET /api/studio/projects` sanitized + daily cap on POST, `GET|POST /api/cron/studio-agent` with error category, `POST /api/studio/generate` limiter, new `POST /api/studio/agent/reconcile` (`manage_jobs`). UI: language toggle, non-JSON guard, mapped errors, downloads via `exportableStudioDraft`, sanitized job shape.
+- **Evidence on 50cb7aa4:** `node --experimental-strip-types --test scripts/studio-*-tests.mjs` 86 pass / 0 fail across 11 files; `npx tsc --noEmit` has no Studio errors; eslint on changed files has 0 errors. CI step now runs every `scripts/studio-*-tests.mjs`. `scripts/studio-ui-browser-check.mjs` fixture updated but not run (Playwright absent locally).
+- **Known, not mine:** typecheck errors after the main merge in `src/lib/ai-providers/store.ts` (missing local `@anthropic-ai/sdk`), `scripts/inventory-*` and `src/lib/inventory/label-*` / `tools/etiquettes-web` (missing local `pdf-lib`), `src/app/api/team/invitations/route.ts` (Permission vs PermissionKey). `studioEnabled` now takes `Record<string, string | undefined>` because `process.env` failed the weak-type check on every Studio route after the merge.
+- **Next exact action:** coordinator reviews #295, merges into `feat/takatakstudio-v1-workspace-20261105`, then re-reads #256 as a whole. Run the browser check where Playwright exists. Docs: `docs/studio/COST_CONTROLS.md` (limits and recovery section) and `docs/studio/TAKATAKSTUDIO_INTEGRATION.md` (routes list) describe the new behaviour.
+
+## 2026-11-05 — Studio premium workspace and cost-control continuation
+
+STUDIO-ENGINE — Codex. Continue draft PR #256 from saved `48d028a`; latest scope/evidence in `docs/studio/PREMIUM_COST_SAFETY_CHECKPOINT.md` and `docs/studio/COST_CONTROLS.md`. Premium rail/mobile drawer, server-searched tenant Library, transactional scene/handoff checks, one-attempt worker holds, stable request/model/token evidence and bounded retail costPlan quotes. Source remains disabled, with no schedule, deployment, migration or provider spend. Preserve KnowledgeAI #194/#195. 70 focused V1 checks plus existing TAK-TAK routing/trial suites pass using existing tools; actual PostgreSQL/authenticated tenant races and full framework checks remain unverified. Companion Academy #2 teaches manual SONGER, recovery and retail/supplier economics. Exact source receipts follow in the Studio dossier and PR descriptions.
