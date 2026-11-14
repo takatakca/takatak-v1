@@ -70,7 +70,7 @@ Rules enforced in code (`publication-model.ts`, re-checked under the job lease i
 
 ## Verification labels
 
-- `npm run qa:social-publishing` — 36 checks (pure model, Facebook and Instagram adapters with a fake transport, worker with an in-memory DB and a real encrypted credential under a test key, source guards). In CI after the AI Studio handoff step.
+- `npm run qa:social-publishing` — 37 checks (pure model, Facebook and Instagram adapters with a fake transport, worker with an in-memory DB and a real encrypted credential under a test key, source guards). In CI after the AI Studio handoff step.
 - `npm run typecheck` on the branch — see WORKLOG for the exact result.
 - VERIFIED LIVE: **not yet** (Facebook and Instagram). Required owner steps: (1) Facebook: on an authorized Page connected with publishing access, approve one test post, press Publish now, confirm `remotePostId` and `permalinkUrl` match the post on the Page. (2) Instagram: submit `instagram_business_content_publish` for Meta app review (or test with an app tester account), press Grant publishing on the Instagram connection, approve one test post with one public image URL, press Publish now, confirm the media id and permalink in the receipt match the post on the account. Record both in WORKLOG and the Drive dossier.
 
