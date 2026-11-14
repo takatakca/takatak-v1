@@ -1,3 +1,35 @@
+# Instagram publishing handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Builds on PR #258 (merged at
+`dea83395`). Read `docs/SOCIAL_PUBLISHING_ENGINE.md` ("Instagram" section) first.
+
+- Branch `claude/vigilant-panini-3acb80` (worktree) from main `69837d2a`. No schema change,
+  no new dependency, no provider spend, tokens never in URLs or logs.
+- Delivered: `instagram_publishing` scope set and `startInstagramPublishingAuthorization`
+  (incremental authorization on the existing Instagram Login connection, selected account
+  preserved) with `POST /api/social/connections/[connectionId]/instagram/publishing` and a
+  "Grant publishing" button; `src/lib/social/publishing/instagram-publisher.ts` (container →
+  bounded status poll → `media_publish` → permalink, reconcile by caption since attempt start,
+  Meta error classification); `publication-model.ts` / `publication-jobs.ts` extended additively
+  for `platform = "instagram"` (`PUBLICATION_TARGETS` map, `resolvePublishTarget` switch,
+  `media_required` block reason, 2,200-character caption limit); capability profile reports
+  Instagram publish/schedule as `available` / `missing_scope` (action `grant_scope`) /
+  `select_account`; `npm run qa:social-publishing` now 36 checks, including worker dispatch
+  with a real encrypted credential under a test key for both Facebook and Instagram.
+- Fixed in passing: publication jobs stored `Job.provider = "meta"`, which is not a value of
+  the `Provider` enum; they now store `internal` like the Facebook Page sync job.
+- Not done: Meta app review of `instagram_business_content_publish` (owner step; until
+  approved only app testers can grant it), first live Instagram post, browser QA of the
+  Grant publishing button, Studio handoff defaulting to Instagram (explicit account choice
+  works), media hosting (the post must already carry one public https media URL).
+- Exact next step: owner submits the permission for app review or adds a tester account,
+  presses Grant publishing on the Instagram connection, approves one test post with one
+  public image URL and presses Publish now; confirm the receipt's media id and permalink on
+  the account. Record in WORKLOG and the Drive dossier. Then Threads/Bluesky adapters on the
+  same contract.
+
+---
+
 # Social publishing engine handoff — 2026-11-06
 
 Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Owner directive of

@@ -31,7 +31,10 @@ import {
   buildMetaAuthorizationUrl,
   type MetaOAuthScopeSet,
 } from "@/lib/social/providers/meta-oauth";
-import { buildInstagramAuthorizationUrl } from "@/lib/social/providers/instagram-oauth";
+import {
+  buildInstagramAuthorizationUrl,
+  type InstagramOAuthScopeSet,
+} from "@/lib/social/providers/instagram-oauth";
 import { buildThreadsAuthorizationUrl } from "@/lib/social/providers/threads-oauth";
 import { buildTikTokAuthorizationUrl } from "@/lib/social/providers/tiktok-oauth";
 import {
@@ -101,6 +104,7 @@ function buildAuthorizationUrl(options: {
   state: string;
   codeChallenge: string;
   metaScopeSet?: MetaOAuthScopeSet;
+  instagramScopeSet?: InstagramOAuthScopeSet;
   googlePurpose?: GoogleOAuthPurpose;
 }): string {
   if (options.provider === "meta") {
@@ -114,6 +118,7 @@ function buildAuthorizationUrl(options: {
   if (options.provider === "instagram") {
     return buildInstagramAuthorizationUrl({
       state: options.state,
+      scopeSet: options.instagramScopeSet,
     });
   }
 
@@ -214,6 +219,7 @@ function readAuthorizationUrlFromMetadata(
 function prepareOAuthAttemptMaterial(options: {
   provider: SocialConnectionProviderValue;
   metaScopeSet?: MetaOAuthScopeSet;
+  instagramScopeSet?: InstagramOAuthScopeSet;
   googlePurpose?: GoogleOAuthPurpose;
 }): {
   publicState: string;
@@ -251,6 +257,7 @@ function prepareOAuthAttemptMaterial(options: {
     state: publicState,
     codeChallenge,
     metaScopeSet: options.metaScopeSet,
+    instagramScopeSet: options.instagramScopeSet,
     googlePurpose: options.googlePurpose,
   });
 
@@ -939,6 +946,165 @@ export async function startLinkedInstagramAuthorization(options: {
     returnPath: options.returnPath,
     purpose: "facebook_linked_instagram",
   });
+}
+
+/**
+ * Incremental authorization for an existing Instagram Login connection:
+ * request `instagram_business_content_publish` on top of the scopes already
+ * granted, without disconnecting the account or discarding its credential.
+ *
+ * The callback stores the union of scopes on the connection
+ * (`completeSocialOAuthState`) and re-selects the same professional account.
+ * New connections keep the default scope set; this is the only path that
+ * asks for the publish permission until the owner confirms app review.
+ */
+export async function startInstagramPublishingAuthorization(options: {
+  clientId: string;
+  profileId: string;
+  connectionId: string;
+  returnPath: string;
+}): Promise<{
+  authorizationUrl: string;
+  expiresAt: string;
+  provider: "instagram";
+  mode: "grant_publishing";
+}> {
+  const prisma = requirePrisma();
+
+  await assertProfileCanManageSocialAccounts(prisma, {
+    clientId: options.clientId,
+    profileId: options.profileId,
+  });
+
+  await assertClientCanConnectSocial(prisma, options.clientId, {
+    provider: "instagram",
+    reconnect: true,
+  });
+
+  const readiness = getSocialProviderReadiness("instagram");
+  const definition = getSocialProviderDefinition("instagram");
+
+  if (!definition.implemented || !readiness.connectable) {
+    throw new ServiceError(
+      "unavailable",
+      "Instagram authorization is not available.",
+      { status: 503 },
+    );
+  }
+
+  const connection =
+    await prisma.socialProviderConnection.findFirst({
+      where: {
+        id: options.connectionId,
+        clientId: options.clientId,
+        provider: "instagram",
+        status: {
+          in: ["connected", "reauthorization_required"],
+        },
+      },
+      select: {
+        id: true,
+        businessBrandId: true,
+      },
+    });
+
+  if (!connection) {
+    throw new ServiceError(
+      "not_found",
+      "Connect Instagram before granting publishing access.",
+    );
+  }
+
+  const material = prepareOAuthAttemptMaterial({
+    provider: "instagram",
+    instagramScopeSet: "instagram_publishing",
+  });
+
+  await runSocialDbTransaction(
+    "social-oauth-instagram-publishing",
+    async (transaction) => {
+      await transaction.$executeRaw`
+        SELECT id
+        FROM social_provider_connections
+        WHERE id = ${connection.id}::uuid
+          AND "clientId" = ${options.clientId}::uuid
+        FOR UPDATE
+      `;
+
+      const locked =
+        await transaction.socialProviderConnection.findFirst({
+          where: {
+            id: connection.id,
+            clientId: options.clientId,
+            provider: "instagram",
+            status: {
+              in: ["connected", "reauthorization_required"],
+            },
+          },
+          select: { id: true, businessBrandId: true },
+        });
+
+      if (!locked) {
+        throw new ServiceError(
+          "not_found",
+          "Connect Instagram before granting publishing access.",
+        );
+      }
+
+      // Keep the connection and its selected account; only flag the pending grant.
+      await transaction.socialProviderConnection.update({
+        where: { id: locked.id },
+        data: {
+          lastErrorCode: "reauthorization_pending",
+          lastErrorMessage:
+            "Instagram publishing access is being requested. Finish the authorization to continue.",
+          lastErrorAt: new Date(),
+          createdByProfileId: options.profileId,
+        },
+      });
+
+      await transaction.socialOAuthState.updateMany({
+        where: {
+          clientId: options.clientId,
+          connectionId: locked.id,
+          status: { in: ["pending", "processing"] },
+        },
+        data: {
+          status: "cancelled",
+          consumedAt: new Date(),
+          errorMessage: "Superseded by the Instagram publishing grant.",
+        },
+      });
+
+      await insertOAuthAttempt(transaction, {
+        clientId: options.clientId,
+        businessBrandId: locked.businessBrandId,
+        connectionId: locked.id,
+        provider: "instagram",
+        profileId: options.profileId,
+        returnPath: options.returnPath,
+        publicState: material.publicState,
+        encryptedVerifier: material.encryptedVerifier,
+        authorizationUrl: material.authorizationUrl,
+        expiresAt: material.expiresAt,
+        preserveConnection: true,
+      });
+    },
+  );
+
+  logSocialOAuthEvent("social-oauth-instagram-publishing", {
+    stage: "attempt_created",
+    outcome: "pending_redirect",
+    provider: "instagram",
+    mode: "grant_publishing",
+  });
+
+  return {
+    authorizationUrl: material.authorizationUrl,
+    expiresAt: material.expiresAt.toISOString(),
+    provider: "instagram",
+    mode: "grant_publishing",
+  };
 }
 
 /**

@@ -16,6 +16,7 @@ import { evaluateWorkspaceWriteAccess } from "@/lib/billing/social/entitlement-g
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
+import { INSTAGRAM_OAUTH_PERMISSION_PUBLISH } from "@/lib/social/providers/instagram-oauth";
 import { META_OAUTH_PERMISSION_PUBLISH } from "@/lib/social/providers/meta-pages";
 import {
   buildSocialCredentialAad,
@@ -28,6 +29,11 @@ import {
   type FacebookPublishTransport,
 } from "@/lib/social/publishing/facebook-page-publisher";
 import {
+  publishInstagramMedia,
+  reconcileInstagramMedia,
+  type InstagramPublishTransport,
+} from "@/lib/social/publishing/instagram-publisher";
+import {
   SOCIAL_PUBLICATION_JOB_SOURCE,
   SOCIAL_PUBLICATION_LEASE_MS,
   SOCIAL_PUBLICATION_MAX_ATTEMPTS,
@@ -35,14 +41,20 @@ import {
   SOCIAL_RECONCILE_LOOKBACK_MS,
   assessPublicationReadiness,
   canQueuePublication,
+  isPublicationPlatform,
+  isVideoMediaUrl,
   publicationBackoffMs,
   publicationContentMaterial,
+  publicationProviderFor,
+  readPublicationMediaUrls,
   readPublicationReceipt,
   receiptNeedsReconciliation,
   record,
   withPublicationReceipt,
   type PublicationBlockReason,
   type PublicationErrorCategory,
+  type PublicationPlatform,
+  type PublicationProvider,
   type PublicationReceipt,
 } from "@/lib/social/publishing/publication-model";
 
@@ -103,7 +115,12 @@ export type PublicationDb = {
 
 export type PublicationWorkerDependencies = {
   db?: PublicationDb;
+  /** Facebook Graph transport (also used for Instagram when no dedicated one is given). */
   transport?: FacebookPublishTransport;
+  /** Instagram Graph transport; same request shape as `transport`. */
+  instagramTransport?: InstagramPublishTransport;
+  /** Container status polling wait; tests inject a no-op. */
+  sleep?: (ms: number) => Promise<void>;
   now?: () => Date;
   /** Re-checks workspace write access at dispatch time. Default uses billing entitlements. */
   workspaceCanWrite?: (clientId: string) => Promise<{ allowed: true } | { allowed: false; message: string }>;
@@ -176,7 +193,7 @@ export async function queueSocialPostPublication(
       approvalsRequired: latestApprovalStatus !== null,
     });
     if (!decision.ok) return { ok: false, reason: decision.reason } as const;
-    if (post.platform !== "facebook") return { ok: false, reason: "unsupported_platform" } as const;
+    if (!isPublicationPlatform(post.platform)) return { ok: false, reason: "unsupported_platform" } as const;
     if (!post.socialAccountId) return { ok: false, reason: "no_account" } as const;
 
     const existing = await tx.job.findFirst({
@@ -221,7 +238,7 @@ export async function queueSocialPostPublication(
         clientId: input.clientId,
         type: "approve_post",
         status: "queued",
-        provider: "meta",
+        provider: "internal",
         attempts: 0,
         maxAttempts: SOCIAL_PUBLICATION_MAX_ATTEMPTS,
         scheduledFor: input.scheduledFor,
@@ -427,10 +444,7 @@ async function loadPost(db: PublicationDb, clientId: string, socialPostId: strin
   return (row as LoadedPost | null) ?? null;
 }
 
-function readMediaUrls(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string" && /^https:\/\//.test(item)).slice(0, 1);
-}
+const readMediaUrls = readPublicationMediaUrls;
 
 function readLink(metadata: unknown): string | null {
   const link = record(metadata).link;
@@ -475,6 +489,65 @@ function resolvePageCredential(post: LoadedPost): { ok: true; pageId: string; ac
     return { ok: false, message: "The Page credential is missing. Select the Page again." };
   }
   return { ok: true, pageId: page.pageId, accessToken: page.accessToken };
+}
+
+/** Resolve the user token for a connected, selected Instagram professional account (Instagram Login). */
+function resolveInstagramCredential(post: LoadedPost): { ok: true; igUserId: string; accessToken: string } | { ok: false; message: string } {
+  const account = post.socialAccount;
+  if (!account || account.platform !== "instagram" || account.status !== "connected") {
+    return { ok: false, message: "The Instagram account is not connected." };
+  }
+  const connection = account.providerConnection;
+  if (connection && connection.provider === "meta") {
+    return { ok: false, message: "This Instagram account is linked through a Facebook Page. Connect it with Instagram Login to publish from TAKATAK." };
+  }
+  if (!connection || connection.provider !== "instagram" || connection.status !== "connected" || !connection.credential || connection.credential.status !== "active") {
+    return { ok: false, message: "Instagram authorization is missing. Reconnect to continue." };
+  }
+  if (connection.clientId !== post.clientId) {
+    return { ok: false, message: "The connection does not belong to this workspace." };
+  }
+  if (!connection.scopes.includes(INSTAGRAM_OAUTH_PERMISSION_PUBLISH)) {
+    return { ok: false, message: `Publishing permission (${INSTAGRAM_OAUTH_PERMISSION_PUBLISH}) was not granted. Use Grant publishing on the Instagram connection.` };
+  }
+  let payload;
+  try {
+    payload = decryptSocialTokenPayload(
+      {
+        ciphertext: connection.credential.encryptedPayload,
+        iv: connection.credential.iv,
+        authTag: connection.credential.authTag,
+        keyVersion: connection.credential.keyVersion,
+      },
+      buildSocialCredentialAad({ clientId: connection.clientId, connectionId: connection.id, provider: connection.provider }),
+    );
+  } catch {
+    return { ok: false, message: "Instagram credentials could not be read. Reconnect to continue." };
+  }
+  const igUserId = account.externalAccountId?.trim() ?? "";
+  if (!igUserId || !payload.accessToken?.trim()) {
+    return { ok: false, message: "The Instagram credential is missing. Reconnect to continue." };
+  }
+  if (payload.providerAccountId && payload.providerAccountId !== igUserId) {
+    return { ok: false, message: "The Instagram credential belongs to another account. Reconnect to continue." };
+  }
+  return { ok: true, igUserId, accessToken: payload.accessToken };
+}
+
+type PublishTarget =
+  | { platform: "facebook"; provider: "meta"; pageId: string; accessToken: string }
+  | { platform: "instagram"; provider: "instagram"; igUserId: string; accessToken: string };
+
+/** Per-platform credential resolution; additive switch for new adapters. */
+function resolvePublishTarget(post: LoadedPost, platform: PublicationPlatform): { ok: true; target: PublishTarget } | { ok: false; message: string } {
+  if (platform === "instagram") {
+    const credential = resolveInstagramCredential(post);
+    if (!credential.ok) return credential;
+    return { ok: true, target: { platform: "instagram", provider: "instagram", igUserId: credential.igUserId, accessToken: credential.accessToken } };
+  }
+  const credential = resolvePageCredential(post);
+  if (!credential.ok) return credential;
+  return { ok: true, target: { platform: "facebook", provider: "meta", pageId: credential.pageId, accessToken: credential.accessToken } };
 }
 
 async function writeReceipt(db: PublicationDb, post: { id: string; clientId: string; status: string; metadata: unknown }, receipt: PublicationReceipt, postData: Record<string, unknown>): Promise<boolean> {
@@ -542,21 +615,25 @@ export async function processSocialPublicationJob(
     return { outcome: "blocked", socialPostId, reason: "workspace_locked" };
   }
 
-  const credential = resolvePageCredential(post);
+  // Readiness already refused unsupported platforms.
+  const platform = post.platform as PublicationPlatform;
+  const provider: PublicationProvider = publicationProviderFor(platform);
+  const resolved = resolvePublishTarget(post, platform);
   const link = readLink(post.metadata);
   const mediaUrls = readMediaUrls(post.mediaUrls);
   const contentHash = publicationContentHash({ caption: post.caption, link, mediaUrls });
   const targetExternalId = post.socialAccount?.externalAccountId ?? "";
   const previous = readiness.receipt;
 
-  if (!credential.ok) {
+  if (!resolved.ok) {
+    const credential = resolved;
     const receipt: PublicationReceipt = {
       version: SOCIAL_PUBLICATION_RECEIPT_VERSION,
       attemptId: previous?.attemptId ?? randomUUID(),
       jobId: job.id,
       state: "needs_reconnect",
-      provider: "meta",
-      platform: "facebook",
+      provider,
+      platform,
       targetExternalId,
       contentHash,
       startedAt: at().toISOString(),
@@ -573,13 +650,22 @@ export async function processSocialPublicationJob(
     return { outcome: "blocked", socialPostId, reason: "needs_reconnect" };
   }
 
+  const target = resolved.target;
+  const instagramTransport = dependencies.instagramTransport ?? (transport as InstagramPublishTransport | undefined);
+
   // Reconcile an ambiguous earlier attempt before sending anything new.
   if (previous && receiptNeedsReconciliation(previous) && previous.contentHash === contentHash) {
     const since = new Date(Date.parse(previous.startedAt) - SOCIAL_RECONCILE_LOOKBACK_MS);
-    const found = await reconcileFacebookPagePost(
-      { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, since },
-      transport,
-    );
+    const found =
+      target.platform === "instagram"
+        ? await reconcileInstagramMedia(
+            { igUserId: target.igUserId, accessToken: target.accessToken, caption: post.caption, since },
+            instagramTransport,
+          )
+        : await reconcileFacebookPagePost(
+            { pageId: target.pageId, pageAccessToken: target.accessToken, message: post.caption, since },
+            transport,
+          );
     if (found.found === true) {
       const receipt: PublicationReceipt = {
         ...previous,
@@ -612,8 +698,8 @@ export async function processSocialPublicationJob(
     attemptId,
     jobId: job.id,
     state: "sending",
-    provider: "meta",
-    platform: "facebook",
+    provider,
+    platform,
     targetExternalId,
     contentHash,
     startedAt: at().toISOString(),
@@ -631,10 +717,25 @@ export async function processSocialPublicationJob(
   }
   const leasedPost = { ...post, metadata: withPublicationReceipt(post.metadata, sending) };
 
-  const result = await publishFacebookPagePost(
-    { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, link, photoUrl: mediaUrls[0] ?? null },
-    transport,
-  );
+  const result =
+    target.platform === "instagram"
+      ? await publishInstagramMedia(
+          {
+            igUserId: target.igUserId,
+            accessToken: target.accessToken,
+            caption: post.caption,
+            imageUrl: mediaUrls[0] && !isVideoMediaUrl(mediaUrls[0]) ? mediaUrls[0] : null,
+            videoUrl: mediaUrls[0] && isVideoMediaUrl(mediaUrls[0]) ? mediaUrls[0] : null,
+          },
+          instagramTransport,
+          dependencies.sleep,
+        )
+      : await publishFacebookPagePost(
+          { pageId: target.pageId, pageAccessToken: target.accessToken, message: post.caption, link, photoUrl: mediaUrls[0] ?? null },
+          transport,
+        );
+  const stage = target.platform === "instagram" ? "instagram_media" : "facebook_feed";
+  const networkLabel = target.platform === "instagram" ? "Instagram" : "Facebook";
 
   if (result.ok) {
     const receipt: PublicationReceipt = {
@@ -645,8 +746,8 @@ export async function processSocialPublicationJob(
       permalinkUrl: result.permalinkUrl,
     };
     await writeReceipt(db, leasedPost, receipt, { status: "published", publishedAt: at() });
-    await jobLog(db, job.id, "info", "Published on Facebook.", { remotePostId: result.remotePostId, verified: result.verified });
-    logSocialOAuthEvent("social-publish", { stage: "facebook_feed", outcome: "ok", provider: "meta", writeCreated: 1 });
+    await jobLog(db, job.id, "info", `Published on ${networkLabel}.`, { remotePostId: result.remotePostId, verified: result.verified });
+    logSocialOAuthEvent("social-publish", { stage, outcome: "ok", provider, writeCreated: 1 });
     await finalizeJob(db, job, { outcome: "completed" }, at());
     return { outcome: "published", socialPostId, remotePostId: result.remotePostId, replayed: false };
   }
@@ -662,8 +763,8 @@ export async function processSocialPublicationJob(
   const receipt: PublicationReceipt = { ...sending, state: "failed", errorCategory: result.category, errorMessage: result.message };
   const retry = result.retryable && job.attempts < job.maxAttempts;
   await writeReceipt(db, leasedPost, receipt, retry ? {} : { status: "failed" });
-  await jobLog(db, job.id, retry ? "warning" : "error", `Facebook refused the post (${result.category}).`);
-  logSocialOAuthEvent("social-publish", { stage: "facebook_feed", outcome: "error", provider: "meta", malformedCount: 1 });
+  await jobLog(db, job.id, retry ? "warning" : "error", `${networkLabel} refused the post (${result.category}).`);
+  logSocialOAuthEvent("social-publish", { stage, outcome: "error", provider, malformedCount: 1 });
   await finalizeJob(
     db,
     job,
