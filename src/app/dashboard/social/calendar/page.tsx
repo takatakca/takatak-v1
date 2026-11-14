@@ -23,6 +23,7 @@ export default async function SocialCalendarPage() {
     <SocialPlanningView
       data={data}
       canCreate={hasEffectivePermission(access, "create_content")}
+      canPublish={hasEffectivePermission(access, "approve_content")}
     />
   );
 }

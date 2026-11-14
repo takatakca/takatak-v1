@@ -39,6 +39,7 @@ import {
   Plus,
   Receipt,
   Rocket,
+  ScanBarcode,
   Search,
   Send,
   Server,
@@ -164,6 +165,7 @@ export const NAV_SECTIONS: NavSection[] = [
         ],
       },
       { label: "Business phone", href: "/dashboard/voip", icon: Phone },
+      { label: "SC4NNER", href: "/dashboard/sc4nner", icon: ScanBarcode },
     ],
   },
   {

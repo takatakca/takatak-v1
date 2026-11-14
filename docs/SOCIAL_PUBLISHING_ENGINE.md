@@ -60,7 +60,7 @@ Rules enforced in code (`publication-model.ts`, re-checked under the job lease i
 
 ## Verification labels
 
-- `npm run qa:social-publishing` — 36 checks (pure model, Facebook and Bluesky adapters with fake transports, the session transport with a fake `fetchHandler`, worker with in-memory DB for both providers including timeout → reconcile, capability profile, source guards). In CI after the AI Studio handoff step.
+- `npm run qa:social-publishing` — 37 checks (pure model, Facebook and Bluesky adapters with fake transports, the session transport with a fake `fetchHandler`, worker with in-memory DB for both providers including timeout → reconcile, capability profile, source guards). In CI after the AI Studio handoff step.
 - `npm run typecheck` on the branch — see WORKLOG for the exact result.
 - VERIFIED LIVE: **not yet** for either provider. Required owner steps: (Facebook) on an authorized Page connected with publishing access, approve one test post, press Publish now, then confirm the `remotePostId` and `permalinkUrl` in the receipt match the post on the Page; (Bluesky) connect an owned Bluesky account (`BLUESKY_OAUTH_PRIVATE_JWK` set, scope `atproto transition:generic`), create a post with `platform = bluesky` on that account, approve it, press Publish now, then confirm the receipt's `remotePostId` (`at://…`) opens at the `permalinkUrl` on bsky.app. Record both in WORKLOG and the Drive dossier.
 
