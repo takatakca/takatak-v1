@@ -1,7 +1,7 @@
 # Social publishing engine — Facebook Pages and Bluesky
 
 2026-11-06 — Claude Fable 5.1 @ Claude Code desktop (owner PC) — branch `p0/social-publishing-engine-20261106` (merged, PR #258)
-2026-11-14 — Claude Fable 5.1 @ Claude Code desktop (owner PC, side session) — Bluesky adapter on the same contract (branch `claude/awesome-poincare-bf9729`)
+2026-11-14 — Claude Fable 5.1 @ Claude Code desktop (owner PC, side session) — Bluesky adapter on the same contract (branch `claude/awesome-poincare-bf9729`, PR #293)
 
 Owner directive (2026-11-06, P0-C): deliver one reliable, verified official-provider
 publishing path with scheduling, durable records and safe reconciliation, on top of

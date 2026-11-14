@@ -4,7 +4,7 @@ Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC, side session). Builds 
 merged Facebook publishing engine (PR #258, main `dea83395`); read
 `docs/SOCIAL_PUBLISHING_ENGINE.md` first.
 
-- Branch `claude/awesome-poincare-bf9729` from main `dea83395`. No schema change, no new
+- Branch `claude/awesome-poincare-bf9729` from main `dea83395`, PR #293. No schema change, no new
   dependency (`@atproto/oauth-client-node` already in the lockfile), no provider spend.
 - Delivered: `src/lib/social/publishing/bluesky-publisher.ts` (text post with link facets,
   verify by record URI, reconcile by author feed, 300-grapheme / 3,000-byte cap, injectable
