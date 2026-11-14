@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   BLOCK_REASON_LABELS,
   PUBLICATION_STATE_LABELS,
+  isPublishablePlatform,
   type PublicationBlockReason,
   type PublicationState,
 } from "@/lib/social/publishing/publication-model";
@@ -48,7 +49,7 @@ const COPY = {
     changesRequested: "Changes requested. The post is back in drafts.",
     scheduled: "Scheduled. It will publish automatically.",
     cancelled: "Schedule cancelled.",
-    onlyFacebook: "Automatic publishing is available for Facebook Pages. Other networks: coming soon.",
+    onlyFacebook: "Automatic publishing is available for Facebook Pages and Bluesky. Other networks: coming soon.",
     failed: "Publication failed",
   },
   fr: {
@@ -67,7 +68,7 @@ const COPY = {
     changesRequested: "Changements demandés. La publication retourne aux brouillons.",
     scheduled: "Planifié. La publication partira automatiquement.",
     cancelled: "Planification annulée.",
-    onlyFacebook: "La publication automatique est offerte pour les Pages Facebook. Autres réseaux : bientôt.",
+    onlyFacebook: "La publication automatique est offerte pour les Pages Facebook et Bluesky. Autres réseaux : bientôt.",
     failed: "Échec de publication",
   },
 } as const;
@@ -170,7 +171,7 @@ export function PublicationActions({
   }
 
   const reviewable = canReview && approvalStatus === "pending" && (postStatus === "pending_approval" || postStatus === "draft");
-  const publishable = canPublish && platform === "facebook" && (postStatus === "approved" || postStatus === "failed" || (postStatus === "draft" && !approvalStatus));
+  const publishable = canPublish && isPublishablePlatform(platform) && (postStatus === "approved" || postStatus === "failed" || (postStatus === "draft" && !approvalStatus));
   const scheduled = postStatus === "scheduled";
   const isPublished = postStatus === "published" || publication?.state === "confirmed";
 
@@ -195,7 +196,7 @@ export function PublicationActions({
           {publication.errorMessage ? ` — ${publication.errorMessage}` : ""}
         </p>
       ) : null}
-      {canPublish && platform !== "facebook" && !isPublished ? (
+      {canPublish && !isPublishablePlatform(platform) && !isPublished ? (
         <p className="text-xs text-slate-500">{t.onlyFacebook}</p>
       ) : null}
 

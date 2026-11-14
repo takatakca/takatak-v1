@@ -7,6 +7,25 @@ import {
   type ConnectionCapabilityProfile,
 } from "@/lib/social/connections/capability-profile";
 
+/**
+ * Whether a connection holds a usable secret. Most providers store a
+ * SocialCredential row; Bluesky keeps its DPoP session in the encrypted
+ * BlueskyOAuthStore and marks that on the connection metadata.
+ */
+function connectionHasCredential(connection: {
+  provider: string;
+  credential: unknown;
+  metadata: unknown;
+}): boolean {
+  if (connection.credential !== null && connection.credential !== undefined) return true;
+  if (connection.provider !== "bluesky") return false;
+  const metadata =
+    connection.metadata && typeof connection.metadata === "object" && !Array.isArray(connection.metadata)
+      ? (connection.metadata as Record<string, unknown>)
+      : {};
+  return metadata.sessionStorage === "encrypted_bluesky_oauth_store";
+}
+
 export type SocialConnectionAccountSummary = {
   id: string;
   platform: string;
@@ -85,6 +104,7 @@ export async function getSocialConnectionsData(
         refreshTokenExpiresAt: true,
         lastErrorCode: true,
         lastErrorMessage: true,
+        metadata: true,
         createdAt: true,
         updatedAt: true,
 
@@ -156,7 +176,7 @@ export async function getSocialConnectionsData(
       brandStatus:
         connection.businessBrand.status,
       hasCredential:
-        connection.credential !== null,
+        connectionHasCredential(connection),
       accountCount:
         connection.socialAccounts.length,
 
@@ -230,7 +250,7 @@ export async function getSocialConnectionsData(
         provider: connection.provider,
         status: connection.status,
         scopes: connection.scopes,
-        hasCredential: connection.credential !== null,
+        hasCredential: connectionHasCredential(connection),
         accessTokenExpiresAt: connection.accessTokenExpiresAt?.toISOString() ?? null,
         refreshTokenExpiresAt: connection.refreshTokenExpiresAt?.toISOString() ?? null,
         lastErrorCode: connection.lastErrorCode,

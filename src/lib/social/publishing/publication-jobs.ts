@@ -28,6 +28,12 @@ import {
   type FacebookPublishTransport,
 } from "@/lib/social/publishing/facebook-page-publisher";
 import {
+  createBlueskySessionTransport,
+  publishBlueskyPost,
+  reconcileBlueskyPost,
+  type BlueskyPublishTransport,
+} from "@/lib/social/publishing/bluesky-publisher";
+import {
   SOCIAL_PUBLICATION_JOB_SOURCE,
   SOCIAL_PUBLICATION_LEASE_MS,
   SOCIAL_PUBLICATION_MAX_ATTEMPTS,
@@ -35,14 +41,19 @@ import {
   SOCIAL_RECONCILE_LOOKBACK_MS,
   assessPublicationReadiness,
   canQueuePublication,
+  isPublishablePlatform,
   publicationBackoffMs,
   publicationContentMaterial,
+  publicationProviderForPlatform,
+  readPostLink,
   readPublicationReceipt,
   receiptNeedsReconciliation,
   record,
   withPublicationReceipt,
   type PublicationBlockReason,
   type PublicationErrorCategory,
+  type PublicationPlatform,
+  type PublicationProvider,
   type PublicationReceipt,
 } from "@/lib/social/publishing/publication-model";
 
@@ -101,9 +112,19 @@ export type PublicationDb = {
   };
 };
 
+/** The Bluesky identity a post is delivered through; the session itself stays in the encrypted OAuth store. */
+export type BlueskyPublicationTarget = { clientId: string; connectionId: string; did: string };
+
 export type PublicationWorkerDependencies = {
   db?: PublicationDb;
+  /** Facebook Graph transport (tests inject a fake). */
   transport?: FacebookPublishTransport;
+  /**
+   * Builds the authenticated Bluesky transport for a target. The default
+   * restores the DPoP session from the encrypted store (refreshing when due);
+   * tests inject a fake. Throws when the session cannot be restored.
+   */
+  blueskyTransportFor?: (target: BlueskyPublicationTarget) => Promise<BlueskyPublishTransport>;
   now?: () => Date;
   /** Re-checks workspace write access at dispatch time. Default uses billing entitlements. */
   workspaceCanWrite?: (clientId: string) => Promise<{ allowed: true } | { allowed: false; message: string }>;
@@ -119,6 +140,21 @@ async function defaultWorkspaceCanWrite(
   const { lifecycle } = await loadClientSocialEntitlementContext(prisma, clientId);
   const write = evaluateWorkspaceWriteAccess(lifecycle.access);
   return write.allowed ? { allowed: true } : { allowed: false, message: write.message };
+}
+
+/** SDK token errors (refresh failed, revoked, invalid) end the session; they are not network failures. */
+function isBlueskyAuthorizationError(error: unknown): boolean {
+  const name = error instanceof Error ? error.name : "";
+  return name === "TokenRefreshError" || name === "TokenRevokedError" || name === "TokenInvalidError";
+}
+
+async function defaultBlueskyTransportFor(target: BlueskyPublicationTarget): Promise<BlueskyPublishTransport> {
+  // Loaded on demand: the AT Protocol SDK is only needed when a Bluesky post is dispatched.
+  const { createBlueskyOAuthClient } = await import("@/lib/social/providers/bluesky-oauth-client");
+  const client = await createBlueskyOAuthClient({ clientId: target.clientId, connectionId: target.connectionId });
+  const session = await client.restore(target.did, "auto");
+  if (session.did !== target.did) throw new Error("The restored Bluesky session belongs to another account.");
+  return createBlueskySessionTransport(session.fetchHandler.bind(session), { isAuthorizationError: isBlueskyAuthorizationError });
 }
 
 function resolveDb(dependencies: PublicationWorkerDependencies): PublicationDb {
@@ -176,7 +212,8 @@ export async function queueSocialPostPublication(
       approvalsRequired: latestApprovalStatus !== null,
     });
     if (!decision.ok) return { ok: false, reason: decision.reason } as const;
-    if (post.platform !== "facebook") return { ok: false, reason: "unsupported_platform" } as const;
+    const provider = publicationProviderForPlatform(String(post.platform));
+    if (!provider) return { ok: false, reason: "unsupported_platform" } as const;
     if (!post.socialAccountId) return { ok: false, reason: "no_account" } as const;
 
     const existing = await tx.job.findFirst({
@@ -221,7 +258,7 @@ export async function queueSocialPostPublication(
         clientId: input.clientId,
         type: "approve_post",
         status: "queued",
-        provider: "meta",
+        provider,
         attempts: 0,
         maxAttempts: SOCIAL_PUBLICATION_MAX_ATTEMPTS,
         scheduledFor: input.scheduledFor,
@@ -432,13 +469,47 @@ function readMediaUrls(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === "string" && /^https:\/\//.test(item)).slice(0, 1);
 }
 
-function readLink(metadata: unknown): string | null {
-  const link = record(metadata).link;
-  return typeof link === "string" && /^https:\/\//.test(link) ? link.slice(0, 2000) : null;
+type ResolvedCredential =
+  | { ok: true; kind: "facebook"; pageId: string; accessToken: string }
+  | { ok: true; kind: "bluesky"; target: BlueskyPublicationTarget }
+  | { ok: false; message: string };
+
+/** Pick the provider credential for the post's platform. */
+function resolveCredential(post: LoadedPost): ResolvedCredential {
+  if (post.platform === "bluesky") return resolveBlueskyCredential(post);
+  return resolvePageCredential(post);
+}
+
+/**
+ * Resolve the Bluesky identity for a connected account. The OAuth session is
+ * not a SocialCredential row: it lives in the encrypted BlueskyOAuthStore and
+ * is restored by DID at dispatch time, so only the DID and connection are
+ * checked here.
+ */
+function resolveBlueskyCredential(post: LoadedPost): ResolvedCredential {
+  const account = post.socialAccount;
+  if (!account || account.platform !== "bluesky" || account.status !== "connected") {
+    return { ok: false, message: "The Bluesky account is not connected." };
+  }
+  const connection = account.providerConnection;
+  if (!connection || connection.provider !== "bluesky" || connection.status !== "connected") {
+    return { ok: false, message: "Bluesky authorization is missing. Reconnect to continue." };
+  }
+  if (connection.clientId !== post.clientId) {
+    return { ok: false, message: "The connection does not belong to this workspace." };
+  }
+  if (!connection.scopes.includes("atproto") || !connection.scopes.includes("transition:generic")) {
+    return { ok: false, message: "Bluesky write access (atproto transition:generic) was not granted. Reconnect to continue." };
+  }
+  const did = account.externalAccountId?.trim() ?? "";
+  if (!did.startsWith("did:")) {
+    return { ok: false, message: "The Bluesky account identity is missing. Reconnect to continue." };
+  }
+  return { ok: true, kind: "bluesky", target: { clientId: connection.clientId, connectionId: connection.id, did } };
 }
 
 /** Resolve the Page credential for a connected, selected Facebook Page. */
-function resolvePageCredential(post: LoadedPost): { ok: true; pageId: string; accessToken: string } | { ok: false; message: string } {
+function resolvePageCredential(post: LoadedPost): ResolvedCredential {
   const account = post.socialAccount;
   if (!account || account.platform !== "facebook" || account.accountType !== "facebook_page" || account.status !== "connected") {
     return { ok: false, message: "The Facebook Page is not connected." };
@@ -474,7 +545,7 @@ function resolvePageCredential(post: LoadedPost): { ok: true; pageId: string; ac
   if (!page || !account.externalAccountId || page.pageId !== account.externalAccountId) {
     return { ok: false, message: "The Page credential is missing. Select the Page again." };
   }
-  return { ok: true, pageId: page.pageId, accessToken: page.accessToken };
+  return { ok: true, kind: "facebook", pageId: page.pageId, accessToken: page.accessToken };
 }
 
 async function writeReceipt(db: PublicationDb, post: { id: string; clientId: string; status: string; metadata: unknown }, receipt: PublicationReceipt, postData: Record<string, unknown>): Promise<boolean> {
@@ -494,7 +565,7 @@ async function writeReceipt(db: PublicationDb, post: { id: string; clientId: str
 
 /**
  * Process one claimed job: re-verify everything under the lease, write a
- * `sending` receipt, call Meta, and persist the outcome. Never throws for
+ * `sending` receipt, call the provider (Meta or Bluesky), and persist the outcome. Never throws for
  * provider failures; database failures propagate so the lease expires.
  */
 export async function processSocialPublicationJob(
@@ -542,12 +613,16 @@ export async function processSocialPublicationJob(
     return { outcome: "blocked", socialPostId, reason: "workspace_locked" };
   }
 
-  const credential = resolvePageCredential(post);
-  const link = readLink(post.metadata);
-  const mediaUrls = readMediaUrls(post.mediaUrls);
+  const credential = resolveCredential(post);
+  const link = readPostLink(post.metadata);
+  const mediaUrls = post.platform === "bluesky" ? [] : readMediaUrls(post.mediaUrls);
   const contentHash = publicationContentHash({ caption: post.caption, link, mediaUrls });
   const targetExternalId = post.socialAccount?.externalAccountId ?? "";
   const previous = readiness.receipt;
+  const platform: PublicationPlatform = isPublishablePlatform(post.platform) ? post.platform : "facebook";
+  const provider: PublicationProvider = publicationProviderForPlatform(platform) ?? "meta";
+  const providerLabel = platform === "bluesky" ? "Bluesky" : "Facebook";
+  const logStage = platform === "bluesky" ? "bluesky_post" : "facebook_feed";
 
   if (!credential.ok) {
     const receipt: PublicationReceipt = {
@@ -555,8 +630,8 @@ export async function processSocialPublicationJob(
       attemptId: previous?.attemptId ?? randomUUID(),
       jobId: job.id,
       state: "needs_reconnect",
-      provider: "meta",
-      platform: "facebook",
+      provider,
+      platform,
       targetExternalId,
       contentHash,
       startedAt: at().toISOString(),
@@ -573,13 +648,49 @@ export async function processSocialPublicationJob(
     return { outcome: "blocked", socialPostId, reason: "needs_reconnect" };
   }
 
+  // Bluesky: restore the DPoP session now; a session that cannot be restored is a reconnect, not a send.
+  let blueskyTransport: BlueskyPublishTransport | null = null;
+  if (credential.kind === "bluesky") {
+    try {
+      blueskyTransport = await (dependencies.blueskyTransportFor ?? defaultBlueskyTransportFor)(credential.target);
+    } catch {
+      const message = "The Bluesky session could not be restored. Reconnect to continue.";
+      const receipt: PublicationReceipt = {
+        version: SOCIAL_PUBLICATION_RECEIPT_VERSION,
+        attemptId: previous?.attemptId ?? randomUUID(),
+        jobId: job.id,
+        state: "needs_reconnect",
+        provider,
+        platform,
+        targetExternalId,
+        contentHash,
+        startedAt: at().toISOString(),
+        confirmedAt: null,
+        remotePostId: null,
+        permalinkUrl: null,
+        errorCategory: "authorization_expired",
+        errorMessage: message,
+        attempts: previous?.attempts ?? 0,
+      };
+      await writeReceipt(db, post, receipt, { status: "failed" });
+      await jobLog(db, job.id, "error", message);
+      await finalizeJob(db, job, { outcome: "failed", error: "needs_reconnect" }, at());
+      return { outcome: "blocked", socialPostId, reason: "needs_reconnect" };
+    }
+  }
+
   // Reconcile an ambiguous earlier attempt before sending anything new.
   if (previous && receiptNeedsReconciliation(previous) && previous.contentHash === contentHash) {
     const since = new Date(Date.parse(previous.startedAt) - SOCIAL_RECONCILE_LOOKBACK_MS);
-    const found = await reconcileFacebookPagePost(
-      { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, since },
-      transport,
-    );
+    const found =
+      credential.kind === "bluesky" && blueskyTransport
+        ? await reconcileBlueskyPost({ did: credential.target.did, text: post.caption, link, since }, blueskyTransport)
+        : credential.kind === "facebook"
+          ? await reconcileFacebookPagePost(
+              { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, since },
+              transport,
+            )
+          : ({ found: "unknown", category: "not_configured", message: "No publishing adapter for this account." } as const);
     if (found.found === true) {
       const receipt: PublicationReceipt = {
         ...previous,
@@ -612,8 +723,8 @@ export async function processSocialPublicationJob(
     attemptId,
     jobId: job.id,
     state: "sending",
-    provider: "meta",
-    platform: "facebook",
+    provider,
+    platform,
     targetExternalId,
     contentHash,
     startedAt: at().toISOString(),
@@ -631,10 +742,15 @@ export async function processSocialPublicationJob(
   }
   const leasedPost = { ...post, metadata: withPublicationReceipt(post.metadata, sending) };
 
-  const result = await publishFacebookPagePost(
-    { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, link, photoUrl: mediaUrls[0] ?? null },
-    transport,
-  );
+  const result =
+    credential.kind === "bluesky" && blueskyTransport
+      ? await publishBlueskyPost({ did: credential.target.did, text: post.caption, link, createdAt: at() }, blueskyTransport)
+      : credential.kind === "facebook"
+        ? await publishFacebookPagePost(
+            { pageId: credential.pageId, pageAccessToken: credential.accessToken, message: post.caption, link, photoUrl: mediaUrls[0] ?? null },
+            transport,
+          )
+        : ({ ok: false, category: "not_configured", retryable: false, message: "No publishing adapter for this account.", ambiguous: false } as const);
 
   if (result.ok) {
     const receipt: PublicationReceipt = {
@@ -645,8 +761,8 @@ export async function processSocialPublicationJob(
       permalinkUrl: result.permalinkUrl,
     };
     await writeReceipt(db, leasedPost, receipt, { status: "published", publishedAt: at() });
-    await jobLog(db, job.id, "info", "Published on Facebook.", { remotePostId: result.remotePostId, verified: result.verified });
-    logSocialOAuthEvent("social-publish", { stage: "facebook_feed", outcome: "ok", provider: "meta", writeCreated: 1 });
+    await jobLog(db, job.id, "info", `Published on ${providerLabel}.`, { remotePostId: result.remotePostId, verified: result.verified });
+    logSocialOAuthEvent("social-publish", { stage: logStage, outcome: "ok", provider, writeCreated: 1 });
     await finalizeJob(db, job, { outcome: "completed" }, at());
     return { outcome: "published", socialPostId, remotePostId: result.remotePostId, replayed: false };
   }
@@ -662,8 +778,8 @@ export async function processSocialPublicationJob(
   const receipt: PublicationReceipt = { ...sending, state: "failed", errorCategory: result.category, errorMessage: result.message };
   const retry = result.retryable && job.attempts < job.maxAttempts;
   await writeReceipt(db, leasedPost, receipt, retry ? {} : { status: "failed" });
-  await jobLog(db, job.id, retry ? "warning" : "error", `Facebook refused the post (${result.category}).`);
-  logSocialOAuthEvent("social-publish", { stage: "facebook_feed", outcome: "error", provider: "meta", malformedCount: 1 });
+  await jobLog(db, job.id, retry ? "warning" : "error", `${providerLabel} refused the post (${result.category}).`);
+  logSocialOAuthEvent("social-publish", { stage: logStage, outcome: "error", provider, malformedCount: 1 });
   await finalizeJob(
     db,
     job,

@@ -1,3 +1,29 @@
+# Bluesky publishing adapter handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC, side session). Builds on the
+merged Facebook publishing engine (PR #258, main `dea83395`); read
+`docs/SOCIAL_PUBLISHING_ENGINE.md` first.
+
+- Branch `claude/awesome-poincare-bf9729` from main `dea83395`, PR #293. No schema change, no new
+  dependency (`@atproto/oauth-client-node` already in the lockfile), no provider spend.
+- Delivered: `src/lib/social/publishing/bluesky-publisher.ts` (text post with link facets,
+  verify by record URI, reconcile by author feed, 300-grapheme / 3,000-byte cap, injectable
+  transport, no token handling); `publication-jobs.ts` provider switch (`meta` | `bluesky`
+  receipts, Bluesky credential = DID + connected connection with `atproto transition:generic`,
+  DPoP session restored from the encrypted `BlueskyOAuthStore`, SDK imported lazily);
+  `publication-model.ts` platform map, grapheme helpers, bilingual labels; capability profile
+  Bluesky `publish`/`schedule` available; `social-connection-data.ts` counts the session store
+  as the Bluesky credential; publish buttons shown for Bluesky posts;
+  `npm run qa:social-publishing` 36 checks (14 new) green; `npm run typecheck` green.
+- Not done: live Bluesky publication (owner step: connect an owned account, approve and
+  publish one test post, confirm the `at://` URI opens on bsky.app); image blobs and link-card
+  embeds; `chooseHandoffAccount` still prefers Facebook Pages for Studio handoffs; the first
+  live Facebook post from PR #258 is also still pending.
+- Rules kept: V1 identity/billing authority, existing entitlement gates, no merge/deploy
+  claimed, nothing secret in the board or this file.
+
+---
+
 # Scheduled & published view handoff — 2026-11-14
 
 Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Follows the merged

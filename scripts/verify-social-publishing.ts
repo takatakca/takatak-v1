@@ -11,13 +11,30 @@ import {
   type FacebookPublishTransport,
 } from "../src/lib/social/publishing/facebook-page-publisher";
 import {
+  buildBlueskyLinkFacets,
+  blueskyPermalink,
+  classifyBlueskyPublishFailure,
+  createBlueskySessionTransport,
+  publishBlueskyPost,
+  reconcileBlueskyPost,
+  verifyBlueskyPost,
+  type BlueskyPublishTransport,
+  type BlueskyTransportRequest,
+} from "../src/lib/social/publishing/bluesky-publisher";
+import {
   applyApprovalDecision,
   assessPublicationReadiness,
+  blueskyTextWithinLimits,
   canQueuePublication,
+  composeBlueskyPostText,
+  countGraphemes,
+  isPublishablePlatform,
   parseScheduleRequest,
   publicationBackoffMs,
+  publicationProviderForPlatform,
   readPublicationReceipt,
   withPublicationReceipt,
+  BLUESKY_POST_GRAPHEME_LIMIT,
   SOCIAL_PUBLICATION_RECEIPT_VERSION,
 } from "../src/lib/social/publishing/publication-model";
 import { accountPublishReady, chooseHandoffAccount } from "../src/lib/ai/handoff";
@@ -221,6 +238,211 @@ function fakeTransport(handler: (call: Call) => { status: number; body: unknown 
   const missing = await reconcileFacebookPagePost({ pageId: PAGE_ID, pageAccessToken: PAGE_TOKEN, message: "Absent", since: NOW }, transport);
   assert.deepEqual(missing, { found: false });
 });
+
+// ── Bluesky adapter ───────────────────────────────────
+
+const DID = "did:plc:takatak0123456789abcdef";
+const POST_URI = `at://${DID}/app.bsky.feed.post/3kabc123xyz`;
+type BskyCall = BlueskyTransportRequest;
+function fakeBlueskyTransport(handler: (call: BskyCall) => { status: number; body: unknown } | Promise<{ status: number; body: unknown }>) {
+  const calls: BskyCall[] = [];
+  const transport: BlueskyPublishTransport = async (request) => {
+    calls.push(request);
+    return handler(request);
+  };
+  return { transport, calls };
+}
+
+  await check("Bluesky text model: platform map, graphemes, composed text and limits", () => {
+    assert.equal(publicationProviderForPlatform("bluesky"), "bluesky");
+    assert.equal(publicationProviderForPlatform("facebook"), "meta");
+    assert.equal(publicationProviderForPlatform("instagram"), null);
+    assert.equal(isPublishablePlatform("bluesky"), true);
+    assert.equal(isPublishablePlatform("tiktok"), false);
+    // A family emoji (ZWJ sequence) is one grapheme, several code points, many bytes.
+    assert.equal(countGraphemes("a👨‍👩‍👧b"), 3);
+    assert.equal(countGraphemes("Montréal"), 8);
+    assert.equal(composeBlueskyPostText({ caption: "Bonjour\r\n", link: "https://takatak.ca" }), "Bonjour\n\nhttps://takatak.ca");
+    assert.equal(composeBlueskyPostText({ caption: "Voir https://takatak.ca", link: "https://takatak.ca" }), "Voir https://takatak.ca");
+    assert.equal(composeBlueskyPostText({ caption: "x", link: null }), "x");
+    assert.equal(blueskyTextWithinLimits("é".repeat(BLUESKY_POST_GRAPHEME_LIMIT)), true);
+    assert.equal(blueskyTextWithinLimits("é".repeat(BLUESKY_POST_GRAPHEME_LIMIT + 1)), false);
+    // 170 graphemes (under 300) but 170 × 18 bytes = 3,060, over the 3,000-byte cap.
+    assert.equal(blueskyTextWithinLimits("👨‍👩‍👧".repeat(170)), false);
+    const base = { status: "scheduled", scheduledAt: NOW, publishedAt: null, caption: "a".repeat(290), platform: "bluesky", socialAccountId: "acc", metadata: { link: "https://takatak.ca/x" } };
+    assert.deepEqual(assessPublicationReadiness({ post: base, latestApprovalStatus: "approved", approvalsRequired: true, now: NOW }), { ok: false, reason: "caption_too_long" });
+    assert.deepEqual(assessPublicationReadiness({ post: { ...base, caption: "a".repeat(270) }, latestApprovalStatus: "approved", approvalsRequired: true, now: NOW }), { ok: true, receipt: null });
+    // Facebook keeps its own 8,000-character cap.
+    assert.deepEqual(assessPublicationReadiness({ post: { ...base, platform: "facebook", caption: "a".repeat(5000) }, latestApprovalStatus: "approved", approvalsRequired: true, now: NOW }), { ok: true, receipt: null });
+  });
+
+  await check("a Bluesky receipt round-trips and a mismatched provider/platform pair is rejected", () => {
+    const receipt = {
+      version: SOCIAL_PUBLICATION_RECEIPT_VERSION,
+      attemptId: "22222222-2222-4222-8222-222222222222",
+      jobId: "job-9",
+      state: "confirmed" as const,
+      provider: "bluesky" as const,
+      platform: "bluesky" as const,
+      targetExternalId: DID,
+      contentHash: "c".repeat(64),
+      startedAt: NOW.toISOString(),
+      confirmedAt: NOW.toISOString(),
+      remotePostId: POST_URI,
+      permalinkUrl: blueskyPermalink(POST_URI),
+      errorCategory: null,
+      errorMessage: null,
+      attempts: 1,
+    };
+    assert.deepEqual(readPublicationReceipt(withPublicationReceipt(null, receipt)), receipt);
+    assert.equal(readPublicationReceipt({ publication: { ...receipt, provider: "meta" } }), null);
+    assert.equal(readPublicationReceipt({ publication: { ...receipt, platform: "facebook" } }), null);
+    assert.equal(blueskyPermalink(POST_URI), `https://bsky.app/profile/${encodeURIComponent(DID)}/post/3kabc123xyz`);
+    assert.equal(blueskyPermalink("at://did:plc:x/app.bsky.feed.like/abc"), null);
+  });
+
+  await check("XRPC errors are classified by status and error name", () => {
+    assert.equal(classifyBlueskyPublishFailure(401, { error: "ExpiredToken" }).category, "authorization_expired");
+    assert.equal(classifyBlueskyPublishFailure(400, { error: "InvalidToken", message: "bad" }).category, "authorization_expired");
+    assert.equal(classifyBlueskyPublishFailure(403, { error: "InsufficientPermissions" }).category, "permission_denied");
+    assert.deepEqual(classifyBlueskyPublishFailure(429, { error: "RateLimitExceeded" }).retryable, true);
+    assert.equal(classifyBlueskyPublishFailure(502, {}).category, "provider_unavailable");
+    assert.equal(classifyBlueskyPublishFailure(400, { error: "InvalidRecord", message: "too long" }).category, "invalid_content");
+    assert.equal(classifyBlueskyPublishFailure(400, { error: "InvalidRecord" }).retryable, false);
+    assert.equal(classifyBlueskyPublishFailure(418, {}).category, "unknown");
+  });
+
+  await check("Bluesky happy path: createRecord with link facet, getRecord verify, record URI as remote id", async () => {
+    const { transport, calls } = fakeBlueskyTransport((call) => {
+      if (call.nsid === "com.atproto.repo.createRecord") return { status: 200, body: { uri: POST_URI, cid: "bafyreicid" } };
+      return { status: 200, body: { uri: POST_URI, cid: "bafyreicid", value: { text: "x", createdAt: NOW.toISOString() } } };
+    });
+    const result = await publishBlueskyPost({ did: DID, text: "  Bonjour Montréal  ", link: "https://takatak.ca/offre", createdAt: NOW }, transport);
+    assert.deepEqual(result, { ok: true, remotePostId: POST_URI, cid: "bafyreicid", permalinkUrl: blueskyPermalink(POST_URI), verified: true });
+    assert.equal(calls.length, 2);
+    assert.equal(calls[0].method, "POST");
+    assert.equal(calls[0].body?.repo, DID);
+    assert.equal(calls[0].body?.collection, "app.bsky.feed.post");
+    const recordValue = calls[0].body?.record as Record<string, unknown>;
+    assert.equal(recordValue.text, "Bonjour Montréal\n\nhttps://takatak.ca/offre");
+    assert.equal(recordValue.createdAt, NOW.toISOString());
+    const facets = recordValue.facets as Array<{ index: { byteStart: number; byteEnd: number }; features: Array<{ uri: string }> }>;
+    assert.equal(facets.length, 1);
+    // "Bonjour Montréal\n\n" is 19 bytes (é = 2 bytes).
+    assert.deepEqual(facets[0].index, { byteStart: 19, byteEnd: 19 + "https://takatak.ca/offre".length });
+    assert.equal(facets[0].features[0].uri, "https://takatak.ca/offre");
+    assert.equal(calls[1].method, "GET");
+    assert.equal(calls[1].nsid, "com.atproto.repo.getRecord");
+    assert.deepEqual(calls[1].query, { repo: DID, collection: "app.bsky.feed.post", rkey: "3kabc123xyz" });
+    // The adapter never handles a token: no request carries one anywhere.
+    for (const call of calls) {
+      const serialized = JSON.stringify(call);
+      assert.doesNotMatch(serialized, /access_token|authorization|bearer|dpop/i);
+    }
+    assert.deepEqual(buildBlueskyLinkFacets("see https://a.ca/x, and https://b.ca."), [
+      { index: { byteStart: 4, byteEnd: 18 }, features: [{ $type: "app.bsky.richtext.facet#link", uri: "https://a.ca/x" }] },
+      { index: { byteStart: 24, byteEnd: 36 }, features: [{ $type: "app.bsky.richtext.facet#link", uri: "https://b.ca" }] },
+    ]);
+  });
+
+  await check("the 300-grapheme limit and invalid inputs never reach Bluesky", async () => {
+    const { transport, calls } = fakeBlueskyTransport(() => ({ status: 200, body: { uri: POST_URI } }));
+    const tooLong = await publishBlueskyPost({ did: DID, text: "é".repeat(301) }, transport);
+    assert.equal(tooLong.ok, false);
+    if (!tooLong.ok) assert.equal(tooLong.category, "invalid_content");
+    const linkPushesOver = await publishBlueskyPost({ did: DID, text: "a".repeat(290), link: "https://takatak.ca/longer-path" }, transport);
+    assert.equal(linkPushesOver.ok, false);
+    const empty = await publishBlueskyPost({ did: DID, text: "   " }, transport);
+    assert.equal(empty.ok, false);
+    const badLink = await publishBlueskyPost({ did: DID, text: "x", link: "http://insecure" }, transport);
+    assert.equal(badLink.ok, false);
+    const noDid = await publishBlueskyPost({ did: "", text: "x" }, transport);
+    assert.equal(noDid.ok, false);
+    if (!noDid.ok) assert.equal(noDid.category, "not_configured");
+    assert.equal(calls.length, 0);
+    const exact = await publishBlueskyPost({ did: DID, text: "é".repeat(300) }, transport);
+    assert.equal(exact.ok, true);
+    assert.equal(calls.length, 2);
+  });
+
+  await check("a Bluesky timeout is ambiguous and retryable; a verify failure keeps the create", async () => {
+    const { transport } = fakeBlueskyTransport(() => {
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      throw error;
+    });
+    const result = await publishBlueskyPost({ did: DID, text: "x" }, transport);
+    assert.deepEqual(result, { ok: false, category: "timeout", retryable: true, message: "Bluesky did not answer in time.", ambiguous: true });
+    const flaky = fakeBlueskyTransport((call) =>
+      call.nsid === "com.atproto.repo.createRecord" ? { status: 200, body: { uri: POST_URI, cid: "c" } } : { status: 500, body: { error: "UpstreamFailure" } },
+    );
+    const unverified = await publishBlueskyPost({ did: DID, text: "x" }, flaky.transport);
+    assert.equal(unverified.ok && unverified.verified, false);
+    assert.equal(unverified.ok && unverified.remotePostId, POST_URI);
+    const foreign = fakeBlueskyTransport(() => ({ status: 200, body: { uri: "at://did:plc:someoneelse/app.bsky.feed.post/1" } }));
+    const mismatch = await publishBlueskyPost({ did: DID, text: "x" }, foreign.transport);
+    assert.equal(mismatch.ok, false);
+    if (!mismatch.ok) assert.equal(mismatch.ambiguous, true);
+    assert.deepEqual(await verifyBlueskyPost({ remotePostId: "not-a-uri" }, flaky.transport), { ok: false });
+  });
+
+  await check("Bluesky reconciliation matches the composed text in the author feed and skips reposts", async () => {
+    const since = new Date(NOW.getTime() - 600_000);
+    const { transport, calls } = fakeBlueskyTransport(() => ({
+      status: 200,
+      body: {
+        feed: [
+          { post: { uri: `at://${DID}/app.bsky.feed.post/repost`, author: { did: DID }, record: { text: "Bonjour\n\nhttps://takatak.ca", createdAt: NOW.toISOString() } }, reason: { $type: "app.bsky.feed.defs#reasonRepost" } },
+          { post: { uri: `at://${DID}/app.bsky.feed.post/old`, author: { did: DID }, record: { text: "Bonjour\n\nhttps://takatak.ca", createdAt: new Date(NOW.getTime() - 3_600_000).toISOString() } } },
+          { post: { uri: `at://${DID}/app.bsky.feed.post/other`, author: { did: DID }, record: { text: "Other", createdAt: NOW.toISOString() } } },
+          { post: { uri: POST_URI, author: { did: DID }, record: { text: "Bonjour\n\nhttps://takatak.ca", createdAt: NOW.toISOString() } } },
+        ],
+      },
+    }));
+    const found = await reconcileBlueskyPost({ did: DID, text: "Bonjour\r\n", link: "https://takatak.ca", since }, transport);
+    assert.deepEqual(found, { found: true, remotePostId: POST_URI, permalinkUrl: blueskyPermalink(POST_URI), createdAt: NOW.toISOString() });
+    assert.equal(calls[0].nsid, "app.bsky.feed.getAuthorFeed");
+    assert.equal(calls[0].query?.actor, DID);
+    assert.deepEqual(await reconcileBlueskyPost({ did: DID, text: "Absent", since }, transport), { found: false });
+    const down = fakeBlueskyTransport(() => ({ status: 503, body: { error: "UpstreamFailure" } }));
+    const unknown = await reconcileBlueskyPost({ did: DID, text: "x", since }, down.transport);
+    assert.equal(unknown.found, "unknown");
+  });
+
+  await check("the session transport shapes XRPC calls, keeps credentials out of the path and maps SDK token errors", async () => {
+    const seen: Array<{ pathname: string; init: RequestInit | undefined }> = [];
+    const fetchHandler = async (pathname: string, init?: RequestInit) => {
+      seen.push({ pathname, init });
+      return new Response(JSON.stringify({ uri: POST_URI, cid: "c" }), { status: 200, headers: { "content-type": "application/json" } });
+    };
+    const transport = createBlueskySessionTransport(fetchHandler);
+    await transport({ method: "POST", nsid: "com.atproto.repo.createRecord", body: { repo: DID, collection: "app.bsky.feed.post", record: { text: "x" } }, timeoutMs: 1000 });
+    await transport({ method: "GET", nsid: "com.atproto.repo.getRecord", query: { repo: DID, collection: "app.bsky.feed.post", rkey: "r k" }, timeoutMs: 1000 });
+    assert.equal(seen[0].pathname, "/xrpc/com.atproto.repo.createRecord");
+    assert.equal(seen[0].init?.method, "POST");
+    assert.equal(JSON.parse(String(seen[0].init?.body)).repo, DID);
+    assert.equal(seen[1].pathname, `/xrpc/com.atproto.repo.getRecord?repo=${encodeURIComponent(DID)}&collection=app.bsky.feed.post&rkey=r+k`);
+    assert.equal(seen[1].init?.body, undefined);
+    for (const entry of seen) {
+      assert.doesNotMatch(entry.pathname, /token|authorization|dpop/i);
+      const headers = (entry.init?.headers ?? {}) as Record<string, string>;
+      assert.equal(Object.keys(headers).some((key) => /authorization|dpop/i.test(key)), false, "the adapter adds no auth header; the SDK session does");
+    }
+    const revoked = createBlueskySessionTransport(
+      async () => {
+        const error = new Error("revoked");
+        error.name = "TokenRevokedError";
+        throw error;
+      },
+      { isAuthorizationError: (error) => error instanceof Error && error.name === "TokenRevokedError" },
+    );
+    const outcome = await publishBlueskyPost({ did: DID, text: "x" }, revoked);
+    assert.equal(outcome.ok, false);
+    if (!outcome.ok) {
+      assert.equal(outcome.category, "authorization_expired");
+      assert.equal(outcome.ambiguous, false);
+    }
+  });
 
 // ── worker against an in-memory database ──────────────
 
@@ -447,6 +669,167 @@ const deps = (db: PublicationDb, transport: FacebookPublishTransport) => ({
     assert.equal(assessTokenHealth({ ...base, status: "disconnected" }), "missing");
     assert.equal(assessTokenHealth({ ...base, lastErrorCode: "oauth_error" }), "error");
     assert.equal(describeConnectionCapabilities({ ...base, provider: "unknown_provider", scopes: [], accounts: [] }).capabilities.length, 0);
+  });
+
+// ── worker: Bluesky dispatch through a fake session transport ──
+
+function blueskyPostRow(overrides: Row = {}): Row {
+  return postRow({
+    id: "post-b",
+    caption: "Bonjour Montréal",
+    platform: "bluesky",
+    socialAccountId: "acc-b",
+    metadata: { source: "ai_studio", link: "https://takatak.ca" },
+    socialAccount: {
+      id: "acc-b",
+      platform: "bluesky",
+      status: "connected",
+      accountType: null,
+      externalAccountId: DID,
+      metadata: null,
+      providerConnection: {
+        id: "conn-b",
+        clientId: CLIENT,
+        provider: "bluesky",
+        status: "connected",
+        scopes: ["atproto", "transition:generic"],
+        credential: null,
+      },
+    },
+    ...overrides,
+  });
+}
+const BJOB = { ...JOB, id: "job-b", metadata: { ...JOB.metadata, socialPostId: "post-b" } };
+const blueskyDeps = (db: PublicationDb, transport: BlueskyPublishTransport, restore?: () => Promise<BlueskyPublishTransport>) => ({
+  db,
+  transport: fakeTransport(() => { throw new Error("Facebook transport must not be used for Bluesky"); }).transport,
+  blueskyTransportFor: restore ?? (async () => transport),
+  now: () => NOW,
+  workspaceCanWrite: async () => ({ allowed: true as const }),
+});
+
+  await check("worker publishes a Bluesky post end to end and writes a verified bluesky receipt", async () => {
+    const { db, posts, jobs, logs } = fakeDb({ posts: [blueskyPostRow()], jobs: [{ ...BJOB, status: "running" }] });
+    const { transport, calls } = fakeBlueskyTransport((call) =>
+      call.nsid === "com.atproto.repo.createRecord"
+        ? { status: 200, body: { uri: POST_URI, cid: "bafy" } }
+        : { status: 200, body: { uri: POST_URI, cid: "bafy", value: { text: "x", createdAt: NOW.toISOString() } } },
+    );
+    const outcome = await processSocialPublicationJob(BJOB, blueskyDeps(db, transport));
+    assert.deepEqual(outcome, { outcome: "published", socialPostId: "post-b", remotePostId: POST_URI, replayed: false });
+    assert.equal(calls.length, 2);
+    assert.equal((calls[0].body?.record as Record<string, unknown>).text, "Bonjour Montréal\n\nhttps://takatak.ca");
+    assert.equal(posts[0].status, "published");
+    const receipt = readPublicationReceipt(posts[0].metadata);
+    assert.equal(receipt?.state, "confirmed");
+    assert.equal(receipt?.provider, "bluesky");
+    assert.equal(receipt?.platform, "bluesky");
+    assert.equal(receipt?.remotePostId, POST_URI);
+    assert.equal(receipt?.targetExternalId, DID);
+    assert.equal(receipt?.permalinkUrl, blueskyPermalink(POST_URI));
+    assert.equal((posts[0].metadata as Row).source, "ai_studio");
+    assert.equal(jobs[0].status, "completed");
+    assert.ok(logs.some((log) => String(log.message).includes("Published on Bluesky")));
+    assert.doesNotMatch(JSON.stringify(logs), /token|dpop/i);
+  });
+
+  await check("a Bluesky account without write scope, with a bad DID or a dead session is needs_reconnect, never sent", async () => {
+    const { transport, calls } = fakeBlueskyTransport(() => ({ status: 200, body: { uri: POST_URI } }));
+    const noScope = blueskyPostRow();
+    (noScope.socialAccount as Row).providerConnection = { ...((noScope.socialAccount as Row).providerConnection as Row), scopes: ["atproto"] };
+    const a = fakeDb({ posts: [noScope], jobs: [{ ...BJOB, status: "running" }] });
+    assert.deepEqual(await processSocialPublicationJob(BJOB, blueskyDeps(a.db, transport)), { outcome: "blocked", socialPostId: "post-b", reason: "needs_reconnect" });
+    assert.match(String(readPublicationReceipt(a.posts[0].metadata)?.errorMessage), /transition:generic/);
+    const badDid = blueskyPostRow();
+    (badDid.socialAccount as Row).externalAccountId = "takatak.bsky.social";
+    const b = fakeDb({ posts: [badDid], jobs: [{ ...BJOB, status: "running" }] });
+    assert.equal((await processSocialPublicationJob(BJOB, blueskyDeps(b.db, transport))).outcome, "blocked");
+    const c = fakeDb({ posts: [blueskyPostRow()], jobs: [{ ...BJOB, status: "running" }] });
+    const dead = await processSocialPublicationJob(BJOB, blueskyDeps(c.db, transport, async () => { throw new Error("TokenRefreshError"); }));
+    assert.deepEqual(dead, { outcome: "blocked", socialPostId: "post-b", reason: "needs_reconnect" });
+    assert.equal(c.posts[0].status, "failed");
+    assert.equal(readPublicationReceipt(c.posts[0].metadata)?.state, "needs_reconnect");
+    assert.equal(c.jobs[0].status, "failed");
+    assert.equal(calls.length, 0);
+    // A Bluesky post too long for the network is blocked before dispatch.
+    const long = fakeDb({ posts: [blueskyPostRow({ caption: "é".repeat(301) })], jobs: [{ ...BJOB, status: "running" }] });
+    assert.deepEqual(await processSocialPublicationJob(BJOB, blueskyDeps(long.db, transport)), { outcome: "blocked", socialPostId: "post-b", reason: "caption_too_long" });
+    assert.equal(calls.length, 0);
+  });
+
+  await check("a Bluesky timeout leaves an uncertain receipt and the retry reconciles instead of duplicating", async () => {
+    const { db, posts, jobs } = fakeDb({ posts: [blueskyPostRow()], jobs: [{ ...BJOB, status: "running" }] });
+    let creates = 0;
+    const first = fakeBlueskyTransport(() => {
+      creates += 1;
+      const error = new Error("aborted");
+      error.name = "AbortError";
+      throw error;
+    });
+    const uncertain = await processSocialPublicationJob(BJOB, blueskyDeps(db, first.transport));
+    assert.deepEqual(uncertain, { outcome: "uncertain", socialPostId: "post-b" });
+    const receipt = readPublicationReceipt(posts[0].metadata);
+    assert.equal(receipt?.state, "uncertain");
+    assert.equal(receipt?.errorCategory, "timeout");
+    assert.equal(posts[0].status, "scheduled");
+    assert.equal(jobs[0].status, "retrying");
+    // Second attempt (re-claimed with a lease): the feed shows the post landed; nothing new is created.
+    Object.assign(jobs[0], { status: "running", leaseOwner: BJOB.leaseOwner });
+    const second = fakeBlueskyTransport((call) => {
+      if (call.nsid === "com.atproto.repo.createRecord") creates += 1;
+      return {
+        status: 200,
+        body: { feed: [{ post: { uri: POST_URI, author: { did: DID }, record: { text: "Bonjour Montréal\n\nhttps://takatak.ca", createdAt: NOW.toISOString() } } }] },
+      };
+    });
+    const reconciled = await processSocialPublicationJob({ ...BJOB, attempts: 2 }, blueskyDeps(db, second.transport));
+    assert.deepEqual(reconciled, { outcome: "published", socialPostId: "post-b", remotePostId: POST_URI, replayed: true });
+    assert.equal(creates, 1);
+    assert.equal(second.calls.length, 1);
+    assert.equal(second.calls[0].nsid, "app.bsky.feed.getAuthorFeed");
+    assert.equal(posts[0].status, "published");
+    assert.equal(readPublicationReceipt(posts[0].metadata)?.state, "confirmed");
+    assert.equal(jobs[0].status, "completed");
+  });
+
+  await check("queueing a Bluesky post creates a bluesky job; other platforms stay unsupported", async () => {
+    const { db, posts, jobs } = fakeDb({ posts: [blueskyPostRow({ status: "approved", scheduledAt: null })] });
+    const queued = await queueSocialPostPublication({ clientId: CLIENT, socialPostId: "post-b", requestedByProfileId: "pr-1", scheduledFor: NOW }, { db, now: () => NOW });
+    assert.equal(queued.ok, true);
+    assert.equal(posts[0].status, "scheduled");
+    assert.equal(jobs[0].provider, "bluesky");
+    assert.equal(jobs[0].type, "approve_post");
+    const ig = fakeDb({ posts: [blueskyPostRow({ platform: "instagram" })] });
+    assert.deepEqual(await queueSocialPostPublication({ clientId: CLIENT, socialPostId: "post-b", requestedByProfileId: null, scheduledFor: NOW }, { db: ig.db, now: () => NOW }), { ok: false, reason: "unsupported_platform" });
+  });
+
+  await check("capability profile: Bluesky publish is available with write scope, needs reconnect without it", () => {
+    const base = { status: "connected", hasCredential: true, accessTokenExpiresAt: null, refreshTokenExpiresAt: null, lastErrorCode: null, externalSubjectId: DID, now: NOW, accounts: [{ platform: "bluesky", status: "connected", accessStatus: "selected", accountType: null, canPublish: null }] };
+    const ready = describeConnectionCapabilities({ ...base, provider: "bluesky", scopes: ["atproto", "transition:generic"] });
+    assert.equal(ready.capabilities.find((c) => c.key === "publish")?.state, "available");
+    assert.equal(ready.capabilities.find((c) => c.key === "schedule")?.state, "available");
+    assert.equal(ready.capabilities.find((c) => c.key === "analytics")?.state, "available");
+    const readOnly = describeConnectionCapabilities({ ...base, provider: "bluesky", scopes: ["atproto"] });
+    assert.equal(readOnly.capabilities.find((c) => c.key === "publish")?.state, "missing_scope");
+    assert.deepEqual(readOnly.capabilities.find((c) => c.key === "publish")?.missingScopes, ["transition:generic"]);
+    const noSession = describeConnectionCapabilities({ ...base, provider: "bluesky", hasCredential: false, scopes: ["atproto", "transition:generic"] });
+    assert.equal(noSession.capabilities.find((c) => c.key === "publish")?.state, "needs_reconnect");
+  });
+
+  await check("source guards (Bluesky): no token handling, no console, SDK loaded lazily, session store counts as credential", () => {
+    const adapter = readFileSync("src/lib/social/publishing/bluesky-publisher.ts", "utf8");
+    const jobs = readFileSync("src/lib/social/publishing/publication-jobs.ts", "utf8");
+    const data = readFileSync("src/lib/social/connections/social-connection-data.ts", "utf8");
+    assert.doesNotMatch(adapter, /console\./);
+    // No token parameter, no auth header and no DPoP proof is ever built in the adapter.
+    assert.doesNotMatch(adapter, /access_token|accessToken|Bearer |authorization:|dpop:/i);
+    assert.match(adapter, /com\.atproto\.repo\.createRecord/);
+    assert.match(adapter, /com\.atproto\.repo\.getRecord/);
+    assert.match(adapter, /app\.bsky\.feed\.getAuthorFeed/);
+    assert.doesNotMatch(jobs, /^import .*bluesky-oauth-client/m);
+    assert.match(jobs, /await import\("@\/lib\/social\/providers\/bluesky-oauth-client"\)/);
+    assert.match(jobs, /client\.restore\(target\.did, "auto"\)/);
+    assert.match(data, /encrypted_bluesky_oauth_store/);
   });
 
   await check("Scheduled & published grouping sorts and classifies posts honestly", () => {
