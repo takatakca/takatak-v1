@@ -71,6 +71,12 @@ export function studioLibraryMetadata(value: unknown, source: string) {
   if (raw.version === 1) safe.version = raw.version;
   return safe;
 }
+/** A customer download carries the draft itself, never request IDs, engine, mode, trial or provenance flags. */
+export function exportableStudioDraft(output: { title: string; content: string; createdAt?: string; status?: string; metadata?: unknown }) {
+  const raw = output.metadata && typeof output.metadata === "object" && !Array.isArray(output.metadata) ? output.metadata as Record<string, unknown> : {};
+  return { studio: "TAKATAKSTUDIO" as const, kind: "text_draft" as const, title: output.title, content: output.content,
+    track: isTrack(raw.track) ? raw.track : null, createdAt: typeof output.createdAt === "string" ? output.createdAt : null };
+}
 export async function listStudioLibrary(
   findMany: (query: StudioLibraryQuery) => Promise<StudioLibraryRow[]>,
   clientId: string,

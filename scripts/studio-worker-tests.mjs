@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { processStudioAgentTick, parseStudioWorkerTask } from '../src/lib/studio/worker.ts';
+import { processStudioAgentTick, parseStudioWorkerTask, recoverStudioLeases } from '../src/lib/studio/worker.ts';
 const source = 'takatakstudio_agent_v1';
 const ids = {
   job: '11111111-1111-4111-8111-111111111111',
@@ -22,6 +22,7 @@ function harness(change = {}) {
     },
     actorAllowed: async (clientId, actorId) => { calls.push({ authorization: { clientId, actorId } }); return clientId === 'tenant-a' && actorId === ids.actor; },
     currentPrice: () => 2,
+    markDispatched: async (job, lease, next) => { calls.push({ dispatched: true }); if (row.lease !== lease || row.status !== 'running') return false; row.metadata = next; return true; },
     generate: async (clientId, input) => { calls.push({ generation: { clientId, ...input } }); return { ok: true, savedId: 'saved-a', text: 'Original draft', linked: true }; },
     finish: async (job, lease, outcome) => {
       finishes.push({ job, lease, outcome });
@@ -73,12 +74,52 @@ test('malformed queued tasks cannot choose an unsupported track, provider, budge
   }
 });
 test('post-dispatch timeout, duplicate debit and unknown refusal stay held without another generation', async () => {
-  for (const code of ['timeout', 'network', 'provider_error', 'already_processed', 'insufficient_credits', 'unrecognized_provider_failure']) {
+  for (const code of ['timeout', 'network', 'provider_error', 'already_processed', 'idempotency_conflict', 'unrecognized_provider_failure']) {
     const h = harness(); h.deps.generate = async () => { h.calls.push({ generation: true }); return { ok: false, code }; };
     assert.equal((await h.run()).state, 'needs_attention'); assert.equal(h.row.status, 'failed');
     assert.equal(h.row.errorMessage, code); assert.equal(h.row.metadata.reconciliationRequired, true);
     assert.equal((await h.run()).state, 'idle'); assert.equal(h.generations().length, 1);
   }
+});
+test('refusals returned before any debit are retained but never block the production', async () => {
+  for (const code of ['insufficient_credits', 'no_engine_connected', 'unknown_engine', 'engine_mode_mismatch', 'project_not_found', 'brief_too_large_for_engine']) {
+    const h = harness(); h.deps.generate = async () => { h.calls.push({ generation: true }); return { ok: false, code }; };
+    assert.equal((await h.run()).state, 'needs_attention'); assert.equal(h.row.status, 'failed');
+    assert.equal(h.row.errorMessage, code); assert.equal(h.row.metadata.reconciliationRequired, false);
+    assert.equal(typeof h.row.metadata.dispatchedAt, 'string');
+    assert.equal((await h.run()).state, 'idle'); assert.equal(h.generations().length, 1);
+  }
+});
+test('the dispatch marker is written before the provider call and a lost lease aborts the call', async () => {
+  const h = harness();
+  const order = [];
+  h.deps.markDispatched = async (job, lease, next) => { order.push('mark'); h.row.metadata = next; return true; };
+  h.deps.generate = async () => { order.push('generate'); return { ok: true, savedId: 'saved-a', text: 'x', linked: true }; };
+  assert.equal((await h.run()).state, 'draft_ready'); assert.deepEqual(order, ['mark', 'generate']);
+  assert.equal(typeof h.row.metadata.dispatchedAt, 'string');
+  const lost = harness(); lost.deps.markDispatched = async () => false;
+  assert.equal((await lost.run()).state, 'contended'); assert.equal(lost.generations().length, 0); assert.equal(lost.finishes.length, 0);
+});
+test('expired running leases are finalized without a provider call: blocked only after dispatch', async () => {
+  const now = Date.parse('2026-11-14T12:00:00Z');
+  const expired = new Date(now - 200000).toISOString();
+  const rows = [
+    { id: 'a', clientId: 'tenant-a', attempts: 1, maxAttempts: 1, status: 'running', leaseOwner: 'l1', leaseExpiresAt: expired, metadata: { ...metadata, dispatchedAt: '2026-11-14T11:50:00.000Z' } },
+    { id: 'b', clientId: 'tenant-a', attempts: 1, maxAttempts: 1, status: 'running', leaseOwner: 'l2', leaseExpiresAt: expired, metadata: { ...metadata } },
+    { id: 'c', clientId: 'tenant-a', attempts: 1, maxAttempts: 1, status: 'running', leaseOwner: 'l3', leaseExpiresAt: new Date(now - 30000).toISOString(), metadata: { ...metadata } },
+  ];
+  const recovered = [];
+  const h = harness({ status: 'completed' });
+  h.deps.now = () => now; h.deps.findExpired = async () => rows; h.deps.recover = async (job, outcome) => { recovered.push({ id: job.id, ...outcome }); return true; };
+  const result = await recoverStudioLeases(h.deps);
+  assert.deepEqual(result, { recovered: 2, blocked: 1 });
+  assert.equal(recovered.find(r => r.id === 'a').errorMessage, 'lease_expired_after_dispatch');
+  assert.equal(recovered.find(r => r.id === 'a').metadata.reconciliationRequired, true);
+  assert.equal(recovered.find(r => r.id === 'b').errorMessage, 'lease_expired_before_dispatch');
+  assert.equal(recovered.find(r => r.id === 'b').metadata.reconciliationRequired, false);
+  assert.equal(recovered.some(r => r.id === 'c'), false, 'within grace: still owned by a possibly live worker');
+  assert.equal(h.generations().length, 0);
+  const tick = await h.run(); assert.equal(tick.state, 'idle'); assert.deepEqual(tick.leases, { recovered: 2, blocked: 1 });
 });
 test('an exception after dispatch is ambiguous, while a preflight outage has no billable attempt', async () => {
   for (const dispatched of [false, true]) {

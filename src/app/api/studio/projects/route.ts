@@ -8,6 +8,8 @@ import { parseStudioBrief, parseStudioPack, storedStudioBrief, studioEnabled, ST
 import { connectedEngines, creditBalance } from "@/lib/takbot/server";
 import { STUDIO_AGENT_SOURCE, STUDIO_SCENE_SOURCE } from "@/lib/studio/agent-policy";
 import { studioLibraryMetadata } from "@/lib/studio/library-policy";
+import { sanitizeStudioAgentJob } from "@/lib/studio/agent-jobs";
+import { DAY_MS, STUDIO_MAX_PROJECTS_PER_DAY, canCreateStudioProject } from "@/lib/studio/limits";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,11 +31,12 @@ export async function GET(request: NextRequest) {
     const [accounts, scenePlans, agentJobs, engineKeys, balance] = await Promise.all([
       db.socialAccount.findMany({where:{clientId:gate.access.activeClientId,status:"connected",accessStatus:{in:["available","selected"]},isAvailableThroughAuth:true},select:{id:true,platform:true,displayName:true,businessBrandId:true},orderBy:{createdAt:"asc"},take:50}),
       db.savedAiOutput.findMany({where:{clientId:gate.access.activeClientId,status:{not:"archived"},AND:[{metadata:{path:["source"],equals:STUDIO_SCENE_SOURCE}},{OR:projects.map(project=>({metadata:{path:["projectId"],equals:project.id}}))}]},select:{id:true,content:true,metadata:true},take:20}),
-      db.job.findMany({where:{clientId:gate.access.activeClientId,metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},select:{id:true,status:true,scheduledFor:true,leaseExpiresAt:true,errorMessage:true,metadata:true},orderBy:{createdAt:"desc"},take:60}),
+      db.job.findMany({where:{clientId:gate.access.activeClientId,metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},select:{id:true,status:true,scheduledFor:true,errorMessage:true,metadata:true},orderBy:{createdAt:"desc"},take:60}),
       connectedEngines(),creditBalance(gate.access.activeClientId),
     ]);
-    return jsonResponse({ ok: true, projects, outputs, accounts, scenePlans, agentJobs, engines:[...engineKeys], balance,
-      agentEnabled:process.env.TAKATAK_STUDIO_AGENT_ENABLED==="true", publishingEnabled:false, hasMore: rows.length > 20, nextOffset: rows.length > 20 ? offset + 20 : null });
+    // Members see only the whitelisted job view: never operation, fingerprint, actorId, lease tokens or recovery text.
+    return jsonResponse({ ok: true, projects, outputs, accounts, scenePlans, agentJobs: agentJobs.map(sanitizeStudioAgentJob), engines:[...engineKeys], balance,
+      agentEnabled:process.env.TAKATAK_STUDIO_AGENT_ENABLED==="true", publishingEnabled:false, hasMore: rows.length > 20, nextOffset: rows.length > 20 ? offset + 20 : null }, 200);
   } catch (e) { return handleApiError("studio-projects-list", e, "Studio is temporarily unavailable."); }
 }
 export async function POST(request: NextRequest) {
@@ -47,6 +50,9 @@ export async function POST(request: NextRequest) {
   const db = getPrisma();
   if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503);
   try {
+    // Per-workspace cap: at most STUDIO_MAX_PROJECTS_PER_DAY briefs per rolling 24 h, archived ones included.
+    const createdLast24h = await db.savedAiOutput.count({ where: { clientId: gate.access.activeClientId, metadata: { path: ["source"], equals: STUDIO_PROJECT_SOURCE }, createdAt: { gte: new Date(Date.now() - DAY_MS) } } });
+    if (!canCreateStudioProject(createdLast24h)) return jsonResponse({ ok: false, code: "project_daily_limit", limit: STUDIO_MAX_PROJECTS_PER_DAY }, 429);
     const row = await db.savedAiOutput.create({ data: { clientId: gate.access.activeClientId, kind: "creative_brief", title: brief.title,
       content: JSON.stringify(brief), origin: "manual", status: "draft", metadata: { source: STUDIO_PROJECT_SOURCE, version: 1, createdBy: gate.access.profileId } }, select: { id: true } });
     return jsonResponse({ ok: true, id: row.id }, 201);

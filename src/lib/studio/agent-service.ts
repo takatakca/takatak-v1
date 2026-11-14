@@ -12,7 +12,11 @@ import { STUDIO_AGENT_SOURCE, planSteps, parseAgentPlan, type AgentPlan } from "
 import { processStudioAgentTick } from "./worker";
 import type { Prisma } from "@prisma/client";
 import { creditsFor, takbotMode } from "@/lib/takbot/catalog";
+import { creditBalance } from "@/lib/takbot/server";
 import { quoteStudioPlanCost } from "./cost-policy";
+import { STUDIO_BLOCKING_FAILURES, reconcileStudioJobMetadata } from "./agent-jobs";
+import { STUDIO_LEASE_GRACE_MS, STUDIO_LEASE_MS } from "./worker";
+import { canQueueStudioPlan, openStudioPlanCount } from "./limits";
 
 export function studioRecordId(seed:string):string {
   const h=createHash("sha256").update(seed).digest("hex");
@@ -29,6 +33,8 @@ export async function queueStudioPlan(clientId:string,actorId:string,plan:AgentP
   const costPlan=quoteStudioPlanCost({tracks:plan.tracks,days:plan.days,retailCreditsPerDraft:price,budgetCredits:plan.budgetCredits});
   if(!costPlan.ok)throw new ServiceError("invalid_input","Review the provider-task limit and retail credit ceiling.");
   const steps=planSteps(plan,Date.now());
+  // Balance precheck at queue time: the ledger still debits per task; this only refuses plans a workspace cannot start.
+  const balance=await creditBalance(clientId);
   return db.$transaction(async tx=>{
     // Serialize plan creation per production, including requests using different operation IDs.
     await tx.$queryRaw`SELECT id FROM saved_ai_outputs WHERE id=${project.id}::uuid AND "clientId"=${clientId}::uuid FOR UPDATE`;
@@ -36,11 +42,37 @@ export async function queueStudioPlan(clientId:string,actorId:string,plan:AgentP
     if(!freshProject)throw new ServiceError("not_found","Production not found.");
     const existing=await tx.job.findFirst({where:{clientId,AND:[{metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},{metadata:{path:["operation"],equals:operation}}]},select:{metadata:true}});
     if(existing){const m=existing.metadata as Record<string,unknown>;if(m.fingerprint!==fingerprint)throw new ServiceError("conflict","This request ID already belongs to another plan.");return {operation,replayed:true,count:steps.length,costPlan};}
-    const active=await tx.job.findFirst({where:{clientId,AND:[{metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},{metadata:{path:["projectId"],equals:project.id}},{OR:[{status:{in:["queued","running"]}},{metadata:{path:["reconciliationRequired"],equals:true}},{status:"completed",metadata:{path:["linked"],equals:false}},{status:"failed",errorMessage:{in:["requires_reconciliation","timeout","network","provider_error","empty","already_processed","idempotency_conflict"]}}]}]},select:{id:true}});
+    const active=await tx.job.findFirst({where:{clientId,AND:[{metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},{metadata:{path:["projectId"],equals:project.id}},{OR:[{status:{in:["queued","running"]}},{metadata:{path:["reconciliationRequired"],equals:true}},{status:"completed",metadata:{path:["linked"],equals:false}},{status:"failed",errorMessage:{in:[...STUDIO_BLOCKING_FAILURES]}}]}]},select:{id:true}});
     if(active)throw new ServiceError("conflict","This production has an active plan or a task awaiting reconciliation.");
+    // Per-workspace caps across all productions.
+    const open=await tx.job.findMany({where:{clientId,status:{in:["queued","running"]},metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},select:{id:true,status:true,metadata:true},take:500});
+    const decision=canQueueStudioPlan({openPlans:openStudioPlanCount(open),balance,firstTaskPrice:price});
+    if(!decision.ok){
+      if(decision.code==="plan_limit")throw new ServiceError("conflict","plan_limit",{status:429});
+      if(decision.code==="balance_unavailable")throw new ServiceError("unavailable","balance_unavailable");
+      throw new ServiceError("invalid_input","insufficient_credits",{status:402});
+    }
     for(const step of steps)await tx.job.create({data:{id:studioRecordId(`${operation}:${step.day}:${step.track}`),clientId,type:"generate_content",status:"queued",maxAttempts:1,scheduledFor:new Date(step.dueAt),metadata:{source:STUDIO_AGENT_SOURCE,version:1,operation,fingerprint,projectId:project.id,actorId,track:step.track,day:step.day,engine:plan.engine,creditCeiling:price,budgetCredits:plan.budgetCredits,providerTaskLimit:costPlan.providerTasks,providerCostStatus:costPlan.providerCostStatus}}});
     return {operation,replayed:false,count:steps.length,costPlan};
   });
+}
+/**
+ * Operator path: a manage_jobs member clears a blocked Studio task after
+ * checking credit activity and saved outputs. The job stays failed/completed;
+ * no second provider attempt is ever granted.
+ */
+export async function reconcileStudioJob(clientId:string,operatorId:string,jobId:string,note:string) {
+  const db=getPrisma();if(!db)throw new ServiceError("unavailable","Studio is temporarily unavailable.");
+  const job=await db.job.findFirst({where:{id:jobId,clientId,metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},select:{id:true,status:true,errorMessage:true,metadata:true}});
+  if(!job)throw new ServiceError("not_found","Task not found.");
+  if(job.status==="queued"||job.status==="running")throw new ServiceError("conflict","task_still_active");
+  const metadata=reconcileStudioJobMetadata(job.metadata,operatorId,note,Date.now());
+  if(!metadata)throw new ServiceError("invalid_input","Add a reconciliation note of 3–300 characters.");
+  const blockedByMessage=typeof job.errorMessage==="string"&&STUDIO_BLOCKING_FAILURES.includes(job.errorMessage);
+  const result=await db.job.updateMany({where:{id:job.id,clientId,status:job.status,metadata:{equals:job.metadata as Prisma.InputJsonValue}},
+    data:{metadata:metadata as Prisma.InputJsonObject,...(blockedByMessage?{errorMessage:`reconciled_${job.errorMessage}`}:{})}});
+  if(result.count!==1)throw new ServiceError("conflict","The task changed while reconciling. Reload and review it again.");
+  return {id:job.id,status:job.status,reconciliationRequired:false};
 }
 async function actorAllowed(clientId:string,profileId:string) {
   const db=getPrisma();if(!db)return false;
@@ -48,7 +80,7 @@ async function actorAllowed(clientId:string,profileId:string) {
   const access=computeTenantAccess({runtime:{foundationAllowed:false,mode:"production"},authenticated:true,databaseAvailable:true,profile:profile?{id:profile.id,role:profile.role,status:profile.status}:null,requestedClientId:clientId,memberships:(profile?.memberships??[]).map(m=>({clientId:m.clientId,clientStatus:m.client.status,role:m.role,status:m.status,customPermissions:m.customPermissions as Permission[],deniedPermissions:m.deniedPermissions as Permission[],customRoleId:m.customRoleId,roleBasePermissions:resolveMembershipBasePermissions({role:m.role,customRolePermissions:m.customRole?.permissions as Permission[]|undefined,roleOverridePermissions:m.client.rolePermissionOverrides.find(o=>o.role===m.role)?.permissions as Permission[]|undefined})}))});
   return access.mode==="client_scoped" && access.activeClientId===clientId && hasEffectivePermission(access,"create_content");
 }
-/** One due step per tick. Running/ambiguous jobs are NEVER reclaimed automatically. */
+/** One due step per tick. Expired running leases are finalized (never re-run) before the next claim. */
 export async function runStudioAgentTick() {
   if(!studioEnabled(process.env)||process.env.TAKATAK_STUDIO_AGENT_ENABLED!=="true")return {state:"disabled"};
   const db=getPrisma();if(!db)throw new ServiceError("unavailable","Studio is unavailable.");
@@ -57,14 +89,24 @@ export async function runStudioAgentTick() {
     findDue:()=>db.job.findFirst({where:{type:"generate_content",status:"queued",attempts:0,maxAttempts:1,leaseOwner:null,scheduledFor:{lte:new Date()},metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},orderBy:[{scheduledFor:"asc"},{id:"asc"}]}),
     claim:async job=>{
       const lease=randomUUID();
-      const claim=await db.job.updateMany({where:{id:job.id,clientId:job.clientId,status:"queued",attempts:0,maxAttempts:1,leaseOwner:null,scheduledFor:{lte:new Date()},metadata:{equals:job.metadata as Prisma.InputJsonValue}},data:{status:"running",leaseOwner:lease,leaseExpiresAt:new Date(Date.now()+120000),startedAt:new Date(),errorMessage:null,attempts:{increment:1}}});
+      const claim=await db.job.updateMany({where:{id:job.id,clientId:job.clientId,status:"queued",attempts:0,maxAttempts:1,leaseOwner:null,scheduledFor:{lte:new Date()},metadata:{equals:job.metadata as Prisma.InputJsonValue}},data:{status:"running",leaseOwner:lease,leaseExpiresAt:new Date(Date.now()+STUDIO_LEASE_MS),startedAt:new Date(),errorMessage:null,attempts:{increment:1}}});
       return claim.count===1?lease:null;
     },
     actorAllowed,
     currentPrice:()=>{const mode=takbotMode("write");return mode?creditsFor(mode):null;},
+    markDispatched:async(job,lease,metadata)=>{
+      const result=await db.job.updateMany({where:{id:job.id,clientId:job.clientId,status:"running",leaseOwner:lease,attempts:1,maxAttempts:1},data:{metadata:metadata as Prisma.InputJsonObject}});
+      return result.count===1;
+    },
     generate:(clientId,input)=>generateStudioDraft(studioGenerationDependencies(db),clientId,input),
     finish:async(job,lease,outcome)=>{
       const result=await db.job.updateMany({where:{id:job.id,clientId:job.clientId,status:"running",leaseOwner:lease,attempts:1,maxAttempts:1},data:{status:outcome.status,errorMessage:outcome.errorMessage,completedAt:new Date(),leaseOwner:null,leaseExpiresAt:null,metadata:outcome.metadata as Prisma.InputJsonObject}});
+      return result.count===1;
+    },
+    findExpired:()=>db.job.findMany({where:{type:"generate_content",status:"running",leaseExpiresAt:{lt:new Date(Date.now()-STUDIO_LEASE_GRACE_MS)},metadata:{path:["source"],equals:STUDIO_AGENT_SOURCE}},select:{id:true,clientId:true,status:true,attempts:true,maxAttempts:true,leaseOwner:true,leaseExpiresAt:true,metadata:true},orderBy:{leaseExpiresAt:"asc"},take:20}),
+    recover:async(job,outcome)=>{
+      // Same lease, same expiry: a worker that is still alive and finishing cannot be overwritten.
+      const result=await db.job.updateMany({where:{id:job.id,clientId:job.clientId,status:"running",leaseOwner:job.leaseOwner,leaseExpiresAt:job.leaseExpiresAt instanceof Date?job.leaseExpiresAt:new Date(String(job.leaseExpiresAt))},data:{status:outcome.status,errorMessage:outcome.errorMessage,completedAt:new Date(),leaseOwner:null,leaseExpiresAt:null,metadata:outcome.metadata as Prisma.InputJsonObject}});
       return result.count===1;
     },
   });
