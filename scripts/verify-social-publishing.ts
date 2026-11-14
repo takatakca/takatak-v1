@@ -22,6 +22,7 @@ import {
 } from "../src/lib/social/publishing/publication-model";
 import { accountPublishReady, chooseHandoffAccount } from "../src/lib/ai/handoff";
 import { assessTokenHealth, describeConnectionCapabilities } from "../src/lib/social/connections/capability-profile";
+import { groupPlanningPosts } from "../src/lib/social/planning/planning-types";
 import {
   isSocialPublicationJobMetadata,
   publicationContentHash,
@@ -446,6 +447,32 @@ const deps = (db: PublicationDb, transport: FacebookPublishTransport) => ({
     assert.equal(assessTokenHealth({ ...base, status: "disconnected" }), "missing");
     assert.equal(assessTokenHealth({ ...base, lastErrorCode: "oauth_error" }), "error");
     assert.equal(describeConnectionCapabilities({ ...base, provider: "unknown_provider", scopes: [], accounts: [] }).capabilities.length, 0);
+  });
+
+  await check("Scheduled & published grouping sorts and classifies posts honestly", () => {
+    const post = (overrides: Record<string, unknown>) => ({
+      id: String(overrides.id ?? "p"), platform: "facebook", caption: "x", status: "scheduled", scheduledAt: null, publishedAt: null, approvalStatus: "approved", publication: null, ...overrides,
+    });
+    const later = new Date(NOW.getTime() + 3_600_000).toISOString();
+    const sooner = new Date(NOW.getTime() + 600_000).toISOString();
+    const past = new Date(NOW.getTime() - 600_000).toISOString();
+    const groups = groupPlanningPosts(
+      [
+        post({ id: "late", scheduledAt: later }),
+        post({ id: "soon", scheduledAt: sooner }),
+        post({ id: "due", scheduledAt: past }),
+        post({ id: "pub-old", status: "published", publishedAt: past }),
+        post({ id: "pub-new", status: "published", publishedAt: sooner, publication: { state: "confirmed", remotePostId: "1_2", permalinkUrl: "https://facebook.com/2", errorMessage: null, confirmedAt: sooner } }),
+        post({ id: "broken", status: "failed", publication: { state: "needs_reconnect", remotePostId: null, permalinkUrl: null, errorMessage: "Reconnect", confirmedAt: null } }),
+        post({ id: "unsure", scheduledAt: past, publication: { state: "uncertain", remotePostId: null, permalinkUrl: null, errorMessage: null, confirmedAt: null } }),
+        post({ id: "draft", status: "draft" }),
+      ] as never,
+      NOW,
+    );
+    assert.deepEqual(groups.upcoming.map((p) => p.id), ["soon", "late"]);
+    assert.deepEqual(groups.inProgress.map((p) => p.id), ["due"]);
+    assert.deepEqual(groups.attention.map((p) => p.id), ["broken", "unsure"]);
+    assert.deepEqual(groups.published.map((p) => p.id), ["pub-new", "pub-old"]);
   });
 
   await check("source guards: no migration, no token in logs, cron and worker wired", () => {
