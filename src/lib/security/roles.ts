@@ -70,6 +70,8 @@ export const ROLE_LABELS: Record<RoleKey, string> = {
 };
 
 export type Permission =
+  | "view_inventory"
+  | "manage_inventory"
   | "view_dashboard"
   | "manage_clients"
   | "manage_brands"
@@ -100,6 +102,8 @@ export type Permission =
   | "manage_conversations";
 
 export const ALL_PERMISSIONS: Permission[] = [
+  "view_inventory",
+  "manage_inventory",
   "view_dashboard",
   "manage_clients",
   "manage_brands",
@@ -143,6 +147,8 @@ export const ROLE_PERMISSIONS: Record<
   ),
 
   manager: [
+    "view_inventory",
+    "manage_inventory",
     "view_dashboard",
     "manage_brands",
     "manage_services",
@@ -166,6 +172,7 @@ export const ROLE_PERMISSIONS: Record<
   ],
 
   editor: [
+    "view_inventory",
     "view_dashboard",
     "view_social",
     "create_content",
@@ -180,6 +187,7 @@ export const ROLE_PERMISSIONS: Record<
   ],
 
   staff: [
+    "view_inventory",
     "view_dashboard",
     "view_social",
     "create_content",
@@ -192,6 +200,7 @@ export const ROLE_PERMISSIONS: Record<
   ],
 
   viewer: [
+    "view_inventory",
     "view_dashboard",
     "view_social",
     "view_reports",
@@ -206,6 +215,7 @@ export const MODULE_ACCESS: Record<
   Permission
 > = {
   "/dashboard": "view_dashboard",
+  "/dashboard/inventory": "view_inventory",
   "/dashboard/rentauto": "view_dashboard",
   "/dashboard/clients": "manage_clients",
   "/dashboard/brands": "manage_brands",

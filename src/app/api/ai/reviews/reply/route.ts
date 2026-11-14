@@ -1,35 +1,35 @@
 import type { NextRequest, NextResponse } from "next/server";
-
-import { authorizeAgentRun } from "@/lib/ai-agents/service";
 import { verifyGatewayRequest } from "@/lib/ai-credits/gateway-auth";
 import { json, readJsonObject, UUID_PATTERN } from "@/lib/ai-credits/http";
-import { replyToGoogleReview } from "@/lib/integrations/google-business/service";
-
+import { publishReviewRunReply } from "@/lib/reputation/review-publisher";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-/**
- * POST { runId, comment } — publishes the Review Responder's reply on Google.
- * Only for a Google review run, in the execute phase (after human approval)
- * or when the client turned approval off for the responder.
- */
+/** Execute only the stored approved provider payload; never accept a browser tenant. */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const auth = verifyGatewayRequest(request.headers);
   if (!auth.ok) return json({ ok: false, message: auth.message }, auth.status);
   const body = await readJsonObject(request);
   const runId = typeof body?.runId === "string" ? body.runId : "";
-  const comment = typeof body?.comment === "string" ? body.comment : "";
-  if (!UUID_PATTERN.test(runId) || !comment.trim()) return json({ ok: false, code: "invalid_request" }, 400);
+  if (!UUID_PATTERN.test(runId) || typeof body?.comment !== "string")
+    return json({ ok: false, code: "invalid_request" }, 400);
   try {
-    const authority = await authorizeAgentRun(runId, "review_responder");
-    if (!authority.ok) return json(authority, authority.code === "not_found" ? 404 : 409);
-    if (!authority.run.canAct) return json({ ok: false, code: "approval_required" }, 403);
-    const reviewId = String(authority.run.input.reviewResponseId ?? "");
-    if (authority.run.input.source !== "google" || !UUID_PATTERN.test(reviewId)) return json({ ok: false, code: "not_a_google_review" }, 409);
-    const result = await replyToGoogleReview(authority.run.clientId, reviewId, comment);
-    return result.ok ? json({ ok: true }, 201) : json({ ok: false, code: result.reason }, 502);
+    const result = await publishReviewRunReply(runId, body.comment);
+    if (result.ok) return json(result, result.replayed ? 200 : 201);
+    const status =
+      result.code === "not_found"
+        ? 404
+        : ["approval_required", "agent_disabled", "plan_required"].includes(
+              result.code,
+            )
+          ? 403
+          : ["database_unavailable", "not_configured"].includes(result.code)
+            ? 503
+            : 409;
+    return json(result, status);
   } catch {
-    console.error("[ai-reviews] reply failed");
-    return json({ ok: false, message: "Unavailable." }, 503);
+    console.error(
+      "[ai-reviews] Publication outcome unavailable; verify source before retry.",
+    );
+    return json({ ok: false, code: "publication_uncertain" }, 503);
   }
 }

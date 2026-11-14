@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BadgeCheck, MapPin, Search, Send, Star, Wrench, Zap } from "lucide-react";
+import { BadgeCheck, MapPin, Search, Send, Wrench, Zap } from "lucide-react";
 
 import { useLanguage } from "@/lib/website/use-language";
 import { useReducedMotion } from "@/lib/website/use-reduced-motion";
@@ -22,9 +22,9 @@ function useBeat(count: number, ms: number) {
 }
 
 const QMAPS_RESULTS = [
-  { fr: "Café du Quartier", en: "Neighbourhood Café", cat: { fr: "Café · Plateau", en: "Café · Plateau" }, r: "4,9" },
-  { fr: "Boulangerie Lune", en: "Moon Bakery", cat: { fr: "Boulangerie · Rosemont", en: "Bakery · Rosemont" }, r: "4,8" },
-  { fr: "Resto Saint-Denis", en: "Saint-Denis Bistro", cat: { fr: "Restaurant · Centre-ville", en: "Restaurant · Downtown" }, r: "4,7" },
+  { fr: "Café du Quartier", en: "Neighbourhood Café", cat: { fr: "Café · Plateau", en: "Café · Plateau" } },
+  { fr: "Boulangerie Lune", en: "Moon Bakery", cat: { fr: "Boulangerie · Rosemont", en: "Bakery · Rosemont" } },
+  { fr: "Resto Saint-Denis", en: "Saint-Denis Bistro", cat: { fr: "Restaurant · Centre-ville", en: "Restaurant · Downtown" } },
 ];
 
 /** QMAPS: a local search, results appear on the map, and a business adds itself for free. */
@@ -63,9 +63,6 @@ export function QmapsScene() {
             <span className="min-w-0">
               <span className="block truncate text-[10.5px] font-bold text-slate-900">{r[lang]}</span>
               <span className="block truncate text-[9.5px] text-slate-500">{r.cat[lang]}</span>
-            </span>
-            <span className="ml-1 flex shrink-0 items-center gap-0.5 text-[10px] font-semibold text-slate-700">
-              <Star size={10} className="fill-[#E7A008] text-[#E7A008]" aria-hidden /> {r.r}
             </span>
           </li>
         ))}

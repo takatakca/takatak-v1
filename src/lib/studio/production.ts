@@ -10,7 +10,7 @@ export interface StudioBrief {
   audience: string;
   characters: { name: string; profile: string }[];
 }
-export function studioEnabled(env: { TAKATAK_STUDIO_ENABLED?: string }): boolean {
+export function studioEnabled(env: Record<string, string | undefined>): boolean {
   return env.TAKATAK_STUDIO_ENABLED === "true";
 }
 function text(value: unknown, max: number): string | null {

@@ -23,9 +23,13 @@ Offer Studio as a resellable multi-client SaaS, using TAKATAK V1 accounts, TAK-T
 ## Implemented routes and workflow
 
 - `/dashboard/studio`: account-scoped production workspace, new briefs/characters, JSON import/export, independently requested video scripts, book outlines and lyrics.
-- `GET /api/studio/projects?offset=0`: 20 projects/page with pagination; latest 30 linked outputs across the workspace.
-- `POST /api/studio/projects`: create an immutable creative brief under the authenticated workspace; manual provenance.
-- `POST /api/studio/generate`: load owned non-archived Studio project, build a bounded prompt, call TAK-TAK in write mode, link resulting saved text draft. Existing credit charge/refund logic applies.
+- `GET /api/studio/projects?offset=0`: 20 projects/page with pagination; latest 30 linked outputs across the workspace. Agent jobs are returned through the whitelist in `src/lib/studio/agent-jobs.ts` (id, status, scheduledFor, errorMessage, projectId, track, day, reconciliationRequired, hasRecoveryText): never operation, fingerprint, actorId, lease tokens or recovery text.
+- `POST /api/studio/projects`: create an immutable creative brief under the authenticated workspace; manual provenance. At most 50 briefs per workspace per rolling 24 h (`project_daily_limit`, 429).
+- `POST /api/studio/generate`: load owned non-archived Studio project, build a bounded prompt, call TAK-TAK in write mode, link resulting saved text draft. Existing credit charge/refund logic applies. An in-memory per-workspace limiter allows 6 requests per minute per process instance (`rate_limited`, 429 with `Retry-After`); see `docs/studio/COST_CONTROLS.md`.
+- `POST /api/studio/agent`: queue a bounded plan. Per workspace: at most 2 open plans (`plan_limit`, 429) and a credit balance of at least one task price at queue time (`insufficient_credits`, 402; `balance_unavailable`, 503). The ledger still debits per task.
+- `POST /api/studio/agent/reconcile` (`manage_jobs`): operator path that clears `reconciliationRequired` or a blocking failure code on one finished task after reviewing credit activity and saved outputs. It records operator, time and note on the job and never grants a second provider attempt.
+- `GET|POST /api/cron/studio-agent` (exact `Authorization: Bearer <CRON_SECRET>`): one worker tick. Expired running leases (lease + 60 s grace) are finalized first without a provider call: `lease_expired_after_dispatch` blocks the production, `lease_expired_before_dispatch` releases it. Failures log only a category.
+- The Studio UI is FR/EN (`src/lib/studio/i18n.ts`, language from `@/lib/website/i18n`); server codes are mapped to sentences and never shown raw; downloads carry only title, text, format and date.
 - `/api/studio` and `/dashboard/studio` are registered as high-risk authentication paths to avoid authorizing with cached local sessions.
 - All APIs use the existing no-store response, write-origin check and permission resolver.
 

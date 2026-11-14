@@ -1,5 +1,7 @@
 # TAKATAK AUTH first — engineering contract and CRM boundaries
 
+> **2026-11-12 owner order:** phone sign-in is switched off on every website for now (email code or Google only). The phone-first items below are paused, not cancelled: see [`../EMAIL_GOOGLE_ONLY_LOGIN.md`](../EMAIL_GOOGLE_ONLY_LOGIN.md).
+
 **Priority P0.** Owner's single developer task: [#141](https://github.com/takatakca/takatak-v1/issues/141). No second auth app or repo. Do not rewrite the working Supabase Auth session system.
 
 ## Concrete bug map (checked against `main` on 2026-10-08)

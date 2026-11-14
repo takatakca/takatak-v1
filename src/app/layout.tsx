@@ -3,20 +3,26 @@ import { ClickPendingProvider } from "@/components/ui/click-pending-provider";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { HOME_LANGUAGE_HEADER, homeLanguage } from "@/lib/website/home-seo";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
 // Not preloaded: the public website uses its own fonts, so preloading these on
 // every page only delays the first paint on phones. The dashboard still gets them.
-const geistSans = Geist({
+const geistSans = localFont({
+  src: "../../node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
   variable: "--font-geist-sans",
-  subsets: ["latin"],
   preload: false,
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: "../../node_modules/@fontsource-variable/geist-mono/files/geist-mono-latin-wght-normal.woff2",
+  weight: "100 900",
+  style: "normal",
+  display: "swap",
   variable: "--font-geist-mono",
-  subsets: ["latin"],
   preload: false,
 });
 

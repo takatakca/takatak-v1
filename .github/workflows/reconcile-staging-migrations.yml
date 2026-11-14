@@ -25,8 +25,11 @@ on:
 permissions:
   contents: read
 
+# One staging migration at a time, never cancelled. A newly queued run replaces
+# a pending run of the same group, so a run that only skips (CI of a pull
+# request, or CI that failed) gets a group of its own and cannot cancel main's.
 concurrency:
-  group: takatak-staging-migrations
+  group: takatak-staging-migrations${{ github.event_name == 'workflow_run' && (github.event.workflow_run.conclusion != 'success' || github.event.workflow_run.head_branch != 'main') && format('-skip-{0}', github.run_id) || '' }}
   cancel-in-progress: false
 
 jobs:

@@ -571,7 +571,7 @@ export function AskBar() {
                 />
                 {!text && (
                   <span aria-hidden className="hp-ink-3 pointer-events-none absolute inset-y-0 left-1.5 right-0 flex items-center text-[16px] sm:left-2 sm:text-[17px]">
-                    <span key={`${example}-${dict.state}`} className="tk-fade-in truncate">
+                    <span key={`${example}-${dict.state}`} className="tk-text-in truncate">
                       {dict.state === "listening" ? C.listening[lang] : C.examples[lang][example]}
                     </span>
                   </span>

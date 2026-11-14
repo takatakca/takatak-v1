@@ -5,7 +5,7 @@ import { AiSourceBanner } from "@/components/ai-studio/ai-source-banner";
 import { SavedOutputCard } from "@/components/ai-studio/saved-output-card";
 import { EmptyState } from "@/components/saas/empty-state";
 import { handoffNotice } from "@/lib/ai/handoff";
-import { getSavedOutputsData } from "@/lib/ai/ai-data";
+import { getHandoffTargetOptions, getSavedOutputsData } from "@/lib/ai/ai-data";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +17,7 @@ export default async function SavedOutputsPage({
   const params = await searchParams;
   const raw = Array.isArray(params.handoff) ? params.handoff[0] : params.handoff;
   const notice = handoffNotice(raw);
-  const data = await getSavedOutputsData();
+  const [data, targets] = await Promise.all([getSavedOutputsData(), getHandoffTargetOptions()]);
   const canSend = data.source === "database";
 
   return (
@@ -48,7 +48,7 @@ export default async function SavedOutputsPage({
       {data.outputs.length ? (
         <div className="grid gap-3 sm:grid-cols-2">
           {data.outputs.map((output) => (
-            <SavedOutputCard key={output.id} output={output} canSend={canSend} />
+            <SavedOutputCard key={output.id} output={output} canSend={canSend} targets={targets} />
           ))}
         </div>
       ) : (

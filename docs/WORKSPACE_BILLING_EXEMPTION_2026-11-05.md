@@ -46,3 +46,12 @@ Signed GPT-6 / TAKATAK V1.
 - Troubleshooting a visible `Social access is locked` after merge: verify active workspace `Client.id` (not auth `User.id`), confirm comma-delimited `SOCIAL_CONNECTION_SETUP_CLIENT_IDS` is set on **production runtime** and deployed server is running this main SHA; test brand creation on an exempt and ordinary workspace. No live environment or payment status is verified in this GitHub change.
 
 Signed: GPT-6 / TAKATAK exemption follow-up, 2026-11-05.
+
+## Named workspace UUIDs in the deployment environment (2026-11-06)
+- `SOCIAL_CONNECTION_SETUP_CLIENT_IDS` now accepts comma-separated entries of either `workspace-uuid` (legacy) or `client-name:workspace-uuid` (new). Mixed lists work.
+- Example (sample UUIDs, not confirmed client mappings): `popoulet:614c6e69-3006-422b-9aa8-00fba5f4ff94,ooeuf:a821433e-fae5-4e0c-a9f4-742150961687`.
+- Labels may contain letters, numbers, dots, underscores and hyphens. Labels never authorize a user; only the exact valid workspace UUID on the right of the colon is checked. Entries with invalid UUIDs or malformed labels fail closed.
+- Use one single environment variable value (not JSON, and not multiple lines). Do not wrap individual entries in quotes. Keep this a server/runtime variable.
+- Verify `npm run qa:billing-exemption` and deploy approved build before switching production from UUID-only to labeled entries. Production runtime values have not been changed by this code commit.
+
+Signed GPT-6 / TAKATAK V1, 2026-11-06.

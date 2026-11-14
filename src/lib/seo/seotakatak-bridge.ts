@@ -28,13 +28,14 @@ function signWorkspace(input:{tenantId:string;profileId:string;manage:boolean;in
 }
 async function callSeo(path:string,method:"GET"|"POST"|"PATCH"|"DELETE",payload?:Record<string,unknown>,ingest=false) {
  const workspaceExportPath=/^\/v1\/workspace\/export\?collection=(sites|opportunities|prospects|briefs)&offset=(0|[1-9][0-9]{0,6})$/.test(path);
- if(path!=="/v1/sites"&&!workspaceExportPath&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|export|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)|briefs\/[0-9a-f-]{36}\/review))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
+ const deletionReceiptsPath=/^\/v1\/workspace\/deletion-receipts\?offset=(0|[1-9][0-9]{0,6})$/.test(path);
+ if(path!=="/v1/sites"&&!workspaceExportPath&&!deletionReceiptsPath&&!/^\/v1\/sites\/[0-9a-f-]{36}(?:\/(?:opportunities\/import|opportunities|summary|export|prospects|prospects\/[0-9a-f-]{36}\/status|briefs|verification|verification\/(?:start|check)|briefs\/[0-9a-f-]{36}\/review))?$/.test(path))return {kind:"unavailable" as const,sites:[]};
  const {access}=await getServerAccessContext();
  if(access.mode!=="client_scoped"||!hasEffectivePermission(access,"view_dashboard"))return {kind:"unauthorized" as const,sites:[]};
  if(workspaceExportPath&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
  if(path.endsWith("/summary")&&!hasEffectivePermission(access,"view_reports"))return {kind:"unauthorized" as const,sites:[]};
  const verificationRoute=path.includes("/verification");
- const manage=(method!=="GET"&&!ingest)||verificationRoute;
+ const manage=(method!=="GET"&&!ingest)||verificationRoute||deletionReceiptsPath;
  if(ingest&&(!hasEffectivePermission(access,"view_reports")||!hasEffectivePermission(access,"manage_integrations")))return {kind:"unauthorized" as const,sites:[]};
  if(manage&&!hasEffectivePermission(access,"manage_integrations"))return {kind:"unauthorized" as const,sites:[]};
  const config=configuredEndpoint();
@@ -361,4 +362,52 @@ export async function getSeoWorkspaceExportPage(collection:SeoExportCollection,o
  const json=JSON.stringify(page,null,2);
  if(Buffer.byteLength(json,"utf8")>1_500_000)return {kind:"unavailable",page:null,json:null};
  return {kind:"ready",page,json};
+}
+
+/** A verified, tenant-scoped operational deletion receipt, not regulatory proof of complete erasure. */
+export interface SeoDeletionReceipt {
+ id:string;site_id:string;deleted_at:string;
+ opportunities_removed:number;prospects_removed:number;briefs_removed:number;
+}
+export interface SeoDeletionReceiptsPage {
+ receipts:SeoDeletionReceipt[];offset:number;limit:100;
+ hasMore:boolean;nextOffset:number|null;
+}
+export async function getSeoDeletionReceipts(offset:number):Promise<
+ {kind:"ready";page:SeoDeletionReceiptsPage}|
+ {kind:"unavailable"|"unconfigured"|"unauthorized";page:null}
+>{
+ if(!Number.isSafeInteger(offset)||offset<0||offset>1_000_000)
+  return {kind:"unavailable",page:null};
+ const {access}=await getServerAccessContext();
+ if(access.mode!=="client_scoped"||
+    !hasEffectivePermission(access,"view_dashboard")||
+    !hasEffectivePermission(access,"manage_integrations"))
+  return {kind:"unauthorized",page:null};
+ const response=await callSeo("/v1/workspace/deletion-receipts?offset="+offset,"GET");
+ if(response.kind!=="ready")return {kind:response.kind,page:null};
+ const data=response.data as {receipts?:unknown;offset?:unknown;limit?:unknown;hasMore?:unknown;nextOffset?:unknown};
+ if(!Array.isArray(data.receipts)||data.receipts.length>100||
+    data.offset!==offset||data.limit!==100||typeof data.hasMore!=="boolean"||
+    (data.hasMore?(typeof data.nextOffset!=="number"||
+      !Number.isSafeInteger(data.nextOffset)||data.nextOffset<=offset):data.nextOffset!==null))
+  return {kind:"unavailable",page:null};
+ const rows=data.receipts.filter((r):r is SeoDeletionReceipt=>{
+  if(!r||typeof r!=="object")return false;
+  const v=r as Record<string,unknown>;
+  return typeof v.id==="string"&&typeof v.site_id==="string"&&
+   typeof v.deleted_at==="string"&&
+   ["opportunities_removed","prospects_removed","briefs_removed"].every(
+    field=>typeof v[field]==="number"&&Number.isInteger(v[field])&&Number(v[field])>=0
+   );
+ });
+ if(rows.length!==data.receipts.length)return {kind:"unavailable",page:null};
+ return {kind:"ready",page:{
+  receipts:rows.map(r=>({
+   id:r.id,site_id:r.site_id,deleted_at:r.deleted_at,
+   opportunities_removed:r.opportunities_removed,
+   prospects_removed:r.prospects_removed,briefs_removed:r.briefs_removed
+  })),
+  offset,limit:100,hasMore:data.hasMore,nextOffset:data.nextOffset as number|null
+ }};
 }

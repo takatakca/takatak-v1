@@ -13,7 +13,7 @@ export const GOOGLE_OAUTH_YOUTUBE_SCOPES = [
   "email",
   "profile",
   "https://www.googleapis.com/auth/youtube.readonly",
-  "https://www.googleapis.com/auth/yt-analytics.readonly",
+  "https://www.googleapis.com/auth/yt-analytics-monetary.readonly",
 ] as const;
 
 export const GOOGLE_OAUTH_BUSINESS_SCOPES = [

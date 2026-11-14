@@ -28,7 +28,10 @@ export async function generateMetadata({
   }
 
   return {
-    title: service.title.en,
+    title:
+      service.title.fr === service.title.en
+        ? service.title.en
+        : `${service.title.fr} · ${service.title.en}`,
     description: service.tagline.en,
     alternates: { canonical: `/services/${service.slug}` },
   };

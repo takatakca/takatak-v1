@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 
+import type { MarketplaceCard } from "@/lib/website/marketplace-cards";
 import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { FeaturedServicesStrip } from "./FeaturedServicesStrip";
@@ -19,12 +20,12 @@ const COPY = {
   explore: { fr: "Explorer par catégorie", en: "Explore by category" },
 } as const;
 
-/** /marketplace landing, in the visitor's language. */
-export function MarketplaceLanding() {
+/** /marketplace landing, in the visitor's language. `cards` is the real catalog with database prices. */
+export function MarketplaceLanding({ cards }: { cards: MarketplaceCard[] }) {
   const { lang } = useLanguage();
   return (
     <>
-      <MarketplaceHero />
+      <MarketplaceHero cards={cards} />
       <div className="mx-auto max-w-7xl space-y-16 px-4 py-12 md:py-16">
         <section>
           <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
@@ -36,10 +37,10 @@ export function MarketplaceLanding() {
               {COPY.custom[lang]} <ArrowRight size={14} aria-hidden />
             </Link>
           </div>
-          <PopularServicesGrid />
+          <PopularServicesGrid cards={cards} />
         </section>
 
-        <FeaturedServicesStrip />
+        <FeaturedServicesStrip cards={cards} />
         <HowItWorks />
 
         <section>

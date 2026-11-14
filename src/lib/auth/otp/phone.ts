@@ -11,6 +11,7 @@ export function normalizePhone(value: string, country: PhoneCountry = "CA"): str
   const digits = trimmed.replace(/\D/g, "");
 
   if (trimmed.startsWith("+")) {
+    if (digits.startsWith("1") && !/^1[2-9]\d{2}[2-9]\d{6}$/.test(digits)) return null;
     return /^[1-9]\d{7,14}$/.test(digits) ? `+${digits}` : null;
   }
 
@@ -22,8 +23,8 @@ export function normalizePhone(value: string, country: PhoneCountry = "CA"): str
   }
 
   if (country === "CA") {
-    if (/^[2-9]\d{9}$/.test(digits)) return `+1${digits}`;
-    if (/^1[2-9]\d{9}$/.test(digits)) return `+${digits}`;
+    if (/^[2-9]\d{2}[2-9]\d{6}$/.test(digits)) return `+1${digits}`;
+    if (/^1[2-9]\d{2}[2-9]\d{6}$/.test(digits)) return `+${digits}`;
   }
 
   // Other countries require an explicitly supplied +country calling code.

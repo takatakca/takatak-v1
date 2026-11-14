@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ReviewCard } from "@/components/local-listings/review-card";
 import { QmapsReplyForm } from "@/components/local-listings/qmaps-reply-form";
 import { LocalListingsEmptyState } from "@/components/local-listings/local-listings-empty-state";
@@ -17,6 +18,12 @@ export default async function ReviewsPage() {
         subtitle="A reply is posted on QMAPS only when that integration is configured and QMAPS accepts it. Google replies stay on Growth reviews."
         badges={[{ label: "QMAPS reply" }, { label: "Sent only after acceptance" }]}
       />
+      <Link
+        href="/dashboard/growth/reviews"
+        className="inline-flex min-h-11 items-center rounded-xl bg-[#1565D8] px-4 py-2 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      >
+        Ouvrir le dashboard Review : boîte de réception et réponses IA →
+      </Link>
       <LocalSourceBanner source={data.source} label={data.sourceLabel} />
       <Card>
         <CardHeader

@@ -2,6 +2,10 @@ import "server-only";
 
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
+import {
+  describeConnectionCapabilities,
+  type ConnectionCapabilityProfile,
+} from "@/lib/social/connections/capability-profile";
 
 export type SocialConnectionAccountSummary = {
   id: string;
@@ -37,6 +41,8 @@ export type SocialConnectionSummary = {
   lastErrorMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Honest, provider-aware description of what this connection can do today. */
+  capabilities: ConnectionCapabilityProfile;
 };
 
 export async function getSocialConnectionsData(
@@ -115,6 +121,8 @@ export async function getSocialConnectionsData(
             status: true,
             accessStatus: true,
             profileImageUrl: true,
+            accountType: true,
+            metadata: true,
           },
         },
       },
@@ -217,6 +225,31 @@ export async function getSocialConnectionsData(
 
       updatedAt:
         connection.updatedAt.toISOString(),
+
+      capabilities: describeConnectionCapabilities({
+        provider: connection.provider,
+        status: connection.status,
+        scopes: connection.scopes,
+        hasCredential: connection.credential !== null,
+        accessTokenExpiresAt: connection.accessTokenExpiresAt?.toISOString() ?? null,
+        refreshTokenExpiresAt: connection.refreshTokenExpiresAt?.toISOString() ?? null,
+        lastErrorCode: connection.lastErrorCode,
+        externalSubjectId: connection.externalSubjectId,
+        accounts: connection.socialAccounts.map((account) => {
+          const metadata =
+            account.metadata && typeof account.metadata === "object" && !Array.isArray(account.metadata)
+              ? (account.metadata as Record<string, unknown>)
+              : {};
+          return {
+            platform: account.platform,
+            status: account.status,
+            accessStatus: account.accessStatus,
+            accountType: account.accountType,
+            canPublish: typeof metadata.canPublish === "boolean" ? metadata.canPublish : null,
+          };
+        }),
+        now: new Date(),
+      }),
     }),
   );
 }

@@ -1,0 +1,6 @@
+---
+# TAKATAK MochaHost/cPanel: deploy ONLY an already verified Linux CI artifact.
+# Never run Next.js build, Prisma generate, npm install or migrations here.
+deployment:
+  tasks:
+    - /bin/bash scripts/mochahost-cpanel-deploy.sh

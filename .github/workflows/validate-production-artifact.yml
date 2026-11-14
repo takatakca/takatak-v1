@@ -11,8 +11,10 @@ permissions:
   contents: read
   actions: read
 
+# A pull-request CI completion must not cancel validation of main.
+# Each triggering branch gets its own group; a newer run cancels only that branch.
 concurrency:
-  group: takatak-production-artifact-validation
+  group: takatak-production-artifact-validation-${{ github.event.workflow_run.head_branch || 'dispatch' }}
   cancel-in-progress: true
 
 jobs:

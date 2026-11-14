@@ -3,34 +3,34 @@
 import { Clock, ShieldCheck } from "lucide-react";
 
 import { categoryName, fastestDelivery, packageTitle, startingPrice } from "@/lib/website/marketplace-i18n";
-import { getPackage } from "@/lib/website/marketplace-packages";
+import { pickCards, type MarketplaceCard } from "@/lib/website/marketplace-cards";
 import { Link } from "@/lib/website/nav";
 import { useLanguage } from "@/lib/website/use-language";
 import { ServiceThumbnail } from "./ServiceThumbnail";
 
-/** One real package per kind of work; prices and delivery times come from the catalog. */
+/** One real package per kind of work (ids of marketplace-catalog.ts); prices and delivery times come from the catalog. */
 const PICKS = [
   "website-starter",
-  "app-ui-prototype",
+  "mobile-app-prototype",
   "logo-design",
   "brand-identity-kit",
   "social-content-pack",
-  "local-seo-setup",
+  "local-seo",
   "data-entry",
   "menu-design",
   "flyer-design",
-  "ecommerce-shopify",
+  "ecommerce-store",
   "automation-setup",
-  "ai-chatbot-setup",
+  "ai-assistant",
 ];
 
 const COPY = {
   managed: { fr: "Géré par TAKATAK", en: "Managed by TAKATAK" },
 } as const;
 
-export function PopularServicesGrid() {
+export function PopularServicesGrid({ cards }: { cards: MarketplaceCard[] }) {
   const { lang } = useLanguage();
-  const packages = PICKS.map((id) => getPackage(id)).filter((p) => p !== undefined);
+  const packages = pickCards(cards, PICKS);
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {packages.map((p) => (

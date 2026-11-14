@@ -9,6 +9,7 @@ import {
   MARKETPLACE_PACKAGES,
   relatedPackages,
 } from "@/lib/website/marketplace-catalog";
+import { packageTitle } from "@/lib/website/marketplace-i18n";
 
 export function generateStaticParams() {
   return MARKETPLACE_PACKAGES.map(
@@ -37,7 +38,12 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${pkg.title} — Marketplace`,
+    title: (() => {
+      const fr = packageTitle(pkg, "fr");
+      return fr === pkg.title
+        ? `${pkg.title} — Place de marché · Marketplace`
+        : `${fr} · ${pkg.title} — Place de marché · Marketplace`;
+    })(),
     description: pkg.description,
     alternates: { canonical: `/marketplace/gigs/${pkg.id}` },
   };

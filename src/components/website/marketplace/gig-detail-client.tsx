@@ -14,25 +14,69 @@ import {
 } from "lucide-react";
 
 import { ServiceThumbnail } from "@/components/website/marketplace/ServiceThumbnail";
-import {
-  formatStartingPrice,
-  shortestDelivery,
-  type MarketplacePackage,
-} from "@/lib/website/marketplace-catalog";
+import type { MarketplacePackage } from "@/lib/website/marketplace-catalog";
 import {
   saveCheckoutSelection,
   saveQuotePrefill,
 } from "@/lib/website/marketplace-storage";
+import {
+  categoryName,
+  fastestDelivery,
+  formatCad,
+  packageTitle,
+  startingPrice,
+  tierName,
+} from "@/lib/website/marketplace-i18n";
 import { previewPromoBackend } from "@/lib/website/promotions";
 import { useLanguage } from "@/lib/website/use-language";
 
-function dollars(
-  cents: number,
-): string {
-  return `$${Math.round(
-    cents / 100,
-  ).toLocaleString("en-CA")}`;
-}
+const COPY = {
+  back: { fr: "← Retour à la place de marché", en: "← Back to marketplace" },
+  delivered: { fr: "Livré par TAKATAK", en: "Delivered through TAKATAK" },
+  whatYouGet: { fr: "Ce que vous obtenez", en: "What you get" },
+  protection: { fr: "Protection TAKATAK", en: "TAKATAK protection" },
+  protectionBody: {
+    fr: "La portée du projet, les fichiers, les étapes, les révisions et les approbations restent organisés par TAKATAK.",
+    en: "The project scope, files, milestones, revisions, and approvals remain organized through TAKATAK.",
+  },
+  about: { fr: "À propos de ce forfait", en: "About this package" },
+  catalogNote: {
+    fr: "Le détail du forfait est pour l’instant en anglais.",
+    en: "",
+  },
+  days: { fr: "{n} jours", en: "{n} days" },
+  revisions: { fr: "{n} révisions", en: "{n} revisions" },
+  addons: { fr: "Options et ajouts", en: "Add-ons and upgrades" },
+  addonsLead: { fr: "Extras facultatifs à ajouter à ce forfait.", en: "Optional extras you can add to this package." },
+  faq: { fr: "Questions fréquentes", en: "Frequently asked questions" },
+  related: { fr: "Forfaits semblables", en: "Related packages" },
+  order: { fr: "Commande TAKATAK", en: "TAKATAK order" },
+  currency: { fr: "$ CA", en: "CAD" },
+  selectedTier: { fr: "Formule choisie · {t}", en: "Selected tier · {t}" },
+  intake: {
+    fr: "Questionnaire requis : TAKATAK recueille un brief avant de commencer le projet.",
+    en: "Intake required — TAKATAK will collect a project brief before kickoff.",
+  },
+  promo: { fr: "Code promo", en: "Promotion code" },
+  apply: { fr: "Appliquer", en: "Apply" },
+  applied: { fr: "Rabais de {p} % appliqué : −{a}", en: "{p}% discount applied: −{a}" },
+  serverNote: {
+    fr: "Le rabais final est calculé par nos serveurs à la commande.",
+    en: "The final discount is calculated by our servers when you order.",
+  },
+  continue: { fr: "Continuer ({a})", en: "Continue ({a})" },
+  quote: { fr: "Demander une soumission sur mesure", en: "Request a custom quote" },
+  saved: {
+    fr: "Votre sélection est gardée avant de passer au compte TAKATAK sécurisé.",
+    en: "Your selection is saved before continuing to the secure TAKATAK account flow.",
+  },
+  side1: { fr: "TAKATAK organise le démarrage et la livraison du projet.", en: "TAKATAK organizes the project kickoff and delivery." },
+  side2: { fr: "Les fichiers et les messages restent dans l’espace du projet.", en: "Files and messages remain inside the project workspace." },
+  side3: { fr: "Les révisions restent liées au projet en cours.", en: "Revisions remain connected to the active project." },
+} as const;
+
+const fill = (text: string, vars: Record<string, string | number>) =>
+  text.replace(/\{(\w+)\}/g, (_, key: string) => String(vars[key] ?? ""));
 
 export function GigDetailClient({
   pkg,
@@ -42,7 +86,8 @@ export function GigDetailClient({
   related: MarketplacePackage[];
 }) {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const dollars = (cents: number) => formatCad(cents, lang);
 
   const [tierIndex, setTierIndex] =
     useState(
@@ -59,8 +104,9 @@ export function GigDetailClient({
   const [promoCode, setPromoCode] =
     useState("");
 
-  const [promoApplied, setPromoApplied] =
-    useState(false);
+  // The server's preview gives the real discount; keep its rate so it follows tier and add-on changes.
+  const [appliedPromo, setAppliedPromo] =
+    useState<{ code: string; rate: number } | null>(null);
 
   const [promoNote, setPromoNote] =
     useState<string | null>(null);
@@ -86,9 +132,9 @@ export function GigDetailClient({
     addonsTotal;
 
   const discount =
-    promoApplied
+    appliedPromo
       ? Math.round(
-          subtotal * 0.1,
+          subtotal * appliedPromo.rate,
         )
       : 0;
 
@@ -134,8 +180,8 @@ export function GigDetailClient({
       deliveryDays:
         tier.deliveryDays,
       promoCode:
-        promoApplied
-          ? "FIRST10"
+        appliedPromo
+          ? appliedPromo.code
           : null,
       discountCents:
         discount,
@@ -158,7 +204,7 @@ export function GigDetailClient({
   async function applyPromo() {
     const code = promoCode.trim();
     if (!code) {
-      setPromoApplied(false);
+      setAppliedPromo(null);
       setPromoNote(null);
       return;
     }
@@ -166,12 +212,15 @@ export function GigDetailClient({
       code,
       subtotalCents: subtotal,
     });
-    if (preview && preview.discountCents > 0) {
-      setPromoApplied(true);
+    if (preview && preview.discountCents > 0 && preview.subtotalCents > 0) {
+      setAppliedPromo({
+        code: (preview.code || code).toUpperCase(),
+        rate: preview.discountCents / preview.subtotalCents,
+      });
       setPromoNote(null);
       return;
     }
-    setPromoApplied(false);
+    setAppliedPromo(null);
     setPromoNote(preview ? t("promo.code.rejected") : t("promo.code.unavailable"));
   }
 
@@ -181,23 +230,23 @@ export function GigDetailClient({
         href="/marketplace"
         className="text-xs text-slate-500 transition hover:text-slate-950"
       >
-        ← Back to marketplace
+        {COPY.back[lang]}
       </Link>
 
       <div className="mt-4 grid grid-cols-1 gap-8 lg:grid-cols-[1.6fr_1fr]">
         <div className="space-y-6">
           <header>
             <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">
-              {pkg.categoryName}
+              {categoryName(pkg.category, pkg.categoryName, lang)}
             </p>
 
             <h1 className="mt-1 text-3xl font-bold leading-tight text-slate-950 md:text-4xl">
-              {pkg.title}
+              {packageTitle(pkg, lang)}
             </h1>
 
             <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-slate-500">
               <span>
-                Delivered through TAKATAK
+                {COPY.delivered[lang]}
               </span>
             </div>
           </header>
@@ -234,7 +283,7 @@ export function GigDetailClient({
 
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <h2 className="font-semibold text-slate-950">
-              What you get
+              {COPY.whatYouGet[lang]}
             </h2>
 
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -265,14 +314,11 @@ export function GigDetailClient({
 
               <div>
                 <h2 className="font-semibold">
-                  TAKATAK protection
+                  {COPY.protection[lang]}
                 </h2>
 
                 <p className="mt-1 text-sm leading-6 text-slate-300">
-                  The project scope, files,
-                  milestones, revisions, and
-                  approvals remain organized
-                  through TAKATAK.
+                  {COPY.protectionBody[lang]}
                 </p>
               </div>
             </div>
@@ -280,12 +326,18 @@ export function GigDetailClient({
 
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <h2 className="font-semibold text-slate-950">
-              About this package
+              {COPY.about[lang]}
             </h2>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {pkg.description}
             </p>
+
+            {lang === "fr" ? (
+              <p className="mt-2 text-xs text-slate-500">
+                {COPY.catalogNote.fr}
+              </p>
+            ) : null}
           </section>
 
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white">
@@ -304,7 +356,7 @@ export function GigDetailClient({
                         : "text-slate-500 hover:text-slate-950"
                     }`}
                   >
-                    {tierItem.name}
+                    {tierName(tierItem.name, lang)}
                   </button>
                 ),
               )}
@@ -321,12 +373,12 @@ export function GigDetailClient({
                 <div className="flex gap-3 text-xs text-slate-500">
                   <span className="inline-flex items-center gap-1">
                     <Clock size={12} />
-                    {tier.deliveryDays} days
+                    {fill(COPY.days[lang], { n: tier.deliveryDays })}
                   </span>
 
                   <span className="inline-flex items-center gap-1">
                     <RefreshCw size={12} />
-                    {tier.revisions} revisions
+                    {fill(COPY.revisions[lang], { n: tier.revisions })}
                   </span>
                 </div>
               </div>
@@ -353,12 +405,11 @@ export function GigDetailClient({
 
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <h2 className="font-semibold text-slate-950">
-              Add-ons and upgrades
+              {COPY.addons[lang]}
             </h2>
 
             <p className="mt-1 text-xs text-slate-500">
-              Optional extras you can add to
-              this package.
+              {COPY.addonsLead[lang]}
             </p>
 
             <ul className="mt-4 space-y-2">
@@ -418,7 +469,7 @@ export function GigDetailClient({
 
           <section className="rounded-xl border border-slate-200 bg-white p-6">
             <h2 className="font-semibold text-slate-950">
-              Frequently asked questions
+              {COPY.faq[lang]}
             </h2>
 
             <ul className="mt-3 divide-y divide-slate-200">
@@ -442,7 +493,7 @@ export function GigDetailClient({
           {related.length > 0 ? (
             <section className="rounded-xl border border-slate-200 bg-white p-6">
               <h2 className="font-semibold text-slate-950">
-                Related packages
+                {COPY.related[lang]}
               </h2>
 
               <ul className="mt-3 divide-y divide-slate-200">
@@ -454,22 +505,17 @@ export function GigDetailClient({
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-slate-950">
-                          {item.title}
+                          {packageTitle(item, lang)}
                         </p>
 
                         <p className="truncate text-xs text-slate-500">
-                          {item.categoryName} ·{" "}
-                          {shortestDelivery(
-                            item,
-                          )}
-                          -day delivery
+                          {categoryName(item.category, item.categoryName, lang)} ·{" "}
+                          {fastestDelivery(item, lang)}
                         </p>
                       </div>
 
                       <span className="shrink-0 text-sm font-semibold text-slate-950">
-                        {formatStartingPrice(
-                          item,
-                        )}
+                        {startingPrice(item, lang)}
                       </span>
                     </Link>
                   </li>
@@ -488,17 +534,17 @@ export function GigDetailClient({
                   className="text-sky-400"
                 />
 
-                TAKATAK order
+                {COPY.order[lang]}
               </span>
 
               <span className="text-slate-400">
-                CAD
+                {COPY.currency[lang]}
               </span>
             </div>
 
             <div className="p-6">
               <p className="text-xs text-slate-500">
-                Selected tier · {tier.name}
+                {fill(COPY.selectedTier[lang], { t: tierName(tier.name, lang) })}
               </p>
 
               <p className="mt-1 text-3xl font-bold text-slate-950">
@@ -507,40 +553,37 @@ export function GigDetailClient({
 
               {pkg.intakeRequired ? (
                 <div className="mt-3 rounded-md border border-primary/25 bg-primary/5 px-3 py-2 text-[11px] text-primary">
-                  Intake required — TAKATAK will
-                  collect a project brief before
-                  kickoff.
+                  {COPY.intake[lang]}
                 </div>
               ) : null}
 
               <div className="mt-3 flex flex-wrap items-center gap-3 border-y border-slate-200 py-3 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-1">
                   <Clock size={12} />
-                  {tier.deliveryDays} days
+                  {fill(COPY.days[lang], { n: tier.deliveryDays })}
                 </span>
 
                 <span>·</span>
                 <span>
-                  {tier.revisions} revisions
+                  {fill(COPY.revisions[lang], { n: tier.revisions })}
                 </span>
               </div>
 
               <div className="mt-4">
-                <label className="block text-xs font-medium text-slate-700">
-                  Promotion code
+                <label htmlFor="gig-promo" className="block text-xs font-medium text-slate-700">
+                  {COPY.promo[lang]}
                 </label>
 
                 <div className="mt-1 flex gap-2">
                   <input
+                    id="gig-promo"
                     value={promoCode}
                     onChange={(event) => {
                       setPromoCode(
                         event.target.value,
                       );
 
-                      setPromoApplied(
-                        false,
-                      );
+                      setAppliedPromo(null);
                       setPromoNote(null);
                     }}
                     placeholder="FIRST10"
@@ -552,14 +595,19 @@ export function GigDetailClient({
                     onClick={applyPromo}
                     className="rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700"
                   >
-                    Apply
+                    {COPY.apply[lang]}
                   </button>
                 </div>
 
-                {promoApplied ? (
+                {appliedPromo ? (
                   <p className="mt-2 text-xs text-primary">
-                    10% discount applied: -
-                    {dollars(discount)}
+                    {fill(COPY.applied[lang], {
+                      p: Math.round(appliedPromo.rate * 100),
+                      a: dollars(discount),
+                    })}
+                    <span className="mt-0.5 block text-slate-500">
+                      {COPY.serverNote[lang]}
+                    </span>
                   </p>
                 ) : promoNote ? (
                   <p className="mt-2 text-xs text-destructive">
@@ -573,7 +621,7 @@ export function GigDetailClient({
                 onClick={continueCheckout}
                 className="mt-4 w-full rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-primary/90"
               >
-                Continue ({dollars(total)})
+                {fill(COPY.continue[lang], { a: dollars(total) })}
               </button>
 
               <button
@@ -581,7 +629,7 @@ export function GigDetailClient({
                 onClick={requestQuote}
                 className="mt-2 w-full rounded-md border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
               >
-                Request a custom quote
+                {COPY.quote[lang]}
               </button>
 
               <p className="mt-3 inline-flex items-start gap-1.5 text-xs leading-5 text-slate-500">
@@ -590,9 +638,7 @@ export function GigDetailClient({
                   className="mt-0.5 text-primary"
                 />
 
-                Your selection is saved before
-                continuing to the secure
-                TAKATAK account flow.
+                {COPY.saved[lang]}
               </p>
             </div>
           </div>
@@ -604,8 +650,7 @@ export function GigDetailClient({
                 className="mt-0.5 text-primary"
               />
 
-              TAKATAK organizes the project
-              kickoff and delivery.
+              {COPY.side1[lang]}
             </p>
 
             <p className="flex items-start gap-2">
@@ -614,8 +659,7 @@ export function GigDetailClient({
                 className="mt-0.5 text-primary"
               />
 
-              Files and messages remain inside
-              the project workspace.
+              {COPY.side2[lang]}
             </p>
 
             <p className="flex items-start gap-2">
@@ -624,8 +668,7 @@ export function GigDetailClient({
                 className="mt-0.5 text-primary"
               />
 
-              Revisions remain connected to the
-              active project.
+              {COPY.side3[lang]}
             </p>
           </div>
         </aside>

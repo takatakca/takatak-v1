@@ -86,6 +86,7 @@ export const NAV_SECTIONS: NavSection[] = [
     items: [
       { label: "Clients", href: "/dashboard/clients", icon: Users },
       { label: "Businesses / Brands", href: "/dashboard/brands", icon: Building2 },
+      { label: "Inventory", href: "/dashboard/inventory", icon: Tags },
       { label: "Locations", href: "/dashboard/locations", icon: MapPinned },
       { label: "Services", href: "/dashboard/services", icon: ListChecks },
     ],
@@ -103,7 +104,7 @@ export const NAV_SECTIONS: NavSection[] = [
       ] },
       { label: "Social Media", href: "/dashboard/social", icon: Share2, hasDropdown: true },
       { label: "TAKATAK ADS", href: "/dashboard/advertising", icon: Megaphone },
-      { label: "Reviews", href: "/dashboard/local-listings/reviews", icon: Star, hasDropdown: true },
+      { label: "Reviews", href: "/dashboard/growth/reviews", icon: Star, hasDropdown: true },
       { label: "Local Listings", href: "/dashboard/local-listings", icon: MapPin },
       { label: "Leads", href: "/dashboard/leads", icon: Filter },
       { label: "AI Studio", href: "/dashboard/ai-studio", icon: Sparkles },
@@ -127,7 +128,10 @@ export const NAV_SECTIONS: NavSection[] = [
   },
   {
     title: "Learning",
-    items: [{ label: "TAKATAK Academy", href: "/dashboard/academy", icon: GraduationCap }],
+    items: [
+      { label: "TAKATAK Academy", href: "/dashboard/academy", icon: GraduationCap },
+      { label: "BEH4VIOR", href: "/dashboard/beh4vior", icon: Star },
+    ],
   },
   {
     title: "Services",
@@ -193,6 +197,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Integrations", href: "/dashboard/integrations", icon: PlugZap },
       { label: "Jobs", href: "/dashboard/jobs", icon: CalendarClock },
       { label: "Activity", href: "/dashboard/activity", icon: History },
+      { label: "Facturations — Administration", href: "/dashboard/admin/billing", icon: Receipt },
       { label: "Admin", href: "/dashboard/admin", icon: Briefcase },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },
     ],

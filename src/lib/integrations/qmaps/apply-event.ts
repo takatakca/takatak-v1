@@ -8,6 +8,7 @@
 // live in ListingReview.metadata.qmapsReviewId, the key the reply form uses.
 
 import { createHash } from "node:crypto";
+import { qmapsTrackedReviewId } from "@/lib/qmaps/reviews-api";
 import type { Prisma, ReviewSentiment } from "@prisma/client";
 
 import type { QmapsEvent } from "./parser";
@@ -182,6 +183,7 @@ export async function applyQmapsEvent(
         const created = await tx.listingReview.create({
           data: {
             ...fields,
+            id: qmapsTrackedReviewId(listing.clientId, listing.id, r.id),
             clientId: listing.clientId,
             businessBrandId: listing.businessBrandId,
             localListingId: listing.id,

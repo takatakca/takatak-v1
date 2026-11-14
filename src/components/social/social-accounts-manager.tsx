@@ -20,7 +20,9 @@ import {
   X,
 } from "lucide-react";
 
+import { ConnectionCapabilities } from "@/components/social/connection-capabilities";
 import { Badge } from "@/components/ui/badge";
+import type { ConnectionCapabilityProfile } from "@/lib/social/connections/capability-profile";
 import {
   canAddAnotherAccount,
   canCancelPendingConnection,
@@ -98,6 +100,7 @@ export type SocialAccountsConnection = {
   lastErrorMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  capabilities?: ConnectionCapabilityProfile;
 };
 
 type Notice = {
@@ -1503,6 +1506,10 @@ export function SocialAccountsManager({
                               connection.lastErrorMessage
                             }
                           </p>
+                        ) : null}
+
+                        {connection.capabilities ? (
+                          <ConnectionCapabilities profile={connection.capabilities} />
                         ) : null}
                       </div>
 

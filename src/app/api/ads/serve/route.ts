@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { serveAds } from "@/lib/ads/ad-server";
-import type { AdsTargetingContext } from "@/lib/ads/types";
+import { readPublicAdsJson, sanitizePublicAdsContext } from "@/lib/ads/public-request";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,21 +21,16 @@ export async function OPTIONS(): Promise<NextResponse> {
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse> {
-  let body: Record<string, unknown>;
-  try {
-    const parsed = await request.json();
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error("invalid_body");
-    }
-    body = parsed as Record<string, unknown>;
-  } catch {
+  const parsed = await readPublicAdsJson(request);
+  if (!parsed.ok) {
     return withCors(
       NextResponse.json(
-        { ok: false, message: "Invalid request." },
-        { status: 400 },
+        { ok: false, message: parsed.message },
+        { status: parsed.status },
       ),
     );
   }
+  const body = parsed.body;
 
   const publisherCode =
     typeof body.publisherCode === "string"
@@ -46,7 +41,10 @@ export async function POST(
       ? body.placementCode.trim()
       : "";
 
-  if (!publisherCode || !placementCode) {
+  if (
+    !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(publisherCode) ||
+    !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(placementCode)
+  ) {
     return withCors(
       NextResponse.json(
         {
@@ -58,12 +56,7 @@ export async function POST(
     );
   }
 
-  const context =
-    body.context &&
-    typeof body.context === "object" &&
-    !Array.isArray(body.context)
-      ? (body.context as AdsTargetingContext)
-      : undefined;
+  const context = sanitizePublicAdsContext(body.context);
 
   try {
     const ad = await serveAds({

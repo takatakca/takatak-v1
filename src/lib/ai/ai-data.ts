@@ -5,7 +5,7 @@
 import { getPrisma } from "@/lib/db/prisma";
 import { clientWhere, resolveDataScope } from "@/lib/security/data-scope";
 import type { TenantAccess } from "@/lib/security/tenant-access";
-import { readHandoffPostId } from "./handoff";
+import { accountPublishReady, readHandoffPostId } from "./handoff";
 import { getAiProviderStatuses } from "./providers";
 import type {
   AiJobSummary,
@@ -134,6 +134,49 @@ export async function getSavedOutputsData(access?: TenantAccess): Promise<Source
     }
   }
   return { source: "mock", sourceLabel: MOCK_LABEL, outputs: MOCK_OUTPUTS };
+}
+
+// ── Delivery targets for the approval handoff ─────────────────
+export type HandoffTargetOption = {
+  id: string;
+  platform: string;
+  displayName: string;
+  brandName: string | null;
+  publishReady: boolean;
+};
+
+export async function getHandoffTargetOptions(access?: TenantAccess): Promise<HandoffTargetOption[]> {
+  const scope = await resolveDataScope(access);
+  if (scope.kind !== "db") return [];
+  const prisma = getPrisma();
+  if (!prisma) return [];
+  try {
+    const rows = await prisma.socialAccount.findMany({
+      where: { ...clientWhere(scope), status: "connected" },
+      select: {
+        id: true,
+        platform: true,
+        displayName: true,
+        handle: true,
+        accountType: true,
+        accessStatus: true,
+        metadata: true,
+        businessBrand: { select: { name: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 50,
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      platform: row.platform,
+      displayName: row.displayName?.trim() || row.handle?.trim() || row.platform,
+      brandName: row.businessBrand?.name ?? null,
+      publishReady: accountPublishReady(row),
+    }));
+  } catch (error) {
+    logDbError("handoff-targets", error);
+    return [];
+  }
 }
 
 // ── Planned AI jobs ──────────────────────────────────────────

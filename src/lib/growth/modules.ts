@@ -1,5 +1,7 @@
 // Growth Suite — module directory shown on the hub and in navigation.
 
+import { AI_PROVIDERS } from "./ai-engine";
+
 export interface GrowthModuleLink {
   href: string;
   title: string;
@@ -14,7 +16,7 @@ export const GROWTH_MODULES: GrowthModuleLink[] = [
   { href: "/dashboard/growth/ads-manager", title: "Ads Manager", summary: "Google, Meta, TikTok, Microsoft and TAKATAK ADS side by side." },
   { href: "/dashboard/growth/audiences", title: "Retargeting & Geo", summary: "Bring visitors back and target the right neighbourhoods." },
   { href: "/dashboard/seo", title: "SEO", summary: "Live site audit, keywords and backlinks." },
-  { href: "/dashboard/growth/ai-engine", title: "AI Engine & Credits", summary: "14 AI engines, autopilot agents and credit pricing." },
+  { href: "/dashboard/growth/ai-engine", title: "AI Engine & Credits", summary: `${AI_PROVIDERS.length} AI engines, autopilot agents and credit pricing.` },
   { href: "/dashboard/growth/connectors", title: "Connectors", summary: "Every API TAKATAK plugs into, with live setup status." },
   { href: "/dashboard/growth/pricing", title: "Plans & Pricing", summary: "The one-stop-shop catalog, from domain to AI autopilot." },
 ];

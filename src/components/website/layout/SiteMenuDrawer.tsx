@@ -60,7 +60,7 @@ const GROUPS: Group[] = [
       { to: "/services", label: { en: "How TAKATAK works", fr: "Comment TAKATAK fonctionne" } },
       { to: "/dashboard/support", label: { en: "Support", fr: "Soutien" } },
       { to: "/marketplace/post-project", label: { en: "Start a project", fr: "Démarrer un projet" } },
-      { to: "/dashboard/freelancer", label: { en: "Partner / freelancer", fr: "Partenaire / pigiste" } },
+      { to: "/freelancers", label: { en: "Partner / freelancer", fr: "Partenaire / pigiste" } },
     ],
   },
 ];

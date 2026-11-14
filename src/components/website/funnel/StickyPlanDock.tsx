@@ -60,7 +60,7 @@ export function StickyPlanDock() {
   return (
     <div
       aria-hidden={!visible}
-      className={`fixed inset-x-0 bottom-20 z-40 flex justify-center px-3 transition-all duration-500 ease-[cubic-bezier(.2,.8,.2,1)] sm:bottom-6 ${
+      className={`tk-plan-dock fixed inset-x-0 bottom-20 z-40 flex justify-center px-3 transition-all duration-500 ease-[cubic-bezier(.2,.8,.2,1)] sm:bottom-6 ${
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-8 opacity-0"
       }`}
     >

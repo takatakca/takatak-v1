@@ -5,6 +5,10 @@ import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { readJsonBody } from "@/lib/security/write-request";
 import { studioGenerationDependencies } from "@/lib/studio/generation-dependencies";
 import { generateStudioDraft, parseStudioGeneration, studioEnabled } from "@/lib/studio/production";
+import { STUDIO_GENERATE_PER_MINUTE, createStudioRateLimiter } from "@/lib/studio/limits";
+
+// In-memory, per process instance (see docs/studio/COST_CONTROLS.md): a burst brake, not a billing control.
+const limiter = createStudioRateLimiter({ limit: STUDIO_GENERATE_PER_MINUTE, windowMs: 60_000 });
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,6 +23,12 @@ export async function POST(request: NextRequest) {
   if (!input) return jsonResponse({ ok: false, code: "invalid_request" }, 400);
   const db = getPrisma();
   if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503);
+  const slot = limiter.take(gate.access.activeClientId);
+  if (!slot.ok) {
+    const response = jsonResponse({ ok: false, code: "rate_limited", retryAfterMs: slot.retryAfterMs }, 429);
+    response.headers.set("Retry-After", String(Math.ceil(slot.retryAfterMs / 1000)));
+    return response;
+  }
   try {
     const result = await generateStudioDraft(studioGenerationDependencies(db), gate.access.activeClientId, input);
     return jsonResponse(result, result.status);

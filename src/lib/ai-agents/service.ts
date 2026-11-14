@@ -13,6 +13,7 @@ import { Prisma, type AiAgentRunStatus } from "@prisma/client";
 import { clientHasGrowthFeature } from "@/lib/billing/growth/entitlements";
 import { getPrisma } from "@/lib/db/prisma";
 import { AI_AGENTS } from "@/lib/growth/ai-engine";
+import { reviewRequiresHumanApproval } from "@/lib/reputation/review-target-model";
 
 import { latestDueSlot, type AgentSchedule, type ScheduleKind } from "./schedule";
 
@@ -111,6 +112,11 @@ export async function requestAgentRun(
   if (!setting?.enabled) return { ok: false, error: "agent_disabled" };
   // Every path (manual, schedule, event trigger) respects the AI Autopilot plan when enforcement is on.
   if (!(await clientHasGrowthFeature(clientId, "ai_autopilot"))) return { ok: false, error: "plan_required" };
+  if (agentKey === "review_responder" && input.context?.reviewWorkflowVersion === 2) {
+    const { enqueueCanonicalReviewRun } = await import("@/lib/reputation/review-run-queue");
+    const payload = { ...(input.brief?.trim() ? { brief: input.brief.trim().slice(0, 2000) } : {}), ...(input.context ?? {}) };
+    return enqueueCanonicalReviewRun(prisma, clientId, payload, profileId, input.trigger ?? "review_cockpit");
+  }
   const pending = await prisma.aiAgentRun.count({
     where: { clientId, agentKey, status: { in: ["queued", "running", "awaiting_approval", "approved", "executing"] } },
   });
@@ -212,6 +218,14 @@ export interface ClaimedRun {
 export async function claimNextAgentRun(now = new Date()): Promise<ClaimedRun | null> {
   const prisma = requirePrisma();
   const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
+  // Native generation may have spent before its response was lost: never regenerate it.
+  await prisma.aiAgentRun.updateMany({
+    where: {
+      status: "running", claimedAt: { lt: staleBefore },
+      input: { path: ["reviewGeneration", "owner"], equals: "native_review_v1" },
+    },
+    data: { status: "failed", completedAt: now, error: "generation_interrupted: verify the generation receipt and credit ledger before any new request" },
+  });
   await prisma.aiAgentRun.updateMany({ where: { status: "running", claimedAt: { lt: staleBefore } }, data: { status: "queued", claimedAt: null } });
   await prisma.aiAgentRun.updateMany({
     where: { status: "executing", claimedAt: { lt: staleBefore } },
@@ -226,6 +240,7 @@ export async function claimNextAgentRun(now = new Date()): Promise<ClaimedRun | 
     WHERE r."id" = (
       SELECT "id" FROM "ai_agent_runs"
       WHERE "status" IN ('queued', 'approved')
+        AND ("status" = 'approved' OR COALESCE("input"->'reviewGeneration'->>'owner', '') <> 'native_review_v1')
       ORDER BY "createdAt"
       LIMIT 1
       FOR UPDATE SKIP LOCKED
@@ -245,7 +260,7 @@ export async function claimNextAgentRun(now = new Date()): Promise<ClaimedRun | 
     input: row.input,
     output: row.output,
     instructions: setting?.instructions ?? null,
-    requireApproval: agentDef(row.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true,
+    requireApproval: reviewRequiresHumanApproval(row.agentKey, row.input) ? true : agentDef(row.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true,
   };
 }
 
@@ -265,9 +280,16 @@ export async function reportAgentRun(
     output = parsed === null ? Prisma.JsonNull : parsed;
   }
   const prisma = requirePrisma();
-  const run = await prisma.aiAgentRun.findUnique({ where: { id: runId }, select: { status: true, clientId: true, agentKey: true } });
+  const run = await prisma.aiAgentRun.findUnique({ where: { id: runId }, select: { status: true, clientId: true, agentKey: true, input: true } });
   if (!run) return { ok: false, code: "not_found" };
   if (run.status !== "running" && run.status !== "executing") return { ok: false, code: "not_claimed" };
+  const nativeInput = run.input && typeof run.input === "object" && !Array.isArray(run.input)
+    ? run.input as Record<string, unknown> : {};
+  const generation = nativeInput.reviewGeneration;
+  if ((run.status === "running" && generation && typeof generation === "object" &&
+      !Array.isArray(generation) && (generation as Record<string, unknown>).owner === "native_review_v1") ||
+    (run.status === "executing" && nativeInput.reviewNativePublication != null))
+    return { ok: false, code: "not_claimed" };
 
   let next: AiAgentRunStatus;
   if (!report.succeeded) next = "failed";
@@ -277,12 +299,15 @@ export async function reportAgentRun(
       where: { clientId_agentKey: { clientId: run.clientId, agentKey: run.agentKey } },
       select: { requireApproval: true },
     });
-    const needsApproval = agentDef(run.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true;
+    const needsApproval = reviewRequiresHumanApproval(run.agentKey, run.input) ? true : agentDef(run.agentKey)?.alwaysRequiresApproval ? true : setting?.requireApproval ?? true;
     next = needsApproval ? "awaiting_approval" : "completed";
   }
   const terminal = next === "completed" || next === "failed";
   const updated = await prisma.aiAgentRun.updateMany({
-    where: { id: runId, status: run.status },
+    where: {
+      id: runId, status: run.status,
+      input: { equals: run.input === null ? Prisma.AnyNull : run.input as Prisma.InputJsonValue },
+    },
     data: {
       status: next,
       ...(output !== undefined ? { output } : {}),
@@ -342,6 +367,9 @@ export async function triggerLowRatingResponder(
   review: { responseId: string; rating: number; feedback: string | null; businessName: string; source?: "takatak" | "google" },
 ): Promise<boolean> {
   if (review.rating > 3) return false;
+  const { resolveReviewTarget } = await import("@/lib/reputation/review-target");
+  const target = await resolveReviewTarget(requirePrisma(), clientId, review.source === "google" ? "google" : "takatak", review.responseId);
+  if (!target) return false;
   const result = await requestAgentRun(
     clientId,
     "review_responder",
@@ -352,7 +380,9 @@ export async function triggerLowRatingResponder(
         rating: review.rating,
         feedback: (review.feedback ?? "").slice(0, 2000),
         businessName: review.businessName.slice(0, 80),
-        ...(review.source === "google" ? { source: "google" } : {}),
+        source: target.source,
+        reviewWorkflowVersion: 2,
+        reviewContentHash: target.fingerprint,
       },
     },
     null,
@@ -411,7 +441,7 @@ export async function authorizeAgentRun(runId: string, agentKey: string): Promis
       where: { clientId_agentKey: { clientId: run.clientId, agentKey } },
       select: { requireApproval: true },
     });
-    canAct = !(agentDef(agentKey)?.alwaysRequiresApproval ?? false) && setting?.requireApproval === false;
+    canAct = !(agentDef(agentKey)?.alwaysRequiresApproval ?? false) && setting?.requireApproval === false && !reviewRequiresHumanApproval(agentKey, run.input);
   }
   const asObject = (v: Prisma.JsonValue | null) => (v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null);
   return { ok: true, run: { id: run.id, clientId: run.clientId, input: asObject(run.input) ?? {}, output: asObject(run.output), canAct } };

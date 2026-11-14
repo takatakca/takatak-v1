@@ -64,6 +64,7 @@ export default async function SeoPortfolioPage({searchParams}:{searchParams:Prom
      <button className="rounded-xl bg-blue-700 p-3 text-sm font-semibold text-white hover:bg-blue-800 sm:col-span-2" type="submit">Add website to this workspace</button>
     </form>
    </section>:null}
+   {canManage?<Link href="/dashboard/seo/deletions" className="inline-flex rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">SEO deletion receipts →</Link>:null}
    {hasEffectivePermission(access,"view_reports")?<Link href="/dashboard/seo/exports" className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">Export workspace SEO data →</Link>:null}
    <Link href="/dashboard/seo/free-tools" className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">Open free SEO & AI tools →</Link>
  </main>;

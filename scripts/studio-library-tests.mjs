@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { parseStudioLibraryFilter, studioLibraryQuery, studioLibraryMetadata, listStudioLibrary } from '../src/lib/studio/library-policy.ts';
+import { parseStudioLibraryFilter, studioLibraryQuery, studioLibraryMetadata, listStudioLibrary, exportableStudioDraft } from '../src/lib/studio/library-policy.ts';
 const source = 'takatakstudio_output';
 const projectId = '22222222-2222-4222-8222-222222222222';
 const parse = query => parseStudioLibraryFilter(new URLSearchParams(query));
@@ -106,4 +106,12 @@ test('library GET requires fresh workspace access and feature flag before readin
   assert.ok(route.includes('gate.access.activeClientId, filter, STUDIO_OUTPUT_SOURCE'));
   assert.ok(route.indexOf('requireWorkspaceApiPermission(') < route.indexOf('const db = getPrisma()'));
   assert.ok(!route.includes('searchParams.get("clientId")')); assert.ok(!route.includes('runTakbot'));
+});
+
+test('a downloaded draft carries only title, text, format and date: no request ID, engine, mode or trial flag', () => {
+  const exported = exportableStudioDraft({ id: 'out-1', title: 'Lyrics', content: 'Original words', status: 'draft', createdAt: '2026-11-14T12:00:00.000Z',
+    metadata: { source: 'takatakstudio_output', projectId: '22222222-2222-4222-8222-222222222222', track: 'music', engine: 'openai', mode: 'write', trial: true, requestId: 'studio:abc', originSource: 'takbot', generatedBy: 'takbot', version: 1 } });
+  assert.deepEqual(exported, { studio: 'TAKATAKSTUDIO', kind: 'text_draft', title: 'Lyrics', content: 'Original words', track: 'music', createdAt: '2026-11-14T12:00:00.000Z' });
+  for (const key of ['requestId', 'engine', 'mode', 'trial', 'projectId', 'id', 'status', 'originSource', 'generatedBy', 'metadata']) assert.equal(key in exported, false, key);
+  assert.deepEqual(exportableStudioDraft({ title: 't', content: 'c', metadata: { track: 'publish' } }), { studio: 'TAKATAKSTUDIO', kind: 'text_draft', title: 't', content: 'c', track: null, createdAt: null });
 });

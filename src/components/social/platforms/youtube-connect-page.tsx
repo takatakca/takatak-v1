@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { YoutubeAnalyticsDashboard } from "@/components/social/platforms/youtube-analytics-dashboard";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -93,6 +94,11 @@ export function YoutubeConnectPage({
   profileImageUrl = null,
   resolutionIssue = null,
   needsSelectionConnectionId = null,
+  billingExempt,
+  hasPaidPlan,
+  analyticsHistoryDays,
+  canCompare,
+  billingHref,
 }: {
   activeBrandId: string | null;
   canManage: boolean;
@@ -102,6 +108,11 @@ export function YoutubeConnectPage({
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
   needsSelectionConnectionId?: string | null;
+  billingExempt: boolean;
+  hasPaidPlan: boolean;
+  analyticsHistoryDays: number | null;
+  canCompare: boolean;
+  billingHref: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -249,49 +260,57 @@ export function YoutubeConnectPage({
   if (isConnected || hasSocialHistory) {
     return (
       <div className="space-y-7 px-1 pb-16 pt-2">
-        <header className="flex items-center gap-4">
-          {profileImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={profileImageUrl}
-              alt=""
-              referrerPolicy="no-referrer"
-              className="h-14 w-14 rounded-full object-cover"
-            />
-          ) : (
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#ff0000] text-lg font-semibold text-white">
-              {(connectedLabel ?? "YouTube").slice(0, 1).toUpperCase()}
-            </span>
-          )}
-          <div>
-            <p className="text-sm font-medium text-slate-500">YouTube</p>
-            <h1 className="text-[28px] font-semibold leading-tight text-[#20242A]">
-              {connectedLabel ?? "YouTube channel"}
-            </h1>
-          </div>
-        </header>
-
-        <section className="rounded-[18px] border border-slate-200 bg-white px-7 py-6">
-          <h2 className="text-[18px] font-semibold text-slate-950">
-            {isConnected ? "Channel connected" : "No YouTube account connected"}
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            {isConnected
-              ? "Channel connected. Analytics will appear here after the next sync step."
-              : "Your saved YouTube history remains stored. Reconnect the same account to restore only that account’s analytics."}
-          </p>
-          {!isConnected ? (
-            <Link
-              href={withSocialPreview(
-                "/dashboard/social/youtube?connections=open",
-                searchParams,
+        {isConnected ? (
+          <YoutubeAnalyticsDashboard
+            billingExempt={billingExempt}
+            hasPaidPlan={hasPaidPlan}
+            historyDays={analyticsHistoryDays}
+            canCompare={canCompare}
+            billingHref={billingHref}
+            canManage={canManage}
+            profileImageUrl={profileImageUrl}
+            connectedLabel={connectedLabel}
+          />
+        ) : (
+          <>
+            <header className="flex items-center gap-4">
+              {profileImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profileImageUrl}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  className="h-14 w-14 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-[#ff0000] text-lg font-semibold text-white">
+                  {(connectedLabel ?? "YouTube").slice(0, 1).toUpperCase()}
+                </span>
               )}
-              className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
-            >
-              Reconnect YouTube
-            </Link>
-          ) : null}
-        </section>
+              <div>
+                <p className="text-sm font-medium text-slate-500">YouTube</p>
+                <h1 className="text-[28px] font-semibold leading-tight text-[#20242A]">
+                  {connectedLabel ?? "YouTube channel"}
+                </h1>
+              </div>
+            </header>
+            <section className="rounded-[18px] border border-slate-200 bg-white px-7 py-6">
+              <h2 className="text-[18px] font-semibold text-slate-950">No YouTube account connected</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Your saved YouTube history remains stored. Reconnect the same account to restore only that account’s analytics.
+              </p>
+              <Link
+                href={withSocialPreview(
+                  "/dashboard/social/youtube?connections=open",
+                  searchParams,
+                )}
+                className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#1565D8] px-6 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                Reconnect YouTube
+              </Link>
+            </section>
+          </>
+        )}
       </div>
     );
   }
@@ -436,8 +455,8 @@ export function YoutubeConnectPage({
             Connect social networks
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts to unlock analytics, scheduling and content
-            management.
+            Connect your accounts once. TAKATAK shows only real data received
+            from each network&apos;s official API.
           </p>
           <Link
             href={withSocialPreview(

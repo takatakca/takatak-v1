@@ -92,3 +92,47 @@ with synthetic rate fixtures, not evidence of actual supplier pricing, live
 provider savings, commercial rights or operational multi-agent orchestration.
 
 — STUDIO-ENGINE — Codex
+
+## Per-workspace limits and recovery (2026-11-14 audit follow-up)
+
+`src/lib/studio/limits.ts` is pure and tested by `scripts/studio-limits-tests.mjs`.
+
+- **Open plans:** a workspace may hold at most two plans whose tasks are still
+  queued or running (`openStudioPlanCount` counts distinct operations). A third
+  plan is refused with `plan_limit` (429) across all of its productions, so one
+  tenant's queue cannot starve the shared FIFO.
+- **Balance precheck:** `queueStudioPlan` reads the central credit balance and
+  refuses a plan when it is below one task price (`insufficient_credits`, 402)
+  or unreadable (`balance_unavailable`, 503). This reserves nothing; the ledger
+  still debits each task when the worker dispatches it.
+- **Projects per day:** `POST /api/studio/projects` allows 50 briefs per
+  workspace per rolling 24 hours (`project_daily_limit`, 429).
+- **Generate limiter:** `POST /api/studio/generate` uses an in-memory,
+  fixed-window limiter of 6 requests per workspace per minute. It lives in one
+  process: every instance counts separately and a restart resets it. It is a
+  burst brake on top of the credit balance, not a billing control, and it is
+  not shared state the ledger depends on.
+
+### Lease recovery and refusals
+
+The worker (`src/lib/studio/worker.ts`) writes `dispatchedAt` on the running
+job before calling TAK-TAK. If `finish()` fails or the function is killed, the
+next tick finalizes any running job whose lease expired more than 60 seconds
+ago without another provider call: with `dispatchedAt` the job fails as
+`lease_expired_after_dispatch` and keeps the production blocked
+(`reconciliationRequired`); without it the job fails as
+`lease_expired_before_dispatch` and the production is released. Refusals TAK-TAK
+returns before any debit (`insufficient_credits`, `no_engine_connected`,
+`unknown_engine`, `engine_mode_mismatch`, `unknown_mode`, `mode_not_inline`,
+`project_not_found`, `brief_too_large_for_engine`) are retained on the job but
+no longer block the production. Post-debit relay failures and replay codes still
+require reconciliation because a refund can itself fail.
+
+### Operator path
+
+`POST /api/studio/agent/reconcile` (`manage_jobs` in the active workspace,
+body `{jobId, note}`) clears the block on one finished task after the operator
+has checked credit activity and saved outputs. The job keeps its status and
+error history (`reconciled_<code>`), records who/when/why, and never receives a
+second provider attempt. The customer-facing listing never includes the held
+recovery text; it reports `hasRecoveryText` so the operator knows to look.

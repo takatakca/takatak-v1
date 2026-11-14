@@ -37,6 +37,13 @@ export interface PostSummary {
   brandName: string | null;
   scheduledAt: string | null;
   approvalStatus: string | null;
+  publication: {
+    state: "sending" | "confirmed" | "failed" | "uncertain" | "needs_reconnect" | null;
+    remotePostId: string | null;
+    permalinkUrl: string | null;
+    errorMessage: string | null;
+    confirmedAt: string | null;
+  } | null;
 }
 
 export interface ApprovalSummary {
