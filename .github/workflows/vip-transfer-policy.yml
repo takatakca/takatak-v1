@@ -1,0 +1,37 @@
+name: VIP Transfer AI contract
+on:
+  pull_request:
+    paths:
+      - "src/lib/web-migration/vip-transfer-policy.ts"
+      - "scripts/verify-vip-transfer-policy.ts"
+      - "src/lib/web-migration/hosting-control-policy.ts"
+      - "scripts/verify-hosting-control-policy.ts"
+      - "src/lib/web-hosting/domain-provider-handoff.ts"
+      - "src/app/dashboard/web-hosting/domain-portal/page.tsx"
+      - "src/components/web-hosting/web-domain-shell.tsx"
+      - "src/components/web-hosting/hosting-accounts-overview.tsx"
+      - "scripts/verify-domain-provider-handoff.ts"
+      - ".github/workflows/vip-transfer-policy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install from locked dependencies
+        run: npm ci --ignore-scripts
+      - name: Test migration permissions and VIP pricing without external services
+        run: npx --no-install tsx scripts/verify-vip-transfer-policy.ts
+      - name: Test tenant-scoped Hosting Control role restrictions
+        run: npx --no-install tsx scripts/verify-hosting-control-policy.ts
+      - name: Test authorized MochaHost handoff without credential collection
+        run: npx --no-install tsx scripts/verify-domain-provider-handoff.ts
