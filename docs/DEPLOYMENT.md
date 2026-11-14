@@ -1,5 +1,7 @@
 # TAKATAK V1 — Deployment
 
+Guardian observation — 2026-11-07T20:43Z. `X-TAKATAK-Release` on `https://takatak.ca/api/health/ready` was `6488d57e24885011034ff95b3578646f39d86ce6`. DNS for both `takatak.ca` and `www.takatak.ca` was 209.145.49.63. The apex certificate is Let's Encrypt for `takatak.ca` only, valid through 30 January 2027. `www` served `CN=TRAEFIK DEFAULT CERT` and Coolify 503. Do not treat a skipped GitHub production job as proof that native Coolify stayed still. Signed: TAKATAK GUARDIAN.
+
 ## Verified architecture and constraints
 Actual takatak.ca target on 2026-11-07: VPS1 209.145.49.63, Coolify application lt05flq7furdzxfqtmfmujek, repository main, root Dockerfile, internal port3000. The older VPS2 application is not the current DNS target. Preserve both existing configurations and mail/DNS. Native Coolify webhook deploys pushes serially; GitHub skipped deployment jobs do not mean native deployment is disabled.
 

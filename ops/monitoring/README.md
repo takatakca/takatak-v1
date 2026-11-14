@@ -18,7 +18,7 @@ python3 -m unittest discover -s ops/monitoring -p 'test_*.py' -v
 python3 ops/monitoring/monitor.py validate --config ops/monitoring/sites.json
 ```
 
-The committed `example.com` configuration is an example, not an enrolled customer. Put approved target hostnames in the host-local configuration before rebuilding.
+The committed `sites.json` lists public production endpoints checked on 2026-11-07. Each `GET` returns HTTP 200 except `www.takatak.ca`, which is included because its certificate and route are broken. These rows are not paid customer enrollments and have no `domain_asset_id`. A redirect is still a failure. `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `MONITOR_FROM` and `MONITOR_TO` are empty in `.env.example`; without them the worker queues notices and the French report says the destination is not configured. No test message was delivered from this repository.
 
 ## Deployment
 
