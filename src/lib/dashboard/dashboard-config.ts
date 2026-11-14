@@ -86,6 +86,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: "Clients & Services",
     items: [
       { label: "Clients", href: "/dashboard/clients", icon: Users },
+      { label: "Customer Database", href: "/dashboard/customers", icon: UserRound },
       { label: "Businesses / Brands", href: "/dashboard/brands", icon: Building2 },
       { label: "Inventory", href: "/dashboard/inventory", icon: Tags },
       { label: "Locations", href: "/dashboard/locations", icon: MapPinned },
