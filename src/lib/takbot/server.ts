@@ -10,7 +10,7 @@ import { aiCreditsCheckoutEnabled } from "@/lib/billing/ai-credits/stripe";
 import { getPrisma } from "@/lib/db/prisma";
 
 import { TAKBOT_ENGINES, routeTakbotRequest, takbotEngine } from "./catalog";
-import { relayPrompt, type RelayResult } from "./relay";
+import { relayPrompt, type RelayResult, type RelayUsage } from "./relay";
 import { TRIAL_GRANT_PREFIX, readTrialConfig, routeForWorkspace, trialEngineKey, trialGrantKey } from "./trial";
 
 async function keyFor(engineKey: string): Promise<string | null> {
@@ -136,7 +136,7 @@ export async function claimTrial(clientId: string): Promise<{ ok: true; balance:
 const SAVED_KIND = { chat: "creative_brief", write: "post_long", research: "report_summary" } as const;
 
 /** Keeps the answer in the client's file (AI Studio → saved outputs). Never fails the run. */
-async function saveOutput(input: { clientId: string; mode: string; prompt: string; text: string; engine: string; trial: boolean }): Promise<string | null> {
+async function saveOutput(input: { clientId: string; mode: string; prompt: string; text: string; engine: string; trial: boolean; requestId: string; model: string; usage: RelayUsage; retailCredits: number }): Promise<string | null> {
   const prisma = getPrisma();
   if (!prisma) return null;
   try {
@@ -149,7 +149,8 @@ async function saveOutput(input: { clientId: string; mode: string; prompt: strin
         content: input.text.slice(0, 20_000),
         origin: "ai_generated",
         status: "saved",
-        metadata: { source: "takbot", mode: input.mode, engine: input.engine, trial: input.trial },
+        metadata: { source: "takbot", mode: input.mode, engine: input.engine, trial: input.trial, requestId: input.requestId, model: input.model, modelEvidence: "requested",
+          usage: { ...input.usage }, retailCredits: input.retailCredits, providerCost: null, providerCostStatus: "unreconciled" },
       },
       select: { id: true },
     });
@@ -206,7 +207,7 @@ export async function runTakbot(input: {
     const refund = await refundDebit({ clientId: input.clientId, debitIdempotencyKey: idempotencyKey, note: `TAK-TAK ${relayed.code}` });
     return { ok: false, status: RELAY_STATUS[relayed.code], code: relayed.code, balance: refund.ok ? refund.balance : debit.balance };
   }
-  const savedId = await saveOutput({ clientId: input.clientId, mode: decision.mode.key, prompt: input.prompt, text: relayed.text, engine: decision.engine.key, trial });
+  const savedId = await saveOutput({ clientId: input.clientId, mode: decision.mode.key, prompt: input.prompt, text: relayed.text, engine: decision.engine.key, trial, requestId: input.requestId, model: relayed.model, usage: relayed.usage, retailCredits: decision.credits });
   return {
     ok: true,
     text: relayed.text,

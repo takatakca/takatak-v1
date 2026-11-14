@@ -194,6 +194,9 @@ jobs:
       - name: AI Studio generation safeguards
         run: npm run qa:ai-studio-generation
 
+      - name: TAKATAKSTUDIO tenant, production, agent-job, limit and i18n contracts
+        run: node --experimental-strip-types --test scripts/studio-*-tests.mjs
+
       - name: QMAPS listings and reviews sync safeguards
         run: npm run qa:qmaps-sync
 

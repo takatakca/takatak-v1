@@ -6,10 +6,11 @@
 import type { TakbotEngine, TakbotMode } from "./catalog";
 
 export type RelayResult =
-  | { ok: true; text: string }
+  | { ok: true; text: string; model: string; usage: RelayUsage }
   | { ok: false; code: "timeout" | "network" | "rate_limited" | "auth" | "provider_error" | "empty" | "unsupported" };
 
 export type RelayFetch = (input: string, init: RequestInit) => Promise<Response>;
+export interface RelayUsage { inputTokens: number | null; outputTokens: number | null; cachedInputTokens: number | null; cacheWriteTokens: number | null; reasoningTokens: number | null }
 
 export const RELAY_MAX_OUTPUT_TOKENS = 1200;
 const TIMEOUT_MS = 45_000;
@@ -86,7 +87,7 @@ function buildRequest(engine: TakbotEngine, mode: TakbotMode, apiKey: string, mo
 export function readRelayText(engine: TakbotEngine, body: unknown): string {
   if (engine.relay === "anthropic") {
     const b = body as { content?: { type?: string; text?: unknown }[] };
-    return (b?.content ?? [])
+    return (Array.isArray(b?.content) ? b.content : [])
       .filter((p) => p?.type === "text" && typeof p.text === "string")
       .map((p) => p.text as string)
       .join("")
@@ -94,7 +95,8 @@ export function readRelayText(engine: TakbotEngine, body: unknown): string {
   }
   if (engine.relay === "gemini") {
     const b = body as { candidates?: { content?: { parts?: { text?: unknown }[] } }[] };
-    return (b?.candidates?.[0]?.content?.parts ?? [])
+    const parts = b?.candidates?.[0]?.content?.parts;
+    return (Array.isArray(parts) ? parts : [])
       .map((p) => (typeof p?.text === "string" ? p.text : ""))
       .join("")
       .trim();
@@ -102,6 +104,19 @@ export function readRelayText(engine: TakbotEngine, body: unknown): string {
   const b = body as { choices?: { message?: { content?: unknown } }[] };
   const content = b?.choices?.[0]?.message?.content;
   return typeof content === "string" ? content.trim() : "";
+}
+
+/** Provider-reported units only. Missing usage is unknown, never zero cost. */
+export function readRelayUsage(engine: Pick<TakbotEngine, "relay">, body: unknown): RelayUsage {
+  const object = (value: unknown): Record<string, unknown> => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {};
+  const count = (value: unknown): number | null => typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : null;
+  const raw = object(body);
+  const usage = object(engine.relay === "gemini" ? raw.usageMetadata : raw.usage);
+  const details = object(usage.prompt_tokens_details);
+  const completion = object(usage.completion_tokens_details);
+  if (engine.relay === "anthropic") return { inputTokens: count(usage.input_tokens), outputTokens: count(usage.output_tokens), cachedInputTokens: count(usage.cache_read_input_tokens), cacheWriteTokens: count(usage.cache_creation_input_tokens), reasoningTokens: null };
+  if (engine.relay === "gemini") return { inputTokens: count(usage.promptTokenCount), outputTokens: count(usage.candidatesTokenCount), cachedInputTokens: count(usage.cachedContentTokenCount), cacheWriteTokens: null, reasoningTokens: count(usage.thoughtsTokenCount) };
+  return { inputTokens: count(usage.prompt_tokens), outputTokens: count(usage.completion_tokens), cachedInputTokens: count(details.cached_tokens), cacheWriteTokens: null, reasoningTokens: count(completion.reasoning_tokens) };
 }
 
 export async function relayPrompt(
@@ -112,7 +127,7 @@ export async function relayPrompt(
   // An explicit model (the trial's economy model) wins over the engine default.
   const model = input.model || modelFor(input.engine, env);
   const request = model ? buildRequest(input.engine, input.mode, input.apiKey, model, input.prompt) : null;
-  if (!request) return { ok: false, code: "unsupported" };
+  if (!model || !request) return { ok: false, code: "unsupported" };
   let response: Response;
   try {
     response = await fetchImpl(request.url, { ...request.init, signal: AbortSignal.timeout(TIMEOUT_MS), redirect: "error" });
@@ -127,5 +142,5 @@ export async function relayPrompt(
     return { ok: false, code: "provider_error" };
   }
   const text = readRelayText(input.engine, body);
-  return text ? { ok: true, text } : { ok: false, code: "empty" };
+  return text ? { ok: true, text, model, usage: readRelayUsage(input.engine, body) } : { ok: false, code: "empty" };
 }

@@ -213,6 +213,8 @@ export function ordinaryUserCannotUsePlatformScope(input: {
 }
 
 export const HIGH_RISK_PATH_PREFIXES = [
+  "/api/studio",
+  "/dashboard/studio",
   "/api/billing",
   "/api/account",
   "/api/team",

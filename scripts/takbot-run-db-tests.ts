@@ -65,6 +65,7 @@ async function main() {
   assert.equal(saved.content, ANSWER);
   assert.equal(saved.origin, "ai_generated");
   assert.equal((saved.metadata as { source?: string; trial?: boolean }).source, "takbot");
+  assert.equal((saved.metadata as { requestId?: string }).requestId, requestId, "the saved output retains the credit operation ID for reconciliation");
   assert.equal(await prisma.savedAiOutput.count({ where: { clientId: other.id } }), 0);
   console.log("PASS the answer is saved in the client's own file (AI Studio saved outputs), nowhere else");
 
