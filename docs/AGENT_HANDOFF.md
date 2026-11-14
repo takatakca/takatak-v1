@@ -3,7 +3,7 @@
 Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Builds on PR #258 (merged at
 `dea83395`). Read `docs/SOCIAL_PUBLISHING_ENGINE.md` ("Instagram" section) first.
 
-- Branch `claude/vigilant-panini-3acb80` (worktree) from main `69837d2a`. No schema change,
+- Branch `claude/vigilant-panini-3acb80` → PR #294, from main `69837d2a`. No schema change,
   no new dependency, no provider spend, tokens never in URLs or logs.
 - Delivered: `instagram_publishing` scope set and `startInstagramPublishingAuthorization`
   (incremental authorization on the existing Instagram Login connection, selected account
