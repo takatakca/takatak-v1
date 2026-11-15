@@ -5,6 +5,7 @@ Branch: feat/local-citation-nap-audit-20261115. Existing billing and authenticat
 ## Delivered in this branch (not yet merged / deployed)
 - Browser-local CSV evidence comparison at /dashboard/local-listings/citations/audit.
 - Reference fields: name, address, phone, website.
+- Pre-fill from current tenant's non-demo TAKATAK local listing profiles or already-discovered connected Google Business Profile snapshots, when available. This makes **no live Google API request**, and Google social discovery currently does **not** preserve phone numbers, so that field stays blank. Only `client_scoped` workspace access can read these profiles; admin/global view does not mix tenant data.
 - Import up to 500 supplied listing evidence rows (250 KB) with quoted CSV parsing.
 - Field-level mismatch/missing comparisons, potential duplicate detection, and correction CSV export.
 - No network calls or server upload of manually entered evidence; no database migration or provider spend.
