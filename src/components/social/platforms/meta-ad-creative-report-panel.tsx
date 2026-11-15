@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import type { MetaAdCreativeReportRow } from "@/lib/social/analytics/meta-ad-creative-mapping";
 import { makeMetaCreativeCsv } from "@/lib/social/analytics/meta-creative-export";
+import { MetaAdPeerComparisonPanel } from "@/components/social/platforms/meta-ad-peer-comparison-panel";
 
 type CreativeReportResponse = {
   ok?: boolean;
@@ -166,6 +167,12 @@ export function MetaAdCreativeReportPanel({ start, end, locale }: { start: strin
               ? "Aucune mesure n'est inventée pour les variantes créatives dynamiques. Les résultats dépendent des objectifs, de l'attribution, des placements et des autorisations Meta. Jusqu'à 50 publicités sont visibles par requête."
               : "No dynamic asset-level metrics are inferred. Results depend on objectives, attribution, placements and Meta permissions. At most 50 ads are shown per request."}
           </p>
+          <MetaAdPeerComparisonPanel
+            rows={rows}
+            complete={report.status === "ready"}
+            locale={locale}
+            currency={currency}
+          />
         </>
       )}
     </section>
