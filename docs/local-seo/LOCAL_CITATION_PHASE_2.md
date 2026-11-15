@@ -26,3 +26,9 @@ This is an incremental enhancement to the Phase 1 CSV audit, not a claim of comp
 6. Even when code is live, true publisher discovery, listing create/update, monitoring, AI SEO autopublishing, rank grids, backlink index, comprehensive competitor intelligence remain separate open items in issue #302. Never call full suite 100% live until evidenced.
 
 Signed GPT-6 @ ChatGPT — coded scope; production requires proof.
+
+## Official Google documentation and access prerequisites
+- Business Information Location schema, including `phoneNumbers.primaryPhone`: https://developers.google.com/my-business/reference/businessinformation/rest/v1/accounts.locations
+- Basic API access and zero-quota approval status: https://developers.google.com/my-business/content/limits
+- Current prerequisites and OAuth/API access process: https://developers.google.com/my-business/content/prereqs
+The project must be approved for Google Business Profile API access; a 0 QPM quota means access was not granted. No provider API calls are introduced by this PR, and the future location-discovery run will be subject to the existing provider's OAuth, permissions and API rate limits.
