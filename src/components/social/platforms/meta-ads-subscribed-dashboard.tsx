@@ -18,6 +18,7 @@ import {
   type ChartTooltipSeries,
 } from "@/components/social/analytics/social-summary-chart";
 import { metricValue } from "@/components/social/analytics/social-summary-tokens";
+import { MetaCampaignBenchmarkPanel } from "@/components/social/platforms/meta-campaign-benchmark-panel";
 
 type DailyPoint = {
   date: string;
@@ -45,6 +46,7 @@ type CampaignRow = {
 
 type AccountAnalytics = {
   accountName?: string;
+  currency?: string;
   impressions: number | null;
   reach: number | null;
   spend: number | null;
@@ -801,6 +803,11 @@ export function MetaAdsSubscribedDashboard({
           rows={campaigns}
           confirmed={campaignsConfirmed}
           loading={loading && !ready}
+        />
+        <MetaCampaignBenchmarkPanel
+          campaigns={campaigns}
+          confirmed={campaignsConfirmed}
+          currency={analytics?.currency ?? null}
         />
       </section>
     </div>
