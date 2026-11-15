@@ -5,6 +5,9 @@ import {
   auditCitations, exportCitationAuditCsv, parseCitationCsv,
   type BusinessNap, type CitationReferenceProfile, type FieldFinding,
 } from "@/lib/local-listings/citation-audit";
+import {
+  citationEvidenceMatchesProfile, type SavedCitationEvidence,
+} from "@/lib/local-listings/citation-evidence";
 
 const EMPTY: BusinessNap = { name: "", address: "", phone: "", website: "" };
 const FIELDS = ["name", "address", "phone", "website"] as const;
@@ -15,17 +18,33 @@ const CHECK_LABEL: Record<FieldFinding, string> = {
   match: "Matches", mismatch: "Different", missing_in_citation: "Not supplied", reference_missing: "No reference",
 };
 
-export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferenceProfile[] }) {
+export function CitationAuditWorkbench({
+  profiles, savedEvidence,
+}: {
+  profiles: CitationReferenceProfile[];
+  savedEvidence: SavedCitationEvidence[];
+}) {
   const [reference, setReference] = useState<BusinessNap>(EMPTY);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [csv, setCsv] = useState("");
+  const [evidenceMode, setEvidenceMode] = useState<"csv" | "saved">("csv");
   const [fileError, setFileError] = useState("");
   const parsed = useMemo(() => {
     try { return { data: parseCitationCsv(csv), error: "" }; }
     catch (error) { return { data: { rows: [], warnings: [] }, error: error instanceof Error ? error.message : "Invalid CSV" }; }
   }, [csv]);
-  const results = useMemo(() => auditCitations(reference, parsed.data.rows), [reference, parsed.data.rows]);
-  const ready = FIELDS.some(f => reference[f].trim()) && results.summary.total > 0 && !parsed.error;
+  const selected = profiles.find(profile => profile.id === selectedProfile);
+  const linkedEvidence = useMemo(() => selected
+    ? savedEvidence.filter(item => citationEvidenceMatchesProfile(selected, item)) : [],
+    [selected, savedEvidence]);
+  const comparisonRows = evidenceMode === "saved"
+    ? linkedEvidence.map(item => item.row) : parsed.data.rows;
+  const results = useMemo(
+    () => auditCitations(reference, comparisonRows),
+    [reference, comparisonRows],
+  );
+  const ready = FIELDS.some(f => reference[f].trim()) &&
+    results.summary.total > 0 && (evidenceMode === "saved" || !parsed.error);
   const hasEnoughReference = FIELDS.every(f => reference[f].trim());
 
   function exportReport() {
@@ -46,7 +65,7 @@ export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferen
     setFileError("");
     if (!file) return;
     if (file.size > 250_000) { setFileError("Maximum CSV size is 250 KB."); return; }
-    try { setCsv(await file.text()); }
+    try { setCsv(await file.text()); setEvidenceMode("csv"); }
     catch { setFileError("Could not read this file."); }
   }
 
@@ -54,7 +73,7 @@ export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferen
     <div className="space-y-5">
       <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
         <strong>Private evidence check — not an online directory scanner.</strong>
-        <p className="mt-1">Compare citation data you supply with your official business information. No Google, Yext, or other publisher is queried, no listing is changed, and nothing entered here is uploaded to TAKATAK.</p>
+        <p className="mt-1">Compare your own CSV or saved TAKATAK citations and connected Google snapshots against the reference details. No fresh publisher API requests are made, no listings are changed, and manually entered CSV data stays in the browser.</p>
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="business-reference-title">
@@ -93,7 +112,33 @@ export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferen
 
       <section className="rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="evidence-title">
         <h2 id="evidence-title" className="text-lg font-semibold text-slate-900">2. Import citation evidence</h2>
-        <p className="mb-3 text-sm text-slate-500">CSV column headers: directory, name, address, phone, website, listing_url. Up to 500 records, 250 KB. Values may be quoted and contain commas.</p>
+        <p className="mb-3 text-sm text-slate-500">Choose saved records from this business/location or compare your own CSV. Saved records are historical evidence, not live directory verification.</p>
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button type="button" onClick={() => setEvidenceMode("csv")}
+            aria-pressed={evidenceMode === "csv"}
+            className={evidenceMode === "csv" ? "rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white" : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"}>
+            My CSV evidence
+          </button>
+          <button type="button" onClick={() => setEvidenceMode("saved")}
+            disabled={!selected || linkedEvidence.length === 0}
+            aria-pressed={evidenceMode === "saved"}
+            className={evidenceMode === "saved" ? "rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white" : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"}>
+            Linked saved evidence ({linkedEvidence.length})
+          </button>
+        </div>
+        {evidenceMode === "saved" && (
+          <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+            <p>Using {linkedEvidence.length} saved citation or Google Business snapshot record(s). Unverified or missing NAP fields will be marked as needing verification.</p>
+            <ul className="mt-2 space-y-1">
+              {linkedEvidence.slice(0, 10).map(item => (
+                <li key={item.id}>{item.row.directory} — {item.sourceLabel}
+                  {item.observedAt ? " (saved " + item.observedAt.slice(0, 10) + ")" : " (date unknown)"}</li>
+              ))}
+              {linkedEvidence.length > 10 && <li>And {linkedEvidence.length - 10} more saved records.</li>}
+            </ul>
+          </div>
+        )}
+        <p className="mb-3 text-xs text-slate-500">CSV column headers: directory, name, address, phone, website, listing_url. Up to 500 records, 250 KB. Values may be quoted and contain commas.</p>
         <label className="mb-3 block text-sm font-medium text-slate-800">
           Select a local CSV file
           <input className="mt-1 block w-full text-sm" type="file" accept=".csv,text/csv" onChange={event => void loadFile(event.target.files?.[0])} />
@@ -101,12 +146,12 @@ export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferen
         <label className="block text-sm font-medium text-slate-800">
           Or paste CSV
           <textarea className="mt-1 min-h-36 w-full rounded-lg border border-slate-300 p-3 font-mono text-xs text-slate-900"
-            spellCheck={false} value={csv} onChange={event => setCsv(event.target.value)}
+            spellCheck={false} value={csv} onChange={event => { setCsv(event.target.value); setEvidenceMode("csv"); }}
             placeholder={"directory,name,address,phone,website,listing_url\nExample Directory,My Business,123 Main St,+1 514 555 0100,https://example.ca,https://directory.example/my-business"}
           />
         </label>
-        {(fileError || parsed.error) && <p role="alert" className="mt-2 text-sm text-red-700">{fileError || parsed.error}</p>}
-        {parsed.data.warnings.length > 0 && <ul className="mt-2 text-sm text-amber-800">
+        {(fileError || (evidenceMode === "csv" && parsed.error)) && <p role="alert" className="mt-2 text-sm text-red-700">{fileError || parsed.error}</p>}
+        {evidenceMode === "csv" && parsed.data.warnings.length > 0 && <ul className="mt-2 text-sm text-amber-800">
           {parsed.data.warnings.slice(0, 5).map((warning, index) => <li key={index}>{warning}</li>)}
         </ul>}
       </section>
@@ -115,7 +160,7 @@ export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferen
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 id="findings-title" className="text-lg font-semibold text-slate-900">3. Citation findings</h2>
-            <p className="text-xs text-slate-500">“Consistent” only means values match in the supplied CSV; it does not verify live publisher data.</p>
+            <p className="text-xs text-slate-500">“Consistent” means a match against selected stored or CSV evidence only; it does not verify current publisher data.</p>
           </div>
           <button disabled={!ready} type="button" onClick={exportReport}
             className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
@@ -125,7 +170,7 @@ export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferen
         <div className="my-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
           {[
             ["Rows", results.summary.total],
-            ["Consistent in CSV", ready ? results.summary.consistent : 0],
+            ["Consistent in evidence", ready ? results.summary.consistent : 0],
             ["Needs update", ready ? results.summary.needsUpdate : 0],
             ["Needs verification", ready ? results.summary.needsVerification : 0],
             ["Possible duplicates", ready ? results.summary.duplicates : 0],
@@ -138,7 +183,7 @@ export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferen
         </div>
         {!ready ? (
           <p className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
-            Enter at least one official business detail and import citation rows to generate a comparison.
+            Select a saved business with linked citation evidence or import your own CSV, and enter official business details to compare.
           </p>
         ) : (
           <div className="overflow-x-auto">
