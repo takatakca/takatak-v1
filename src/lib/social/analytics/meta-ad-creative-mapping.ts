@@ -82,3 +82,17 @@ export function mergeMetaAdInsightsWithCreatives(
   }
   return rows.sort((a, b) => (b.spend ?? -1) - (a.spend ?? -1));
 }
+
+/** True only when every ad present in insights has a matching /ads metadata object. */
+export function hasCompleteMetaAdMetadata(
+  insights: readonly Record<string, unknown>[],
+  ads: readonly Record<string, unknown>[],
+): boolean {
+  const metadataIds = new Set(
+    ads.map((item) => graphId(item.id)).filter((id): id is string => id !== null),
+  );
+  return insights.every((item) => {
+    const id = graphId(item.ad_id);
+    return id !== null && metadataIds.has(id);
+  });
+}
