@@ -1,3 +1,9 @@
+# Meta Marketing API compatibility handoff — 2026-11-15
+
+Signed GPT-6 @ ChatGPT. M2 ad peer comparisons PR #307 merged main ee06da2 after exact 114-step green CI. Previous independent Marketing API version PR #310 diverged from that new main; successor branch `fix/meta-marketing-v25-current-main-20261115` replays only Meta Ads v25 API helper/account/insights/tests, adds v25 QA to the expanded M2 scripts, and preserves all M2 UI/WORKLOG changes. Graph OAuth for Pages/Instagram untouched. Full exact-head CI and authorized Meta Ads app test still required. Feature flags OFF; no 100% LIVE claim.
+
+---
+
 # Creative Intelligence M2 same-campaign peers — 2026-11-15
 
 Signed: GPT-6 @ ChatGPT. PR #303 merged main aa753e8; urgent hotfix PR #305 passed full 114-step CI and merged main 4349607. Feature is still disabled by server/build-time flags. This branch `feat/meta-ad-peer-comparison-main-20261115` derives from that verified main and adds descriptive per-campaign ad medians using only already loaded authorized `level=ad` metrics. No provider reads, paid behavior, cross-tenant pooling, industry claims or migrations; FR/EN and synthetic test coverage included. Release requires exact-head CI green, coordination board #105 and live operator acceptance; **NOT a deployed production feature**. Remaining Meta creative assets, attribution, image/video, external benchmark licenses and real account smoke detailed in `docs/TAKATAK_CREATIVE_INTELLIGENCE.md`.
