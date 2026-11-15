@@ -92,6 +92,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Meta Ads connection and internal campaign benchmark safeguards
+        run: npm run qa:social-meta-ads
+
       - name: Facebook content ingest safeguards
         run: npm run qa:social-step8-content
 
