@@ -94,3 +94,17 @@ Read full existing dashboard screen architecture, auth/tenant policy, studio lib
 - Enforce paid entitlement server-side on event ingestion, worker execution, agent tools and management API; allow normal pre-existing file handling to continue if unpaid. Preserve explicitly authorized setup/bypass identities and existing feature gates.
 - Cancellation: stop future organizer AI work at entitlement end; keep original client files accessible under existing retention/storage terms. Do not delete files merely because add-on is cancelled.
 - Launch requirements: exact existing product/price ID, webhook idempotency, checkout/subscription activation, failed-payment grace, cancellation, renewal, invoice tax treatment and end-to-end test. No price ID or live billing activation has been created by this documentation.
+
+## Cross-repository discovery — Ollama and KnowledgeAI (2026-11-15)
+Owner explicitly requires reviewing existing GitHub infrastructure before selecting any AI engine. GitHub account inventory includes `knowledgeAI`, `TAKATAKSTUDIO`, `takatakbackend`, `ACADEMYTAKATAK`, and `takatak-v1`; do not assume a new Ollama deployment is required.
+
+Verified source findings:
+- `takatak-v1/docs/OLLAMA_CLOUD.md`: existing Ollama Cloud relay via `https://ollama.com/v1/chat/completions`, key in encrypted admin provider settings or `OLLAMA_API_KEY`; existing TAKBOT routing/credits and QA commands. This is the most direct existing inference integration candidate, pending actual runtime key/connection verification.
+- `takatak-v1/src/lib/studio/agent-policy.ts` and `src/lib/studio/worker.ts`: existing Studio agent plan/worker explicitly accepts engine `ollama`; worker has atomic claim, cost ceiling and no double billable replay. Reuse patterns, not an unreviewed second worker.
+- `knowledgeAI/deploy/ai-studio/docker-compose.yml`: separate LibreChat + Open WebUI kit; Open WebUI explicitly sets `ENABLE_OLLAMA_API: "false"` and `ENABLE_OPENAI_API: "true"`. Do not claim this kit is a running local Ollama model server.
+- `knowledgeAI/private-knowledge/README.md`: private tenant-scoped KnowledgeAI backend is explicitly NOT DEPLOYED and is text search, not embeddings; production database, JWT authority and gateway remain prerequisites.
+- `knowledgeAI/projects/TAKATAK-AI-NEXUS.md`: central orchestration, tenant scope, asynchronous jobs, approvals, provenance, metering and provider routing are architectural objectives; provider connectivity requires runtime evidence.
+
+Implementation rule: discover/reuse the actual TAKBOT/Ollama provider and existing credits first, then add an organizer-specific task with strict workspace/consent/subscription checks. Never route private customer files to an external model merely because an API key exists: obtain explicit provider/data-processing consent and define minimization/retention. Distinguish Ollama Cloud from self-hosted Ollama. Preserve existing AI Studio charging semantics; $20/month organizer entitlement must not silently double-charge per-run credits.
+
+Repository review is ongoing, not a claim that every repository or file was audited.
