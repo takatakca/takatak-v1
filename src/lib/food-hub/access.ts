@@ -132,8 +132,8 @@ export async function listFoodHubTeam(clientId: string): Promise<FoodHubTeamMemb
     orderBy: { createdAt: "asc" },
   });
   return rows.map((m) => ({
-    name: m.profile.displayName?.trim() || [m.profile.firstName, m.profile.lastName].filter(Boolean).join(" ").trim() || m.profile.email,
-    email: m.profile.email,
+    name: m.profile.displayName?.trim() || [m.profile.firstName, m.profile.lastName].filter(Boolean).join(" ").trim() || m.profile.email || "TAKATAK user",
+    email: m.profile.email ?? "",
     workspaceRole: m.role as RoleKey,
     foodHubRole: WORKSPACE_ROLE_TO_FOOD_HUB[m.role as RoleKey] ?? "analyst",
     status: m.status,
