@@ -39,6 +39,8 @@ assert(route.includes('requireWorkspaceApiPermission("view_social")'));
 assert(route.includes("resolveBrandSessionContextFromRequest"));
 assert(route.includes("resolveCanonicalMetaAdsDashboard"));
 assert(!route.includes("request.nextUrl.searchParams.get(\"clientId\")"));
+assert(!route.includes("lastRequestByAccount.clear()"), "throttle must never reset active cooldowns");
+assert(route.includes("if (lastRequestByAccount.size >= 500) return false;"), "throttle capacity must fail closed");
 const source = readFileSync("src/lib/social/providers/meta-ads-insights.ts", "utf8");
 assert(source.includes("fetchMetaAdsCreativeReport"));
 assert(source.includes("MAX_CREATIVE_REPORT_PAGES"));
