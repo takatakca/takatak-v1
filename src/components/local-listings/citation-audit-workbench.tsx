@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   auditCitations, exportCitationAuditCsv, parseCitationCsv,
-  type BusinessNap, type FieldFinding,
+  type BusinessNap, type CitationReferenceProfile, type FieldFinding,
 } from "@/lib/local-listings/citation-audit";
 
 const EMPTY: BusinessNap = { name: "", address: "", phone: "", website: "" };
@@ -15,8 +15,9 @@ const CHECK_LABEL: Record<FieldFinding, string> = {
   match: "Matches", mismatch: "Different", missing_in_citation: "Not supplied", reference_missing: "No reference",
 };
 
-export function CitationAuditWorkbench() {
+export function CitationAuditWorkbench({ profiles }: { profiles: CitationReferenceProfile[] }) {
   const [reference, setReference] = useState<BusinessNap>(EMPTY);
+  const [selectedProfile, setSelectedProfile] = useState("");
   const [csv, setCsv] = useState("");
   const [fileError, setFileError] = useState("");
   const parsed = useMemo(() => {
@@ -59,6 +60,19 @@ export function CitationAuditWorkbench() {
       <section className="rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="business-reference-title">
         <h2 id="business-reference-title" className="text-lg font-semibold text-slate-900">1. Official business details</h2>
         <p className="mb-4 text-sm text-slate-500">Use your full NAP details as the source of truth. Fields left blank cannot be validated.</p>
+        {profiles.length > 0 && <label className="mb-4 block text-sm font-medium text-slate-800">
+          Start with a saved workspace business profile
+          <select className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" value={selectedProfile}
+            onChange={event => {
+              setSelectedProfile(event.target.value);
+              const match = profiles.find(item => item.id === event.target.value);
+              if (match) setReference({ ...match.nap });
+            }}>
+            <option value="">Enter information manually</option>
+            {profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
+          </select>
+          <span className="mt-1 block text-xs font-normal text-slate-500">Profiles are previously stored TAKATAK or connected Google snapshots, not newly verified live publisher data.</span>
+        </label>}
         <div className="grid gap-4 sm:grid-cols-2">
           {FIELDS.map(field => (
             <label key={field} className="block text-sm font-medium text-slate-800">
