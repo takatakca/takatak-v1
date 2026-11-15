@@ -1,0 +1,25 @@
+name: Local citation audit
+
+on:
+  pull_request:
+    paths:
+      - "src/lib/local-listings/citation-audit.ts"
+      - "src/components/local-listings/citation-audit-workbench.tsx"
+      - "src/app/dashboard/local-listings/citations/**"
+      - "scripts/local-citation-audit.test.ts"
+      - ".github/workflows/local-citation-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate NAP evidence engine
+        run: node --experimental-strip-types --test scripts/local-citation-audit.test.ts
