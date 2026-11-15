@@ -3225,6 +3225,7 @@ model MasterIdentity {
   reversMemberships   ReversMembership[]
 
   experienceLaunchCodes ExperienceLaunchCode[]
+  providerAccounts      ProviderAccount[]
   billingInvoiceRequests BillingInvoiceRequest[]
   @@index([primaryEmail])
   @@index([primaryPhone])
@@ -3636,6 +3637,33 @@ model ExperienceLaunchCode {
   @@index([identityId, productCode, entitlementCode])
   @@index([expiresAt])
   @@map("experience_launch_codes")
+}
+
+// Ecosystem provider registry: one row per master identity per provider
+// source (e.g. "sc4nner"). This is the main-database record of the provider
+// copy: identity + email captured once, at signup/first authorization, so
+// every provider of the ecosystem is grouped in one place. It is NOT a
+// second identity system: MasterIdentity stays the only identity authority,
+// and no address or verification is required to open a row.
+model ProviderAccount {
+  id                String    @id @default(uuid()) @db.Uuid
+  identityId        String    @db.Uuid
+  email             String?
+  displayName       String?
+  source            String
+  status            String    @default("active")
+  provisionStatus   String    @default("pending")
+  firstLinkedAt     DateTime  @default(now())
+  lastProvisionedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  identity MasterIdentity @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  @@unique([identityId, source])
+  @@index([email])
+  @@index([source, provisionStatus])
+  @@map("provider_accounts")
 }
 
 

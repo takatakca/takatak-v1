@@ -3,6 +3,7 @@ import "server-only";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
+import { recordSc4nnerProviderLink } from "@/lib/experiences/sc4nner-provisioning";
 
 const PRODUCT = "sc4nner";
 const FREE_ACCESS = "sc4nner_free";
@@ -45,6 +46,23 @@ function requireState(state: string) {
   }
 }
 
+// The authorization gate (owner's order, 2026-11-15): nobody authorizes
+// SC4NNER without an identified TAKATAK account. No session → login (the
+// login page offers account creation); a denied profile sync → denied; a
+// temporarily unavailable identity service → unavailable; otherwise the
+// identified account may be shown its authorization screen ("confirm").
+export type Sc4nnerAuthorizeDecision = "login" | "denied" | "unavailable" | "confirm";
+export function sc4nnerAuthorizeDecision(input: {
+  hasUser: boolean;
+  syncOutcome?: string;
+}): Sc4nnerAuthorizeDecision {
+  if (!input.hasUser) return "login";
+  if (input.syncOutcome === "denied") return "denied";
+  if (input.syncOutcome === "unavailable" || input.syncOutcome === "error")
+    return "unavailable";
+  return "confirm";
+}
+
 export async function createSc4nnerExperienceLaunch(authUserId: string, state: string) {
   requireState(state);
   const callback = sc4nnerCallback();
@@ -52,7 +70,7 @@ export async function createSc4nnerExperienceLaunch(authUserId: string, state: s
   if (!prisma) throw new ServiceError("unavailable","TAKATAK identity is unavailable.");
   const identity = await prisma.masterIdentity.findUnique({
     where: { authUserId },
-    select: { id: true, accountStatus: true },
+    select: { id: true, accountStatus: true, primaryEmail: true, firstName: true, lastName: true },
   });
   if (!identity || identity.accountStatus && identity.accountStatus !== "active") {
     throw new ServiceError("forbidden","SC4NNER is not available for this account.");
@@ -69,7 +87,16 @@ export async function createSc4nnerExperienceLaunch(authUserId: string, state: s
   });
   callback.searchParams.set("code", rawCode);
   callback.searchParams.set("state", state);
-  return callback.toString();
+  // The launch is bound to THIS identity: the confirmation that calls this
+  // function also provisions this identity's provider copy (never another
+  // account's), from the email returned here.
+  const name = [identity.firstName,identity.lastName].filter(Boolean).join(" ").trim();
+  return {
+    callbackUrl: callback.toString(),
+    identityId: identity.id,
+    email: identity.primaryEmail ?? null,
+    displayName: name || null,
+  };
 }
 
 export async function exchangeSc4nnerExperienceLaunch(rawCode: string) {
@@ -88,7 +115,7 @@ export async function exchangeSc4nnerExperienceLaunch(rawCode: string) {
       entitlementCode: true,
       expiresAt: true,
       usedAt: true,
-      identity: { select: { firstName: true, lastName: true, accountStatus: true } },
+      identity: { select: { firstName: true, lastName: true, primaryEmail: true, accountStatus: true } },
     },
   });
   if (!launch || launch.usedAt || launch.expiresAt <= now ||
@@ -104,11 +131,25 @@ export async function exchangeSc4nnerExperienceLaunch(rawCode: string) {
 
   // SC4NNER is free while it is in private testing: the only entitlement
   // issued is sc4nner_free. No label data is ever sent to or stored in V1;
-  // this exchange returns the account context and nothing else.
+  // this exchange returns the account context and nothing else. The email
+  // now travels with the session so the connected SC4NNER account shows
+  // the TAKATAK account it is linked to (owner's order, 2026-11-15), and
+  // the main-database provider copy is refreshed from the same identity.
   const name = [launch.identity.firstName,launch.identity.lastName].filter(Boolean).join(" ").trim();
+  const email = launch.identity.primaryEmail ?? null;
+  try {
+    await recordSc4nnerProviderLink({
+      identityId: launch.identityId,
+      email,
+      displayName: name || null,
+    });
+  } catch (error) {
+    console.error("[sc4nner-exchange] provider link refresh failed", error);
+  }
   return {
     masterIdentityId: launch.identityId,
     displayName: name || "Atelier",
+    email,
     productCode: PRODUCT,
     entitlements: [FREE_ACCESS],
     expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
