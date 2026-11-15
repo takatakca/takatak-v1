@@ -19,6 +19,7 @@ import {
 } from "@/components/social/analytics/social-summary-chart";
 import { metricValue } from "@/components/social/analytics/social-summary-tokens";
 import { MetaCampaignBenchmarkPanel } from "@/components/social/platforms/meta-campaign-benchmark-panel";
+import { MetaAdCreativeReportPanel } from "@/components/social/platforms/meta-ad-creative-report-panel";
 
 type DailyPoint = {
   date: string;
@@ -809,6 +810,7 @@ export function MetaAdsSubscribedDashboard({
           confirmed={campaignsConfirmed}
           currency={analytics?.currency ?? null}
         />
+        <MetaAdCreativeReportPanel start={display.start} end={display.end} />
       </section>
     </div>
   );
