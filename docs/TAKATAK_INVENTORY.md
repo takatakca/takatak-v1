@@ -81,6 +81,10 @@ Additional migration: `20261020154310_inventory_label_layout` adds the product J
 
 See [MIEL AISSA’s practical start guide](MIEL_AISSA_START_HERE.md) for registration, measured-label setup, equipment prices and retailer starting points. `npm run qa:inventory-labels` runs PDF/geometry tests; optional `INVENTORY_LABEL_ARTIFACTS` writes local fixtures. Test GTINs in generated QA files are never assigned to the business. The shared public proof uses an internal SKU and clearly marks its example size as draft.
 
+## SC4NNER catalog link
+
+The standalone SC4NNER label studio (sc4nner.takatak.ca) can start a label from an inventory product of the signed-in TAKATAK identity, so the printed SKU/GTIN is the inventory's own code. V1 serves the catalogs read-only through `POST /api/experiences/sc4nner/inventory` (service-token protected, same rule as the dashboard gate: effective `view_inventory` per active membership). SC4NNER stores the chosen product reference with its label template; stock still changes only here, behind `manage_inventory`. See [the SC4NNER bridge doc](SC4NNER_BRIDGE.md).
+
 ## Retail EDI reference
 
 The owner-provided Orderful reference is assessed in [Retail EDI for TAKATAK Inventory](TAKATAK_INVENTORY_RETAIL_EDI.md). It maps purchase orders, shipments, invoices, packaging and traceability gaps for future work. The owner clarified that this must be an owned solution. Orderful is background research only; the implementation has no Orderful dependency or account. EDI is a separate future requirement only when a buyer requests it.

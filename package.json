@@ -190,7 +190,8 @@
     "qa:review-workspace-navigation": "tsx scripts/review-workspace-navigation-tests.ts",
     "qa:inventory": "tsx scripts/inventory-tests.ts",
     "qa:inventory-db": "tsx --require ./scripts/register-server-only.cjs scripts/inventory-db-tests.ts",
-    "qa:inventory-labels": "tsx scripts/inventory-label-tests.ts"
+    "qa:inventory-labels": "tsx scripts/inventory-label-tests.ts",
+    "qa:sc4nner-inventory": "tsx scripts/sc4nner-inventory-bridge-tests.ts"
 
 
 
