@@ -1,3 +1,9 @@
+## Active delivery branch (2026-11-15)
+- **Active draft PR:** https://github.com/takatakca/takatak-v1/pull/303, rebased from current main `176966c4` with existing Local Citation feature preserved.
+- Previous PR #300 was **closed unmerged** because its WORKLOG conflicted with the newly merged Local Citation #301. All Creative Intelligence files were transplanted to #303; do not revive the old branch.
+- Default-off flags and exact-SHA CI + live authorized Meta QA must be satisfied before enabling UI/API or calling this deployed.
+- Overall project percentage is **indicative ~20%** and actual live deployment of the new feature remains **0% verified**. The final product includes rights-cleared industry benchmarks, legitimate creative assets, attribution-aware analytics, FR/EN, and real on-site acceptance.
+
 # TAKATAK Creative Intelligence — foundation and release gates
 
 Date: 2026-11-15. Owner request: build an original TAKATAK feature inspired by the *concept* of Motion Creative Benchmarks, not a copy of its proprietary dataset, algorithms or visual assets.
