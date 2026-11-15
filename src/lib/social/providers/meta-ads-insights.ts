@@ -2,6 +2,7 @@ import "server-only";
 
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
+import { mergeMetaAdInsightsWithCreatives, type MetaAdCreativeReportRow } from "@/lib/social/analytics/meta-ad-creative-mapping";
 import { getMetaGraphApiVersion } from "@/lib/social/providers/meta-oauth";
 import {
   buildSocialCredentialAad,
@@ -466,5 +467,115 @@ export async function fetchMetaAdsAccountAnalytics(options: {
       : nextPage || !campaignInsights.complete
         ? "Meta returned only part of this period."
         : null,
+  };
+}
+
+/**
+ * M1 (read-only): on-demand ad-level insights joined to ad creative metadata.
+ * Each row is one AD, not an aggregation across creatives or brands.
+ * No claims about individual dynamic creative assets or profit.
+ */
+const MAX_CREATIVE_REPORT_PAGES = 3;
+const MAX_CREATIVE_REPORT_ROWS = 100;
+
+export type MetaAdsCreativeReport = {
+  status: "ready" | "partial" | "unavailable";
+  currency: string | null;
+  rows: MetaAdCreativeReportRow[];
+  notice: string | null;
+  range: { start: string; end: string };
+};
+
+async function collectCreativeReportRows(
+  first: Awaited<ReturnType<typeof graphGet>>,
+  accessToken: string,
+): Promise<{
+  rows: Array<Record<string, unknown>>;
+  complete: boolean;
+  denied: boolean;
+}> {
+  if (first.denied || first.status >= 400) {
+    return { rows: [], complete: false, denied: first.denied };
+  }
+  const rows = rowsOf(first.body).slice(0, MAX_CREATIVE_REPORT_ROWS);
+  let pageCount = 1;
+  let next = readPagingNext(first.body);
+  let failed = false;
+  while (next && rows.length < MAX_CREATIVE_REPORT_ROWS && pageCount < MAX_CREATIVE_REPORT_PAGES) {
+    const page = await graphFetch(next, accessToken);
+    if (page.denied || page.status >= 400) {
+      return { rows, complete: false, denied: page.denied };
+    }
+    pageCount += 1;
+    rows.push(...rowsOf(page.body).slice(0, MAX_CREATIVE_REPORT_ROWS - rows.length));
+    next = readPagingNext(page.body);
+  }
+  if (rows.length === MAX_CREATIVE_REPORT_ROWS && next !== null) failed = true;
+  return { rows, complete: !failed && next === null, denied: false };
+}
+
+export async function fetchMetaAdsCreativeReport(options: {
+  clientId: string;
+  connectionId: string;
+  socialAccountId: string;
+  start: string;
+  end: string;
+}): Promise<MetaAdsCreativeReport> {
+  const prisma = getPrisma();
+  if (!prisma) {
+    throw new ServiceError("unavailable", "The social connection database is unavailable.", { status: 503 });
+  }
+  const account = await prisma.socialAccount.findFirst({
+    where: {
+      id: options.socialAccountId,
+      clientId: options.clientId,
+      providerConnectionId: options.connectionId,
+      platform: "meta_ads",
+    },
+    select: { externalAccountId: true, metadata: true },
+  });
+  if (!account || !/^act_[0-9]{1,32}$/.test(account.externalAccountId ?? "")) {
+    throw new ServiceError("not_found", "No authorized Meta ad account is selected.", { status: 404 });
+  }
+  const currencyMetadata = account.metadata && typeof account.metadata === "object" && !Array.isArray(account.metadata)
+    ? (account.metadata as Record<string, unknown>).currency
+    : null;
+  const currency = typeof currencyMetadata === "string" && /^[A-Z]{3}$/.test(currencyMetadata)
+    ? currencyMetadata : null;
+
+  const accessToken = await loadAccessToken({ clientId: options.clientId, connectionId: options.connectionId });
+  const timeRange = encodeURIComponent(JSON.stringify({ since: options.start, until: options.end }));
+  const insightsFields = "ad_id,ad_name,campaign_id,campaign_name,impressions,clicks,spend,ctr,cpc,cpm";
+  // Fetch minimal creative metadata only, never private audience data or media downloads.
+  const [insights, ads] = await Promise.all([
+    graphGet(`/${account.externalAccountId}/insights?fields=${insightsFields}&time_range=${timeRange}&level=ad&limit=50`, accessToken),
+    graphGet(`/${account.externalAccountId}/ads?fields=id,name,effective_status,creative{id,name,object_type}&limit=50`, accessToken),
+  ]);
+  const [readInsights, readAds] = await Promise.all([
+    collectCreativeReportRows(insights, accessToken),
+    collectCreativeReportRows(ads, accessToken),
+  ]);
+  if (readInsights.denied || readAds.denied) {
+    return {
+      status: "unavailable", currency, range: { start: options.start, end: options.end },
+      rows: [], notice: "Meta denied access. Reconnect Meta Ads with the ads_read permission.",
+    };
+  }
+  if (insights.status >= 400 || readInsights.rows.length === 0 && !readInsights.complete) {
+    return {
+      status: "unavailable", currency, range: { start: options.start, end: options.end },
+      rows: [], notice: "Ad-level Meta insights were not returned. No performance is inferred.",
+    };
+  }
+  const rows = mergeMetaAdInsightsWithCreatives(readInsights.rows, readAds.rows);
+  const complete = readInsights.complete && readAds.complete && ads.status < 400;
+  return {
+    status: complete ? "ready" : "partial",
+    currency,
+    rows,
+    range: { start: options.start, end: options.end },
+    notice: complete
+      ? "Each row is one ad. Dynamic or Advantage+ asset-level performance is not available in this report."
+      : "Meta returned incomplete ad metrics or creative metadata. Missing creatives and values are not fabricated.",
   };
 }
