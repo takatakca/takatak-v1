@@ -129,6 +129,10 @@ assert.ok(
   "confirming triggers the provisioning of the shown account",
 );
 assert.ok(
+  confirmRoute.includes("NextResponse.redirect(launch.callbackUrl"),
+  "the journey ends back on SC4NNER: confirm redirects to the SC4NNER callback, never to a TAKATAK page",
+);
+assert.ok(
   confirmRoute.includes("isConsentPostAllowed"),
   "confirm is a same-origin form POST, like the OAuth consent decision",
 );
@@ -145,6 +149,10 @@ assert.ok(
 assert.ok(
   authorizePage.includes("accountLabel"),
   "the authorize page displays the account that will authorize",
+);
+assert.ok(
+  authorizePage.includes("Retour à SC4NNER"),
+  "every authorize frame offers the way back: the user never ends on a TAKATAK page",
 );
 
 const switchRoute = read("src/app/api/experiences/sc4nner/switch/route.ts");

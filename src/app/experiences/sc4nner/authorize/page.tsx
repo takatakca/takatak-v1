@@ -39,9 +39,22 @@ export default async function Sc4nnerAuthorizePage({
   const params = await searchParams;
   const state = typeof params.state === "string" ? params.state : "";
 
+  // The journey starts and ends on SC4NNER (owner's order, 2026-11-15):
+  // every screen of this page — including the error frames — offers the
+  // way back, and the confirmation itself redirects to the SC4NNER
+  // callback, never to a TAKATAK page.
+  let sc4nnerOrigin: string | null = null;
+  try {
+    sc4nnerOrigin = new URL(
+      process.env.SC4NNER_EXPERIENCE_CALLBACK_URL || "",
+    ).origin;
+  } catch {
+    sc4nnerOrigin = null;
+  }
+
   if (!STATE_RE.test(state)) {
     return (
-      <Frame>
+      <Frame sc4nnerOrigin={sc4nnerOrigin}>
         <h1 className="text-2xl font-extrabold tracking-tight">Autoriser SC4NNER</h1>
         <p className="mt-3 text-sm leading-6 text-[#B8C4D3]">
           Cette demande d’autorisation est incomplète. Revenez à SC4NNER et recommencez.
@@ -66,7 +79,7 @@ export default async function Sc4nnerAuthorizePage({
   });
   if (decision !== "confirm") {
     return (
-      <Frame>
+      <Frame sc4nnerOrigin={sc4nnerOrigin}>
         <h1 className="text-2xl font-extrabold tracking-tight">Autoriser SC4NNER</h1>
         <p className="mt-3 text-sm leading-6 text-[#F5C16C]">
           {decision === "denied"
@@ -92,7 +105,7 @@ export default async function Sc4nnerAuthorizePage({
     : null;
   if (identity?.accountStatus && identity.accountStatus !== "active") {
     return (
-      <Frame>
+      <Frame sc4nnerOrigin={sc4nnerOrigin}>
         <h1 className="text-2xl font-extrabold tracking-tight">Autoriser SC4NNER</h1>
         <p className="mt-3 text-sm leading-6 text-[#F5C16C]">
           Ce compte TAKATAK n’a pas accès à SC4NNER.
@@ -110,17 +123,8 @@ export default async function Sc4nnerAuthorizePage({
   const accountLabel =
     email || identity?.primaryPhone || user.phone || name || "Compte TAKATAK";
 
-  let sc4nnerOrigin: string | null = null;
-  try {
-    sc4nnerOrigin = new URL(
-      process.env.SC4NNER_EXPERIENCE_CALLBACK_URL || "",
-    ).origin;
-  } catch {
-    sc4nnerOrigin = null;
-  }
-
   return (
-    <Frame>
+    <Frame sc4nnerOrigin={sc4nnerOrigin}>
       <h1 className="text-2xl font-extrabold tracking-tight">Autoriser SC4NNER</h1>
       <p className="mt-3 text-sm leading-6 text-[#B8C4D3]">
         SC4NNER, le studio d’étiquettes de TAKATAK, demande l’accès à votre
@@ -181,7 +185,13 @@ export default async function Sc4nnerAuthorizePage({
   );
 }
 
-function Frame({ children }: { children: React.ReactNode }) {
+function Frame({
+  children,
+  sc4nnerOrigin,
+}: {
+  children: React.ReactNode;
+  sc4nnerOrigin?: string | null;
+}) {
   return (
     <main
       lang="fr-CA"
@@ -198,6 +208,16 @@ function Frame({ children }: { children: React.ReactNode }) {
       <section className="mt-8 rounded-2xl border border-white/10 bg-[#0B1B3D] p-6 shadow-[0_0_40px_rgba(31,139,255,0.18)] sm:p-8">
         {children}
       </section>
+      {sc4nnerOrigin ? (
+        <p className="mt-6 text-center text-sm">
+          <a
+            href={`${sc4nnerOrigin}/`}
+            className="font-semibold text-[#29C3FF] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#29C3FF]"
+          >
+            ← Retour à SC4NNER
+          </a>
+        </p>
+      ) : null}
     </main>
   );
 }
