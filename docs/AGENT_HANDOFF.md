@@ -1,3 +1,39 @@
+# Creative Intelligence localization follow-up — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Active branch and PR remain `feat/meta-creative-intelligence-rebased-20261115` → draft PR #303. Added self-contained FR/EN selector for new M0/M1 Meta creative intelligence panels in subscribed Meta Ads; default French, English selectable, existing dashboard unaffected. Old PR #300 remains closed unmerged. Reconfirm last-head CI and real Meta account before promotion; feature flags are OFF; still no provider-connected production verification.
+
+---
+
+# TAKATAK Creative Intelligence — clean successor PR #303 — 2026-11-15
+
+Signed GPT-6 @ ChatGPT. Owner requests 100% integrated, tested and deployed. PR #300 was superseded and closed **without merge** because current main received unrelated Local Citation PR #301 and the old branch conflicted in WORKLOG. Its exact 17 Creative Intelligence files and all feature notes were replayed onto new `feat/meta-creative-intelligence-rebased-20261115` based on main `176966c4`, with all non-feature main files retained; the latest draft is https://github.com/takatakca/takatak-v1/pull/303. `WORKLOG.md` contains both independent histories. New CI run and live Meta verification required; flags default OFF; NO production deploy or 100% status claimed. Future work must resume #303, not reopen #300.
+
+---
+
+# Creative Intelligence safety and rollout continuation — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Owner directs full integrated delivery in existing TAKATAK-V1. Feature PR #300 now adds CSV export, incomplete metadata coverage detection and fail-closed throttle. Two explicit default-off flags in `.env.example` gate the new frontend and backend; intentionally NOT live. New synthetic CSV and gating tests run via `qa:social-meta-ads`. Source docs: `docs/TAKATAK_CREATIVE_INTELLIGENCE.md`; tracker #299; Google Drive Académie journal below. Latest CI must be rechecked at exact head before merge; old CI passes are not enough. Real Meta `ads_read` access, app approval, correct creative/asset metadata, multi-tenant live smoke, verified deployed SHA, multilingual UX and licensed external benchmark source are still required. Do not disclose provider secrets or claim 100% while blocked.
+
+---
+
+# Creative Intelligence M1 preview handoff — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Building on existing draft PR #300 for user-requested TAKATAK-V1 Creative Intelligence. Added `src/lib/social/analytics/meta-ad-creative-mapping.ts`, `src/lib/social/providers/meta-ads-insights.ts` bounded on-demand `fetchMetaAdsCreativeReport()`, private `/api/social/meta-ads/creatives`, and `MetaAdCreativeReportPanel` under the subscribed Meta Ads campaigns section. Request uses existing `ads_read` credential and server-side selected client/brand/ad account; no browser-set tenant/account ID. Bound 31-day requests, 3 pages/100 rows per API edge, 20-second process-local cooldown, manual-only load; display 50 ads max, no dynamic asset-level or ROI claims. Missing data stays missing. Existing billing and subscription exemption remain untouched.
+
+Validation required before merge: exact-head CI `npm run qa:social-meta-ads`, typecheck/lint/build, real owned Meta account showing ads_read and actual creative metadata, two-client isolation regression, mobile UI. Feature is NOT deployed and current integration is NOT a complete industry benchmark solution. Live account review, true asset/media-level signals, third-party benchmark licensing, bilingual production UI and operational release still pending. Work recorded in TAKATAK Académie Doc https://docs.google.com/document/d/1qVAmcgQT1Ts0LqRHzfHfwUl4kb83rmK6t3NImkA6CTw/edit ; issue #299, draft PR #300. NOTE: requested autonomous hourly automation couldn't be created because account has 5 active scheduled tasks.
+
+---
+
+# TAKATAK Creative Intelligence M0 handoff — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Owner wants Motion-style creative benchmarking inside TAKATAK.ca. Issue #299; draft PR #300; branch `feat/meta-creative-benchmarks-foundation-20261115`. This branch intentionally implements only account-internal **campaign** comparisons using existing Meta Ads account/campaign analytics, not creative-level benchmarks or cross-client industry statistics. No schema, authorization, OAuth, billing, synchronization or production changes. New pure calculator + synthetic tests + panel under the subscribed Meta Ads Campaigns section. Read `docs/TAKATAK_CREATIVE_INTELLIGENCE.md` for M1 true creative implementation, rights/permission constraints and explicit release gates.
+
+Drive journal: https://docs.google.com/document/d/1qVAmcgQT1Ts0LqRHzfHfwUl4kb83rmK6t3NImkA6CTw/edit ; CI GitHub Actions run 43753511919 in progress at last check.
+
+Next: review branch CI, run `npm run qa:social-meta-ads`, typecheck/lint, test with a permitted owned Meta account; coordinator chooses merge/release. **Not deployed / no live account validation**. Never pool one client's Meta data with another's. Existing Social/Studio branches and release coordinator unaffected.
+
+---
+
 # Bluesky publishing adapter handoff — 2026-11-14
 
 Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC, side session). Builds on the

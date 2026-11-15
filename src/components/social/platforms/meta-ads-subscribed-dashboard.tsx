@@ -18,6 +18,8 @@ import {
   type ChartTooltipSeries,
 } from "@/components/social/analytics/social-summary-chart";
 import { metricValue } from "@/components/social/analytics/social-summary-tokens";
+import { MetaCampaignBenchmarkPanel } from "@/components/social/platforms/meta-campaign-benchmark-panel";
+import { MetaAdCreativeReportPanel } from "@/components/social/platforms/meta-ad-creative-report-panel";
 
 type DailyPoint = {
   date: string;
@@ -45,6 +47,7 @@ type CampaignRow = {
 
 type AccountAnalytics = {
   accountName?: string;
+  currency?: string;
   impressions: number | null;
   reach: number | null;
   spend: number | null;
@@ -75,6 +78,7 @@ const CAMPAIGN_COLUMNS: Array<{ key: CampaignColumn; label: string }> = [
 ];
 
 const RANGES = [7, 30, 90, 180, 365] as const;
+const CREATIVE_INTELLIGENCE_UI_ENABLED = process.env.NEXT_PUBLIC_TAKATAK_CREATIVE_INTELLIGENCE_ENABLED === "true";
 const COLORS = {
   purple: "#8B7EF6",
   green: "#7BC98A",
@@ -432,6 +436,7 @@ export function MetaAdsSubscribedDashboard({
   connectedLabel: string | null;
 }) {
   const [section, setSection] = useState<MetaSection>("account");
+  const [creativeLocale, setCreativeLocale] = useState<"fr" | "en">("fr");
   const [rangeDays, setRangeDays] = useState(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [reachMetric, setReachMetric] = useState<"impressions" | "reach" | "spend">(
@@ -802,6 +807,32 @@ export function MetaAdsSubscribedDashboard({
           confirmed={campaignsConfirmed}
           loading={loading && !ready}
         />
+        {CREATIVE_INTELLIGENCE_UI_ENABLED ? (
+          <>
+            <div role="group" aria-label="Creative Intelligence language" className="flex justify-end gap-2">
+              {(["fr", "en"] as const).map((language) => (
+                <button key={language} type="button" onClick={() => setCreativeLocale(language)}
+                  aria-pressed={creativeLocale === language}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${creativeLocale === language ? "border-[#1455D9] bg-[#1455D9] text-white" : "border-[#CBD5E1] bg-white text-[#334155]"}`}>
+                  {language.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <MetaCampaignBenchmarkPanel
+              locale={creativeLocale}
+              campaigns={campaigns}
+              confirmed={campaignsConfirmed}
+              currency={analytics?.currency ?? null}
+            />
+            {rangeDays <= 30 ? (
+              <MetaAdCreativeReportPanel start={display.start} end={display.end} locale={creativeLocale} />
+            ) : (
+              <p className="rounded-lg bg-[#F8FAFC] p-4 text-sm text-[#64748B]">
+                Choose a 7-day or 30-day period to load the on-demand individual ad report.
+              </p>
+            )}
+          </>
+        ) : null}
       </section>
     </div>
   );
