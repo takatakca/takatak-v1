@@ -1,3 +1,9 @@
+# Creative Intelligence localization follow-up — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Active branch and PR remain `feat/meta-creative-intelligence-rebased-20261115` → draft PR #303. Added self-contained FR/EN selector for new M0/M1 Meta creative intelligence panels in subscribed Meta Ads; default French, English selectable, existing dashboard unaffected. Old PR #300 remains closed unmerged. Reconfirm last-head CI and real Meta account before promotion; feature flags are OFF; still no provider-connected production verification.
+
+---
+
 # TAKATAK Creative Intelligence — clean successor PR #303 — 2026-11-15
 
 Signed GPT-6 @ ChatGPT. Owner requests 100% integrated, tested and deployed. PR #300 was superseded and closed **without merge** because current main received unrelated Local Citation PR #301 and the old branch conflicted in WORKLOG. Its exact 17 Creative Intelligence files and all feature notes were replayed onto new `feat/meta-creative-intelligence-rebased-20261115` based on main `176966c4`, with all non-feature main files retained; the latest draft is https://github.com/takatakca/takatak-v1/pull/303. `WORKLOG.md` contains both independent histories. New CI run and live Meta verification required; flags default OFF; NO production deploy or 100% status claimed. Future work must resume #303, not reopen #300.
