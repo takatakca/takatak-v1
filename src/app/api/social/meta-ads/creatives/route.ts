@@ -51,6 +51,9 @@ export async function GET(request: NextRequest) {
   try {
     const gate = await requireWorkspaceApiPermission("view_social");
     if (!gate.ok) return gate.response;
+    if (process.env.TAKATAK_CREATIVE_INTELLIGENCE_ENABLED !== "true") {
+      return jsonResponse({ ok: false, message: "Creative Intelligence is not enabled for this deployment." }, 404);
+    }
     const brand = await resolveBrandSessionContextFromRequest(gate.access);
     if (!brand.activeBrandId) {
       return jsonResponse({ ok: true, connected: false }, 200);
