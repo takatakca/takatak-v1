@@ -59,7 +59,7 @@
     "qa:social-x": "tsx --require ./scripts/register-server-only.cjs scripts/x-connection-tests.ts",
     "qa:social-x-cost": "tsx --require ./scripts/register-server-only.cjs scripts/x-cost-control-tests.ts",
     "qa:social-twitch": "tsx --require ./scripts/register-server-only.cjs scripts/twitch-connection-tests.ts",
-    "qa:social-meta-ads": "tsx --require ./scripts/register-server-only.cjs scripts/meta-ads-connection-tests.ts && tsx scripts/meta-campaign-benchmark-tests.ts && tsx scripts/meta-ad-creative-report-tests.ts && tsx scripts/meta-creative-export-tests.ts && tsx scripts/meta-creative-ui-render-tests.ts",
+    "qa:social-meta-ads": "tsx --require ./scripts/register-server-only.cjs scripts/meta-ads-connection-tests.ts && tsx scripts/meta-campaign-benchmark-tests.ts && tsx scripts/meta-ad-creative-report-tests.ts && tsx scripts/meta-creative-export-tests.ts && tsx scripts/meta-creative-ui-render-tests.ts && tsx scripts/meta-ad-peer-comparison-tests.ts",
     "qa:social-google-ads": "tsx --require ./scripts/register-server-only.cjs scripts/google-ads-connection-tests.ts",
     "qa:social-looker-studio": "tsx --require ./scripts/register-server-only.cjs scripts/looker-studio-connection-tests.ts",
     "qa:social-web": "tsx --require ./scripts/register-server-only.cjs scripts/web-site-connection-tests.ts",

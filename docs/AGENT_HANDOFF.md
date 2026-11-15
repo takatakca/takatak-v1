@@ -1,3 +1,9 @@
+# Creative Intelligence M2 same-campaign peers — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. PR #303 merged main aa753e8; urgent hotfix PR #305 passed full 114-step CI and merged main 4349607. Feature is still disabled by server/build-time flags. This branch `feat/meta-ad-peer-comparison-main-20261115` derives from that verified main and adds descriptive per-campaign ad medians using only already loaded authorized `level=ad` metrics. No provider reads, paid behavior, cross-tenant pooling, industry claims or migrations; FR/EN and synthetic test coverage included. Release requires exact-head CI green, coordination board #105 and live operator acceptance; **NOT a deployed production feature**. Remaining Meta creative assets, attribution, image/video, external benchmark licenses and real account smoke detailed in `docs/TAKATAK_CREATIVE_INTELLIGENCE.md`.
+
+---
+
 # Creative Intelligence localization follow-up — 2026-11-15
 
 Signed: GPT-6 @ ChatGPT. Active branch and PR remain `feat/meta-creative-intelligence-rebased-20261115` → draft PR #303. Added self-contained FR/EN selector for new M0/M1 Meta creative intelligence panels in subscribed Meta Ads; default French, English selectable, existing dashboard unaffected. Old PR #300 remains closed unmerged. Reconfirm last-head CI and real Meta account before promotion; feature flags are OFF; still no provider-connected production verification.
