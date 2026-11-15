@@ -1,3 +1,9 @@
+# Meta Marketing API expiry fix — 2026-11-15
+
+Signed GPT-6 @ ChatGPT. Existing Meta Graph default v21 is still within Graph lifecycle but Meta **Marketing API v21 is expired**; v25 Marketing is supported (official Meta schedule). Separate Marketing-only version selector added to account discovery and insights in branch `fix/meta-marketing-api-version-20261115`; Pages/Instagram OAuth remains unchanged. Synthetic QA verifies pinned version and fails on expired overrides. Real connection/field compatibility still requires an authorized Meta ad account; do not turn on Creative Intelligence flags or claim 100% LIVE from compile alone. Concurrent M2 PR #307 adds same-campaign peer stats separately. Follow exact full CI and current-main release gate.
+
+---
+
 # Creative Intelligence localization follow-up — 2026-11-15
 
 Signed: GPT-6 @ ChatGPT. Active branch and PR remain `feat/meta-creative-intelligence-rebased-20261115` → draft PR #303. Added self-contained FR/EN selector for new M0/M1 Meta creative intelligence panels in subscribed Meta Ads; default French, English selectable, existing dashboard unaffected. Old PR #300 remains closed unmerged. Reconfirm last-head CI and real Meta account before promotion; feature flags are OFF; still no provider-connected production verification.
