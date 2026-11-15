@@ -40,6 +40,12 @@ const route = readFileSync("src/app/api/social/meta-ads/creatives/route.ts", "ut
 assert(route.includes('requireWorkspaceApiPermission("view_social")'));
 assert(route.includes("resolveBrandSessionContextFromRequest"));
 assert(route.includes("resolveCanonicalMetaAdsDashboard"));
+assert(route.includes('TAKATAK_CREATIVE_INTELLIGENCE_ENABLED !== "true"'), "ad report route must be disabled by default");
+const adsUi = readFileSync("src/components/social/platforms/meta-ads-subscribed-dashboard.tsx", "utf8");
+assert(adsUi.includes('NEXT_PUBLIC_TAKATAK_CREATIVE_INTELLIGENCE_ENABLED === "true"'), "dashboard beta must be feature-gated");
+const envExample = readFileSync(".env.example", "utf8");
+assert(envExample.includes("TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false"), "backend flag disabled by default");
+assert(envExample.includes("NEXT_PUBLIC_TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false"), "frontend flag disabled by default");
 assert(!route.includes("request.nextUrl.searchParams.get(\"clientId\")"));
 assert(!route.includes("lastRequestByAccount.clear()"), "throttle must never reset active cooldowns");
 assert(route.includes("if (lastRequestByAccount.size >= 500) return false;"), "throttle capacity must fail closed");
