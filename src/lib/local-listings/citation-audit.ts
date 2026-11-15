@@ -5,6 +5,13 @@
 export type NapField = "name" | "address" | "phone" | "website";
 export type BusinessNap = Record<NapField, string>;
 export type CitationRow = BusinessNap & { directory: string; listingUrl: string };
+export type CitationReferenceProfile = {
+  id: string;
+  label: string;
+  source: "google_business_connection" | "local_listing";
+  observedAt: string | null;
+  nap: BusinessNap;
+};
 export type FieldFinding = "match" | "mismatch" | "missing_in_citation" | "reference_missing";
 export type AuditStatus = "needs_update" | "needs_verification" | "consistent_in_supplied_data";
 export type CitationFinding = CitationRow & {
