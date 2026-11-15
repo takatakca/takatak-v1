@@ -85,3 +85,12 @@ Upload → auto suggestion → Approve → existing client dashboard file listin
 
 ### Immediate next engineering action
 Read full existing dashboard screen architecture, auth/tenant policy, studio library, knowledge policy, attachment storage, hosting control and existing job schema. Produce a concrete file-by-file integration map and collision assessment. Implement the first safe vertical slice on this feature branch with tests; do not merge until CI and coordinator review. 
+
+## Owner pricing directive — 2026-11-15
+- Product: TAKATAK AI File Organizer / AI Automation add-on.
+- Public price: USD 20.00 per month per subscribed customer workspace (billing interval monthly); taxes, FX presentation, proration, refunds and billing ownership must follow the EXISTING TAKATAK subscription system.
+- Entitlement: all organizer feature categories included (classification, suggested filing, approved automation, file/media support, studio/agent integration, search, manual controls, settings, audit). Do not create a second payment processor or bypass existing subscription checks.
+- Protect against unbounded costs: establish disclosed fair-use limits for AI tokens, processing, storage and external connectors before release. Do not silently bill overages. An exceeded quota should safely pause paid processing, retain originals, and explain next steps.
+- Enforce paid entitlement server-side on event ingestion, worker execution, agent tools and management API; allow normal pre-existing file handling to continue if unpaid. Preserve explicitly authorized setup/bypass identities and existing feature gates.
+- Cancellation: stop future organizer AI work at entitlement end; keep original client files accessible under existing retention/storage terms. Do not delete files merely because add-on is cancelled.
+- Launch requirements: exact existing product/price ID, webhook idempotency, checkout/subscription activation, failed-payment grace, cancellation, renewal, invoice tax treatment and end-to-end test. No price ID or live billing activation has been created by this documentation.
