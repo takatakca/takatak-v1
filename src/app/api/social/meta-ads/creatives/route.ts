@@ -40,7 +40,7 @@ function rateLimit(key: string): boolean {
     for (const [oldKey, time] of lastRequestByAccount) {
       if (now - time >= COOLDOWN_MS) lastRequestByAccount.delete(oldKey);
     }
-    if (lastRequestByAccount.size >= 500) lastRequestByAccount.clear();
+    // At capacity, reject instead of clearing active cooldowns and allowing a burst.\n    if (lastRequestByAccount.size >= 500) return false;
   }
   lastRequestByAccount.set(key, now);
   return true;
