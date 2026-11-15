@@ -1,3 +1,9 @@
+# Creative Intelligence safety and rollout continuation — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Owner directs full integrated delivery in existing TAKATAK-V1. Feature PR #300 now adds CSV export, incomplete metadata coverage detection and fail-closed throttle. Two explicit default-off flags in `.env.example` gate the new frontend and backend; intentionally NOT live. New synthetic CSV and gating tests run via `qa:social-meta-ads`. Source docs: `docs/TAKATAK_CREATIVE_INTELLIGENCE.md`; tracker #299; Google Drive Académie journal below. Latest CI must be rechecked at exact head before merge; old CI passes are not enough. Real Meta `ads_read` access, app approval, correct creative/asset metadata, multi-tenant live smoke, verified deployed SHA, multilingual UX and licensed external benchmark source are still required. Do not disclose provider secrets or claim 100% while blocked.
+
+---
+
 # Creative Intelligence M1 preview handoff — 2026-11-15
 
 Signed: GPT-6 @ ChatGPT. Building on existing draft PR #300 for user-requested TAKATAK-V1 Creative Intelligence. Added `src/lib/social/analytics/meta-ad-creative-mapping.ts`, `src/lib/social/providers/meta-ads-insights.ts` bounded on-demand `fetchMetaAdsCreativeReport()`, private `/api/social/meta-ads/creatives`, and `MetaAdCreativeReportPanel` under the subscribed Meta Ads campaigns section. Request uses existing `ads_read` credential and server-side selected client/brand/ad account; no browser-set tenant/account ID. Bound 31-day requests, 3 pages/100 rows per API edge, 20-second process-local cooldown, manual-only load; display 50 ads max, no dynamic asset-level or ROI claims. Missing data stays missing. Existing billing and subscription exemption remain untouched.
