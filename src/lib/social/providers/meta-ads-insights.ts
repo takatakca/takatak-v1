@@ -568,7 +568,8 @@ export async function fetchMetaAdsCreativeReport(options: {
     };
   }
   const rows = mergeMetaAdInsightsWithCreatives(readInsights.rows, readAds.rows);
-  const complete = readInsights.complete && readAds.complete && ads.status < 400 &&\n    hasCompleteMetaAdMetadata(readInsights.rows, readAds.rows);
+  const complete = readInsights.complete && readAds.complete && ads.status < 400 &&
+    hasCompleteMetaAdMetadata(readInsights.rows, readAds.rows);
   return {
     status: complete ? "ready" : "partial",
     currency,
