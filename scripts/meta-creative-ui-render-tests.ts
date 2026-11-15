@@ -4,6 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { MetaCampaignBenchmarkPanel } from "../src/components/social/platforms/meta-campaign-benchmark-panel";
 import { MetaAdCreativeReportPanel } from "../src/components/social/platforms/meta-ad-creative-report-panel";
+import { MetaAdPeerComparisonPanel } from "../src/components/social/platforms/meta-ad-peer-comparison-panel";
 import type { MetaCampaignBenchmarkInput } from "../src/lib/social/analytics/meta-campaign-benchmarks";
 
 const campaigns: MetaCampaignBenchmarkInput[] = [
@@ -32,4 +33,28 @@ const enReport = renderToStaticMarkup(createElement(MetaAdCreativeReportPanel, {
 }));
 assert(enReport.includes("Analyze ad-level performance"), "English request button");
 assert(enReport.includes("Export CSV"), "English export button");
-console.log("PASS Creative Intelligence FR/EN render and report load/export affordances.");
+const peerRows = ["101", "102", "103"].map((id, index) => ({
+  adId: id,
+  adName: `Ad ${id}`,
+  campaignId: "9",
+  campaignName: "Example Campaign",
+  creativeId: id,
+  creativeName: null,
+  creativeType: "VIDEO",
+  status: "ACTIVE",
+  impressions: 1200,
+  clicks: 50,
+  spend: 30,
+  ctr: index + 1,
+  cpc: index + 2,
+  cpm: index + 3,
+}));
+const peerFR = renderToStaticMarkup(createElement(MetaAdPeerComparisonPanel, { rows: peerRows, complete: true, currency: "CAD", locale: "fr" }));
+assert(peerFR.includes("Comparaisons entre publicités"), "French peer title");
+assert(peerFR.includes("Example Campaign"), "Only current authorized sample presented");
+const peerEN = renderToStaticMarkup(createElement(MetaAdPeerComparisonPanel, { rows: peerRows, complete: true, currency: "CAD", locale: "en" }));
+assert(peerEN.includes("Within-campaign ad comparisons"), "English peer title");
+const partial = renderToStaticMarkup(createElement(MetaAdPeerComparisonPanel, { rows: peerRows, complete: false, currency: "CAD", locale: "en" }));
+assert(partial.includes("incomplete report"), "Incomplete data must not form comparisons");
+assert(!partial.includes("Example Campaign"), "No peer group data shown from incomplete report");
+console.log("PASS Creative Intelligence FR/EN render, report actions and same-campaign peer states.");
