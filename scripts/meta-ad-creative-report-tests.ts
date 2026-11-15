@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 
-import { mergeMetaAdInsightsWithCreatives } from "../src/lib/social/analytics/meta-ad-creative-mapping";
+import { hasCompleteMetaAdMetadata, mergeMetaAdInsightsWithCreatives } from "../src/lib/social/analytics/meta-ad-creative-mapping";
 
 const insights = [
   { ad_id: "100", ad_name: "Ad one", campaign_id: "400", campaign_name: "Campaign A", impressions: "10000", clicks: "125", spend: "48.50", ctr: "1.25", cpc: "0.388", cpm: "4.85" },
@@ -14,6 +14,8 @@ const ads = [
 ];
 const result = mergeMetaAdInsightsWithCreatives(insights, ads);
 assert.equal(result.length, 3);
+assert.equal(hasCompleteMetaAdMetadata(insights, ads), false, "missing archived ad metadata must mark report partial");
+assert.equal(hasCompleteMetaAdMetadata(insights.slice(0, 2), ads), true, "all joined ads can be complete");
 assert.equal(result[0].creativeId, "900");
 assert.equal(result[0].spend, 48.5);
 assert.equal(result[0].ctr, 1.25);
