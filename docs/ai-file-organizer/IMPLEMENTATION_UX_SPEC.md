@@ -53,3 +53,35 @@ P8 staged release, production smoke and operator documentation.
 
 ## Handoff
 This PR contains design/engineering documentation only. It does not activate routes, add production services, modify billing, or assert compliance certifications. Respect AGENTS.md, WORKLOG.md and protected release gate before coding.
+
+## Owner correction — AI-first embedded organization (2026-11-15)
+This section overrides the earlier proposed standalone journey and route assumptions. DO NOT add a new landing page, new signup, independent agent builder, new billing, duplicate studio, or separate cPanel. First inventory the actual dashboard routes and permissions. Integrate as a reusable service and contextual controls inside existing Files/Studio/Agents/Hosting screens, plus one settings panel and a shared approval inbox where appropriate.
+
+### Existing integration candidates identified on main (not yet full code audit)
+- `src/lib/integrations/knowledgeai/policy.ts` — existing knowledge access policy.
+- `src/lib/studio/library-policy.ts`, `src/lib/studio/output-link.ts`, `src/lib/studio/agent-jobs.ts`, `src/lib/studio/agent-service.ts` — existing studio library/output/agent job infrastructure.
+- `src/lib/website-leads/attachment-storage.ts`, `src/lib/website-leads/attachments.ts` — existing attachment handling and security.
+- `docs/TAKATAK_HOSTING_CONTROL_CLIENT_PANEL.md` — existing client hosting controls.
+- `docs/KNOWLEDGEAI_MASTER_ISSUER.md` — existing knowledge integration.
+Verify behavior and reuse boundaries before implementing; filenames alone do not prove a capability is live.
+
+### Target automation
+An authorized upload, existing studio output, approved connected source sync, or client-created file emits an idempotent file-created event. Existing background job infrastructure schedules classification/extraction with bounded retries. The classifier proposes tenant/project/category/destination, suggested filename and confidence with evidence. The rules engine selects:
+- **auto**: only when the owner explicitly enables auto-file for a narrowly scoped folder/source/file class and confidence/policy thresholds pass.
+- **ask**: a small inline modal or approval inbox item with preview, suggested destination, Approve / Change / Reject; no file move before approval.
+- **manual**: existing file-management flow remains accessible.
+- **off**: no AI analysis; ordinary existing upload remains available.
+
+The system never creates a new customer, workspace, permission, or billing subscription. Never infer tenancy from file text alone. Preserve the immutable original, store metadata/index separately, and make reversible destination assignments. Use existing storage and server-side access checks. Do not physically move hosting/cPanel files or publish to connected systems without explicit scoped authorization and safe connector support.
+
+### Settings
+Inside existing account/workspace settings: master AI organizer toggle (default OFF until consent), modes off/suggest/auto, allowed source categories, target folders, confidence threshold, approval requirement, retention, notification channel, AI spend ceiling, per-action activity log, revoke, and manual correction. Manager controls policies; client may override within granted role. Explain the difference between organizing a dashboard index and moving actual files on a host.
+
+### AI agent interface
+Expose authorized source search and metadata actions as scoped tools to the EXISTING agents/studios. An agent can propose a move/tag and request approval; only an approved server-side operation can commit. Agent responses cite original file provenance. No new agent identity or agent builder is necessary.
+
+### Acceptance cases
+Upload → auto suggestion → Approve → existing client dashboard file listing updates; Reject leaves original unchanged; Change destination revalidates permission; duplicate events don't duplicate records; undo restores prior classification; auto mode respects exact policy; off mode creates no AI jobs; other tenant's file never appears in suggestions, search, previews or agent context; studio outputs and hosting uploads do not get silently moved; agent costs capped. Add QA fixtures and actual production smoke evidence before marking functional.
+
+### Immediate next engineering action
+Read full existing dashboard screen architecture, auth/tenant policy, studio library, knowledge policy, attachment storage, hosting control and existing job schema. Produce a concrete file-by-file integration map and collision assessment. Implement the first safe vertical slice on this feature branch with tests; do not merge until CI and coordinator review. 
