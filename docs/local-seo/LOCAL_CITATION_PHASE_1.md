@@ -9,7 +9,7 @@ Branch: feat/local-citation-nap-audit-20261115. Existing billing and authenticat
 - Import up to 500 supplied listing evidence rows (250 KB) with quoted CSV parsing.
 - Field-level mismatch/missing comparisons, potential duplicate detection, and correction CSV export.
 - No network calls or server upload of manually entered evidence; no database migration or provider spend.
-- Unit tests and a PR test workflow.
+- Node 22 MJS tests and a PR test workflow; MJS harness avoids TS5097 from repository tsconfig.
 
 ## Truthful scope and limits
 This is NOT BrightLocal's online citation discovery/publishing, nor a provider API connection. It cannot confirm any directory page exists, cannot prove the data in CSV is current, cannot submit changes to Google/Apple/Bing/Meta, and has no AI auto-publishing. "Consistent" means consistent with customer-supplied evidence only.
