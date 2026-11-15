@@ -3,20 +3,9 @@ import "server-only";
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import type { CitationReferenceProfile } from "./citation-audit";
+import { readGoogleSnapshotAddress, readGoogleSnapshotPhone } from "./citation-evidence";
 
 function stringValue(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function googleAddress(value: unknown): string {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return "";
-  const meta = value as Record<string, unknown>;
-  const lines = Array.isArray(meta.addressLines)
-    ? meta.addressLines.filter((line): line is string => typeof line === "string" && line.trim().length > 0)
-    : [];
-  return [...lines, stringValue(meta.locality), stringValue(meta.administrativeArea),
-    stringValue(meta.postalCode)].filter(Boolean).join(", ");
-}
 
 /**
  * Only reads a currently selected, active client workspace. Never uses a user-
@@ -35,7 +24,7 @@ export async function getCitationReferenceProfiles(): Promise<CitationReferenceP
       db.localListing.findMany({
         where: { clientId, provider: { not: "internal_demo" } },
         select: {
-          id: true, name: true, addressLine1: true, city: true, region: true,
+          id: true, businessBrandId: true, name: true, addressLine1: true, city: true, region: true,
           postalCode: true, phone: true, website: true, updatedAt: true,
         },
         orderBy: { updatedAt: "desc" },
@@ -48,7 +37,7 @@ export async function getCitationReferenceProfiles(): Promise<CitationReferenceP
           providerConnection: { provider: "google_business", status: "connected" },
         },
         select: {
-          id: true, displayName: true, profileUrl: true, metadata: true, lastDiscoveredAt: true,
+          id: true, businessBrandId: true, displayName: true, profileUrl: true, metadata: true, lastDiscoveredAt: true,
         },
         orderBy: { lastDiscoveredAt: "desc" },
         take: 30,
@@ -58,6 +47,9 @@ export async function getCitationReferenceProfiles(): Promise<CitationReferenceP
       id: "local:" + item.id,
       label: (item.name || "Local business") + " — saved TAKATAK listing",
       source: "local_listing",
+      businessBrandId: item.businessBrandId,
+      localListingId: item.id,
+      socialAccountId: null,
       observedAt: item.updatedAt.toISOString(),
       nap: {
         name: item.name,
@@ -70,12 +62,15 @@ export async function getCitationReferenceProfiles(): Promise<CitationReferenceP
       id: "google:" + item.id,
       label: (item.displayName || "Google Business Profile") + " — connected Google snapshot",
       source: "google_business_connection",
+      businessBrandId: item.businessBrandId,
+      localListingId: null,
+      socialAccountId: item.id,
       observedAt: item.lastDiscoveredAt?.toISOString() ?? null,
       nap: {
         name: item.displayName ?? "",
-        address: googleAddress(item.metadata),
-        // Social discovery does not currently store GBP phone numbers; never invent one.
-        phone: "",
+        address: readGoogleSnapshotAddress(item.metadata),
+        // Only present after a new authorized GBP location discovery; older snapshots may lack it.
+        phone: readGoogleSnapshotPhone(item.metadata),
         website: item.profileUrl ?? "",
       },
     }));
