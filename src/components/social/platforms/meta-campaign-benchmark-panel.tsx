@@ -11,8 +11,8 @@ const METRICS = [
   { key: "cpm", label: "Median CPM", unit: "currency" },
 ] as const;
 
-function amount(value: number | null, unit: "%" | "currency", currency: string | null) {
-  if (value == null) return "Unavailable";
+function amount(value: number | null, unit: "%" | "currency", currency: string | null, locale: "fr" | "en") {
+  if (value == null) return locale === "fr" ? "Indisponible" : "Unavailable";
   const rendered = new Intl.NumberFormat("en-CA", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
@@ -66,7 +66,7 @@ export function MetaCampaignBenchmarkPanel({
               <div key={metric.key} className="rounded-lg border border-[#E2E8F0] bg-white p-4">
                 <p className="text-xs text-[#475569]">{fr ? `Médiane ${metric.key.toUpperCase()}` : metric.label}</p>
                 <p className="mt-2 text-2xl font-semibold text-[#10213A]">
-                  {amount(summary.medians[metric.key], metric.unit, currencyCode)}
+                  {amount(summary.medians[metric.key], metric.unit, currencyCode, locale)}
                 </p>
               </div>
             ))}
@@ -86,9 +86,9 @@ export function MetaCampaignBenchmarkPanel({
                 {summary.rows.slice(0, 8).map((campaign) => (
                   <tr key={campaign.id} className="border-b border-[#F1F5F9] last:border-0">
                     <th scope="row" className="p-3 font-medium text-[#10213A]">{campaign.name}</th>
-                    <td className="p-3">{amount(campaign.ctr, "%", currencyCode)}</td>
-                    <td className="p-3">{amount(campaign.cpc, "currency", currencyCode)}</td>
-                    <td className="p-3">{amount(campaign.cpm, "currency", currencyCode)}</td>
+                    <td className="p-3">{amount(campaign.ctr, "%", currencyCode, locale)}</td>
+                    <td className="p-3">{amount(campaign.cpc, "currency", currencyCode, locale)}</td>
+                    <td className="p-3">{amount(campaign.cpm, "currency", currencyCode, locale)}</td>
                   </tr>
                 ))}
               </tbody>
