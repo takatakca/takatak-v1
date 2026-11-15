@@ -26,7 +26,7 @@ export async function getSavedCitationEvidence(): Promise<SavedCitationEvidence[
         where: {
           clientId,
           source: { in: ["manual", "qmaps", "provider_api"] },
-          status: { notIn: ["planned", "archived"] },
+          status: { in: ["found_internal", "needs_update"] },
         },
         select: {
           id: true, businessBrandId: true, localListingId: true,
