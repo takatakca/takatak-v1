@@ -66,3 +66,70 @@ test("escapes spreadsheet-formula injection when exporting audit", () => {
   assert.ok(exported.includes("\"'+1+1\""));
   assert.ok(exported.startsWith("\uFEFF"));
 });
+
+
+import {
+  citationEvidenceMatchesProfile, readObservedCitationNap,
+  readGoogleSnapshotAddress, readGoogleSnapshotPhone, rowsForSavedEvidence,
+  safeCitationLink,
+} from "../src/lib/local-listings/citation-evidence.ts";
+import { getGoogleBusinessPrimaryPhone } from "../src/lib/social/providers/google-business-contact.ts";
+
+const linkedProfile = {
+  id: "local:location-a", label: "Business A", source: "local_listing",
+  observedAt: null, businessBrandId: "brand-a", localListingId: "location-a",
+  socialAccountId: null, nap: reference,
+};
+
+const linkedGoogle = {
+  id: "google:google-a", source: "google_business_snapshot",
+  sourceLabel: "Google snapshot", observedAt: null,
+  businessBrandId: "brand-a", localListingId: null,
+  socialAccountId: "google-a", row,
+};
+
+test("only explicit observedNap metadata counts as directory observation", () => {
+  assert.deepEqual(readObservedCitationNap({ name: "Unverified company", phone: "99999" }), {
+    name: "", address: "", phone: "", website: "",
+  });
+  assert.deepEqual(readObservedCitationNap({ observedNap: { name: "Recorded", phone: "+1 514 555 0100" } }), {
+    name: "Recorded", address: "", phone: "+1 514 555 0100", website: "",
+  });
+  assert.deepEqual(readObservedCitationNap([]), { name: "", address: "", phone: "", website: "" });
+});
+
+test("stored Google snapshots use readMask primary phone and saved address only", () => {
+  assert.equal(getGoogleBusinessPrimaryPhone({ primaryPhone: " +1 514 555 0100 " }), "+1 514 555 0100");
+  assert.equal(getGoogleBusinessPrimaryPhone({ additionalPhones: ["123"] }), null);
+  assert.equal(getGoogleBusinessPrimaryPhone({ primaryPhone: 45 }), null);
+  assert.equal(readGoogleSnapshotPhone({ primaryPhone: "514-555-0100" }), "514-555-0100");
+  assert.equal(readGoogleSnapshotPhone({}), "");
+  assert.equal(readGoogleSnapshotAddress({
+    addressLines: ["123 Rue Saint-Paul"], locality: "Montréal",
+    administrativeArea: "QC", postalCode: "H2Y 1G2",
+  }), "123 Rue Saint-Paul, Montréal, QC, H2Y 1G2");
+});
+
+test("saved evidence never implicitly matches another location under same brand", () => {
+  assert.equal(citationEvidenceMatchesProfile(linkedProfile, {
+    ...linkedGoogle, localListingId: "location-b", socialAccountId: null,
+  }), false);
+  assert.equal(citationEvidenceMatchesProfile(linkedProfile, {
+    ...linkedGoogle, localListingId: "location-a", socialAccountId: null,
+  }), true);
+  assert.equal(citationEvidenceMatchesProfile(linkedProfile, linkedGoogle), false);
+  assert.equal(citationEvidenceMatchesProfile(linkedProfile, {
+    ...linkedGoogle, businessBrandId: "brand-b", localListingId: null, socialAccountId: null,
+  }), false);
+  assert.equal(citationEvidenceMatchesProfile(linkedProfile, {
+    ...linkedGoogle, businessBrandId: "brand-a", localListingId: null, socialAccountId: null,
+  }), true);
+  assert.deepEqual(rowsForSavedEvidence(linkedProfile, [linkedGoogle]), []);
+  assert.deepEqual(rowsForSavedEvidence(undefined, [linkedGoogle]), []);
+});
+
+test("only valid remote listing URLs are rendered as links", () => {
+  assert.equal(safeCitationLink("javascript:alert(1)"), "");
+  assert.equal(safeCitationLink("https://user:pass@example.com/profile"), "");
+  assert.equal(safeCitationLink("https://directory.example/profile"), "https://directory.example/profile");
+});
