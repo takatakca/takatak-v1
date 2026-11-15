@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import type { MetaAdCreativeReportRow } from "@/lib/social/analytics/meta-ad-creative-mapping";
+import { makeMetaCreativeCsv } from "@/lib/social/analytics/meta-creative-export";
 
 type CreativeReportResponse = {
   ok?: boolean;
@@ -69,6 +70,28 @@ export function MetaAdCreativeReportPanel({ start, end }: { start: string; end: 
 
   const currency = report?.currency && /^[A-Z]{3}$/.test(report.currency) ? report.currency : null;
   const rows = report?.rows ?? [];
+  function downloadCsv() {
+    if (status !== "loaded" || !report || rows.length === 0 || !report.status) return;
+    const data = makeMetaCreativeCsv({
+      rows,
+      currency,
+      start,
+      end,
+      status: report.status,
+    });
+    const blob = new Blob(["\uFEFF", data], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    try {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `takatak-meta-creatives-${start}-${end}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } finally {
+      window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+  }
   return (
     <section className="rounded-xl border border-[#DCE7F7] bg-white p-5 sm:p-6" aria-labelledby="meta-ad-creatives-title">
       <p className="text-xs font-semibold uppercase tracking-wider text-[#2563EB]">
@@ -86,6 +109,10 @@ export function MetaAdCreativeReportPanel({ start, end }: { start: string; end: 
         <button type="button" onClick={load} disabled={status === "loading"}
           className="rounded-lg bg-[#1455D9] px-4 py-2.5 text-sm font-semibold text-white disabled:cursor-wait disabled:opacity-60">
           {status === "loading" ? "Loading Meta ad data…" : status === "loaded" ? "Refresh ad-level report" : "Analyze ad-level performance"}
+        </button>
+        <button type="button" onClick={downloadCsv} disabled={status !== "loaded" || rows.length === 0}
+          className="rounded-lg border border-[#C9D8F0] bg-white px-4 py-2.5 text-sm font-medium text-[#10213A] disabled:cursor-not-allowed disabled:opacity-50">
+          Export CSV (loaded ads only)
         </button>
         <p className="text-xs text-[#64748B]">On-demand only · maximum 31 days · bounded API pagination</p>
       </div>
