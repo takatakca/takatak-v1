@@ -1,3 +1,9 @@
+# TAKATAK Creative Intelligence — clean successor PR #303 — 2026-11-15
+
+Signed GPT-6 @ ChatGPT. Owner requests 100% integrated, tested and deployed. PR #300 was superseded and closed **without merge** because current main received unrelated Local Citation PR #301 and the old branch conflicted in WORKLOG. Its exact 17 Creative Intelligence files and all feature notes were replayed onto new `feat/meta-creative-intelligence-rebased-20261115` based on main `176966c4`, with all non-feature main files retained; the latest draft is https://github.com/takatakca/takatak-v1/pull/303. `WORKLOG.md` contains both independent histories. New CI run and live Meta verification required; flags default OFF; NO production deploy or 100% status claimed. Future work must resume #303, not reopen #300.
+
+---
+
 # Creative Intelligence safety and rollout continuation — 2026-11-15
 
 Signed: GPT-6 @ ChatGPT. Owner directs full integrated delivery in existing TAKATAK-V1. Feature PR #300 now adds CSV export, incomplete metadata coverage detection and fail-closed throttle. Two explicit default-off flags in `.env.example` gate the new frontend and backend; intentionally NOT live. New synthetic CSV and gating tests run via `qa:social-meta-ads`. Source docs: `docs/TAKATAK_CREATIVE_INTELLIGENCE.md`; tracker #299; Google Drive Académie journal below. Latest CI must be rechecked at exact head before merge; old CI passes are not enough. Real Meta `ads_read` access, app approval, correct creative/asset metadata, multi-tenant live smoke, verified deployed SHA, multilingual UX and licensed external benchmark source are still required. Do not disclose provider secrets or claim 100% while blocked.
