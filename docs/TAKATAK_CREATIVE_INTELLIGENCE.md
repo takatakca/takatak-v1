@@ -36,3 +36,11 @@ Tracking: [GitHub #299](https://github.com/takatakca/takatak-v1/issues/299).
 - Later: live authorized Meta account verification, multi-client isolation tests, consent/privacy retention, FR/EN localization and gated billing decision.
 
 References: https://developers.facebook.com/docs/marketing-api/reference/v27.0 ; https://developers.facebook.com/docs/marketing-api/insights/v9.0 ; https://developers.facebook.com/docs/business-management-apis/business-creative-asset-management/get-started ; https://go.motionapp.com/benchmarks-quiz
+
+
+## M1 hardening (2026-11-15 follow-up)
+- The read-only ad report remains user-triggered, and never uses browser-submitted client/account IDs. The server-side cooldown is bounded and fails closed when 500 active keys are present (no unconditional clearing of active rate limits).
+- The report status is **partial** when any ad-level Insight row lacks its matching /ads metadata, even if Meta independently completed both response page sets. No missing creative is represented as a fully confirmed join.
+- A user-initiated CSV export uses **only already-loaded authorized rows** (no additional Meta API reads) and writes coverage, period, currency, ad/creative IDs. CSV fields are quoted and potentially executable spreadsheet formulas are converted to text. Synthetic tests validate injection/missing-data behavior.
+- **Default-off flags:** `TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false` (server API) and `NEXT_PUBLIC_TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false` (UI, build time) in `.env.example`. Both must be explicitly true on a validated release to expose this beta. A rollout needs CI, authenticated real Meta Ads read, two-client isolation smoke, served SHA + HTTPS readiness checks, and existing coordinator workflow. Never enable based on CI alone.
+- Neither a successful compiled build nor an attached GitHub artifact proves the module is served in production. This phase is not licensed industry benchmarking, actual video-asset fatigue analysis, profitability, or fully ready for paid users.
