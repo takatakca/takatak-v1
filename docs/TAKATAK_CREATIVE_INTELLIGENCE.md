@@ -57,3 +57,9 @@ References: https://developers.facebook.com/docs/marketing-api/reference/v27.0 ;
 - Display FR/EN campaign name, eligible ad count and median CTR/CPC/CPM (no creativity, return, success or ranking inference). Does not mix campaigns, brands, clients, time periods or currencies. Ads within the same campaign can still differ in audience, placements and attribution, so these medians are **not** causal ad performance or Motion industry benchmarks.
 - Implementation: `src/lib/social/analytics/meta-ad-peer-comparisons.ts`, `MetaAdPeerComparisonPanel`, pure synthetic tests `scripts/meta-ad-peer-comparison-tests.ts`, SSR FR/EN tests in `meta-creative-ui-render-tests.ts`; integrated into `qa:social-meta-ads`.
 - The new section inherits both **default-OFF** deployment flags from the parent Meta Ads dashboard. Real authorized Meta access, full CI, UI smoke, licensing for external benchmarks and on-host rollout still outstanding.
+
+## Meta Marketing API version gate — verified 2026-11-15
+- Meta's official Marketing API v21 expired September 9, 2025, while its Graph API v21 is active until January 21, 2027. Marketing v24 expired October 6, 2026; v25 is documented as supported.
+- Ads account discovery and insights use the separate `getMetaMarketingApiVersion()` at v25.0, with optional server-only `META_ADS_MARKETING_API_VERSION=v25.0`. Unsupported overrides fail closed. Facebook and Instagram OAuth continue using the existing Graph API configuration; no global version migration.
+- This fixes a CODE DEFAULT compatibility risk, not a confirmed production failure. Validate actual ads_read and fields on an authorized Meta Ads test account before activation. Both Creative Intelligence feature flags stay OFF by default.
+- Official schedule: https://developers.facebook.com/docs/graph-api/changelog/versions/ ; Insights permission: https://developers.facebook.com/docs/marketing-api/insights/v9.0
