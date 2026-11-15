@@ -1,3 +1,11 @@
+# TAKATAK Creative Intelligence M0 handoff — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Owner wants Motion-style creative benchmarking inside TAKATAK.ca. Issue #299; branch `feat/meta-creative-benchmarks-foundation-20261115`. This branch intentionally implements only account-internal **campaign** comparisons using existing Meta Ads account/campaign analytics, not creative-level benchmarks or cross-client industry statistics. No schema, authorization, OAuth, billing, synchronization or production changes. New pure calculator + synthetic tests + panel under the subscribed Meta Ads Campaigns section. Read `docs/TAKATAK_CREATIVE_INTELLIGENCE.md` for M1 true creative implementation, rights/permission constraints and explicit release gates.
+
+Next: review branch CI, run `npm run qa:social-meta-ads`, typecheck/lint, test with a permitted owned Meta account; coordinator chooses merge/release. **Not deployed / no live account validation**. Never pool one client's Meta data with another's. Existing Social/Studio branches and release coordinator unaffected.
+
+---
+
 # Bluesky publishing adapter handoff — 2026-11-14
 
 Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC, side session). Builds on the
