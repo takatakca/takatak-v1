@@ -810,7 +810,13 @@ export function MetaAdsSubscribedDashboard({
           confirmed={campaignsConfirmed}
           currency={analytics?.currency ?? null}
         />
-        <MetaAdCreativeReportPanel start={display.start} end={display.end} />
+        {rangeDays <= 30 ? (
+          <MetaAdCreativeReportPanel start={display.start} end={display.end} />
+        ) : (
+          <p className="rounded-lg bg-[#F8FAFC] p-4 text-sm text-[#64748B]">
+            Choose a 7-day or 30-day period to load the on-demand individual ad report.
+          </p>
+        )}
       </section>
     </div>
   );
