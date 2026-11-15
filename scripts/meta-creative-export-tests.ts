@@ -25,7 +25,7 @@ const row: MetaAdCreativeReportRow = {
   cpm: null,
 };
 const csv = makeMetaCreativeCsv({ rows: [row], currency: "CAD", start: "2026-11-01", end: "2026-11-10", status: "partial" });
-assert(csv.includes('"'=HYPERLINK('), "unsafe ad name escaped");
+assert(csv.includes(String.fromCharCode(34, 39) + "=HYPERLINK("), "unsafe ad name escaped");
 assert(csv.includes('"Example, video"'), "commas quoted");
 assert(csv.includes('"partial"'), "incomplete evidence visible");
 assert(csv.includes('"0"'), "zero does not become blank");
