@@ -27,7 +27,20 @@ No V1 migration: `ExperienceLaunchCode` already exists and `productCode` is a st
 
 ## Hard boundary: no label data in V1
 
-Products, label templates, barcodes and scan checks stay in SC4NNER's own database, keyed by `masterIdentityId`. V1 never receives or stores a product name, a barcode or a label. The exchange returns the account context and nothing else.
+Label templates, barcodes and scan checks stay in SC4NNER's own database, keyed by `masterIdentityId`. V1 never receives or stores a label, a label template or a scan check. The exchange returns the account context and nothing else. The one addition since 2026-11-14 (next section) is a read in the other direction: SC4NNER may read the V1 inventory catalog of the signed-in identity, so a label can start from the inventory product itself. Nothing flows from SC4NNER into V1.
+
+## Inventory catalog link (2026-11-14, owner's order)
+
+Behind the label studio, the owner wants the full TAKATAK inventory ecosystem: products tracked by UPC, stock kept like a shop catalog. That inventory already lives in V1 (`/dashboard/inventory`, PR #218). This link lets the deployed SC4NNER studio start a label from an inventory product, so the printed SKU/GTIN is the one the inventory and the registers recognise.
+
+- `POST /api/experiences/sc4nner/inventory`: same bearer service token as the exchange. Body: `{masterIdentityId}`. Returns `{ok:true, linked, workspaces:[{clientId, clientName, brands, products}]}` with product `id, businessBrandId, name, sku, category, size, ingredients, gtin, priceCents, quantity, threshold` (label artwork is never read or returned).
+- Resolution: master identity → its V1 profile → active workspace memberships. A workspace is served only when the membership's effective `view_inventory` permission — computed exactly like the dashboard API gate (role base or custom role / role override, plus grants, minus denials) — allows it, and the client is neither paused nor archived. Paused/archived clients and suspended memberships are excluded. Tenant scope always comes from the membership, never from a requested workspace id.
+- An identity without a V1 profile gets `{linked:false, reason:"no_profile"}`: SC4NNER keeps working standalone for that account.
+- Caps: 25 workspaces, 200 products per workspace; workspaces without products are omitted.
+- Implementation: `src/lib/experiences/sc4nner-inventory-access.ts`, pure permission rule in `src/lib/experiences/sc4nner-inventory-permissions.ts`, contract tests in `scripts/sc4nner-inventory-bridge-tests.ts` (`npm run qa:sc4nner-inventory`). No migration, no new variable: the endpoint reuses `TAKATAK_SC4NNER_SERVICE_TOKEN`. SC4NNER derives its URL from the configured exchange URL (optional override `TAKATAK_SC4NNER_INVENTORY_URL` on the SC4NNER side only).
+- Read-only: this endpoint never creates or edits a product and never moves stock. Stock changes stay in the V1 dashboard, behind `manage_inventory`.
+
+State of this addition: written by Taktak @ Muse VM, 2026-11-14; contract tests, access matrix and inventory suites green locally; typecheck shows only the pre-existing food-hub error. Not merged, not deployed.
 
 ## State
 
