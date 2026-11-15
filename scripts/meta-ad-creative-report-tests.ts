@@ -48,7 +48,8 @@ assert(envExample.includes("TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false"), "back
 assert(envExample.includes("NEXT_PUBLIC_TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false"), "frontend flag disabled by default");
 assert(!route.includes("request.nextUrl.searchParams.get(\"clientId\")"));
 assert(!route.includes("lastRequestByAccount.clear()"), "throttle must never reset active cooldowns");
-assert(route.includes("if (lastRequestByAccount.size >= 500) return false;"), "throttle capacity must fail closed");
+assert(/^\s*if \(lastRequestByAccount\.size >= 500\) return false;/m.test(route), "throttle must execute on an actual code line");
+assert(!route.includes("burst.\\n    if ("), "throttle must never be hidden inside a comment");
 const source = readFileSync("src/lib/social/providers/meta-ads-insights.ts", "utf8");
 assert(source.includes("fetchMetaAdsCreativeReport"));
 assert(source.includes("MAX_CREATIVE_REPORT_PAGES"));
