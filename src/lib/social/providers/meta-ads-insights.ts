@@ -2,7 +2,7 @@ import "server-only";
 
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
-import { mergeMetaAdInsightsWithCreatives, type MetaAdCreativeReportRow } from "@/lib/social/analytics/meta-ad-creative-mapping";
+import { hasCompleteMetaAdMetadata, mergeMetaAdInsightsWithCreatives, type MetaAdCreativeReportRow } from "@/lib/social/analytics/meta-ad-creative-mapping";
 import { getMetaGraphApiVersion } from "@/lib/social/providers/meta-oauth";
 import {
   buildSocialCredentialAad,
@@ -568,7 +568,7 @@ export async function fetchMetaAdsCreativeReport(options: {
     };
   }
   const rows = mergeMetaAdInsightsWithCreatives(readInsights.rows, readAds.rows);
-  const complete = readInsights.complete && readAds.complete && ads.status < 400;
+  const complete = readInsights.complete && readAds.complete && ads.status < 400 &&\n    hasCompleteMetaAdMetadata(readInsights.rows, readAds.rows);
   return {
     status: complete ? "ready" : "partial",
     currency,
