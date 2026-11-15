@@ -12,7 +12,14 @@ Tracking: [GitHub #299](https://github.com/takatakca/takatak-v1/issues/299).
 
 **Important limitation:** campaign comparisons are NOT creative benchmarks. The existing Meta connection returns campaign-level stats but does not yet import ad-to-creative join data. This panel must never say it identifies winning ads, industry percentiles, profits, causal ad effectiveness or competitor performance. Objectives, placements and attribution windows differ.
 
-## M1 implementation (not yet built)
+## M1 preview now coded on this branch (not yet verified live)
+- An authenticated `GET /api/social/meta-ads/creatives` route resolves the selected client, brand and Meta ad account **server-side**. Caller may specify a validated start/end date (at most 31 days); never accepts a client/brand/account ID.
+- On-demand (button click only): reads `level=ad` insights and bounded `/ads` metadata with `creative{id,name,object_type}` from the *same* authorized Meta Ads account. `ads_read` is already the original OAuth scope, but actual access and field availability require an authorized live Meta test.
+- Cap: 3 pages and 100 rows per source, with incomplete/permission-denied states; per-account in-process 20-second cooldown (not a global quota), no secrets in browser. The UI displays up to 50 individual ads sorted by reported spend.
+- No assumptions about images, video assets or Advantage+ dynamic asset variants. One row is **one ad**, not a creative asset or a peer/industry score. Missing metadata or performance is shown as unavailable. No actions, ROI or purchases assumed.
+- Pure ad-to-creative mapper, malformed-value tests and route-source isolation checks in `scripts/meta-ad-creative-report-tests.ts`. Integrated in CI through `qa:social-meta-ads`.
+
+## M1 next implementation (still missing)
 1. Verify current Meta permissions, account authorization and API-level availability for ad-level insights. Query selected `act_<id>/ads` with creative identifiers and ad-level insights only after per-tenant account resolution; never accept a browser-supplied tenant ID. Link images/videos/text only if authorized and returned.
 2. Join ad results to creative metadata by exact IDs; maintain explicit unsupported and partial coverage status (dynamic/Advantage+ creative may not give asset metrics). Normalize campaign objective, goal, period, currency, attribution window and placement before comparison.
 3. For video creative evaluate only metrics actually returned: plays, 3-sec views, ThruPlay etc. Track sample, defined formulas, source and timestamp. Add safe video asset handling, export and human-reviewed recommendations.
