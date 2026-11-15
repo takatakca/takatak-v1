@@ -5,8 +5,6 @@ import { getServerAccessContext } from "@/lib/security/access-context";
 import type { CitationReferenceProfile } from "./citation-audit";
 import { readGoogleSnapshotAddress, readGoogleSnapshotPhone } from "./citation-evidence";
 
-function stringValue(value: unknown): string {
-
 /**
  * Only reads a currently selected, active client workspace. Never uses a user-
  * submitted client ID, never falls back to mock, and never calls Google or any
