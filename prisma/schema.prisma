@@ -393,6 +393,7 @@ model Client {
   memberships               ClientMembership[]
   subscription              ClientSubscription?
   organizerPolicy            OrganizerWorkspacePolicy?
+  organizerFilingProposals    OrganizerFilingProposal[]
   stripeConnectAccount      ClientStripeConnectAccount?
   customRoles               WorkspaceCustomRole[]
   rolePermissionOverrides   WorkspaceRolePermissionOverride[]
@@ -5169,4 +5170,31 @@ model OrganizerWorkspacePolicy {
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@map("organizer_workspace_policies")
+}
+
+
+/// Manual metadata association proposal. Original Studio content is never modified.
+model OrganizerFilingProposal {
+  id                   String   @id @default(uuid()) @db.Uuid
+  clientId             String   @db.Uuid
+  requestId            String
+  sourceOutputId       String   @db.Uuid
+  destinationProjectId String   @db.Uuid
+  sourceUpdatedAt      DateTime
+  status               String   @default("pending")
+  revision             Int      @default(1)
+  requestedBy          String   @db.Uuid
+  reviewedBy           String?  @db.Uuid
+  reviewedAt           DateTime?
+  undoneAt             DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, requestId])
+  @@unique([clientId, sourceOutputId, destinationProjectId])
+  @@index([clientId, status, createdAt])
+  @@index([clientId, sourceOutputId])
+  @@map("organizer_filing_proposals")
 }
