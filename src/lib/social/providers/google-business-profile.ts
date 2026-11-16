@@ -1,6 +1,7 @@
 import "server-only";
 
 import { ServiceError } from "@/lib/services/service-error";
+import { getGoogleBusinessPrimaryPhone } from "./google-business-contact";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
 
 const ACCOUNT_API =
@@ -299,6 +300,7 @@ export async function listGoogleBusinessLocations(
             metadata: {
               source:
                 "google_business_profile",
+              primaryPhone: getGoogleBusinessPrimaryPhone(location.phoneNumbers),
               googleAccountName:
                 accountName,
               googleAccountLabel: text(

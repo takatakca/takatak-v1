@@ -10,6 +10,9 @@ export type CitationReferenceProfile = {
   label: string;
   source: "google_business_connection" | "local_listing";
   observedAt: string | null;
+  businessBrandId: string | null;
+  localListingId: string | null;
+  socialAccountId: string | null;
   nap: BusinessNap;
 };
 export type FieldFinding = "match" | "mismatch" | "missing_in_citation" | "reference_missing";
