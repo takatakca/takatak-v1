@@ -451,6 +451,11 @@ jobs:
           NODE_ENV: development
         run: npm run qa:ai-file-organizer-db
 
+      - name: AI File Organizer filing proposal metadata and RLS on ephemeral DB
+        env:
+          NODE_ENV: development
+        run: npm run qa:ai-file-organizer-filing-db
+
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma
 

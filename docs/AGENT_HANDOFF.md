@@ -1,3 +1,7 @@
+# AI File Organizer — durable human metadata approval foundation — 2026-11-16
+Signed GPT-6 @ ChatGPT. Stacked branch feat/ai-file-organizer-approval-ledger-20261116 on #328 proposes OrganizerFilingProposal RLS schema, tenant/source/project and policy-version trigger, idempotent request UUID, 1 active assignment/source, auditable manual proposal+approve/reject/undo routes and disposable DB tests. Never changes SavedAiOutput content or source storage; no automatic AI/files/payment. Must pass exact CI and schema/backup review before merge/apply. Keep existing SocialPost Approval separate. Follow docs/ai-file-organizer/EXECUTION_LEDGER.md; production organizer remains OFF.
+
+---
 # AI File Organizer — reconciled current main be0d9f7 — 2026-11-16
 Signed GPT-6 @ ChatGPT. PR #326 full CI 43808315350 passed 116 steps but GitHub merge returned conflict after main advanced. New branch feat/ai-file-organizer-studio-ui-preview-current-main-v2-20261116 replays feature-only Studio UI, metadata consent and no-write preview; shared package/WORKLOG/docs updated from latest main, original migration unchanged, additive migration 20261116060000 proposed only. Feature flag OFF, no real database migration, AI processing, file storage or paid checkout. Verify exact CI, coordinator review, then protected migration/staging/actual deployment proof. Ledger docs/ai-file-organizer/EXECUTION_LEDGER.md.
 
