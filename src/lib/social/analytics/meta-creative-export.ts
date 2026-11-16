@@ -20,13 +20,16 @@ export function makeMetaCreativeCsv(options: {
 }): string {
   const headers = [
     "Ad ID", "Ad name", "Campaign ID", "Campaign name",
-    "Creative ID", "Creative name", "Creative type", "Status",
+    "Creative ID", "Creative name", "Creative type", "Creative title",
+    "Creative body", "Creative video ID", "Creative call to action", "Status",
     "Impressions", "Clicks", "Spend", "CTR (%)", "CPC", "CPM",
     "Currency", "Period start", "Period end", "Report completeness",
   ];
   const values = options.rows.map((row) => [
     row.adId, row.adName, row.campaignId, row.campaignName,
-    row.creativeId, row.creativeName, row.creativeType, row.status,
+    row.creativeId, row.creativeName, row.creativeType,
+    row.creativeTitle, row.creativeBody, row.creativeVideoId,
+    row.creativeCallToAction, row.status,
     row.impressions, row.clicks, row.spend, row.ctr, row.cpc, row.cpm,
     options.currency, options.start, options.end, options.status,
   ]);
