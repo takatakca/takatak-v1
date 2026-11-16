@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { OrganizerSettingsPanel } from "@/components/studio/organizer-settings-panel";
+import { OrganizerFilingInbox } from "@/components/studio/organizer-filing-inbox";
 import { hasOrganizerEntitlement } from "@/lib/ai-file-organizer/studio-existing-records";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 
@@ -22,6 +23,7 @@ export default async function StudioOrganizerPage() {
       {entitled ? (
         <OrganizerSettingsPanel />
       ) : (
+        <div className="space-y-6">
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
           <h1 className="text-2xl font-bold text-slate-900">AI File Organizer</h1>
           <p className="mt-3 text-slate-700">
@@ -30,6 +32,13 @@ export default async function StudioOrganizerPage() {
             No AI processing or organizer charges have been enabled.
           </p>
         </section>
+        {process.env.TAKATAK_AI_FILE_ORGANIZER_ENABLED === "true" && (
+          <OrganizerFilingInbox
+            language="en" projects={[]} outputs={[]} allowedDestinationIds={[]}
+            canPropose={false} historyOnly
+          />
+        )}
+        </div>
       )}
     </main>
   );

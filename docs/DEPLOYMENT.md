@@ -61,3 +61,7 @@ V1 only supplies the authorized UI/bridge; the SEO API is a separately deployed 
 ### Latest release status (2026-10-16)
 
 PR #196 full branch CI passed: SHA `90f8fdeef6ea499e99f796c3563cefa4f6c8a6e9`, run `38884438610`; the PR is open and ready for V1 coordinator review, not merged. The SEOTAKATAK backend main SHA `b41eae7f4981f325668065ce4fc4e7e3a5860710` passed CI `38885243320`, but Coolify deploy `38885295728` failed. Owner-approved SQL 0004 and live /ready plus two-tenant staging deletion audit are still mandatory.
+
+
+## AI File Organizer guarded release note — 2026-11-16
+Source PR #331 is merged at `c6b6bbcd`; its protected organizer filing migrations exist **only in GitHub source**, not confirmed against the actual production database. Native filing UI branch `feat/ai-file-organizer-native-inbox-20261116` adds manual record/review/change/undo with no file or AI side effects; source CI still pending. The feature gate `TAKATAK_AI_FILE_ORGANIZER_ENABLED` stays OFF. Next operator-only live step is a non-destructive verified database schema + backup review, then the relevant ordered migrations with explicit authorization, signed-in two-workspace tests and served-SHA proof. Never infer a live feature from main push, GitHub CI, or a skipped CI deploy job. USD20 billing remains OFF; no content bytes are uploaded/moved by this feature.

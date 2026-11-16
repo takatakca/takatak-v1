@@ -12,6 +12,14 @@ assert.deepEqual(parseFilingDecisionInput({action:"approve",expectedRevision:1})
 assert.equal(parseFilingDecisionInput({action:"approve",expectedRevision:0}),null);
 assert.equal(parseFilingDecisionInput({action:"approve",expectedRevision:1,clientId:b}),null);
 assert.equal(parseFilingDecisionInput({action:"publish",expectedRevision:1}),null);
+assert.deepEqual(parseFilingDecisionInput({action:"change_destination",expectedRevision:2,destinationProjectId:b}),
+  {action:"change_destination",expectedRevision:2,destinationProjectId:b});
+assert.equal(parseFilingDecisionInput({action:"change_destination",expectedRevision:2}),null);
+assert.equal(parseFilingDecisionInput({action:"change_destination",expectedRevision:2,destinationProjectId:"../../other"}),null);
+assert.equal(parseFilingDecisionInput({action:"change_destination",expectedRevision:2,destinationProjectId:b,clientId:a}),null);
+assert.equal(parseFilingDecisionInput({action:"approve",expectedRevision:2,destinationProjectId:b}),null);
+assert.equal(parseFilingDecisionInput({action:"change_destination",expectedRevision:0,destinationProjectId:b}),null);
+
 const base={currentStatus:"pending" as const,action:"approve" as const,actualRevision:1,expectedRevision:1,sourceStillCurrent:true,enabledAndEntitled:true};
 assert.deepEqual(decideFilingTransition(base),{ok:true,status:"approved"});
 assert.deepEqual(decideFilingTransition({...base,expectedRevision:2}),{ok:false,code:"revision_conflict"});
@@ -22,4 +30,4 @@ assert.deepEqual(decideFilingTransition({...base,action:"undo"}),{ok:false,code:
 assert.deepEqual(decideFilingTransition({...base,currentStatus:"approved",action:"undo",enabledAndEntitled:false}),{ok:true,status:"undone"});
 assert.deepEqual(decideFilingTransition({...base,currentStatus:"rejected"}),{ok:false,code:"transition_forbidden"});
 assert.deepEqual(decideFilingTransition({...base,currentStatus:"undone",action:"approve"}),{ok:false,code:"transition_forbidden"});
-console.log("AI organizer filing state and strict request QA: 19 assertions passed");
+console.log("AI organizer filing state and strict request QA: 25 assertions passed");

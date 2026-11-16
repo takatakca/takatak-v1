@@ -6,7 +6,7 @@ import { STUDIO_OUTPUT_SOURCE, STUDIO_PROJECT_SOURCE } from "../src/lib/studio/p
 async function main(){
  const db=getPrisma();
  if(!db) throw new Error("organizer_filing_db_requires_migrated_disposable_database");
- const a=randomUUID(),b=randomUUID(),srcA=randomUUID(),pA=randomUUID(),pA2=randomUUID(),pB=randomUUID();
+ const a=randomUUID(),b=randomUUID(),srcA=randomUUID(),pA=randomUUID(),pA2=randomUUID(),pA3=randomUUID(),pB=randomUUID();
  const creator=randomUUID();
  try{
    await db.client.createMany({data:[
@@ -23,6 +23,9 @@ async function main(){
      {id:pA2,clientId:a,origin:"manual",status:"draft",
        kind:"creative_brief",title:"CI A project two",content:"{}",
        metadata:{source:STUDIO_PROJECT_SOURCE}},
+     {id:pA3,clientId:a,origin:"manual",status:"draft",
+       kind:"creative_brief",title:"CI A project three",content:"{}",
+       metadata:{source:STUDIO_PROJECT_SOURCE}},
      {id:pB,clientId:b,origin:"manual",status:"draft",
        kind:"creative_brief",title:"CI B project",content:"{}",
        metadata:{source:STUDIO_PROJECT_SOURCE}},
@@ -30,7 +33,7 @@ async function main(){
    const source=await db.savedAiOutput.findUniqueOrThrow({where:{id:srcA}});
    await db.organizerWorkspacePolicy.createMany({data:[
      {clientId:a,mode:"suggest",consentGranted:true,providerProcessingConsent:false,
-       requireApproval:true,allowedSourceKinds:["studio"],allowedDestinationIds:[pA,pA2]},
+       requireApproval:true,allowedSourceKinds:["studio"],allowedDestinationIds:[pA,pA2,pA3]},
      {clientId:b,mode:"suggest",consentGranted:true,providerProcessingConsent:false,
        requireApproval:true,allowedSourceKinds:["studio"],allowedDestinationIds:[pB]},
    ]});
@@ -59,6 +62,23 @@ async function main(){
    const second=await db.organizerFilingProposal.create({data:{
       ...values,requestId:"request_test_1234567895",destinationProjectId:pA2,
    }});
+   // The modification API changes only the pending metadata destination and revision.
+   const changed=await db.organizerFilingProposal.updateMany({
+     where:{id:second.id,clientId:a,status:"pending",revision:1},
+     data:{destinationProjectId:pA3,revision:{increment:1}},
+   });
+   assert.equal(changed.count,1);
+   const stale=await db.organizerFilingProposal.updateMany({
+     where:{id:second.id,clientId:a,status:"pending",revision:1},
+     data:{destinationProjectId:pA2,revision:{increment:1}},
+   });
+   assert.equal(stale.count,0,"concurrent manager cannot overwrite latest revision");
+   await assert.rejects(()=>db.organizerFilingProposal.update({
+     where:{id:second.id},data:{destinationProjectId:pB,revision:{increment:1}},
+   }),"database trigger rejects a destination belonging to another client");
+   const retained=await db.organizerFilingProposal.findUniqueOrThrow({where:{id:second.id}});
+   assert.equal(retained.destinationProjectId,pA3);
+   assert.equal(retained.revision,2);
    const reviewer=randomUUID(),now=new Date();
    await db.organizerFilingProposal.update({where:{id:first.id},data:{
       status:"approved",revision:{increment:1},reviewedBy:reviewer,reviewedAt:now,
@@ -83,7 +103,7 @@ async function main(){
      "SELECT c.relrowsecurity FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='organizer_filing_proposals'"
    );
    assert.equal(rls[0]?.relrowsecurity,true);
-   console.log("AI organizer filing: disposable PostgreSQL tenant/provenance/idempotency/unique/undo/RLS PASS");
+   console.log("AI organizer filing: disposable PostgreSQL tenant/provenance/idempotency/retarget-CAS/unique/undo/RLS PASS");
  }finally{
    await db.client.deleteMany({where:{id:{in:[a,b]}}});
    await disconnectPrisma();
