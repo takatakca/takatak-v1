@@ -78,7 +78,6 @@ const CAMPAIGN_COLUMNS: Array<{ key: CampaignColumn; label: string }> = [
 ];
 
 const RANGES = [7, 30, 90, 180, 365] as const;
-const CREATIVE_INTELLIGENCE_UI_ENABLED = process.env.NEXT_PUBLIC_TAKATAK_CREATIVE_INTELLIGENCE_ENABLED === "true";
 const COLORS = {
   purple: "#8B7EF6",
   green: "#7BC98A",
@@ -437,6 +436,7 @@ export function MetaAdsSubscribedDashboard({
 }) {
   const [section, setSection] = useState<MetaSection>("account");
   const [creativeLocale, setCreativeLocale] = useState<"fr" | "en">("fr");
+  const [creativeIntelligenceEnabled, setCreativeIntelligenceEnabled] = useState(false);
   const [rangeDays, setRangeDays] = useState(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [reachMetric, setReachMetric] = useState<"impressions" | "reach" | "spend">(
@@ -464,6 +464,32 @@ export function MetaAdsSubscribedDashboard({
       end: shiftDays(display.start, -1),
     };
   }, [display]);
+
+  useEffect(() => {
+    let stale = false;
+    const controller = new AbortController();
+    setCreativeIntelligenceEnabled(false);
+    void fetch("/api/social/meta-ads/creative-intelligence/capability", {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return false;
+        const data = (await response.json()) as { ok?: boolean; enabled?: boolean };
+        return data.ok === true && data.enabled === true;
+      })
+      .then((enabled) => {
+        if (!stale) setCreativeIntelligenceEnabled(enabled);
+      })
+      .catch(() => {
+        if (!stale) setCreativeIntelligenceEnabled(false);
+      });
+    return () => {
+      stale = true;
+      controller.abort();
+    };
+  }, [connectedLabel]);
 
   useEffect(() => {
     let stale = false;
@@ -807,7 +833,7 @@ export function MetaAdsSubscribedDashboard({
           confirmed={campaignsConfirmed}
           loading={loading && !ready}
         />
-        {CREATIVE_INTELLIGENCE_UI_ENABLED ? (
+        {creativeIntelligenceEnabled ? (
           <>
             <div role="group" aria-label="Creative Intelligence language" className="flex justify-end gap-2">
               {(["fr", "en"] as const).map((language) => (
