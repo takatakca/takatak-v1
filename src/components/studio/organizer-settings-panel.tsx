@@ -20,7 +20,7 @@ const words = {
     off: "Désactivé — aucun consentement conservé",
     suggest: "Suggestions uniquement — approbation humaine obligatoire",
     consent: "J'autorise la préparation des suggestions de classement des brouillons Studio sélectionnés.",
-    provider: "Je comprends qu'un traitement par un fournisseur IA demandera mon consentement et des contrôles supplémentaires avant toute activation.",
+    provider: "J’autorise la préparation d’un traitement IA futur des brouillons sélectionnés. Aucun contenu ne sera transmis sans une nouvelle confirmation précisant le fournisseur, les données et les règles de conservation.",
     confidence: "Seuil de confiance minimal",
     save: "Enregistrer les règles",
     saving: "Enregistrement…",
@@ -32,6 +32,7 @@ const words = {
     later: "Les actions Approuver / Modifier / Refuser exigeront d'abord un registre sécurisé des suggestions. Elles ne sont pas encore actives.",
     version: "Révision",
     note: "Mode automatique, stockage de fichiers, facturation à 20 USD/mois et classement par IA : non activés.",
+    partialProjects: "Certains projets sélectionnés ne figurent pas dans cette première page. La modification des suggestions est bloquée pour éviter d’effacer silencieusement des choix existants. Vous pouvez toujours désactiver le service.",
     changeLanguage: "English",
   },
   en: {
@@ -46,7 +47,7 @@ const words = {
     off: "Off — no consent retained",
     suggest: "Suggestions only — human approval required",
     consent: "I consent to preparing filing suggestions for selected Studio drafts.",
-    provider: "I understand that AI-provider processing needs my consent and additional safeguards before activation.",
+    provider: "I consent to preparing for future AI processing of selected Studio drafts. No content will be transmitted without a separate confirmation naming the provider, data and retention terms.",
     confidence: "Minimum confidence threshold",
     save: "Save settings",
     saving: "Saving…",
@@ -58,6 +59,7 @@ const words = {
     later: "Approve / Edit / Reject will require a secure persisted suggestion queue first. These actions are not active yet.",
     version: "Revision",
     note: "Automatic mode, file storage, USD 20/month billing and AI filing are not enabled.",
+    partialProjects: "Some selected projects are not on this first page. Suggestion edits are blocked to prevent silently removing existing choices. You can still turn the service off.",
     changeLanguage: "Français",
   },
 } as const;
@@ -135,7 +137,7 @@ export function OrganizerSettingsPanel() {
       setDraft({
         mode: value.mode === "suggest" ? "suggest" : "off", consentGranted: value.consentGranted,
         providerProcessingConsent: value.providerProcessingConsent,
-        allowedDestinationIds: value.allowedDestinationIds.filter(id => visible.some(p => p.id === id)),
+        allowedDestinationIds: [...value.allowedDestinationIds],
         minimumConfidence: value.minimumConfidence,
       });
       setError(null);
@@ -147,6 +149,7 @@ export function OrganizerSettingsPanel() {
     }
   }
   useEffect(() => { void load(); }, []);
+  const partialProjects = settings?.mode === "suggest" && settings.allowedDestinationIds.some(id => !projects.some(p => p.id === id));
   const payload = settings ? organizerSettingsSavePayload(draft, settings.revision, projects.map(p => p.id)) : null;
   async function save() {
     if (!payload || saving) return;
@@ -169,7 +172,7 @@ export function OrganizerSettingsPanel() {
       setDraft({
         mode: value.mode === "suggest" ? "suggest" : "off", consentGranted: value.consentGranted,
         providerProcessingConsent: value.providerProcessingConsent,
-        allowedDestinationIds: value.allowedDestinationIds.filter(id => projects.some(p => p.id === id)),
+        allowedDestinationIds: [...value.allowedDestinationIds],
         minimumConfidence: value.minimumConfidence,
       });
       setFeedback("saved");
@@ -213,6 +216,7 @@ export function OrganizerSettingsPanel() {
           <fieldset className="space-y-3 rounded-xl border border-slate-200 p-4">
             <legend className="px-1 font-semibold text-slate-900">{t.projects}</legend>
             <p className="text-sm text-slate-600">{t.projectsHint}</p>
+            {partialProjects && <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="alert">{t.partialProjects}</p>}
             {!projects.length ? <p className="text-sm text-amber-700">{t.noProjects}</p> : projects.map(project =>
               <label key={project.id} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm text-slate-900">
                 <input type="checkbox" checked={draft.allowedDestinationIds.includes(project.id)}
