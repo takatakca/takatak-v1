@@ -55,3 +55,14 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [ ] Designated V1 coordinator reviews/merges PR #196, deploys approved V1 release and validates SEO staging/production receipts; not delegated to this development agent.
 - [ ] Owner approves existing/non-billable SEO PostgreSQL and `sql/0004_site_deletion_receipts.sql` after 0001→0003; run manager/viewer/client B negative tests and disposable staging site deletion.
 - [ ] Agree a written retention policy for SEO deletion receipts, backup purge/subject access and cross-product erasure boundaries before regulated use.
+
+
+## AI File Organizer — real TAKATAK-V1 release path (2026-11-16)
+- [x] Code: manager-only bilingual Studio settings/consent preview, existing owner/role/billing guard and CI-tested pure rules.
+- [x] Code: tenant-limited audited filing proposal/decision metadata ledger (PR #331 integrated at `c6b6bbcd`), flag OFF.
+- [ ] Review, test and merge native Studio filing inbox with Proposer / Approuver / Modifier / Refuser / Annuler and post-cancellation undo, branch `feat/ai-file-organizer-native-inbox-20261116`.
+- [ ] Real protected production database backup + verified migration manifest for organizer policy, consent gate and approval ledger; no automatic migration or new table claim until actual production evidence.
+- [ ] Provision dedicated private files bucket only with actual tenant RLS, upload limits, scanner/quarantine, retention/export/delete and source preservation; test on signed client A/client B.
+- [ ] Connect bounded Ollama classification only with provider-specific consent and cost/credit caps, zero auto-move on failed classification; implement approvals as metadata association only.
+- [ ] Review existing billing USD20/month add-on product/tax/trial/refund/expired status, test webhook idempotency and enforce server entitlements; no charges until live proof and owner payment launch approval.
+- [ ] Verify authentic production served commit + real client journeys/undo, then move flag from OFF only for the approved canary workspace.
