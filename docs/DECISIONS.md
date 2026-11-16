@@ -57,3 +57,7 @@ TAKATAK V1 remains the identity/client/permission master. A new independent site
 ### PR #196 review readiness (2026-10-16)
 
 A passing V1 full CI allows the feature PR to be marked ready for designated-coordinator review only. It does not authorize an automatic merge, alteration of TAKATAK V1 production environments or backend SQL migration. PR #196 SHA `90f8fdeef6ea499e99f796c3563cefa4f6c8a6e9` passed CI `38884438610`; production SEO remains blocked by Coolify and database owner approval.
+
+
+## AI File Organizer consent UI release boundary (2026-11-16)
+Existing TAKATAK client membership and `manage_settings` authority protect the Studio organizer configuration page and API. The UX may only set `off` or `suggest`; both explicit consents and server-verified current-workspace Studio destination IDs are required before saved suggestion configuration, while every other mode defaults OFF. The UI is not a backend execution authorization: all future source filing, review, provider calls, physical storage, billing and payments require separate implementation and evidence. Real `Approuver/Modifier/Refuser` actions must be backed by versioned tenant-scoped persisted suggestions and append-only audit, never decorative buttons or browser-only state.
