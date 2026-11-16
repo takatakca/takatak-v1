@@ -5,7 +5,7 @@ import {
   getMetaAdsOAuthRedirectUri,
   META_ADS_OAUTH_START_SCOPES,
 } from "@/lib/social/providers/meta-ads-oauth";
-import { getMetaGraphApiVersion } from "@/lib/social/providers/meta-oauth";
+import { getMetaMarketingApiVersion } from "@/lib/social/providers/meta-marketing-api-version";
 import {
   exchangeMetaAuthorizationCode,
   exchangeMetaLongLivedUserToken,
@@ -39,7 +39,7 @@ export type MetaAdsTokenResult = {
 };
 
 function graphUrl(path: string): URL {
-  const version = getMetaGraphApiVersion();
+  const version = getMetaMarketingApiVersion();
   const url = new URL(`${META_GRAPH_HOST}/${version}${path}`);
   if (url.origin !== META_GRAPH_HOST) {
     throw new ServiceError(
