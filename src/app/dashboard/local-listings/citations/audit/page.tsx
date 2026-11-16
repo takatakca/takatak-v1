@@ -2,10 +2,15 @@ import { CitationAuditWorkbench } from "@/components/local-listings/citation-aud
 import { getCitationReferenceProfiles } from "@/lib/local-listings/citation-reference-profiles";
 import { getSavedCitationEvidence } from "@/lib/local-listings/citation-evidence-data";
 import { LocalListingsHeader } from "@/components/local-listings/local-listings-header";
+import { getServerAccessContext } from "@/lib/security/access-context";
+import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 export const dynamic = "force-dynamic";
 
 export default async function CitationAuditPage() {
+  const { access } = await getServerAccessContext();
+  const authorizedLiveCheck = access.mode === "client_scoped" &&
+    hasEffectivePermission(access, "manage_integrations");
   const [profiles, savedEvidence] = await Promise.all([
     getCitationReferenceProfiles(), getSavedCitationEvidence(),
   ]);
@@ -14,9 +19,10 @@ export default async function CitationAuditPage() {
       <LocalListingsHeader
         title="Local Citation Audit"
         subtitle="Check directory citation evidence against your business name, address, phone, and website."
-        badges={[{ label: "Private CSV comparison" }, { label: "No provider scans" }]}
+        badges={[{ label: "Private CSV comparison" }, { label: "Manual Google check where enabled" }]}
       />
-      <CitationAuditWorkbench profiles={profiles} savedEvidence={savedEvidence} />
+      <CitationAuditWorkbench profiles={profiles} savedEvidence={savedEvidence}
+        liveGoogleEnabled={authorizedLiveCheck && process.env.TAKATAK_LOCAL_CITATION_GBP_LIVE_READ === "true"} />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
   citationEvidenceMatchesProfile, type SavedCitationEvidence,
 } from "@/lib/local-listings/citation-evidence";
 import { buildCitationProfileChoices } from "@/lib/local-listings/citation-profile-choices";
+import { readLiveGoogleBusinessNap } from "@/app/dashboard/local-listings/citations/audit/actions";
 
 const EMPTY: BusinessNap = { name: "", address: "", phone: "", website: "" };
 const FIELDS = ["name", "address", "phone", "website"] as const;
@@ -20,15 +21,18 @@ const CHECK_LABEL: Record<FieldFinding, string> = {
 };
 
 export function CitationAuditWorkbench({
-  profiles, savedEvidence,
+  profiles, savedEvidence, liveGoogleEnabled,
 }: {
   profiles: CitationReferenceProfile[];
   savedEvidence: SavedCitationEvidence[];
+  liveGoogleEnabled: boolean;
 }) {
   const [reference, setReference] = useState<BusinessNap>(EMPTY);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [csv, setCsv] = useState("");
-  const [evidenceMode, setEvidenceMode] = useState<"csv" | "saved">("csv");
+  const [evidenceMode, setEvidenceMode] = useState<"csv" | "saved" | "google_live">("csv");
+  const [liveGoogleResult, setLiveGoogleResult] = useState<Awaited<ReturnType<typeof readLiveGoogleBusinessNap>> | null>(null);
+  const [liveGoogleLoading, setLiveGoogleLoading] = useState(false);
   const [fileError, setFileError] = useState("");
   const parsed = useMemo(() => {
     try { return { data: parseCitationCsv(csv), error: "" }; }
@@ -39,16 +43,35 @@ export function CitationAuditWorkbench({
     ? savedEvidence.filter(item => citationEvidenceMatchesProfile(selected, item)) : [],
     [selected, savedEvidence]);
   const comparisonRows = evidenceMode === "saved"
-    ? linkedEvidence.map(item => item.row) : parsed.data.rows;
+    ? linkedEvidence.map(item => item.row)
+    : evidenceMode === "google_live" && liveGoogleResult?.ok
+      ? [liveGoogleResult.row] : parsed.data.rows;
   const results = useMemo(
     () => auditCitations(reference, comparisonRows),
     [reference, comparisonRows],
   );
   const ready = FIELDS.some(f => reference[f].trim()) &&
-    results.summary.total > 0 && (evidenceMode === "saved" || !parsed.error);
+    results.summary.total > 0 && (evidenceMode !== "csv" || !parsed.error);
   const hasEnoughReference = FIELDS.every(f => reference[f].trim());
   const profileChoices = useMemo(() => buildCitationProfileChoices(profiles), [profiles]);
   const hasSameNameProfiles = profileChoices.some(choice => choice.sharesName);
+
+  async function verifyCurrentGoogle() {
+    if (!liveGoogleEnabled || !selected?.socialAccountId || liveGoogleLoading) return;
+    setLiveGoogleLoading(true);
+    setLiveGoogleResult(null);
+    // Never show stale provider evidence if a new live request fails.
+    setEvidenceMode("csv");
+    try {
+      const result = await readLiveGoogleBusinessNap(selected.socialAccountId);
+      setLiveGoogleResult(result);
+      if (result.ok) setEvidenceMode("google_live");
+    } catch {
+      setLiveGoogleResult({ ok: false, reason: "Live Google verification could not be completed." });
+    } finally {
+      setLiveGoogleLoading(false);
+    }
+  }
 
   function exportReport() {
     if (!ready) return;
@@ -76,7 +99,7 @@ export function CitationAuditWorkbench({
     <div className="space-y-5">
       <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
         <strong>Private evidence check — not an online directory scanner.</strong>
-        <p className="mt-1">Compare your own CSV or saved TAKATAK citations and connected Google snapshots against the reference details. No fresh publisher API requests are made, no listings are changed, and manually entered CSV data stays in the browser.</p>
+        <p className="mt-1">Compare your own CSV or previously saved TAKATAK/Google records. Live Google verification is a separate manual, read-only option where enabled. No directory listings are changed and manually entered CSV data stays in the browser.</p>
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="business-reference-title">
@@ -87,6 +110,8 @@ export function CitationAuditWorkbench({
           <select className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" value={selectedProfile}
             onChange={event => {
               setSelectedProfile(event.target.value);
+              setLiveGoogleResult(null);
+              setEvidenceMode("csv");
               const match = profiles.find(item => item.id === event.target.value);
               if (match) setReference({ ...match.nap });
             }}>
@@ -129,7 +154,27 @@ export function CitationAuditWorkbench({
             className={evidenceMode === "saved" ? "rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white" : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"}>
             Linked saved evidence ({linkedEvidence.length})
           </button>
+          {liveGoogleEnabled && selected?.source === "google_business_connection" && selected.socialAccountId && (
+            <button type="button" onClick={() => void verifyCurrentGoogle()}
+              disabled={liveGoogleLoading}
+              className="rounded-lg border border-blue-700 bg-white px-3 py-2 text-sm font-semibold text-blue-800 disabled:opacity-40">
+              {liveGoogleLoading ? "Checking official Google API…" : "Verify Google NAP live"}
+            </button>
+          )}
+          {liveGoogleResult?.ok && (
+            <button type="button" onClick={() => setEvidenceMode("google_live")}
+              aria-pressed={evidenceMode === "google_live"}
+              className={evidenceMode === "google_live" ? "rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white" : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"}>
+              Use latest Google response
+            </button>
+          )}
         </div>
+        {selected?.source === "google_business_connection" && !liveGoogleEnabled &&
+          <p className="mb-3 text-xs text-slate-500">Live Google API verification is not activated on this server. Saved Google snapshots can still be compared.</p>}
+        {liveGoogleResult?.ok &&
+          <p role="status" className="mb-3 text-sm text-blue-900">Google Business Information API confirmed this location at {liveGoogleResult.observedAt}. This is live Google account data, not a scan of other directories.</p>}
+        {liveGoogleResult && !liveGoogleResult.ok &&
+          <p role="alert" className="mb-3 text-sm text-amber-800">{liveGoogleResult.reason}</p>}
         {evidenceMode === "saved" && (
           <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
             <p>Using {linkedEvidence.length} saved citation or Google Business snapshot record(s). Unverified or missing NAP fields will be marked as needing verification.</p>
