@@ -14,9 +14,10 @@ export default async function CitationAuditPage() {
       <LocalListingsHeader
         title="Local Citation Audit"
         subtitle="Check directory citation evidence against your business name, address, phone, and website."
-        badges={[{ label: "Private CSV comparison" }, { label: "No provider scans" }]}
+        badges={[{ label: "Private CSV comparison" }, { label: "Manual Google check where enabled" }]}
       />
-      <CitationAuditWorkbench profiles={profiles} savedEvidence={savedEvidence} />
+      <CitationAuditWorkbench profiles={profiles} savedEvidence={savedEvidence}
+        liveGoogleEnabled={process.env.TAKATAK_LOCAL_CITATION_GBP_LIVE_READ === "true"} />
     </div>
   );
 }
