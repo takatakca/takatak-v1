@@ -61,3 +61,9 @@ At every run: read this file, latest GitHub main SHA, AGENTS.md and current issu
 - PR #316 exact-head CI 43803365992 **SUCCESS**, squash merged `f7bc6d322f03f7055743e0c4eee76000c2356346`. Feature remains OFF, no verified running user workflow.
 - Replayed only new policy/schema files from stacked PR #317 onto fresh main, plus `scripts/ai-file-organizer-db-tests.ts`: ephemeral DB checks two-tenant destination scoping, default OFF, optimistic revision, RLS. CI invokes this after disposable DB startup.
 - New policy migration is **NOT APPLIED** to TAKATAK STAGING or PRODUCTION; do not enable flags or live charges. Next: exact CI, migration review, audited consent UI, separate filing approvals.
+
+## 2026-11-16 — consolidated release candidate after main drift
+- Main moved to `eb8d5773406975685332eb6db1acdfebed3dd7c2` after concurrent releases. To avoid modifying unrelated code, only the 13 new/changed organizer source, script and migration paths were replayed to `feat/ai-file-organizer-studio-ui-preview-current-main-20261116`, plus the specific QA command and signed docs. The previous #322/#324 source remains historical.
+- Deliverables: in-Studio FR/EN settings, persisted consent with two-tenant project list, revoke, revision conflict, strict manual preview of an existing generated Studio draft into a same-client project (returns `approval_required` but no durable approval; neither content nor files move), additive migration preserving original #318 migration, deterministic UI/request/DB tests in CI.
+- Runtime/state: **NOT LIVE**, primary feature flag OFF, no producer/provider calls, no dedicated object storage, no actual organizer subscriptions/checkout, no migrated real DB, no production served SHA proof.
+- Next: exact-head GitHub full Node22 CI and protected review; after a verified real DB backup run staged migration; then implement durable approval and safe private storage, paywall and actual consented classification before paid release.
