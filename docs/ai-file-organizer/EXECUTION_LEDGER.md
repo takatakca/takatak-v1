@@ -67,3 +67,8 @@ At every run: read this file, latest GitHub main SHA, AGENTS.md and current issu
 - Current successor branch feat/ai-file-organizer-studio-ui-preview-current-main-v2-20261116 rooted at be0d9f7. Replayed only 13 tested organizer-specific files; rewrote only targeted QA entry in current package.json and prepended current WORKLOG/HANDOFF records. Never replaced current main history or original migration.
 - Google Drive verified continuity doc: https://docs.google.com/document/d/1LRtzrb6JBz2lCtIFEhAdSiGsUaFDK5sfOtkggG_Wa1U/edit
 - Not live: organizer flag OFF, original bytes untouched, no generic object storage, no named LLM provider consent, no paid Stripe product, no hosted DB migrations or production served-SHA proof.
+
+## 2026-11-16 — manual approval ledger reconciliation after parent merge
+- Parent PR #328 CI 43809405434 SUCCESS, merged `main f24dbeba540a17ea87b0cd5af8dd7a34b428ff00`. Feature remains OFF; actual Supabase migrations and live deployment unverified.
+- New branch `feat/ai-file-organizer-approval-ledger-main-20261116` replays approval ledger change set only, preserving latest main. Proposal model and new `20261116080000_ai_file_organizer_filing_proposals` migration include tenant/provenance/consent DB trigger (no SECURITY DEFINER), request idempotency, only 1 active approved overlay/source and metadata-only status updates. REST APIs require signed client role and human approval; rejection/undo allowed after cancellation. Original Studio content remains untouched.
+- CI includes tests for direct cross-tenant insert denials, outdated policy or source revision, duplicate request, undo/reapprove and RLS on disposable Postgres. No migration applied to staging/prod. Future native inbox and real file storage/antimalware/AI/Stripe remain.
