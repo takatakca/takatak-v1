@@ -46,3 +46,8 @@ At every run: read this file, latest GitHub main SHA, AGENTS.md and current issu
 - `studio-approval.ts` connects the existing deterministic approval-policy to permission, subscription, source and resolved destination ownership callbacks. Missing real destination adapter denies; even an `auto_approved` preview is **never a write**. No new route, migration, charge, provider call, bulk file scan or file move.
 - Test evidence: isolated global TypeScript compiler strict typecheck for pure policy/preview modules passed; compiled synthetic integration suite ran **26/26**. Existing pure policy suite has 12 fixtures, now registered together in `qa:ai-file-organizer` in the normal CI pipeline. **Full repo CI pending; no exact-head green claim.** Local environment has no authenticated GitHub checkout or installed project dependencies.
 - Next: verify exact-head GitHub CI, fix any type/lint failures; map real destinations and persisted workspace settings, client permission at API boundary; only then build persistent suggestion/approval/audit with replay, rollback and an explicitly reviewed USD20 Stripe product. All production flags/charges OFF.
+
+### Final handoff / latest source
+- Initial implementation commit: `0e2e6073cca7280bccefd6b5ef11e0b4c2246dd9` on main-reconciled branch; draft PR: https://github.com/takatakca/takatak-v1/pull/314.
+- Isolated repeat strict TS compilation and synthetic test execution: **PASS, 26/26**. Full GitHub CI run 43797413069 started, still IN PROGRESS at this checkpoint; do not call it green.
+- Current job owner PAUSED via foodhubca issue #105; next: verify PR exact-head full CI, review real destination adapter + persisted workspace policy. Release state **NOT LIVE**.
