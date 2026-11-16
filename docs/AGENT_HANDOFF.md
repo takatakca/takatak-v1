@@ -1,3 +1,9 @@
+# AI File Organizer — manual metadata preview — 2026-11-16
+
+Signed GPT-6 @ ChatGPT. Stacked branch `feat/ai-file-organizer-preview-20261116` adds server-verified preview from existing Studio drafts to tenant-owned projects; requires existing paid/bypass entitlement and saved suggestion consent. This preview returns approval-required but does **not** persist/approve/move anything or call AI. No generic file storage, provider processing or Stripe charges are activated. New strict-input tests and mainline CI pending. Prior UI branch `feat/ai-file-organizer-studio-settings-ui-20261116`; continue only after exact-head PR check and release gate. Ledger: `docs/ai-file-organizer/EXECUTION_LEDGER.md`.
+
+---
+
 # AI File Organizer — Studio configuration continuation — 2026-11-16
 
 Signed: GPT-6 @ ChatGPT. Main `cd834ccf` includes PR #318 server-only OrganizerWorkspacePolicy schema and default-off consent settings. UI successor `feat/ai-file-organizer-studio-settings-ui-20261116` adds in-Studio link, FR/EN responsive settings panel, tenant-owned project picker and UI mutation checks. Fixes previous strict policy DTO mismatch (no client-supplied revision) and prohibits external-provider consent before provider-specific disclosure. Only metadata settings; no file upload, relocation, AI, checkout or automation is active. Full CI, merge review, migration/backup gate, authenticated two-tenant smoke and served SHA verification remain. Primary ledger: `docs/ai-file-organizer/EXECUTION_LEDGER.md`. Coordination: `takatakca/foodhubca#105`.
