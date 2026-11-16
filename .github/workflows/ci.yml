@@ -197,6 +197,9 @@ jobs:
       - name: AI Studio generation safeguards
         run: npm run qa:ai-studio-generation
 
+      - name: AI File Organizer policy and tenant/billing preview guard
+        run: npm run qa:ai-file-organizer
+
       - name: TAKATAKSTUDIO tenant, production, agent-job, limit and i18n contracts
         run: node --experimental-strip-types --test scripts/studio-*-tests.mjs
 
