@@ -5,6 +5,7 @@ on:
     paths:
       - "src/lib/local-listings/citation-audit.ts"
       - "src/lib/local-listings/citation-profile-choices.ts"
+      - "src/lib/local-listings/google-live-nap.ts"
       - "src/lib/local-listings/citation-evidence*.ts"
       - "src/lib/local-listings/citation-reference-profiles.ts"
       - "src/lib/social/providers/google-business-contact.ts"
