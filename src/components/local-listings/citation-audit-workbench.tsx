@@ -9,6 +9,7 @@ import {
   citationEvidenceMatchesProfile, type SavedCitationEvidence,
 } from "@/lib/local-listings/citation-evidence";
 import { buildCitationProfileChoices } from "@/lib/local-listings/citation-profile-choices";
+import { readLiveGoogleBusinessNap } from "@/app/dashboard/local-listings/citations/audit/actions";
 
 const EMPTY: BusinessNap = { name: "", address: "", phone: "", website: "" };
 const FIELDS = ["name", "address", "phone", "website"] as const;
@@ -20,15 +21,18 @@ const CHECK_LABEL: Record<FieldFinding, string> = {
 };
 
 export function CitationAuditWorkbench({
-  profiles, savedEvidence,
+  profiles, savedEvidence, liveGoogleEnabled,
 }: {
   profiles: CitationReferenceProfile[];
   savedEvidence: SavedCitationEvidence[];
+  liveGoogleEnabled: boolean;
 }) {
   const [reference, setReference] = useState<BusinessNap>(EMPTY);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [csv, setCsv] = useState("");
-  const [evidenceMode, setEvidenceMode] = useState<"csv" | "saved">("csv");
+  const [evidenceMode, setEvidenceMode] = useState<"csv" | "saved" | "google_live">("csv");
+  const [liveGoogleResult, setLiveGoogleResult] = useState<Awaited<ReturnType<typeof readLiveGoogleBusinessNap>> | null>(null);
+  const [liveGoogleLoading, setLiveGoogleLoading] = useState(false);
   const [fileError, setFileError] = useState("");
   const parsed = useMemo(() => {
     try { return { data: parseCitationCsv(csv), error: "" }; }
@@ -39,16 +43,33 @@ export function CitationAuditWorkbench({
     ? savedEvidence.filter(item => citationEvidenceMatchesProfile(selected, item)) : [],
     [selected, savedEvidence]);
   const comparisonRows = evidenceMode === "saved"
-    ? linkedEvidence.map(item => item.row) : parsed.data.rows;
+    ? linkedEvidence.map(item => item.row)
+    : evidenceMode === "google_live" && liveGoogleResult?.ok
+      ? [liveGoogleResult.row] : parsed.data.rows;
   const results = useMemo(
     () => auditCitations(reference, comparisonRows),
     [reference, comparisonRows],
   );
   const ready = FIELDS.some(f => reference[f].trim()) &&
-    results.summary.total > 0 && (evidenceMode === "saved" || !parsed.error);
+    results.summary.total > 0 && (evidenceMode !== "csv" || !parsed.error);
   const hasEnoughReference = FIELDS.every(f => reference[f].trim());
   const profileChoices = useMemo(() => buildCitationProfileChoices(profiles), [profiles]);
   const hasSameNameProfiles = profileChoices.some(choice => choice.sharesName);
+
+  async function verifyCurrentGoogle() {
+    if (!liveGoogleEnabled || !selected?.socialAccountId || liveGoogleLoading) return;
+    setLiveGoogleLoading(true);
+    setLiveGoogleResult(null);
+    try {
+      const result = await readLiveGoogleBusinessNap(selected.socialAccountId);
+      setLiveGoogleResult(result);
+      if (result.ok) setEvidenceMode("google_live");
+    } catch {
+      setLiveGoogleResult({ ok: false, reason: "Live Google verification could not be completed." });
+    } finally {
+      setLiveGoogleLoading(false);
+    }
+  }
 
   function exportReport() {
     if (!ready) return;
@@ -76,7 +97,7 @@ export function CitationAuditWorkbench({
     <div className="space-y-5">
       <div className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
         <strong>Private evidence check — not an online directory scanner.</strong>
-        <p className="mt-1">Compare your own CSV or saved TAKATAK citations and connected Google snapshots against the reference details. No fresh publisher API requests are made, no listings are changed, and manually entered CSV data stays in the browser.</p>
+        <p className="mt-1">Compare your own CSV or previously saved TAKATAK/Google records. Live Google verification is a separate manual, read-only option where enabled. No directory listings are changed and manually entered CSV data stays in the browser.</p>
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white p-5" aria-labelledby="business-reference-title">
@@ -87,6 +108,8 @@ export function CitationAuditWorkbench({
           <select className="mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" value={selectedProfile}
             onChange={event => {
               setSelectedProfile(event.target.value);
+              setLiveGoogleResult(null);
+              setEvidenceMode("csv");
               const match = profiles.find(item => item.id === event.target.value);
               if (match) setReference({ ...match.nap });
             }}>
