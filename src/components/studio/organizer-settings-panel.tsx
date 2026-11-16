@@ -14,6 +14,7 @@ type SettingsReply = {
   ok: boolean;
   settings?: OrganizerSettings;
   availableProjects?: StudioProject[];
+  availableOutputs?: StudioProject[];
   code?: string;
 };
 type ScreenState = "loading" | "ready" | "unavailable";
@@ -38,6 +39,14 @@ const copy = {
     conflict: "Another manager changed this policy. Reload before saving.",
     error: "Could not save settings. No changes were applied.",
     save: "Save settings", revoke: "Turn off and revoke consent", saving: "Saving…", reload: "Reload settings",
+    previewTitle: "Preview a filing choice (no AI call)",
+    previewSource: "AI-generated Studio draft",
+    previewDestination: "Project to associate",
+    preview: "Preview permission",
+    previewEmpty: "Create a Studio AI draft and save a suggestion policy first.",
+    previewOff: "Save an enabled suggestion policy before previewing.",
+    previewReady: "Approval would be required. This preview is not recorded and moves nothing.",
+    previewError: "Preview not allowed. Verify saved policy, project access and draft ownership.",
   },
   fr: {
     heading: "Organisateur IA — Studio",
@@ -58,6 +67,14 @@ const copy = {
     conflict: "Un autre gestionnaire a modifié ces paramètres. Rechargez-les avant d'enregistrer.",
     error: "Impossible d'enregistrer. Aucune modification n'a été appliquée.",
     save: "Enregistrer", revoke: "Désactiver et révoquer les consentements", saving: "Enregistrement…", reload: "Recharger",
+    previewTitle: "Prévisualiser un classement (sans appel IA)",
+    previewSource: "Brouillon IA Studio",
+    previewDestination: "Projet à associer",
+    preview: "Vérifier les permissions",
+    previewEmpty: "Créez un brouillon IA Studio et enregistrez une politique de suggestion.",
+    previewOff: "Enregistrez une politique de suggestion active avant de prévisualiser.",
+    previewReady: "Une approbation serait obligatoire. L’aperçu n’est pas enregistré et ne déplace rien.",
+    previewError: "Aperçu non autorisé. Vérifiez la politique enregistrée, les projets et le brouillon.",
   },
 };
 
@@ -67,6 +84,11 @@ export function OrganizerSettingsPanel() {
   const [settings, setSettings] = useState<OrganizerSettings | null>(null);
   const [draft, setDraft] = useState<OrganizerSettingsDraft | null>(null);
   const [projects, setProjects] = useState<StudioProject[]>([]);
+  const [outputs, setOutputs] = useState<StudioProject[]>([]);
+  const [previewOutputId, setPreviewOutputId] = useState("");
+  const [previewProjectId, setPreviewProjectId] = useState("");
+  const [previewNotice, setPreviewNotice] = useState("");
+  const [previewing, setPreviewing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const t = copy[lang];
@@ -89,6 +111,10 @@ export function OrganizerSettingsPanel() {
       setSettings(body.settings);
       setDraft(organizerDraftFromSettings(body.settings));
       setProjects(body.availableProjects);
+      setOutputs(Array.isArray(body.availableOutputs) ? body.availableOutputs : []);
+      setPreviewOutputId(body.availableOutputs?.[0]?.id ?? "");
+      setPreviewProjectId(body.availableProjects[0]?.id ?? "");
+      setPreviewNotice("");
       setScreen("ready");
     } catch {
       setScreen("unavailable");
@@ -113,6 +139,10 @@ export function OrganizerSettingsPanel() {
         setSettings(body.settings);
         setDraft(organizerDraftFromSettings(body.settings));
         setProjects(body.availableProjects);
+      setOutputs(Array.isArray(body.availableOutputs) ? body.availableOutputs : []);
+      setPreviewOutputId(body.availableOutputs?.[0]?.id ?? "");
+      setPreviewProjectId(body.availableProjects[0]?.id ?? "");
+      setPreviewNotice("");
         setScreen("ready");
       } catch {
         if (active) setScreen("unavailable");
@@ -143,10 +173,35 @@ export function OrganizerSettingsPanel() {
       setSettings(body.settings);
       setDraft(organizerDraftFromSettings(body.settings));
       setNotice(forceOff || body.settings.mode === "off" ? t.disabled : t.settingsSaved);
+      setPreviewNotice("");
     } catch {
       setNotice(t.error);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function preview() {
+    if (!previewOutputId || !previewProjectId || previewing) return;
+    if (settings?.mode !== "suggest" || !settings.allowedDestinationIds.includes(previewProjectId)) {
+      setPreviewNotice(t.previewOff);
+      return;
+    }
+    setPreviewing(true);
+    setPreviewNotice("");
+    try {
+      const response = await fetch("/api/ai-file-organizer/preview", {
+        method: "POST", credentials: "same-origin", cache: "no-store",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outputId: previewOutputId, destinationProjectId: previewProjectId }),
+      });
+      const result = await response.json() as { ok?: boolean; decision?: string };
+      setPreviewNotice(response.ok && result.ok && result.decision === "approval_required"
+        ? t.previewReady : t.previewError);
+    } catch {
+      setPreviewNotice(t.previewError);
+    } finally {
+      setPreviewing(false);
     }
   }
 
@@ -249,6 +304,32 @@ export function OrganizerSettingsPanel() {
             </button>
           </div>
           <p className="text-sm text-slate-700" role="status" aria-live="polite">{notice}</p>
+          <fieldset className="space-y-3 rounded-xl border border-slate-200 p-4">
+            <legend className="px-2 font-semibold text-slate-900">{t.previewTitle}</legend>
+            {outputs.length === 0 && <p className="text-sm text-slate-600">{t.previewEmpty}</p>}
+            <label className="block space-y-1 text-sm text-slate-700">
+              <span>{t.previewSource}</span>
+              <select value={previewOutputId} onChange={event => setPreviewOutputId(event.target.value)}
+                disabled={saving || previewing || outputs.length === 0}
+                className="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2">
+                {outputs.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+              </select>
+            </label>
+            <label className="block space-y-1 text-sm text-slate-700">
+              <span>{t.previewDestination}</span>
+              <select value={previewProjectId} onChange={event => setPreviewProjectId(event.target.value)}
+                disabled={saving || previewing || projects.length === 0}
+                className="min-h-11 w-full rounded-lg border border-slate-300 bg-white p-2">
+                {projects.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+              </select>
+            </label>
+            <button type="button" disabled={saving || previewing || !previewOutputId || !previewProjectId}
+              onClick={() => { void preview(); }}
+              className="min-h-11 rounded-lg border border-blue-700 px-4 py-2 text-sm font-semibold text-blue-700 disabled:opacity-50">
+              {t.preview}
+            </button>
+            <p role="status" aria-live="polite" className="text-sm text-slate-700">{previewNotice}</p>
+          </fieldset>
         </form>
       )}
     </section>

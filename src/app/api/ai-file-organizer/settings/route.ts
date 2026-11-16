@@ -4,9 +4,9 @@ import { getPrisma } from "@/lib/db/prisma";
 import { jsonResponse, handleApiError } from "@/lib/security/api-response";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { readJsonBody } from "@/lib/security/write-request";
-import { STUDIO_PROJECT_SOURCE } from "@/lib/studio/production";
+import { STUDIO_PROJECT_SOURCE, STUDIO_OUTPUT_SOURCE } from "@/lib/studio/production";
 import { hasOrganizerEntitlement } from "@/lib/ai-file-organizer/studio-existing-records";
-import { defaultOrganizerSettings, organizerSettingsFromRow, parseOrganizerSettingsUpdate } from "@/lib/ai-file-organizer/settings-policy";
+import { organizerSettingsFromRow, parseOrganizerSettingsUpdate } from "@/lib/ai-file-organizer/settings-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,16 +19,23 @@ export async function GET() {
   const db = getPrisma();
   if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503);
   try {
-    const [row, availableProjects] = await Promise.all([
+    const [row, availableProjects, availableOutputs] = await Promise.all([
       db.organizerWorkspacePolicy.findUnique({ where: { clientId } }),
       db.savedAiOutput.findMany({
         where: { clientId, status: { not: "archived" },
           metadata: { path: ["source"], equals: STUDIO_PROJECT_SOURCE } },
         select: { id: true, title: true }, orderBy: { createdAt: "desc" }, take: 50,
       }),
+      db.savedAiOutput.findMany({
+        where: {
+          clientId, status: { in: ["draft", "saved", "sent_to_approval"] },
+          origin: "ai_generated", metadata: { path: ["source"], equals: STUDIO_OUTPUT_SOURCE },
+        },
+        select: { id: true, title: true }, orderBy: { createdAt: "desc" }, take: 30,
+      }),
     ]);
     return jsonResponse({ ok: true, settings: organizerSettingsFromRow(row ?? null),
-      availableProjects, initial: row === null,
+      availableProjects, availableOutputs, initial: row === null,
       storageMode: "studio_metadata_only", fileMovesEnabled: false }, 200);
   } catch (error) { return handleApiError("organizer-policy-get", error, "Organizer settings are unavailable."); }
 }
