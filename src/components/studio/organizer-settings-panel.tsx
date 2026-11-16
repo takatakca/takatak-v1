@@ -133,7 +133,7 @@ export function OrganizerSettingsPanel() {
       setProjects(visible);
       setSettings(value);
       setDraft({
-        mode: value.mode, consentGranted: value.consentGranted,
+        mode: value.mode === "suggest" ? "suggest" : "off", consentGranted: value.consentGranted,
         providerProcessingConsent: value.providerProcessingConsent,
         allowedDestinationIds: value.allowedDestinationIds.filter(id => visible.some(p => p.id === id)),
         minimumConfidence: value.minimumConfidence,
@@ -167,7 +167,7 @@ export function OrganizerSettingsPanel() {
       if (!value) throw new Error("invalid_saved_settings");
       setSettings(value);
       setDraft({
-        mode: value.mode, consentGranted: value.consentGranted,
+        mode: value.mode === "suggest" ? "suggest" : "off", consentGranted: value.consentGranted,
         providerProcessingConsent: value.providerProcessingConsent,
         allowedDestinationIds: value.allowedDestinationIds.filter(id => projects.some(p => p.id === id)),
         minimumConfidence: value.minimumConfidence,
