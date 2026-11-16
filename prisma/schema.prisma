@@ -5181,6 +5181,7 @@ model OrganizerFilingProposal {
   sourceOutputId       String   @db.Uuid
   destinationProjectId String   @db.Uuid
   sourceUpdatedAt      DateTime
+  policyRevision       Int
   status               String   @default("pending")
   revision             Int      @default(1)
   requestedBy          String   @db.Uuid

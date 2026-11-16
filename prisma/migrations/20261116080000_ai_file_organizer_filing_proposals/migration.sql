@@ -7,6 +7,7 @@ CREATE TABLE "organizer_filing_proposals" (
   "sourceOutputId" UUID NOT NULL,
   "destinationProjectId" UUID NOT NULL,
   "sourceUpdatedAt" TIMESTAMP(3) NOT NULL,
+  "policyRevision" INTEGER NOT NULL,
   "status" TEXT NOT NULL DEFAULT 'pending',
   "revision" INTEGER NOT NULL DEFAULT 1,
   "requestedBy" UUID NOT NULL,
@@ -20,7 +21,7 @@ CREATE TABLE "organizer_filing_proposals" (
     FOREIGN KEY ("clientId") REFERENCES "clients"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "organizer_filing_proposals_status_check"
     CHECK ("status" IN ('pending','approved','rejected','undone')),
-  CONSTRAINT "organizer_filing_proposals_revision_check" CHECK ("revision" >= 1),
+  CONSTRAINT "organizer_filing_proposals_revision_check" CHECK ("revision" >= 1 AND "policyRevision" >= 1),
   CONSTRAINT "organizer_filing_proposals_requestId_check"
     CHECK ("requestId" ~ '^[A-Za-z0-9_-]{16,64}$'),
   CONSTRAINT "organizer_filing_proposals_different_ids_check"
