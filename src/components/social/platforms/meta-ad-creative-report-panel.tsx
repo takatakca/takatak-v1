@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import type { MetaAdCreativeReportRow } from "@/lib/social/analytics/meta-ad-creative-mapping";
 import { makeMetaCreativeCsv } from "@/lib/social/analytics/meta-creative-export";
 import { MetaAdPeerComparisonPanel } from "@/components/social/platforms/meta-ad-peer-comparison-panel";
+import { MetaCreativeGalleryPanel } from "@/components/social/platforms/meta-creative-gallery-panel";
 
 type CreativeReportResponse = {
   ok?: boolean;
@@ -173,6 +174,7 @@ export function MetaAdCreativeReportPanel({ start, end, locale }: { start: strin
             locale={locale}
             currency={currency}
           />
+          <MetaCreativeGalleryPanel rows={rows} locale={locale} />
         </>
       )}
     </section>
