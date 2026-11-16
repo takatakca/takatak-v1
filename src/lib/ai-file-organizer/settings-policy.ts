@@ -11,7 +11,7 @@ export type OrganizerSettings = {
   requireApproval: boolean;
   revision: number;
 };
-export type OrganizerSettingsUpdate = OrganizerSettings & { expectedRevision: number };
+export type OrganizerSettingsUpdate = Omit<OrganizerSettings, "revision"> & { expectedRevision: number };
 export function defaultOrganizerSettings(): OrganizerSettings {
   return { mode: "off", consentGranted: false, providerProcessingConsent: false,
     allowedSourceKinds: [], allowedDestinationIds: [], minimumConfidence: 0.9,
@@ -40,16 +40,17 @@ export function parseOrganizerSettingsUpdate(body: unknown): OrganizerSettingsUp
     if (data.consentGranted || data.providerProcessingConsent ||
       !Array.isArray(data.allowedSourceKinds) || data.allowedSourceKinds.length ||
       !Array.isArray(data.allowedDestinationIds) || data.allowedDestinationIds.length) return null;
-    return { ...defaultOrganizerSettings(), minimumConfidence: data.minimumConfidence,
-      expectedRevision: data.expectedRevision as number };
+    return { mode: "off", consentGranted: false, providerProcessingConsent: false,
+      allowedSourceKinds: [], allowedDestinationIds: [], minimumConfidence: data.minimumConfidence,
+      requireApproval: true, expectedRevision: data.expectedRevision as number };
   }
-  if (!data.consentGranted || !data.providerProcessingConsent ||
+  if (!data.consentGranted || data.providerProcessingConsent !== false ||
     !Array.isArray(data.allowedSourceKinds) || data.allowedSourceKinds.length !== 1 ||
     data.allowedSourceKinds[0] !== "studio" || !uniqueStudioDestinations(data.allowedDestinationIds)) return null;
-  return { mode: "suggest", consentGranted: true, providerProcessingConsent: true,
+  return { mode: "suggest", consentGranted: true, providerProcessingConsent: false,
     requireApproval: true, allowedSourceKinds: ["studio"],
     allowedDestinationIds: [...data.allowedDestinationIds], minimumConfidence: data.minimumConfidence,
-    revision: 0, expectedRevision: data.expectedRevision as number };
+    expectedRevision: data.expectedRevision as number };
 }
 export function organizerSettingsFromRow(row: {
   mode: string; consentGranted: boolean; providerProcessingConsent: boolean;
@@ -61,7 +62,7 @@ export function organizerSettingsFromRow(row: {
     row.allowedDestinationIds.length > 0 && row.allowedDestinationIds.length <= 20 &&
     row.allowedDestinationIds.every(x => typeof x === "string" && UUID.test(x)) &&
     new Set(row.allowedDestinationIds.map(x => String(x).toLowerCase())).size === row.allowedDestinationIds.length;
-  if (row.mode !== "suggest" || !row.consentGranted || !row.providerProcessingConsent ||
+  if (row.mode !== "suggest" || !row.consentGranted || row.providerProcessingConsent !== false ||
     row.requireApproval !== true || !Array.isArray(row.allowedSourceKinds) ||
     row.allowedSourceKinds.length !== 1 || row.allowedSourceKinds[0] !== "studio" ||
     !validDestinations ||
@@ -69,7 +70,7 @@ export function organizerSettingsFromRow(row: {
     !Number.isInteger(row.revision) || row.revision < 1) {
     return { ...defaultOrganizerSettings(), revision: Number.isInteger(row.revision) && row.revision > 0 ? row.revision : 0 };
   }
-  return { mode: "suggest", consentGranted: true, providerProcessingConsent: true,
+  return { mode: "suggest", consentGranted: true, providerProcessingConsent: false,
     allowedSourceKinds: ["studio"], allowedDestinationIds: [...(row.allowedDestinationIds as string[])],
     minimumConfidence: row.minimumConfidence, requireApproval: true, revision: row.revision };
 }
