@@ -114,6 +114,7 @@
     "qa:qmaps-bridge": "tsx --require ./scripts/register-server-only.cjs scripts/verify-qmaps-bridge.ts",
     "qa:voip-dashboard": "tsx scripts/verify-voip-dashboard.ts",
     "qa:website-categories": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-categories.ts",
+    "qa:ai-file-organizer": "tsx scripts/ai-file-organizer-policy-tests.ts && tsx scripts/ai-file-organizer-integration-tests.ts",
     "qa:ai-studio-generation": "tsx --require ./scripts/register-server-only.cjs scripts/verify-ai-studio-generation.ts",
     "qa:qmaps-sync": "tsx --require ./scripts/register-server-only.cjs scripts/verify-qmaps-sync.ts",
     "qa:1lv-legacy-seed": "tsx scripts/ci-seed-one-lv-legacy-schema.ts",
