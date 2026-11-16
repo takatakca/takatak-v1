@@ -1,6 +1,6 @@
 /** Approval of a metadata overlay. No provider calls or source content writes. */
 export type FilingStatus = "pending" | "approved" | "rejected" | "undone";
-export type FilingAction = "approve" | "reject" | "undo";
+export type FilingAction = "approve" | "reject" | "undo" | "change_destination";
 export type FilingTransition =
   | { ok: true; status: FilingStatus }
   | { ok: false; code: "revision_conflict" | "transition_forbidden" | "entitlement_required" | "source_changed" };
@@ -40,13 +40,23 @@ export function parseFilingProposalInput(value: unknown): {
     x.outputId.toLowerCase() === x.destinationProjectId.toLowerCase()) return null;
   return { requestId: x.requestId, outputId: x.outputId, destinationProjectId: x.destinationProjectId };
 }
-export function parseFilingDecisionInput(value: unknown): {
-  action: FilingAction; expectedRevision: number;
-} | null {
+export type FilingDecisionInput =
+  | { action: "approve" | "reject" | "undo"; expectedRevision: number }
+  | { action: "change_destination"; expectedRevision: number; destinationProjectId: string };
+
+/** An existing pending proposal can be retargeted, never silently approved. */
+export function parseFilingDecisionInput(value: unknown): FilingDecisionInput | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const x = value as Record<string,unknown>;
-  if (Object.keys(x).length !== 2 || (x.action !== "approve" && x.action !== "reject" && x.action !== "undo") ||
-    !Number.isInteger(x.expectedRevision) || (x.expectedRevision as number) < 1 ||
+  if (!Number.isSafeInteger(x.expectedRevision) || (x.expectedRevision as number) < 1 ||
     (x.expectedRevision as number) > 1000000) return null;
+  if (x.action === "change_destination") {
+    if (Object.keys(x).length !== 3 || typeof x.destinationProjectId !== "string" ||
+      !UUID.test(x.destinationProjectId)) return null;
+    return { action: "change_destination", expectedRevision: x.expectedRevision as number,
+      destinationProjectId: x.destinationProjectId };
+  }
+  if (Object.keys(x).length !== 2 ||
+    (x.action !== "approve" && x.action !== "reject" && x.action !== "undo")) return null;
   return { action: x.action, expectedRevision: x.expectedRevision as number };
 }
