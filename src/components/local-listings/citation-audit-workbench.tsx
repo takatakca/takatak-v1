@@ -60,6 +60,8 @@ export function CitationAuditWorkbench({
     if (!liveGoogleEnabled || !selected?.socialAccountId || liveGoogleLoading) return;
     setLiveGoogleLoading(true);
     setLiveGoogleResult(null);
+    // Never show stale provider evidence if a new live request fails.
+    setEvidenceMode("csv");
     try {
       const result = await readLiveGoogleBusinessNap(selected.socialAccountId);
       setLiveGoogleResult(result);
