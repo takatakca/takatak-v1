@@ -3,13 +3,13 @@ import { defaultOrganizerSettings, organizerSettingsFromRow, parseOrganizerSetti
 const a="11111111-1111-4111-8111-111111111111",b="22222222-2222-4222-8222-222222222222";
 const off={mode:"off",consentGranted:false,providerProcessingConsent:false,
   allowedSourceKinds:[],allowedDestinationIds:[],minimumConfidence:0.9,requireApproval:true,expectedRevision:0};
-const suggest={...off,mode:"suggest",consentGranted:true,providerProcessingConsent:true,allowedSourceKinds:["studio"],allowedDestinationIds:[a,b]};
+const suggest={...off,mode:"suggest",consentGranted:true,providerProcessingConsent:false,allowedSourceKinds:["studio"],allowedDestinationIds:[a,b]};
 assert.deepEqual(defaultOrganizerSettings().mode,"off");
 assert.equal(parseOrganizerSettingsUpdate(off)?.mode,"off");
 assert.equal(parseOrganizerSettingsUpdate(suggest)?.mode,"suggest");
 assert.equal(parseOrganizerSettingsUpdate({...suggest,mode:"auto"}),null);
 assert.equal(parseOrganizerSettingsUpdate({...suggest,consentGranted:false}),null);
-assert.equal(parseOrganizerSettingsUpdate({...suggest,providerProcessingConsent:false}),null);
+assert.equal(parseOrganizerSettingsUpdate({...suggest,providerProcessingConsent:true}),null);
 assert.equal(parseOrganizerSettingsUpdate({...suggest,requireApproval:false}),null);
 assert.equal(parseOrganizerSettingsUpdate({...suggest,allowedSourceKinds:["lead"]}),null);
 assert.equal(parseOrganizerSettingsUpdate({...suggest,allowedSourceKinds:["studio","lead"]}),null);
@@ -24,6 +24,6 @@ assert.equal(parseOrganizerSettingsUpdate({...off,consentGranted:true}),null);
 const stored={...suggest,revision:2};
 assert.equal(organizerSettingsFromRow(stored).mode,"suggest");
 assert.equal(organizerSettingsFromRow({...stored,mode:"auto"}).mode,"off");
-assert.equal(organizerSettingsFromRow({...stored,providerProcessingConsent:false}).mode,"off");
+assert.equal(organizerSettingsFromRow({...stored,providerProcessingConsent:true}).mode,"off");
 assert.equal(organizerSettingsFromRow(null).revision,0);
 console.log("AI organizer workspace settings: 21 checks passed");

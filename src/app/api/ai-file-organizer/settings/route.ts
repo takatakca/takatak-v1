@@ -19,9 +19,17 @@ export async function GET() {
   const db = getPrisma();
   if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503);
   try {
-    const row = await db.organizerWorkspacePolicy.findUnique({ where: { clientId } });
+    const [row, availableProjects] = await Promise.all([
+      db.organizerWorkspacePolicy.findUnique({ where: { clientId } }),
+      db.savedAiOutput.findMany({
+        where: { clientId, status: { not: "archived" },
+          metadata: { path: ["source"], equals: STUDIO_PROJECT_SOURCE } },
+        select: { id: true, title: true }, orderBy: { createdAt: "desc" }, take: 50,
+      }),
+    ]);
     return jsonResponse({ ok: true, settings: organizerSettingsFromRow(row ?? null),
-      initial: row === null, storageMode: "studio_metadata_only", fileMovesEnabled: false }, 200);
+      availableProjects, initial: row === null,
+      storageMode: "studio_metadata_only", fileMovesEnabled: false }, 200);
   } catch (error) { return handleApiError("organizer-policy-get", error, "Organizer settings are unavailable."); }
 }
 
