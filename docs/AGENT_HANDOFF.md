@@ -1,3 +1,9 @@
+# Creative Intelligence — read-only creative gallery handoff 2026-11-15
+
+Signed GPT-6 @ ChatGPT. PR #311 Marketing API v25 pin merged main `ded63f7` after full 114-step CI success. New independent branch `feat/meta-creative-asset-preview-20261115` adds optional Meta creative thumbnail/title/body/video ID/CTA to the EXISTING read-only /ads response and displays up to 12 FR/EN cards. Safe Meta HTTPS image allowlist; no access tokens, arbitrary external sources, signed URL CSV export or media cache. Tests: `scripts/meta-creative-media-tests.ts`, modified Meta SSR and CSV regression tests included in `qa:social-meta-ads`. Existing server/public feature flags remain **OFF**. No production deploy, no real Meta app read or industry benchmark proof; requires full exact-head CI, owned-account OAuth/Meta field support, two-tenant isolation and verified served SHA before owner-approved enablement. Coordinate with `takatakca/foodhubca#105`, issue #299, and current main; do NOT treat sample mocks as production evidence.
+
+---
+
 # Meta Marketing API compatibility handoff — 2026-11-15
 
 Signed GPT-6 @ ChatGPT. M2 ad peer comparisons PR #307 merged main ee06da2 after exact 114-step green CI. Previous independent Marketing API version PR #310 diverged from that new main; successor branch `fix/meta-marketing-v25-current-main-20261115` replays only Meta Ads v25 API helper/account/insights/tests, adds v25 QA to the expanded M2 scripts, and preserves all M2 UI/WORKLOG changes. Graph OAuth for Pages/Instagram untouched. Full exact-head CI and authorized Meta Ads app test still required. Feature flags OFF; no 100% LIVE claim.
