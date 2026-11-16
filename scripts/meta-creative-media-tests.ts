@@ -64,7 +64,7 @@ const source = readFileSync("src/lib/social/providers/meta-ads-insights.ts", "ut
 assert(source.includes("creative{id,name,object_type,thumbnail_url,title,body,video_id,call_to_action_type}"));
 assert(source.includes("MAX_CREATIVE_REPORT_ROWS"));
 const endpoint = readFileSync("src/app/api/social/meta-ads/creatives/route.ts", "utf8");
-assert(endpoint.includes("TAKATAK_CREATIVE_INTELLIGENCE_ENABLED"), "server flag retained");
+assert(endpoint.includes("isCreativeIntelligenceEnabledForClient(gate.access.activeClientId)"), "server-enforced client canary retained");
 const ui = readFileSync("src/components/social/platforms/meta-ads-subscribed-dashboard.tsx", "utf8");
 assert(ui.includes("/api/social/meta-ads/creative-intelligence/capability"), "UI must use live authorization capability");
 console.log("PASS sanitized Meta creative gallery metadata, URL allowlist, missing fields and feature gates.");
