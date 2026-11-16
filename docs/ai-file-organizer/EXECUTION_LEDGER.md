@@ -56,3 +56,8 @@ At every run: read this file, latest GitHub main SHA, AGENTS.md and current issu
 - Original guarded PR #314 exact-head CI 43797593692: **SUCCESS**. That PR's earlier base subsequently diverged by 14 commits and reported mergeable=false. This new branch replays its own 11 file changes without overwriting main-only work, built from main 059b36521. No prior PR merge or live activation assumed.
 - Code remains preview-only and fail-closed; no DB schema delta, payment activation, provider work or physical file moving.
 - Immediate next: exact-head CI on successor PR, coordinator review, gated merge then independently verify served SHA. Build actual workspace settings and approved suggestions as a separate schema-gated increment.
+
+## 2026-11-16 — main merged preview and policy QA successor
+- PR #316 exact-head CI 43803365992 **SUCCESS**, squash merged `f7bc6d322f03f7055743e0c4eee76000c2356346`. Feature remains OFF, no verified running user workflow.
+- Replayed only new policy/schema files from stacked PR #317 onto fresh main, plus `scripts/ai-file-organizer-db-tests.ts`: ephemeral DB checks two-tenant destination scoping, default OFF, optimistic revision, RLS. CI invokes this after disposable DB startup.
+- New policy migration is **NOT APPLIED** to TAKATAK STAGING or PRODUCTION; do not enable flags or live charges. Next: exact CI, migration review, audited consent UI, separate filing approvals.
