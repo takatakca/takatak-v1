@@ -3,7 +3,7 @@ import "server-only";
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
 import { hasCompleteMetaAdMetadata, mergeMetaAdInsightsWithCreatives, type MetaAdCreativeReportRow } from "@/lib/social/analytics/meta-ad-creative-mapping";
-import { getMetaGraphApiVersion } from "@/lib/social/providers/meta-oauth";
+import { getMetaMarketingApiVersion } from "@/lib/social/providers/meta-marketing-api-version";
 import {
   buildSocialCredentialAad,
   decryptSocialTokenPayload,
@@ -128,7 +128,7 @@ async function graphGet(
   path: string,
   accessToken: string,
 ): Promise<{ status: number; body: Record<string, unknown>; denied: boolean }> {
-  const version = getMetaGraphApiVersion().replace(/^\/+/, "");
+  const version = getMetaMarketingApiVersion().replace(/^\/+/, "");
   return graphFetch(`${GRAPH_HOST}/${version}${path}`, accessToken);
 }
 
