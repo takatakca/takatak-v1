@@ -19,7 +19,7 @@ CREATE TABLE "organizer_workspace_policies" (
     ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "organizer_workspace_policies_mode_check" CHECK ("mode" IN ('off','suggest','auto')),
   CONSTRAINT "organizer_workspace_policies_consent_check"
-    CHECK ("mode" = 'off' OR ("consentGranted" AND NOT "providerProcessingConsent" AND "requireApproval")),
+    CHECK ("mode" = 'off' OR ("consentGranted" AND "providerProcessingConsent" AND "requireApproval")),
   CONSTRAINT "organizer_workspace_policies_confidence_check"
     CHECK ("minimumConfidence" BETWEEN 0 AND 1),
   CONSTRAINT "organizer_workspace_policies_revision_check" CHECK ("revision" > 0),
