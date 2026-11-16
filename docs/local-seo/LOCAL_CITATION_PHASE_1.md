@@ -1,8 +1,8 @@
 # TAKATAK Local Citation — first functional increment (2026-11-15)
 
-Branch: feat/local-citation-nap-audit-20261115. Existing billing and authentication remain unchanged.
+Phase 1 was merged to main as PR #301 at commit `176966c4` on 2026-11-15; full GitHub CI passed. Actual production deployment/tenant verification remains independent and has not been evidenced. Existing billing and authentication remain unchanged.
 
-## Delivered in this branch (not yet merged / deployed)
+## Code delivered by Phase 1 (merge confirmed; production not verified)
 - Browser-local CSV evidence comparison at /dashboard/local-listings/citations/audit.
 - Reference fields: name, address, phone, website.
 - Pre-fill from current tenant's non-demo TAKATAK local listing profiles or already-discovered connected Google Business Profile snapshots, when available. This makes **no live Google API request**, and Google social discovery currently does **not** preserve phone numbers, so that field stays blank. Only `client_scoped` workspace access can read these profiles; admin/global view does not mix tenant data.
