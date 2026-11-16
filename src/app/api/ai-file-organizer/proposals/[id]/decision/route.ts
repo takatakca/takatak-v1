@@ -26,7 +26,8 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   if(!parsed) return jsonResponse({ok:false,code:"invalid_decision"},400);
   const clientId=gate.access.activeClientId;
   // A user may reject a pending proposal or undo approved metadata after cancellation.
-  const entitled=parsed.action==="approve" && await hasOrganizerEntitlement(clientId);
+  const entitled=(parsed.action==="approve" || parsed.action==="change_destination") &&
+    await hasOrganizerEntitlement(clientId);
   // Reject/undo remain possible after subscription expiry, not after global rollback.
   if(process.env.TAKATAK_AI_FILE_ORGANIZER_ENABLED!=="true")
     return jsonResponse({ok:false,code:"organizer_disabled"},503);
@@ -41,6 +42,53 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
         },
       });
       if(!record) return {ok:false as const,status:404,code:"not_found"};
+      // Modify is an audited compare-and-swap of a PENDING metadata destination.
+      // It cannot approve, modify originals, or bypass current source/consent checks.
+      if(parsed.action==="change_destination"){
+        if(record.revision!==parsed.expectedRevision)
+          return {ok:false as const,status:409,code:"revision_conflict"};
+        if(record.status!=="pending")
+          return {ok:false as const,status:403,code:"transition_forbidden"};
+        if(!entitled)
+          return {ok:false as const,status:403,code:"entitlement_required"};
+        if(parsed.destinationProjectId===record.destinationProjectId)
+          return {ok:false as const,status:409,code:"destination_unchanged"};
+        const [policyRow,source,target]=await Promise.all([
+          tx.organizerWorkspacePolicy.findUnique({where:{clientId}}),
+          tx.savedAiOutput.findFirst({where:{
+            id:record.sourceOutputId,clientId,origin:"ai_generated",
+            status:{in:["saved","draft","sent_to_approval"]},
+            metadata:{path:["source"],equals:STUDIO_OUTPUT_SOURCE}},
+            select:{updatedAt:true}}),
+          tx.savedAiOutput.findFirst({where:{
+            id:parsed.destinationProjectId,clientId,status:{not:"archived"},
+            metadata:{path:["source"],equals:STUDIO_PROJECT_SOURCE}},
+            select:{id:true}}),
+        ]);
+        const policy=organizerSettingsFromRow(policyRow);
+        if(!source || !target || source.updatedAt.getTime()!==record.sourceUpdatedAt.getTime())
+          return {ok:false as const,status:403,code:"source_or_destination_changed"};
+        if(policy.mode!=="suggest" || !policy.consentGranted || policy.providerProcessingConsent ||
+          !policy.requireApproval || policy.revision!==record.policyRevision ||
+          !policy.allowedSourceKinds.includes("studio") ||
+          !policy.allowedDestinationIds.includes(parsed.destinationProjectId))
+          return {ok:false as const,status:403,code:"organizer_disabled"};
+        const changed=await tx.organizerFilingProposal.updateMany({
+          where:{id,clientId,status:"pending",revision:record.revision},
+          data:{destinationProjectId:parsed.destinationProjectId,revision:{increment:1}},
+        });
+        if(changed.count!==1) return {ok:false as const,status:409,code:"revision_conflict"};
+        await tx.auditLog.create({data:{
+          clientId,profileId:gate.access.profileId,
+          action:"organizer.filing_destination_changed",
+          entityType:"organizer_filing_proposal",entityId:id,
+          metadata:{revision:record.revision+1,sourceOutputId:record.sourceOutputId,
+            fromDestinationProjectId:record.destinationProjectId,
+            toDestinationProjectId:parsed.destinationProjectId,
+            approved:false,originalChanged:false,providerCalled:false,fileMoved:false},
+        }});
+        return {ok:true as const,status:"pending",revision:record.revision+1};
+      }
       let current=false,permitted=false;
       if(parsed.action==="approve" && entitled){
         const [policyRow,source,target]=await Promise.all([
