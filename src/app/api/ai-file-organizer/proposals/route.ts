@@ -22,6 +22,9 @@ export async function GET(request: NextRequest) {
   const status = request.nextUrl.searchParams.get("status");
   if (status !== null && !scopes.includes(status as typeof scopes[number]))
     return jsonResponse({ok:false,code:"invalid_status"},400);
+  // Hide the new API until approved DB migrations and rollout config exist.
+  if(process.env.TAKATAK_AI_FILE_ORGANIZER_ENABLED!=="true")
+    return jsonResponse({ok:false,code:"organizer_disabled"},503);
   const db = getPrisma();
   if (!db) return jsonResponse({ok:false,code:"unavailable"},503);
   try {

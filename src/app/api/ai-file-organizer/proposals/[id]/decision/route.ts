@@ -27,6 +27,9 @@ export async function POST(request:NextRequest,{params}:{params:Promise<{id:stri
   const clientId=gate.access.activeClientId;
   // A user may reject a pending proposal or undo approved metadata after cancellation.
   const entitled=parsed.action==="approve" && await hasOrganizerEntitlement(clientId);
+  // Reject/undo remain possible after subscription expiry, not after global rollback.
+  if(process.env.TAKATAK_AI_FILE_ORGANIZER_ENABLED!=="true")
+    return jsonResponse({ok:false,code:"organizer_disabled"},503);
   const db=getPrisma();
   if(!db) return jsonResponse({ok:false,code:"unavailable"},503);
   try {
