@@ -1,3 +1,5 @@
+import { safeCreativeAction, safeCreativeCopy, safeMetaCreativeThumbnail } from "@/lib/social/analytics/meta-creative-media";
+
 /**
  * Mapper for Meta ad-level performance + per-ad creative metadata.
  * No aggregation between ads or accounts; absence is represented by null.
@@ -10,6 +12,12 @@ export type MetaAdCreativeReportRow = {
   creativeId: string | null;
   creativeName: string | null;
   creativeType: string | null;
+  /** Optional creative content. These fields may not be returned by every Meta ad format. */
+  creativeTitle?: string | null;
+  creativeBody?: string | null;
+  creativeThumbnailUrl?: string | null;
+  creativeVideoId?: string | null;
+  creativeCallToAction?: string | null;
   status: string | null;
   impressions: number | null;
   clicks: number | null;
@@ -71,6 +79,11 @@ export function mergeMetaAdInsightsWithCreatives(
       creativeId: graphId(creative?.id),
       creativeName: graphName(creative?.name),
       creativeType: graphName(creative?.object_type),
+      creativeTitle: safeCreativeCopy(creative?.title, 140),
+      creativeBody: safeCreativeCopy(creative?.body, 320),
+      creativeThumbnailUrl: safeMetaCreativeThumbnail(creative?.thumbnail_url),
+      creativeVideoId: graphId(creative?.video_id),
+      creativeCallToAction: safeCreativeAction(creative?.call_to_action_type),
       status: status && /^[A-Z_]{1,40}$/.test(status) ? status : null,
       impressions: graphMetric(point.impressions),
       clicks: graphMetric(point.clicks),
