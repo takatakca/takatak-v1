@@ -30,11 +30,11 @@ const copy = {
     empty: "No Studio projects are available. Create a project in TAKATAKSTUDIO first.",
     confidence: "Minimum confidence",
     consent: "I authorize this workspace to use the selected Studio drafts for classification suggestions.",
-    provider: "I consent to future AI-provider processing of selected drafts after the provider, purpose and terms are disclosed. This screen does not send any data to an AI provider.",
+    provider: "External AI-provider processing is not authorized or enabled. A separate provider-specific notice and consent will be needed before sending any file content.",
     note: "Classification changes are metadata-only. Physical files, hosting folders and original Studio drafts are never moved. Human approval is mandatory.",
     settingsSaved: "Policy saved. No classification or file movement was executed.",
     disabled: "Organizer disabled and previously granted consents revoked for this policy.",
-    invalid: "Select at least one Studio project, grant both consents and use a valid confidence threshold.",
+    invalid: "Select at least one Studio project, grant consent and use a valid confidence threshold.",
     conflict: "Another manager changed this policy. Reload before saving.",
     error: "Could not save settings. No changes were applied.",
     save: "Save settings", revoke: "Turn off and revoke consent", saving: "Saving…", reload: "Reload settings",
@@ -50,11 +50,11 @@ const copy = {
     empty: "Aucun projet Studio disponible. Créez d'abord un projet dans TAKATAKSTUDIO.",
     confidence: "Seuil de confiance minimal",
     consent: "J'autorise cet espace client à utiliser les brouillons Studio sélectionnés pour proposer leur classement.",
-    provider: "J'accepte un traitement futur par un fournisseur IA après communication du fournisseur, de la finalité et des conditions. Cet écran ne transmet aucune donnée à un fournisseur IA.",
+    provider: "Aucun traitement par un fournisseur IA externe n’est autorisé ni activé. Un avis et un consentement propres au fournisseur seront requis avant le transfert de contenu.",
     note: "Le classement concerne uniquement les métadonnées. Aucun fichier physique, dossier d'hébergement ou brouillon original n'est déplacé. L'approbation humaine demeure obligatoire.",
     settingsSaved: "Paramètres enregistrés. Aucun classement ni déplacement de fichier n'a été exécuté.",
     disabled: "Organisateur désactivé et consentements de cette politique révoqués.",
-    invalid: "Sélectionnez un projet Studio, donnez les deux consentements et choisissez un seuil valide.",
+    invalid: "Sélectionnez un projet Studio, donnez votre consentement et choisissez un seuil valide.",
     conflict: "Un autre gestionnaire a modifié ces paramètres. Rechargez-les avant d'enregistrer.",
     error: "Impossible d'enregistrer. Aucune modification n'a été appliquée.",
     save: "Enregistrer", revoke: "Désactiver et révoquer les consentements", saving: "Enregistrement…", reload: "Recharger",
@@ -236,11 +236,7 @@ export function OrganizerSettingsPanel() {
                 onChange={event => setDraft({ ...draft, consentGranted: event.target.checked })}/>
               {t.consent}
             </label>
-            <label className="flex items-start gap-3 text-sm leading-6 text-slate-800">
-              <input type="checkbox" className="mt-1" checked={draft.providerProcessingConsent}
-                onChange={event => setDraft({ ...draft, providerProcessingConsent: event.target.checked })}/>
-              {t.provider}
-            </label>
+            <p className="text-sm leading-6 text-slate-700">{t.provider}</p>
           </fieldset>
           <div className="flex flex-wrap gap-3">
             <button disabled={saving} type="submit"
