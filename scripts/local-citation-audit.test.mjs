@@ -197,3 +197,64 @@ test("unique business names and empty names are not falsely flagged", () => {
   assert.ok(choices.every(choice => !choice.sharesName));
   assert.deepEqual(choices.map(choice => choice.label), items.map(item => item.label));
 });
+
+
+import { googleLiveLocationUrl, parseLiveGoogleBusinessNap } from "../src/lib/local-listings/google-live-nap.ts";
+import { readFileSync } from "node:fs";
+
+test("live Google location requests use fixed official API host and read mask only", () => {
+  const url = googleLiveLocationUrl("locations/abc_123-Z");
+  assert.ok(url);
+  assert.equal(url.origin, "https://mybusinessbusinessinformation.googleapis.com");
+  assert.equal(url.pathname, "/v1/locations/abc_123-Z");
+  assert.ok(url.searchParams.get("readMask").includes("phoneNumbers"));
+  for (const untrusted of [
+    "https://evil.example/x", "../other", "locations/abc/../def", "accounts/a/locations/x",
+    "locations/id?host=evil", "locations/", "locations/a#frag",
+  ]) assert.equal(googleLiveLocationUrl(untrusted), null);
+});
+
+test("live Google NAP parser validates exact location, fields and business website distinction", () => {
+  const data = {
+    name: "locations/abc123",
+    title: "Café Montréal",
+    websiteUri: "https://www.example.ca",
+    phoneNumbers: { primaryPhone: "+1 514 555 0100" },
+    storefrontAddress: {
+      addressLines: ["123 Rue Saint-Paul"], locality: "Montréal",
+      administrativeArea: "QC", postalCode: "H2Y 1G2",
+    },
+  };
+  assert.deepEqual(parseLiveGoogleBusinessNap(data, "locations/abc123"), {
+    directory: "Google Business Profile (live API)",
+    listingUrl: "",
+    name: "Café Montréal",
+    address: "123 Rue Saint-Paul, Montréal, QC, H2Y 1G2",
+    phone: "+1 514 555 0100",
+    website: "https://www.example.ca",
+  });
+  assert.equal(parseLiveGoogleBusinessNap(data, "locations/wrong"), null);
+  assert.equal(parseLiveGoogleBusinessNap({ ...data, name: "locations/abc123", title: "" }, "locations/abc123"), null);
+  assert.equal(parseLiveGoogleBusinessNap([], "locations/abc123"), null);
+});
+
+test("live Google NAP parser leaves missing provider fields empty, never invents data", () => {
+  assert.deepEqual(parseLiveGoogleBusinessNap({
+    name: "locations/a", title: "My Shop",
+  }, "locations/a"), {
+    directory: "Google Business Profile (live API)",
+    listingUrl: "", name: "My Shop", address: "", phone: "", website: "",
+  });
+});
+
+test("server-only live verification is gated by feature, selected tenant and manager permission", () => {
+  const action = readFileSync(new URL("../src/app/dashboard/local-listings/citations/audit/actions.ts", import.meta.url), "utf8");
+  assert.match(action, /"use server"/);
+  assert.match(action, /TAKATAK_LOCAL_CITATION_GBP_LIVE_READ/);
+  assert.match(action, /access\.mode !== "client_scoped"/);
+  assert.match(action, /hasEffectivePermission\(access, "manage_integrations"\)/);
+  assert.match(action, /clientId: access\.activeClientId/);
+  assert.match(action, /loadGoogleAccessToken/);
+  assert.match(action, /method: "GET"/);
+  assert.doesNotMatch(action, /method: "PATCH"|method: "POST"|method: "DELETE"/);
+});
