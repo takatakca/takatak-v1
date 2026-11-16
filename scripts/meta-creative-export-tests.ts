@@ -16,6 +16,11 @@ const row: MetaAdCreativeReportRow = {
   creativeId: "23",
   creativeName: "Example, video",
   creativeType: null,
+  creativeTitle: "=malicious",
+  creativeBody: "Creative text",
+  creativeVideoId: "777",
+  creativeCallToAction: "SHOP_NOW",
+  creativeThumbnailUrl: "https://scontent.xx.fbcdn.net/signed.jpg?oh=secretlink",
   status: "ACTIVE",
   impressions: 0,
   clicks: null,
@@ -29,5 +34,9 @@ assert(csv.includes(String.fromCharCode(34, 39) + "=HYPERLINK("), "unsafe ad nam
 assert(csv.includes('"Example, video"'), "commas quoted");
 assert(csv.includes('"partial"'), "incomplete evidence visible");
 assert(csv.includes('"0"'), "zero does not become blank");
+assert(csv.includes('"\u0027=malicious"'), "creative text formula neutralized");
+assert(csv.includes('"Creative text"'), "creative copy exported");
+assert(csv.includes('"SHOP_NOW"'), "CTA exported");
+assert(!csv.includes("signed.jpg"), "signed ephemeral thumbnail URL not exported");
 assert(csv.endsWith("\r\n"));
 console.log("PASS Meta ad creative export: formula protection, CSV quoting, missing values and completeness.");
