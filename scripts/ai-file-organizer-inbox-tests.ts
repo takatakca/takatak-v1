@@ -33,4 +33,11 @@ const off=renderToStaticMarkup(React.createElement(OrganizerFilingInbox,{
 assert.match(off,/Enable and save a consented policy/);
 assert.match(off,/<button[^>]+disabled/);
 assert.doesNotMatch(off,/value="33333333-3333-4333-8333-333333333333"/);
-console.log("AI organizer bilingual filing inbox SSR and tenant-filtered destinations: 12 assertions passed");
+const history = renderToStaticMarkup(React.createElement(OrganizerFilingInbox,{
+  ...props,language:"en",canPropose:false,historyOnly:true,
+}));
+assert.match(history,/Review previous decisions/);
+assert.match(history,/Recent workspace history/);
+assert.doesNotMatch(history,/Propose filing/);
+assert.doesNotMatch(history,/No authorized draft/);
+console.log("AI organizer bilingual filing inbox SSR and tenant-filtered destinations: 16 assertions passed");
