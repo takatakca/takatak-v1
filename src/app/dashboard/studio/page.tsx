@@ -9,5 +9,12 @@ export default async function StudioPage() {
   await requireWorkspacePermission("create_content", "/dashboard/studio");
   if (!studioEnabled(process.env)) return <section className="rounded-2xl border border-slate-200 bg-white p-8"><h1 className="text-2xl font-bold">TAKATAKSTUDIO</h1><p className="my-4 text-slate-600">Studio is being prepared for this platform. Existing AI Studio tools remain available.</p><Link className="text-blue-700 underline" href="/dashboard/ai-studio">Open AI Studio</Link></section>;
   const mode = takbotMode("write");
-  return <StudioWorkspace creditsPerDraft={mode ? creditsFor(mode) : null} />;
+  return <>
+    <div className="mx-auto flex max-w-7xl justify-end px-4 pt-3 sm:px-6">
+      <Link href="/dashboard/studio/organizer" className="rounded-lg border border-blue-200 bg-white px-4 py-2 text-sm font-semibold text-blue-800 shadow-sm hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+        AI File Organizer · Manager settings / Paramètres
+      </Link>
+    </div>
+    <StudioWorkspace creditsPerDraft={mode ? creditsFor(mode) : null} />
+  </>;
 }
