@@ -61,3 +61,9 @@ At every run: read this file, latest GitHub main SHA, AGENTS.md and current issu
 - PR #316 exact-head CI 43803365992 **SUCCESS**, squash merged `f7bc6d322f03f7055743e0c4eee76000c2356346`. Feature remains OFF, no verified running user workflow.
 - Replayed only new policy/schema files from stacked PR #317 onto fresh main, plus `scripts/ai-file-organizer-db-tests.ts`: ephemeral DB checks two-tenant destination scoping, default OFF, optimistic revision, RLS. CI invokes this after disposable DB startup.
 - New policy migration is **NOT APPLIED** to TAKATAK STAGING or PRODUCTION; do not enable flags or live charges. Next: exact CI, migration review, audited consent UI, separate filing approvals.
+
+## 2026-11-16 — retry after #326 CI-green but merge conflict
+- #326 exact-head full Node22 CI run 43808315350 SUCCESS, including focused organizer and ephemeral two-tenant DB tests. GitHub refused merge 405 due conflicts when main moved to be0d9f7; no forced merge.
+- Current successor branch feat/ai-file-organizer-studio-ui-preview-current-main-v2-20261116 rooted at be0d9f7. Replayed only 13 tested organizer-specific files; rewrote only targeted QA entry in current package.json and prepended current WORKLOG/HANDOFF records. Never replaced current main history or original migration.
+- Google Drive verified continuity doc: https://docs.google.com/document/d/1LRtzrb6JBz2lCtIFEhAdSiGsUaFDK5sfOtkggG_Wa1U/edit
+- Not live: organizer flag OFF, original bytes untouched, no generic object storage, no named LLM provider consent, no paid Stripe product, no hosted DB migrations or production served-SHA proof.
