@@ -43,3 +43,9 @@ The project must be approved for Google Business Profile API access; a 0 QPM quo
 
 ## 2026-11-16 second reconciliation gate
 Ported this CI-green phase-2 increment onto the then-latest main cd834ccf while preserving AI File Organizer updates. Owner reported phase-1 page loads in the owner account. Real CSV import/export, cross-tenant authenticated smoke, provider API discovery and Coolify exact served SHA remain separate release gates. No billing, migrations, automatic directory calls or publishing were enabled.
+
+## Same-name saved profile UX (QA follow-up #323)
+
+An owner's authenticated UI test showed Club Havana Camping twice in the profile selector. No evidence establishes whether those are duplicate database records or separate TAKATAK/Google entries. The next UI increment disambiguates same-name options by source (saved TAKATAK listing vs connected Google snapshot), stored address and a short stable record reference. Matching names are normalized (case, accents, punctuation), but records are **never merged or deleted automatically**, including across different business locations. The change does not load other clients' records, issue provider requests or change billing.
+
+Required production acceptance: select each option in the owner's session, confirm correct NAP and linked citation evidence; verify another client sees none of these profiles; inspect actual record IDs only in authorized administrative tooling before considering cleanup. Issue #323 retains data-level investigation.
