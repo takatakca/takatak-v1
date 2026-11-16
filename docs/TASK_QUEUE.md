@@ -55,3 +55,12 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [ ] Designated V1 coordinator reviews/merges PR #196, deploys approved V1 release and validates SEO staging/production receipts; not delegated to this development agent.
 - [ ] Owner approves existing/non-billable SEO PostgreSQL and `sql/0004_site_deletion_receipts.sql` after 0001→0003; run manager/viewer/client B negative tests and disposable staging site deletion.
 - [ ] Agree a written retention policy for SEO deletion receipts, backup purge/subject access and cross-product erasure boundaries before regulated use.
+
+
+## 2026-11-16 AI File Organizer continuation
+- [x] Validate and merge previously open, source-only organizer workspace policy PR #318 (CI 43804686427 success; merged main cd834ccf), NO staging/prod migration yet.
+- [ ] Review exact SHA CI for bilingual `/dashboard/studio/organizer` manager-only consent/settings UX PR; check no accidental plan grants, customer file moves or consent bypass.
+- [ ] Build durable tenant-scoped suggestions with stable idempotency key, source proof, destination validation, `pending/approved/rejected` status, compare-and-swap revision and append-only audit; expose Approuver/Modifier/Refuser only on real authenticated/signed records.
+- [ ] Authorized operator verifies staging database backup, migration 20261116043000 and actual RLS + user-access / two-tenant smoke; production only after independent approval.
+- [ ] Provision separate private object-storage bucket and virus scan/quarantine, scoped short-lived download/upload URLs, versions and rollback; do not repurpose unrelated buckets.
+- [ ] Implement original USD 20/mo add-on via existing central billing after cost control, entitlement refunds/cancel and approved product lifecycle; leave disabled until proven.
