@@ -37,7 +37,7 @@ async function main() {
     assert.equal(matchB, 0, "another tenant cannot authorize this destination");
     const updated = await db.organizerWorkspacePolicy.updateMany({
       where: { clientId: a, revision: 1 },
-      data: { mode: "suggest", consentGranted: true, providerProcessingConsent: true,
+      data: { mode: "suggest", consentGranted: true, providerProcessingConsent: false,
         allowedSourceKinds: ["studio"], allowedDestinationIds: [projectId],
         minimumConfidence: 0.95, requireApproval: true, revision: { increment: 1 } },
     });
@@ -52,6 +52,14 @@ async function main() {
     assert.equal(fromA.revision, 2);
     assert.equal(fromB.revision, 1);
     assert.equal(fromB.consentGranted, false);
+    // Once suggestion mode is enabled, external provider consent must NOT be
+    // silently granted by changing the stored row.
+    await assert.rejects(
+      () => db.organizerWorkspacePolicy.update({
+        where: { clientId: a }, data: { providerProcessingConsent: true },
+      }),
+      "database rejects any unreviewed provider-processing consent",
+    );
     // Fixed trusted SQL string; never accept query parameters for catalog introspection.
     const rls = await db.$queryRawUnsafe<Array<{ relrowsecurity: boolean }>>(
       "SELECT c.relrowsecurity FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relname='organizer_workspace_policies'"
