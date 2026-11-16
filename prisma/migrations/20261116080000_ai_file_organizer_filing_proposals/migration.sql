@@ -54,3 +54,54 @@ BEGIN
     END IF;
   END LOOP;
 END $$;
+
+-- Harden privileged caller mistakes: source and destination must both
+-- exist in this client workspace, with exact Studio source kinds.
+-- SECURITY INVOKER (default), never SECURITY DEFINER or client-controlled schema.
+CREATE FUNCTION public.check_organizer_filing_ownership()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER
+SET search_path = pg_catalog, public
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.saved_ai_outputs src
+    WHERE src."id" = NEW."sourceOutputId"
+      AND src."clientId" = NEW."clientId"
+      AND src."origin" = 'ai_generated'
+      AND src."status" IN ('draft','saved','sent_to_approval')
+      AND src."metadata"->>'source' = 'takatakstudio_output'
+      AND src."updatedAt" = NEW."sourceUpdatedAt"
+  ) THEN
+    RAISE EXCEPTION 'organizer_source_scope_failed' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.saved_ai_outputs dst
+    WHERE dst."id" = NEW."destinationProjectId"
+      AND dst."clientId" = NEW."clientId"
+      AND dst."status" <> 'archived'
+      AND dst."metadata"->>'source' = 'takatakstudio_project'
+  ) THEN
+    RAISE EXCEPTION 'organizer_destination_scope_failed' USING ERRCODE = '23514';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.organizer_workspace_policies pol
+    WHERE pol."clientId" = NEW."clientId"
+      AND pol."revision" = NEW."policyRevision"
+      AND pol."mode" = 'suggest'
+      AND pol."consentGranted" = TRUE
+      AND pol."providerProcessingConsent" = FALSE
+      AND pol."requireApproval" = TRUE
+      AND pol."allowedDestinationIds" ? NEW."destinationProjectId"::text
+      AND pol."allowedSourceKinds" ? 'studio'
+  ) THEN
+    RAISE EXCEPTION 'organizer_policy_scope_failed' USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.check_organizer_filing_ownership() FROM PUBLIC;
+CREATE TRIGGER check_organizer_filing_ownership
+BEFORE INSERT OR UPDATE OF "clientId", "sourceOutputId", "destinationProjectId",
+  "sourceUpdatedAt", "policyRevision"
+ON public.organizer_filing_proposals
+FOR EACH ROW EXECUTE FUNCTION public.check_organizer_filing_ownership();
