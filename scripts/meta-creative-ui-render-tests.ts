@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { MetaCampaignBenchmarkPanel } from "../src/components/social/platforms/meta-campaign-benchmark-panel";
 import { MetaAdCreativeReportPanel } from "../src/components/social/platforms/meta-ad-creative-report-panel";
 import { MetaAdPeerComparisonPanel } from "../src/components/social/platforms/meta-ad-peer-comparison-panel";
+import { MetaCreativeGalleryPanel } from "../src/components/social/platforms/meta-creative-gallery-panel";
 import type { MetaCampaignBenchmarkInput } from "../src/lib/social/analytics/meta-campaign-benchmarks";
 
 const campaigns: MetaCampaignBenchmarkInput[] = [
@@ -57,4 +58,15 @@ assert(peerEN.includes("Within-campaign ad comparisons"), "English peer title");
 const partial = renderToStaticMarkup(createElement(MetaAdPeerComparisonPanel, { rows: peerRows, complete: false, currency: "CAD", locale: "en" }));
 assert(partial.includes("incomplete report"), "Incomplete data must not form comparisons");
 assert(!partial.includes("Example Campaign"), "No peer group data shown from incomplete report");
-console.log("PASS Creative Intelligence FR/EN render, report actions and same-campaign peer states.");
+const preview = { ...peerRows[0], creativeTitle: "Holiday offer", creativeBody: "Original ad copy", creativeThumbnailUrl: "https://scontent.xx.fbcdn.net/thumb.jpg", creativeVideoId: "9001", creativeCallToAction: "SHOP_NOW" };
+const galleryFR = renderToStaticMarkup(createElement(MetaCreativeGalleryPanel, { rows: [preview], locale: "fr" }));
+assert(galleryFR.includes("Aperçu des créations"), "FR gallery heading");
+assert(galleryFR.includes("Holiday offer"), "Original ad title rendered");
+assert(galleryFR.includes("Original ad copy"), "Original ad copy rendered");
+assert(galleryFR.includes("Vidéo"), "Video identifier rendered without playback");
+const galleryEN = renderToStaticMarkup(createElement(MetaCreativeGalleryPanel, { rows: [preview], locale: "en" }));
+assert(galleryEN.includes("Ad creative gallery"), "EN gallery heading");
+assert(galleryEN.includes("thumb.jpg"), "Safe thumbnail URL kept");
+const noGallery = renderToStaticMarkup(createElement(MetaCreativeGalleryPanel, { rows: peerRows, locale: "en" }));
+assert(noGallery.includes("No creative content was returned"), "Missing gallery evidence handled");
+console.log("PASS Creative Intelligence FR/EN render, report actions, peers and creative metadata previews.");
