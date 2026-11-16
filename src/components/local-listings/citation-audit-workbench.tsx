@@ -8,6 +8,7 @@ import {
 import {
   citationEvidenceMatchesProfile, type SavedCitationEvidence,
 } from "@/lib/local-listings/citation-evidence";
+import { buildCitationProfileChoices } from "@/lib/local-listings/citation-profile-choices";
 
 const EMPTY: BusinessNap = { name: "", address: "", phone: "", website: "" };
 const FIELDS = ["name", "address", "phone", "website"] as const;
@@ -46,6 +47,8 @@ export function CitationAuditWorkbench({
   const ready = FIELDS.some(f => reference[f].trim()) &&
     results.summary.total > 0 && (evidenceMode === "saved" || !parsed.error);
   const hasEnoughReference = FIELDS.every(f => reference[f].trim());
+  const profileChoices = useMemo(() => buildCitationProfileChoices(profiles), [profiles]);
+  const hasSameNameProfiles = profileChoices.some(choice => choice.sharesName);
 
   function exportReport() {
     if (!ready) return;
@@ -88,9 +91,10 @@ export function CitationAuditWorkbench({
               if (match) setReference({ ...match.nap });
             }}>
             <option value="">Enter information manually</option>
-            {profiles.map(profile => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
+            {profileChoices.map(choice => <option key={choice.id} value={choice.id}>{choice.label}</option>)}
           </select>
           <span className="mt-1 block text-xs font-normal text-slate-500">Profiles are previously stored TAKATAK or connected Google snapshots, not newly verified live publisher data.</span>
+          {hasSameNameProfiles && <span role="status" className="mt-2 block text-xs font-normal text-amber-800">More than one saved profile shares a business name. Compare the source, address and reference before selecting. No record has been merged or deleted.</span>}
         </label>}
         <div className="grid gap-4 sm:grid-cols-2">
           {FIELDS.map(field => (

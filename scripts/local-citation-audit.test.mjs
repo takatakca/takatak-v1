@@ -133,3 +133,67 @@ test("only valid remote listing URLs are rendered as links", () => {
   assert.equal(safeCitationLink("https://user:pass@example.com/profile"), "");
   assert.equal(safeCitationLink("https://directory.example/profile"), "https://directory.example/profile");
 });
+
+
+import { buildCitationProfileChoices } from "../src/lib/local-listings/citation-profile-choices.ts";
+
+test("same-name saved profiles remain distinct by source, address and stable record reference", () => {
+  const profiles = [
+    {
+      id: "local:11111111-aaaa-aaaa-aaaa-000000000001",
+      label: "Club Havana Camping — saved TAKATAK listing",
+      source: "local_listing", nap: {
+        name: "Club Havana Camping", address: "100 Rue A, Montréal",
+        phone: "", website: "",
+      },
+    },
+    {
+      id: "google:22222222-bbbb-bbbb-bbbb-000000000002",
+      label: "Club Havana Camping — connected Google snapshot",
+      source: "google_business_connection", nap: {
+        name: "club havana camping", address: "200 Rue B, Laval",
+        phone: "", website: "",
+      },
+    },
+  ];
+  const snapshot = JSON.stringify(profiles);
+  const choices = buildCitationProfileChoices(profiles);
+  assert.equal(choices.length, 2);
+  assert.ok(choices.every(choice => choice.sharesName));
+  assert.notEqual(choices[0].id, choices[1].id);
+  assert.notEqual(choices[0].label, choices[1].label);
+  assert.match(choices[0].label, /TAKATAK listing.*Montréal.*000001/);
+  assert.match(choices[1].label, /Google snapshot.*Laval.*000002/);
+  assert.equal(JSON.stringify(profiles), snapshot, "must not edit source records");
+});
+
+test("accents and punctuation normalize when identifying ambiguous names", () => {
+  const base = {
+    id: "local:a", label: "Café Montréal",
+    source: "local_listing", nap: {
+      name: "Café-Montréal", address: "", phone: "", website: "",
+    },
+  };
+  const profileList = [
+    base, { ...base, id: "local:b", nap: { ...base.nap, name: "cafe montreal" } },
+  ];
+  const choices = buildCitationProfileChoices(profileList);
+  assert.ok(choices.every(choice => choice.sharesName));
+  assert.ok(choices[0].label.includes("address not stored"));
+});
+
+test("unique business names and empty names are not falsely flagged", () => {
+  const base = { id: "local:a", label: "Business A",
+    source: "local_listing", nap: {
+      name: "Business A", address: "", phone: "", website: "",
+    },
+  };
+  const items = [
+    base, { ...base, id: "google:b", label: "Business B", nap: { ...base.nap, name: "Business B" } },
+    { ...base, id: "local:c", label: "Unnamed 1", nap: { ...base.nap, name: "" } },
+    { ...base, id: "local:d", label: "Unnamed 2", nap: { ...base.nap, name: "  " } },
+  ];
+  const choices = buildCitationProfileChoices(items);
+  assert.ok(choices.every(choice => !choice.sharesName));
+  assert.deepEqual(choices.map(choice => choice.label), items.map(item => item.label));
+});
