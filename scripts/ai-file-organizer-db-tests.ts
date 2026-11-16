@@ -37,7 +37,7 @@ async function main() {
     assert.equal(matchB, 0, "another tenant cannot authorize this destination");
     const updated = await db.organizerWorkspacePolicy.updateMany({
       where: { clientId: a, revision: 1 },
-      data: { mode: "suggest", consentGranted: true, providerProcessingConsent: true,
+      data: { mode: "suggest", consentGranted: true, providerProcessingConsent: false,
         allowedSourceKinds: ["studio"], allowedDestinationIds: [projectId],
         minimumConfidence: 0.95, requireApproval: true, revision: { increment: 1 } },
     });
