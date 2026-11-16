@@ -5,6 +5,7 @@ import { resolveBrandSessionContextFromRequest } from "@/lib/security/brand-requ
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { resolveCanonicalMetaAdsDashboard } from "@/lib/social/connections/meta-ads-dashboard-resolve";
 import { fetchMetaAdsCreativeReport } from "@/lib/social/providers/meta-ads-insights";
+import { isCreativeIntelligenceEnabledForClient } from "@/lib/social/analytics/creative-intelligence-rollout";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
   try {
     const gate = await requireWorkspaceApiPermission("view_social");
     if (!gate.ok) return gate.response;
-    if (process.env.TAKATAK_CREATIVE_INTELLIGENCE_ENABLED !== "true") {
+    if (!isCreativeIntelligenceEnabledForClient(gate.access.activeClientId)) {
       return jsonResponse({ ok: false, message: "Creative Intelligence is not enabled for this deployment." }, 404);
     }
     const brand = await resolveBrandSessionContextFromRequest(gate.access);
