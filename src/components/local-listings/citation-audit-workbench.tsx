@@ -201,7 +201,7 @@ export function CitationAuditWorkbench({
                       {item.listingUrl && <a className="block break-all text-xs text-blue-700 underline" href={item.listingUrl} target="_blank" rel="noreferrer noopener">View supplied link</a>}
                       {item.duplicate && <span className="block text-xs text-amber-700">Possible duplicate</span>}
                     </td>
-                    <td className="p-2">{item.status === "needs_update" ? "Needs update" : item.status === "needs_verification" ? "Needs verification" : "Consistent in CSV"}</td>
+                    <td className="p-2">{item.status === "needs_update" ? "Needs update" : item.status === "needs_verification" ? "Needs verification" : "Consistent in supplied evidence"}</td>
                     {FIELDS.map(field => <td key={field} className="p-2">
                       <span className={item.fields[field] === "mismatch" ? "font-medium text-red-700" : item.fields[field] === "match" ? "text-green-700" : "text-slate-500"}>
                         {CHECK_LABEL[item.fields[field]]}
