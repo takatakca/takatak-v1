@@ -392,6 +392,7 @@ model Client {
   assignedProfile           Profile?                          @relation("AssignedAdmin", fields: [assignedProfileId], references: [id])
   memberships               ClientMembership[]
   subscription              ClientSubscription?
+  organizerPolicy            OrganizerWorkspacePolicy?
   stripeConnectAccount      ClientStripeConnectAccount?
   customRoles               WorkspaceCustomRole[]
   rolePermissionOverrides   WorkspaceRolePermissionOverride[]
@@ -5147,4 +5148,25 @@ model KnowledgeAiGrant {
   @@index([clientId, enabled])
   @@map("knowledgeai_grants")
 
+}
+
+
+/// One tenant-owned, disabled-by-default policy for AI-assisted metadata filing.
+model OrganizerWorkspacePolicy {
+  clientId                  String   @id @db.Uuid
+  mode                      String   @default("off")
+  consentGranted            Boolean  @default(false)
+  providerProcessingConsent Boolean  @default(false)
+  allowedSourceKinds        Json     @default("[]")
+  allowedDestinationIds     Json     @default("[]")
+  minimumConfidence         Float    @default(0.9)
+  requireApproval           Boolean  @default(true)
+  revision                  Int      @default(1)
+  updatedBy                 String?  @db.Uuid
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @default(now()) @updatedAt
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("organizer_workspace_policies")
 }

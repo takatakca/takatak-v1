@@ -56,3 +56,9 @@ At every run: read this file, latest GitHub main SHA, AGENTS.md and current issu
 - Original guarded PR #314 exact-head CI 43797593692: **SUCCESS**. That PR's earlier base subsequently diverged by 14 commits and reported mergeable=false. This new branch replays its own 11 file changes without overwriting main-only work, built from main 059b36521. No prior PR merge or live activation assumed.
 - Code remains preview-only and fail-closed; no DB schema delta, payment activation, provider work or physical file moving.
 - Immediate next: exact-head CI on successor PR, coordinator review, gated merge then independently verify served SHA. Build actual workspace settings and approved suggestions as a separate schema-gated increment.
+
+## 2026-11-16 — workspace policy persistence proposal, NOT LIVE
+- Proposed `OrganizerWorkspacePolicy` one-to-one workspace row with default OFF; explicit source+provider consent, restricted Studio project IDs, confidence and revision; no separate customer identity or payment system.
+- Read/write guarded by existing `manage_settings` session+client scope and `hasOrganizerEntitlement` (rollout flag OFF). Non-tenant and missing destination IDs deny, `auto` mode is disallowed. Writes include existing `auditLog` event; optimistic version to be checked under concurrency during CI review.
+- Proposed migration `prisma/migrations/20261116043000_ai_file_organizer_workspace_policy/migration.sql` is NOT APPLIED to staging or production. RLS enabled and direct anon/authenticated grants revoked. Requires reviewed release process, backup and migration dry-run.
+- QA adds 21 strict settings-policy fixtures to existing organizer test command, full CI to verify. No file bytes, provider calls or billing activated. Next implementation: metadata-only suggestions and explicit approval state in existing Studio UI; second-stage storage outside SavedAiOutput remains pending.
