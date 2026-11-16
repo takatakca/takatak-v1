@@ -152,7 +152,27 @@ export function CitationAuditWorkbench({
             className={evidenceMode === "saved" ? "rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white" : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 disabled:opacity-40"}>
             Linked saved evidence ({linkedEvidence.length})
           </button>
+          {liveGoogleEnabled && selected?.source === "google_business_connection" && selected.socialAccountId && (
+            <button type="button" onClick={() => void verifyCurrentGoogle()}
+              disabled={liveGoogleLoading}
+              className="rounded-lg border border-blue-700 bg-white px-3 py-2 text-sm font-semibold text-blue-800 disabled:opacity-40">
+              {liveGoogleLoading ? "Checking official Google API…" : "Verify Google NAP live"}
+            </button>
+          )}
+          {liveGoogleResult?.ok && (
+            <button type="button" onClick={() => setEvidenceMode("google_live")}
+              aria-pressed={evidenceMode === "google_live"}
+              className={evidenceMode === "google_live" ? "rounded-lg bg-blue-700 px-3 py-2 text-sm font-medium text-white" : "rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"}>
+              Use latest Google response
+            </button>
+          )}
         </div>
+        {selected?.source === "google_business_connection" && !liveGoogleEnabled &&
+          <p className="mb-3 text-xs text-slate-500">Live Google API verification is not activated on this server. Saved Google snapshots can still be compared.</p>}
+        {liveGoogleResult?.ok &&
+          <p role="status" className="mb-3 text-sm text-blue-900">Google Business Information API confirmed this location at {liveGoogleResult.observedAt}. This is live Google account data, not a scan of other directories.</p>}
+        {liveGoogleResult && !liveGoogleResult.ok &&
+          <p role="alert" className="mb-3 text-sm text-amber-800">{liveGoogleResult.reason}</p>}
         {evidenceMode === "saved" && (
           <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
             <p>Using {linkedEvidence.length} saved citation or Google Business snapshot record(s). Unverified or missing NAP fields will be marked as needing verification.</p>
