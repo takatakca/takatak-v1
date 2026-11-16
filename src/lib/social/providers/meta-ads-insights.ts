@@ -549,7 +549,7 @@ export async function fetchMetaAdsCreativeReport(options: {
   // Fetch minimal creative metadata only, never private audience data or media downloads.
   const [insights, ads] = await Promise.all([
     graphGet(`/${account.externalAccountId}/insights?fields=${insightsFields}&time_range=${timeRange}&level=ad&limit=50`, accessToken),
-    graphGet(`/${account.externalAccountId}/ads?fields=id,name,effective_status,creative{id,name,object_type}&limit=50`, accessToken),
+    graphGet(`/${account.externalAccountId}/ads?fields=id,name,effective_status,creative{id,name,object_type,thumbnail_url,title,body,video_id,call_to_action_type}&limit=50`, accessToken),
   ]);
   const [readInsights, readAds] = await Promise.all([
     collectCreativeReportRows(insights, accessToken),
