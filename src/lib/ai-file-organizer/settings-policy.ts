@@ -58,16 +58,18 @@ export function organizerSettingsFromRow(row: {
 } | null): OrganizerSettings {
   if (!row) return defaultOrganizerSettings();
   const validDestinations = Array.isArray(row.allowedDestinationIds) &&
-    row.allowedDestinationIds.every(x => typeof x === "string" && UUID.test(x));
+    row.allowedDestinationIds.length > 0 && row.allowedDestinationIds.length <= 20 &&
+    row.allowedDestinationIds.every(x => typeof x === "string" && UUID.test(x)) &&
+    new Set(row.allowedDestinationIds.map(x => String(x).toLowerCase())).size === row.allowedDestinationIds.length;
   if (row.mode !== "suggest" || !row.consentGranted || !row.providerProcessingConsent ||
     row.requireApproval !== true || !Array.isArray(row.allowedSourceKinds) ||
     row.allowedSourceKinds.length !== 1 || row.allowedSourceKinds[0] !== "studio" ||
-    !validDestinations || !row.allowedDestinationIds?.length ||
+    !validDestinations ||
     !Number.isFinite(row.minimumConfidence) || row.minimumConfidence < 0.8 || row.minimumConfidence > 1 ||
     !Number.isInteger(row.revision) || row.revision < 1) {
     return { ...defaultOrganizerSettings(), revision: Number.isInteger(row.revision) && row.revision > 0 ? row.revision : 0 };
   }
   return { mode: "suggest", consentGranted: true, providerProcessingConsent: true,
-    allowedSourceKinds: ["studio"], allowedDestinationIds: [...row.allowedDestinationIds] as string[],
+    allowedSourceKinds: ["studio"], allowedDestinationIds: [...(row.allowedDestinationIds as string[])],
     minimumConfidence: row.minimumConfidence, requireApproval: true, revision: row.revision };
 }

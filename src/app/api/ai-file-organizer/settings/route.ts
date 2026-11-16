@@ -10,19 +10,18 @@ import { defaultOrganizerSettings, organizerSettingsFromRow, parseOrganizerSetti
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-const NO_STORE = { "Cache-Control": "private, no-store" };
 
 export async function GET() {
   const gate = await requireWorkspaceApiPermission("manage_settings");
   if (!gate.ok) return gate.response;
   const clientId = gate.access.activeClientId;
-  if (!await hasOrganizerEntitlement(clientId)) return jsonResponse({ ok: false, code: "organizer_unavailable" }, 403, NO_STORE);
+  if (!await hasOrganizerEntitlement(clientId)) return jsonResponse({ ok: false, code: "organizer_unavailable" }, 403);
   const db = getPrisma();
-  if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503, NO_STORE);
+  if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503);
   try {
     const row = await db.organizerWorkspacePolicy.findUnique({ where: { clientId } });
     return jsonResponse({ ok: true, settings: organizerSettingsFromRow(row ?? null),
-      initial: row === null, storageMode: "studio_metadata_only", fileMovesEnabled: false }, 200, NO_STORE);
+      initial: row === null, storageMode: "studio_metadata_only", fileMovesEnabled: false }, 200);
   } catch (error) { return handleApiError("organizer-policy-get", error, "Organizer settings are unavailable."); }
 }
 
@@ -31,13 +30,13 @@ export async function PUT(request: NextRequest) {
   const gate = await requireWorkspaceApiPermission("manage_settings");
   if (!gate.ok) return gate.response;
   const clientId = gate.access.activeClientId;
-  if (!await hasOrganizerEntitlement(clientId)) return jsonResponse({ ok: false, code: "organizer_unavailable" }, 403, NO_STORE);
+  if (!await hasOrganizerEntitlement(clientId)) return jsonResponse({ ok: false, code: "organizer_unavailable" }, 403);
   const body = await readJsonBody(request, 4096);
-  if (!body.ok) return jsonResponse({ ok: false, message: body.message }, body.status, NO_STORE);
+  if (!body.ok) return jsonResponse({ ok: false, message: body.message }, body.status);
   const input = parseOrganizerSettingsUpdate(body.body);
-  if (!input) return jsonResponse({ ok: false, code: "invalid_policy" }, 400, NO_STORE);
+  if (!input) return jsonResponse({ ok: false, code: "invalid_policy" }, 400);
   const db = getPrisma();
-  if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503, NO_STORE);
+  if (!db) return jsonResponse({ ok: false, code: "unavailable" }, 503);
   try {
     if (input.mode !== "off") {
       const count = await db.savedAiOutput.count({
@@ -45,7 +44,7 @@ export async function PUT(request: NextRequest) {
           metadata: { path: ["source"], equals: STUDIO_PROJECT_SOURCE } },
       });
       if (count !== input.allowedDestinationIds.length)
-        return jsonResponse({ ok: false, code: "destination_not_found" }, 404, NO_STORE);
+        return jsonResponse({ ok: false, code: "destination_not_found" }, 404);
     }
     const data = { mode: input.mode, consentGranted: input.consentGranted,
       providerProcessingConsent: input.providerProcessingConsent,
@@ -57,21 +56,31 @@ export async function PUT(request: NextRequest) {
         select: { revision: true } });
       if (current && current.revision !== input.expectedRevision) return null;
       if (!current && input.expectedRevision !== 0) return null;
+      // Version-bound compare-and-swap: concurrent managers cannot overwrite each other.
       const saved = current
-        ? await tx.organizerWorkspacePolicy.update({ where: { clientId }, data: { ...data, revision: { increment: 1 } } })
+        ? await (async () => {
+            const changed = await tx.organizerWorkspacePolicy.updateMany({
+              where: { clientId, revision: input.expectedRevision },
+              data: { ...data, revision: { increment: 1 } },
+            });
+            return changed.count === 1
+              ? tx.organizerWorkspacePolicy.findUnique({ where: { clientId } })
+              : null;
+          })()
         : await tx.organizerWorkspacePolicy.create({ data: { clientId, ...data } });
+      if (!saved) return null;
       await tx.auditLog.create({ data: { clientId, profileId: gate.access.profileId,
         action: "organizer.policy_updated", entityType: "organizer_workspace_policy", entityId: clientId,
         metadata: { mode: saved.mode, revision: saved.revision, sourceCount: input.allowedSourceKinds.length,
           destinationCount: input.allowedDestinationIds.length } } });
       return saved;
     });
-    if (!row) return jsonResponse({ ok: false, code: "policy_conflict" }, 409, NO_STORE);
+    if (!row) return jsonResponse({ ok: false, code: "policy_conflict" }, 409);
     return jsonResponse({ ok: true, settings: organizerSettingsFromRow(row),
-      storageMode: "studio_metadata_only", fileMovesEnabled: false }, 200, NO_STORE);
+      storageMode: "studio_metadata_only", fileMovesEnabled: false }, 200);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
-      return jsonResponse({ ok: false, code: "policy_conflict" }, 409, NO_STORE);
+      return jsonResponse({ ok: false, code: "policy_conflict" }, 409);
     return handleApiError("organizer-policy-update", error, "Organizer settings could not be saved.");
   }
 }
