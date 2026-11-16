@@ -1,3 +1,23 @@
+## État réel du déploiement et activation canari — 2026-11-15
+
+**Rapport opérateur Coolify fourni par le propriétaire :** le code `f1cd567f` est déployé sur `vps1` via webhook Coolify (Success à 19:48 EST), application Running, `https://takatak.ca` 200/HSTS et `/api/health=ok`. Déploiements `ded63f7` et `ee06da2` Success également. Le rapport indique qu'aucune variable Creative Intelligence ne figure parmi les 188 variables Coolify. **Ne pas présenter cette vérification comme un accès Coolify direct de l'agent**. GitHub a indépendamment confirmé la CI push `43782535988` réussie et l'artefact de `main=f1cd567f` valide.
+
+### Pourquoi l'activation requiert un nouveau build de code (mais pas un flag public au build)
+L'ancien panneau utilisait `process.env.NEXT_PUBLIC_TAKATAK_CREATIVE_INTELLIGENCE_ENABLED`, figé à la compilation client. Mettre cette variable dans le conteneur Coolify après le build **ne rendrait pas** le bouton visible. La présente branche remplace donc ce mécanisme par une requête authentifiée `GET /api/social/meta-ads/creative-intelligence/capability` (réponse `Cache-Control: no-store`) et une configuration serveur seulement.
+
+### Activation canari verrouillée et prête pour essai
+1. Déployer le nouvel artefact issu de `main` après CI et fusion de cette branche (webhook Coolify existant, pas le workflow secondaire MochaHost/Passenger).
+2. Dans Coolify, conserver les deux valeurs côté serveur : `TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false` et `TAKATAK_CREATIVE_INTELLIGENCE_CANARY_CLIENT_IDS=` vide jusqu'à la validation de la procédure. L'absence de chacune des variables bloque tout accès.
+3. Sélectionner **un client pilote autorisé** dont le UUID réel est obtenu par l'opérateur directement depuis TAKATAK Auth/administration; ne jamais inscrire ce UUID, des tokens Meta ou des clés dans GitHub/Drive ou dans une URL. Ensuite configurer `TAKATAK_CREATIVE_INTELLIGENCE_CANARY_CLIENT_IDS` avec ce UUID unique et mettre `TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=true` côté serveur, puis appliquer la configuration avec le redémarrage/redéploiement contrôlé prévu par Coolify. Ne pas utiliser `NEXT_PUBLIC_`.
+4. Vérifier avec une session de ce client et une marque active que le panneau apparaît; avec une autre session client, qu'il reste invisible, que l'API de capacité retourne disabled et que l'API de créations renvoie 404. Les deux requièrent `view_social` côté serveur. Éviter toute exposition des identifiants entre clients.
+5. À partir du client pilote, faire un seul chargement autorisé des données Meta Ads `ads_read` (période 7 jours), vérifier rapports ready/partial, exactitude des lignes/ad IDs, présence/absence des champs de créatif, quotas et éventuelles erreurs Meta. Ne pas créer ni modifier des campagnes.
+6. Vérifier le HTTPS, `X-TAKATAK-Release` exact du nouveau commit si fourni, `/api/health`, `/api/health/ready` DB/Supabase, console navigateur FR/EN/mobile, et disposer du rollback Coolify avant d'ouvrir à d'autres clients.
+7. En cas d'échec, remettre `TAKATAK_CREATIVE_INTELLIGENCE_ENABLED=false` et redéployer/recharger proprement la configuration. Aucune facturation ne s'active automatiquement.
+
+Ce canari est **intentionnellement limité à au plus 50 UUID clients valides**; pas de mode wildcard ni de divulgation publique. Aucun accès canari n'est autorisé tant que l'allowlist est vide, même avec le flag principal vrai. Ne pas considérer les tests synthétiques ou une app qui répond 200 comme preuve qu'une connexion Meta réelle fonctionne.
+
+---
+
 ## Active delivery branch (2026-11-15)
 - **Active draft PR:** https://github.com/takatakca/takatak-v1/pull/303, rebased from current main `176966c4` with existing Local Citation feature preserved.
 - Previous PR #300 was **closed unmerged** because its WORKLOG conflicted with the newly merged Local Citation #301. All Creative Intelligence files were transplanted to #303; do not revive the old branch.
