@@ -158,6 +158,7 @@ export default async function Sc4nnerAuthorizePage({
         className="mt-6"
       >
         <input type="hidden" name="state" value={state} />
+        <input type="hidden" name="account" value={user.id} />
         <button
           type="submit"
           className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-[#1F8BFF] px-4 py-2.5 text-sm font-extrabold text-[#060D1F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#29C3FF]"

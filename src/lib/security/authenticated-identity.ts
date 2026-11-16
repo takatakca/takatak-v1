@@ -227,6 +227,8 @@ export const HIGH_RISK_PATH_PREFIXES = [
   "/dashboard/team",
   "/dashboard/users",
   "/dashboard/profile",
+  "/api/experiences/sc4nner",
+  "/experiences/sc4nner",
 ] as const;
 
 export function isHighRiskPath(pathname: string | null | undefined): boolean {

@@ -136,6 +136,28 @@ assert.ok(
   confirmRoute.includes("isConsentPostAllowed"),
   "confirm is a same-origin form POST, like the OAuth consent decision",
 );
+assert.ok(
+  confirmRoute.includes('"/login?next=" + encodeURIComponent(next), request.url), 303'),
+  "an expired session restarts at /login with a GET (303), never replays the confirmation POST",
+);
+assert.ok(
+  confirmRoute.includes('form?.get("account")'),
+  "confirm reads the account the authorize page displayed",
+);
+assert.ok(
+  confirmRoute.includes("/experiences/sc4nner/authorize?state="),
+  "a confirmation whose session no longer matches the shown account returns to the authorize screen — no code is created",
+);
+
+const authenticatedIdentity = read("src/lib/security/authenticated-identity.ts");
+assert.ok(
+  authenticatedIdentity.includes('"/api/experiences/sc4nner"'),
+  "the SC4NNER launch routes are high-risk paths: an Auth-verified identity is required before any code is issued",
+);
+assert.ok(
+  authenticatedIdentity.includes('"/experiences/sc4nner"'),
+  "the SC4NNER authorize page is a high-risk path: an Auth-verified identity is required before the account is shown",
+);
 
 const authorizePage = read("src/app/experiences/sc4nner/authorize/page.tsx");
 assert.ok(
@@ -149,6 +171,10 @@ assert.ok(
 assert.ok(
   authorizePage.includes("accountLabel"),
   "the authorize page displays the account that will authorize",
+);
+assert.ok(
+  authorizePage.includes('name="account" value={user.id}'),
+  "the authorize form carries the displayed account, so the confirmation is bound to it",
 );
 assert.ok(
   authorizePage.includes("Retour à SC4NNER"),
