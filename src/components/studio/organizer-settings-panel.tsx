@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { OrganizerFilingInbox } from "@/components/studio/organizer-filing-inbox";
 import {
   makeOrganizerSettingsUpdate,
   organizerDraftFromSettings,
@@ -331,6 +332,16 @@ export function OrganizerSettingsPanel() {
             <p role="status" aria-live="polite" className="text-sm text-slate-700">{previewNotice}</p>
           </fieldset>
         </form>
+      )}
+      {screen === "ready" && settings && (
+        <OrganizerFilingInbox
+          language={lang}
+          projects={projects}
+          outputs={outputs}
+          allowedDestinationIds={settings.allowedDestinationIds}
+          canPropose={settings.mode === "suggest" && settings.consentGranted &&
+            !settings.providerProcessingConsent && settings.requireApproval}
+        />
       )}
     </section>
   );
