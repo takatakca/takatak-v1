@@ -22,6 +22,7 @@ type Props = {
   outputs: Entry[];
   allowedDestinationIds: string[];
   canPropose: boolean;
+  historyOnly?: boolean;
 };
 
 const ui = {
@@ -39,6 +40,7 @@ const ui = {
     actionDone: "Décision enregistrée dans le journal d’audit. Aucun fichier déplacé.",
     conflict: "Une autre modification est intervenue. Liste actualisée : vérifiez la proposition avant de réessayer.",
     error: "Opération refusée ou indisponible. Aucun déplacement effectué.",
+    historyOnly: "Consultez les anciennes décisions. Vous pouvez refuser les propositions en attente et annuler un classement existant, même sans abonnement actif.",
     history: "Historique récent de l'espace client", more: "Seules les 50 propositions les plus récentes sont affichées.",
     created: "Créée le", original: "Brouillon d’origine", selectDifferent: "Choisissez un autre projet avant de modifier.",
     noOptions: "Aucun brouillon et projet autorisé n’est disponible."
@@ -57,6 +59,7 @@ const ui = {
     actionDone: "Decision recorded in the audit trail. No files moved.",
     conflict: "Another change occurred. The list was refreshed; review the proposal before retrying.",
     error: "Operation denied or unavailable. No file movement occurred.",
+    historyOnly: "Review previous decisions. You can reject pending suggestions or undo an approved association even when the subscription has ended.",
     history: "Recent workspace history", more: "Only the 50 latest proposals are shown.",
     created: "Created", original: "Original Studio draft", selectDifferent: "Choose a different project before changing.",
     noOptions: "No authorized draft and project are available."
@@ -65,7 +68,7 @@ const ui = {
 
 const STATUS: Proposal["status"][] = ["pending", "approved", "rejected", "undone"];
 export function OrganizerFilingInbox({
-  language, projects, outputs, allowedDestinationIds, canPropose,
+  language, projects, outputs, allowedDestinationIds, canPropose, historyOnly = false,
 }: Props) {
   const t = ui[language === "fr" ? "fr" : "en"];
   const [items, setItems] = useState<Proposal[]>([]);
@@ -164,8 +167,9 @@ export function OrganizerFilingInbox({
   return (
     <section className="space-y-4 rounded-xl border border-blue-200 bg-blue-50/50 p-4" aria-label={t.heading}>
       <h2 className="text-lg font-bold text-slate-950">{t.heading}</h2>
-      <p className="text-sm leading-6 text-slate-700">{t.intro}</p>
-      {!canPropose && <p className="text-sm font-medium text-slate-700">{t.disabled}</p>}
+      <p className="text-sm leading-6 text-slate-700">{historyOnly ? t.historyOnly : t.intro}</p>
+      {!historyOnly && !canPropose && <p className="text-sm font-medium text-slate-700">{t.disabled}</p>}
+      {!historyOnly && <>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm font-medium text-slate-800">
           <span className="block">{t.source}</span>
@@ -190,6 +194,7 @@ export function OrganizerFilingInbox({
         className="min-h-11 rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
         {busy === "create" ? t.submitting : t.create}
       </button>
+      </>}
       <p role="status" aria-live="polite" className="text-sm text-slate-700">{notice}</p>
 
       <div className="flex items-center justify-between gap-3 border-t border-slate-200 pt-4">
