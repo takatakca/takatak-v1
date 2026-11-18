@@ -5,7 +5,8 @@ import type { NextConfig } from "next";
 //   or preload until every takatak.ca subdomain is confirmed on HTTPS).
 // - CSP: a baseline that cannot break hydration, auth, Stripe or Upmind (no script/style
 //   allow-list yet): no plugins, no <base> hijack, no framing by other sites, forms post
-//   to this site or HTTPS only. A strict nonce-based CSP needs the auth proxy and is a
+//   to this site or HTTPS only. Installable app: the manifest and service workers come from
+//   this site only (blob: kept for in-page workers). A strict nonce-based CSP needs the auth proxy and is a
 //   separate change (docs/TAKATAK_V1_SECURITY_CHECKLIST.md).
 // - Permissions: the site itself may ask for the microphone (TAK-TAK dictation), the
 //   camera and screen sharing (calls), full screen, passkeys and SMS one-time codes
@@ -14,7 +15,8 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=31536000" },
   {
     key: "Content-Security-Policy",
-    value: "base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self' https:",
+    value:
+      "base-uri 'self'; object-src 'none'; frame-ancestors 'self'; form-action 'self' https:; manifest-src 'self'; worker-src 'self' blob:",
   },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

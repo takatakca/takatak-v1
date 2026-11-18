@@ -20,7 +20,10 @@ Une seule app : **le site takatak.ca lui-même**, ouvert en plein écran avec l'
 | Service worker | `public/takatak-push-sw.js` | Un seul worker pour l'app et les alertes d'offres (même adresse, même portée : les abonnements aux alertes ne sont pas perdus) |
 | Page hors connexion | `public/offline.html` | Bilingue, aux couleurs TAKATAK |
 | Liaison Android | `/.well-known/assetlinks.json` | Ouvre l'app Google Play sans barre d'adresse. Répond 404 tant que Coolify n'a pas `TAKATAK_ANDROID_CERT_SHA256` |
-| Vérification | `npm run qa:pwa` (dans la CI) | Manifeste, tailles réelles des icônes et captures, worker sans cache privé, liaison Android |
+| Mode télé | `src/lib/pwa/tv-mode.ts` | Sur une télé (ou avec `?tv=1`) : flèches, OK et Retour de la télécommande (Tizen 10009, webOS 461), cadre de sélection bien visible. Condition pour Google TV, Fire TV, Samsung TV, LG webOS et Xbox |
+| Sécurité (CSP) | `next.config.ts` | `manifest-src 'self'; worker-src 'self' blob:` : le manifeste et le worker ne viennent que de takatak.ca |
+| Images des magasins | [`docs/store-assets/`](store-assets/README.md) | Icônes, bannières, affiches Microsoft, bannières télé, captures téléphone, tablette, ordinateur et télé (pages publiques seulement) |
+| Vérification | `npm run qa:pwa` (dans la CI) | Manifeste, tailles réelles des icônes, captures et images des magasins, worker sans cache privé, CSP, mode télé, liaison Android |
 
 **Icône provisoire :** `BRAND.md` demande le logo officiel (`knowledgeAI/brand/logo-circle.png`), qui n'est pas encore déposé. L'icône actuelle (T blanc, flèche bleue, cercle lumineux sur bleu marine) suit les couleurs de BRAND.md. Dès que le fichier officiel est là : `npm run pwa:icons -- chemin/vers/logo-circle.png`, puis commit.
 
@@ -46,21 +49,21 @@ Le propriétaire tape lui-même ses mots de passe, codes et paiements.
 | # | Plateforme | Appareils | Paquet | Inscription | Dépôt | Coût | Faisabilité |
 |---|---|---|---|---|---|---|---|
 | 1 | Google Play | téléphones, tablettes, Chromebook | `.aab` (PWABuilder) | https://play.google.com/console/signup | https://play.google.com/console | 25 $ US une fois | Oui |
-| 2 | Google TV / Android TV | télés Android | même `.aab`, facteur « TV » | même compte | Play Console › Facteurs de forme › TV | inclus | Possible, mais Google exige une navigation à la télécommande : version télé à adapter |
+| 2 | Google TV / Android TV | télés Android | même `.aab`, facteur « TV » | même compte | Play Console › Facteurs de forme › TV | inclus | Oui : mode télé prêt (télécommande) |
 | 3 | Apple App Store | iPhone, iPad, Mac | projet Xcode (PWABuilder iOS) | https://developer.apple.com/programs/enroll/ | https://appstoreconnect.apple.com | 99 $ US par an | Oui ; voir règle 4.2 ci-dessous |
 | 4 | Apple TV | Apple TV | — | — | — | — | Non sans réécriture (pas de navigateur dans tvOS) |
 | 5 | Microsoft Store | Windows 10 et 11 | `.msix` (PWABuilder) | https://storedeveloper.microsoft.com | https://partner.microsoft.com/dashboard | gratuit | Oui |
 | 6 | Xbox | consoles Xbox | `.msix` | même compte Microsoft | Partner Center | gratuit | À tester après Windows |
-| 7 | Amazon Appstore | tablettes Fire, Fire TV | même `.aab` / `.apk` | https://developer.amazon.com/apps-and-games/console | même lien | gratuit | Oui (tablettes) ; Fire TV : réserve télécommande |
+| 7 | Amazon Appstore | tablettes Fire, Fire TV | même `.aab` / `.apk` | https://developer.amazon.com/apps-and-games/console | même lien | gratuit | Oui (tablettes) ; Fire TV : mode télé prêt |
 | 8 | Samsung Galaxy Store | Samsung | même `.apk` | https://seller.samsungapps.com | même lien | gratuit | Oui |
-| 9 | Samsung Smart TV (Tizen) | télés Samsung | app Web `.wgt` | https://seller.samsungapps.com/tv/ | TV Seller Office | gratuit, partenariat à faire approuver | Possible ; réserve télécommande |
-| 10 | LG webOS TV | télés LG | app Web `.ipk` | http://seller.lgappstv.com/seller/member/register/memberMain.lge | http://seller.lgappstv.com | gratuit | Possible ; réserve télécommande |
+| 9 | Samsung Smart TV (Tizen) | télés Samsung | app Web `.wgt` | https://seller.samsungapps.com/tv/ | TV Seller Office | gratuit, partenariat à faire approuver | Possible ; mode télé prêt |
+| 10 | LG webOS TV | télés LG | app Web `.ipk` | http://seller.lgappstv.com/seller/member/register/memberMain.lge | http://seller.lgappstv.com | gratuit | Possible ; mode télé prêt |
 | 11 | Huawei AppGallery | téléphones Huawei | même `.apk` | https://developer.huawei.com/consumer/en/appgallery | AppGallery Connect | gratuit | Oui |
 | 12 | Linux | tout PC | bouton « Installer » du navigateur (déjà actif) ; plus tard Snap | https://snapcraft.io/account | https://snapcraft.io | gratuit | Déjà possible |
 | 13 | PlayStation | PS4, PS5 | — | — | — | — | Non (Sony réserve aux jeux et grands services) |
 | 14 | Roku | télés Roku | — | — | — | — | Non sans réécriture complète |
 
-**Ordre recommandé :** D-U-N-S et inscriptions entreprise → Android (lignes 1, 7, 8, 11) et Windows (5) → Apple (3) → version télé « télécommande » (2, 7, 9, 10).
+**Ordre recommandé :** D-U-N-S et inscriptions entreprise (mêmes comptes que BesoinAvocat et MIMT) → Android (lignes 1, 2, 7, 8, 11) et Windows (5, 6) → Apple (3) → télés Samsung et LG (9, 10).
 
 ## 5. Points d'attention
 
@@ -105,7 +108,8 @@ Liste à reprendre telle quelle dans chaque dépôt de marque :
 2. Icônes générées d'une seule source (logo officiel de la marque).
 3. Service worker : page hors connexion seulement, jamais de données privées en cache ; un seul worker par site (fusionner avec un worker existant, comme les alertes ici).
 4. Page hors connexion aux couleurs de la marque.
-5. `/.well-known/assetlinks.json` piloté par variable d'environnement (404 sinon).
-6. Test automatique dans la CI.
-7. Ce document : inscriptions, paquets, tableau des 14 plateformes, textes des fiches FR/EN.
-8. Inscriptions faites une seule fois au nom de Groupe TAKATAK, réutilisées par toutes les marques.
+5. Mode télé (télécommande) et CSP `manifest-src` / `worker-src`.
+6. `/.well-known/assetlinks.json` piloté par variable d'environnement (404 sinon).
+7. Images de chaque magasin (`docs/store-assets/`) et test automatique dans la CI.
+8. Ce document : inscriptions, paquets, tableau des 14 plateformes, textes des fiches FR/EN.
+9. Inscriptions faites une seule fois au nom de Groupe TAKATAK, réutilisées par toutes les marques.
