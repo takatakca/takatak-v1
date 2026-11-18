@@ -63,6 +63,7 @@ function validBps(value: unknown): value is number {
 
 /** Fail closed: invalid configuration never silently enters traffic. */
 export function isValidExperimentAllocationConfig(config: ExperimentAllocationConfig): boolean {
+  if (!config || typeof config !== "object") return false;
   if (!validUuid(config.clientId) || !validUuid(config.experimentId)) return false;
   if (!Number.isSafeInteger(config.revision) || config.revision < 1) return false;
   if (!["draft", "approved", "running", "paused", "completed"].includes(config.status)) return false;
@@ -87,16 +88,16 @@ export function isValidExperimentAllocationConfig(config: ExperimentAllocationCo
  * and use sticky assignment policy before exposing live experiments.
  */
 export function assignExperiment(input: ExperimentAllocationInput): ExperimentAllocationResult {
-  if (!input.enabled) return { assigned: false, reason: "disabled" };
+  if (input.enabled !== true) return { assigned: false, reason: "disabled" };
   const config = input.experiment;
+  if (!isValidExperimentAllocationConfig(config)) return { assigned: false, reason: "invalid_configuration" };
   if (!validUuid(input.activeClientId) || input.activeClientId !== config.clientId) {
     return { assigned: false, reason: "tenant_mismatch" };
   }
-  if (!isValidExperimentAllocationConfig(config)) return { assigned: false, reason: "invalid_configuration" };
   if (config.status !== "running") return { assigned: false, reason: "not_running" };
-  if (!input.hasHumanLaunchApproval) return { assigned: false, reason: "approval_required" };
-  if (!input.siteOwnershipVerified) return { assigned: false, reason: "unverified_site" };
-  if (!input.hasAnalyticsConsent) return { assigned: false, reason: "consent_required" };
+  if (input.hasHumanLaunchApproval !== true) return { assigned: false, reason: "approval_required" };
+  if (input.siteOwnershipVerified !== true) return { assigned: false, reason: "unverified_site" };
+  if (input.hasAnalyticsConsent !== true) return { assigned: false, reason: "consent_required" };
   if (!validUuid(input.anonymousSubjectId) || typeof input.serverSecret !== "string" || input.serverSecret.length < 32) {
     return { assigned: false, reason: "invalid_configuration" };
   }
