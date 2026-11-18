@@ -49,6 +49,14 @@ test("all experiments are disabled by default without explicit server rollout", 
   assert.deepEqual(assignExperiment(input({ enabled: false })), { assigned: false, reason: "disabled" });
 });
 
+test("malformed null configuration and string-valued flags never authorize", () => {
+  assert.deepEqual(assignExperiment(input({ experiment: null })), { assigned: false, reason: "invalid_configuration" });
+  assert.deepEqual(assignExperiment(input({ enabled: "true" })), { assigned: false, reason: "disabled" });
+  assert.deepEqual(assignExperiment(input({ hasHumanLaunchApproval: "true" })), { assigned: false, reason: "approval_required" });
+  assert.deepEqual(assignExperiment(input({ siteOwnershipVerified: "true" })), { assigned: false, reason: "unverified_site" });
+  assert.deepEqual(assignExperiment(input({ hasAnalyticsConsent: "true" })), { assigned: false, reason: "consent_required" });
+});
+
 test("tenant isolation denies a foreign current session and missing session", () => {
   assert.deepEqual(assignExperiment(input({ activeClientId: CLIENT_B })), { assigned: false, reason: "tenant_mismatch" });
   assert.deepEqual(assignExperiment(input({ activeClientId: null })), { assigned: false, reason: "tenant_mismatch" });
