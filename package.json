@@ -24,6 +24,8 @@
     "qa:concierge": "tsx scripts/concierge-tests.ts",
     "qa:newsletter": "tsx scripts/newsletter-tests.ts",
     "qa:push": "tsx scripts/push-tests.ts",
+    "qa:pwa": "tsx scripts/pwa-tests.ts",
+    "pwa:icons": "node scripts/pwa/make-icons.mjs",
     "media:videos": "node scripts/media/runway-generate.mjs",
 
     "qa:r2nette-sync": "tsx --require ./scripts/register-server-only.cjs scripts/r2nette-sync-tests.ts",

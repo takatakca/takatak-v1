@@ -1,0 +1,6 @@
+# Journal des agents (takatak-v1)
+
+Notes signées avant, pendant et après le travail, comme dans `takatakca/BESOINAVOCAT.CA/docs/JOURNAL-AGENTS.md`. Le détail court aussi dans `WORKLOG.md` (une ligne par travail).
+
+- 2026-11-18 19:45 UTC | Claude (Claude Code, fil « Déployer takatak.ca partout », projet BESOINAVOCAT COMPLETE) | DÉBUT | Standard « apps partout » pour takatak.ca, calqué sur BesoinAvocat PR 83-85. Fichiers pris : `src/lib/pwa/`, `src/app/manifest.ts`, `src/app/.well-known/assetlinks.json/`, `src/components/pwa/`, `public/icons/`, `public/screenshots/`, `public/offline.html`, `scripts/pwa*`, `docs/APPS-MAGASINS.md`. Fichiers partagés touchés avec soin : `public/takatak-push-sw.js` (ajout du cache hors connexion, alertes inchangées), `src/app/layout.tsx`, `next.config.ts`, `package.json`, `.github/workflows/ci.yml`, `src/app/icon.png`, `src/app/apple-icon.png`.
+- 2026-11-18 20:15 UTC | Claude | ÉTAPE | Vérifié en local : `/manifest.webmanifest` 200, worker 200 (no-cache), `/offline.html` 200, `/.well-known/assetlinks.json` 404 sans réglage ; `npm run qa:pwa`, `tsc --noEmit` et eslint verts. Icône provisoire en attendant `knowledgeAI/brand/logo-circle.png` (non déposé). Pas d'annonce sur le tableau foodhubca #105 : ce dépôt n'est pas accessible depuis ce fil.

@@ -93,6 +93,14 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
+        // Installable app (PWA): browsers must always fetch the newest service worker.
+        source: "/takatak-push-sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+        ],
+      },
+      {
         source: "/dashboard/:path*",
         headers: privateNoStore,
       },
