@@ -55,3 +55,10 @@ body {
   cursor: wait !important;
   opacity: 0.65;
 }
+
+/* TV mode (smart TVs or ?tv=1, src/lib/pwa/tv-mode.ts): readable from the couch, focus always obvious. */
+.tv-mode { font-size: 125%; }
+.tv-mode :focus-visible,
+.tv-mode :focus { outline: 4px solid #29C3FF !important; outline-offset: 4px !important; box-shadow: 0 0 0 8px rgb(31 139 255 / 30%) !important; border-radius: 8px; }
+.tv-mode a, .tv-mode button, .tv-mode summary { scroll-margin: 96px; }
+@media (prefers-reduced-motion: reduce) { .tv-mode * { scroll-behavior: auto !important; } }

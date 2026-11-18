@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- TAKATAK app icon (interim, until the owner's official logo-circle.png is in knowledgeAI/brand/).
+       BRAND.md colours: navy #060D1F, midnight #0B1B3D, electric blue #1F8BFF, cyan #29C3FF, white #F5F8FC.
+       Content stays inside the central 80 % so the same art works as an Android "maskable" icon. -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#1F8BFF" stop-opacity="0.55"/>
+      <stop offset="0.6" stop-color="#1F8BFF" stop-opacity="0.12"/>
+      <stop offset="1" stop-color="#060D1F" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="disc" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0B1B3D"/>
+      <stop offset="1" stop-color="#060D1F"/>
+    </linearGradient>
+    <linearGradient id="arrow" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#1565D8"/>
+      <stop offset="1" stop-color="#29C3FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="#060D1F"/>
+  <circle cx="256" cy="256" r="250" fill="url(#glow)"/>
+  <circle cx="256" cy="256" r="176" fill="url(#disc)" stroke="#1F8BFF" stroke-width="10"/>
+  <!-- White T -->
+  <path d="M160 168 H352 V206 H276 V352 H236 V206 H160 Z" fill="#F5F8FC"/>
+  <!-- Electric-blue upward arrow sweeping past the T -->
+  <path d="M190 330 C250 318 300 286 330 236" fill="none" stroke="url(#arrow)" stroke-width="18" stroke-linecap="round"/>
+  <path d="M302 226 L352 204 L346 258 Z" fill="#29C3FF"/>
+</svg>

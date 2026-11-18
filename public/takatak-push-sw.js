@@ -1,9 +1,41 @@
-/* TAKATAK deal alerts service worker. Push and notification clicks only: no
-   fetch handler, no caching. Pushes carry no payload; the live offer is read
-   from the server, so a notification never shows an offer that has ended. */
+/* TAKATAK service worker: installable app (PWA) + deal alerts.
+   App: makes takatak.ca installable on phones, tablets and computers, and in the store packages built
+   from it (docs/APPS-MAGASINS.md). Privacy rule: only the public offline page and the app icons are
+   cached. Pages always come from the network (fresh after each deploy); the offline page shows only
+   when there is no connection. /api/, /dashboard, /auth and every non-GET request are never touched.
+   Alerts: pushes carry no payload; the live offer is read from the server, so a notification never
+   shows an offer that has ended. */
 
-self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
+const SHELL_CACHE = "takatak-shell-v1";
+const SHELL = ["/offline.html", "/icons/icon-192.png", "/icons/icon-512.png"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches
+      .open(SHELL_CACHE)
+      .then((cache) => cache.addAll(SHELL))
+      .catch(() => undefined)
+      .then(() => self.skipWaiting()),
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("takatak-shell-") && key !== SHELL_CACHE).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+  if (request.method !== "GET" || request.mode !== "navigate") return;
+  if (new URL(request.url).origin !== self.location.origin) return;
+  event.respondWith(
+    fetch(request).catch(async () => (await caches.match("/offline.html")) || Response.error()),
+  );
+});
 
 function copy(lang) {
   return lang === "en"
