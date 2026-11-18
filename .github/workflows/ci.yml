@@ -203,6 +203,9 @@ jobs:
       - name: TAKATAKSTUDIO tenant, production, agent-job, limit and i18n contracts
         run: node --experimental-strip-types --test scripts/studio-*-tests.mjs
 
+      - name: Intelligence OS allocation contract (no DB or provider calls)
+        run: node --experimental-strip-types --test scripts/intelligence-experiment-allocation.test.mjs
+
       - name: QMAPS listings and reviews sync safeguards
         run: npm run qa:qmaps-sync
 
