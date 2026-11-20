@@ -152,6 +152,9 @@ jobs:
       - name: Website lead capture safeguards
         run: npm run qa:website-leads
 
+      - name: Client dashboard shows no prototype labels
+        run: npm run qa:dashboard-labels
+
       - name: Promotion code safeguards
         run: npm run qa:promotions
 

@@ -481,12 +481,12 @@ export function HeroChat() {
 
             {/* Conversation */}
             <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto" aria-live="polite">
-              <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6 sm:px-6 sm:py-8">
+              <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-5 sm:px-6 sm:py-6">
                 <div className={started ? "" : "my-auto"}>
                   <div className={started ? "sr-only" : "text-center"}>
                     {!started && (
-                      <div className="mx-auto mb-4 hidden w-fit sm:block">
-                        <RobotMascot size={96} title="TAK-TAK" />
+                      <div className="mx-auto mb-3 hidden w-fit sm:block">
+                        <RobotMascot size={76} title="TAK-TAK" />
                       </div>
                     )}
                     <h1 id="home-hero-title" className="tk-gradient-text text-balance text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-[40px]">
@@ -496,7 +496,7 @@ export function HeroChat() {
                   </div>
 
                   {!started && (
-                    <ul className="mt-5 grid grid-cols-2 gap-2 sm:mt-7 sm:gap-2.5 lg:grid-cols-3" aria-label={C.starts[lang]}>
+                    <ul className="mt-5 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-2.5 lg:grid-cols-3" aria-label={C.starts[lang]}>
                       {HERO_CHIPS.map((c) => {
                         const Icon = CHIP_ICON[c.key] ?? Sparkles;
                         return (

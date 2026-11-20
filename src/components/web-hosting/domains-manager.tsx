@@ -583,12 +583,12 @@ export function DomainsManager({
           ) : null}
 
           {tab === "Redirects" ? (
-            <p className="text-sm text-slate-400">Redirects are not connected yet.</p>
+            <p className="text-sm text-slate-400">Redirects for this domain are set up by the TAKATAK team on request.</p>
           ) : null}
 
           {tab === "Security" ? (
             <p className="text-sm text-slate-400">
-              Security controls appear after the domain provider is connected. SSL status is{" "}
+              Security for this domain is managed by the TAKATAK team. SSL status is{" "}
               {SSL_STATUS_LABELS[selectedSsl?.status ?? selected.sslStatus] ?? selected.sslStatus}.
             </p>
           ) : null}

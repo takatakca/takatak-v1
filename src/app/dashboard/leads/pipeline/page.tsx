@@ -15,9 +15,6 @@ export default async function LeadsPipelinePage() {
       />
       <LeadsSourceBanner source={data.source} label={data.sourceLabel} />
       <PipelineBoard leads={data.leads} />
-      <p className="text-xs text-slate-400">
-        Stage configuration exists per brand ({data.stages.length} stage records) — a stage editor arrives in a later phase.
-      </p>
     </div>
   );
 }

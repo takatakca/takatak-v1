@@ -5,7 +5,7 @@ import { QUICK_ACTIONS } from "@/lib/dashboard/dashboard-config";
 export function QuickActions() {
   return (
     <Card>
-      <CardHeader title="Quick Actions" subtitle="Shortcuts into modules. Some actions arrive in later phases." />
+      <CardHeader title="Quick Actions" subtitle="Shortcuts into your workspace." />
       <CardBody className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {QUICK_ACTIONS.map((action) => {
           const Icon = action.icon;

@@ -58,6 +58,24 @@ for (const path of clientPages) {
     if (pattern.test(source)) offenders.push(`${relative(ROOT, path)} ~ ${pattern}`);
   }
 }
+// Shared components shown on client screens: no build-phase sentences either.
+// (Planning panels and FoundationNotice are only used on staff-only screens.)
+const COMPONENT_FORBIDDEN = /not connected yet|arrives? in (a )?later phases?|in a future phase|Some actions arrive/i;
+const sharedComponents = files(join(ROOT, "src/components")).filter((path) => {
+  const rel = relative(ROOT, path);
+  return !rel.startsWith("src/components/website/") && !rel.startsWith("src/components/admin/") && !/prep-panel|foundation-notice/.test(rel);
+});
+for (const path of sharedComponents) {
+  if (COMPONENT_FORBIDDEN.test(readFileSync(path, "utf8"))) offenders.push(`${relative(ROOT, path)} ~ ${COMPONENT_FORBIDDEN}`);
+}
+for (const path of clientPages) {
+  const route = "/" + relative(join(ROOT, "src/app"), path).replace(/\/page\.tsx$/, "");
+  if (!STAFF_ONLY_ROUTES.has(route) && COMPONENT_FORBIDDEN.test(readFileSync(path, "utf8"))) {
+    offenders.push(`${relative(ROOT, path)} ~ ${COMPONENT_FORBIDDEN}`);
+  }
+}
 assert.deepEqual(offenders, [], `developer notes on client screens:\n${offenders.join("\n")}`);
 
-console.log(`dashboard client labels: ok (${clientPages.length} client screens scanned, ${STAFF_ONLY_ROUTES.size} staff-only)`);
+console.log(
+  `dashboard client labels: ok (${clientPages.length} client screens and ${sharedComponents.length} shared components scanned, ${STAFF_ONLY_ROUTES.size} staff-only)`,
+);
