@@ -233,6 +233,31 @@ function flattenNavItems(items: NavItem[]): NavItem[] {
 /** Flat list kept for compatibility with existing consumers. */
 export const NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap((s) => flattenNavItems(s.items));
 
+/**
+ * Spaces that are not self-serve for clients yet (placeholder or demo-data
+ * screens). They stay in the menu for TAKATAK platform staff only, so a client
+ * never lands on an unfinished screen. Remove a route from this list in the
+ * same pull request that makes its page real.
+ */
+export const STAFF_ONLY_ROUTES: ReadonlySet<string> = new Set([
+  "/dashboard/services",
+  "/dashboard/clients",
+  "/dashboard/integrations",
+  "/dashboard/jobs",
+  "/dashboard/files",
+  "/dashboard/settings",
+  "/dashboard/hosting/servers",
+  "/dashboard/hosting/email",
+  "/dashboard/web-hosting/analytics",
+  "/dashboard/web-hosting/backups",
+  "/dashboard/web-hosting/blog",
+  "/dashboard/web-hosting/pages",
+  "/dashboard/web-hosting/performance",
+  "/dashboard/web-hosting/redirects",
+  "/dashboard/web-hosting/security",
+  "/dashboard/web-hosting/staging",
+]);
+
 export function pageTitleForPath(pathname: string): string {
   if (pathname === "/dashboard") return "Dashboard";
   const matches = NAV_ITEMS.filter(

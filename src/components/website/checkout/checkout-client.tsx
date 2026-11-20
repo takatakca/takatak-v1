@@ -17,6 +17,7 @@ import {
 import { categoryName, packageTitle, tierName } from "@/lib/website/marketplace-i18n";
 import { useLanguage } from "@/lib/website/use-language";
 import { submitWebsiteRequest } from "@/lib/website/website-requests";
+import { EmailFallback } from "@/components/website/support/EmailFallback";
 import styles from "./checkout-domain.module.css";
 
 type Lang = "en" | "fr";
@@ -86,10 +87,12 @@ function MarketplaceOrder({
   const [reference, setReference] = useState<string | null>(null);
   const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [down, setDown] = useState(false);
 
   async function sendOrder() {
     setSending(true);
     setError(null);
+    setDown(false);
     const result = await submitWebsiteRequest({
       kind: "package_order",
       packageId: selection.packageId,
@@ -115,6 +118,7 @@ function MarketplaceOrder({
       return;
     }
     setError(c(COPY.down));
+    setDown(true);
   }
 
   if (reference) {
@@ -201,6 +205,20 @@ function MarketplaceOrder({
               <p role="alert" className="mt-6 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
                 {error}
               </p>
+            ) : null}
+            {down ? (
+              <EmailFallback
+                lang={lang}
+                className="mt-3"
+                subject={`TAKATAK · ${lang === "fr" ? "Commande" : "Order"} · ${title} (${tier})`}
+                lines={[
+                  `${lang === "fr" ? "Forfait" : "Package"} : ${title} (${tier})`,
+                  selection.addons.length > 0 && `${lang === "fr" ? "Options" : "Add-ons"} : ${selection.addons.map((item) => item.label).join(", ")}`,
+                  selection.promoCode && `${lang === "fr" ? "Code promo" : "Promo code"} : ${selection.promoCode}`,
+                  `${lang === "fr" ? "Total affiché" : "Displayed total"} : ${dollars(selection.finalTotalCents, lang)}`,
+                  `${lang === "fr" ? "Référence du forfait" : "Package reference"} : ${selection.packageId}`,
+                ]}
+              />
             ) : null}
             <button
               type="button"

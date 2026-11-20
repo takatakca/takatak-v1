@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { submitWebsiteRequest } from "@/lib/website/website-requests";
+import { EmailFallback } from "@/components/website/support/EmailFallback";
 
 type TransferScope = "site" | "domain" | "both";
 type Provider = "MochaHost" | "GoDaddy" | "Enom" | "Other / unknown";
@@ -27,6 +28,7 @@ export function LegacyTransferRequestForm() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reference, setReference] = useState<string | null>(null);
+  const [down, setDown] = useState(false);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -75,7 +77,8 @@ export function LegacyTransferRequestForm() {
       } else if (result.status === "rate_limited") {
         setError("Trop de demandes ont été envoyées. Réessayez plus tard.");
       } else {
-        setError("Votre demande n'a pas pu être enregistrée. Aucun transfert n'a été lancé. Réessayez ou contactez le soutien TAKATAK.");
+        setError("Votre demande n'a pas pu être enregistrée. Aucun transfert n'a été lancé.");
+        setDown(true);
       }
     } finally {
       setSending(false);
@@ -167,6 +170,23 @@ export function LegacyTransferRequestForm() {
           déplacer mon site ou transférer mon domaine.</span>
       </label>
       {error ? <p role="alert" className="mt-5 text-sm font-semibold text-red-200">{error}</p> : null}
+      {down ? (
+        <EmailFallback
+          lang="fr"
+          tone="dark"
+          className="mt-3"
+          subject={`TAKATAK · Transfert · ${domain.trim().toLowerCase() || "domaine"}`}
+          lines={[
+            `Domaine concerné : ${domain.trim().toLowerCase()}`,
+            `Transfert demandé : ${scope === "site" ? "site Web uniquement" : scope === "domain" ? "domaine uniquement" : "site Web et domaine"}`,
+            `Hébergeur ou registraire actuel : ${provider}`,
+            name.trim() && `Nom : ${name.trim()}`,
+            company.trim() && `Entreprise : ${company.trim()}`,
+            phone.trim() && `Téléphone : ${phone.trim()}`,
+            notes.trim() && `Notes : ${notes.trim()}`,
+          ]}
+        />
+      ) : null}
       <button type="submit" disabled={sending}
         className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1565D8] px-5 py-3.5 font-bold text-white hover:bg-[#104fab] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-60">
         {sending ? "Envoi en cours…" : "Envoyer ma demande de transfert"}

@@ -1,3 +1,5 @@
+import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
+import { getServerAccessContext } from "@/lib/security/access-context";
 import { PlugZap } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { DisabledActionButton } from "@/components/saas/disabled-action-button";
@@ -7,7 +9,7 @@ import { ModuleHeader } from "@/components/saas/module-header";
 import { INTEGRATIONS } from "@/lib/data/mock-data";
 
 // Integrations — provider registry. Real adapters begin in Phase 6.
-export default function IntegrationsPage() {
+function IntegrationsPageDemo() {
   return (
     <div className="space-y-5">
       <ModuleHeader
@@ -31,4 +33,18 @@ export default function IntegrationsPage() {
       </Card>
     </div>
   );
+}
+
+// Demo-data screen: TAKATAK platform staff only. Clients see the
+// "done by the TAKATAK team" page instead of mock records.
+export default async function IntegrationsPage() {
+  const { access } = await getServerAccessContext();
+  if (access.mode !== "platform_admin") {
+    return (
+      <ModulePlaceholder
+        def={{ title: "Integrations", purpose: "Connections between your account and outside tools.", status: "foundation", functions: [] }}
+      />
+    );
+  }
+  return <IntegrationsPageDemo />;
 }

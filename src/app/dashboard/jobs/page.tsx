@@ -1,3 +1,5 @@
+import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
+import { getServerAccessContext } from "@/lib/security/access-context";
 import { RefreshCcw } from "lucide-react";
 import { DataTable, type Column } from "@/components/saas/data-table";
 import { DisabledActionButton } from "@/components/saas/disabled-action-button";
@@ -35,7 +37,7 @@ const columns: Column<AutomationJob>[] = [
 ];
 
 // Jobs — the future automation backbone. Every important action becomes trackable.
-export default function JobsPage() {
+function JobsPageDemo() {
   return (
     <div className="space-y-5">
       <ModuleHeader
@@ -52,4 +54,18 @@ export default function JobsPage() {
       <DataTable columns={columns} rows={AUTOMATION_JOBS} rowKey={(j) => j.id} caption="Planned automation jobs" />
     </div>
   );
+}
+
+// Demo-data screen: TAKATAK platform staff only. Clients see the
+// "done by the TAKATAK team" page instead of mock records.
+export default async function JobsPage() {
+  const { access } = await getServerAccessContext();
+  if (access.mode !== "platform_admin") {
+    return (
+      <ModulePlaceholder
+        def={{ title: "Jobs", purpose: "Background tasks TAKATAK runs for your account.", status: "foundation", functions: [] }}
+      />
+    );
+  }
+  return <JobsPageDemo />;
 }

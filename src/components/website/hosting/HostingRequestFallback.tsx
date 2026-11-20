@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/website/auth-context";
 import { UPMIND_HOSTING_PLANS } from "@/lib/website/upmind-config";
 import { useLanguage } from "@/lib/website/use-language";
 import { submitWebsiteRequest } from "@/lib/website/website-requests";
+import { EmailFallback } from "@/components/website/support/EmailFallback";
 
 /**
  * Shown when the Upmind hosting widgets cannot load: the visitor picks a plan
@@ -24,10 +25,12 @@ export function HostingRequestFallback() {
   const [status, setStatus] = useState<"idle" | "submitting" | "done">("idle");
   const [reference, setReference] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [down, setDown] = useState(false);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError(null);
+    setDown(false);
     if (!isAuthenticated && !email.trim() && !phone.trim()) {
       setError(t("fallback.hosting.contactRequired"));
       return;
@@ -49,6 +52,7 @@ export function HostingRequestFallback() {
       return;
     }
     setStatus("idle");
+    setDown(result.status === "unavailable");
     setError(
       result.status === "invalid" && (result.fieldErrors.contact || result.fieldErrors.email || result.fieldErrors.phone)
         ? t("fallback.hosting.contactRequired")
@@ -136,6 +140,18 @@ export function HostingRequestFallback() {
           className="absolute -left-[9999px] h-0 w-0 opacity-0"
         />
         {error && <p role="alert" className="text-sm text-destructive sm:col-span-2">{error}</p>}
+        {down && (
+          <EmailFallback
+            lang={lang === "fr" ? "fr" : "en"}
+            className="sm:col-span-2"
+            subject={`TAKATAK · ${lang === "fr" ? "Hébergement" : "Hosting"} · ${planName}`}
+            lines={[
+              `${lang === "fr" ? "Forfait d’hébergement" : "Hosting plan"} : ${planName}`,
+              name.trim() && `${lang === "fr" ? "Nom" : "Name"} : ${name.trim()}`,
+              phone.trim() && `${lang === "fr" ? "Téléphone" : "Phone"} : ${phone.trim()}`,
+            ]}
+          />
+        )}
         <button
           disabled={status === "submitting"}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60 sm:col-span-2"
