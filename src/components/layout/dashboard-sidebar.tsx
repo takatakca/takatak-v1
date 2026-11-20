@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronDown, ChevronRight, Lock, X } from "lucide-react";
-import { APP_NAME, APP_NAME_BADGE, NAV_SECTIONS } from "@/lib/dashboard/dashboard-config";
+import { APP_NAME, APP_NAME_BADGE, NAV_SECTIONS, STAFF_ONLY_ROUTES } from "@/lib/dashboard/dashboard-config";
 import type { NavItem } from "@/lib/dashboard/types";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { MODULE_ACCESS } from "@/lib/security/roles";
@@ -61,6 +61,9 @@ function NavRow({
     item.href === "/dashboard/admin" || item.href.startsWith("/dashboard/admin/");
   const hasPlatformAdminAccess =
     session.platformRole === "owner" || session.platformRole === "admin";
+  if (session.configured && !hasPlatformAdminAccess && STAFF_ONLY_ROUTES.has(item.href)) {
+    return null;
+  }
   const requiredPermission = isPlatformAdminItem ? undefined : MODULE_ACCESS[item.href];
   const allowed =
     !session.configured ||

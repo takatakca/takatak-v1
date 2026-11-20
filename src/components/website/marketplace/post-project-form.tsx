@@ -30,6 +30,7 @@ import {
   submitWebsiteRequest,
   uploadWebsiteAttachment,
 } from "@/lib/website/website-requests";
+import { EmailFallback } from "@/components/website/support/EmailFallback";
 
 type Visibility =
   | "private"
@@ -1000,6 +1001,23 @@ export function PostProjectForm({
             >
               {COPY.errors[submitError][lang]}
             </p>
+          ) : null}
+          {submitError === "failed" ? (
+            <EmailFallback
+              lang={lang}
+              subject={`TAKATAK · ${lang === "fr" ? "Projet" : "Project"} · ${title || category}`}
+              lines={[
+                title && `${lang === "fr" ? "Projet" : "Project"} : ${title}`,
+                businessName && `${lang === "fr" ? "Entreprise" : "Business"} : ${businessName}`,
+                `${lang === "fr" ? "Catégorie" : "Category"} : ${category}`,
+                budget && `${lang === "fr" ? "Budget" : "Budget"} : ${budget} $`,
+                `${lang === "fr" ? "Délai" : "Timeline"} : ${timeline}`,
+                brief,
+                skills && `${lang === "fr" ? "Compétences" : "Skills"} : ${skills}`,
+                contactName && `${lang === "fr" ? "Nom" : "Name"} : ${contactName}`,
+                contactPhone && `${lang === "fr" ? "Téléphone" : "Phone"} : ${contactPhone}`,
+              ]}
+            />
           ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
