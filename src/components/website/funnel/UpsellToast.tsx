@@ -50,7 +50,7 @@ export function UpsellToast() {
         : "";
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-[150px] z-[45] flex justify-center px-3 sm:bottom-24">
+    <div className="tk-upsell-toast pointer-events-none fixed inset-x-0 bottom-[150px] z-[45] flex justify-center px-3 sm:bottom-24">
       <div
         role="status"
         onMouseEnter={() => setHover(true)}
