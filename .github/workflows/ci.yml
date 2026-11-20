@@ -92,6 +92,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Meta Ads connection and internal campaign benchmark safeguards
+        run: npm run qa:social-meta-ads
+
       - name: Facebook content ingest safeguards
         run: npm run qa:social-step8-content
 
@@ -161,6 +164,9 @@ jobs:
       - name: AI Studio approval handoff
         run: npm run qa:ai-handoff
 
+      - name: Social publishing engine (approvals, Facebook adapter, durable worker)
+        run: npm run qa:social-publishing
+
       - name: Lead detail actions
         run: npm run qa:lead-actions
 
@@ -172,6 +178,9 @@ jobs:
 
       - name: Website SEO and HTTPS redirect
         run: npm run qa:website-seo
+
+      - name: Installable app (PWA) and store packages
+        run: npm run qa:pwa
 
       - name: SEO score history
         run: npm run qa:seo-history
@@ -190,6 +199,12 @@ jobs:
 
       - name: AI Studio generation safeguards
         run: npm run qa:ai-studio-generation
+
+      - name: AI File Organizer policy and tenant/billing preview guard
+        run: npm run qa:ai-file-organizer
+
+      - name: TAKATAKSTUDIO tenant, production, agent-job, limit and i18n contracts
+        run: node --experimental-strip-types --test scripts/studio-*-tests.mjs
 
       - name: QMAPS listings and reviews sync safeguards
         run: npm run qa:qmaps-sync
@@ -433,6 +448,16 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:growth-backend
+
+      - name: AI File Organizer policy database constraints on ephemeral DB
+        env:
+          NODE_ENV: development
+        run: npm run qa:ai-file-organizer-db
+
+      - name: AI File Organizer filing proposal metadata and RLS on ephemeral DB
+        env:
+          NODE_ENV: development
+        run: npm run qa:ai-file-organizer-filing-db
 
       - name: Rentauto booking lifecycle smoke test
         run: npx prisma db execute --file scripts/rentauto-core-smoke.sql --schema prisma/schema.prisma

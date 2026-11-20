@@ -1,6 +1,8 @@
 import { NetworkStatusBanner } from "@/components/network/network-status-banner";
+import { PwaRegister } from "@/components/pwa/pwa-register";
 import { ClickPendingProvider } from "@/components/ui/click-pending-provider";
-import type { Metadata } from "next";
+import { PWA_THEME_COLOR } from "@/lib/pwa/manifest";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { HOME_LANGUAGE_HEADER, homeLanguage } from "@/lib/website/home-seo";
 import localFont from "next/font/local";
@@ -29,6 +31,13 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "Takatak Official website",
   description: "takatak.ca official platform",
+  applicationName: "TAKATAK",
+  appleWebApp: { capable: true, title: "TAKATAK", statusBarStyle: "black" },
+};
+
+// Installable app (PWA): browser bar and phone status bar in the TAKATAK navy.
+export const viewport: Viewport = {
+  themeColor: PWA_THEME_COLOR,
 };
 
 export default async function RootLayout({
@@ -44,6 +53,7 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <NetworkStatusBanner />
+        <PwaRegister />
         <ClickPendingProvider>{children}</ClickPendingProvider>
       </body>
     </html>

@@ -18,6 +18,8 @@ import {
   type ChartTooltipSeries,
 } from "@/components/social/analytics/social-summary-chart";
 import { metricValue } from "@/components/social/analytics/social-summary-tokens";
+import { MetaCampaignBenchmarkPanel } from "@/components/social/platforms/meta-campaign-benchmark-panel";
+import { MetaAdCreativeReportPanel } from "@/components/social/platforms/meta-ad-creative-report-panel";
 
 type DailyPoint = {
   date: string;
@@ -45,6 +47,7 @@ type CampaignRow = {
 
 type AccountAnalytics = {
   accountName?: string;
+  currency?: string;
   impressions: number | null;
   reach: number | null;
   spend: number | null;
@@ -432,6 +435,8 @@ export function MetaAdsSubscribedDashboard({
   connectedLabel: string | null;
 }) {
   const [section, setSection] = useState<MetaSection>("account");
+  const [creativeLocale, setCreativeLocale] = useState<"fr" | "en">("fr");
+  const [creativeIntelligenceEnabled, setCreativeIntelligenceEnabled] = useState(false);
   const [rangeDays, setRangeDays] = useState(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [reachMetric, setReachMetric] = useState<"impressions" | "reach" | "spend">(
@@ -459,6 +464,32 @@ export function MetaAdsSubscribedDashboard({
       end: shiftDays(display.start, -1),
     };
   }, [display]);
+
+  useEffect(() => {
+    let stale = false;
+    const controller = new AbortController();
+    setCreativeIntelligenceEnabled(false);
+    void fetch("/api/social/meta-ads/creative-intelligence/capability", {
+      credentials: "same-origin",
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return false;
+        const data = (await response.json()) as { ok?: boolean; enabled?: boolean };
+        return data.ok === true && data.enabled === true;
+      })
+      .then((enabled) => {
+        if (!stale) setCreativeIntelligenceEnabled(enabled);
+      })
+      .catch(() => {
+        if (!stale) setCreativeIntelligenceEnabled(false);
+      });
+    return () => {
+      stale = true;
+      controller.abort();
+    };
+  }, [connectedLabel]);
 
   useEffect(() => {
     let stale = false;
@@ -802,6 +833,32 @@ export function MetaAdsSubscribedDashboard({
           confirmed={campaignsConfirmed}
           loading={loading && !ready}
         />
+        {creativeIntelligenceEnabled ? (
+          <>
+            <div role="group" aria-label="Creative Intelligence language" className="flex justify-end gap-2">
+              {(["fr", "en"] as const).map((language) => (
+                <button key={language} type="button" onClick={() => setCreativeLocale(language)}
+                  aria-pressed={creativeLocale === language}
+                  className={`rounded-md border px-3 py-1.5 text-xs font-semibold ${creativeLocale === language ? "border-[#1455D9] bg-[#1455D9] text-white" : "border-[#CBD5E1] bg-white text-[#334155]"}`}>
+                  {language.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <MetaCampaignBenchmarkPanel
+              locale={creativeLocale}
+              campaigns={campaigns}
+              confirmed={campaignsConfirmed}
+              currency={analytics?.currency ?? null}
+            />
+            {rangeDays <= 30 ? (
+              <MetaAdCreativeReportPanel start={display.start} end={display.end} locale={creativeLocale} />
+            ) : (
+              <p className="rounded-lg bg-[#F8FAFC] p-4 text-sm text-[#64748B]">
+                Choose a 7-day or 30-day period to load the on-demand individual ad report.
+              </p>
+            )}
+          </>
+        ) : null}
       </section>
     </div>
   );

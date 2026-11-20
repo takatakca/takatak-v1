@@ -1,3 +1,175 @@
+# AI File Organizer — new native human filing inbox — 2026-11-16
+Signed GPT-6 @ ChatGPT. Source baseline main c6b6bbcd88e0620d8817f633580162456fb64b68 after filing ledger PR #331 exact CI 43810954025 SUCCESS. Branch feat/ai-file-organizer-native-inbox-20261116 adds `src/components/studio/organizer-filing-inbox.tsx`, attached to existing Studio organizer manager-only settings, with manual propose/approve/change/reject/undo. Modification uses strict new `change_destination` decision input, server-side current consent+paid entitlement+owner/project/source/version checks, revision compare-and-swap and transaction-bound audit; no file-content movement/provider calls. Authorized managers losing subscription still may reject pending and undo approved metadata through read-only history view. Added Node SSR FR/EN & tenant option QA, pure input QA, and disposable PostgreSQL retarget/tenant tests. CI pending; no hosted migrations, AI provider, private object bucket or paid checkout; feature flag remains OFF. Owner explicitly requested only real TAKATAK production work, not another environment. Next: run exact-head CI, review and merge only if green, separate protected production backup/schema review, actual signed-in A/B smoke and served SHA proof. Do not claim LIVE.
+
+---
+# AI File Organizer — approval metadata ledger continuation — 2026-11-16
+Signed GPT-6 @ ChatGPT. Parent Studio UI/preview PR #328 merged main f24dbeb after full CI green, feature OFF. New branch feat/ai-file-organizer-approval-ledger-main-20261116 adds durable proposal/decision metadata model, RLS and scoped trigger, user-approved only status transitions, audit and test fixture; no original file movement or AI provider call. Await exact CI and review. Do not apply migrations without backup and staging validation. See docs/ai-file-organizer/EXECUTION_LEDGER.md and coordination #105.
+
+---
+# AI File Organizer — reconciled current main be0d9f7 — 2026-11-16
+Signed GPT-6 @ ChatGPT. PR #326 full CI 43808315350 passed 116 steps but GitHub merge returned conflict after main advanced. New branch feat/ai-file-organizer-studio-ui-preview-current-main-v2-20261116 replays feature-only Studio UI, metadata consent and no-write preview; shared package/WORKLOG/docs updated from latest main, original migration unchanged, additive migration 20261116060000 proposed only. Feature flag OFF, no real database migration, AI processing, file storage or paid checkout. Verify exact CI, coordinator review, then protected migration/staging/actual deployment proof. Ledger docs/ai-file-organizer/EXECUTION_LEDGER.md.
+
+---
+# Creative Intelligence — opérateur Coolify et canari serveur — 2026-11-15
+
+Signé GPT-6 @ ChatGPT. L'opérateur a vérifié sur Coolify `takatak-v1` Running/vps1, déploiement webhook Success `f1cd567f` à 19:48 EST, HTTPS 200/HSTS, /api/health=ok; **c'est une observation rapportée par l'utilisateur**, pas une connexion Coolify de l'agent. GitHub a confirmé main SHA exact `f1cd567f85b7ae1c7be16ed9e37407072eb134a8`, CI push `43782535988` SUCCESS et artefact non expiré. Produit Creative Intelligence **toujours inaccessible** faute de variables: le `NEXT_PUBLIC_` précédent est figé au build. Branche `feat/creative-intelligence-runtime-canary-20261115`: migration vers `/api/social/meta-ads/creative-intelligence/capability` après auth `view_social`, liste de clients UUID serveur `TAKATAK_CREATIVE_INTELLIGENCE_CANARY_CLIENT_IDS`, et flag `TAKATAK_CREATIVE_INTELLIGENCE_ENABLED`, tous deux requis; l'API ad-level contrôle aussi client canari. Pas de clé/secrets client en browser ni de facturation, jamais wildcard; default OFF. Faire tests exact-head CI et revue GitHub avant fusion. Une fois l'artefact webhook Coolify livré, l'opérateur doit configurer un seul UUID client pilote directement sur Coolify (pas dans Git), contrôler Meta ads_read, tester deux tenants et /api/health/ready, ne pas déclarer la fonction 100 % LIVE prématurément. Suivi #299 et docs/TAKATAK_CREATIVE_INTELLIGENCE.md.
+
+---
+
+# Creative Intelligence — read-only creative gallery handoff 2026-11-15
+
+Signed GPT-6 @ ChatGPT. PR #311 Marketing API v25 pin merged main `ded63f7` after full 114-step CI success. New independent branch `feat/meta-creative-asset-preview-20261115` adds optional Meta creative thumbnail/title/body/video ID/CTA to the EXISTING read-only /ads response and displays up to 12 FR/EN cards. Safe Meta HTTPS image allowlist; no access tokens, arbitrary external sources, signed URL CSV export or media cache. Tests: `scripts/meta-creative-media-tests.ts`, modified Meta SSR and CSV regression tests included in `qa:social-meta-ads`. Existing server/public feature flags remain **OFF**. No production deploy, no real Meta app read or industry benchmark proof; requires full exact-head CI, owned-account OAuth/Meta field support, two-tenant isolation and verified served SHA before owner-approved enablement. Coordinate with `takatakca/foodhubca#105`, issue #299, and current main; do NOT treat sample mocks as production evidence.
+
+---
+
+# Meta Marketing API compatibility handoff — 2026-11-15
+
+Signed GPT-6 @ ChatGPT. M2 ad peer comparisons PR #307 merged main ee06da2 after exact 114-step green CI. Previous independent Marketing API version PR #310 diverged from that new main; successor branch `fix/meta-marketing-v25-current-main-20261115` replays only Meta Ads v25 API helper/account/insights/tests, adds v25 QA to the expanded M2 scripts, and preserves all M2 UI/WORKLOG changes. Graph OAuth for Pages/Instagram untouched. Full exact-head CI and authorized Meta Ads app test still required. Feature flags OFF; no 100% LIVE claim.
+
+---
+
+# Creative Intelligence M2 same-campaign peers — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. PR #303 merged main aa753e8; urgent hotfix PR #305 passed full 114-step CI and merged main 4349607. Feature is still disabled by server/build-time flags. This branch `feat/meta-ad-peer-comparison-main-20261115` derives from that verified main and adds descriptive per-campaign ad medians using only already loaded authorized `level=ad` metrics. No provider reads, paid behavior, cross-tenant pooling, industry claims or migrations; FR/EN and synthetic test coverage included. Release requires exact-head CI green, coordination board #105 and live operator acceptance; **NOT a deployed production feature**. Remaining Meta creative assets, attribution, image/video, external benchmark licenses and real account smoke detailed in `docs/TAKATAK_CREATIVE_INTELLIGENCE.md`.
+
+---
+
+# Creative Intelligence localization follow-up — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Active branch and PR remain `feat/meta-creative-intelligence-rebased-20261115` → draft PR #303. Added self-contained FR/EN selector for new M0/M1 Meta creative intelligence panels in subscribed Meta Ads; default French, English selectable, existing dashboard unaffected. Old PR #300 remains closed unmerged. Reconfirm last-head CI and real Meta account before promotion; feature flags are OFF; still no provider-connected production verification.
+
+---
+
+# TAKATAK Creative Intelligence — clean successor PR #303 — 2026-11-15
+
+Signed GPT-6 @ ChatGPT. Owner requests 100% integrated, tested and deployed. PR #300 was superseded and closed **without merge** because current main received unrelated Local Citation PR #301 and the old branch conflicted in WORKLOG. Its exact 17 Creative Intelligence files and all feature notes were replayed onto new `feat/meta-creative-intelligence-rebased-20261115` based on main `176966c4`, with all non-feature main files retained; the latest draft is https://github.com/takatakca/takatak-v1/pull/303. `WORKLOG.md` contains both independent histories. New CI run and live Meta verification required; flags default OFF; NO production deploy or 100% status claimed. Future work must resume #303, not reopen #300.
+
+---
+
+# Creative Intelligence safety and rollout continuation — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Owner directs full integrated delivery in existing TAKATAK-V1. Feature PR #300 now adds CSV export, incomplete metadata coverage detection and fail-closed throttle. Two explicit default-off flags in `.env.example` gate the new frontend and backend; intentionally NOT live. New synthetic CSV and gating tests run via `qa:social-meta-ads`. Source docs: `docs/TAKATAK_CREATIVE_INTELLIGENCE.md`; tracker #299; Google Drive Académie journal below. Latest CI must be rechecked at exact head before merge; old CI passes are not enough. Real Meta `ads_read` access, app approval, correct creative/asset metadata, multi-tenant live smoke, verified deployed SHA, multilingual UX and licensed external benchmark source are still required. Do not disclose provider secrets or claim 100% while blocked.
+
+---
+
+# Creative Intelligence M1 preview handoff — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Building on existing draft PR #300 for user-requested TAKATAK-V1 Creative Intelligence. Added `src/lib/social/analytics/meta-ad-creative-mapping.ts`, `src/lib/social/providers/meta-ads-insights.ts` bounded on-demand `fetchMetaAdsCreativeReport()`, private `/api/social/meta-ads/creatives`, and `MetaAdCreativeReportPanel` under the subscribed Meta Ads campaigns section. Request uses existing `ads_read` credential and server-side selected client/brand/ad account; no browser-set tenant/account ID. Bound 31-day requests, 3 pages/100 rows per API edge, 20-second process-local cooldown, manual-only load; display 50 ads max, no dynamic asset-level or ROI claims. Missing data stays missing. Existing billing and subscription exemption remain untouched.
+
+Validation required before merge: exact-head CI `npm run qa:social-meta-ads`, typecheck/lint/build, real owned Meta account showing ads_read and actual creative metadata, two-client isolation regression, mobile UI. Feature is NOT deployed and current integration is NOT a complete industry benchmark solution. Live account review, true asset/media-level signals, third-party benchmark licensing, bilingual production UI and operational release still pending. Work recorded in TAKATAK Académie Doc https://docs.google.com/document/d/1qVAmcgQT1Ts0LqRHzfHfwUl4kb83rmK6t3NImkA6CTw/edit ; issue #299, draft PR #300. NOTE: requested autonomous hourly automation couldn't be created because account has 5 active scheduled tasks.
+
+---
+
+# TAKATAK Creative Intelligence M0 handoff — 2026-11-15
+
+Signed: GPT-6 @ ChatGPT. Owner wants Motion-style creative benchmarking inside TAKATAK.ca. Issue #299; draft PR #300; branch `feat/meta-creative-benchmarks-foundation-20261115`. This branch intentionally implements only account-internal **campaign** comparisons using existing Meta Ads account/campaign analytics, not creative-level benchmarks or cross-client industry statistics. No schema, authorization, OAuth, billing, synchronization or production changes. New pure calculator + synthetic tests + panel under the subscribed Meta Ads Campaigns section. Read `docs/TAKATAK_CREATIVE_INTELLIGENCE.md` for M1 true creative implementation, rights/permission constraints and explicit release gates.
+
+Drive journal: https://docs.google.com/document/d/1qVAmcgQT1Ts0LqRHzfHfwUl4kb83rmK6t3NImkA6CTw/edit ; CI GitHub Actions run 43753511919 in progress at last check.
+
+Next: review branch CI, run `npm run qa:social-meta-ads`, typecheck/lint, test with a permitted owned Meta account; coordinator chooses merge/release. **Not deployed / no live account validation**. Never pool one client's Meta data with another's. Existing Social/Studio branches and release coordinator unaffected.
+
+---
+
+# Bluesky publishing adapter handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC, side session). Builds on the
+merged Facebook publishing engine (PR #258, main `dea83395`); read
+`docs/SOCIAL_PUBLISHING_ENGINE.md` first.
+
+- Branch `claude/awesome-poincare-bf9729` from main `dea83395`, PR #293. No schema change, no new
+  dependency (`@atproto/oauth-client-node` already in the lockfile), no provider spend.
+- Delivered: `src/lib/social/publishing/bluesky-publisher.ts` (text post with link facets,
+  verify by record URI, reconcile by author feed, 300-grapheme / 3,000-byte cap, injectable
+  transport, no token handling); `publication-jobs.ts` provider switch (`meta` | `bluesky`
+  receipts, Bluesky credential = DID + connected connection with `atproto transition:generic`,
+  DPoP session restored from the encrypted `BlueskyOAuthStore`, SDK imported lazily);
+  `publication-model.ts` platform map, grapheme helpers, bilingual labels; capability profile
+  Bluesky `publish`/`schedule` available; `social-connection-data.ts` counts the session store
+  as the Bluesky credential; publish buttons shown for Bluesky posts;
+  `npm run qa:social-publishing` 36 checks (14 new) green; `npm run typecheck` green.
+- Not done: live Bluesky publication (owner step: connect an owned account, approve and
+  publish one test post, confirm the `at://` URI opens on bsky.app); image blobs and link-card
+  embeds; `chooseHandoffAccount` still prefers Facebook Pages for Studio handoffs; the first
+  live Facebook post from PR #258 is also still pending.
+- Rules kept: V1 identity/billing authority, existing entitlement gates, no merge/deploy
+  claimed, nothing secret in the board or this file.
+# Instagram publishing handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Builds on PR #258 (merged at
+`dea83395`). Read `docs/SOCIAL_PUBLISHING_ENGINE.md` ("Instagram" section) first.
+
+- Branch `claude/vigilant-panini-3acb80` → PR #294, from main `69837d2a`. No schema change,
+  no new dependency, no provider spend, tokens never in URLs or logs.
+- Delivered: `instagram_publishing` scope set and `startInstagramPublishingAuthorization`
+  (incremental authorization on the existing Instagram Login connection, selected account
+  preserved) with `POST /api/social/connections/[connectionId]/instagram/publishing` and a
+  "Grant publishing" button; `src/lib/social/publishing/instagram-publisher.ts` (container →
+  bounded status poll → `media_publish` → permalink, reconcile by caption since attempt start,
+  Meta error classification); `publication-model.ts` / `publication-jobs.ts` extended additively
+  for `platform = "instagram"` (`PUBLICATION_TARGETS` map, `resolvePublishTarget` switch,
+  `media_required` block reason, 2,200-character caption limit); capability profile reports
+  Instagram publish/schedule as `available` / `missing_scope` (action `grant_scope`) /
+  `select_account`; `npm run qa:social-publishing` now 36 checks, including worker dispatch
+  with a real encrypted credential under a test key for both Facebook and Instagram.
+- Fixed in passing: publication jobs stored `Job.provider = "meta"`, which is not a value of
+  the `Provider` enum; they now store `internal` like the Facebook Page sync job.
+- Not done: Meta app review of `instagram_business_content_publish` (owner step; until
+  approved only app testers can grant it), first live Instagram post, browser QA of the
+  Grant publishing button, Studio handoff defaulting to Instagram (explicit account choice
+  works), media hosting (the post must already carry one public https media URL).
+- Exact next step: owner submits the permission for app review or adds a tester account,
+  presses Grant publishing on the Instagram connection, approves one test post with one
+  public image URL and presses Publish now; confirm the receipt's media id and permalink on
+  the account. Record in WORKLOG and the Drive dossier. Then Threads/Bluesky adapters on the
+  same contract.
+
+
+---
+
+# Scheduled & published view handoff — 2026-11-14
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Follows the merged
+PR #258 (Facebook Page publishing engine, main `dea83395`).
+
+- Branch `p1/scheduled-published-view-20261113` → PR #292: calendar tab
+  "Scheduled & published" grouped by needs-attention / publishing / upcoming /
+  published with receipts, provider permalinks and inline publish, schedule and
+  cancel actions; chip markers on the week grid. No schema change.
+- Checks: `npm run qa:social-publishing` 23 pass; typecheck clean for changed files.
+- Parallel sessions (started by the owner on 2026-11-13, restarted after the
+  usage limit on 2026-11-14): Bluesky adapter, Instagram adapter, Studio PR #256
+  hardening. Each opens its own PR; the two adapters both touch
+  `src/lib/social/publishing/publication-jobs.ts`, so merge them one at a time.
+- Still owner steps: Coolify scheduled task calling `GET /api/cron/social-sync-jobs`
+  with the `CRON_SECRET` bearer every minute, and the first live Facebook Page
+  post to turn the engine VERIFIED LIVE. Production deploy stays manual and gated.
+
+---
+
+# Social publishing engine handoff — 2026-11-06
+
+Signed: Claude Fable 5.1 @ Claude Code desktop (owner PC). Owner directive of
+2026-11-06 (P0: Social Manager + Studio, Metricool-level). Read
+`docs/SOCIAL_STUDIO_GAP_ASSESSMENT_2026-11-06.md` (current state with evidence) and
+`docs/SOCIAL_PUBLISHING_ENGINE.md` (design, rules, operations) first.
+
+- Branch `p0/social-publishing-engine-20261106` from main `52290cda`. No schema change.
+- Delivered: approval decisions, durable publication jobs on the existing `Job` model,
+  Facebook Page Graph adapter (feed/photo, verify, reconcile), publish-now / schedule /
+  cancel / receipt API, cron and ops-worker ticks, My tasks and Posts actions,
+  `npm run qa:social-publishing` (20 checks) in CI.
+- Not done: live Facebook publication (owner step on an authorized Page), production
+  cron trigger on Coolify, real-database lease test, other networks' publishing,
+  Studio PR #256 fixes listed in the gap assessment, FR copy on legacy Social pages.
+- Exact next step: owner enables the cron trigger and publishes one test post; then
+  P0-D (Studio draft → selected Facebook account → approve → publish) and the
+  per-connection capability profile (P0-B).
+- Rules kept: V1 identity/billing authority, `SOCIAL_CONNECTION_SETUP_CLIENT_IDS`
+  through existing gates, X paid API off, no dependency installation outside the
+  existing lockfile, no merge/deploy claimed.
+
+---
+
 # TAKATAK V1 — Agent Handoff
 
 ## 2026-11-12 — Claude (Anthropic): email code or Google only on takatak.ca
@@ -205,3 +377,16 @@ This scope is independent from the SEO handoff below; do not overwrite the SEO a
 - **Current task:** designated V1 coordinator reviews PR #196. Next coding agent should inspect latest CI first, correct any failing checks, and only act on authorized feature branches. No unapproved V1 main merges, server secrets or production migrations.
 - **Access and environment blockers:** Coolify HTTPS origin/app UUID/scoped token + health endpoint via GitHub environment `production`; owner-approved existing/non-billable PostgreSQL applying migration 0001→0004; matching V1 service-token signing key. Central TAKATAK identity must remain unchanged and tenant data isolated.
 - **Exact next action:** verify latest PR #196 CI after this handoff docs commit, hand green PR to coordinator, then conduct disposable-site receipt and cross-tenant staging tests once authorized infrastructure is running. Do not claim legal erasure certification or successful production deployment. An external coding-agent restart orchestrator was not installed or verified.
+
+## 2026-11-14 — Studio PR #256 audit hardening (PR #295)
+
+Claude Fable 5.1 (Claude Code desktop side session). Branch `fix/studio-audit-hardening-20261113`, cut from `feat/takatakstudio-v1-workspace-20261105` with `origin/main` dea83395 merged (WORKLOG/handoff conflicts: both sides kept). PR #295 targets the #256 branch so #256 stays the integration point. Flags `TAKATAK_STUDIO_ENABLED` / `TAKATAK_STUDIO_AGENT_ENABLED` unchanged (off). No schema migration, no dependency install, no deploy, no live verification.
+
+- **Done:** audit items a–i. Pure policy in `src/lib/studio/agent-jobs.ts` (job whitelist, blocking failures, operator reconcile metadata), `src/lib/studio/limits.ts` (2 open plans, 50 projects/24 h, balance precheck, in-memory limiter), `src/lib/studio/worker.ts` (`dispatchedAt` before the provider call, expired-lease recovery after 60 s grace, non-billable refusal list), `src/lib/studio/i18n.ts` (FR/EN strings, server-code mapping). Routes: `GET /api/studio/projects` sanitized + daily cap on POST, `GET|POST /api/cron/studio-agent` with error category, `POST /api/studio/generate` limiter, new `POST /api/studio/agent/reconcile` (`manage_jobs`). UI: language toggle, non-JSON guard, mapped errors, downloads via `exportableStudioDraft`, sanitized job shape.
+- **Evidence on 50cb7aa4:** `node --experimental-strip-types --test scripts/studio-*-tests.mjs` 86 pass / 0 fail across 11 files; `npx tsc --noEmit` has no Studio errors; eslint on changed files has 0 errors. CI step now runs every `scripts/studio-*-tests.mjs`. `scripts/studio-ui-browser-check.mjs` fixture updated but not run (Playwright absent locally).
+- **Known, not mine:** typecheck errors after the main merge in `src/lib/ai-providers/store.ts` (missing local `@anthropic-ai/sdk`), `scripts/inventory-*` and `src/lib/inventory/label-*` / `tools/etiquettes-web` (missing local `pdf-lib`), `src/app/api/team/invitations/route.ts` (Permission vs PermissionKey). `studioEnabled` now takes `Record<string, string | undefined>` because `process.env` failed the weak-type check on every Studio route after the merge.
+- **Next exact action:** coordinator reviews #295, merges into `feat/takatakstudio-v1-workspace-20261105`, then re-reads #256 as a whole. Run the browser check where Playwright exists. Docs: `docs/studio/COST_CONTROLS.md` (limits and recovery section) and `docs/studio/TAKATAKSTUDIO_INTEGRATION.md` (routes list) describe the new behaviour.
+
+## 2026-11-05 — Studio premium workspace and cost-control continuation
+
+STUDIO-ENGINE — Codex. Continue draft PR #256 from saved `48d028a`; latest scope/evidence in `docs/studio/PREMIUM_COST_SAFETY_CHECKPOINT.md` and `docs/studio/COST_CONTROLS.md`. Premium rail/mobile drawer, server-searched tenant Library, transactional scene/handoff checks, one-attempt worker holds, stable request/model/token evidence and bounded retail costPlan quotes. Source remains disabled, with no schedule, deployment, migration or provider spend. Preserve KnowledgeAI #194/#195. 70 focused V1 checks plus existing TAK-TAK routing/trial suites pass using existing tools; actual PostgreSQL/authenticated tenant races and full framework checks remain unverified. Companion Academy #2 teaches manual SONGER, recovery and retail/supplier economics. Exact source receipts follow in the Studio dossier and PR descriptions.

@@ -50,6 +50,11 @@ def load_config(path):
         if host in seen:
             raise ValueError("duplicate hostname")
         seen.add(host)
+        path = site.get("path", "/")
+        if (type(path) is not str or not 1 <= len(path) <= 200 or not path.startswith("/")
+                or path.startswith("//") or any(c in path for c in " \t\r\n?#\\")):
+            raise ValueError("path must be one absolute HTTP path")
+        site["path"] = path
         if "domain_asset_id" in site or "sync_key_env" in site:
             uuid.UUID(site.get("domain_asset_id", ""))
             key_env = site.get("sync_key_env", "")
@@ -73,7 +78,10 @@ class PinnedHTTPS(http.client.HTTPSConnection):
             raise
 
 
-def probe(hostname, resolver=socket.getaddrinfo, connection=PinnedHTTPS):
+def probe(hostname, resolver=socket.getaddrinfo, connection=PinnedHTTPS, path="/"):
+    if (type(path) is not str or not path.startswith("/") or path.startswith("//")
+            or any(c in path for c in " \t\r\n?#\\")):
+        return False, None, 0, "invalid_path"
     started = time.monotonic()
     conn = None
     try:
@@ -83,7 +91,7 @@ def probe(hostname, resolver=socket.getaddrinfo, connection=PinnedHTTPS):
                                 or ipaddress.ip_address(ip).is_multicast for ip in addresses):
             return False, None, 0, "blocked_address"
         conn = connection(hostname, addresses[0])
-        conn.request("GET", "/", headers={"User-Agent": "TAKATAK-Monitor/0.1", "Connection": "close"})
+        conn.request("GET", path, headers={"User-Agent": "TAKATAK-Monitor/0.1", "Connection": "close"})
         response = conn.getresponse()
         status = response.status
         # No redirects followed, no response body downloaded/stored.
@@ -245,6 +253,37 @@ def snapshot_payload(db, site, at, result, interval):
             "latencyMs": result[2], "reason": result[3], "months": months}
 
 
+def smtp_configured(env=os.environ):
+    return all(env.get(key) for key in ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "MONITOR_FROM", "MONITOR_TO"))
+
+
+def french_daily_report(db, config, now, env=os.environ):
+    """Idempotent French status. It never claims an email was delivered."""
+    lines = [
+        "# TAKATAK GUARDIAN — rapport quotidien",
+        "",
+        f"Heure UTC : {now.isoformat()}",
+        "",
+        "| Hôte | Chemin | État | Échecs consécutifs |",
+        "| --- | --- | --- | --- |",
+    ]
+    for site in config["sites"]:
+        row = db.execute(
+            "SELECT stable, failures FROM state WHERE host=?",
+            (site["hostname"],),
+        ).fetchone()
+        stable, failures = row or ("inconnu", 0)
+        lines.append(f"| {site['hostname']} | {site.get('path', '/')} | {stable} | {failures} |")
+    pending = db.execute("SELECT COUNT(*) FROM outbox WHERE sent=0").fetchone()[0]
+    lines.extend(["", f"Alertes en file, non encore confirmées livrées : {pending}."])
+    if smtp_configured(env):
+        lines.append("Destination SMTP présente. Une livraison n'est confirmée que lorsque l'envoi marque la file comme envoyée.")
+    else:
+        lines.append("Destination d'alerte : non configurée. Aucun courriel de test n'a été envoyé.")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def run_cycle(db, config, output, probe_fn=probe, dashboard_fn=dashboard_request):
     for site in config["sites"]:
         if site.get("domain_asset_id"):
@@ -253,13 +292,16 @@ def run_cycle(db, config, output, probe_fn=probe, dashboard_fn=dashboard_request
                 print(json.dumps({"host": site["hostname"], "monitoring": "awaiting_authorization"}), flush=True)
                 continue  # Failed/expired payment or unavailable authorization never enables paid checks.
         at = int(time.time())
-        result = probe_fn(site["hostname"])
+        result = probe_fn(site["hostname"], path=site.get("path", "/"))
         record(db, site["hostname"], at, result, config["interval_seconds"])
         if site.get("domain_asset_id"):
             if not dashboard_fn(site, snapshot_payload(db, site, at, result, config["interval_seconds"])):
                 print(json.dumps({"host": site["hostname"], "dashboard_sync": "retry_next_cycle"}), flush=True)
     deliver(db)
     now = dt.datetime.now(UTC)
+    report_dir = Path(output)
+    report_dir.mkdir(parents=True, exist_ok=True)
+    (report_dir / "daily-fr.md").write_text(french_daily_report(db, config, now), encoding="utf-8")
     previous = (now.replace(day=1) - dt.timedelta(days=1)).strftime("%Y-%m")
     for month in (previous, now.strftime("%Y-%m")):
         report(db, month, Path(output) / f"{month}.csv", config)
@@ -292,8 +334,7 @@ def main():
             pending = db.execute("SELECT COUNT(*) FROM outbox WHERE sent=0").fetchone()[0]
             print(json.dumps({"last_cycle_utc": dt.datetime.now(UTC).isoformat(),
                               "checked": len(config["sites"]), "pending_alerts": pending,
-                              "smtp_configured": all(os.environ.get(key) for key in
-                                  ("SMTP_HOST", "SMTP_USER", "SMTP_PASSWORD", "MONITOR_FROM", "MONITOR_TO"))}), flush=True)
+                              "smtp_configured": smtp_configured()}), flush=True)
             if args.command == "once":
                 break
             time.sleep(max(1, config["interval_seconds"] - (time.monotonic() - started)))

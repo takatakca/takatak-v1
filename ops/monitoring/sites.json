@@ -1,8 +1,12 @@
 {
   "interval_seconds": 300,
   "sites": [
-    {
-      "hostname": "example.com"
-    }
+    {"hostname": "takatak.ca", "path": "/api/health/ready"},
+    {"hostname": "www.takatak.ca", "path": "/"},
+    {"hostname": "foodhub.on2go.ca", "path": "/api/health"},
+    {"hostname": "mimt.ca", "path": "/"},
+    {"hostname": "api.mimt.ca", "path": "/readyz"},
+    {"hostname": "besoinavocat.ca", "path": "/"},
+    {"hostname": "portail.besoinavocat.ca", "path": "/"}
   ]
 }

@@ -491,7 +491,7 @@ export function HostingAccountsOverview({
           <h3 className="text-sm font-semibold text-slate-900">Quick Actions</h3>
           <ul className="mt-2">
             {[
-              { label: "cPanel Login", href: null, icon: Monitor },
+              { label: "Domain Provider Portal", href: "/dashboard/web-hosting/domain-portal", icon: Monitor },
               { label: "File Manager", href: null, icon: HardDrive },
               { label: "Backup Manager", href: "/dashboard/web-hosting/backups", icon: Database },
               { label: "Email Accounts", href: "/dashboard/hosting/email", icon: Mail },

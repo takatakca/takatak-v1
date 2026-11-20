@@ -2,6 +2,29 @@ import "server-only";
 
 import { getPrisma } from "@/lib/db/prisma";
 import { ServiceError } from "@/lib/services/service-error";
+import {
+  describeConnectionCapabilities,
+  type ConnectionCapabilityProfile,
+} from "@/lib/social/connections/capability-profile";
+
+/**
+ * Whether a connection holds a usable secret. Most providers store a
+ * SocialCredential row; Bluesky keeps its DPoP session in the encrypted
+ * BlueskyOAuthStore and marks that on the connection metadata.
+ */
+function connectionHasCredential(connection: {
+  provider: string;
+  credential: unknown;
+  metadata: unknown;
+}): boolean {
+  if (connection.credential !== null && connection.credential !== undefined) return true;
+  if (connection.provider !== "bluesky") return false;
+  const metadata =
+    connection.metadata && typeof connection.metadata === "object" && !Array.isArray(connection.metadata)
+      ? (connection.metadata as Record<string, unknown>)
+      : {};
+  return metadata.sessionStorage === "encrypted_bluesky_oauth_store";
+}
 
 export type SocialConnectionAccountSummary = {
   id: string;
@@ -37,6 +60,8 @@ export type SocialConnectionSummary = {
   lastErrorMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Honest, provider-aware description of what this connection can do today. */
+  capabilities: ConnectionCapabilityProfile;
 };
 
 export async function getSocialConnectionsData(
@@ -79,6 +104,7 @@ export async function getSocialConnectionsData(
         refreshTokenExpiresAt: true,
         lastErrorCode: true,
         lastErrorMessage: true,
+        metadata: true,
         createdAt: true,
         updatedAt: true,
 
@@ -115,6 +141,8 @@ export async function getSocialConnectionsData(
             status: true,
             accessStatus: true,
             profileImageUrl: true,
+            accountType: true,
+            metadata: true,
           },
         },
       },
@@ -148,7 +176,7 @@ export async function getSocialConnectionsData(
       brandStatus:
         connection.businessBrand.status,
       hasCredential:
-        connection.credential !== null,
+        connectionHasCredential(connection),
       accountCount:
         connection.socialAccounts.length,
 
@@ -217,6 +245,31 @@ export async function getSocialConnectionsData(
 
       updatedAt:
         connection.updatedAt.toISOString(),
+
+      capabilities: describeConnectionCapabilities({
+        provider: connection.provider,
+        status: connection.status,
+        scopes: connection.scopes,
+        hasCredential: connectionHasCredential(connection),
+        accessTokenExpiresAt: connection.accessTokenExpiresAt?.toISOString() ?? null,
+        refreshTokenExpiresAt: connection.refreshTokenExpiresAt?.toISOString() ?? null,
+        lastErrorCode: connection.lastErrorCode,
+        externalSubjectId: connection.externalSubjectId,
+        accounts: connection.socialAccounts.map((account) => {
+          const metadata =
+            account.metadata && typeof account.metadata === "object" && !Array.isArray(account.metadata)
+              ? (account.metadata as Record<string, unknown>)
+              : {};
+          return {
+            platform: account.platform,
+            status: account.status,
+            accessStatus: account.accessStatus,
+            accountType: account.accountType,
+            canPublish: typeof metadata.canPublish === "boolean" ? metadata.canPublish : null,
+          };
+        }),
+        now: new Date(),
+      }),
     }),
   );
 }

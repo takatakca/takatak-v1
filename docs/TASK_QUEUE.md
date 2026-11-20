@@ -4,6 +4,9 @@
 Review current main, AGENTS, WORKLOG, active PRs and foodhubca#105 before changing files. Respect active Social/Studio ownership. Reconcile reviewed changes on a separate branch, preserve newer source and all agent notes, run focused and complete CI, merge only the reviewed tested revision, then verify the actual runtime SHA and readiness. Leave signed before/during/after GitHub and Drive notes.
 
 ## Current next actions
+
+Guardian, 2026-11-07: keep the public smoke on its branch until CI is green. The owner, not an agent, attaches `www.takatak.ca` in Coolify and replaces the Traefik default certificate. Do not change the release-workflow concurrency groups in this audit; the release coordinator still owns that cancellation behavior. No test account was available, so sign-in, dashboard contents, and payments remain unverified.
+
 Finish integration checks, publish the review branch and observe Node22 CI. Reconcile any concurrent main changes before release. Let Coolify finish its existing serial queue; verify the resulting production SHA instead of starting a competing deployment. Drafts and integration/migration dependencies remain explicit separate work; no paid activation, social publication, DNS or live migration is implied.
 
 Current release checkpoint — 2026-11-07T08:31:19.480459+00:00. Signed: Codex @ ChatGPT Work. This current checkpoint supersedes dated release-status assertions below; all prior main notes are preserved. Tracking: https://github.com/takatakca/takatak-v1/issues/259
@@ -52,3 +55,14 @@ The general V1 backlog remains `docs/DEV-TODO.md`. This file tracks the addition
 - [ ] Designated V1 coordinator reviews/merges PR #196, deploys approved V1 release and validates SEO staging/production receipts; not delegated to this development agent.
 - [ ] Owner approves existing/non-billable SEO PostgreSQL and `sql/0004_site_deletion_receipts.sql` after 0001→0003; run manager/viewer/client B negative tests and disposable staging site deletion.
 - [ ] Agree a written retention policy for SEO deletion receipts, backup purge/subject access and cross-product erasure boundaries before regulated use.
+
+
+## AI File Organizer — real TAKATAK-V1 release path (2026-11-16)
+- [x] Code: manager-only bilingual Studio settings/consent preview, existing owner/role/billing guard and CI-tested pure rules.
+- [x] Code: tenant-limited audited filing proposal/decision metadata ledger (PR #331 integrated at `c6b6bbcd`), flag OFF.
+- [ ] Review, test and merge native Studio filing inbox with Proposer / Approuver / Modifier / Refuser / Annuler and post-cancellation undo, branch `feat/ai-file-organizer-native-inbox-20261116`.
+- [ ] Real protected production database backup + verified migration manifest for organizer policy, consent gate and approval ledger; no automatic migration or new table claim until actual production evidence.
+- [ ] Provision dedicated private files bucket only with actual tenant RLS, upload limits, scanner/quarantine, retention/export/delete and source preservation; test on signed client A/client B.
+- [ ] Connect bounded Ollama classification only with provider-specific consent and cost/credit caps, zero auto-move on failed classification; implement approvals as metadata association only.
+- [ ] Review existing billing USD20/month add-on product/tax/trial/refund/expired status, test webhook idempotency and enforce server entitlements; no charges until live proof and owner payment launch approval.
+- [ ] Verify authentic production served commit + real client journeys/undo, then move flag from OFF only for the approved canary workspace.

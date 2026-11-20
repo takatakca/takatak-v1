@@ -12,6 +12,8 @@ import { isUuid } from "@/lib/validation/common";
 export async function sendSavedOutputToApproval(formData: FormData) {
   const outputId = String(formData.get("outputId") ?? "").trim();
   if (!isUuid(outputId)) redirect("/dashboard/ai-studio/saved?handoff=refused");
+  const requestedAccount = String(formData.get("socialAccountId") ?? "").trim();
+  if (requestedAccount && !isUuid(requestedAccount)) redirect("/dashboard/ai-studio/saved?handoff=account_unavailable");
 
   const { access } = await getServerAccessContext();
   const scope = await resolveDataScope(access);
@@ -26,6 +28,7 @@ export async function sendSavedOutputToApproval(formData: FormData) {
     outputId,
     clientIds: scope.clientIds,
     profileId: profileId && isUuid(profileId) ? profileId : null,
+    socialAccountId: requestedAccount || null,
   });
 
   if (result.code === "sent" || result.code === "already") {

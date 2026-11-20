@@ -20,7 +20,9 @@ import {
   X,
 } from "lucide-react";
 
+import { ConnectionCapabilities } from "@/components/social/connection-capabilities";
 import { Badge } from "@/components/ui/badge";
+import type { ConnectionCapabilityProfile } from "@/lib/social/connections/capability-profile";
 import {
   canAddAnotherAccount,
   canCancelPendingConnection,
@@ -98,6 +100,7 @@ export type SocialAccountsConnection = {
   lastErrorMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  capabilities?: ConnectionCapabilityProfile;
 };
 
 type Notice = {
@@ -750,6 +753,95 @@ export function SocialAccountsManager({
         tone: "error",
         message:
           "A network error occurred while continuing authorization.",
+      });
+    } finally {
+      if (!redirected) {
+        connectInFlightRef.current = false;
+        setBusyConnectionId(null);
+        setBusyProvider(null);
+      }
+    }
+  }
+
+  async function grantInstagramPublishing(
+    connection: SocialAccountsConnection,
+  ) {
+    if (!canManage) {
+      setNotice({
+        tone: "error",
+        message:
+          "You do not have permission to manage social connections.",
+      });
+      return;
+    }
+
+    if (
+      connectInFlightRef.current ||
+      busyProvider !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
+    connectInFlightRef.current = true;
+    setBusyConnectionId(connection.id);
+    setBusyProvider(connection.provider as ProviderKey);
+    setNotice(null);
+
+    let redirected = false;
+
+    try {
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(
+          connection.id,
+        )}/instagram/publishing`,
+        {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            returnPath: "/dashboard/social/accounts",
+          }),
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: "error",
+          message:
+            result.message ??
+            "Instagram publishing access could not be requested.",
+        });
+        return;
+      }
+
+      const authorizationUrl =
+        result.authorization?.authorizationUrl;
+
+      if (authorizationUrl) {
+        redirected = true;
+        window.location.assign(authorizationUrl);
+        return;
+      }
+
+      setNotice({
+        tone: "info",
+        message:
+          result.message ??
+          "The request was prepared, but no authorization URL is available.",
+      });
+
+      router.refresh();
+    } catch {
+      setNotice({
+        tone: "error",
+        message:
+          "A network error occurred while requesting Instagram publishing access.",
       });
     } finally {
       if (!redirected) {
@@ -1504,6 +1596,10 @@ export function SocialAccountsManager({
                             }
                           </p>
                         ) : null}
+
+                        {connection.capabilities ? (
+                          <ConnectionCapabilities profile={connection.capabilities} />
+                        ) : null}
                       </div>
 
                       {canManage &&
@@ -1552,6 +1648,35 @@ export function SocialAccountsManager({
                               : "Cancel pending"}
                           </button>
                         </div>
+                      ) : null}
+
+                      {canManage &&
+                      connection.provider === "instagram" &&
+                      connection.status === "connected" &&
+                      connection.capabilities?.capabilities.some(
+                        (capability) =>
+                          capability.key === "publish" &&
+                          capability.action === "grant_scope",
+                      ) ? (
+                        <button
+                          type="button"
+                          disabled={
+                            disconnecting ||
+                            busyProvider !== null
+                          }
+                          onClick={() =>
+                            void grantInstagramPublishing(
+                              connection,
+                            )
+                          }
+                          title="Requests instagram_business_content_publish on this connection. The account stays connected."
+                          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-indigo-200 px-3.5 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {busyConnectionId === connection.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : null}
+                          Grant publishing
+                        </button>
                       ) : null}
 
                       {canManage &&

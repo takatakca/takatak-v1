@@ -1,0 +1,417 @@
+// Social publishing engine — pure state model (no database, no network).
+//
+// One SocialPost is one delivery target (one platform, one connected account).
+// Its durable publication receipt lives in SocialPost.metadata.publication and
+// is the only evidence that may mark a post `published`. A Job row
+// (type `approve_post`, metadata.source = SOCIAL_PUBLICATION_JOB_SOURCE) is the
+// durable queue entry with lease/attempt columns. No schema change.
+//
+// This module is imported by client components for labels and types, so it
+// must stay free of Node-only imports; hashing lives in publication-jobs.ts.
+
+export const SOCIAL_PUBLICATION_JOB_SOURCE = "social_publication_v1" as const;
+export const SOCIAL_PUBLICATION_RECEIPT_VERSION = 1 as const;
+export const SOCIAL_PUBLICATION_MAX_ATTEMPTS = 3;
+export const SOCIAL_PUBLICATION_LEASE_MS = 120_000;
+export const SOCIAL_PUBLICATION_CAPTION_LIMIT = 8_000;
+/** Facebook Page feed posts accept up to 63,206 characters; keep a product cap. */
+export const FACEBOOK_FEED_MESSAGE_LIMIT = 8_000;
+/** Instagram captions accept up to 2,200 characters. */
+export const INSTAGRAM_CAPTION_LIMIT = 2_200;
+/** Bluesky posts (app.bsky.feed.post) accept at most 300 graphemes and 3,000 UTF-8 bytes. */
+export const BLUESKY_POST_GRAPHEME_LIMIT = 300;
+export const BLUESKY_POST_BYTE_LIMIT = 3_000;
+/** Reconciliation looks this far back before the attempt start for a matching post. */
+export const SOCIAL_RECONCILE_LOOKBACK_MS = 10 * 60_000;
+
+export type PublicationState =
+  | "sending"
+  | "confirmed"
+  | "failed"
+  | "uncertain"
+  | "needs_reconnect";
+
+export type PublicationErrorCategory =
+  | "permission_denied"
+  | "authorization_expired"
+  | "invalid_content"
+  | "rate_limited"
+  | "provider_unavailable"
+  | "timeout"
+  | "not_configured"
+  | "unknown";
+
+/** Provider connections that own a publishing adapter. */
+export type PublicationProvider = "meta" | "instagram" | "bluesky";
+/** SocialPost.platform values that can be published automatically. */
+export type PublicationPlatform = "facebook" | "instagram" | "bluesky";
+
+const PLATFORM_PROVIDER: Record<PublicationPlatform, PublicationProvider> = {
+  facebook: "meta",
+  instagram: "instagram",
+  bluesky: "bluesky",
+};
+
+/** The provider connection a publishable platform is delivered through, or null. */
+export function publicationProviderForPlatform(platform: string): PublicationProvider | null {
+  return platform === "facebook" || platform === "instagram" || platform === "bluesky" ? PLATFORM_PROVIDER[platform] : null;
+}
+
+export function isPublishablePlatform(platform: string): platform is PublicationPlatform {
+  return publicationProviderForPlatform(platform) !== null;
+}
+
+/** Caption limit enforced before dispatch, per platform. */
+export function publicationCaptionLimit(platform: PublicationPlatform): number {
+  return platform === "instagram" ? INSTAGRAM_CAPTION_LIMIT : FACEBOOK_FEED_MESSAGE_LIMIT;
+}
+
+/** Public https media URLs stored on the post (at most one is used today). */
+export function readPublicationMediaUrls(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string" && /^https:\/\//.test(item)).slice(0, 1);
+}
+
+const VIDEO_URL = /\.(mp4|mov|m4v)(\?[^\s]*)?$/i;
+
+/** Whether a media URL should be published as a video (Instagram Reel). */
+export function isVideoMediaUrl(url: string): boolean {
+  return VIDEO_URL.test(url.trim());
+}
+
+export type PublicationReceipt = {
+  version: typeof SOCIAL_PUBLICATION_RECEIPT_VERSION;
+  attemptId: string;
+  jobId: string | null;
+  state: PublicationState;
+  provider: PublicationProvider;
+  platform: PublicationPlatform;
+  targetExternalId: string;
+  contentHash: string;
+  startedAt: string;
+  confirmedAt: string | null;
+  remotePostId: string | null;
+  permalinkUrl: string | null;
+  errorCategory: PublicationErrorCategory | null;
+  errorMessage: string | null;
+  attempts: number;
+};
+
+export type SocialPostLike = {
+  status: string;
+  scheduledAt: Date | null;
+  publishedAt: Date | null;
+  caption: string;
+  platform: string;
+  socialAccountId: string | null;
+  metadata: unknown;
+  /** Optional: Instagram requires one public https media URL. */
+  mediaUrls?: unknown;
+};
+
+export const record = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+
+const iso = (value: unknown): value is string =>
+  typeof value === "string" &&
+  value.length <= 64 &&
+  Number.isFinite(Date.parse(value));
+
+const STATES: PublicationState[] = [
+  "sending",
+  "confirmed",
+  "failed",
+  "uncertain",
+  "needs_reconnect",
+];
+
+const CATEGORIES: PublicationErrorCategory[] = [
+  "permission_denied",
+  "authorization_expired",
+  "invalid_content",
+  "rate_limited",
+  "provider_unavailable",
+  "timeout",
+  "not_configured",
+  "unknown",
+];
+
+/** Canonical caption used for hashing and for the provider request. */
+export function canonicalCaption(caption: string): string {
+  return caption.replace(/\r\n/g, "\n").trim();
+}
+
+type GraphemeSegmenter = { segment: (input: string) => Iterable<unknown> };
+type GraphemeSegmenterCtor = new (locale?: string, options?: { granularity: "grapheme" }) => GraphemeSegmenter;
+
+/** User-perceived characters (what Bluesky counts), with a code-point fallback. */
+export function countGraphemes(text: string): number {
+  const SegmenterCtor = (Intl as unknown as { Segmenter?: GraphemeSegmenterCtor }).Segmenter;
+  if (SegmenterCtor) {
+    let count = 0;
+    for (const _segment of new SegmenterCtor(undefined, { granularity: "grapheme" }).segment(text)) count += 1;
+    return count;
+  }
+  return Array.from(text).length;
+}
+
+export function utf8ByteLength(text: string): number {
+  return new TextEncoder().encode(text).length;
+}
+
+/**
+ * The exact text sent to Bluesky: the canonical caption, plus the link on its
+ * own line when the caption does not already contain it. Used for the request,
+ * the length check and reconciliation so all three agree.
+ */
+export function composeBlueskyPostText(input: { caption: string; link?: string | null }): string {
+  const caption = canonicalCaption(input.caption);
+  const link = input.link?.trim() ?? "";
+  if (!link || caption.includes(link)) return caption;
+  return caption ? `${caption}\n\n${link}` : link;
+}
+
+export function blueskyTextWithinLimits(text: string): boolean {
+  return countGraphemes(text) <= BLUESKY_POST_GRAPHEME_LIMIT && utf8ByteLength(text) <= BLUESKY_POST_BYTE_LIMIT;
+}
+
+/** The optional https link stored on a post (SocialPost.metadata.link). */
+export function readPostLink(metadata: unknown): string | null {
+  const link = record(metadata).link;
+  return typeof link === "string" && /^https:\/\/[^\s]{1,2000}$/.test(link) ? link : null;
+}
+
+/** Canonical bytes that identify one publication's content (hashed server-side). */
+export function publicationContentMaterial(input: {
+  caption: string;
+  link?: string | null;
+  mediaUrls?: string[];
+}): string {
+  return [
+    canonicalCaption(input.caption),
+    input.link?.trim() ?? "",
+    (input.mediaUrls ?? []).map((url) => url.trim()).join("\n"),
+  ].join("\u0000");
+}
+
+/** Read a durable receipt; anything malformed is treated as absent. */
+export function readPublicationReceipt(metadata: unknown): PublicationReceipt | null {
+  const raw = record(record(metadata).publication);
+  if (raw.version !== SOCIAL_PUBLICATION_RECEIPT_VERSION) return null;
+  if (typeof raw.attemptId !== "string" || !raw.attemptId) return null;
+  if (!STATES.includes(raw.state as PublicationState)) return null;
+  if (!isPublishablePlatform(String(raw.platform)) || raw.provider !== publicationProviderForPlatform(String(raw.platform))) return null;
+  if (typeof raw.targetExternalId !== "string" || !raw.targetExternalId) return null;
+  if (typeof raw.contentHash !== "string" || !/^[0-9a-f]{64}$/.test(raw.contentHash)) return null;
+  if (!iso(raw.startedAt)) return null;
+  return {
+    version: SOCIAL_PUBLICATION_RECEIPT_VERSION,
+    attemptId: raw.attemptId,
+    jobId: typeof raw.jobId === "string" ? raw.jobId : null,
+    state: raw.state as PublicationState,
+    provider: raw.provider as PublicationProvider,
+    platform: raw.platform as PublicationPlatform,
+    targetExternalId: raw.targetExternalId,
+    contentHash: raw.contentHash,
+    startedAt: raw.startedAt,
+    confirmedAt: iso(raw.confirmedAt) ? raw.confirmedAt : null,
+    remotePostId: typeof raw.remotePostId === "string" && raw.remotePostId ? raw.remotePostId : null,
+    permalinkUrl: typeof raw.permalinkUrl === "string" && raw.permalinkUrl ? raw.permalinkUrl : null,
+    errorCategory: CATEGORIES.includes(raw.errorCategory as PublicationErrorCategory)
+      ? (raw.errorCategory as PublicationErrorCategory)
+      : null,
+    errorMessage: typeof raw.errorMessage === "string" ? raw.errorMessage.slice(0, 500) : null,
+    attempts: typeof raw.attempts === "number" && Number.isInteger(raw.attempts) && raw.attempts >= 0 ? raw.attempts : 0,
+  };
+}
+
+/** Merge a receipt into existing post metadata without dropping other keys. */
+export function withPublicationReceipt(
+  metadata: unknown,
+  receipt: PublicationReceipt,
+): Record<string, unknown> {
+  return { ...record(metadata), publication: { ...receipt } };
+}
+
+export type PublicationReadiness =
+  | { ok: true; receipt: PublicationReceipt | null }
+  | { ok: false; reason: PublicationBlockReason };
+
+export type PublicationBlockReason =
+  | "already_published"
+  | "not_scheduled"
+  | "blocked_by_plan"
+  | "approval_missing"
+  | "approval_not_approved"
+  | "no_account"
+  | "unsupported_platform"
+  | "empty_caption"
+  | "caption_too_long"
+  | "media_required"
+  | "publication_in_flight"
+  | "needs_reconnect";
+
+/**
+ * Decide whether a post may be dispatched to the provider right now.
+ * Pure: the worker re-reads the row under a lease and calls this again.
+ */
+export function assessPublicationReadiness(input: {
+  post: SocialPostLike;
+  latestApprovalStatus: string | null;
+  approvalsRequired: boolean;
+  now: Date;
+}): PublicationReadiness {
+  const { post } = input;
+  const receipt = readPublicationReceipt(post.metadata);
+  if (post.status === "published" || receipt?.state === "confirmed") {
+    return { ok: false, reason: "already_published" };
+  }
+  if (post.status === "blocked_by_plan") return { ok: false, reason: "blocked_by_plan" };
+  if (post.status !== "scheduled") return { ok: false, reason: "not_scheduled" };
+  if (!isPublishablePlatform(post.platform)) return { ok: false, reason: "unsupported_platform" };
+  if (!post.socialAccountId) return { ok: false, reason: "no_account" };
+  if (input.latestApprovalStatus && input.latestApprovalStatus !== "approved") {
+    return { ok: false, reason: "approval_not_approved" };
+  }
+  if (input.approvalsRequired && input.latestApprovalStatus !== "approved") {
+    return { ok: false, reason: "approval_missing" };
+  }
+  const caption = canonicalCaption(post.caption);
+  if (!caption) return { ok: false, reason: "empty_caption" };
+  if (post.platform === "bluesky") {
+    if (!blueskyTextWithinLimits(composeBlueskyPostText({ caption, link: readPostLink(post.metadata) }))) {
+      return { ok: false, reason: "caption_too_long" };
+    }
+  } else if (caption.length > publicationCaptionLimit(post.platform as PublicationPlatform)) {
+    return { ok: false, reason: "caption_too_long" };
+  }
+  if (post.platform === "instagram" && readPublicationMediaUrls(post.mediaUrls).length === 0) {
+    return { ok: false, reason: "media_required" };
+  }
+  if (receipt?.state === "needs_reconnect") return { ok: false, reason: "needs_reconnect" };
+  if (receipt?.state === "sending") {
+    const started = Date.parse(receipt.startedAt);
+    // A `sending` receipt younger than the lease belongs to a live attempt.
+    if (input.now.getTime() - started < SOCIAL_PUBLICATION_LEASE_MS) {
+      return { ok: false, reason: "publication_in_flight" };
+    }
+  }
+  return { ok: true, receipt };
+}
+
+/** Whether an attempt must reconcile remote state before sending again. */
+export function receiptNeedsReconciliation(receipt: PublicationReceipt | null): boolean {
+  if (!receipt) return false;
+  return receipt.state === "uncertain" || receipt.state === "sending";
+}
+
+export type ApprovalDecision = "approve" | "reject" | "request_changes";
+
+export function parseApprovalDecision(value: unknown): ApprovalDecision | null {
+  return value === "approve" || value === "reject" || value === "request_changes" ? value : null;
+}
+
+/** Map a reviewer decision onto Approval.status and SocialPost.status. */
+export function applyApprovalDecision(input: {
+  decision: ApprovalDecision;
+  currentApprovalStatus: string;
+  currentPostStatus: string;
+  scheduledAt: Date | null;
+}):
+  | { ok: true; approvalStatus: "approved" | "rejected" | "changes_requested"; postStatus: "approved" | "scheduled" | "draft" }
+  | { ok: false; reason: "approval_closed" | "post_not_reviewable" } {
+  if (
+    input.currentApprovalStatus === "cancelled" ||
+    (input.currentApprovalStatus === "approved" && input.decision === "approve")
+  ) {
+    return { ok: false, reason: "approval_closed" };
+  }
+  if (
+    input.currentPostStatus === "published" ||
+    input.currentPostStatus === "scheduled" ||
+    input.currentPostStatus === "blocked_by_plan"
+  ) {
+    return { ok: false, reason: "post_not_reviewable" };
+  }
+  if (input.decision === "approve") {
+    return {
+      ok: true,
+      approvalStatus: "approved",
+      postStatus: input.scheduledAt ? "scheduled" : "approved",
+    };
+  }
+  if (input.decision === "reject") {
+    return { ok: true, approvalStatus: "rejected", postStatus: "draft" };
+  }
+  return { ok: true, approvalStatus: "changes_requested", postStatus: "draft" };
+}
+
+export type ScheduleRequest =
+  | { mode: "now" }
+  | { mode: "schedule"; scheduledAt: Date };
+
+/** Parse the publish request body; future dates only, at most one year ahead. */
+export function parseScheduleRequest(body: unknown, now: Date): ScheduleRequest | null {
+  const raw = record(body);
+  if (raw.mode === "now") return { mode: "now" };
+  if (raw.mode !== "schedule") return null;
+  if (typeof raw.scheduledAt !== "string" || raw.scheduledAt.length > 64) return null;
+  const at = Date.parse(raw.scheduledAt);
+  if (!Number.isFinite(at)) return null;
+  if (at < now.getTime() - 60_000) return null;
+  if (at > now.getTime() + 366 * 24 * 60 * 60_000) return null;
+  return { mode: "schedule", scheduledAt: new Date(at) };
+}
+
+/** Post states from which a publish/schedule request may start a job. */
+export function canQueuePublication(input: {
+  postStatus: string;
+  latestApprovalStatus: string | null;
+  approvalsRequired: boolean;
+}): { ok: true } | { ok: false; reason: PublicationBlockReason } {
+  if (input.postStatus === "published") return { ok: false, reason: "already_published" };
+  if (input.postStatus === "blocked_by_plan") return { ok: false, reason: "blocked_by_plan" };
+  if (input.latestApprovalStatus && input.latestApprovalStatus !== "approved") {
+    return { ok: false, reason: "approval_not_approved" };
+  }
+  if (input.approvalsRequired && input.latestApprovalStatus !== "approved") {
+    return { ok: false, reason: "approval_missing" };
+  }
+  if (input.postStatus !== "approved" && input.postStatus !== "scheduled" && input.postStatus !== "draft" && input.postStatus !== "failed") {
+    return { ok: false, reason: "not_scheduled" };
+  }
+  return { ok: true };
+}
+
+/** Exponential backoff with deterministic jitter, capped at 15 minutes. */
+export function publicationBackoffMs(attempts: number): number {
+  const exp = Math.max(0, attempts - 1);
+  const base = Math.min(15 * 60_000, 30_000 * 2 ** exp);
+  const jitter = Math.floor(base * 0.1 * ((attempts % 3) - 1));
+  return base + jitter;
+}
+
+export const PUBLICATION_STATE_LABELS: Record<PublicationState, { en: string; fr: string }> = {
+  sending: { en: "Publishing…", fr: "Publication en cours…" },
+  confirmed: { en: "Published (verified)", fr: "Publié (vérifié)" },
+  failed: { en: "Publication failed", fr: "Échec de publication" },
+  uncertain: { en: "Awaiting verification", fr: "En attente de vérification" },
+  needs_reconnect: { en: "Reconnect the account", fr: "Reconnectez le compte" },
+};
+
+export const BLOCK_REASON_LABELS: Record<PublicationBlockReason, { en: string; fr: string }> = {
+  already_published: { en: "This post is already published.", fr: "Cette publication est déjà publiée." },
+  not_scheduled: { en: "This post is not scheduled.", fr: "Cette publication n'est pas planifiée." },
+  blocked_by_plan: { en: "Your plan cannot publish this post yet.", fr: "Votre forfait ne permet pas encore cette publication." },
+  approval_missing: { en: "An approval is required before publishing.", fr: "Une approbation est requise avant de publier." },
+  approval_not_approved: { en: "The latest review did not approve this post.", fr: "La dernière révision n'a pas approuvé cette publication." },
+  no_account: { en: "Choose a connected Facebook Page, Instagram account or Bluesky account first.", fr: "Choisissez d'abord une Page Facebook, un compte Instagram ou un compte Bluesky connecté." },
+  unsupported_platform: { en: "Only Facebook Pages, Instagram professional accounts and Bluesky accounts can be published automatically for now.", fr: "Seules les Pages Facebook, les comptes professionnels Instagram et les comptes Bluesky peuvent être publiés automatiquement pour l'instant." },
+  empty_caption: { en: "The caption is empty.", fr: "La légende est vide." },
+  caption_too_long: { en: "The caption is too long for this network (Bluesky: 300 characters).", fr: "La légende est trop longue pour ce réseau (Bluesky : 300 caractères)." },
+  media_required: { en: "Instagram needs one public image or video URL; text-only posts are not supported.", fr: "Instagram exige une URL d'image ou de vidéo publique ; les publications texte seules ne sont pas prises en charge." },
+  publication_in_flight: { en: "A publication attempt is already running.", fr: "Une tentative de publication est déjà en cours." },
+  needs_reconnect: { en: "Reconnect the account with publishing access.", fr: "Reconnectez le compte avec l'accès de publication." },
+};

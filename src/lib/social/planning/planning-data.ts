@@ -8,6 +8,7 @@ import { getPrisma } from "@/lib/db/prisma";
 import { resolveBrandSessionContext } from "@/lib/security/brand-context";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
 import type { PlanningPageData } from "@/lib/social/planning/planning-types";
+import { readPublicationReceipt } from "@/lib/social/publishing/publication-model";
 
 export type {
   PlanningPageData,
@@ -56,6 +57,13 @@ export async function getSocialPlanningData(
           caption: true,
           status: true,
           scheduledAt: true,
+          publishedAt: true,
+          metadata: true,
+          approvals: {
+            select: { status: true },
+            orderBy: { requestedAt: "desc" },
+            take: 1,
+          },
         },
         orderBy: { scheduledAt: "asc" },
       }),
@@ -65,13 +73,27 @@ export async function getSocialPlanningData(
       connectedPlatforms,
       postsUsedThisMonth,
       monthlyPostAllowance: entitlements.monthlyPostAllowance,
-      posts: posts.map((post) => ({
-        id: post.id,
-        platform: post.platform,
-        caption: post.caption,
-        status: post.status,
-        scheduledAt: post.scheduledAt?.toISOString() ?? null,
-      })),
+      posts: posts.map((post) => {
+        const receipt = readPublicationReceipt(post.metadata);
+        return {
+          id: post.id,
+          platform: post.platform,
+          caption: post.caption,
+          status: post.status,
+          scheduledAt: post.scheduledAt?.toISOString() ?? null,
+          publishedAt: post.publishedAt?.toISOString() ?? null,
+          approvalStatus: post.approvals[0]?.status ?? null,
+          publication: receipt
+            ? {
+                state: receipt.state,
+                remotePostId: receipt.remotePostId,
+                permalinkUrl: receipt.permalinkUrl,
+                errorMessage: receipt.errorMessage,
+                confirmedAt: receipt.confirmedAt,
+              }
+            : null,
+        };
+      }),
     };
   } catch (error) {
     console.error(

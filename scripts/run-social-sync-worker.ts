@@ -46,6 +46,12 @@ async function main() {
     limit: Number(process.env.SOCIAL_SYNC_WORKER_LIMIT ?? 5),
     processJobs: true,
   });
+  const { runSocialPublicationWorkerTick } = await import(
+    "../src/lib/social/publishing/publication-jobs"
+  );
+  const publications = await runSocialPublicationWorkerTick({
+    limit: Number(process.env.SOCIAL_SYNC_WORKER_LIMIT ?? 5),
+  });
 
   console.log(
     JSON.stringify({
@@ -53,6 +59,13 @@ async function main() {
       outcome: "ok",
       ...result,
       competitors,
+      publications: {
+        claimed: publications.claimed,
+        published: publications.published,
+        failed: publications.failed,
+        uncertain: publications.uncertain,
+        blocked: publications.blocked,
+      },
     }),
   );
 }

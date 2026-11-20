@@ -1,0 +1,6 @@
+[
+  {"code":"NDG_MAIN","name":"NDG MAIN","address_line_1":"6280 Av Somerled","city":"Montréal","province":"QC","postal_code":"H3X 2B6","country":"CA"},
+  {"code":"NDG_6284","name":"NDG 6284","address_line_1":"6284 Av Somerled","city":"Montréal","province":"QC","postal_code":"H3X 2B6","country":"CA"},
+  {"code":"HOCHELAGA","name":"HOCHELAGA","address_line_1":"3583 Rue Sainte-Catherine E","city":"Montréal","province":"QC","postal_code":"H1W 2E6","country":"CA"},
+  {"code":"SAINT_LEONARD","name":"SAINT-LÉONARD","address_line_1":"5837 Rue Jean-Talon E","city":"Saint-Léonard","province":"QC","postal_code":"H1S 1M4","country":"CA"}
+]

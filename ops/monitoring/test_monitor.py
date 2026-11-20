@@ -124,7 +124,21 @@ class MonitorTests(unittest.TestCase):
         factory.assert_called_once_with("example.com", "93.184.216.34")
         conn.getresponse.return_value.read.assert_not_called()
         conn.request.assert_called_once()
+        self.assertEqual(conn.request.call_args.args[0], "GET")
+        self.assertEqual(conn.request.call_args.args[1], "/")
         conn.close.assert_called_once()
+
+    def test_health_path_is_requested_and_unsafe_paths_fail_closed(self):
+        resolver = Mock(return_value=[(2, 1, 6, "", ("93.184.216.34", 443))])
+        conn = Mock()
+        conn.getresponse.return_value.status = 200
+        self.assertTrue(monitor.probe("takatak.ca", resolver, Mock(return_value=conn), "/api/health/ready")[0])
+        self.assertEqual(conn.request.call_args.args[1], "/api/health/ready")
+        self.assertEqual(monitor.probe("takatak.ca", resolver, Mock(), "https://takatak.ca")[3], "invalid_path")
+        path = self.root / "sites.json"
+        path.write_text(json.dumps({"sites": [{"hostname": "takatak.ca", "path": "/api/health?full=1"}]}))
+        with self.assertRaises(ValueError):
+            monitor.load_config(path)
 
     def test_successful_https_probe(self):
         resolver = Mock(return_value=[(2, 1, 6, "", ("93.184.216.34", 443))])
@@ -141,7 +155,7 @@ class MonitorTests(unittest.TestCase):
         self.assertEqual(self.db.execute("SELECT COUNT(*) FROM samples").fetchone()[0], 0)
         dashboard = Mock(side_effect=[{"ok": True, "enabled": True}, {"ok": True, "accepted": True}])
         monitor.run_cycle(self.db, {**CONFIG, "sites": [site]}, self.root / "reports", probe, dashboard)
-        probe.assert_called_once_with("example.com")
+        probe.assert_called_once_with("example.com", path="/")
         snapshot = dashboard.call_args_list[1].args[1]
         self.assertEqual(snapshot["domainAssetId"], site["domain_asset_id"])
         self.assertEqual(snapshot["ok"], True)
@@ -164,6 +178,14 @@ class MonitorTests(unittest.TestCase):
         expected = hmac.new(bytes.fromhex(env["MONITORING_KEY_EXAMPLE"]), headers["x-monitor-timestamp"].encode() + b"." + raw, hashlib.sha256).hexdigest()
         self.assertEqual(headers["x-monitor-signature"], expected)
         self.assertNotIn(env["MONITORING_KEY_EXAMPLE"], str(args))
+
+    def test_french_report_does_not_claim_delivery_without_smtp(self):
+        self.observe([BAD, BAD, BAD])
+        text = monitor.french_daily_report(self.db, CONFIG, dt.datetime(2026, 11, 7, 12, tzinfo=monitor.UTC), {})
+        self.assertIn("example.com", text)
+        self.assertIn("down", text)
+        self.assertIn("non configurée", text)
+        self.assertNotIn("livré avec succès", text)
 
     def test_sync_fails_closed_without_credentials(self):
         factory = Mock()
