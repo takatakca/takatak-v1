@@ -4,6 +4,7 @@ import { ReportHeader } from "@/components/reports/report-header";
 import { ReportSourceBanner } from "@/components/reports/source-banner";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getReportBuilderData } from "@/lib/reports/reporting-data";
+import { StaffOnly } from "@/components/dashboard/staff-only";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ const BUILDER_SECTIONS = [
   "Recommendations",
 ];
 
-export default async function ReportBuilderPage() {
+async function ReportBuilderPageScreen() {
   const data = await getReportBuilderData();
   return (
     <div className="space-y-5">
@@ -64,5 +65,18 @@ export default async function ReportBuilderPage() {
 
       <ReportBoundaryWarning />
     </div>
+  );
+}
+
+// Not self-serve for clients yet: TAKATAK staff see the screen, clients see
+// what it is for and ask the team (owner's order, Nov 2026: no prototypes).
+export default async function ReportBuilderPage() {
+  return (
+    <StaffOnly
+      title="Rapports personnalisés · Custom reports"
+      purpose="Des rapports faits pour votre entreprise : sommaire, services, réseaux sociaux, site web et recommandations · Reports built for your business: summary, services, social media, website and recommendations."
+    >
+      <ReportBuilderPageScreen />
+    </StaffOnly>
   );
 }

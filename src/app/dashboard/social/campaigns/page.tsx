@@ -12,8 +12,7 @@ export default async function SocialCampaignsPage() {
     <div className="space-y-5">
       <SocialHeader
         title="Campaigns"
-        subtitle="Social campaigns per brand with goals, dates, and post counts. Campaign creation UI arrives in a later phase."
-        badges={[{ label: "Foundation" }]}
+        subtitle="Your social media campaigns per brand, with goals, dates and posts. To start a campaign, ask the team."
       />
       <SourceBanner source={data.source} label={data.sourceLabel} />
       {data.campaigns.length ? (

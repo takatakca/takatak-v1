@@ -17,7 +17,7 @@ import type {
 } from "./types";
 
 const MOCK_LABEL = "Mock foundation data — database not connected yet.";
-const DB_LABEL = "Database — live report records. PDF export and in-dashboard delivery are available for this workspace.";
+const DB_LABEL = "Données à jour de votre compte. Export PDF et envoi dans le tableau de bord disponibles · Live data from your account. PDF export and delivery in the dashboard are available.";
 
 // ── Mock foundation data (mirrors the seed) ──────────────────
 const MOCK_TEMPLATES: ReportTemplateSummary[] = [

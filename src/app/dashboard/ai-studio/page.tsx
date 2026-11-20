@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { AI_JOB_STATUS_LABELS, AI_KIND_LABELS, aiToneForStatus } from "@/lib/ai/status";
 import { getAiStudioOverviewData } from "@/lib/ai/ai-data";
+import { STAFF_ONLY_ROUTES } from "@/lib/dashboard/dashboard-config";
+import { getServerAccessContext } from "@/lib/security/access-context";
 
 export const dynamic = "force-dynamic";
 
@@ -17,27 +19,29 @@ const TOOLS = [
   { label: "Content Generator", href: "/dashboard/ai-studio/content-generator", note: "Captions, hashtags, hooks, CTAs" },
   { label: "Campaign Builder", href: "/dashboard/ai-studio/campaign-builder", note: "Campaign plans and post ideas" },
   { label: "Video Ideas", href: "/dashboard/ai-studio/video-ideas", note: "Reels/TikTok concepts and scripts" },
-  { label: "Brand Voice", href: "/dashboard/ai-studio/brand-voice", note: "Voice profiles feeding future prompts" },
+  { label: "Brand Voice", href: "/dashboard/ai-studio/brand-voice", note: "Your tone, audience and the words to use" },
   { label: "Saved Outputs", href: "/dashboard/ai-studio/saved", note: "Envoyer un brouillon à l'approbation" },
   { label: "Utilisation et coût", href: "/dashboard/ai-studio/usage", note: "Solde de crédits et coût estimé" },
-  { label: "Provider Status", href: "/dashboard/ai-studio/provider-status", note: "OpenAI / TryHolo readiness" },
+  { label: "Provider Status", href: "/dashboard/ai-studio/provider-status", note: "Which AI engines are available" },
 ];
 
 export default async function AiStudioOverviewPage() {
   const data = await getAiStudioOverviewData();
+  const { access } = await getServerAccessContext();
+  // Tools that are not self-serve yet stay with the TAKATAK team.
+  const tools = access.mode === "platform_admin" ? TOOLS : TOOLS.filter((t) => !STAFF_ONLY_ROUTES.has(t.href));
   const kpis = [
     { label: "Brand Voices", value: data.kpis.brandVoices, icon: Mic2 },
     { label: "Saved Outputs", value: data.kpis.savedOutputs, icon: BookMarked },
     { label: "Template Outputs", value: data.kpis.templateOutputs, icon: FileEdit },
     { label: "AI-Generated Outputs", value: data.kpis.aiGeneratedOutputs, icon: Sparkles },
-    { label: "Planned AI Jobs", value: data.kpis.plannedJobs, icon: Wand2 },
+    { label: "AI jobs", value: data.kpis.plannedJobs, icon: Wand2 },
   ];
   return (
     <div className="space-y-6">
       <AiHeader
         title="AI Studio"
-        subtitle="AI content and campaign workspace. AI is a layer inside TAKATAK — no provider is connected and no generation runs yet."
-        badges={[{ label: "Foundation" }, { label: "No AI provider connected", status: "not_configured" }]}
+        subtitle="Posts, captions and ideas in your brand voice. Drafts are saved here, and a person reviews them before anything is published."
       />
 
       <section aria-label="AI KPIs">
@@ -60,15 +64,12 @@ export default async function AiStudioOverviewPage() {
           })}
         </div>
         <div className="mt-2"><AiSourceBanner source={data.source} label={data.sourceLabel} /></div>
-        <p className="mt-1 text-[11px] text-slate-400">
-          AI-Generated Outputs is 0 by design — nothing is claimed as AI-generated until a real provider call succeeds.
-        </p>
       </section>
 
       <section className="space-y-3" aria-label="Tools">
         <h2 className="text-sm font-semibold text-slate-900">Studio Tools</h2>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {TOOLS.map((t) => (
+          {tools.map((t) => (
             <Link key={t.href} href={t.href} className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/40">
               <p className="text-sm font-semibold text-slate-900">{t.label}</p>
               <p className="text-xs text-slate-500">{t.note}</p>
@@ -83,7 +84,7 @@ export default async function AiStudioOverviewPage() {
           {data.providers.map((p) => <ProviderStatusCard key={p.provider} status={p} />)}
         </div>
         <Card>
-          <CardHeader title="Planned AI Jobs" subtitle="Planned only — no generation runs in Phase 9." />
+          <CardHeader title="AI jobs" subtitle="Requests waiting for the AI studio, by brand." />
           <CardBody className="space-y-2">
             {data.plannedJobs.map((j) => (
               <div key={j.id} className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">

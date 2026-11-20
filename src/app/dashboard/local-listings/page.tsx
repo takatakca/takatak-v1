@@ -6,19 +6,19 @@ import { LocalListingCard } from "@/components/local-listings/local-listing-card
 import { LocalListingsHeader } from "@/components/local-listings/local-listings-header";
 import { LocalListingsKpiCard } from "@/components/local-listings/local-listings-kpi-card";
 import { LocalSourceBanner } from "@/components/local-listings/source-banner";
-import { QmapsPrepPanel } from "@/components/local-listings/qmaps-prep-panel";
 import { ReviewCard } from "@/components/local-listings/review-card";
 import { VisibilitySnapshotCard } from "@/components/local-listings/visibility-snapshot-card";
 import { getListingCitationsData, getLocalListingsOverviewData } from "@/lib/local-listings/local-listings-data";
+import { QuickLinks } from "@/components/dashboard/quick-links";
 
 export const dynamic = "force-dynamic";
 
 const QUICK_ACTIONS = [
-  { label: "Add Listing", note: "Coming soon" },
-  { label: "Check Citations", note: "Coming soon" },
-  { label: "Review Replies", note: "Coming soon" },
-  { label: "Upload Photos", note: "Coming soon" },
-  { label: "Connect QMAPS", note: "Future phase" },
+  { label: "Listings", href: "/dashboard/local-listings/listings" },
+  { label: "Citations", href: "/dashboard/local-listings/citations" },
+  { label: "Reviews", href: "/dashboard/local-listings/reviews" },
+  { label: "Visibility", href: "/dashboard/local-listings/visibility" },
+  { label: "Ask the team", href: "/dashboard/support" },
 ];
 
 export default async function LocalListingsOverviewPage() {
@@ -41,8 +41,7 @@ export default async function LocalListingsOverviewPage() {
     <div className="space-y-6">
       <LocalListingsHeader
         title="Local Listings"
-        subtitle="Track business listings, citations, reviews, photos, and local visibility before QMAPS connects."
-        badges={[{ label: "Foundation" }, { label: "QMAPS not connected" }, { label: "Google Business not connected" }]}
+        subtitle="Your business listings, directory citations, reviews and local visibility in one place."
       />
 
       <section aria-label="Local listings KPIs">
@@ -60,7 +59,7 @@ export default async function LocalListingsOverviewPage() {
       </section>
 
       <Card>
-        <CardHeader title="Citation Health" subtitle="Internal NAP tracking only — no citation scans run until a provider is connected." />
+        <CardHeader title="Citation Health" subtitle="Whether your name, address and phone match across directories." />
         <CardBody className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {health.map((h) => (
             <div key={h.label} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-center">
@@ -96,19 +95,7 @@ export default async function LocalListingsOverviewPage() {
         </div>
       </section>
 
-      <QmapsPrepPanel />
-
-      <Card>
-        <CardHeader title="Quick Actions" subtitle="Actions activate with CRUD and provider phases." />
-        <CardBody className="flex flex-wrap gap-2">
-          {QUICK_ACTIONS.map((a) => (
-            <span key={a.label} className="inline-flex items-center gap-2 rounded-lg bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-400 ring-1 ring-inset ring-slate-200">
-              {a.label}
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">{a.note}</span>
-            </span>
-          ))}
-        </CardBody>
-      </Card>
+      <QuickLinks links={QUICK_ACTIONS} />
     </div>
   );
 }

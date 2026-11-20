@@ -12,8 +12,7 @@ export default async function LeadSourcesPage() {
     <div className="space-y-5">
       <LeadsHeader
         title="Sources"
-        subtitle="Where leads come from. The FLEXS source is planned only — no capture widget or provider sync exists."
-        badges={[{ label: "Foundation" }, { label: "FLEXS not connected" }]}
+        subtitle="Where your leads come from: website forms, orders, campaigns and the sources your team adds."
       />
       <LeadsSourceBanner source={data.source} label={data.sourceLabel} />
       {data.sources.length ? (

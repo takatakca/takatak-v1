@@ -12,8 +12,7 @@ export default async function LeadCampaignsPage() {
     <div className="space-y-5">
       <LeadsHeader
         title="Lead Campaigns"
-        subtitle="Lead generation campaign tracking. No real ad spend, paid sync, or provider campaign exists — budgets are unrecorded by design."
-        badges={[{ label: "Foundation" }, { label: "No ad spend" }]}
+        subtitle="The campaigns that bring you leads, with their goal, dates and results."
       />
       <LeadsSourceBanner source={data.source} label={data.sourceLabel} />
       {data.campaigns.length ? (

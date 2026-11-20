@@ -1,7 +1,7 @@
 import { Activity, Inbox, Megaphone, Target, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { FlexsPrepPanel } from "@/components/leads/flexs-prep-panel";
+import { QuickLinks } from "@/components/dashboard/quick-links";
 import { LeadActivityCard } from "@/components/leads/lead-activity-card";
 import { LeadCampaignCard } from "@/components/leads/lead-campaign-card";
 import { LeadCard } from "@/components/leads/lead-card";
@@ -14,11 +14,13 @@ import { getLeadsOverviewData } from "@/lib/leads/leads-data";
 export const dynamic = "force-dynamic";
 
 const QUICK_ACTIONS = [
-  { label: "Add Lead", note: "Coming soon" },
-  { label: "Add Source", note: "Coming soon" },
-  { label: "Plan Campaign", note: "Coming soon" },
-  { label: "Log Activity", note: "Coming soon" },
-  { label: "Connect FLEXS", note: "Future phase" },
+  { label: "Lead inbox", href: "/dashboard/leads/inbox" },
+  { label: "Pipeline", href: "/dashboard/leads/pipeline" },
+  { label: "Contacts", href: "/dashboard/leads/contacts" },
+  { label: "Sources", href: "/dashboard/leads/sources" },
+  { label: "Campaigns", href: "/dashboard/leads/campaigns" },
+  { label: "Activities", href: "/dashboard/leads/activities" },
+  { label: "Ask the team", href: "/dashboard/support" },
 ];
 
 export default async function LeadsOverviewPage() {
@@ -34,8 +36,7 @@ export default async function LeadsOverviewPage() {
     <div className="space-y-6">
       <LeadsHeader
         title="Leads"
-        subtitle="Internal lead inbox, pipeline, and follow-up tracking before FLEXS connects. No outreach automation exists."
-        badges={[{ label: "Foundation" }, { label: "FLEXS not connected" }, { label: "No automation" }]}
+        subtitle="Every request from your website and campaigns in one place: inbox, pipeline and follow-ups."
       />
 
       <section aria-label="Leads KPIs">
@@ -46,7 +47,7 @@ export default async function LeadsOverviewPage() {
       </section>
 
       <Card>
-        <CardHeader title="Pipeline Snapshot" subtitle="Lead counts per internal stage. All stage results are internal tracking only." />
+        <CardHeader title="Pipeline Snapshot" subtitle="How many leads are at each stage." />
         <CardBody className="flex flex-wrap gap-2">
           {data.pipelineCounts.map((p) => (
             <span key={p.status} className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -77,19 +78,7 @@ export default async function LeadsOverviewPage() {
         </div>
       </section>
 
-      <FlexsPrepPanel />
-
-      <Card>
-        <CardHeader title="Quick Actions" subtitle="Actions activate with CRUD and provider phases." />
-        <CardBody className="flex flex-wrap gap-2">
-          {QUICK_ACTIONS.map((a) => (
-            <span key={a.label} className="inline-flex items-center gap-2 rounded-lg bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-400 ring-1 ring-inset ring-slate-200">
-              {a.label}
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">{a.note}</span>
-            </span>
-          ))}
-        </CardBody>
-      </Card>
+      <QuickLinks links={QUICK_ACTIONS} />
     </div>
   );
 }

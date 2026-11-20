@@ -3,10 +3,11 @@ import { PlannedGeneratorForm } from "@/components/ai-studio/planned-generator-f
 import { SavedOutputCard } from "@/components/ai-studio/saved-output-card";
 import { AiSourceBanner } from "@/components/ai-studio/ai-source-banner";
 import { getSavedOutputsData } from "@/lib/ai/ai-data";
+import { StaffOnly } from "@/components/dashboard/staff-only";
 
 export const dynamic = "force-dynamic";
 
-export default async function VideoIdeasPage() {
+async function VideoIdeasPageScreen() {
   const data = await getSavedOutputsData();
   const videoOutputs = data.outputs.filter((o) => ["video_idea", "video_script", "creative_brief"].includes(o.kind));
   return (
@@ -33,5 +34,18 @@ export default async function VideoIdeasPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+// Not self-serve for clients yet: TAKATAK staff see the screen, clients see
+// what it is for and ask the team (owner's order, Nov 2026: no prototypes).
+export default async function VideoIdeasPage() {
+  return (
+    <StaffOnly
+      title="Idées vidéo · Video ideas"
+      purpose="Concepts de reels et de TikTok, scripts et briefs créatifs · Reel and TikTok concepts, scripts and creative briefs."
+    >
+      <VideoIdeasPageScreen />
+    </StaffOnly>
   );
 }

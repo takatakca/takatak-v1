@@ -38,7 +38,6 @@ import {
   MessageCircle,
   Phone,
   PlugZap,
-  Plus,
   Receipt,
   Rocket,
   ScanBarcode,
@@ -54,7 +53,6 @@ import {
   Tags,
   Target,
   Ticket,
-  UserPlus,
   UserRound,
   Users,
   UtensilsCrossed,
@@ -256,6 +254,14 @@ export const STAFF_ONLY_ROUTES: ReadonlySet<string> = new Set([
   "/dashboard/web-hosting/redirects",
   "/dashboard/web-hosting/security",
   "/dashboard/web-hosting/staging",
+  "/dashboard/reports/builder",
+  "/dashboard/reports/schedules",
+  "/dashboard/reports/metrics",
+  "/dashboard/ai-studio/campaign-builder",
+  "/dashboard/ai-studio/video-ideas",
+  "/dashboard/local-listings/photos",
+  "/dashboard/web-hosting/dns",
+  "/dashboard/web-hosting/provisioning",
 ]);
 
 export function pageTitleForPath(pathname: string): string {
@@ -379,13 +385,14 @@ export const ACTIVITY_FEED: ActivityItem[] = [
   { message: "Auth / database not configured yet", detail: "Supabase planned for Phase 3, Prisma for Phase 4" },
 ];
 
+// Every quick action opens a working screen (no "Soon" entries for clients).
 export const QUICK_ACTIONS: QuickAction[] = [
-  { label: "Add Client", href: "/dashboard/clients", icon: UserPlus },
-  { label: "Add Business / Brand", href: "/dashboard/brands", icon: Building2 },
-  { label: "Create Campaign", comingSoon: true, icon: Plus },
-  { label: "Connect Integration", comingSoon: true, icon: PlugZap },
-  { label: "Generate Report", comingSoon: true, icon: FileBarChart2 },
+  { label: "Add Business / Brand", href: "/dashboard/brands/new", icon: Building2 },
+  { label: "My websites", href: "/dashboard/web-hosting/websites", icon: Globe },
+  { label: "Social media", href: "/dashboard/social", icon: Share2 },
+  { label: "Reports", href: "/dashboard/reports", icon: FileBarChart2 },
   { label: "Open AI Studio", href: "/dashboard/ai-studio", icon: BotMessageSquare },
+  { label: "Ask the team", href: "/dashboard/support", icon: LifeBuoy },
 ];
 
 // Placeholder page definitions for every sidebar module (Phase 1).

@@ -11,8 +11,7 @@ export default async function LeadsPipelinePage() {
     <div className="space-y-5">
       <LeadsHeader
         title="Pipeline"
-        subtitle="Leads grouped by internal stage. Display only — no drag and drop, and Won/Lost are internal tracking states, not real conversions."
-        badges={[{ label: "Foundation" }, { label: "Internal tracking" }]}
+        subtitle="Your leads by stage, from new request to won or lost. Open a lead for the full request."
       />
       <LeadsSourceBanner source={data.source} label={data.sourceLabel} />
       <PipelineBoard leads={data.leads} />

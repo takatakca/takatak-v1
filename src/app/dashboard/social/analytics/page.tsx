@@ -27,11 +27,7 @@ export default async function SocialAnalyticsPage() {
     <div className="space-y-5">
       <SocialHeader
         title="Social Analytics"
-        subtitle="Performance data arrives with the Metricool sync in Phase 6. No charts here pretend to be real provider data."
-        badges={[
-          { label: 'Foundation' },
-          { label: 'Metricool not connected', status: 'not_connected' },
-        ]}
+        subtitle="Reach, impressions, engagement, clicks and followers for your connected accounts. Only real numbers from your accounts are shown here."
       />
       {historyDays !== null ? (
         <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
@@ -53,7 +49,7 @@ export default async function SocialAnalyticsPage() {
             subtitle={`${a.days} day record${a.days === 1 ? '' : 's'}`}
             action={
               a.source === 'internal_mock' ? (
-                <Badge tone="muted">Sample / foundation data</Badge>
+                <Badge tone="muted">Sample data</Badge>
               ) : null
             }
           />
@@ -73,7 +69,7 @@ export default async function SocialAnalyticsPage() {
         <SocialEmptyState
           icon={BarChart3}
           title="No analytics yet"
-          description="Reach, impressions, engagement, clicks, and followers sync from Metricool once it is connected in Phase 6."
+          description="Numbers appear here once your social accounts are connected. Connect them under Social Media, or ask the team."
         />
       )}
     </div>

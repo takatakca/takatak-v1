@@ -8,6 +8,7 @@ import { loadAiStudioConfig } from "@/lib/ai/generation/load-config";
 import { getAiProviderStatuses } from "@/lib/ai/providers";
 import { getServerAccessContext } from "@/lib/security/access-context";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
+import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,21 @@ export default async function ContentGeneratorPage() {
     : access.mode !== "client_scoped"
       ? "Select a client workspace to generate drafts for it."
       : "Your role cannot create content in this workspace.";
+
+  // Clients never get a form with every control disabled: they get the team.
+  if (access.mode !== "platform_admin") {
+    return (
+      <ModulePlaceholder
+        def={{
+          title: "Générateur de contenu · Content generator",
+          purpose:
+            "Légendes, mots-clics, accroches et appels à l’action dans la voix de votre marque · Captions, hashtags, hooks and calls to action in your brand voice.",
+          status: "foundation",
+          functions: [],
+        }}
+      />
+    );
+  }
 
   return (
     <div className="space-y-5">

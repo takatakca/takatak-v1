@@ -13,8 +13,7 @@ export default async function CitationsPage() {
     <div className="space-y-5">
       <LocalListingsHeader
         title="Citations"
-        subtitle="Citation and NAP tracking. Internal foundation records only — no automatic directory scan runs until a provider is connected."
-        badges={[{ label: "Foundation" }, { label: "Manual/internal tracking" }]}
+        subtitle="Your business name, address and phone on each directory, checked by the TAKATAK team."
       />
       <section className="rounded-xl border border-blue-200 bg-blue-50 p-4" aria-label="Citation audit tool">
         <h2 className="text-base font-semibold text-slate-900">Local Citation Audit</h2>

@@ -12,8 +12,7 @@ export default async function VisibilityPage() {
     <div className="space-y-5">
       <LocalListingsHeader
         title="Visibility"
-        subtitle="Local visibility snapshots. Foundation counts from internal records — never a local SEO score from QMAPS or Google."
-        badges={[{ label: "Foundation" }, { label: "Internal foundation" }]}
+        subtitle="Snapshots of how visible your business is locally, from the records the TAKATAK team keeps for you."
       />
       <LocalSourceBanner source={data.source} label={data.sourceLabel} />
       {data.snapshots.length ? (

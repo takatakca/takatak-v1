@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { StatusBadge } from "./status-badge";
+import { clientBadges } from "@/lib/dashboard/client-labels";
+import { statusLabel, StatusBadge } from "./status-badge";
 
 export function ModuleHeader({
   title,
@@ -17,7 +18,7 @@ export function ModuleHeader({
       <div className="max-w-2xl">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight text-slate-900">{title}</h1>
-          {statuses.map((s) => (
+          {statuses.filter((s) => clientBadges([statusLabel(s)]).length > 0).map((s) => (
             <StatusBadge key={s} status={s} />
           ))}
         </div>

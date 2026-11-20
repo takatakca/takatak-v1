@@ -3,10 +3,11 @@ import { LocalListingsEmptyState } from "@/components/local-listings/local-listi
 import { LocalListingsHeader } from "@/components/local-listings/local-listings-header";
 import { LocalSourceBanner } from "@/components/local-listings/source-banner";
 import { getListingPhotosData } from "@/lib/local-listings/local-listings-data";
+import { StaffOnly } from "@/components/dashboard/staff-only";
 
 export const dynamic = "force-dynamic";
 
-export default async function PhotosPage() {
+async function PhotosPageScreen() {
   const data = await getListingPhotosData();
   return (
     <div className="space-y-5">
@@ -24,5 +25,18 @@ export default async function PhotosPage() {
         <LocalListingsEmptyState title="No photos yet" description="Listing photo assets appear here." />
       )}
     </div>
+  );
+}
+
+// Not self-serve for clients yet: TAKATAK staff see the screen, clients see
+// what it is for and ask the team (owner's order, Nov 2026: no prototypes).
+export default async function PhotosPage() {
+  return (
+    <StaffOnly
+      title="Photos des fiches · Listing photos"
+      purpose="Les photos de vos fiches Google et annuaires · The photos on your Google and directory listings."
+    >
+      <PhotosPageScreen />
+    </StaffOnly>
   );
 }
