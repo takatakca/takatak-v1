@@ -1172,6 +1172,13 @@ html[data-promo-open] .tk-plan-dock { opacity: 0 !important; pointer-events: non
   body:has(.tk-bottom-bar) .tk-chat-launcher { bottom: 5rem; }
 }
 
+/* Homepage TAK-TAK chat (HeroChat.tsx): while it fills the screen, the floating support bubble steps aside.
+   TAK-TAK hands over to a person itself; the bubble comes back as soon as the visitor scrolls on. */
+html[data-hero-chat] .tk-chat-launcher { opacity: 0; transform: translateY(12px); pointer-events: none; }
+/* The pairing suggestion shows inside the conversation instead (HeroChat.tsx), so the pop-up never covers the chat. */
+html[data-hero-chat] .tk-upsell-toast { display: none; }
+.tk-chat-launcher { transition: opacity 0.2s ease, transform 0.2s ease; }
+
 /* Kiosk scene (KioskScene.tsx): the menu rolls; a new kitchen ticket slides in. */
 .hp-kiosk-roll { animation: hp-kiosk-roll 14s linear infinite; }
 @keyframes hp-kiosk-roll { to { transform: translateY(-50%); } }
