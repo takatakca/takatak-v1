@@ -1,6 +1,8 @@
 # Classical public probe. It does not deploy, log in, or call an AI agent.
-# The daily run is expected to fail until www.takatak.ca has a trusted certificate
-# and Coolify answers it. Unit tests do not contact production.
+# It also checks that production accepts requests (lead_intake): the daily run
+# fails while WEBSITE_LEADS_ENABLED / WEBSITE_LEADS_CLIENT_ID are missing in
+# Coolify, because every sales form is then refused. Unit tests do not contact
+# production.
 name: TAKATAK GUARDIAN public smoke
 
 on:
