@@ -4,10 +4,12 @@ import test from "node:test";
 import {
   assessAuthGate,
   assessCertificate,
+  assessLeadIntake,
   assessLiveness,
   assessLoginLanguage,
   assessPageStatus,
   assessReady,
+  runLiveSmoke,
   summarize,
 } from "./guardian-public-smoke.mjs";
 
@@ -82,4 +84,57 @@ test("a blocking failure fails the run", () => {
   ]);
   assert.equal(report.ok, false);
   assert.deepEqual(report.blocking, ["www_certificate"]);
+});
+
+test("request intake switched off is a blocking failure", () => {
+  const off = assessLeadIntake(503, { ok: false, code: "not_enabled" });
+  assert.equal(off.ok, false);
+  assert.equal(off.blocking, true);
+  assert.match(off.detail, /WEBSITE_LEADS_ENABLED/);
+  assert.equal(assessLeadIntake(0, null).ok, false);
+  assert.equal(assessLeadIntake(500, { ok: false }).ok, false);
+});
+
+test("any refusal of the empty probe other than not_enabled means intake is on", () => {
+  assert.equal(assessLeadIntake(403, { ok: false, code: "invalid_request" }).ok, true);
+  assert.equal(assessLeadIntake(400, { ok: false, code: "invalid_fields" }).ok, true);
+  assert.equal(assessLeadIntake(429, { ok: false, code: "rate_limited" }).ok, true);
+});
+
+test("the live probe sends only an empty body to the intake", async () => {
+  const calls = [];
+  const fetchImpl = async (url, init = {}) => {
+    calls.push({ url, init });
+    const json = (status, body, headers = {}) => ({
+      status,
+      url,
+      headers: new Headers(headers),
+      text: async () => JSON.stringify(body),
+    });
+    if (url.endsWith("/api/health")) return json(200, { status: "ok", app: "TAKATAK", alive: true });
+    if (url.endsWith("/api/health/ready")) {
+      return json(200, { ok: true, checks: { database: "ok", supabase: "ok" } }, { "x-takatak-release": SHA });
+    }
+    if (url.endsWith("/api/public/website-requests")) return json(503, { ok: false, code: "not_enabled" });
+    if (url.endsWith("/dashboard")) return { status: 200, url: "https://takatak.ca/login?next=%2Fdashboard", headers: new Headers(), text: async () => "" };
+    return { status: 200, url, headers: new Headers(), text: async () => "<h1>Bon retour</h1>" };
+  };
+  const connect = (_options, onConnect) => {
+    const socket = {
+      authorized: true,
+      authorizationError: null,
+      getPeerCertificate: () => ({ subject: { CN: "takatak.ca" }, subjectaltname: "DNS:takatak.ca, DNS:www.takatak.ca" }),
+      end() {},
+      on() {},
+    };
+    queueMicrotask(onConnect);
+    return socket;
+  };
+  const report = await runLiveSmoke({ fetchImpl, connect });
+  const intakeCall = calls.find((call) => call.url.endsWith("/api/public/website-requests"));
+  assert.equal(intakeCall.init.method, "POST");
+  assert.equal(intakeCall.init.body, "{}");
+  assert.equal(intakeCall.init.headers.origin, undefined);
+  assert.equal(report.ok, false);
+  assert.deepEqual(report.blocking, ["lead_intake"]);
 });

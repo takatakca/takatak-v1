@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Read-only public probe for takatak.ca.
- * No credentials, no request body, no customer data.
+ * No credentials, no customer data. The only request body is an empty JSON
+ * object sent to the request intake without an origin: the server refuses it
+ * before reading or storing anything, unless intake is switched off.
  * A blocking failure exits 1. Language drift is reported and does not hide an outage.
  */
 import tls from "node:tls";
@@ -84,6 +86,27 @@ export function assessLoginLanguage(html) {
   return pass("login_language", "P2", "French login marker not contradicted", false);
 }
 
+/**
+ * Every sales path (contact, project, order, transfer, hosting, TAK-TAK request)
+ * goes through /api/public/website-requests. When production intake is switched
+ * off, each one is refused while every page still answers 200: in November 2026
+ * that went unseen for twelve days. Any refusal other than not_enabled means
+ * intake is on (the empty probe is turned away before anything is stored).
+ */
+export function assessLeadIntake(status, body) {
+  if (body?.code === "not_enabled") {
+    return fail(
+      "lead_intake",
+      "P1",
+      "production refuses every request (503 not_enabled): set WEBSITE_LEADS_ENABLED and WEBSITE_LEADS_CLIENT_ID",
+    );
+  }
+  if (!status || status >= 500) {
+    return fail("lead_intake", "P1", `request intake answered HTTP ${status || "none"}`);
+  }
+  return pass("lead_intake", "P1", `intake on (empty probe refused with HTTP ${status}, nothing stored)`);
+}
+
 export function summarize(checks) {
   const flat = checks.flat();
   const blocking = flat.filter((check) => check.blocking && !check.ok).map((check) => check.id);
@@ -148,6 +171,20 @@ export async function runLiveSmoke({ origin = `https://${APEX}`, fetchImpl = fet
   } catch {
     wwwStatus = 0;
   }
+  let intakeStatus = 0;
+  let intakeBody = null;
+  try {
+    const intake = await fetchImpl(`${base}/api/public/website-requests`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: "{}",
+      redirect: "manual",
+    });
+    intakeStatus = intake.status;
+    intakeBody = await readJson(intake);
+  } catch {
+    intakeStatus = 0;
+  }
   const readyChecks = assessReady(ready.status, await readJson(ready), ready.headers.get("x-takatak-release"));
   return summarize([
     assessLiveness(health.status, await readJson(health)),
@@ -157,6 +194,7 @@ export async function runLiveSmoke({ origin = `https://${APEX}`, fetchImpl = fet
     assessPageStatus("login_page", login.status),
     assessAuthGate(dashboard.url),
     assessPageStatus("www_http", wwwStatus),
+    assessLeadIntake(intakeStatus, intakeBody),
     assessLoginLanguage(loginHtml),
   ]);
 }
