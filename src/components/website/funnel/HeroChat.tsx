@@ -23,6 +23,7 @@ import {
   Receipt,
   Server,
   Share2,
+  ShoppingBag,
   Sparkles,
   Star,
   Volume2,
@@ -355,11 +356,6 @@ export function HeroChat() {
     };
   }, []);
 
-  // Keep the newest message in view inside the chat (never scrolls the page).
-  useEffect(() => {
-    const el = scroller.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [msgs, typing, step]);
 
   // With voice replies on, a finished dictation is sent like a spoken question.
   const wasListening = useRef(false);
@@ -406,6 +402,13 @@ export function HeroChat() {
     setPair(next ? { added: fresh[0], next } : null);
   }, [plan.keys]);
 
+  // Keep the newest message in view inside the chat (never scrolls the page).
+  // Before the first message the welcome screen stays at its top.
+  useEffect(() => {
+    const el = scroller.current;
+    if (el && started) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [msgs, typing, step, pair, started]);
+
   // Other homepage sections open TAK-TAK in the side sheet.
   const [sheet, setSheet] = useState<{ first: string; voice: boolean } | null>(null);
   useEffect(() => {
@@ -438,7 +441,7 @@ export function HeroChat() {
               <span className="lg:hidden">
                 <BotAvatar />
               </span>
-              <span className="min-w-0 flex-1">
+              <span className="min-w-0 flex-1 overflow-hidden">
                 <span className="block whitespace-nowrap text-[15px] font-semibold text-white lg:hidden">TAK-TAK</span>
                 <span className="flex min-w-0 items-center gap-2 text-[12.5px] text-white/60">
                   <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_10px_rgb(52_211_153/0.8)]" />
@@ -451,7 +454,8 @@ export function HeroChat() {
                   aria-label={H.finalize[lang]}
                   className="hp-cta hp-focus inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-[13px] font-semibold lg:hidden"
                 >
-                  {plan.keys.length} · {H.order[lang]} <ArrowRight size={14} aria-hidden />
+                  <ShoppingBag size={15} aria-hidden /> {plan.keys.length}
+                  <span className="hidden sm:inline">· {H.order[lang]}</span> <ArrowRight size={14} aria-hidden />
                 </Link>
               )}
               <button
@@ -479,42 +483,42 @@ export function HeroChat() {
             <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto" aria-live="polite">
               <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col px-4 py-6 sm:px-6 sm:py-8">
                 <div className={started ? "" : "my-auto"}>
-                <div className={started ? "sr-only" : "text-center"}>
-                  {!started && (
-                    <div className="mx-auto mb-4 hidden w-fit sm:block">
-                      <RobotMascot size={96} title="TAK-TAK" />
-                    </div>
-                  )}
-                  <h1 id="home-hero-title" className="tk-gradient-text text-balance text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-[40px]">
-                    {H.title[lang]}
-                  </h1>
-                  <p className="mx-auto mt-3 hidden max-w-2xl text-[16px] leading-6 text-white/65 sm:block">{H.sub[lang]}</p>
-                </div>
+                  <div className={started ? "sr-only" : "text-center"}>
+                    {!started && (
+                      <div className="mx-auto mb-4 hidden w-fit sm:block">
+                        <RobotMascot size={96} title="TAK-TAK" />
+                      </div>
+                    )}
+                    <h1 id="home-hero-title" className="tk-gradient-text text-balance text-[26px] font-extrabold leading-[1.1] tracking-[-0.03em] sm:text-[40px]">
+                      {H.title[lang]}
+                    </h1>
+                    <p className="mx-auto mt-3 hidden max-w-2xl text-[16px] leading-6 text-white/65 sm:block">{H.sub[lang]}</p>
+                  </div>
 
-                {!started && (
-                  <ul className="mt-5 grid grid-cols-2 gap-2 sm:mt-7 sm:gap-2.5 lg:grid-cols-3" aria-label={C.starts[lang]}>
-                    {HERO_CHIPS.map((c) => {
-                      const Icon = CHIP_ICON[c.key] ?? Sparkles;
-                      return (
-                        <li key={c.key}>
-                          <button
-                            type="button"
-                            onClick={() => ask(c.ask[lang])}
-                            className="hp-focus group flex h-full w-full items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.045] p-2.5 text-left sm:items-start sm:gap-3 sm:p-3.5 transition-all hover:-translate-y-0.5 hover:border-[var(--tk-cyan)]/50 hover:bg-white/[0.08]"
-                          >
-                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[var(--hp-cta)]/15 sm:h-9 sm:w-9 text-[var(--tk-cyan)] ring-1 ring-[var(--tk-cyan)]/25">
-                              <Icon size={17} aria-hidden />
-                            </span>
-                            <span className="min-w-0">
-                              <span className="block text-[13.5px] font-semibold leading-5 text-white sm:text-[14.5px]">{c.label[lang]}</span>
-                              <span className="mt-0.5 hidden text-[13px] leading-5 text-white/55 sm:block">{c.ask[lang]}</span>
-                            </span>
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
+                  {!started && (
+                    <ul className="mt-5 grid grid-cols-2 gap-2 sm:mt-7 sm:gap-2.5 lg:grid-cols-3" aria-label={C.starts[lang]}>
+                      {HERO_CHIPS.map((c) => {
+                        const Icon = CHIP_ICON[c.key] ?? Sparkles;
+                        return (
+                          <li key={c.key}>
+                            <button
+                              type="button"
+                              onClick={() => ask(c.ask[lang])}
+                              className="hp-focus group flex h-full w-full items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.045] p-2.5 text-left sm:items-start sm:gap-3 sm:p-3.5 transition-all hover:-translate-y-0.5 hover:border-[var(--tk-cyan)]/50 hover:bg-white/[0.08]"
+                            >
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-[var(--hp-cta)]/15 sm:h-9 sm:w-9 text-[var(--tk-cyan)] ring-1 ring-[var(--tk-cyan)]/25">
+                                <Icon size={17} aria-hidden />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-[13.5px] font-semibold leading-5 text-white sm:text-[14.5px]">{c.label[lang]}</span>
+                                <span className="mt-0.5 hidden text-[13px] leading-5 text-white/55 sm:block">{c.ask[lang]}</span>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </div>
 
                 {started && (
