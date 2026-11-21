@@ -8,6 +8,7 @@ import type * as T from './types';
 
 const SESSION_KEY = 'tk.session.v1';
 const WORKSPACE_KEY = 'tk.workspace.v1';
+const REVIEW_TOKEN = 'review';
 let session: T.Session | null = null;
 let workspaceId: string | null = null;
 let refreshing: Promise<boolean> | null = null;
@@ -35,6 +36,7 @@ export async function loadSession(): Promise<boolean> {
     session = raw ? (JSON.parse(raw) as T.Session) : null;
     workspaceId = await SecureStore.getItemAsync(WORKSPACE_KEY);
   } catch { session = null; }
+  applyMode();
   return Boolean(session?.accessToken && session.refreshToken);
 }
 
@@ -117,12 +119,18 @@ async function request<R>(method: string, path: string, body?: unknown, auth = t
 
 export const api = {
   requestCode: (email: string) => request<{ ok: boolean; message: string }>('POST', '/api/auth/email-code', { email }, false),
+  // Store reviewer email? Then no email is sent: the reviewer types the code given in the store console.
+  // An older server without this route answers 404: treated as a normal email.
+  isReviewEmail: async (email: string) => {
+    try { return (await request<{ review?: boolean }>('POST', '/api/mobile/v1/auth/review', { email }, false)).review === true; } catch { return false; }
+  },
   verifyCode: async (email: string, code: string) => {
     const result = await request<{ session: T.Session; user: { id: string; email: string } }>('POST', '/api/mobile/v1/auth/verify', { email, code }, false);
     await saveSession(result.session);
+    applyMode();
     return result;
   },
-  signOut: async () => { await saveSession(null); },
+  signOut: async () => { await saveSession(null); applyMode(); },
   hasSession: () => Boolean(session),
 
   me: () => request<T.Me>('GET', '/api/mobile/v1/me'),
@@ -135,7 +143,12 @@ export const api = {
   team: () => request<T.Team>('GET', '/api/mobile/v1/team'),
 };
 
-if (DEMO) {
+// Fictitious data instead of the server: the visual preview (DEMO) and the store reviewer session, whose token
+// ("review") no real /api/mobile/v1 route accepts. Everything else always talks to the real server.
+const realApi = { ...api };
+export const isReviewSession = () => session?.accessToken === REVIEW_TOKEN;
+function applyMode() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  Object.assign(api, require('./demo').demoApi);
+  Object.assign(api, realApi, DEMO || isReviewSession() ? require('./demo').demoApi : {});
 }
+applyMode();
