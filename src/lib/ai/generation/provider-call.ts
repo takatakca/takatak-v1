@@ -2,6 +2,7 @@
 // key is sent only to the provider. Errors are reduced to short codes; raw
 // provider messages are never returned to the browser.
 
+import { anthropicWorkspaceHeaders } from "@/lib/ai/anthropic-workspace";
 import type { AiStudioProvider } from "./config";
 
 export type GenerationResult =
@@ -58,7 +59,7 @@ export async function callProvider(
     method: "POST",
     headers: openai
       ? { Authorization: `Bearer ${config.apiKey}`, "Content-Type": "application/json" }
-      : { "x-api-key": config.apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+      : { "x-api-key": config.apiKey, "anthropic-version": "2023-06-01", ...anthropicWorkspaceHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify(
       openai
         ? {
