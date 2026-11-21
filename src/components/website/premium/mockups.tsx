@@ -375,7 +375,7 @@ function ReviewRequestMock() {
 function AiGenerateMock() {
   const { tk } = useCopy();
   return (
-    <Window title="AI Studio" right={<SoonTag />}>
+    <Window title="AI Studio">
       <div className="grid h-full grid-cols-[0.85fr_1.15fr] gap-2.5">
         <div className="flex flex-col gap-1.5">
           <div className="rounded-lg border border-white/10 bg-white/[0.04] p-2">

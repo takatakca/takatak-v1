@@ -546,8 +546,8 @@ export const servicePages: readonly ServicePage[] = [
     eyebrow: bi("Automation", "Automatisation"),
     title: bi("AI Studio", "AI Studio"),
     tagline: bi(
-      "Brand voice profiles and a saved library today; content, campaign and video generation coming soon.",
-      "Profils de voix de marque et bibliothèque dès aujourd'hui; génération de contenu, de campagnes et de vidéos bientôt.",
+      "Brand voice profiles, a saved library, and content, campaign and video drafts in your style, billed in AI credits.",
+      "Profils de voix de marque, bibliothèque, et brouillons de contenu, de campagnes et de vidéos dans votre style, facturés en crédits IA.",
     ),
     intro: bi(
       "AI Studio is the TAKATAK workspace for AI content. Our team also builds workflow automations and custom AI assistants today.",
