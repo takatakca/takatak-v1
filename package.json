@@ -46,6 +46,7 @@
     "qa:dashboard-labels": "tsx --require ./scripts/register-server-only.cjs scripts/dashboard-client-labels-tests.ts",
     "qa:ai-control-center": "tsx scripts/verify-ai-control-center.ts",
     "qa:go-live": "tsx scripts/verify-go-live-checklist.ts",
+    "qa:report-builder": "tsx scripts/verify-report-builder.ts",
     "qa:native-agents": "tsx scripts/verify-native-agents.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
     "qa:routes": "tsx scripts/list-routes.ts",
