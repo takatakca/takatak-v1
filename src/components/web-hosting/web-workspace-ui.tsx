@@ -220,7 +220,7 @@ export function PagePager({
           type="button"
           disabled={page <= 1}
           onClick={() => onPage(page - 1)}
-          className="rounded-md p-1 text-slate-500 disabled:text-slate-300"
+          className="-m-1 rounded-md p-2 text-slate-500 disabled:text-slate-300"
           aria-label="Previous page"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -243,7 +243,7 @@ export function PagePager({
           type="button"
           disabled={page >= pages}
           onClick={() => onPage(page + 1)}
-          className="rounded-md p-1 text-slate-500 disabled:text-slate-300"
+          className="-m-1 rounded-md p-2 text-slate-500 disabled:text-slate-300"
           aria-label="Next page"
         >
           <ChevronRight className="h-4 w-4" />
@@ -302,7 +302,7 @@ export function SideDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="-m-1 rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           aria-label="Close"
         >
           <X className="h-4 w-4" />

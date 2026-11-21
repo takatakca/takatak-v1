@@ -191,7 +191,7 @@ export function HostingAccountsOverview({
               </span>
             </div>
             <p className="mt-1 text-2xl font-semibold text-slate-900">—</p>
-            <Link href="/dashboard/support" className="mt-1 inline-block text-xs font-medium text-blue-600">
+            <Link href="/dashboard/support" className="mt-1 inline-flex min-h-8 items-center text-xs font-medium text-blue-600">
               View All Tickets
             </Link>
           </article>
@@ -207,7 +207,7 @@ export function HostingAccountsOverview({
                     key={item}
                     type="button"
                     onClick={() => setRange(item)}
-                    className={`rounded-md px-2.5 py-1 ${range === item ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+                    className={`rounded-md px-3 py-1.5 ${range === item ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
                   >
                     {item}
                   </button>
@@ -255,7 +255,7 @@ export function HostingAccountsOverview({
                 <li className="flex justify-between gap-4"><span>Bandwidth</span>{bandwidthPct != null ? `${bandwidthPct}%` : "—"}</li>
               </ul>
             </div>
-            <Link href="/dashboard/web-hosting/environments" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-blue-600">
+            <Link href="/dashboard/web-hosting/environments" className="mt-4 inline-flex min-h-10 items-center gap-1 text-sm font-medium text-blue-600">
               View Full Resource Usage <ChevronRight className="h-4 w-4" />
             </Link>
           </article>
@@ -358,13 +358,13 @@ export function HostingAccountsOverview({
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-1 text-slate-400">
-                          <span title="cPanel is not connected" className="rounded-md p-1 text-orange-400">
+                          <span title="cPanel is not connected" className="-m-1 rounded-md p-2 text-orange-400">
                             <Monitor className="h-4 w-4" />
                           </span>
                           <Link
                             href="/dashboard/web-hosting/environments"
                             onClick={(event) => event.stopPropagation()}
-                            className="rounded-md p-1 hover:bg-white hover:text-slate-700"
+                            className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700"
                             aria-label="Open environments"
                           >
                             <Settings className="h-4 w-4" />
@@ -424,7 +424,7 @@ export function HostingAccountsOverview({
                   label="Primary Domain"
                   value={
                     selected.primaryDomain ? (
-                      <a href={`https://${selected.primaryDomain}`} className="inline-flex items-center gap-1 text-blue-600" target="_blank" rel="noreferrer">
+                      <a href={`https://${selected.primaryDomain}`} className="inline-flex min-h-10 items-center gap-1 text-blue-600" target="_blank" rel="noreferrer">
                         {selected.primaryDomain} <ExternalLink className="h-3 w-3" />
                       </a>
                     ) : (

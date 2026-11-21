@@ -41,12 +41,12 @@ export function ConnectorCard({
       ) : null}
       <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium">
         {connector.managedIn ? (
-          <Link href={connector.managedIn} className="text-indigo-600 hover:text-indigo-800">
+          <Link href={connector.managedIn} className="inline-flex min-h-10 items-center text-indigo-600 hover:text-indigo-800">
             Open module →
           </Link>
         ) : null}
         {showSetupDetails && connector.docsUrl ? (
-          <a href={connector.docsUrl} target="_blank" rel="noreferrer noopener" className="text-slate-500 hover:text-slate-800">
+          <a href={connector.docsUrl} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-10 items-center text-slate-500 hover:text-slate-800">
             API docs ↗
           </a>
         ) : null}
