@@ -74,7 +74,7 @@ jobs:
 
   ios:
     needs: check
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +84,11 @@ jobs:
           cache: npm
           cache-dependency-path: mobile/package-lock.json
       - run: npm ci
+      - name: Use Xcode 26 (Swift 6.2, needed by Expo SDK 57)
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC/Contents/Developer"; fi
+          xcodebuild -version
       - name: Generate the iOS project
         run: npx expo prebuild --platform ios
       - name: Build for the iPhone simulator (no Apple account needed)
@@ -91,7 +96,7 @@ jobs:
         run: |
           xcodebuild -workspace TAKATAK.xcworkspace -scheme TAKATAK -configuration Release -sdk iphonesimulator \
             -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > xcodebuild.log 2>&1 || {
-            echo '--- errors ---'; grep -nE 'error:|xcodebuild: error|BUILD FAILED' xcodebuild.log | head -60
+            echo '--- errors ---'; grep -nE -A12 'error:|xcodebuild: error|BUILD FAILED' xcodebuild.log | head -120
             echo '--- end of log ---'; tail -80 xcodebuild.log; exit 1; }
           tail -5 xcodebuild.log
       - name: Package the simulator app
