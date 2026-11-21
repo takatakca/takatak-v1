@@ -156,14 +156,14 @@ export function WebsitesManager({
                               target="_blank"
                               rel="noreferrer"
                               onClick={(event) => event.stopPropagation()}
-                              className="rounded-md p-1 hover:bg-white hover:text-slate-700"
+                              className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700"
                               aria-label="View website"
                             >
                               <Eye className="h-4 w-4" />
                             </a>
                             <button
                               type="button"
-                              className="rounded-md p-1 hover:bg-white hover:text-slate-700"
+                              className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700"
                               aria-label="Settings"
                             >
                               <Settings className="h-4 w-4" />
@@ -204,7 +204,7 @@ export function WebsitesManager({
                   key={item}
                   type="button"
                   onClick={() => setRange(item)}
-                  className={`rounded-md px-2.5 py-1 ${
+                  className={`rounded-md px-3 py-1.5 ${
                     range === item ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"
                   }`}
                 >

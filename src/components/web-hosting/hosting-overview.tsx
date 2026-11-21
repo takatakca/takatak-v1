@@ -507,7 +507,7 @@ export function HostingOverview({
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1 text-slate-400">
-                        <button type="button" className="rounded-md p-1 hover:bg-white hover:text-slate-700" aria-label="View">
+                        <button type="button" className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700" aria-label="View">
                           <Eye className="h-4 w-4" />
                         </button>
                         <span className="rounded-md p-1">
@@ -737,7 +737,7 @@ function HostingDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="-m-1 rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
