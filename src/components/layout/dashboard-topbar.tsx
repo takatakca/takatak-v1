@@ -5,8 +5,11 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Bell, CalendarRange, Menu } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, Suspense } from "react";
 import { UserProfileMenu } from "@/components/layout/user-profile-menu";
+import { LanguageSwitch } from "@/components/layout/language-switch";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { pageSubtitleForPath, pageTitleForPath } from "@/lib/dashboard/dashboard-config";
+import { navLabel } from "@/lib/dashboard/nav-fr";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 function isoDate(value: Date): string {
   return value.toISOString().slice(0, 10);
@@ -140,7 +143,9 @@ export function DashboardTopbar({
   unreadNotificationCount?: number;
 }) {
   const pathname = usePathname();
-  const subtitle = pageSubtitleForPath(pathname);
+  const language = useDashboardLanguage();
+  // The English subtitles have no French version yet: shown only in English.
+  const subtitle = language === "fr" ? null : pageSubtitleForPath(pathname);
   const showDateRange =
     pathname === "/dashboard" ||
     pathname === "/dashboard/web-hosting" ||
@@ -168,7 +173,7 @@ export function DashboardTopbar({
         <Menu className="mt-0.5 hidden h-5 w-5 shrink-0 text-slate-500 lg:block" aria-hidden="true" />
         <div className="min-w-0">
           <h1 className="text-lg font-semibold tracking-tight text-slate-900">
-            {pageTitleForPath(pathname)}
+            {navLabel(pageTitleForPath(pathname), language)}
           </h1>
           {subtitle ? <p className="truncate text-xs text-slate-500">{subtitle}</p> : null}
         </div>
@@ -184,6 +189,8 @@ export function DashboardTopbar({
             <DateRangePicker />
           </Suspense>
         ) : null}
+
+        {session.configured ? <LanguageSwitch /> : null}
 
         <Link
           href="/dashboard/notifications"

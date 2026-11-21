@@ -109,6 +109,11 @@ for (const match of homeData.matchAll(/(?:label|detail): "([^"]+)"/g)) {
   assert.ok(HOME_FR[match[1]], `French text missing for the dashboard home text "${match[1]}"`);
 }
 assert.equal(homeText("Total Reach", "fr"), "Portée totale");
+// One-click FR / EN switch: only "en" or "fr", only the caller's own profile.
+const switchAction = readFileSync(join(ROOT, "src/app/dashboard/language-actions.ts"), "utf8");
+assert.match(switchAction, /if \(raw !== "en" && raw !== "fr"\) return;/);
+assert.match(switchAction, /where: \{ id: profileDetails\.id \}/, "the switch changes the caller's own profile only");
+assert.match(readFileSync(join(ROOT, "src/components/layout/dashboard-topbar.tsx"), "utf8"), /<LanguageSwitch \/>/);
 assert.equal(homeText("Total Reach", "en"), "Total Reach");
 
 console.log(
