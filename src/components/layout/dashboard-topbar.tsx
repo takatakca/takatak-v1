@@ -120,7 +120,7 @@ function DateRangePicker() {
           <button
             type="button"
             onClick={applyRange}
-            className="mt-3 w-full rounded-lg bg-[#1f2125] px-3 py-2 text-sm font-medium text-white"
+            className="mt-3 w-full rounded-lg bg-[#1565D8] px-3 py-2 text-sm font-medium text-white"
           >
             Apply
           </button>
