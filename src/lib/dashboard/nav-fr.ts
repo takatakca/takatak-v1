@@ -97,3 +97,54 @@ export function navLabel(label: string, language: DashboardLanguage): string {
 export function asDashboardLanguage(value: unknown): DashboardLanguage {
   return value === "fr" ? "fr" : "en";
 }
+
+/** French for the dashboard home and its quick actions, keyed by the English text. */
+export const HOME_FR: Record<string, string> = {
+  // Quick actions
+  "Quick Actions": "Actions rapides",
+  "Add Business / Brand": "Ajouter une entreprise ou une marque",
+  "My websites": "Mes sites web",
+  "Social media": "Réseaux sociaux",
+  Reports: "Rapports",
+  "Open AI Studio": "Ouvrir AI Studio",
+  "Ask the team": "Demander à l’équipe",
+  Soon: "Bientôt",
+  // Welcome
+  "Welcome back": "Bon retour",
+  "Here's what's happening with your business across all integrated platforms.": "Voici ce qui se passe pour votre entreprise sur toutes les plateformes branchées.",
+  // KPIs and sections
+  "Total Reach": "Portée totale",
+  Engagement: "Engagement",
+  "Website Traffic": "Visites du site",
+  Conversions: "Conversions",
+  "Avg. Rating": "Note moyenne",
+  "Integration Overview": "Intégrations",
+  "Performance Overview": "Performance",
+  "Top Pages by Traffic": "Pages les plus visitées",
+  Page: "Page",
+  Sessions: "Sessions",
+  Change: "Variation",
+  "Top Social Posts": "Meilleures publications",
+  "Recent Reviews": "Avis récents",
+  "Reviews appear here once a source is connected.": "Les avis s’affichent ici dès qu’une source est branchée.",
+  "No data yet": "Pas encore de données",
+  Total: "Total",
+  // Integration rows and statuses
+  Website: "Site web",
+  "Social Media": "Réseaux sociaux",
+  Advertising: "Publicité",
+  Reviews: "Avis",
+  "No website connected": "Aucun site branché",
+  "No accounts connected": "Aucun compte branché",
+  "No ad accounts connected": "Aucun compte publicitaire branché",
+  "No review sources connected": "Aucune source d’avis branchée",
+  Connected: "Branché",
+  Error: "Erreur",
+  Expired: "Expiré",
+  "Not connected": "Pas branché",
+};
+
+/** The home text in the account's language (English when no French text exists). */
+export function homeText(text: string, language: DashboardLanguage): string {
+  return language === "fr" ? (HOME_FR[text] ?? text) : text;
+}

@@ -2,7 +2,7 @@
 // Phase 15A: access resolution is Profile + ClientMembership based via
 // getServerAccessContext. Denied states render safe screens — never demo
 // data, never another client's data, never owner defaults.
-import { asDashboardLanguage } from "@/lib/dashboard/nav-fr";
+import { getDashboardLanguage } from "@/lib/dashboard/language";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
@@ -252,12 +252,7 @@ export default async function DashboardLayout({
   if (access.mode === "foundation_demo") session.configured = false;
 
   // The account's dashboard language (Account settings › Preferences); English by default.
-  const languageDb = getPrisma();
-  const language = profileDetails?.id && languageDb
-    ? asDashboardLanguage(
-        (await languageDb.profile.findUnique({ where: { id: profileDetails.id }, select: { language: true } }).catch(() => null))?.language,
-      )
-    : "en";
+  const language = await getDashboardLanguage(profileDetails?.id);
 
   return (
     <DashboardShell
