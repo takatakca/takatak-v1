@@ -162,8 +162,11 @@ export async function getAiControlSnapshot(now = Date.now()): Promise<AiControlS
     {
       key: "gateway",
       on: gatewayMissing.length === 0,
-      label: "TAKATAK AI Gateway (agents and Growth Suite tasks)",
-      detail: gatewayMissing.length === 0 ? "Configured." : `Not configured: ${gatewayMissing.join(", ")} missing.`,
+      label: "External AI Gateway (optional)",
+      detail:
+        gatewayMissing.length === 0
+          ? "Configured: the gateway runs every agent."
+          : "Not configured (optional): Chat Concierge and Social Autopilot run here on the connected engines; SMS, SEO, ads and report agents wait for the gateway.",
       settings: [...AI_GATEWAY_ENV],
     },
     {

@@ -52,7 +52,6 @@ export function goLiveChecklist(env: Env, facts: GoLiveFacts): GoLiveItem[] {
   const studio = readAiStudioConfig(env);
   const cronSecret = set(env, "CRON_SECRET");
   const syncFresh = facts.lastAutomaticSyncAt !== null && facts.now - Date.parse(facts.lastAutomaticSyncAt) < DAY_MS;
-  const gateway = set(env, "TAKATAK_AI_GATEWAY_URL") && set(env, "TAKATAK_AI_GATEWAY_TOKEN");
 
   return [
     {
@@ -163,13 +162,18 @@ export function goLiveChecklist(env: Env, facts: GoLiveFacts): GoLiveItem[] {
       id: "agents",
       area: "ai",
       title: "Autopilot agents can run",
-      status: gateway ? "partial" : "todo",
-      now: gateway
-        ? "Gateway settings are present; agents run once a workspace turns one on."
-        : "No agent can run: the AI Gateway service that executes them is not built yet.",
-      howTo: "TAKATAK team: build the agent runner (or the gateway) on the engines already connected.",
-      settings: ["TAKATAK_AI_GATEWAY_URL", "TAKATAK_AI_GATEWAY_TOKEN"],
-      who: "team",
+      // Chat Concierge and Social Autopilot run natively on the connected engines;
+      // they need connected engines and the scheduler (or the owner's "run now" button).
+      status: facts.connectedEngines > 0 ? (cronSecret && syncFresh ? "done" : "partial") : "todo",
+      now:
+        facts.connectedEngines > 0
+          ? cronSecret && syncFresh
+            ? "Chat Concierge and Social Autopilot run on the connected engines every 15 minutes."
+            : "Chat Concierge and Social Autopilot run on the connected engines when you press \"Run waiting agents now\" (AI Control Center); automatic runs start with the scheduler."
+          : "No engine is connected, so no agent can run.",
+      howTo: "Turn on the scheduler (item above). SMS, SEO, ads and report agents also need their own connections.",
+      settings: ["CRON_SECRET"],
+      who: "owner",
     },
     {
       id: "newsletter",

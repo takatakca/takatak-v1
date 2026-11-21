@@ -161,6 +161,9 @@ jobs:
       - name: Go-live checklist follows the real settings
         run: npm run qa:go-live
 
+      - name: Native agent runner stays within its limits
+        run: npm run qa:native-agents
+
       - name: Promotion code safeguards
         run: npm run qa:promotions
 

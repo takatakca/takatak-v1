@@ -107,7 +107,13 @@ async function main() {
       seenAuth = (init.headers as Record<string, string>).Authorization;
       return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 });
     }, {});
-    assert.deepEqual(run, { ok: true, text: "ok" });
+    // The relay also reports the model and token usage (used for receipts).
+    assert.ok(run.ok, `${key} relays the answer`);
+    if (run.ok) {
+      assert.equal(run.text, "ok");
+      assert.ok(run.model.length > 0, `${key} names the model it used`);
+      assert.ok("inputTokens" in run.usage, `${key} reports usage`);
+    }
     assert.equal(seenUrl, url);
     assert.equal(seenAuth, "Bearer k-test");
   }

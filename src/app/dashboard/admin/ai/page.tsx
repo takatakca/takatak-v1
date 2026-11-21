@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Bot, CircleDollarSign, Cpu, KeyRound, Sparkles, Workflow } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/admin-header";
+import { RunAgentsButton } from "@/components/admin/run-agents-button";
+import { nativeRunnerEnabled } from "@/lib/ai-agents/native-runner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getAiControlSnapshot, type AiControlEngine } from "@/lib/admin/ai-control";
@@ -200,9 +202,10 @@ export default async function AiControlCenterPage() {
       <Card>
         <CardHeader
           title="Agents"
-          subtitle="Autopilot agents that work for client workspaces. Publishing and spending always wait for a person's approval."
+          subtitle="Autopilot agents that work for client workspaces. Chat Concierge and Social Autopilot run here on the connected engines; publishing and spending always wait for a person's approval."
         />
-        <CardBody className="overflow-x-auto">
+        <CardBody className="space-y-4 overflow-x-auto">
+          <RunAgentsButton disabledReason={nativeRunnerEnabled() ? null : "The AI Gateway is configured: it runs the agents."} />
           <table className="w-full min-w-[720px] text-left">
             <thead>
               <tr className="text-[11px] uppercase tracking-wide text-slate-400">
@@ -243,7 +246,7 @@ export default async function AiControlCenterPage() {
         <CardHeader title="Dernières exécutions · Latest runs" subtitle="The ten most recent agent runs, all workspaces." />
         <CardBody>
           {recentRuns.length === 0 ? (
-            <p className="text-sm text-slate-600">No agent has run yet. Agents start when a workspace turns one on and the AI Gateway is configured.</p>
+            <p className="text-sm text-slate-600">No agent has run yet. An agent runs once a workspace turns it on (Growth → AI Engine), has AI credits, and a run is due or requested.</p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {recentRuns.map((run) => (
