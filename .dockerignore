@@ -9,3 +9,4 @@ coverage
 .tmp-takatak-automate
 deploy/takatak-staging-release.tar.gz
 *.pem
+mobile

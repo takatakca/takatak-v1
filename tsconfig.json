@@ -40,6 +40,7 @@
   "exclude": [
     "node_modules",
     ".tmp-takatak-automate",
-    "supabase/functions"
+    "supabase/functions",
+    "mobile"
   ]
 }

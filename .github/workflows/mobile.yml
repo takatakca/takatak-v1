@@ -1,0 +1,111 @@
+name: Application native (iOS + Android)
+# Builds the native TAKATAK app in mobile/ for free on GitHub: type check, JavaScript bundle, an Android test APK
+# and AAB, and an iOS simulator build that proves the iPhone app compiles. No secret is used: the Android files are
+# signed with the throwaway debug key, for testing only. The store upload is re-signed on the owner's PC with the
+# Play upload key, which never comes to GitHub (mobile/README.md).
+on:
+  push:
+    branches: [main, 'claude/**']
+    paths: ['mobile/**', '.github/workflows/mobile.yml']
+  pull_request:
+    paths: ['mobile/**', '.github/workflows/mobile.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+defaults:
+  run:
+    working-directory: mobile
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm test
+      - name: JavaScript bundle (Android and iOS)
+        run: npx expo export --platform android --platform ios --output-dir /tmp/export
+
+  android:
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - name: Generate the Android project
+        run: npx expo prebuild --platform android --no-install
+      - name: Build APK (install on a phone) and AAB (Google Play format)
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64
+      - name: Name the files
+        run: |
+          mkdir -p ../out
+          cp android/app/build/outputs/apk/release/app-release.apk ../out/TAKATAK-native-test.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab ../out/TAKATAK-native-unsigned-for-play.aab
+          # Remove the debug signature from the AAB, so the owner's upload key is its only signature.
+          zip -q -d ../out/TAKATAK-native-unsigned-for-play.aab 'META-INF/*.SF' 'META-INF/*.RSA' 'META-INF/*.EC' 'META-INF/*.DSA' 'META-INF/MANIFEST.MF' || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: takatak-android
+          path: out/
+          retention-days: 30
+
+  ios:
+    needs: check
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - run: npm ci
+      - name: Use Xcode 26 (Swift 6.2, needed by Expo SDK 57)
+        run: |
+          XC=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$XC" ]; then sudo xcode-select -s "$XC/Contents/Developer"; fi
+          xcodebuild -version
+      - name: Generate the iOS project
+        run: npx expo prebuild --platform ios
+      - name: Build for the iPhone simulator (no Apple account needed)
+        working-directory: mobile/ios
+        run: |
+          xcodebuild -workspace TAKATAK.xcworkspace -scheme TAKATAK -configuration Release -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > xcodebuild.log 2>&1 || {
+            echo '--- errors ---'; grep -nE -A12 'error:|xcodebuild: error|BUILD FAILED' xcodebuild.log | head -120
+            echo '--- end of log ---'; tail -80 xcodebuild.log; exit 1; }
+          tail -5 xcodebuild.log
+      - name: Package the simulator app
+        run: |
+          mkdir -p ../out
+          cd ios/build/Build/Products/Release-iphonesimulator
+          zip -qry "$GITHUB_WORKSPACE/out/TAKATAK-ios-simulator.zip" TAKATAK.app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: takatak-ios-simulator
+          path: out/
+          retention-days: 30
