@@ -211,6 +211,8 @@ jobs:
 
       - name: AI Studio generation safeguards
         run: npm run qa:ai-studio-generation
+      - name: Website categories (honest public service lines)
+        run: npm run qa:website-categories
 
       - name: AI File Organizer policy and tenant/billing preview guard
         run: npm run qa:ai-file-organizer

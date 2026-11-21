@@ -5,6 +5,7 @@
 // - capabilities the code does not run yet are labelled "coming soon".
 // Run: npm run qa:website-categories
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 import { SOCIAL_PROVIDER_REGISTRY } from "../src/lib/social/providers/registry";
 import { SOCIAL_PLAN_CATALOG } from "../src/lib/billing/social/plan-catalog";
@@ -107,15 +108,15 @@ check("every price comes from the code catalogs", () => {
   }
 });
 
-check("the business phone is planned: no price, every feature labelled coming soon", () => {
+check("the business phone is sold by MIMT: never in a TAKATAK cart, no invented claims", () => {
+  // Since the MIMT launch (Nov 2026) the page presents MIMT's own plans (src/lib/website/mimt-plans.ts).
   const voip = CORE_CATEGORIES.find((c) => c.key === "voip")!;
-  assert.equal(voip.availability, "planned");
-  assert.equal(voip.pricing.kind, "planned");
+  assert.equal(voip.availability, "live");
+  assert.equal(voip.pricing.kind, "planned", "kept out of TAKATAK carts and order totals");
   assert.equal(voip.from, "planned");
-  assert.ok(voip.included.slice(0, 5).every((i) => i.soon));
-  assert.equal(getServicePage("voip")?.packages.length, 0, "the /services index must not show a VoIP price");
+  assert.equal(getServicePage("voip")?.packages.length, 0, "the /services index must not show a TAKATAK VoIP price");
   const copy = Object.entries(dicts).flatMap(([, d]) => Object.entries(d).filter(([k]) => k.startsWith("cat.voip.")).map(([, v]) => v));
-  for (const banned of [/unlimited/i, /illimit/i, /\bfree\b/i, /gratuit/i, /download/i, /télécharg/i, /fongo/i, /textnow/i, /\$/]) {
+  for (const banned of [/unlimited/i, /illimit/i, /download/i, /télécharg/i, /fongo/i, /textnow/i]) {
     assert.ok(!copy.some((v) => banned.test(v)), `VoIP copy must not match ${banned}`);
   }
 });
@@ -124,7 +125,9 @@ check("capabilities not live in the code are labelled", () => {
   const soon = (key: string) => CORE_CATEGORIES.find((c) => c.key === key)!.included.filter((i) => i.soon).length;
   assert.ok(soon("social") >= 1, "direct publishing is not implemented");
   assert.ok(soon("reviews") >= 2, "review requests and AI drafts are not implemented");
-  assert.ok(soon("ai") >= 3, "AI Studio generation runs no provider yet");
+  // AI Studio writes drafts on the TAK-TAK engines (billed in AI credits), so its lines are live.
+  assert.equal(soon("ai"), 0, "AI Studio generation is live on the TAK-TAK engines");
+  assert.match(readFileSync("src/lib/ai/generation/studio-engine.ts", "utf8"), /runTakbot\(/, "the generator really runs on TAK-TAK");
 });
 
 check("every /services category slug has a service page entry (sitemap + static params)", () => {

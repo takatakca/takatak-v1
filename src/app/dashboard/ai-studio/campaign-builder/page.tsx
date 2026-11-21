@@ -1,43 +1,18 @@
-import { AiHeader } from "@/components/ai-studio/ai-header";
-import { PlannedGeneratorForm } from "@/components/ai-studio/planned-generator-form";
-import { StaffOnly } from "@/components/dashboard/staff-only";
+import { StudioGeneratorScreen } from "@/components/ai-studio/studio-generator-screen";
 
 export const dynamic = "force-dynamic";
 
-async function CampaignBuilderPageScreen() {
+export default function CampaignBuilderPage() {
   return (
-    <div className="space-y-5">
-      <AiHeader
-        title="Campaign Builder"
-        subtitle="Future assistant that drafts campaign plans, content calendars, and post ideas. Drafts will flow into the Social Media module as campaign drafts — nothing is sent to Metricool."
-        badges={[{ label: "Foundation" }, { label: "No AI provider connected", status: "not_configured" }]}
-      />
-      <PlannedGeneratorForm
-        title="Build a campaign plan (planned)"
-        subtitle="All controls are disabled — no AI call happens on this page."
-        fields={[
-          { label: "Business type", placeholder: "e.g. restaurant, dental clinic, gym" },
-          { label: "Goal", kind: "select", placeholder: "Select goal", options: ["Awareness", "Foot traffic", "Leads", "Launch"] },
-          { label: "Date range", placeholder: "e.g. 4 weeks starting next Monday" },
-          { label: "Platforms", placeholder: "e.g. Instagram + Facebook" },
-          { label: "Offer / audience notes", kind: "textarea", placeholder: "Key offer and target audience" },
-        ]}
-        buttonLabel="Draft campaign plan"
-        footnote="Generated plans will save as campaign drafts for review — real scheduling and publishing stay behind the Metricool verification boundary."
-      />
-    </div>
-  );
-}
-
-// Not self-serve for clients yet: TAKATAK staff see the screen, clients see
-// what it is for and ask the team (owner's order, Nov 2026: no prototypes).
-export default async function CampaignBuilderPage() {
-  return (
-    <StaffOnly
+    <StudioGeneratorScreen
       title="Planificateur de campagnes · Campaign builder"
+      subtitle="Un plan de campagne de 4 semaines : objectif, public, message clé et calendrier de publications. Le plan est gardé comme brouillon ; rien n’est programmé ni publié · A 4-week campaign plan: objective, audience, key message and a post calendar. Saved as a draft; nothing is scheduled or published."
       purpose="Plans de campagne, calendriers de contenu et idées de publications pour votre entreprise · Campaign plans, content calendars and post ideas for your business."
-    >
-      <CampaignBuilderPageScreen />
-    </StaffOnly>
+      kinds={["campaign_plan"]}
+      formTitle="Bâtir un plan de campagne · Build a campaign plan"
+      goalLabel="Objectif de la campagne · Campaign goal"
+      goalPlaceholder="ex. : plus de clients le midi en décembre · e.g. more lunch customers in December"
+      contextPlaceholder="Type d’entreprise, offre, dates, public visé… · Business type, offer, dates, target audience…"
+    />
   );
 }

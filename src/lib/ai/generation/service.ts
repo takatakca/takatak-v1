@@ -15,9 +15,22 @@ export interface GenerationDb extends Db {
   $transaction<T>(fn: (tx: Db) => Promise<T>): Promise<T>;
 }
 
+/**
+ * What one call returns. A TAK-TAK call (billed in AI credits) can also fail
+ * for lack of credits or of a connected engine, and adds non-secret details
+ * (engine, credits) kept with the draft.
+ */
+export type StudioCallResult =
+  | (Extract<GenerationResult, { ok: true }> & { meta?: Record<string, string | number | boolean | null> })
+  | Extract<GenerationResult, { ok: false }>
+  | { ok: false; code: "insufficient_credits" | "no_engine" };
+
+/** Where a draft is generated: a provider key of AI Studio, or the TAK-TAK engines (credits). */
+export type StudioProvider = AiStudioProvider | "takbot";
+
 export type GenerationOutcome =
-  | { ok: true; outputId: string; jobId: string; title: string; content: string }
-  | { ok: false; reason: "daily_limit" | "voice_not_found" | Extract<GenerationResult, { ok: false }>["code"] };
+  | { ok: true; outputId: string; jobId: string; title: string; content: string; meta: Record<string, string | number | boolean | null> }
+  | { ok: false; reason: "daily_limit" | "voice_not_found" | Extract<StudioCallResult, { ok: false }>["code"] };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -34,17 +47,17 @@ export const GENERATION_SOURCE = "ai_studio_generation";
  * (a model called from TAKATAK's server); the real vendor is always in
  * `metadata.provider`.
  */
-export function dbProvider(provider: AiStudioProvider): "openai" | "internal" {
+export function dbProvider(provider: StudioProvider): "openai" | "internal" {
   return provider === "openai" ? "openai" : "internal";
 }
 
 export async function generateForWorkspace(
   db: GenerationDb,
-  call: (prompt: { system: string; user: string }) => Promise<GenerationResult>,
+  call: (prompt: { system: string; user: string }, context: { jobId: string }) => Promise<StudioCallResult>,
   input: {
     clientId: string;
     profileId: string | null;
-    provider: AiStudioProvider;
+    provider: StudioProvider;
     model: string;
     dailyLimit: number;
     request: GenerateRequest;
@@ -98,9 +111,9 @@ export async function generateForWorkspace(
     select: { id: true },
   });
 
-  let result: GenerationResult;
+  let result: StudioCallResult;
   try {
-    result = await call(buildPrompt(request, voice));
+    result = await call(buildPrompt(request, voice), { jobId: job.id });
   } catch {
     result = { ok: false, code: "network" };
   }
@@ -122,6 +135,7 @@ export async function generateForWorkspace(
     return { ok: false, reason: result.code };
   }
 
+  const meta = result.meta ?? {};
   const title = outputTitle(request);
   const output = await db.$transaction(async (tx) => {
     const saved = await tx.savedAiOutput.create({
@@ -141,6 +155,7 @@ export async function generateForWorkspace(
           provider: input.provider,
           model: input.model,
           requestedBy: input.profileId,
+          ...meta,
         },
       },
       select: { id: true },
@@ -161,11 +176,12 @@ export async function generateForWorkspace(
           model: input.model,
           inputTokens: result.inputTokens,
           outputTokens: result.outputTokens,
+          ...meta,
         },
       },
     });
     return saved;
   });
 
-  return { ok: true, outputId: output.id, jobId: job.id, title, content: result.text };
+  return { ok: true, outputId: output.id, jobId: job.id, title, content: result.text, meta };
 }

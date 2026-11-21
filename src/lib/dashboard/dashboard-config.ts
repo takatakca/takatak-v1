@@ -259,8 +259,6 @@ export const STAFF_ONLY_ROUTES: ReadonlySet<string> = new Set([
   "/dashboard/reports/builder",
   "/dashboard/reports/schedules",
   "/dashboard/reports/metrics",
-  "/dashboard/ai-studio/campaign-builder",
-  "/dashboard/ai-studio/video-ideas",
   "/dashboard/local-listings/photos",
   "/dashboard/web-hosting/dns",
   "/dashboard/web-hosting/provisioning",
