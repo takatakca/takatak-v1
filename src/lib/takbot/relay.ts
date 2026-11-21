@@ -5,6 +5,14 @@
 
 import type { TakbotEngine, TakbotMode } from "./catalog";
 
+// Same rule as src/lib/ai/anthropic-workspace.ts, kept local so this file has
+// no runtime imports (scripts/studio-usage-tests.mjs loads it with plain Node).
+// A Claude key made for "All workspaces" must name its workspace on each call.
+function anthropicWorkspaceHeaders(env: Record<string, string | undefined> = process.env): Record<string, string> {
+  const id = env.ANTHROPIC_WORKSPACE_ID?.trim();
+  return id && /^wrkspc_[A-Za-z0-9]{8,64}$/.test(id) ? { "anthropic-workspace-id": id } : {};
+}
+
 export type RelayResult =
   | { ok: true; text: string; model: string; usage: RelayUsage }
   | { ok: false; code: "timeout" | "network" | "rate_limited" | "auth" | "provider_error" | "empty" | "unsupported" };
@@ -61,7 +69,7 @@ function buildRequest(engine: TakbotEngine, mode: TakbotMode, apiKey: string, mo
       url: "https://api.anthropic.com/v1/messages",
       init: {
         method: "POST",
-        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", ...anthropicWorkspaceHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ model, max_tokens: RELAY_MAX_OUTPUT_TOKENS, system, messages: [{ role: "user", content: prompt }] }),
       },
     };

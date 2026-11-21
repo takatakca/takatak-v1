@@ -13,6 +13,7 @@ Admin › **AI provider keys** (`/dashboard/admin/ai-providers`) is where a plat
   - Saving a new key clears the old result.
 - Providers with no read-only endpoint can store a key, but are never shown as working. Today these are Perplexity, Revid, Suno, Lovable and Cursor.
 - Server code gets a key with `resolveProviderKey(provider)` (`src/lib/ai-providers/store.ts`). It returns the saved key first, then the provider's environment variable.
+- A Claude key made for "All workspaces" must name a workspace on every request. Set `ANTHROPIC_WORKSPACE_ID` (`wrkspc_…`) on the server: TAK-TAK, AI Studio generation and the key test then send it as `anthropic-workspace-id`. Leave it unset for a key that belongs to one workspace.
 - Every save, replace, test and removal writes an audit entry (`ai_provider_key.*`) with the provider and the last four characters only.
 
 ## Providers (checked against each provider's docs on 2026-10-09)
