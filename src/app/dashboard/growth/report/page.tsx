@@ -21,7 +21,7 @@ export default async function GrowthReportPage({ searchParams }: { searchParams:
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="Monthly Growth Report"
+        title="Bilan mensuel · Monthly Growth Report"
         description="Everything TAKATAK did for this client this month: traffic, contacts, reviews, chat, leads, ads and AI work, compared with last month."
         actions={
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium">

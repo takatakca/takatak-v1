@@ -5,7 +5,7 @@ import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Plans and billing",
+  title: "Forfaits et facturation · Plans and billing",
   robots: { index: false, follow: false },
 };
 

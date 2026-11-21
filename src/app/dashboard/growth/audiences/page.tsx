@@ -44,7 +44,7 @@ export default async function AudiencesPage() {
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="Retargeting & Geo-targeting"
+        title="Reciblage et géociblage · Retargeting & Geo-targeting"
         description="Bring back people who already showed interest, and spend only in the neighbourhoods that matter to each business."
       />
 
