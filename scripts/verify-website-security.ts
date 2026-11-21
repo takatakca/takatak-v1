@@ -3,6 +3,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
+import { domainFrom } from "../src/lib/web-hosting/dns-check";
+import { gradeDns } from "../src/lib/web-hosting/dns-grade";
 import { gradeSecurity } from "../src/lib/web-hosting/security-grade";
 
 const strong = gradeSecurity({
@@ -61,4 +63,46 @@ const action = readFileSync("src/app/dashboard/web-hosting/security/actions.ts",
 assert.match(action, /hasEffectivePermission\(access, "view_dashboard"\)/);
 assert.doesNotMatch(readFileSync("src/lib/dashboard/dashboard-config.ts", "utf8"), /"\/dashboard\/web-hosting\/security",\n/, "the security screen is no longer staff-only");
 
-console.log("website security: ok (grading, certificate, HSTS, framing, guards)");
+// DNS and email check (/dashboard/web-hosting/dns).
+assert.equal(domainFrom("https://www.Example.ca/menu"), "example.ca");
+assert.equal(domainFrom("shop.example.ca"), "shop.example.ca");
+for (const bad of ["", "localhost", "intranet.local", "10.0.0.1", "exa mple.ca", "x".repeat(400)]) assert.equal(domainFrom(bad), null, bad);
+const healthy = gradeDns({
+  domain: "example.ca",
+  a: ["203.0.113.10"],
+  aaaa: [],
+  wwwResolves: true,
+  ns: ["ns1.host.ca", "ns2.host.ca"],
+  mx: [{ exchange: "mx.mail.ca", priority: 10 }],
+  txt: ["v=spf1 include:_spf.mail.ca ~all", "google-site-verification=abc"],
+  dmarc: ["v=DMARC1; p=quarantine; rua=mailto:dmarc@example.ca"],
+});
+assert.ok(healthy.checks.every((c) => c.status === "pass"), JSON.stringify(healthy.checks));
+assert.ok(healthy.records.some((r) => r.type === "MX" && r.value === "10 mx.mail.ca"));
+const broken = gradeDns({
+  domain: "example.ca",
+  a: [],
+  aaaa: [],
+  wwwResolves: false,
+  ns: ["ns1.host.ca"],
+  mx: [{ exchange: "mx.mail.ca", priority: 10 }],
+  txt: ["v=spf1 +all", "v=spf1 include:x ~all"],
+  dmarc: [],
+});
+const dns = (key: string) => broken.checks.find((c) => c.key === key)?.status;
+assert.equal(dns("website"), "fail");
+assert.equal(dns("www"), "warn");
+assert.equal(dns("ns"), "warn");
+assert.equal(dns("spf"), "fail", "two SPF records are rejected by mail servers");
+assert.equal(dns("dmarc"), "fail", "a domain that receives mail without DMARC can be spoofed");
+const watch = gradeDns({ domain: "x.ca", a: ["203.0.113.1"], aaaa: [], wwwResolves: true, ns: ["a", "b"], mx: [], txt: ["v=spf1 ?all"], dmarc: ["v=DMARC1; p=none"] });
+assert.equal(watch.checks.find((c) => c.key === "spf")?.status, "warn", "an SPF without ~all or -all is too permissive");
+assert.equal(watch.checks.find((c) => c.key === "dmarc")?.status, "warn", "p=none only watches");
+assert.equal(watch.checks.find((c) => c.key === "mx")?.status, "warn");
+const dnsCheck = readFileSync("src/lib/web-hosting/dns-check.ts", "utf8");
+assert.match(dnsCheck, /^import "server-only";/);
+assert.doesNotMatch(dnsCheck, /prisma|getPrisma|\.create\(|fetch\(/, "the DNS check only reads public DNS and stores nothing");
+assert.match(readFileSync("src/app/dashboard/web-hosting/dns/actions.ts", "utf8"), /hasEffectivePermission\(access, "view_dashboard"\)/);
+assert.doesNotMatch(readFileSync("src/lib/dashboard/dashboard-config.ts", "utf8"), /"\/dashboard\/web-hosting\/dns",\n/, "the DNS screen is no longer staff-only");
+
+console.log("website security: ok (grading, certificate, HSTS, framing, guards, DNS and email)");

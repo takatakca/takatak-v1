@@ -1,40 +1,48 @@
+import Link from "next/link";
+
 import { DnsRecordList } from "@/components/web-hosting/dns-record-list";
-import { WebHostingEmptyState } from "@/components/web-hosting/web-hosting-empty-state";
-import { WebHostingHeader } from "@/components/web-hosting/web-hosting-header";
-import { WebSourceBanner } from "@/components/web-hosting/source-banner";
+import { DnsCheckForm } from "@/components/web-hosting/dns-check-form";
+import { getPrisma } from "@/lib/db/prisma";
+import { getServerAccessContext } from "@/lib/security/access-context";
 import { getDnsRecordsData } from "@/lib/web-hosting/web-hosting-data";
-import { StaffOnly } from "@/components/dashboard/staff-only";
 
 export const dynamic = "force-dynamic";
 
-async function DnsPageScreen() {
-  const data = await getDnsRecordsData();
-  return (
-    <div className="space-y-5">
-      <WebHostingHeader
-        title="DNS"
-        subtitle="Internal DNS tracking. Values marked Internal demo are foundation placeholders — nothing here is live, and editing arrives with provider sync."
-        badges={[{ label: "Foundation" }, { label: "Internal demo" }]}
-      />
-      <WebSourceBanner source={data.source} label={data.sourceLabel} />
-      {data.records.length ? (
-        <DnsRecordList records={data.records} />
-      ) : (
-        <WebHostingEmptyState title="No DNS records yet" description="DNS tracking rows appear here." />
-      )}
-    </div>
-  );
+async function workspaceDomains(clientId: string): Promise<string[]> {
+  const prisma = getPrisma();
+  if (!prisma) return [];
+  try {
+    const rows = await prisma.domainAsset.findMany({ where: { clientId }, select: { domainName: true }, take: 20 });
+    return [...new Set(rows.map((row) => row.domainName.trim().toLowerCase()).filter(Boolean))];
+  } catch {
+    return [];
+  }
 }
 
-// Not self-serve for clients yet: TAKATAK staff see the screen, clients see
-// what it is for and ask the team (owner's order, Nov 2026: no prototypes).
 export default async function DnsPage() {
+  const { access } = await getServerAccessContext();
+  const suggestions = access.mode === "client_scoped" ? await workspaceDomains(access.activeClientId) : [];
+  const staffRecords = access.mode === "platform_admin" ? await getDnsRecordsData() : null;
   return (
-    <StaffOnly
-      title="DNS"
-      purpose="Les enregistrements DNS de vos domaines · The DNS records of your domains."
-    >
-      <DnsPageScreen />
-    </StaffOnly>
+    <div className="space-y-5">
+      <div>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-900">DNS et courriel · DNS & email</h1>
+        <p className="mt-1 max-w-2xl text-sm text-slate-500">
+          Vérifiez que votre domaine mène au site et que vos courriels ne vont pas aux pourriels (MX, SPF, DMARC) · Check that your domain
+          leads to your website and that your emails stay out of spam (MX, SPF, DMARC).
+        </p>
+      </div>
+      <DnsCheckForm suggestions={suggestions} />
+      <p className="text-xs text-slate-500">
+        Pour changer un enregistrement, l’équipe s’en occupe · To change a record, the team handles it:{" "}
+        <Link href="/dashboard/support" className="font-semibold text-emerald-700 hover:underline">Demander · Ask</Link>
+      </p>
+      {staffRecords && staffRecords.records.length ? (
+        <section className="space-y-2" aria-label="Internal DNS tracking">
+          <h2 className="text-sm font-semibold text-slate-900">Suivi interne (personnel) · Internal tracking (staff)</h2>
+          <DnsRecordList records={staffRecords.records} />
+        </section>
+      ) : null}
+    </div>
   );
 }
