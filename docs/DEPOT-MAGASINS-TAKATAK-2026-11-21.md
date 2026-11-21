@@ -2,12 +2,12 @@
 
 Suite de [`APPS-MAGASINS.md`](APPS-MAGASINS.md). Même recette que BesoinAvocat (`takatakca/BESOINAVOCAT.CA/docs/DEPOT-MAGASINS-2026-11-20.md`). Tous les comptes sont au nom de **Groupe TAKATAK** (Quadro Holdings Ltée, D-U-N-S 203779971).
 
-## État au 21 novembre 2026 (06 h 00 UTC)
+## État au 21 novembre 2026 (06 h 45 UTC)
 
 | Magasin | État | Reste à faire | Qui |
 |---|---|---|---|
-| Google Play | App `ca.takatak.app` créée. Fiche fr-CA remplie : textes, icône, bannière, 4 captures téléphone, 4 captures tablette 7 po et 10 po. Confidentialité enregistrée. | Déclarations (section 3), dépôt du `.aab`, envoi en examen | Propriétaire (déclarations, envoi), Claude (reste) |
-| Amazon Appstore | App créée. Fiche en-US, icônes, 4 captures tablette, gratuit, tous les pays, 18 ans et plus, classement de contenu, questionnaire de confidentialité. | Dépôt du paquet, fiche fr-CA, case « Export compliance », envoi | Claude, puis propriétaire |
+| Google Play | App `ca.takatak.app` créée. Fiche fr-CA remplie : textes, icône, bannière, 4 captures téléphone, 4 captures tablette 7 po et 10 po. Confidentialité, catégorie Business et coordonnées (support@takatak.ca, takatak.ca) enregistrées. | Case « Don't label assets » puis Save sur la fiche, déclarations (section 3), dépôt du `.aab`, envoi en examen | Propriétaire (case, déclarations, envoi), Claude (reste) |
+| Amazon Appstore | App créée. Langues de l'app : anglais et français. Fiches en-US et français (utilisée au Canada), icônes, 4 captures tablette, gratuit, tous les pays, 18 ans et plus, questionnaire de confidentialité, liens de suppression. | Questionnaire de classement (13 réponses, section 3 : il s'affiche de nouveau vide), dépôt du paquet, case « Export compliance », envoi | Propriétaire (classement, envoi), Claude (paquet) |
 | Huawei AppGallery | Compte en vérification d'entreprise | Créer l'app, déposer l'`.apk` | Après approbation |
 | Microsoft Store | Compte en vérification d'emploi | Réserver « TAKATAK », générer le `.msix` avec PWABuilder, déposer | Après approbation |
 | Samsung Galaxy Store | Demande au soutien en attente | Créer l'app, déposer l'`.apk` | Après réponse |
@@ -53,7 +53,7 @@ Tirées de la politique de confidentialité en ligne. À revoir si l'app change.
 - Application gouvernementale, financière, santé, actualités : **non**.
 - Images de la fiche : « Don't label assets » (aucune image produite par IA générative).
 
-**Amazon** (déjà rempli)
+**Amazon** (confidentialité remplie ; classement à cliquer par le propriétaire)
 - Classement : tout à « None » ; éducatif non ; renseignements personnels oui ; publicité, jeu, localisation non ; communication entre utilisateurs oui.
 - Confidentialité : collecte de nom, courriel, identifiant d'utilisateur, autres renseignements d'utilisateur, identifiant d'appareil ; buts « App functionality » et « Fraud Prevention, Security and Compliance » ; rien de transféré à des tiers.
 
