@@ -14,29 +14,29 @@ import { getLeadsOverviewData } from "@/lib/leads/leads-data";
 export const dynamic = "force-dynamic";
 
 const QUICK_ACTIONS = [
-  { label: "Lead inbox", href: "/dashboard/leads/inbox" },
+  { label: "Boîte de réception · Inbox", href: "/dashboard/leads/inbox" },
   { label: "Pipeline", href: "/dashboard/leads/pipeline" },
   { label: "Contacts", href: "/dashboard/leads/contacts" },
   { label: "Sources", href: "/dashboard/leads/sources" },
-  { label: "Campaigns", href: "/dashboard/leads/campaigns" },
-  { label: "Activities", href: "/dashboard/leads/activities" },
-  { label: "Ask the team", href: "/dashboard/support" },
+  { label: "Campagnes · Campaigns", href: "/dashboard/leads/campaigns" },
+  { label: "Activités · Activities", href: "/dashboard/leads/activities" },
+  { label: "Demander à l’équipe · Ask the team", href: "/dashboard/support" },
 ];
 
 export default async function LeadsOverviewPage() {
   const data = await getLeadsOverviewData();
   const kpis = [
-    { label: "Leads", value: data.kpis.leads, icon: Users },
+    { label: "Prospects · Leads", value: data.kpis.leads, icon: Users },
     { label: "Sources", value: data.kpis.sources, icon: Inbox },
-    { label: "Campaigns", value: data.kpis.campaigns, icon: Megaphone },
-    { label: "Follow-ups Planned", value: data.kpis.followUpsPlanned, icon: Activity },
-    { label: "Qualified (internal)", value: data.kpis.qualifiedLeads, icon: Target },
+    { label: "Campagnes · Campaigns", value: data.kpis.campaigns, icon: Megaphone },
+    { label: "Suivis prévus · Follow-ups", value: data.kpis.followUpsPlanned, icon: Activity },
+    { label: "Qualifiés · Qualified", value: data.kpis.qualifiedLeads, icon: Target },
   ];
   return (
     <div className="space-y-6">
       <LeadsHeader
-        title="Leads"
-        subtitle="Every request from your website and campaigns in one place: inbox, pipeline and follow-ups."
+        title="Prospects · Leads"
+        subtitle="Toutes les demandes de votre site et de vos campagnes au même endroit : réception, pipeline et suivis · Every request from your website and campaigns in one place."
       />
 
       <section aria-label="Leads KPIs">
@@ -47,7 +47,7 @@ export default async function LeadsOverviewPage() {
       </section>
 
       <Card>
-        <CardHeader title="Pipeline Snapshot" subtitle="How many leads are at each stage." />
+        <CardHeader title="Pipeline" subtitle="Combien de prospects à chaque étape · How many leads at each stage." />
         <CardBody className="flex flex-wrap gap-2">
           {data.pipelineCounts.map((p) => (
             <span key={p.status} className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -58,21 +58,21 @@ export default async function LeadsOverviewPage() {
       </Card>
 
       <section className="space-y-3" aria-label="Recent leads">
-        <h2 className="text-sm font-semibold text-slate-900">Lead Inbox</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Boîte de réception · Inbox</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.leads.slice(0, 4).map((l) => <LeadCard key={l.id} lead={l} />)}
         </div>
       </section>
 
       <section className="space-y-3" aria-label="Campaigns">
-        <h2 className="text-sm font-semibold text-slate-900">Lead Campaigns</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Campagnes · Campaigns</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.campaigns.map((c) => <LeadCampaignCard key={c.id} campaign={c} />)}
         </div>
       </section>
 
       <section className="space-y-3" aria-label="Activities">
-        <h2 className="text-sm font-semibold text-slate-900">Recent Activities</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Activités récentes · Recent activities</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.activities.slice(0, 4).map((a) => <LeadActivityCard key={a.id} activity={a} />)}
         </div>
