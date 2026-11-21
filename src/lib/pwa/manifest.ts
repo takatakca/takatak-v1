@@ -21,7 +21,9 @@ export function takatakManifest(): MetadataRoute.Manifest {
     start_url: "/?source=pwa",
     scope: "/",
     display: "standalone",
-    display_override: ["window-controls-overlay", "standalone"],
+    // No "window-controls-overlay": the site has no title-bar area, so on Windows/macOS installs
+    // the window buttons would cover the header's Menu button. A normal title bar is cleaner.
+    display_override: ["standalone", "minimal-ui"],
     orientation: "any",
     background_color: PWA_BACKGROUND_COLOR,
     theme_color: PWA_THEME_COLOR,

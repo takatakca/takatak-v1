@@ -27,9 +27,21 @@ export function SiteHeader() {
   const { t, tx } = useLanguage();
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const [scrolled, setScrolled] = useState(false);
+  // While reading down the page, the search row and the category rail tuck away so the
+  // content keeps most of a phone screen; scrolling up (or reaching the top) brings them back.
+  const [tucked, setTucked] = useState(false);
+  const lastY = useRef(0);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 8);
+      const delta = y - lastY.current;
+      if (y < 160) setTucked(false);
+      else if (delta > 6) setTucked(true);
+      else if (delta < -6) setTucked(false);
+      if (Math.abs(delta) > 6 || y < 160) lastY.current = y;
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -127,11 +139,18 @@ export function SiteHeader() {
         </div>
       </nav>
 
-      <div className="border-t border-border/60 px-4 py-2 md:hidden">
-        <UniversalSearchPanel compact />
-      </div>
+      <div
+        data-tucked={tucked && !menuOpen ? "true" : undefined}
+        className="grid grid-cols-1 grid-rows-[1fr] transition-[grid-template-rows,opacity] duration-300 ease-out data-[tucked=true]:grid-rows-[0fr] data-[tucked=true]:opacity-0 motion-reduce:transition-none"
+      >
+        <div className={tucked && !menuOpen ? "min-h-0 min-w-0 overflow-hidden" : "min-h-0 min-w-0"} inert={tucked && !menuOpen ? true : undefined}>
+          <div className="border-t border-border/60 px-4 py-2 md:hidden">
+            <UniversalSearchPanel compact />
+          </div>
 
-      <MarketplaceCategoryRail />
+          <MarketplaceCategoryRail />
+        </div>
+      </div>
 
       <div id="tk-site-menu">
         <SiteMenuDrawer open={menuOpen} onClose={closeMenu} />

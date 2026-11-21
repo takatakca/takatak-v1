@@ -82,7 +82,7 @@ export function HomeSectionNav() {
                     jump(s.id);
                   }}
                   aria-current={on ? "true" : undefined}
-                  className={`hp-focus whitespace-nowrap text-[14px] font-medium transition-colors ${on ? "hp-ink" : "hp-ink-3 hover:text-[var(--hp-ink)]"}`}
+                  className={`hp-focus flex h-full items-center whitespace-nowrap text-[14px] font-medium transition-colors ${on ? "hp-ink" : "hp-ink-3 hover:text-[var(--hp-ink)]"}`}
                 >
                   {s.label[lang]}
                 </a>

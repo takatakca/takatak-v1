@@ -394,16 +394,19 @@ export function ServiceGallery() {
               onClick={() => go(i)}
               aria-label={tk(`cat.${c.key}.name`)}
               aria-current={i === active ? "true" : undefined}
-              className="relative h-1 flex-1 overflow-hidden rounded-full bg-[var(--hp-line)]"
+              className="hp-focus flex h-6 flex-1 items-center rounded-full"
             >
-              {i < active && <span className="absolute inset-0 bg-[var(--hp-ink-3)]" />}
-              {i === active && (
-                <span
-                  key={`${active}-${running}`}
-                  className={`absolute inset-0 origin-left bg-[var(--hp-ink)] ${running ? "tk-progress" : ""}`}
-                  style={{ animationDuration: `${AUTOPLAY_MS}ms` }}
-                />
-              )}
+              {/* 24px tall hit area for fingers; the visible bar stays a thin line. */}
+              <span className="relative h-1 w-full overflow-hidden rounded-full bg-[var(--hp-line)]">
+                {i < active && <span className="absolute inset-0 bg-[var(--hp-ink-3)]" />}
+                {i === active && (
+                  <span
+                    key={`${active}-${running}`}
+                    className={`absolute inset-0 origin-left bg-[var(--hp-ink)] ${running ? "tk-progress" : ""}`}
+                    style={{ animationDuration: `${AUTOPLAY_MS}ms` }}
+                  />
+                )}
+              </span>
             </button>
           ))}
         </div>
