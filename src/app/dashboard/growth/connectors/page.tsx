@@ -14,7 +14,7 @@ export default async function ConnectorsPage() {
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="Connectors"
+        title="Connecteurs · Connectors"
         description="Every outside platform TAKATAK plugs into: domains, social, analytics, ads, reviews, listings, messaging, SEO, leads and payments."
       />
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">

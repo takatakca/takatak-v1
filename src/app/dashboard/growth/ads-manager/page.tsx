@@ -25,7 +25,7 @@ export default async function AdsManagerPage() {
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="Ads Manager"
+        title="Gestion des publicités · Ads Manager"
         description="Run and compare every ad network from one screen, starting with TAKATAK ADS, which is already live."
       />
       <AdsSummaryCard summary={ads} />

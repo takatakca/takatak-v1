@@ -54,7 +54,7 @@ export default async function GrowthPricingPage({ searchParams }: { searchParams
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="Plans & Pricing"
+        title="Forfaits et prix · Plans & Pricing"
         description="TAKATAK is the one-stop shop: each tool below replaces a separate subscription, and the bundle covers everything."
         badges={[exempt ? { label: "Internal · Billing exempt", tone: "success" } : canBuy ? { label: "Online checkout", tone: "success" } : { label: "Draft pricing", tone: "warning" }]}
         actions={
