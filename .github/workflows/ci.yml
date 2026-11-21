@@ -155,6 +155,15 @@ jobs:
       - name: Client dashboard shows no prototype labels
         run: npm run qa:dashboard-labels
 
+      - name: AI Control Center stays admin-only and never shows a key
+        run: npm run qa:ai-control-center
+
+      - name: Go-live checklist follows the real settings
+        run: npm run qa:go-live
+
+      - name: Native agent runner stays within its limits
+        run: npm run qa:native-agents
+
       - name: Promotion code safeguards
         run: npm run qa:promotions
 
