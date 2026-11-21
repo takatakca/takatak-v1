@@ -15,11 +15,11 @@ export function TakatakLogo({
       aria-label={iconOnly ? "TAKATAK" : undefined}
     >
       <Image
-        src="/img/imgtak/takicon2.png"
+        src="/icons/icon-192.png"
         alt=""
         width={36}
         height={36}
-        className="h-9 w-9 shrink-0 object-contain"
+        className="h-9 w-9 shrink-0 rounded-full object-contain shadow-[0_0_14px_rgba(31,139,255,0.35)]"
         priority
       />
 

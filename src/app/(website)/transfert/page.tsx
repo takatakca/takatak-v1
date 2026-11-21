@@ -5,7 +5,7 @@ import { ArrowLeftRight, ShieldCheck } from "lucide-react";
 import { LegacyTransferRequestForm } from "@/components/website/transfer/LegacyTransferRequestForm";
 
 export const metadata: Metadata = {
-  title: "Demander un transfert de domaine ou de site Web | TAKATAK",
+  title: "Transfert de domaine ou de site Web · Domain or website transfer",
   description: "Ancien client ou nouveau client : demandez le transfert de votre domaine ou de votre site Web vers TAKATAK.",
   alternates: { canonical: "/transfert" },
 };

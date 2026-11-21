@@ -34,7 +34,7 @@ export function QuickActionsMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex items-center gap-2 rounded-lg bg-[#1f2125] px-4 py-2.5 text-sm font-medium text-white shadow-sm"
+        className="inline-flex items-center gap-2 rounded-lg bg-[#1565D8] px-4 py-2.5 text-sm font-medium text-white shadow-sm"
       >
         Quick Actions
         <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} />

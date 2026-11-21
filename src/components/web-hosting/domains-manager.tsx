@@ -289,10 +289,10 @@ export function DomainsManager({
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 text-slate-400">
-                            <button type="button" className="rounded-md p-1 hover:bg-white hover:text-slate-700" aria-label="View">
+                            <button type="button" className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700" aria-label="View">
                               <Eye className="h-4 w-4" />
                             </button>
-                            <button type="button" className="rounded-md p-1 hover:bg-white hover:text-slate-700" aria-label="Edit">
+                            <button type="button" className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700" aria-label="Edit">
                               <Pencil className="h-4 w-4" />
                             </button>
                             <span className="rounded-md p-1">

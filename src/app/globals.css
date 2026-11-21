@@ -62,3 +62,18 @@ body {
 .tv-mode :focus { outline: 4px solid #29C3FF !important; outline-offset: 4px !important; box-shadow: 0 0 0 8px rgb(31 139 255 / 30%) !important; border-radius: 8px; }
 .tv-mode a, .tv-mode button, .tv-mode summary { scroll-margin: 96px; }
 @media (prefers-reduced-motion: reduce) { .tv-mode * { scroll-behavior: auto !important; } }
+
+/* Dashboard on every screen (phone, tablet, laptop, desktop, TV): grid and flex
+   children may shrink below their content width, so one long label or chart
+   never pushes the whole page sideways on a phone. */
+.dashboard-main .grid > *,
+.dashboard-main .flex > .flex-1 { min-width: 0; }
+
+/* Dashboard sidebar width; on a TV the sidebar grows with the rest of the page
+   (its sizes are in px, so the 125% TV font size alone would leave it tiny). */
+:root { --dash-sidebar: 260px; }
+.tv-mode { --dash-sidebar: 325px; }
+.tv-mode .dash-sidebar-frame { zoom: 1.25; }
+/* Tiny fixed-size labels stay readable from the couch. */
+.tv-mode .dashboard-main .text-\[10px\],
+.tv-mode .dashboard-main .text-\[11px\] { font-size: 0.8125rem; }
