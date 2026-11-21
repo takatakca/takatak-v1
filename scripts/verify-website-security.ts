@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 
 import { domainFrom } from "../src/lib/web-hosting/dns-check";
 import { gradeDns } from "../src/lib/web-hosting/dns-grade";
+import { gradeRedirects } from "../src/lib/web-hosting/redirect-grade";
 import { gradeSecurity } from "../src/lib/web-hosting/security-grade";
 
 const strong = gradeSecurity({
@@ -105,4 +106,30 @@ assert.doesNotMatch(dnsCheck, /prisma|getPrisma|\.create\(|fetch\(/, "the DNS ch
 assert.match(readFileSync("src/app/dashboard/web-hosting/dns/actions.ts", "utf8"), /hasEffectivePermission\(access, "view_dashboard"\)/);
 assert.doesNotMatch(readFileSync("src/lib/dashboard/dashboard-config.ts", "utf8"), /"\/dashboard\/web-hosting\/dns",\n/, "the DNS screen is no longer staff-only");
 
-console.log("website security: ok (grading, certificate, HSTS, framing, guards, DNS and email)");
+// Redirect checker (/dashboard/web-hosting/redirects).
+const clean = gradeRedirects("http://example.ca/", [
+  { url: "http://example.ca/", status: 301, location: "https://example.ca/" },
+  { url: "https://example.ca/", status: 200, location: null },
+], null);
+assert.equal(clean.finalUrl, "https://example.ca/");
+assert.ok(clean.findings.every((f) => f.status === "pass"), JSON.stringify(clean.findings));
+const messy = gradeRedirects("http://example.ca/old", [
+  { url: "http://example.ca/old", status: 302, location: "https://example.ca/old" },
+  { url: "https://example.ca/old", status: 301, location: "http://www.example.ca/old" },
+  { url: "http://www.example.ca/old", status: 301, location: "https://www.example.ca/new" },
+  { url: "https://www.example.ca/new", status: 404, location: null },
+], null);
+const finding = (key: string) => messy.findings.find((f) => f.key === key)?.status;
+assert.equal(finding("final"), "fail", "a chain ending on a 404 is broken");
+assert.equal(finding("count"), "warn", "three redirects is too many");
+assert.equal(finding("temporary"), "warn", "a 302 on a permanent move is flagged");
+assert.equal(finding("downgrade"), "fail", "https back to http is flagged");
+assert.equal(gradeRedirects("https://x.ca/", [{ url: "https://x.ca/", status: 301, location: "https://x.ca/" }], "loop").findings[0].key, "loop");
+const follower = readFileSync("src/lib/web-hosting/redirect-check.ts", "utf8");
+assert.match(follower, /^import "server-only";/);
+assert.ok(follower.indexOf("resolvePublicAddress(current)") < follower.indexOf("requestPinned(current"), "each hop resolves a public address before connecting");
+assert.match(follower, /current = normalizeAuditUrl\(next\.toString\(\)\)/, "every next hop passes the same URL guard");
+assert.doesNotMatch(follower, /prisma|getPrisma|\.create\(/, "the redirect check stores nothing");
+assert.match(readFileSync("src/app/dashboard/web-hosting/redirects/actions.ts", "utf8"), /hasEffectivePermission\(access, "view_dashboard"\)/);
+
+console.log("website security: ok (grading, certificate, HSTS, framing, guards, DNS and email, redirects)");
