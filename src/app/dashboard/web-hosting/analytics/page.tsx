@@ -1,6 +1,7 @@
-import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
-import { MODULE_PLACEHOLDERS } from "@/lib/dashboard/dashboard-config";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <ModulePlaceholder def={MODULE_PLACEHOLDERS["web-analytics"]} />;
+// Website analytics live in Growth › Analytics (TAKATAK's own first-party
+// measurement plus Google Analytics 4 when connected). One screen, not two.
+export default function WebsiteAnalyticsPage() {
+  redirect("/dashboard/growth/analytics");
 }

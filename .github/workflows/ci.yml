@@ -164,6 +164,9 @@ jobs:
       - name: Report builder (monthly report from real numbers)
         run: npm run qa:report-builder
 
+      - name: Website security check (grading and SSRF guards)
+        run: npm run qa:website-security
+
       - name: Native agent runner stays within its limits
         run: npm run qa:native-agents
 

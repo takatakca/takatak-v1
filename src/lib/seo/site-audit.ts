@@ -56,7 +56,7 @@ export interface SiteAuditReport {
 
 export type SiteAuditResult = { ok: true; report: SiteAuditReport } | { ok: false; error: string };
 
-class AuditError extends Error {}
+export class AuditError extends Error {}
 
 // ---------------------------------------------------------------- URL safety
 
@@ -149,7 +149,7 @@ export interface PinnedAddress {
 }
 
 /** Resolves the host once and returns a public address to connect to (never a private one). */
-async function resolvePublicAddress(url: URL): Promise<PinnedAddress> {
+export async function resolvePublicAddress(url: URL): Promise<PinnedAddress> {
   const host = url.hostname.replace(/^\[|\]$/g, "");
   const literal = isIP(host);
   if (literal) {

@@ -32,12 +32,12 @@ export const WEB_DOMAIN_NAV: { label: string; href: string; icon: LucideIcon }[]
   { label: "Hosting", href: "/dashboard/web-hosting/environments", icon: Server },
   { label: "Pages", href: "/dashboard/web-hosting/pages", icon: FileText },
   { label: "Blog & Content", href: "/dashboard/web-hosting/blog", icon: Newspaper },
-  { label: "Website Analytics", href: "/dashboard/web-hosting/analytics", icon: BarChart3 },
+  { label: "Website Analytics", href: "/dashboard/growth/analytics", icon: BarChart3 },
   { label: "Redirects", href: "/dashboard/web-hosting/redirects", icon: ArrowLeftRight },
   { label: "DNS Advanced", href: "/dashboard/web-hosting/dns", icon: Workflow },
   { label: "Backups & Restore", href: "/dashboard/web-hosting/backups", icon: Database },
   { label: "Staging", href: "/dashboard/web-hosting/staging", icon: Layers },
-  { label: "Performance", href: "/dashboard/web-hosting/performance", icon: Gauge },
+  { label: "Performance", href: "/dashboard/seo", icon: Gauge },
   { label: "Security", href: "/dashboard/web-hosting/security", icon: Shield },
 ];
 
