@@ -1,8 +1,8 @@
 name: Application native (iOS + Android)
 # Builds the native TAKATAK app in mobile/ for free on GitHub: type check, JavaScript bundle, an Android test APK
 # and AAB, and an iOS simulator build that proves the iPhone app compiles. No secret is used: the Android files are
-# signed with the throwaway debug key, for testing only. The store upload is re-signed on the owner's PC with the
-# Play upload key, which never comes to GitHub (mobile/README.md).
+# signed with the throwaway debug key, for testing only. The store kit (takatak-store-kit) is signed on the owner's
+# PC with one double-click (mobile/store-kit/SIGNER.bat); the signing key never comes to GitHub (mobile/README.md).
 on:
   push:
     branches: [main, 'claude/**']
@@ -71,6 +71,50 @@ jobs:
           name: takatak-android
           path: out/
           retention-days: 30
+      - name: Store kit for version 2 (signed on the owner's PC, the key never comes here)
+        run: |
+          mkdir -p ../kit
+          cp android/app/build/outputs/apk/release/app-release.apk ../kit/TAKATAK-a-signer.apk
+          cp ../out/TAKATAK-native-unsigned-for-play.aab ../kit/TAKATAK-a-signer.aab
+          cp "$(ls "$ANDROID_HOME"/build-tools/*/lib/apksigner.jar | sort -V | tail -1)" ../kit/apksigner.jar
+          cp store-kit/SIGNER.bat store-kit/SIGNER.ps1 store-kit/LISEZ-MOI.txt ../kit/
+      - name: Check the kit's signing commands with a throwaway key
+        working-directory: kit
+        run: |
+          keytool -genkeypair -keystore /tmp/t.keystore -alias t -keyalg RSA -keysize 2048 -validity 2 -storepass testpass123 -keypass testpass123 -dname CN=test
+          TK_STORE_PASS=testpass123 TK_KEY_PASS=testpass123 jarsigner -keystore /tmp/t.keystore -storepass:env TK_STORE_PASS -keypass:env TK_KEY_PASS -sigalg SHA256withRSA -digestalg SHA-256 -signedjar /tmp/t.aab TAKATAK-a-signer.aab t
+          jarsigner -verify /tmp/t.aab | grep -q 'jar verified'
+          TK_STORE_PASS=testpass123 TK_KEY_PASS=testpass123 java -jar apksigner.jar sign --ks /tmp/t.keystore --ks-key-alias t --ks-pass env:TK_STORE_PASS --key-pass env:TK_KEY_PASS --out /tmp/t.apk TAKATAK-a-signer.apk
+          java -jar apksigner.jar verify --print-certs /tmp/t.apk | grep -q 'CN=test'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: takatak-store-kit
+          path: kit/
+          retention-days: 30
+
+  store-kit-windows:
+    # Runs the owner's one-click SIGNER.ps1 on Windows, the way it runs on their PC, with a throwaway key.
+    needs: android
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: kit
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: takatak-store-kit
+          path: kit
+      - name: Sign with a throwaway key, as the owner would
+        run: |
+          $bin = "$env:JAVA_HOME\bin"
+          & "$bin\keytool.exe" -genkeypair -keystore signing.keystore -alias my-key-alias -keyalg RSA -keysize 2048 -validity 2 -storepass testpass123 -keypass testpass123 -dname CN=test
+          Set-Content signing-key-info.txt "Key store file: signing.keystore`nKey store password: testpass123`nKey alias: my-key-alias`nKey password: testpass123"
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\SIGNER.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'SIGNER.ps1 failed' }
+          if (-not (Test-Path TAKATAK-v2-google-play.aab) -or -not (Test-Path TAKATAK-v2-amazon.apk)) { throw 'signed files missing' }
+          & "$bin\jarsigner.exe" -verify TAKATAK-v2-google-play.aab
 
   ios:
     needs: check

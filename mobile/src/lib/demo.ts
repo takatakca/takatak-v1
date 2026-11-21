@@ -12,7 +12,7 @@ const me: T.Me = {
   mode: 'client_scoped', platformAdmin: false,
   workspace: { id: 'w1', name: 'Boulangerie Exemple', role: 'owner' },
   workspaces: [{ id: 'w1', name: 'Boulangerie Exemple' }, { id: 'w2', name: 'Café Exemple Plateau' }],
-  can: { invoices: true, dashboard: true },
+  can: { invoices: true, dashboard: true, team: true },
 };
 
 const home: T.Home = {
@@ -56,7 +56,38 @@ const invoices: T.Invoices = { status: 'ok', partial: false, invoices: [
   { id: 'i2', source: 'stripe', number: 'EX-0037', description: 'Gestion des réseaux sociaux (exemple)', issuedAt: day(-33), dueAt: day(-19), paidAt: day(-20), currency: 'cad', totalMinor: 34900, amountDueMinor: 0, amountPaidMinor: 34900, status: 'paid', payUrl: null, pdfUrl: 'https://takatak.ca' },
 ] };
 
+const leads: T.Leads = {
+  available: true, total: 4,
+  kpis: { leads: 4, sources: 2, campaigns: 1, followUpsPlanned: 1, qualifiedLeads: 1 },
+  pipeline: [{ status: 'new_internal', count: 2 }, { status: 'follow_up_planned', count: 1 }, { status: 'qualified_internal', count: 1 }],
+  leads: [
+    { id: 'l1', name: 'Julie Exemple', email: 'julie@exemple.ca', phone: '+15145550101', company: 'Traiteur Exemple', message: 'Bonjour, je cherche un traiteur pour 40 personnes le 12 décembre.', status: 'new_internal', priority: 'high', source: 'Formulaire du site', campaign: null, followUpAt: null, createdAt: day(-1).slice(0, 10) },
+    { id: 'l2', name: 'Marc Exemple', email: 'marc@exemple.ca', phone: null, company: null, message: 'Faites-vous la livraison au Plateau ?', status: 'new_internal', priority: 'normal', source: 'Google', campaign: null, followUpAt: null, createdAt: day(-2).slice(0, 10) },
+    { id: 'l3', name: 'Sofia Exemple', email: null, phone: '+15145550102', company: 'Bureau Exemple', message: 'Commande de boîtes à lunch chaque vendredi.', status: 'follow_up_planned', priority: 'normal', source: 'Formulaire du site', campaign: 'Traiteur des Fêtes', followUpAt: day(2).slice(0, 10), createdAt: day(-5).slice(0, 10) },
+    { id: 'l4', name: 'Paul Exemple', email: 'paul@exemple.ca', phone: null, company: null, message: 'Gâteau de mariage pour juin.', status: 'qualified_internal', priority: 'low', source: 'Facebook', campaign: null, followUpAt: null, createdAt: day(-9).slice(0, 10) },
+  ],
+};
+const web: T.Web = {
+  available: true,
+  domains: [
+    { id: 'd1', name: 'boulangerie-exemple.ca', brand: 'Boulangerie Exemple', registrar: 'TAKATAK', status: 'active', dns: 'ok', ssl: 'active', autoRenew: true, expiresAt: day(240).slice(0, 10) },
+    { id: 'd2', name: 'cafe-exemple.ca', brand: 'Café Exemple Plateau', registrar: 'TAKATAK', status: 'active', dns: 'warning', ssl: 'pending', autoRenew: false, expiresAt: day(21).slice(0, 10) },
+  ],
+  hosting: [{ id: 'h1', plan: 'Hébergement Affaires', brand: 'Boulangerie Exemple', domain: 'boulangerie-exemple.ca', status: 'active', server: 'online', renewsAt: day(240).slice(0, 10) }],
+};
+const team: T.Team = {
+  available: true, pendingInvitations: 1,
+  members: [
+    { id: 't1', name: 'Camille Exemple', email: 'camille@exemple.ca', role: 'owner', status: 'active', joinedAt: day(-400), me: true },
+    { id: 't2', name: 'Léo Exemple', email: 'leo@exemple.ca', role: 'manager', status: 'active', joinedAt: day(-120), me: false },
+    { id: 't3', name: 'Nora Exemple', email: 'nora@exemple.ca', role: 'editor', status: 'active', joinedAt: day(-30), me: false },
+  ],
+};
+
 export const demoApi = {
+  leads: () => wait(leads),
+  web: () => wait(web),
+  team: () => wait(team),
   me: () => wait(me),
   home: () => wait(home),
   notifications: () => wait({ notifications, unread: notifications.filter(n => n.status === 'unread').length }),

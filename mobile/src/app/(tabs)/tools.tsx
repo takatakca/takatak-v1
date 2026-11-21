@@ -9,20 +9,20 @@ import { SITE_ORIGIN } from '../../lib/config';
 import { useSession } from '../../lib/session';
 import { colors, type } from '../../lib/theme';
 
-type Tool = { title: string; subtitle: string; icon: IconName; href?: string; native?: '/invoices' };
+type Tool = { title: string; subtitle: string; icon: IconName; href?: string; native?: '/invoices' | '/leads' | '/web' | '/team'; need?: 'invoices' | 'dashboard' | 'team' };
 const GROUPS: { title: string; tools: Tool[] }[] = [
   { title: 'Croissance', tools: [
     { title: 'Réseaux sociaux', subtitle: 'Publications, approbations, statistiques', icon: 'users', href: '/dashboard/social' },
     { title: 'Publicité TAKATAK ADS', subtitle: 'Campagnes et résultats', icon: 'megaphone', href: '/dashboard/advertising' },
     { title: 'Avis et réputation', subtitle: 'Lire et répondre aux avis', icon: 'star', href: '/dashboard/growth/reviews' },
-    { title: 'Demandes reçues', subtitle: 'Prospects du site et des formulaires', icon: 'inbox', href: '/dashboard/leads' },
+    { title: 'Demandes reçues', subtitle: 'Prospects du site et des formulaires', icon: 'inbox', native: '/leads', need: 'dashboard' },
     { title: 'Référencement local', subtitle: 'Fiches et citations', icon: 'pin', href: '/dashboard/local-listings' },
     { title: 'SEO', subtitle: 'Mots-clés, liens, occasions', icon: 'search', href: '/dashboard/seo' },
     { title: 'AI Studio', subtitle: 'Textes et visuels par IA', icon: 'sparkle', href: '/dashboard/ai-studio' },
   ] },
   { title: 'Web', tools: [
-    { title: 'Mes sites Web', subtitle: 'Sites, surveillance, sauvegardes', icon: 'globe', href: '/dashboard/web-hosting/websites' },
-    { title: 'Domaines', subtitle: 'Noms de domaine et renouvellements', icon: 'link', href: '/dashboard/web-hosting/domains' },
+    { title: 'Sites et domaines', subtitle: 'Domaines, sécurité HTTPS, renouvellements', icon: 'globe', native: '/web', need: 'dashboard' },
+    { title: 'Mes sites Web', subtitle: 'Surveillance et sauvegardes', icon: 'link', href: '/dashboard/web-hosting/websites' },
     { title: 'Hébergement', subtitle: 'Comptes, courriels, sécurité', icon: 'server', href: '/dashboard/hosting' },
   ] },
   { title: 'Commerce', tools: [
@@ -30,10 +30,10 @@ const GROUPS: { title: string; tools: Tool[] }[] = [
     { title: 'Téléphone d’affaires', subtitle: 'Lignes et appels', icon: 'phone', href: '/dashboard/voip' },
   ] },
   { title: 'Administration', tools: [
-    { title: 'Factures', subtitle: 'Vos factures TAKATAK', icon: 'receipt', native: '/invoices' },
+    { title: 'Factures', subtitle: 'Vos factures TAKATAK', icon: 'receipt', native: '/invoices', need: 'invoices' },
     { title: 'Rapports', subtitle: 'Rapports mensuels et sur mesure', icon: 'chart', href: '/dashboard/reports' },
     { title: 'Fichiers', subtitle: 'Documents partagés avec l’équipe', icon: 'folder', href: '/dashboard/files' },
-    { title: 'Équipe et permissions', subtitle: 'Membres, rôles, invitations', icon: 'users', href: '/dashboard/team' },
+    { title: 'Équipe et permissions', subtitle: 'Membres, rôles, invitations', icon: 'users', native: '/team', need: 'team' },
     { title: 'Forfaits et paiement', subtitle: 'Abonnements et moyens de paiement', icon: 'briefcase', href: '/dashboard/billing' },
     { title: 'Soutien', subtitle: 'Écrire à l’équipe TAKATAK', icon: 'support', href: '/dashboard/support' },
   ] },
@@ -49,7 +49,7 @@ export default function Tools() {
     <Screen>
       <Text style={[type.body, { color: colors.muted, marginBottom: 16 }]}>Tous vos services TAKATAK. Les outils spécialisés s’ouvrent dans votre tableau de bord sécurisé, sans quitter l’app.</Text>
       {GROUPS.map(g => {
-        const tools = g.tools.filter(t => !t.native || me?.can.invoices);
+        const tools = g.tools.filter(t => !t.need || Boolean(me?.can[t.need]));
         return (
           <View key={g.title} style={{ marginBottom: 22 }}>
             <Eyebrow>{g.title}</Eyebrow>

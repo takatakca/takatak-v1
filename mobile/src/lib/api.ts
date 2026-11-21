@@ -130,6 +130,9 @@ export const api = {
   notifications: () => request<{ notifications: T.Notification[]; unread: number }>('GET', '/api/mobile/v1/notifications'),
   markRead: (target: { all: true } | { ids: string[] }) => request<{ updated: number }>('POST', '/api/mobile/v1/notifications/read', target),
   invoices: () => request<T.Invoices>('GET', '/api/mobile/v1/invoices'),
+  leads: () => request<T.Leads>('GET', '/api/mobile/v1/leads'),
+  web: () => request<T.Web>('GET', '/api/mobile/v1/web'),
+  team: () => request<T.Team>('GET', '/api/mobile/v1/team'),
 };
 
 if (DEMO) {

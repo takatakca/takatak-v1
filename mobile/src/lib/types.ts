@@ -7,7 +7,7 @@ export type Me = {
   platformAdmin: boolean;
   workspace: { id: string; name: string; role: string } | null;
   workspaces: { id: string; name: string }[];
-  can: { invoices: boolean; dashboard: boolean };
+  can: { invoices: boolean; dashboard: boolean; team?: boolean };
 };
 
 export type Kpi = { label: string; value: number | null; previous: number | null; series: number[]; hint: string; available: boolean };
@@ -33,3 +33,11 @@ export type Invoice = {
   currency: string; totalMinor: number; amountDueMinor: number; amountPaidMinor: number; status: string; payUrl: string | null; pdfUrl: string | null;
 };
 export type Invoices = { status: 'ok'; invoices: Invoice[]; partial: boolean } | { status: 'no_billing_account' } | { status: 'unavailable' };
+
+export type Lead = { id: string; name: string; email: string | null; phone: string | null; company: string | null; message: string | null; status: string; priority: string; source: string | null; campaign: string | null; followUpAt: string | null; createdAt: string };
+export type Leads = { available: boolean; kpis: { leads: number; sources: number; campaigns: number; followUpsPlanned: number; qualifiedLeads: number } | null; pipeline: { status: string; count: number }[]; leads: Lead[]; total: number };
+export type Domain = { id: string; name: string; brand: string | null; registrar: string | null; status: string; dns: string; ssl: string; autoRenew: boolean; expiresAt: string | null };
+export type Hosting = { id: string; plan: string; brand: string | null; domain: string | null; status: string; server: string; renewsAt: string | null };
+export type Web = { available: boolean; domains: Domain[]; hosting: Hosting[] };
+export type Member = { id: string; name: string | null; email: string | null; role: string; status: 'active' | 'suspended'; joinedAt: string; me: boolean };
+export type Team = { available: boolean; members: Member[]; pendingInvitations: number };
