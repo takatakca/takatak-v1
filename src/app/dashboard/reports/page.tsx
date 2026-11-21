@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CalendarClock, FileBarChart2, FileCheck2, FileText, LayoutTemplate } from "lucide-react";
 import { ReportBoundaryWarning } from "@/components/reports/report-boundary-warning";
 import { ReportDraftCard } from "@/components/reports/report-draft-card";
@@ -30,18 +31,23 @@ export default async function ReportsOverviewPage({
   const data = await getReportsOverviewData();
   const canExport = data.source === "database";
   const kpis = [
-    { label: "Reports", value: data.kpis.reports, icon: FileText },
-    { label: "Templates", value: data.kpis.templates, icon: LayoutTemplate },
-    { label: "Draft Reports", value: data.kpis.draftReports, icon: FileBarChart2 },
-    { label: "Ready Reports", value: data.kpis.readyReports, icon: FileCheck2 },
-    { label: "Scheduled Reports", value: data.kpis.scheduledReports, icon: CalendarClock },
+    { label: "Rapports · Reports", value: data.kpis.reports, icon: FileText },
+    { label: "Modèles · Templates", value: data.kpis.templates, icon: LayoutTemplate },
+    { label: "Brouillons · Drafts", value: data.kpis.draftReports, icon: FileBarChart2 },
+    { label: "Prêts · Ready", value: data.kpis.readyReports, icon: FileCheck2 },
+    { label: "Planifiés · Scheduled", value: data.kpis.scheduledReports, icon: CalendarClock },
   ];
   return (
     <div className="space-y-6">
       <ReportHeader
-        title="Reports"
-        subtitle="Client reports for this workspace. A PDF stays private, and delivery stays inside the dashboard."
-        badges={[{ label: "PDF" }, { label: "In-dashboard delivery" }]}
+        title="Rapports · Reports"
+        subtitle="Les rapports de cet espace : PDF privé et remise dans le tableau de bord · This workspace's reports: private PDF and in-dashboard delivery."
+        badges={[{ label: "PDF" }, { label: "Remise dans le tableau de bord · In-dashboard delivery" }]}
+        actions={
+          <Link href="/dashboard/reports/builder" className="rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-700">
+            Bâtir un rapport mensuel · Build a monthly report
+          </Link>
+        }
       />
 
       {raw === "sent" ? (
@@ -68,21 +74,21 @@ export default async function ReportsOverviewPage({
       </section>
 
       <section className="space-y-3" aria-label="Templates">
-        <h2 className="text-sm font-semibold text-slate-900">Report Templates</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Modèles · Templates</h2>
         <div className="grid gap-3 lg:grid-cols-3 sm:grid-cols-2">
           {data.templates.map((t) => <ReportTemplateCard key={t.id} template={t} />)}
         </div>
       </section>
 
       <section className="space-y-3" aria-label="Recent drafts">
-        <h2 className="text-sm font-semibold text-slate-900">Recent Report Drafts</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Rapports récents · Recent reports</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.drafts.map((d) => <ReportDraftCard key={d.id} draft={d} canExport={canExport} />)}
         </div>
       </section>
 
       <section className="space-y-3" aria-label="Metrics snapshot">
-        <h2 className="text-sm font-semibold text-slate-900">Report Metrics Snapshot</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Indicateurs · Metrics</h2>
         <ReportMetricList metrics={data.metrics} />
       </section>
 
