@@ -7,7 +7,7 @@ Suite de [`APPS-MAGASINS.md`](APPS-MAGASINS.md). Même recette que BesoinAvocat 
 | Magasin | État | Reste à faire | Qui |
 |---|---|---|---|
 | Google Play | App `ca.takatak.app` créée. Fiche fr-CA remplie : textes, icône, bannière, 4 captures téléphone, 4 captures tablette 7 po et 10 po. Confidentialité, catégorie Business et coordonnées (support@takatak.ca, takatak.ca) enregistrées. | Case « Don't label assets » puis Save sur la fiche, déclarations (section 3), dépôt du `.aab`, envoi en examen | Propriétaire (case, déclarations, envoi), Claude (reste) |
-| Amazon Appstore | App créée. Langues de l'app : anglais et français. Fiches en-US et français (utilisée au Canada), icônes, 4 captures tablette, gratuit, tous les pays, 18 ans et plus, questionnaire de confidentialité, liens de suppression. | Questionnaire de classement (13 réponses, section 3 : il s'affiche de nouveau vide), dépôt du paquet, case « Export compliance », envoi | Propriétaire (classement, envoi), Claude (paquet) |
+| Amazon Appstore | **Envoyé en révision le 2026-11-21 vers 08 h UTC** (statut « Submitted »). Fiches en-US et français, langues anglais et français, classement complet (13 réponses de la section 3, rempli par Claude à la demande expresse du propriétaire), confidentialité, liens de suppression, `TAKATAK.aab` version 1, 12 tablettes Fire, diffusion 100 %. | Attendre la réponse d'Amazon | Amazon |
 | Huawei AppGallery | Compte en vérification d'entreprise | Créer l'app, déposer l'`.apk` | Après approbation |
 | Microsoft Store | Compte en vérification d'emploi | Réserver « TAKATAK », générer le `.msix` avec PWABuilder, déposer | Après approbation |
 | Samsung Galaxy Store | Demande au soutien en attente | Créer l'app, déposer l'`.apk` | Après réponse |
