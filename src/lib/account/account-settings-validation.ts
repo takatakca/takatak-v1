@@ -12,7 +12,7 @@ import {
   type ValidationResult,
 } from "@/lib/validation/common";
 
-export const ACCOUNT_LANGUAGES = ["en"] as const;
+export const ACCOUNT_LANGUAGES = ["en", "fr"] as const;
 export type AccountLanguage = (typeof ACCOUNT_LANGUAGES)[number];
 
 export const WEEK_STARTS = ["sunday", "monday"] as const;

@@ -50,7 +50,7 @@ export type AccountSettingsPageData =
     };
 
 function asLanguage(value: string): AccountLanguage {
-  return value === "en" ? "en" : "en";
+  return value === "fr" ? "fr" : "en";
 }
 
 function asWeekStart(value: string): WeekStartsOn {

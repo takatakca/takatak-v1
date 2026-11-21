@@ -11,8 +11,27 @@ import {
 } from "./dashboard-sidebar";
 import { DashboardTopbar } from "./dashboard-topbar";
 import { isWebDomainWorkspace, WebDomainShell } from "@/components/web-hosting/web-domain-shell";
+import { DashboardLanguageProvider } from "@/components/layout/dashboard-language";
+import type { DashboardLanguage } from "@/lib/dashboard/nav-fr";
 
+/** Dashboard frame in the account's language (Account settings › Preferences). */
 export function DashboardShell({
+  language = "en",
+  ...props
+}: {
+  children: ReactNode;
+  session: SessionSnapshot;
+  unreadNotificationCount?: number;
+  language?: DashboardLanguage;
+}) {
+  return (
+    <DashboardLanguageProvider language={language}>
+      <DashboardShellFrame {...props} />
+    </DashboardLanguageProvider>
+  );
+}
+
+function DashboardShellFrame({
   children,
   session,
   unreadNotificationCount = 0,
