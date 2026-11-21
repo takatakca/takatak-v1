@@ -87,7 +87,7 @@ export default async function ReportsOverviewPage({
       </section>
 
       <section className="space-y-3" aria-label="Schedules">
-        <h2 className="text-sm font-semibold text-slate-900">Schedule Foundation</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Rapports planifiés · Scheduled reports</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.schedules.map((s) => <ReportScheduleCard key={s.id} schedule={s} />)}
         </div>
