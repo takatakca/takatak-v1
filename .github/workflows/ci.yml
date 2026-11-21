@@ -155,6 +155,9 @@ jobs:
       - name: Client dashboard shows no prototype labels
         run: npm run qa:dashboard-labels
 
+      - name: AI Control Center stays admin-only and never shows a key
+        run: npm run qa:ai-control-center
+
       - name: Promotion code safeguards
         run: npm run qa:promotions
 
