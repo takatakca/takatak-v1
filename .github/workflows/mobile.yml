@@ -89,9 +89,11 @@ jobs:
       - name: Build for the iPhone simulator (no Apple account needed)
         working-directory: mobile/ios
         run: |
-          set -o pipefail
           xcodebuild -workspace TAKATAK.xcworkspace -scheme TAKATAK -configuration Release -sdk iphonesimulator \
-            -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build | tail -40
+            -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build > xcodebuild.log 2>&1 || {
+            echo '--- errors ---'; grep -nE 'error:|xcodebuild: error|BUILD FAILED' xcodebuild.log | head -60
+            echo '--- end of log ---'; tail -80 xcodebuild.log; exit 1; }
+          tail -5 xcodebuild.log
       - name: Package the simulator app
         run: |
           mkdir -p ../out
