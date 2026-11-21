@@ -128,7 +128,7 @@ export default async function ReputationPage({
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="Reputation & Reviews"
+        title="Réputation et avis · Reputation & Reviews"
         description="Listen to every customer, follow up thoughtfully, and manage your reputation through the TAKATAK ecosystem."
         badges={[
           {

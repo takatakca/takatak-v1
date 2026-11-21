@@ -50,7 +50,7 @@ export default async function GrowthAnalyticsPage({ searchParams }: { searchPara
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="Analytics"
+        title="Statistiques · Analytics"
         description="TAKATAK Analytics (cookie-free, first-party) plus ads, search, social, reviews and leads in one scoreboard."
         badges={[{ label: "TAKATAK Analytics live", tone: "success" }]}
       />

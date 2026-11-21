@@ -54,7 +54,7 @@ export default async function AiEnginePage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-6">
       <GrowthHeader
-        title="AI Engine & Credits"
+        title="Moteur IA et crédits · AI Engine & Credits"
         description={`Every AI task (posts, replies, ads, audits, videos) runs through the TAKATAK AI Gateway, which picks the best of ${AI_PROVIDERS.length} engines and bills clients in credits.`}
         actions={
           <Link href="/dashboard/ai-studio" className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-indigo-300">

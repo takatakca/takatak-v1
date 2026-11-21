@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { clientBadges } from "@/lib/dashboard/client-labels";
 
 export function GrowthHeader({
-  eyebrow = "TAKATAK Growth Suite",
+  eyebrow = "Croissance TAKATAK · Growth Suite",
   title,
   description,
   badges = [],
