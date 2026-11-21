@@ -11,8 +11,8 @@ export default async function SocialCampaignsPage() {
   return (
     <div className="space-y-5">
       <SocialHeader
-        title="Campaigns"
-        subtitle="Your social media campaigns per brand, with goals, dates and posts. To start a campaign, ask the team."
+        title="Campagnes · Campaigns"
+        subtitle="Vos campagnes sur les réseaux sociaux par marque, avec objectifs, dates et publications ; pour en lancer une, écrivez à l’équipe · Your social campaigns per brand; to start one, ask the team."
       />
       <SourceBanner source={data.source} label={data.sourceLabel} />
       {data.campaigns.length ? (
@@ -20,7 +20,7 @@ export default async function SocialCampaignsPage() {
           {data.campaigns.map((c) => <CampaignCard key={c.id} campaign={c} />)}
         </div>
       ) : (
-        <SocialEmptyState title="No campaigns yet" description="Campaigns appear here once created." />
+        <SocialEmptyState title="Aucune campagne pour l’instant · No campaigns yet" description="Les campagnes paraissent ici dès leur création · Campaigns appear here once created." />
       )}
     </div>
   );

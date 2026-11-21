@@ -39,28 +39,27 @@ export default async function NewLocationPage() {
     return (
       <div className="space-y-5">
         <ModuleHeader
-          title="Create location"
-          description="A location must belong to a real brand inside the active workspace."
+          title="Créer un emplacement · Create location"
+          description="Un emplacement appartient toujours à une marque de votre espace · A location must belong to a brand in your workspace."
         />
 
         <Card>
           <CardHeader
-            title="Create a brand first"
-            subtitle="No available brands were found in the selected workspace."
+            title="Créez d’abord une marque · Create a brand first"
+            subtitle="Aucune marque n’a été trouvée dans cet espace · No available brands were found in this workspace."
           />
 
           <CardBody>
             <p className="text-sm leading-6 text-slate-600">
-              Create at least one active,
-              draft, or paused brand before
-              adding a physical location.
+              Créez au moins une marque (active, en brouillon ou en pause) avant d’ajouter une adresse physique · Create at least one brand
+              before adding a physical location.
             </p>
 
             <Link
               href="/dashboard/brands/new"
               className="mt-4 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
             >
-              Create brand
+              Créer une marque · Create brand
             </Link>
           </CardBody>
         </Card>
@@ -71,8 +70,8 @@ export default async function NewLocationPage() {
   return (
     <div className="space-y-5">
       <ModuleHeader
-        title="Create location"
-        description="Create a real workspace-owned physical location for local listings, social accounts, scheduling, and reporting."
+        title="Créer un emplacement · Create location"
+        description="Ajoutez une adresse physique de votre entreprise pour les fiches locales, les comptes sociaux, la planification et les rapports · Add a physical location for listings, social, scheduling and reports."
       />
 
       <LocationForm

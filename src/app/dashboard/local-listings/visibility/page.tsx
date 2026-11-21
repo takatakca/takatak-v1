@@ -11,8 +11,8 @@ export default async function VisibilityPage() {
   return (
     <div className="space-y-5">
       <LocalListingsHeader
-        title="Visibility"
-        subtitle="Snapshots of how visible your business is locally, from the records the TAKATAK team keeps for you."
+        title="Visibilité · Visibility"
+        subtitle="Des relevés de la visibilité locale de votre entreprise, tirés des dossiers que l’équipe TAKATAK tient pour vous · Snapshots of your local visibility."
       />
       <LocalSourceBanner source={data.source} label={data.sourceLabel} />
       {data.snapshots.length ? (
@@ -20,7 +20,7 @@ export default async function VisibilityPage() {
           {data.snapshots.map((s) => <VisibilitySnapshotCard key={s.id} snapshot={s} />)}
         </div>
       ) : (
-        <LocalListingsEmptyState title="No snapshots yet" description="Visibility snapshots appear here." />
+        <LocalListingsEmptyState title="Aucun relevé pour l’instant · No snapshots yet" description="Les relevés de visibilité paraissent ici · Visibility snapshots appear here." />
       )}
     </div>
   );

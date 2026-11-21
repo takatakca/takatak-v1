@@ -12,6 +12,14 @@ import { getSocialAnalyticsData } from '@/lib/social/social-data';
 
 export const dynamic = 'force-dynamic';
 
+const TOTAL_LABELS: Record<string, string> = {
+  reach: 'portée · reach',
+  impressions: 'impressions',
+  engagement: 'engagement',
+  clicks: 'clics · clicks',
+  followers: 'abonnés · followers',
+};
+
 export default async function SocialAnalyticsPage() {
   const access = await requireWorkspacePermission(
     'view_social',
@@ -26,17 +34,17 @@ export default async function SocialAnalyticsPage() {
   return (
     <div className="space-y-5">
       <SocialHeader
-        title="Social Analytics"
-        subtitle="Reach, impressions, engagement, clicks and followers for your connected accounts. Only real numbers from your accounts are shown here."
+        title="Statistiques sociales · Social Analytics"
+        subtitle="Portée, impressions, engagement, clics et abonnés de vos comptes branchés ; seuls les vrais chiffres de vos comptes paraissent ici · Only real numbers from your accounts are shown."
       />
       {historyDays !== null ? (
         <p className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-          Free includes {historyDays} days of analytics history.{' '}
+          L’offre gratuite comprend {historyDays} jours d’historique · Free includes {historyDays} days of history.{' '}
           <Link
             href={SOCIAL_BILLING_HREF}
             className="font-medium text-[#2a1728] underline-offset-2 hover:underline"
           >
-            Starter unlocks the full window
+            Starter ouvre tout l’historique · Starter unlocks the full window
           </Link>
           .
         </p>
@@ -45,8 +53,8 @@ export default async function SocialAnalyticsPage() {
       {a.hasData ? (
         <Card>
           <CardHeader
-            title="Totals"
-            subtitle={`${a.days} day record${a.days === 1 ? '' : 's'}`}
+            title="Totaux · Totals"
+            subtitle={`${a.days} jour${a.days === 1 ? '' : 's'} de données · day records`}
             action={
               a.source === 'internal_mock' ? (
                 <Badge tone="muted">Exemple (démo locale) · Sample (local demo)</Badge>
@@ -60,7 +68,7 @@ export default async function SocialAnalyticsPage() {
                 className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2 text-center"
               >
                 <p className="text-lg font-semibold text-slate-900">{v}</p>
-                <p className="text-[11px] capitalize text-slate-400">{k}</p>
+                <p className="text-[11px] capitalize text-slate-400">{TOTAL_LABELS[k] ?? k}</p>
               </div>
             ))}
           </CardBody>
@@ -68,8 +76,8 @@ export default async function SocialAnalyticsPage() {
       ) : (
         <SocialEmptyState
           icon={BarChart3}
-          title="No analytics yet"
-          description="Numbers appear here once your social accounts are connected. Connect them under Social Media, or ask the team."
+          title="Aucune statistique pour l’instant · No analytics yet"
+          description="Les chiffres paraissent dès que vos comptes sociaux sont branchés ; branchez-les dans Réseaux sociaux ou écrivez à l’équipe · Numbers appear once your accounts are connected."
         />
       )}
     </div>
