@@ -114,7 +114,7 @@ export function goLiveChecklist(env: Env, facts: GoLiveFacts): GoLiveItem[] {
             ? "CRON_SECRET is set, but no automatic sync in the last 24 hours: the scheduler does not call the app yet."
             : "Off: production has no scheduler, so planned posts, syncs and agents never start on their own.",
       howTo:
-        "In Coolify (Scheduled tasks), call with Authorization: Bearer $CRON_SECRET: every minute /api/cron/social-sync-jobs, every 15 minutes /api/cron/growth-agents and /api/cron/studio-agent, every hour /api/cron/growth-reviews-sync.",
+        "Simplest: put the same random value in CRON_SECRET (Coolify) and in the GitHub repository secret CRON_SECRET; the \"TAKATAK production scheduler\" workflow then calls every scheduled route each 15 minutes. Or use Coolify scheduled tasks with Authorization: Bearer $CRON_SECRET.",
       settings: ["CRON_SECRET"],
       who: "owner",
     },

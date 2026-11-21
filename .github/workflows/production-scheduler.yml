@@ -1,0 +1,51 @@
+# Production scheduler. Production runs one web container with no cron, so
+# scheduled work never starts on its own: social publishing and syncs,
+# autopilot agents, the studio agent and the hourly review sync. This
+# workflow calls those protected routes every 15 minutes.
+#
+# It does nothing until the repository secret CRON_SECRET exists, with the
+# same value as CRON_SECRET in the production environment (Coolify). It never
+# deploys and never changes the database schema; each route checks the secret.
+name: TAKATAK production scheduler
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-production-scheduler
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    env:
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+      ORIGIN: https://takatak.ca
+    steps:
+      - name: Call the scheduled routes
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET is not set in the repository secrets: the scheduler is off, nothing was called."
+            exit 0
+          fi
+          status=0
+          call() {
+            # curl prints 000 itself when the call fails.
+            code=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 80 -H "Authorization: Bearer $CRON_SECRET" "$ORIGIN$1") || true
+            [ -n "$code" ] || code=000
+            echo "$1 -> HTTP $code"
+            if [ "$code" = "401" ]; then echo "  the secret does not match production CRON_SECRET"; status=1; fi
+            if [ "$code" -ge 500 ] || [ "$code" = "000" ]; then head -c 300 /tmp/body; echo; status=1; fi
+          }
+          call /api/cron/social-sync-jobs
+          call /api/cron/growth-agents
+          call /api/cron/studio-agent
+          # Hourly: the first tick of each hour.
+          if [ "$(date -u +%M)" -lt 15 ]; then call /api/cron/growth-reviews-sync; fi
+          exit $status
