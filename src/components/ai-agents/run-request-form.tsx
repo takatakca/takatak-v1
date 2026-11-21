@@ -15,12 +15,12 @@ export function RunRequestForm({ agentKey, disabled }: { agentKey: string; disab
         name="brief"
         maxLength={2000}
         disabled={disabled}
-        placeholder="Optional brief, e.g. “Promote winter tires this week”"
+        placeholder="Consigne facultative, ex. : « Mettre en avant le spécial de la semaine » · Optional brief"
         className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs text-slate-900 outline-none focus:border-indigo-500 disabled:bg-slate-50"
       />
       <div className="flex flex-wrap items-center gap-2">
         <button type="submit" disabled={disabled || pending} className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50">
-          {pending ? "Queuing…" : "Run now"}
+          {pending ? "Envoi… · Queuing…" : "Lancer maintenant · Run now"}
         </button>
         {state.ok === true ? <span className="text-[11px] text-emerald-700">{state.message}</span> : null}
         {state.ok === false ? (

@@ -30,7 +30,7 @@ export function ReplyForm({ conversationId, disabled }: { conversationId: string
         rows={3}
         maxLength={2000}
         disabled={disabled}
-        placeholder={disabled ? "Conversation closed — reopen to reply." : "Write a reply…"}
+        placeholder={disabled ? "Conversation fermée ; rouvrez-la pour répondre · Conversation closed — reopen to reply." : "Écrire une réponse… · Write a reply…"}
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) formRef.current?.requestSubmit();
         }}
@@ -38,9 +38,9 @@ export function ReplyForm({ conversationId, disabled }: { conversationId: string
       />
       <div className="flex items-center gap-3">
         <button type="submit" disabled={pending || disabled} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-          {pending ? "Sending…" : "Send reply"}
+          {pending ? "Envoi… · Sending…" : "Envoyer · Send reply"}
         </button>
-        <span className="text-[11px] text-slate-400">Ctrl/⌘ + Enter to send</span>
+        <span className="text-[11px] text-slate-400">Ctrl/⌘ + Entrée pour envoyer · to send</span>
         {state.ok === false ? (
           <p role="alert" className="text-xs text-rose-700">
             {state.error}

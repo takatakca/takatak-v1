@@ -9,12 +9,12 @@ import { getConnectorStatuses } from "@/lib/growth/status";
 export const dynamic = "force-dynamic";
 
 const CAPABILITIES = [
-  { name: "All networks, one table", detail: "Spend, clicks, leads and cost-per-lead for Google, Meta, TikTok, Microsoft and TAKATAK ADS." },
-  { name: "Budget guardrails", detail: "Daily caps and alerts. AI suggests shifts; a human approves any spend change." },
-  { name: "Lead attribution", detail: "Every lead traced back to the campaign, ad and keyword through FLEXS." },
-  { name: "AI ad copy", detail: "Headlines and descriptions generated from the brand voice, paid with credits." },
-  { name: "Google Business ads", detail: "Local service and map-pack promotion tied to Local Listings." },
-  { name: "Lead-form sync", detail: "Facebook and Google lead forms land straight in the Leads pipeline." },
+  { name: "Tous les réseaux, un tableau · All networks, one table", detail: "Dépenses, clics, prospects et coût par prospect pour Google, Meta, TikTok, Microsoft et TAKATAK ADS · Spend, clicks, leads and cost per lead." },
+  { name: "Garde-fous budgétaires · Budget guardrails", detail: "Plafonds quotidiens et alertes ; l’IA propose, une personne approuve chaque changement de dépense · A human approves any spend change." },
+  { name: "Attribution des prospects · Lead attribution", detail: "Chaque prospect relié à sa campagne, son annonce et son mot-clé (FLEXS) · Every lead traced to its campaign, ad and keyword." },
+  { name: "Textes d’annonces par l’IA · AI ad copy", detail: "Titres et descriptions dans la voix de la marque, payés en crédits · Headlines and descriptions in the brand voice, paid with credits." },
+  { name: "Annonces Google Business · Google Business ads", detail: "Promotion locale et carte Google, reliée aux Fiches locales · Local and map-pack promotion tied to Local Listings." },
+  { name: "Synchro des formulaires · Lead-form sync", detail: "Les formulaires Facebook et Google arrivent dans le pipeline · Facebook and Google lead forms land in the Leads pipeline." },
 ];
 
 export default async function AdsManagerPage() {
@@ -26,11 +26,11 @@ export default async function AdsManagerPage() {
     <div className="space-y-6">
       <GrowthHeader
         title="Gestion des publicités · Ads Manager"
-        description="Run and compare every ad network from one screen, starting with TAKATAK ADS, which is already live."
+        description="Gérez et comparez chaque réseau publicitaire sur un seul écran, à commencer par TAKATAK ADS, déjà en marche · Run and compare every ad network from one screen."
       />
       <AdsSummaryCard summary={ads} />
       <Card>
-        <CardHeader title="What Ads Manager does" />
+        <CardHeader title="Ce que fait la gestion des publicités · What Ads Manager does" />
         <CardBody className="grid gap-2 sm:grid-cols-2">
           {CAPABILITIES.map((c) => (
             <div key={c.name} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
@@ -41,9 +41,12 @@ export default async function AdsManagerPage() {
         </CardBody>
       </Card>
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900">Ad networks</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Réseaux publicitaires · Ad networks</h2>
         <ConnectorGrid connectors={connectors} showSetupDetails={showSetupDetails} />
-        <HonestyNote>External networks never spend money from this dashboard without an explicit, human-approved action.</HonestyNote>
+        <HonestyNote>
+          Les réseaux externes ne dépensent jamais d’argent depuis ce tableau de bord sans une action approuvée par une personne · External networks never
+          spend money from this dashboard without an explicit, human-approved action.
+        </HonestyNote>
       </section>
     </div>
   );

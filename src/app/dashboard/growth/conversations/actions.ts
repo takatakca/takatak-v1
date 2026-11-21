@@ -27,7 +27,7 @@ export type WidgetFormState = { ok: null } | { ok: true; message: string } | { o
 
 export async function createChatWidgetAction(_prev: WidgetFormState, formData: FormData): Promise<WidgetFormState> {
   const access = await canManage();
-  if (!access) return { ok: false, error: "You do not have permission to manage chat for this workspace." };
+  if (!access) return { ok: false, error: "Vous n’avez pas la permission de gérer le clavardage de cet espace · You do not have permission to manage chat for this workspace." };
   if (!(await clientHasGrowthFeature(access.activeClientId, "conversations"))) return { ok: false, error: FEATURE_UPSELL.conversations };
   try {
     const result = await createChatWidget(access.activeClientId, {
@@ -41,10 +41,10 @@ export async function createChatWidgetAction(_prev: WidgetFormState, formData: F
     if ("error" in result) return { ok: false, error: result.error };
   } catch {
     console.error("[chat] create widget failed");
-    return { ok: false, error: "The chat could not be created. Try again." };
+    return { ok: false, error: "Le clavardage n’a pas pu être créé ; réessayez · The chat could not be created. Try again." };
   }
   revalidatePath(BASE);
-  return { ok: true, message: "Chat created. Copy the install code below." };
+  return { ok: true, message: "Clavardage créé : copiez le code d’installation ci-dessous · Chat created. Copy the install code below." };
 }
 
 export async function toggleChatWidgetAction(formData: FormData): Promise<void> {
@@ -59,16 +59,16 @@ export type ReplyState = { ok: null } | { ok: true; at: number } | { ok: false; 
 
 export async function replyAction(_prev: ReplyState, formData: FormData): Promise<ReplyState> {
   const access = await canManage();
-  if (!access) return { ok: false, error: "You do not have permission to reply." };
+  if (!access) return { ok: false, error: "Vous n’avez pas la permission de répondre · You do not have permission to reply." };
   const id = String(formData.get("conversationId") ?? "");
   const body = cleanMessage(formData.get("body"));
-  if (!UUID.test(id) || !body) return { ok: false, error: "Write a message first." };
+  if (!UUID.test(id) || !body) return { ok: false, error: "Écrivez d’abord un message · Write a message first." };
   try {
     const sent = await staffReply(access.activeClientId, id, body, access.profileId);
-    if (!sent) return { ok: false, error: "This conversation is closed. Reopen it to reply." };
+    if (!sent) return { ok: false, error: "Cette conversation est fermée ; rouvrez-la pour répondre · This conversation is closed. Reopen it to reply." };
   } catch {
     console.error("[chat] reply failed");
-    return { ok: false, error: "The reply could not be sent. Try again." };
+    return { ok: false, error: "La réponse n’a pas pu être envoyée ; réessayez · The reply could not be sent. Try again." };
   }
   revalidatePath(`${BASE}/${id}`);
   return { ok: true, at: Date.now() };
