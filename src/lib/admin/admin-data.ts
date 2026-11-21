@@ -392,7 +392,7 @@ export async function getAdminServicesData(access?: TenantAccess): Promise<Sourc
 export const getAdminProfilesData = getAdminTeamData;
 
 // ── System health (env/config status only — NO provider calls) ─
-export function getAdminSystemHealthData(): { app: AdminSystemHealthItem[]; providers: AdminSystemHealthItem[]; foundations: AdminSystemHealthItem[] } {
+export function getAdminSystemHealthData(): { app: AdminSystemHealthItem[]; providers: AdminSystemHealthItem[] } {
   const db = getDatabaseEnvStatus();
   const auth = isSupabaseConfigured();
   const metricool = getMetricoolEnvStatus();
@@ -412,16 +412,6 @@ export function getAdminSystemHealthData(): { app: AdminSystemHealthItem[]; prov
       { label: "Upmind", value: upmind.configured ? "Configured (untested)" : "Not configured", ok: upmind.configured ? null : false },
       { label: "OpenAI", value: openai.configured ? "Key present (unverified)" : "Not configured", ok: openai.configured ? null : false },
       { label: "TryHolo", value: tryholo.state === "disabled" ? "Disabled (flag off)" : tryholo.configured ? "Configured (untested)" : "Not configured", ok: null },
-    ],
-    foundations: [
-      { label: "Reporting export/delivery", value: "Not active", ok: null },
-      { label: "AI generation", value: "Not active", ok: null },
-      { label: "QMAPS / Google Business", value: "Not connected", ok: null },
-      { label: "FLEXS / outreach automation", value: "Not connected", ok: null },
-      { label: "Job workers", value: "Not active", ok: null },
-      { label: "Admin write actions", value: "Not active", ok: null },
-      { label: "Tenant isolation (server scoping)", value: "Enforced (qa:tenant-isolation)", ok: true },
-      { label: "Tenant isolation (live Supabase E2E)", value: "Pending staging", ok: null },
     ],
   };
 }
