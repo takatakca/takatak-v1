@@ -83,6 +83,11 @@ function logDbError(scope: string, error: unknown) {
 }
 
 // ── Templates ────────────────────────────────────────────────
+/** Templates created by prisma/seed.ts for the local foundation demo. */
+export function isSeedTemplate(template: { name: string; description: string | null }): boolean {
+  return /\bFoundation$/.test(template.name.trim()) || /^Foundation template\b/i.test(template.description?.trim() ?? "");
+}
+
 export async function getReportTemplatesData(access?: TenantAccess): Promise<SourceMeta & { templates: ReportTemplateSummary[] }> {
   const scope = await resolveDataScope(access);
   if (scope.kind === "unavailable") {
@@ -91,7 +96,9 @@ export async function getReportTemplatesData(access?: TenantAccess): Promise<Sou
   const prisma = scope.kind === "db" ? getPrisma() : null;
   if (prisma && scope.kind === "db") {
     try {
-      const rows = await prisma.reportTemplate.findMany({ orderBy: { createdAt: "asc" } });
+      const all = await prisma.reportTemplate.findMany({ orderBy: { createdAt: "asc" } });
+      // Seed templates ("… Foundation") belong to the local demo; real workspaces never see them.
+      const rows = scope.allowMockFallback ? all : all.filter((t) => !isSeedTemplate(t));
       return {
         source: "database", sourceLabel: DB_LABEL,
         templates: rows.map((t) => ({

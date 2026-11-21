@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
+import { allowWebsiteCheck, WEBSITE_CHECKS_PER_WINDOW } from "../src/lib/web-hosting/check-limit";
 import { domainFrom } from "../src/lib/web-hosting/dns-check";
 import { gradeDns } from "../src/lib/web-hosting/dns-grade";
 import { gradeRedirects } from "../src/lib/web-hosting/redirect-grade";
@@ -132,4 +133,14 @@ assert.match(follower, /current = normalizeAuditUrl\(next\.toString\(\)\)/, "eve
 assert.doesNotMatch(follower, /prisma|getPrisma|\.create\(/, "the redirect check stores nothing");
 assert.match(readFileSync("src/app/dashboard/web-hosting/redirects/actions.ts", "utf8"), /hasEffectivePermission\(access, "view_dashboard"\)/);
 
-console.log("website security: ok (grading, certificate, HSTS, framing, guards, DNS and email, redirects)");
+// Abuse brake: each person gets a limited number of checks per window, shared by the three tools.
+for (let i = 0; i < WEBSITE_CHECKS_PER_WINDOW; i += 1) assert.ok(allowWebsiteCheck("profile-a"));
+assert.equal(allowWebsiteCheck("profile-a"), false, "the check after the limit is refused");
+assert.ok(allowWebsiteCheck("profile-b"), "another person is not affected");
+for (const tool of ["security", "dns", "redirects"]) {
+  const source = readFileSync(`src/app/dashboard/web-hosting/${tool}/actions.ts`, "utf8");
+  assert.ok(source.indexOf("hasEffectivePermission(") < source.indexOf("allowWebsiteCheck(profileDetails.id)"), `${tool}: signed in first, then the brake`);
+  assert.ok(source.indexOf("allowWebsiteCheck(profileDetails.id)") < source.indexOf("return run"), `${tool}: the brake runs before any network call`);
+}
+
+console.log("website security: ok (grading, certificate, HSTS, framing, guards, DNS and email, redirects, abuse brake)");

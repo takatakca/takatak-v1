@@ -109,6 +109,10 @@ for (const match of homeData.matchAll(/(?:label|detail): "([^"]+)"/g)) {
   assert.ok(HOME_FR[match[1]], `French text missing for the dashboard home text "${match[1]}"`);
 }
 assert.equal(homeText("Total Reach", "fr"), "Portée totale");
+// Real workspaces never see sample (internal_mock) social analytics rows.
+assert.match(readFileSync(join(ROOT, "src/lib/social/social-data.ts"), "utf8"), /scope\.allowMockFallback \? \{\} : \{ source: \{ not: "internal_mock" as const \} \}/);
+// Seed report templates ("… Foundation") stay in the local demo.
+assert.match(readFileSync(join(ROOT, "src/lib/reports/reporting-data.ts"), "utf8"), /scope\.allowMockFallback \? all : all\.filter\(\(t\) => !isSeedTemplate\(t\)\)/);
 // One-click FR / EN switch: only "en" or "fr", only the caller's own profile.
 const switchAction = readFileSync(join(ROOT, "src/app/dashboard/language-actions.ts"), "utf8");
 assert.match(switchAction, /if \(raw !== "en" && raw !== "fr"\) return;/);
