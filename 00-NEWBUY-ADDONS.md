@@ -1,3 +1,17 @@
+## NEWBUY — Renouvellements de domaines en lecture seule fusionnés, production non déployée — 2026-11-21 16:23 EST
+
+**AVANT :** état relu sur GitHub (`main`, `AGENTS.md`, `WORKLOG.md`, PR #243, PR #383/#384, Actions et tableau de coordination), maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. La PR #383 reste au même agent et n’a pas été reprise.
+
+**PENDANT / APRÈS VÉRIFICATION :** la PR #384 est fusionnée sous `380b0d00c50b67a845b2cdb841b5a3b078e5f7b5`. Elle ajoute sur la page authentifiée des domaines un panneau 0–30 jours en lecture seule, limité aux enregistrements réels du tenant et fermé par défaut derrière le drapeau serveur `TAKATAK_DOMAIN_RENEWAL_NOTICES_ENABLED`. Les données fictives, absentes, expirées, annulées, non reliées ou en doublon échouent fermées. Aucun import des 42 domaines historiques, paiement, renouvellement, courriel, SMS, DNS, appel registraire ou injection sur site client n’est effectué.
+
+**PREUVES :** CI exact-main [44947496772](https://github.com/takatakca/takatak-v1/actions/runs/44947496772) réussie, y compris identité/isolement, facturation, Monitoring, build et artefact; validation d’artefact [44948403446](https://github.com/takatakca/takatak-v1/actions/runs/44948403446) réussie. La réconciliation [44948403457](https://github.com/takatakca/takatak-v1/actions/runs/44948403457) était en mode audit : 0 migration approuvée en attente, aucune application humaine. Le workflow staging [44948466244](https://github.com/takatakca/takatak-v1/actions/runs/44948466244) a seulement passé ses gardes : approbation de migration manquante, aucun artefact construit, aucune activation; production explicitement intacte. Le workflow Coolify [44948403516](https://github.com/takatakca/takatak-v1/actions/runs/44948403516) est sauté.
+
+**PREUVE PUBLIQUE :** `/api/health/ready` répond 200 mais sert encore `x-takatak-release: 595c32f7e7f45fec008c610ffef2c8ce615b0d48`, donc #384 n’est pas prouvée déployée. `/dashboard/web-hosting/domains` refuse l’anonyme par redirection vers la connexion. `/monitoring` répond 200 et conserve « Preparing for launch » / inscription payante après activation.
+
+**BLOCAGE / PROCHAIN GESTE :** aucune activation du panneau ni du Monitoring payant. Un opérateur autorisé doit d’abord obtenir une chaîne de déploiement approuvée, prouver le SHA servi exact, puis comparer dans des comptes contrôlés les dates registraire réelles et l’isolement tenant. Ensuite seulement, activer le drapeau sur liste autorisée et faire un smoke authentifié. Les preuves worker/alertes/SMTP/watchdog/Stripe restent requises avant l’ouverture payante de Monitoring. Aucun identifiant Coolify rejeté n’a été réessayé.
+
+— **NEWBUY**
+
 # 00 — NEWBUY — TAKATAK ecosystem add-ons
 
 Signed: **NEWBUY** @ ChatGPT Work · 2026-11-02.
