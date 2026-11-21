@@ -1,6 +1,7 @@
-import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
-import { MODULE_PLACEHOLDERS } from "@/lib/dashboard/dashboard-config";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <ModulePlaceholder def={MODULE_PLACEHOLDERS["web-performance"]} />;
+// Website speed is measured on the SEO screen (Google PageSpeed Insights:
+// Core Web Vitals, mobile and desktop). One screen, not two.
+export default function WebsitePerformancePage() {
+  redirect("/dashboard/seo");
 }

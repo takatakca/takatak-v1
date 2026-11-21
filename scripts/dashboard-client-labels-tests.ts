@@ -76,6 +76,16 @@ for (const path of clientPages) {
 }
 assert.deepEqual(offenders, [], `developer notes on client screens:\n${offenders.join("\n")}`);
 
+// 4. Screens that duplicate a working one lead to it instead of a placeholder.
+for (const [page, target] of [
+  ["src/app/dashboard/web-hosting/analytics/page.tsx", "/dashboard/growth/analytics"],
+  ["src/app/dashboard/web-hosting/performance/page.tsx", "/dashboard/seo"],
+]) {
+  const source = readFileSync(join(ROOT, page), "utf8");
+  assert.ok(source.includes(`redirect("${target}")`), `${page} must lead to ${target}`);
+  assert.ok(!/ModulePlaceholder/.test(source), `${page} must not show a placeholder`);
+}
+
 console.log(
   `dashboard client labels: ok (${clientPages.length} client screens and ${sharedComponents.length} shared components scanned, ${STAFF_ONLY_ROUTES.size} staff-only)`,
 );
