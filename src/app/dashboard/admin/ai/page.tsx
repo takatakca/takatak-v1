@@ -1,8 +1,12 @@
+import { randomUUID } from "node:crypto";
+
 import Link from "next/link";
 import { ArrowRight, Bot, CircleDollarSign, Cpu, KeyRound, Sparkles, Workflow } from "lucide-react";
 
 import { AdminHeader } from "@/components/admin/admin-header";
 import { RunAgentsButton } from "@/components/admin/run-agents-button";
+import { GrantCreditsForm } from "@/components/growth/grant-credits-form";
+import { listClientBalances } from "@/lib/ai-credits/ledger";
 import { nativeRunnerEnabled } from "@/lib/ai-agents/native-runner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -95,7 +99,7 @@ function EngineRow({ engine }: { engine: AiControlEngine }) {
 
 export default async function AiControlCenterPage() {
   await requireAdminAccess();
-  const snapshot = await getAiControlSnapshot();
+  const [snapshot, balances] = await Promise.all([getAiControlSnapshot(), listClientBalances().catch(() => null)]);
   const { engines, switches, credits, agents, recentRuns } = snapshot;
 
   const connected = engines.filter((engine) => engine.connected).length;
@@ -138,6 +142,20 @@ export default async function AiControlCenterPage() {
         <Kpi icon={CircleDollarSign} label="Credits in circulation" value={credits ? number.format(credits.totalBalance) : "—"} hint={credits ? `${credits.accounts} workspace accounts` : "Unavailable"} />
         <Kpi icon={CircleDollarSign} label="Credits spent (30 days)" value={credits ? number.format(credits.spent30d) : "—"} hint={credits ? `${credits.debits30d} AI tasks billed` : "Unavailable"} />
       </section>
+
+      <Card>
+        <CardHeader
+          title="Accorder des crédits IA · Grant AI credits"
+          subtitle="Clients use credits for TAK-TAK, AI Studio and the agents. Each grant is written once in the client's ledger, with your name."
+        />
+        <CardBody>
+          {balances ? (
+            <GrantCreditsForm clients={balances} nonce={randomUUID()} />
+          ) : (
+            <p className="text-sm text-slate-500">The credit ledger is not reachable right now; try again shortly.</p>
+          )}
+        </CardBody>
+      </Card>
 
       <section aria-label="Switches" className="space-y-3">
         <h2 className="text-sm font-semibold text-slate-900">Ce qui est allumé · What is switched on</h2>

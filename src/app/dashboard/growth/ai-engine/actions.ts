@@ -46,6 +46,7 @@ export async function grantCreditsAction(_prev: GrantState, formData: FormData):
       return { ok: false, error: messages[result.code] };
     }
     revalidatePath("/dashboard/growth/ai-engine");
+    revalidatePath("/dashboard/admin/ai");
     return {
       ok: true,
       message: result.replayed ? `Already applied. Balance: ${result.balance}.` : `Done. New balance: ${result.balance.toLocaleString("en-CA")} credits.`,
