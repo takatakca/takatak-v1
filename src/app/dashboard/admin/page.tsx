@@ -1,4 +1,4 @@
-import { Activity, Bell, Bot, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, KeyRound, MapPinned, PackageOpen, PlugZap, Receipt, Settings, ShoppingBag, Users } from "lucide-react";
+import { Activity, Bell, Bot, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, KeyRound, MapPinned, PackageOpen, PlugZap, Receipt, Rocket, Settings, ShoppingBag, Users } from "lucide-react";
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminBoundaryWarning } from "@/components/admin/admin-boundary-warning";
 import { AdminHeader } from "@/components/admin/admin-header";
@@ -17,6 +17,7 @@ import { requireAdminAccess } from "@/lib/security/guard";
 export const dynamic = "force-dynamic";
 
 const OPERATIONS = [
+  { href: "/dashboard/admin/go-live", title: "Go-live checklist", description: "How close TAKATAK is to 100% in production, measured live, with exactly what closes each item.", icon: Rocket },
   { href: "/dashboard/admin/ai", title: "AI Control Center", description: "Every AI on one screen: engines and keys, switches, credits, agents and their latest runs.", icon: Bot },
   { href: "/dashboard/admin/clients", title: "Clients", description: "Client accounts with brand, service, and member counts.", icon: Building2 },
   { href: "/dashboard/admin/users", title: "Users", description: "Profiles and client memberships (read-only).", icon: Users },

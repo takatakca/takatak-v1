@@ -38,6 +38,7 @@ const RUN_TONE: Record<string, "success" | "warning" | "danger" | "neutral" | "m
 const CATEGORY_ORDER: AiProviderCategory[] = ["text", "voice", "video", "image", "music", "builder"];
 
 const AI_SCREENS = [
+  { href: "/dashboard/admin/go-live", label: "Mise en service · Go-live", note: "Everything still needed for 100% in production." },
   { href: "/dashboard/admin/ai-providers", label: "Clés des fournisseurs · Provider keys", note: "Enter, test and remove each provider key." },
   { href: "/dashboard/growth/ai-engine", label: "Moteur IA et crédits · AI Engine & credits", note: "Gateway, credit packs, grant credits to a workspace." },
   { href: "/dashboard/ai-studio", label: "AI Studio", note: "Brand voices, saved drafts, content generator." },

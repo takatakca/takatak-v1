@@ -218,6 +218,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Jobs", href: "/dashboard/jobs", icon: CalendarClock },
       { label: "Activity", href: "/dashboard/activity", icon: History },
       { label: "Facturations — Administration", href: "/dashboard/admin/billing", icon: Receipt },
+      { label: "Go-live checklist", href: "/dashboard/admin/go-live", icon: Rocket },
       { label: "AI Control Center", href: "/dashboard/admin/ai", icon: Bot },
       { label: "Admin", href: "/dashboard/admin", icon: Briefcase },
       { label: "Settings", href: "/dashboard/settings", icon: Settings },
