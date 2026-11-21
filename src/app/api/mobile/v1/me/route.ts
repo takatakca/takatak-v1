@@ -40,8 +40,9 @@ export async function GET(request: NextRequest) {
         ? {
             invoices: hasEffectivePermission(access, "manage_settings"),
             dashboard: hasEffectivePermission(access, "view_dashboard"),
+            team: hasEffectivePermission(access, "view_team"),
           }
-        : { invoices: false, dashboard: false },
+        : { invoices: false, dashboard: false, team: false },
     },
     200,
   );

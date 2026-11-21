@@ -1,0 +1,19 @@
+Version 2 pour Google Play et Amazon : signer l'application sur votre PC
+=========================================================================
+
+Votre clé de signature ne quitte jamais votre PC. Rien n'est envoyé sur Internet.
+
+1. Décompressez tout ce ZIP dans un dossier (clic droit > Extraire tout).
+2. Copiez votre clé de signature dans ce même dossier :
+   - Si TAKATAK est déjà sur Google Play (version PWABuilder) : le fichier .keystore ET signing-key-info.txt
+     du ZIP PWABuilder de TAKATAK. Il faut la même clé pour que Google accepte la mise à jour.
+   - Sinon, le programme propose de créer une nouvelle clé. Gardez-en une copie en lieu sûr.
+   (Si la clé n'est pas dans le dossier, une fenêtre vous demande de la choisir.)
+3. Double-cliquez sur SIGNER.bat.
+   - Si Java n'est pas installé, la page de téléchargement gratuite s'ouvre : installez-le, puis recommencez.
+4. À la fin, le dossier s'ouvre avec deux nouveaux fichiers :
+   - ...-v2-google-play.aab : à téléverser dans Google Play Console (Tests > Nouvelle version).
+   - ...-v2-amazon.apk      : à téléverser dans Amazon Appstore (Nouvelle version > Fichiers).
+
+Le numéro de version (2.0.0, code 100) est plus élevé que celui de la version PWABuilder :
+les magasins l'acceptent comme une mise à jour, au même nom de paquet.

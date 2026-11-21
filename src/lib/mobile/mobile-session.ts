@@ -58,3 +58,6 @@ export function normalizeRefreshToken(value: unknown): string | null {
   const token = value.trim();
   return token.length >= 8 && token.length <= 512 && /^[A-Za-z0-9_.-]+$/.test(token) ? token : null;
 }
+
+/** Lists sent to the phone are capped; the full list stays on the website. */
+export const MOBILE_LIST_LIMIT = 200;

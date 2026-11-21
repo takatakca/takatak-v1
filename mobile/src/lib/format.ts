@@ -63,3 +63,35 @@ export const INVOICE_STATUS: Record<string, { label: string; tone: 'green' | 'go
   uncollectible: { label: 'Non recouvrable', tone: 'muted' },
   refunded: { label: 'Remboursée', tone: 'muted' },
 };
+
+type Tone = 'green' | 'gold' | 'red' | 'muted' | 'wine';
+export const LEAD_STATUS: Record<string, { label: string; tone: Tone }> = {
+  new_internal: { label: 'Nouveau', tone: 'wine' },
+  follow_up_planned: { label: 'Suivi prévu', tone: 'gold' },
+  contacted_internal: { label: 'Contacté', tone: 'muted' },
+  qualified_internal: { label: 'Qualifié', tone: 'green' },
+  proposal_planned: { label: 'Soumission', tone: 'gold' },
+  won_internal: { label: 'Gagné', tone: 'green' },
+  lost_internal: { label: 'Perdu', tone: 'muted' },
+  archived: { label: 'Archivé', tone: 'muted' },
+};
+export const PRIORITY: Record<string, string> = { low: 'Basse', normal: 'Normale', high: 'Haute', urgent: 'Urgente' };
+const OK = ['active', 'connected', 'verified', 'valid', 'issued', 'ok', 'online', 'running', 'healthy'];
+const BAD = ['error', 'expired', 'suspended', 'failed', 'offline', 'down', 'cancelled'];
+const WARN = ['warning', 'pending', 'pending_connection', 'planned', 'provisioning', 'expiring'];
+const WORDS: Record<string, string> = {
+  active: 'Actif', connected: 'Relié', verified: 'Vérifié', valid: 'Valide', issued: 'Émis', ok: 'OK', online: 'En ligne', running: 'En marche', healthy: 'En santé',
+  error: 'Erreur', expired: 'Expiré', suspended: 'Suspendu', failed: 'Échec', offline: 'Hors ligne', down: 'En panne', cancelled: 'Annulé',
+  warning: 'À vérifier', pending: 'En attente', pending_connection: 'À relier', planned: 'Prévu', provisioning: 'En préparation', expiring: 'Expire bientôt',
+  not_configured: 'Non configuré', not_connected: 'Non relié', unknown: 'Inconnu',
+};
+export function statusOf(value: string | null | undefined): { label: string; tone: Tone } {
+  const v = (value ?? 'unknown').toLowerCase();
+  const tone: Tone = OK.includes(v) ? 'green' : BAD.includes(v) ? 'red' : WARN.includes(v) ? 'gold' : 'muted';
+  return { label: WORDS[v] ?? v.replace(/_/g, ' '), tone };
+}
+export function daysUntil(iso: string | null | undefined, now = Date.now()) {
+  if (!iso) return null;
+  return Math.ceil((new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).getTime() - now) / 86400000);
+}
+export const ROLE: Record<string, string> = { owner: 'Propriétaire', admin: 'Administrateur', manager: 'Gestionnaire', editor: 'Rédacteur', staff: 'Employé', viewer: 'Lecture seule' };

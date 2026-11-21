@@ -37,6 +37,9 @@ function Navigator() {
         <Stack.Protected guard={signedIn}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="invoices" options={{ title: 'Factures' }} />
+          <Stack.Screen name="leads" options={{ title: 'Demandes reçues' }} />
+          <Stack.Screen name="web" options={{ title: 'Sites et domaines' }} />
+          <Stack.Screen name="team" options={{ title: 'Équipe' }} />
           <Stack.Screen name="workspaces" options={{ title: 'Entreprises', presentation: 'modal' }} />
         </Stack.Protected>
       </Stack>
