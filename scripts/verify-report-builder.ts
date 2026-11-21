@@ -5,6 +5,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { buildableMonths, isBuildableMonth, monthlyReportPlan, REPORT_BUILDER_SOURCE, type BuilderNumbers } from "../src/lib/reports/monthly-builder";
+import { isDue, monthCoveredBy, nextMonthlyRun } from "../src/lib/reports/monthly-schedule";
 
 const zero: BuilderNumbers = {
   pageviews: 0, visits: 0, conversions: 0, ratings: 0, averageRating: null, publicReviewClicks: 0,
@@ -53,16 +54,36 @@ assert.ok(empty.metrics.filter((m) => m.key !== "averageRating").every((m) => m.
 
 // 4. The action is scoped to the active workspace, checks roles and month, and sends nothing.
 const action = readFileSync("src/app/dashboard/reports/builder/actions.ts", "utf8");
-assert.ok(action.indexOf("isBuildableMonth(month)") < action.indexOf("getGrowthReport("), "the month is checked first");
+assert.ok(action.indexOf("isBuildableMonth(month)") < action.indexOf("buildMonthlyReportFor("), "the month is checked first");
 assert.match(action, /access\.mode !== "client_scoped"/);
 assert.match(action, /hasEffectivePermission\(access, "view_reports"\)/);
 assert.match(action, /hasEffectivePermission\(access, "create_content"\)/);
-assert.match(action, /const clientId = access\.activeClientId/);
-assert.match(action, /where: \{\s*clientId,\s*type: "monthly_business"/, "a rebuild only ever touches this workspace's report");
+assert.match(action, /buildMonthlyReportFor\(prisma, \{ clientId: access\.activeClientId/);
+assert.match(readFileSync("src/lib/reports/build-monthly.ts", "utf8"), /where: \{\s*clientId: input\.clientId,\s*type: "monthly_business"/, "a rebuild only ever touches this workspace's report");
 assert.doesNotMatch(action, /sendEmail|resend|nodemailer|fetch\(/i, "building a report sends nothing");
 const page = readFileSync("src/app/dashboard/reports/builder/page.tsx", "utf8");
 assert.doesNotMatch(page, /disabled|Coming soon|Phase \d/, "no dead controls on the client screen");
 assert.match(page, /export\/pdf\?id=/);
 assert.doesNotMatch(readFileSync("src/lib/dashboard/dashboard-config.ts", "utf8"), /"\/dashboard\/reports\/builder",\n/, "the builder is no longer staff-only");
 
-console.log("report builder: ok (months, plan, empty month, action guards)");
+// 5. Automatic monthly report: runs on the 1st (12:00 UTC) and covers the month that just ended.
+assert.equal(nextMonthlyRun(new Date(Date.UTC(2026, 10, 21, 8))).toISOString(), "2026-12-01T12:00:00.000Z");
+assert.equal(nextMonthlyRun(new Date(Date.UTC(2026, 11, 31, 23))).toISOString(), "2027-01-01T12:00:00.000Z");
+assert.equal(monthCoveredBy(new Date("2026-12-01T12:00:00Z")), "2026-11");
+assert.equal(monthCoveredBy(new Date("2027-01-01T12:00:00Z")), "2026-12");
+assert.ok(isDue(new Date("2026-12-01T12:00:00Z"), new Date("2026-12-01T12:00:00Z")));
+assert.ok(!isDue(new Date("2026-12-01T12:00:00Z"), new Date("2026-12-01T11:59:00Z")));
+assert.ok(!isDue(null, new Date()));
+const runner = readFileSync("src/lib/reports/build-monthly.ts", "utf8");
+assert.ok(runner.indexOf("updateMany") < runner.indexOf("buildMonthlyReportFor(prisma, { clientId: schedule.clientId"), "a schedule is claimed before it runs (no double build)");
+assert.match(runner, /where: \{ id: schedule\.id, nextRunAt: schedule\.nextRunAt, status: "active_internal" \}/);
+assert.doesNotMatch(runner, /sendEmail|resend|nodemailer|fetch\(/i, "the automatic report sends no email");
+const cron = readFileSync("src/app/api/cron/monthly-reports/route.ts", "utf8");
+assert.ok(cron.indexOf("cronAuthorized(") < cron.indexOf("runDueMonthlySchedules("), "the cron route checks the secret first");
+assert.match(readFileSync(".github/workflows/production-scheduler.yml", "utf8"), /\/api\/cron\/monthly-reports/);
+const scheduleAction = readFileSync("src/app/dashboard/reports/schedules/actions.ts", "utf8");
+assert.match(scheduleAction, /const clientId = access\.activeClientId/);
+assert.match(scheduleAction, /hasEffectivePermission\(access, "create_content"\)/);
+assert.doesNotMatch(readFileSync("src/lib/dashboard/dashboard-config.ts", "utf8"), /"\/dashboard\/reports\/schedules",\n/, "scheduled reports are no longer staff-only");
+
+console.log("report builder: ok (months, plan, empty month, action guards, automatic monthly schedule)");

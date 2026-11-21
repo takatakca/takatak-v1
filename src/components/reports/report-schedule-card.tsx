@@ -22,7 +22,7 @@ export function ReportScheduleCard({ schedule }: { schedule: ReportScheduleSumma
           {schedule.nextRunAt ? ` · Next run ${schedule.nextRunAt}` : " · No next run set"}
           {schedule.lastRunAt ? ` · Last run ${schedule.lastRunAt}` : " · Never run"}
         </p>
-        <p className="text-[11px] text-slate-400">{schedule.note ?? "No background worker is active."}</p>
+        {schedule.note ? <p className="text-[11px] text-slate-400">{schedule.note}</p> : null}
       </CardBody>
     </Card>
   );
