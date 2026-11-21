@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     "deploy/**",
     "server.js",
     ".tmp-takatak-automate/**",
+    // Native phone app (Expo): its own type check and tests run in .github/workflows/mobile.yml.
+    "mobile/**",
   ]),
   {
     rules: {
