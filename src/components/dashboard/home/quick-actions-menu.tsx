@@ -4,8 +4,11 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { QUICK_ACTIONS } from "@/lib/dashboard/dashboard-config";
+import { homeText } from "@/lib/dashboard/nav-fr";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export function QuickActionsMenu() {
+  const language = useDashboardLanguage();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -36,7 +39,7 @@ export function QuickActionsMenu() {
         onClick={() => setOpen((current) => !current)}
         className="inline-flex items-center gap-2 rounded-lg bg-[#1565D8] px-4 py-2.5 text-sm font-medium text-white shadow-sm"
       >
-        Quick Actions
+        {homeText("Quick Actions", language)}
         <ChevronDown className={`h-4 w-4 transition ${open ? "rotate-180" : ""}`} />
       </button>
       {open ? (
@@ -54,16 +57,16 @@ export function QuickActionsMenu() {
                   className={className}
                 >
                   <Icon className="h-4 w-4 text-slate-400" />
-                  {action.label}
+                  {homeText(action.label, language)}
                 </Link>
               );
             }
             return (
               <div key={action.label} className={`${className} cursor-not-allowed opacity-60`}>
                 <Icon className="h-4 w-4 text-slate-400" />
-                <span className="flex-1">{action.label}</span>
+                <span className="flex-1">{homeText(action.label, language)}</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                  Soon
+                  {homeText("Soon", language)}
                 </span>
               </div>
             );

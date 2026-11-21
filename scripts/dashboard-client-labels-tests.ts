@@ -7,7 +7,7 @@ import { join, relative } from "node:path";
 
 import { clientBadges, isBuildPhaseLabel, LIVE_DATA_LABEL } from "../src/lib/dashboard/client-labels";
 import { NAV_SECTIONS, QUICK_ACTIONS, STAFF_ONLY_ROUTES } from "../src/lib/dashboard/dashboard-config";
-import { asDashboardLanguage, NAV_FR, navLabel } from "../src/lib/dashboard/nav-fr";
+import { asDashboardLanguage, HOME_FR, homeText, NAV_FR, navLabel } from "../src/lib/dashboard/nav-fr";
 import { ACCOUNT_LANGUAGES } from "../src/lib/account/account-settings-validation";
 
 // 1. Build-phase labels are recognised; real statuses are kept.
@@ -102,6 +102,14 @@ assert.equal(asDashboardLanguage("fr"), "fr");
 assert.equal(asDashboardLanguage("de"), "en");
 assert.ok((ACCOUNT_LANGUAGES as readonly string[]).includes("fr"), "French is offered in Account settings");
 assert.match(readFileSync(join(ROOT, "src/components/account/account-settings-view.tsx"), "utf8"), /<option value="fr">Français<\/option>/);
+// The dashboard home and its quick actions follow the account language too.
+for (const action of QUICK_ACTIONS) assert.ok(HOME_FR[action.label], `French text missing for the quick action "${action.label}"`);
+const homeData = readFileSync(join(ROOT, "src/lib/dashboard/home-data.ts"), "utf8");
+for (const match of homeData.matchAll(/(?:label|detail): "([^"]+)"/g)) {
+  assert.ok(HOME_FR[match[1]], `French text missing for the dashboard home text "${match[1]}"`);
+}
+assert.equal(homeText("Total Reach", "fr"), "Portée totale");
+assert.equal(homeText("Total Reach", "en"), "Total Reach");
 
 console.log(
   `dashboard client labels: ok (${clientPages.length} client screens and ${sharedComponents.length} shared components scanned, ${STAFF_ONLY_ROUTES.size} staff-only)`,
