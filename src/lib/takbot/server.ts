@@ -177,6 +177,8 @@ export async function runTakbot(input: {
   engine: string;
   prompt: string;
   requestId: string;
+  /** False when the caller keeps the answer itself (AI Studio saves its own draft). */
+  persist?: boolean;
 }): Promise<TakbotRunResult> {
   const connected = await connectedEngines();
   const route = routeForWorkspace({ premiumUnlocked: await premiumUnlocked(input.clientId), config: readTrialConfig(), connected });
@@ -207,7 +209,7 @@ export async function runTakbot(input: {
     const refund = await refundDebit({ clientId: input.clientId, debitIdempotencyKey: idempotencyKey, note: `TAK-TAK ${relayed.code}` });
     return { ok: false, status: RELAY_STATUS[relayed.code], code: relayed.code, balance: refund.ok ? refund.balance : debit.balance };
   }
-  const savedId = await saveOutput({ clientId: input.clientId, mode: decision.mode.key, prompt: input.prompt, text: relayed.text, engine: decision.engine.key, trial, requestId: input.requestId, model: relayed.model, usage: relayed.usage, retailCredits: decision.credits });
+  const savedId = input.persist === false ? null : await saveOutput({ clientId: input.clientId, mode: decision.mode.key, prompt: input.prompt, text: relayed.text, engine: decision.engine.key, trial, requestId: input.requestId, model: relayed.model, usage: relayed.usage, retailCredits: decision.credits });
   return {
     ok: true,
     text: relayed.text,

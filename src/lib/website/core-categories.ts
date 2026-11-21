@@ -490,9 +490,10 @@ export const CORE_CATEGORIES: readonly CoreCategory[] = [
     included: [
       { icon: Mic2 },
       { icon: BookMarked },
-      { icon: Wand2, soon: true },
-      { icon: Megaphone, soon: true },
-      { icon: Clapperboard, soon: true },
+      // Live: the dashboard writes these drafts on the TAK-TAK engines (AI credits).
+      { icon: Wand2 },
+      { icon: Megaphone },
+      { icon: Clapperboard },
       { icon: Workflow },
     ],
     steps: 4,

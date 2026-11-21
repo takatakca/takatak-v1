@@ -2,13 +2,25 @@
 // brand voice applied as instructions. Pure module.
 
 export const GENERATION_KINDS = {
-  caption: { label: "Social caption", instruction: "Write one social media caption (max 120 words). No hashtags unless asked." },
-  hashtags: { label: "Hashtags", instruction: "Suggest 12 relevant hashtags, one per line, mixing broad and local/niche tags." },
-  hook: { label: "Hooks", instruction: "Write 5 short opening hooks (max 15 words each), one per line." },
-  cta: { label: "Calls to action", instruction: "Write 5 short calls to action, one per line." },
-  post_long: { label: "Long post", instruction: "Write one long-form post (150–300 words) with short paragraphs." },
-  video_idea: { label: "Video ideas", instruction: "Suggest 5 short-video ideas: a title line, then one sentence each." },
-  creative_brief: { label: "Creative brief", instruction: "Write a one-page creative brief: objective, audience, key message, tone, deliverables, mandatory mentions." },
+  caption: { label: "Social caption", labelFr: "Légende de publication", instruction: "Write one social media caption (max 120 words). No hashtags unless asked." },
+  hashtags: { label: "Hashtags", labelFr: "Mots-clics", instruction: "Suggest 12 relevant hashtags, one per line, mixing broad and local/niche tags." },
+  hook: { label: "Hooks", labelFr: "Accroches", instruction: "Write 5 short opening hooks (max 15 words each), one per line." },
+  cta: { label: "Calls to action", labelFr: "Appels à l’action", instruction: "Write 5 short calls to action, one per line." },
+  post_long: { label: "Long post", labelFr: "Publication longue", instruction: "Write one long-form post (150–300 words) with short paragraphs." },
+  campaign_plan: {
+    label: "Campaign plan",
+    labelFr: "Plan de campagne",
+    instruction:
+      "Write a 4-week campaign plan: objective, audience, key message, then a week-by-week calendar with 3 post ideas per week (format, hook, one-line caption idea), and the call to action. Use only the offer, dates and facts given; mark anything to confirm as \"to confirm\".",
+  },
+  video_idea: { label: "Video ideas", labelFr: "Idées vidéo", instruction: "Suggest 5 short-video ideas: a title line, then one sentence each." },
+  video_script: {
+    label: "Video script",
+    labelFr: "Script vidéo",
+    instruction:
+      "Write one short-video script of 30 to 45 seconds: the hook (first 3 seconds), then 4 to 6 scenes, each with what is shown, what is said and the on-screen text, and the closing call to action.",
+  },
+  creative_brief: { label: "Creative brief", labelFr: "Brief créatif", instruction: "Write a one-page creative brief: objective, audience, key message, tone, deliverables, mandatory mentions." },
 } as const;
 
 export type GenerationKind = keyof typeof GENERATION_KINDS;

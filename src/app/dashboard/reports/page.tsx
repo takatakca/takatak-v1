@@ -7,7 +7,10 @@ import { ReportMetricList } from "@/components/reports/report-metric-list";
 import { ReportScheduleCard } from "@/components/reports/report-schedule-card";
 import { ReportSourceBanner } from "@/components/reports/source-banner";
 import { ReportTemplateCard } from "@/components/reports/report-template-card";
+import { getPrisma } from "@/lib/db/prisma";
+import { runDueMonthlySchedules } from "@/lib/reports/build-monthly";
 import { getReportsOverviewData } from "@/lib/reports/reporting-data";
+import { getServerAccessContext } from "@/lib/security/access-context";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +21,12 @@ export default async function ReportsOverviewPage({
 }) {
   const params = await searchParams;
   const raw = Array.isArray(params.delivery) ? params.delivery[0] : params.delivery;
+  // Catch-up: an automatic monthly report that came due is built on the next visit.
+  const { access } = await getServerAccessContext();
+  const prisma = getPrisma();
+  if (access.mode === "client_scoped" && prisma) {
+    await runDueMonthlySchedules(prisma, { clientId: access.activeClientId, max: 1 }).catch(() => []);
+  }
   const data = await getReportsOverviewData();
   const canExport = data.source === "database";
   const kpis = [
@@ -78,7 +87,7 @@ export default async function ReportsOverviewPage({
       </section>
 
       <section className="space-y-3" aria-label="Schedules">
-        <h2 className="text-sm font-semibold text-slate-900">Schedule Foundation</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Rapports planifiés · Scheduled reports</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.schedules.map((s) => <ReportScheduleCard key={s.id} schedule={s} />)}
         </div>

@@ -73,7 +73,7 @@ export default async function LocalListingsOverviewPage() {
       <section className="space-y-3" aria-label="Reviews">
         <div className="flex items-center gap-2">
           <h2 className="text-sm font-semibold text-slate-900">Review Monitoring</h2>
-          <Badge tone="muted">Internal demo reviews</Badge>
+          <Badge tone="muted">Avis enregistrés · Stored reviews</Badge>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.reviews.map((r) => <ReviewCard key={r.id} review={r} />)}
@@ -82,7 +82,7 @@ export default async function LocalListingsOverviewPage() {
 
       <section className="space-y-3" aria-label="Visibility">
         <h2 className="text-sm font-semibold text-slate-900">Local Visibility Snapshot</h2>
-        <p className="text-[11px] text-slate-400">Foundation visibility only — not from QMAPS or Google data.</p>
+        <p className="text-[11px] text-slate-400">Instantanés enregistrés dans votre espace · Snapshots stored in your workspace.</p>
         <div className="grid gap-3 sm:grid-cols-2">
           {data.snapshots.map((s) => <VisibilitySnapshotCard key={s.id} snapshot={s} />)}
         </div>

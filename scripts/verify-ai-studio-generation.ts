@@ -6,7 +6,8 @@ import { readFileSync } from "node:fs";
 
 import { DEFAULT_ANTHROPIC_MODEL, readAiStudioConfig } from "../src/lib/ai/generation/config";
 import { loadAiStudioConfig } from "../src/lib/ai/generation/load-config";
-import { buildPrompt, parseGenerateRequest, type GenerateRequest } from "../src/lib/ai/generation/prompt";
+import { buildPrompt, GENERATION_KINDS, parseGenerateRequest, type GenerateRequest } from "../src/lib/ai/generation/prompt";
+import { studioFailureFromTakbot, takbotStudioPrompt } from "../src/lib/ai/generation/takbot-failure";
 import { callProvider, MAX_OUTPUT_TOKENS } from "../src/lib/ai/generation/provider-call";
 import { dbProvider, generateForWorkspace, GENERATION_SOURCE, type GenerationDb } from "../src/lib/ai/generation/service";
 
@@ -205,13 +206,21 @@ async function main() {
 
   await check("route and page keep generation gated and workspace-scoped; no migration", () => {
     const route = readFileSync("src/app/api/ai-studio/generate/route.ts", "utf8");
-    assert.ok(route.indexOf("readAiStudioConfig()") < route.indexOf("requireWorkspaceApiPermission(\"create_content\")"));
-    assert.ok(route.indexOf("loadAiStudioConfig()") > route.indexOf("requireWorkspaceApiPermission(\"create_content\")"), "the saved key is read only after the permission check");
-    assert.match(route, /requireWorkspaceApiPermission\("create_content"\)/);
+    const gateAt = route.indexOf("requireWorkspaceApiPermission(\"create_content\")");
+    assert.ok(gateAt > 0 && route.indexOf("resolveStudioEngine()") > gateAt, "keys and engines are resolved only after the permission check");
     assert.match(route, /readJsonBody\(request/);
-    assert.match(route, /clientId: gate\.access\.activeClientId/);
-    const page = readFileSync("src/app/dashboard/ai-studio/content-generator/page.tsx", "utf8");
-    assert.match(page, /access\.mode === "client_scoped" && hasEffectivePermission\(access, "create_content"\)/);
+    assert.match(route, /const clientId = gate\.access\.activeClientId/);
+    assert.match(route, /takbotStudioCall\(clientId, prompt, context\.jobId\)/, "the TAK-TAK path bills the active workspace, once per job");
+    const engine = readFileSync("src/lib/ai/generation/studio-engine.ts", "utf8");
+    assert.match(engine, /requestId: `ai-studio:\$\{jobId\}`/);
+    assert.match(engine, /persist: false/, "AI Studio keeps one draft (its own), not a second TAK-TAK copy");
+    assert.ok(engine.indexOf("config.enabled") < engine.indexOf("connectedEngines()"), "a provider key set for AI Studio wins over TAK-TAK");
+    const screen = readFileSync("src/components/ai-studio/studio-generator-screen.tsx", "utf8");
+    assert.match(screen, /access\.mode === "client_scoped" && hasEffectivePermission\(access, "create_content"\)/);
+    assert.match(screen, /access\.mode !== "platform_admin"[\s\S]*ModulePlaceholder/, "clients never see a disabled form");
+    for (const page of ["content-generator", "campaign-builder", "video-ideas"]) {
+      assert.match(readFileSync(`src/app/dashboard/ai-studio/${page}/page.tsx`, "utf8"), /<StudioGeneratorScreen/, `${page} uses the working generator`);
+    }
     const form = readFileSync("src/components/ai-studio/content-generator-form.tsx", "utf8");
     assert.doesNotMatch(form, /API_KEY|apiKey/);
     const schema = readFileSync("prisma/schema.prisma", "utf8");
@@ -219,6 +228,43 @@ async function main() {
     for (const list of ["scripts/reconcile-production-migrations.mjs", "scripts/reconcile-staging-migrations.mjs"]) {
       assert.doesNotMatch(readFileSync(list, "utf8"), /ai_provider_anthropic/, `${list} approves no AI Studio migration`);
     }
+  });
+
+  await check("TAK-TAK drafts: details kept with the draft, refusals mapped, nothing stored about the key", async () => {
+    const fake = fakeDb();
+    const seen: string[] = [];
+    const outcome = await generateForWorkspace(
+      fake.db,
+      async (_prompt, context) => {
+        seen.push(context.jobId);
+        return { ok: true, text: "Plan", inputTokens: null, outputTokens: null, meta: { engine: "openai", engineName: "OpenAI", credits: 2, balance: 8, trial: false } };
+      },
+      { ...input, provider: "takbot", model: "auto", request: { ...baseRequest, kind: "campaign_plan" } },
+    );
+    assert.ok(outcome.ok && outcome.meta.credits === 2 && outcome.meta.balance === 8);
+    assert.deepEqual(seen, ["job-1"], "the call receives the job id (idempotent credit debit)");
+    assert.equal(fake.jobs[0].provider, "internal");
+    assert.equal(fake.jobs[0].kind, "campaign_plan");
+    assert.equal((fake.outputs[0].metadata as Row).provider, "takbot");
+    assert.equal((fake.outputs[0].metadata as Row).engine, "openai");
+    assert.equal((fake.outputs[0].metadata as Row).credits, 2);
+    assert.equal(dbProvider("takbot"), "internal");
+
+    const broke = fakeDb();
+    assert.deepEqual(
+      await generateForWorkspace(broke.db, async () => ({ ok: false, code: "insufficient_credits" }), { ...input, provider: "takbot", model: "auto" }),
+      { ok: false, reason: "insufficient_credits" },
+    );
+    assert.equal(broke.outputs.length, 0);
+
+    assert.equal(studioFailureFromTakbot("insufficient_credits"), "insufficient_credits");
+    assert.equal(studioFailureFromTakbot("no_engine_connected"), "no_engine");
+    assert.equal(studioFailureFromTakbot("timeout"), "timeout");
+    assert.equal(studioFailureFromTakbot("already_processed"), "provider_error");
+    const merged = takbotStudioPrompt({ system: "RULES", user: "TASK" });
+    assert.ok(merged.indexOf("RULES") < merged.indexOf("TASK"), "the AI Studio rules come before the task");
+    assert.ok(GENERATION_KINDS.campaign_plan && GENERATION_KINDS.video_script, "campaign and video kinds exist (enum values already in the schema)");
+    assert.ok(parseGenerateRequest({ kind: "video_script", platform: "TikTok", goal: "Coulisses" }));
   });
 
   await check("a key saved in Admin › AI provider keys wins; the server variable stays the fallback", async () => {

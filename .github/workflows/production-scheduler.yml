@@ -1,6 +1,7 @@
 # Production scheduler. Production runs one web container with no cron, so
 # scheduled work never starts on its own: social publishing and syncs,
-# autopilot agents, the studio agent and the hourly review sync. This
+# autopilot agents, the studio agent, the hourly review sync and the
+# automatic monthly reports (built on the 1st). This
 # workflow calls those protected routes every 15 minutes.
 #
 # It does nothing until the repository secret CRON_SECRET exists, with the
@@ -47,5 +48,8 @@ jobs:
           call /api/cron/growth-agents
           call /api/cron/studio-agent
           # Hourly: the first tick of each hour.
-          if [ "$(date -u +%M)" -lt 15 ]; then call /api/cron/growth-reviews-sync; fi
+          if [ "$(date -u +%M)" -lt 15 ]; then
+            call /api/cron/growth-reviews-sync
+            call /api/cron/monthly-reports
+          fi
           exit $status

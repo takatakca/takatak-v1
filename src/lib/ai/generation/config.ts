@@ -32,10 +32,13 @@ export function readAiStudioConfig(env: Record<string, string | undefined> = pro
       : env.AI_STUDIO_ANTHROPIC_MODEL?.trim() || DEFAULT_ANTHROPIC_MODEL;
   if (!MODEL_RE.test(model)) return { enabled: false, reason: "missing_model" };
 
-  const limit = Number(env.AI_STUDIO_DAILY_LIMIT ?? DEFAULT_DAILY_LIMIT);
-  const dailyLimit = Number.isInteger(limit) && limit >= 1 && limit <= 1000 ? limit : DEFAULT_DAILY_LIMIT;
+  return { enabled: true, provider, apiKey, model, dailyLimit: studioDailyLimit(env) };
+}
 
-  return { enabled: true, provider, apiKey, model, dailyLimit };
+/** Drafts per workspace per day (AI_STUDIO_DAILY_LIMIT, 1 to 1000; 50 by default). */
+export function studioDailyLimit(env: Record<string, string | undefined> = process.env): number {
+  const limit = Number(env.AI_STUDIO_DAILY_LIMIT ?? DEFAULT_DAILY_LIMIT);
+  return Number.isInteger(limit) && limit >= 1 && limit <= 1000 ? limit : DEFAULT_DAILY_LIMIT;
 }
 
 export const DISABLED_REASON_LABELS: Record<Extract<AiStudioConfig, { enabled: false }>["reason"], string> = {

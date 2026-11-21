@@ -10,7 +10,7 @@ import { readAiStudioConfig } from "@/lib/ai/generation/config";
 import { aiCreditsCheckoutEnabled } from "@/lib/billing/ai-credits/stripe";
 import { getPrisma } from "@/lib/db/prisma";
 import { AI_AGENTS, AI_GATEWAY_ENV } from "@/lib/growth/ai-engine";
-import { TAKBOT_ENGINES } from "@/lib/takbot/catalog";
+import { routeTakbotRequest, TAKBOT_ENGINES } from "@/lib/takbot/catalog";
 import { connectedEngines, trialStatus } from "@/lib/takbot/server";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -88,9 +88,19 @@ const STUDIO_REASON: Record<string, string> = {
   invalid_provider: "AI Studio generation names an unknown provider.",
 };
 
-function studioSwitch(): AiControlSwitch {
+function studioSwitch(connected: ReadonlySet<string>): AiControlSwitch {
   const config = readAiStudioConfig();
   const settings = ["AI_STUDIO_GENERATION_ENABLED", "AI_STUDIO_PROVIDER", "AI_STUDIO_OPENAI_MODEL / AI_STUDIO_ANTHROPIC_MODEL", "AI_STUDIO_DAILY_LIMIT"];
+  const takbot = routeTakbotRequest({ mode: "write", engine: "auto", connected });
+  if (!config.enabled && takbot.ok) {
+    return {
+      key: "studio",
+      on: true,
+      label: "AI Studio content generator",
+      detail: `On through the TAK-TAK engines (${takbot.engine.name} first): ${takbot.credits} AI credits per draft, refunded on failure. Setting AI_STUDIO_GENERATION_ENABLED runs it on a provider key without credits instead.`,
+      settings,
+    };
+  }
   if (config.enabled) {
     return {
       key: "studio",
@@ -140,7 +150,7 @@ export async function getAiControlSnapshot(now = Date.now()): Promise<AiControlS
   const trial = await trialStatus(null).catch(() => null);
   const gatewayMissing = AI_GATEWAY_ENV.filter((name) => !process.env[name]?.trim());
   const switches: AiControlSwitch[] = [
-    studioSwitch(),
+    studioSwitch(connected),
     {
       key: "trial",
       on: Boolean(trial?.enabled),
