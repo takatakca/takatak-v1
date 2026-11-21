@@ -70,3 +70,12 @@ python3 scripts/make-icons.py       # icônes à partir du logo officiel
 ```
 
 `ios/` et `android/` sont générés (`npx expo prebuild`) et ne sont pas versionnés.
+
+## Accès des réviseurs des boutiques (Google Play, Amazon, Apple)
+
+Les boutiques demandent une connexion qui fonctionne. Elle est **désactivée par défaut**. Pour l'activer, le propriétaire ajoute deux variables dans Coolify (application takatak-v1), puis le site se redéploie :
+
+- `TAKATAK_MOBILE_REVIEW_EMAIL` : un courriel de démonstration choisi par le propriétaire ;
+- `TAKATAK_MOBILE_REVIEW_CODE` : un code de 6 chiffres choisi par le propriétaire.
+
+Il tape les deux mêmes valeurs dans la console de la boutique (« Sign in details »). Ces valeurs ne vont jamais dans le dépôt ni dans une conversation. Avec ce courriel, l'application n'envoie aucun courriel : le réviseur tape le code et voit seulement les données fictives intégrées à l'application. Ce compte ne passe ni par Supabase ni par la base de données, et son jeton est refusé par toutes les vraies routes `/api/mobile/v1`. Pour couper l'accès, il suffit de retirer une des deux variables.
