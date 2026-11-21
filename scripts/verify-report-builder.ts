@@ -86,4 +86,9 @@ assert.match(scheduleAction, /const clientId = access\.activeClientId/);
 assert.match(scheduleAction, /hasEffectivePermission\(access, "create_content"\)/);
 assert.doesNotMatch(readFileSync("src/lib/dashboard/dashboard-config.ts", "utf8"), /"\/dashboard\/reports\/schedules",\n/, "scheduled reports are no longer staff-only");
 
+const metricsPage = readFileSync("src/app/dashboard/reports/metrics/page.tsx", "utf8");
+assert.match(metricsPage, /clientId: access\.activeClientId/, "metrics are read for the active workspace only");
+assert.doesNotMatch(metricsPage, /foundation-only|Foundation"|Phase \d/);
+assert.doesNotMatch(readFileSync("src/lib/dashboard/dashboard-config.ts", "utf8"), /"\/dashboard\/reports\/metrics",\n/, "report metrics are no longer staff-only");
+
 console.log("report builder: ok (months, plan, empty month, action guards, automatic monthly schedule)");
