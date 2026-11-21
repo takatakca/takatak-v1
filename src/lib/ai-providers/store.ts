@@ -9,6 +9,7 @@ import "server-only";
 // returned to a page, logged, or written to the audit log.
 
 import Anthropic from "@anthropic-ai/sdk";
+import { anthropicWorkspaceHeaders } from "@/lib/ai/anthropic-workspace";
 
 import { getPrisma } from "@/lib/db/prisma";
 import {
@@ -198,6 +199,7 @@ export async function runKeyCheck(entry: AiProviderEntry, apiKey: string, fetchI
   if (entry.check.kind === "anthropic_sdk") {
     const client = new Anthropic({
       apiKey,
+      defaultHeaders: anthropicWorkspaceHeaders(),
       maxRetries: 0,
       timeout: CHECK_TIMEOUT_MS,
       fetch: fetchImpl as unknown as typeof fetch,

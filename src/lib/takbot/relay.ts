@@ -3,6 +3,7 @@
 // reduced to short codes and never reach the browser. Pure apart from the
 // injected fetch, so it is testable without network access.
 
+import { anthropicWorkspaceHeaders } from "@/lib/ai/anthropic-workspace";
 import type { TakbotEngine, TakbotMode } from "./catalog";
 
 export type RelayResult =
@@ -61,7 +62,7 @@ function buildRequest(engine: TakbotEngine, mode: TakbotMode, apiKey: string, mo
       url: "https://api.anthropic.com/v1/messages",
       init: {
         method: "POST",
-        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "Content-Type": "application/json" },
+        headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", ...anthropicWorkspaceHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ model, max_tokens: RELAY_MAX_OUTPUT_TOKENS, system, messages: [{ role: "user", content: prompt }] }),
       },
     };

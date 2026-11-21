@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { TAKBOT_ENGINES, TAKBOT_MODES, creditsFor, routeTakbotRequest, takbotEngine } from "../src/lib/takbot/catalog";
 import { modelFor, readRelayText, relayPrompt } from "../src/lib/takbot/relay";
+import { anthropicWorkspaceHeaders } from "../src/lib/ai/anthropic-workspace";
 
 // Every mode has a real credit action, and every engine comes from the billable catalog.
 for (const mode of TAKBOT_MODES) assert.ok(creditsFor(mode) > 0, `mode ${mode.key} has a credit cost`);
@@ -45,6 +46,19 @@ async function main() {
   assert.equal(ok.usage.inputTokens, null, "missing provider usage is unknown");
   assert.equal(seen!.url, "https://api.anthropic.com/v1/messages");
   assert.equal(seen!.headers["x-api-key"], "k-test");
+  assert.equal(seen!.headers["anthropic-workspace-id"], undefined, "no workspace header unless configured");
+
+  // A Claude key made for "All workspaces" needs the workspace on every request.
+  assert.deepEqual(anthropicWorkspaceHeaders({ ANTHROPIC_WORKSPACE_ID: " wrkspc_01Pqu5p44AFJ8ERotJJ2Bwbo " }), { "anthropic-workspace-id": "wrkspc_01Pqu5p44AFJ8ERotJJ2Bwbo" });
+  assert.deepEqual(anthropicWorkspaceHeaders({ ANTHROPIC_WORKSPACE_ID: "not-a-workspace" }), {}, "a malformed id is ignored");
+  assert.deepEqual(anthropicWorkspaceHeaders({}), {});
+  process.env.ANTHROPIC_WORKSPACE_ID = "wrkspc_01Pqu5p44AFJ8ERotJJ2Bwbo";
+  await relayPrompt({ engine: anthropic, mode: "chat", apiKey: "k-test", prompt: "hello" }, async (url, init) => {
+    seen = { url, headers: init.headers as Record<string, string> };
+    return new Response(JSON.stringify({ content: [{ type: "text", text: "yo" }] }), { status: 200 });
+  });
+  assert.equal(seen!.headers["anthropic-workspace-id"], "wrkspc_01Pqu5p44AFJ8ERotJJ2Bwbo");
+  delete process.env.ANTHROPIC_WORKSPACE_ID;
 
   const limited = await relayPrompt({ engine: openai, mode: "write", apiKey: "k", prompt: "x" }, async () => new Response("{}", { status: 429 }));
   assert.deepEqual(limited, { ok: false, code: "rate_limited" });
