@@ -17,6 +17,8 @@ Suite de [`APPS-MAGASINS.md`](APPS-MAGASINS.md). Même recette que BesoinAvocat 
 
 - Généré par PWABuilder le 21 novembre 2026 pour `https://takatak.ca`, identifiant `ca.takatak.app`, version 1 (1.0.0.0).
 - Le ZIP (`.aab`, `.apk`, clé de signature) est sur le PC du propriétaire. **La clé de signature ne va jamais dans GitHub, Drive ou le clavardage.**
+- Le ZIP a été ouvert le 21 novembre : `TAKATAK.aab` et `TAKATAK.apk` sont sur le PC du propriétaire dans `BESOINAVOCAT\APP-ANDROID\`. Empreinte SHA-256 de la clé de dépôt (publique, c'est celle d'`assetlinks.json`) : `ED:9B:BE:01:B5:B1:38:26:C0:79:CE:74:52:F0:AB:F4:F1:D1:2C:A4:78:47:FC:83:FC:80:CD:34:54:4B:69:45`.
+- Dossier prêt par magasin sur le PC : `BESOINAVOCAT\TAKATAK-MAGASINS\` (`1-HUAWEI`, `2-SAMSUNG`, `3-MICROSOFT`, `4-APPLE`, `5-AUTRES-ANDROID`), chacun avec le paquet, les images, un `LISEZ-MOI.txt` et, à la racine, `TEXTES-ET-REPONSES.txt` à copier-coller.
 - Après le premier dépôt sur Google Play : copier dans Coolify (app takatak.ca) `TAKATAK_ANDROID_CERT_SHA256` = empreinte de la clé de dépôt **et** empreinte de signature de Google (Play Console › Intégrité de l'application), séparées par une virgule, puis redéployer. Sans cela, `/.well-known/assetlinks.json` répond 404 et l'app montre la barre d'adresse.
 
 ## 2. Valeurs communes à toutes les fiches
