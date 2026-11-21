@@ -90,7 +90,7 @@ function NavRow({
         className="flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] transition hover:text-white"
       >
         <span
-          className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-orange-400" : "bg-transparent"}`}
+          className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-[#29C3FF]" : "bg-transparent"}`}
         />
         <span className={active ? "font-medium text-white" : "text-white/60"}>{item.label}</span>
       </Link>
@@ -106,7 +106,7 @@ function NavRow({
       <div
         className={`flex items-center rounded-lg ${
           hostingModuleActive
-            ? "border-l-2 border-orange-400 bg-blue-600/90"
+            ? "border-l-2 border-[#29C3FF] bg-[#1565D8]/90"
             : (active || childActive) && hasChildren
               ? "bg-white/10"
               : ""
@@ -187,22 +187,26 @@ function NavLinks({ session, onNavigate }: { session: SessionSnapshot; onNavigat
 
 function BrandMark() {
   return (
-    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-sm">
-      <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
-        <path fill="currentColor" d="M9.2 16.6 5.8 13.2l1.4-1.4 2 2 7.6-7.6 1.4 1.4z" />
-      </svg>
-    </span>
+    // Official TAKATAK mark (same file as the app icon), never the retired orange or gold marks.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/icons/icon-192.png"
+      alt=""
+      width={36}
+      height={36}
+      className="h-9 w-9 shrink-0 rounded-full shadow-[0_0_18px_rgba(31,139,255,0.35)]"
+    />
   );
 }
 
 function SidebarFrame({ session, onNavigate }: { session: SessionSnapshot; onNavigate?: () => void }) {
   return (
-    <div className="flex h-full flex-col bg-[#1f2125] text-white">
+    <div className="dash-sidebar-frame flex h-full flex-col bg-gradient-to-b from-[#0B1B3D] to-[#060D1F] text-white">
       <div className="flex items-center gap-2.5 px-5 pb-5 pt-6">
         <BrandMark />
         <div className="leading-tight">
-          <p className="text-[15px] font-semibold tracking-tight text-white">{APP_NAME}</p>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/45">
+          <p className="text-[15px] font-extrabold tracking-[0.06em] text-white">{APP_NAME}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#29C3FF]/80">
             {APP_NAME_BADGE}
           </p>
         </div>
@@ -214,7 +218,7 @@ function SidebarFrame({ session, onNavigate }: { session: SessionSnapshot; onNav
 
 export function DesktopSidebar({ session }: { session: SessionSnapshot }) {
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[260px] lg:block">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[var(--dash-sidebar)] lg:block">
       <SidebarFrame session={session} />
     </aside>
   );

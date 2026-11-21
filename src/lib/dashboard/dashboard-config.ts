@@ -70,7 +70,7 @@ import type {
   ServiceModule,
 } from "./types";
 
-export const APP_NAME = "TakaTak";
+export const APP_NAME = "TAKATAK";
 export const APP_NAME_BADGE = "Official";
 export const APP_FULL_NAME = "TakaTak Official Dashboard";
 
