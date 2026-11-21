@@ -1,6 +1,7 @@
-import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
-import { MODULE_PLACEHOLDERS } from "@/lib/dashboard/dashboard-config";
+import { redirect } from "next/navigation";
 
-export default function Page() {
-  return <ModulePlaceholder def={MODULE_PLACEHOLDERS["settings"]} />;
+// Settings live on the account settings screen (profile, security, language).
+// One screen, not two; old links still land in the right place.
+export default function SettingsPage() {
+  redirect("/dashboard/profile");
 }

@@ -80,6 +80,7 @@ assert.deepEqual(offenders, [], `developer notes on client screens:\n${offenders
 for (const [page, target] of [
   ["src/app/dashboard/web-hosting/analytics/page.tsx", "/dashboard/growth/analytics"],
   ["src/app/dashboard/web-hosting/performance/page.tsx", "/dashboard/seo"],
+  ["src/app/dashboard/settings/page.tsx", "/dashboard/profile"],
 ]) {
   const source = readFileSync(join(ROOT, page), "utf8");
   assert.ok(source.includes(`redirect("${target}")`), `${page} must lead to ${target}`);

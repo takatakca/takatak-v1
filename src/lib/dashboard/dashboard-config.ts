@@ -44,7 +44,6 @@ import {
   Search,
   Send,
   Server,
-  Settings,
   Share2,
   Shield,
   ShieldCheck,
@@ -221,7 +220,6 @@ export const NAV_SECTIONS: NavSection[] = [
       { label: "Go-live checklist", href: "/dashboard/admin/go-live", icon: Rocket },
       { label: "AI Control Center", href: "/dashboard/admin/ai", icon: Bot },
       { label: "Admin", href: "/dashboard/admin", icon: Briefcase },
-      { label: "Settings", href: "/dashboard/settings", icon: Settings },
     ],
   },
 ];
@@ -245,7 +243,6 @@ export const STAFF_ONLY_ROUTES: ReadonlySet<string> = new Set([
   "/dashboard/integrations",
   "/dashboard/jobs",
   "/dashboard/files",
-  "/dashboard/settings",
   "/dashboard/hosting/servers",
   "/dashboard/hosting/email",
   "/dashboard/web-hosting/backups",
