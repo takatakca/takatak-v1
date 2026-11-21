@@ -164,6 +164,9 @@ jobs:
       - name: Native agent runner stays within its limits
         run: npm run qa:native-agents
 
+      - name: Native app API checks tokens and workspaces
+        run: npm run qa:mobile-api
+
       - name: Promotion code safeguards
         run: npm run qa:promotions
 

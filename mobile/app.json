@@ -1,0 +1,81 @@
+{
+  "expo": {
+    "name": "TAKATAK",
+    "slug": "takatak",
+    "scheme": "takatak",
+    "version": "2.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#060D1F",
+    "primaryColor": "#1F8BFF",
+    "description": "Suivez les résultats de votre entreprise et gérez vos services TAKATAK : site Web, réseaux sociaux, publicité, avis et factures.",
+    "ios": {
+      "bundleIdentifier": "ca.takatak.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "TAKATAK utilise Face ID pour verrouiller votre espace.",
+        "CFBundleDevelopmentRegion": "fr_CA",
+        "CFBundleAllowMixedLocalizations": true
+      }
+    },
+    "android": {
+      "package": "ca.takatak.app",
+      "versionCode": 100,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-foreground.png",
+        "backgroundImage": "./assets/adaptive-background.png",
+        "monochromeImage": "./assets/adaptive-monochrome.png",
+        "backgroundColor": "#060D1F"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.USE_BIOMETRIC"
+      ],
+      "blockedPermissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-font",
+      "expo-localization",
+      "expo-image",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 150,
+          "backgroundColor": "#060D1F"
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "TAKATAK utilise Face ID pour verrouiller votre espace."
+        }
+      ],
+      "expo-status-bar"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "siteOrigin": "https://takatak.ca"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
