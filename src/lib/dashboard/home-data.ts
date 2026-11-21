@@ -130,7 +130,8 @@ function viewerName(options: {
   clientName: string | null;
 }): string {
   const composed = [options.firstName, options.lastName].filter(Boolean).join(" ");
-  return options.displayName || composed || options.clientName || options.email || "there";
+  // No name known: greet without one ("Welcome back"), never "there" or a raw email.
+  return options.displayName || composed || options.clientName || "";
 }
 
 const EMPTY: Omit<DashboardHomeData, "source" | "sourceLabel" | "range" | "welcomeName"> = {
