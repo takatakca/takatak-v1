@@ -27,7 +27,6 @@
     "qa:pwa": "tsx scripts/pwa-tests.ts",
     "pwa:icons": "node scripts/pwa/make-icons.mjs",
     "media:videos": "node scripts/media/runway-generate.mjs",
-
     "qa:r2nette-sync": "tsx --require ./scripts/register-server-only.cjs scripts/r2nette-sync-tests.ts",
     "check:modules": "tsx scripts/check-compiled-modules.ts && tsx scripts/check-module-load.ts",
     "check:sources": "node scripts/check-required-sources.cjs",
@@ -197,10 +196,8 @@
     "qa:inventory": "tsx scripts/inventory-tests.ts",
     "qa:inventory-db": "tsx --require ./scripts/register-server-only.cjs scripts/inventory-db-tests.ts",
     "qa:inventory-labels": "tsx scripts/inventory-label-tests.ts",
-    "qa:sc4nner-inventory": "tsx scripts/sc4nner-inventory-bridge-tests.ts"
-
-
-
+    "qa:sc4nner-inventory": "tsx scripts/sc4nner-inventory-bridge-tests.ts",
+    "qa:sc4nner-provisioning": "tsx --require ./scripts/register-server-only.cjs scripts/sc4nner-provisioning-tests.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.132.1",

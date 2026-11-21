@@ -9,10 +9,21 @@ TAKATAK-V1 remains the **single master dashboard** for shared authentication, id
 ## Routes
 
 - `/dashboard/sc4nner`: authenticated dashboard entry (nav: Services → SC4NNER). Uses `TAKATAK_SC4NNER_URL` to open SC4NNER's `/auth/start`. Shows a truthful "not connected" state when missing.
-- `GET /api/experiences/sc4nner/launch?state=<43-character base64url>`: TAKATAK login with `next` preserved, profile sync, active master identity check, random 90-second one-time launch code hashed in `ExperienceLaunchCode`; state is forwarded only after validation to the configured callback.
-- `POST /api/experiences/sc4nner/exchange`: bearer-secret protected JSON exchange, one-time atomic consumption, identity re-check. Returns `{ok:true,session:{masterIdentityId,displayName,productCode:"sc4nner",entitlements:["sc4nner_free"],expiresAt}}`.
+- `GET /api/experiences/sc4nner/launch?state=<43-character base64url>`: TAKATAK login with `next` preserved, profile sync, then a redirect to the **authorize page** — this GET issues no code (see "Account step and provisioning" below).
+- `GET /experiences/sc4nner/authorize?state=…`: the account step. Shows the identified account (email; phone for phone-first accounts), offers "Changer de compte" (`GET /api/experiences/sc4nner/switch`, sign-out → login with the launch as `next`), and posts the confirmation. No session → login (the login page offers account creation).
+- `POST /api/experiences/sc4nner/launch/confirm`: same-origin form POST from the authorize page. Creates the random 90-second one-time launch code hashed in `ExperienceLaunchCode`, bound to the confirming identity, triggers that identity's provisioning, then redirects to the configured callback.
+- `POST /api/experiences/sc4nner/exchange`: bearer-secret protected JSON exchange, one-time atomic consumption, identity re-check. Returns `{ok:true,session:{masterIdentityId,displayName,email,productCode:"sc4nner",entitlements:["sc4nner_free"],expiresAt}}` — `email` is the master identity's primary email (or null for phone-first accounts).
 
-Implementation: `src/lib/experiences/sc4nner-experience-access.ts`, `src/app/api/experiences/sc4nner/`, `src/app/dashboard/sc4nner/page.tsx`, one nav line in `src/lib/dashboard/dashboard-config.ts`, three names in `.env.example`.
+Implementation: `src/lib/experiences/sc4nner-experience-access.ts`, `src/lib/experiences/sc4nner-provisioning.ts`, `src/app/api/experiences/sc4nner/`, `src/app/experiences/sc4nner/authorize/page.tsx`, `src/app/dashboard/sc4nner/page.tsx`, one nav line in `src/lib/dashboard/dashboard-config.ts`, three names in `.env.example`.
+
+## Account step and provisioning (2026-11-15, owner's order)
+
+Owner's live finding (2026-11-15 10:51): the flow went straight to authorizing with no account choice, and the authorization was visibly attached to no email, client or signup; SC4NNER's `/api/release` also reported `account: "not_configured"` (that field only ever described the local workshop account variables). The missing link is built here:
+
+- **Account before authorization.** The launch GET is now only a gate (session + profile sync + `sc4nnerAuthorizeDecision`): authorizing without an identified account is impossible, switching accounts rebinds the flow to the newly signed-in identity, and the confirmation creates the code for the shown account only.
+- **Provider copy in the main database.** Confirming upserts `ProviderAccount` (new model + migration `20261115120000_provider_accounts`, RLS enabled like `ReversMembership`): one row per identity per source (`sc4nner`), email + display name captured once, `provisionStatus` (`pending` / `provisioned` / `failed`) and timestamps. This is the ecosystem provider registry — not a second identity system; `MasterIdentity` stays the authority, and no address or verification is required.
+- **SC4NNER provisioning call.** Confirming also POSTs `{masterIdentityId,email,displayName,productCode,entitlement}` to SC4NNER's `/api/provision` (address derived from `SC4NNER_EXPERIENCE_CALLBACK_URL`, same service token, 8 s timeout, idempotent). Failure never blocks the authorization: the record keeps `provisionStatus: "failed"`, and the exchange still carries the email, from which SC4NNER feeds the same link. The exchange also refreshes the provider record for its identity.
+- SC4NNER counterpart: `POST /api/provision` + `linked_accounts` (its migration 0003), `email` in `/api/session`, truthful `/api/release` (`account` + `linkedAccounts`). No new environment variable on either side.
 
 Like BEH4VIOR, the session returned by the exchange lasts 12 hours: the workshop keeps the studio open through the day, and SC4NNER caps its own session at 12 hours as well. A deactivated account therefore loses SC4NNER access within 12 hours.
 
@@ -23,11 +34,11 @@ V1 runtime:
 - `SC4NNER_EXPERIENCE_CALLBACK_URL` = `https://sc4nner.takatak.ca/auth/callback`
 - `TAKATAK_SC4NNER_SERVICE_TOKEN` = dedicated long random secret, identical in the SC4NNER deployment (Coolify, app `sc4nner`, as `TAKATAK_SC4NNER_LAUNCH_URL` / `TAKATAK_SC4NNER_EXCHANGE_URL` / `TAKATAK_SC4NNER_SERVICE_TOKEN` pointing back at `https://takatak.ca/api/experiences/sc4nner/...`). The values were prepared by Taktak on 2026-11-14 in a protected local file; no value is written in any repository.
 
-No V1 migration: `ExperienceLaunchCode` already exists and `productCode` is a string. Free access only; no paid grant, subscription or new entitlement is provisioned.
+No V1 migration for the original bridge: `ExperienceLaunchCode` already exists and `productCode` is a string. Free access only; no paid grant, subscription or new entitlement is provisioned. The 2026-11-15 account-step addition brings ONE migration (`provider_accounts`, see above) and no new variable.
 
 ## Hard boundary: no label data in V1
 
-Label templates, barcodes and scan checks stay in SC4NNER's own database, keyed by `masterIdentityId`. V1 never receives or stores a label, a label template or a scan check. The exchange returns the account context and nothing else. The one addition since 2026-11-14 (next section) is a read in the other direction: SC4NNER may read the V1 inventory catalog of the signed-in identity, so a label can start from the inventory product itself. Nothing flows from SC4NNER into V1.
+Label templates, barcodes and scan checks stay in SC4NNER's own database, keyed by `masterIdentityId`. V1 never receives or stores a label, a label template or a scan check. The exchange returns the account context and nothing else. The additions since 2026-11-14 stay inside that boundary: SC4NNER may read the V1 inventory catalog of the signed-in identity (next section), and V1 keeps the account's provider record (`ProviderAccount`, account context only — never label data).
 
 ## Inventory catalog link (2026-11-14, owner's order)
 
