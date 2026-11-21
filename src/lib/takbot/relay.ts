@@ -3,8 +3,15 @@
 // reduced to short codes and never reach the browser. Pure apart from the
 // injected fetch, so it is testable without network access.
 
-import { anthropicWorkspaceHeaders } from "@/lib/ai/anthropic-workspace";
 import type { TakbotEngine, TakbotMode } from "./catalog";
+
+// Same rule as src/lib/ai/anthropic-workspace.ts, kept local so this file has
+// no runtime imports (scripts/studio-usage-tests.mjs loads it with plain Node).
+// A Claude key made for "All workspaces" must name its workspace on each call.
+function anthropicWorkspaceHeaders(env: Record<string, string | undefined> = process.env): Record<string, string> {
+  const id = env.ANTHROPIC_WORKSPACE_ID?.trim();
+  return id && /^wrkspc_[A-Za-z0-9]{8,64}$/.test(id) ? { "anthropic-workspace-id": id } : {};
+}
 
 export type RelayResult =
   | { ok: true; text: string; model: string; usage: RelayUsage }
