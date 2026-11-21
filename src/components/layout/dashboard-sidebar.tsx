@@ -8,6 +8,8 @@ import { APP_NAME, APP_NAME_BADGE, NAV_SECTIONS, STAFF_ONLY_ROUTES } from "@/lib
 import type { NavItem } from "@/lib/dashboard/types";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { MODULE_ACCESS } from "@/lib/security/roles";
+import { navLabel } from "@/lib/dashboard/nav-fr";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 function collectHrefs(items: NavItem[]): string[] {
   return items.flatMap((item) => [item.href, ...(item.children ? collectHrefs(item.children) : [])]);
@@ -40,6 +42,8 @@ function NavRow({
   nested?: boolean;
 }) {
   const Icon = item.icon;
+  const language = useDashboardLanguage();
+  const label = navLabel(item.label, language);
   const children = item.children ?? [];
   const hasChildren = children.length > 0 || item.hasDropdown;
   const childActive = children.some((child) => itemIsActive(pathname, child.href, allHrefs));
@@ -75,7 +79,7 @@ function NavRow({
     return (
       <div className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-[13px] font-medium text-white/35">
         <Icon className="h-4 w-4 shrink-0" />
-        <span className="truncate">{item.label}</span>
+        <span className="truncate" title={item.label}>{label}</span>
         <Lock className="ml-auto h-3 w-3" />
       </div>
     );
@@ -92,7 +96,7 @@ function NavRow({
         <span
           className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? "bg-[#29C3FF]" : "bg-transparent"}`}
         />
-        <span className={active ? "font-medium text-white" : "text-white/60"}>{item.label}</span>
+        <span className={active ? "font-medium text-white" : "text-white/60"} title={item.label}>{label}</span>
       </Link>
     );
   }
@@ -121,13 +125,13 @@ function NavRow({
           }`}
         >
           <Icon className={`h-4 w-4 shrink-0 ${active || childActive ? "text-white" : "text-white/55"}`} />
-          <span className="truncate">{item.label}</span>
+          <span className="truncate" title={item.label}>{label}</span>
         </Link>
         {hasChildren ? (
           <button
             type="button"
             aria-expanded={open}
-            aria-label={open ? `Collapse ${item.label}` : `Expand ${item.label}`}
+            aria-label={open ? `Collapse ${label}` : `Expand ${label}`}
             onClick={() => setOpen((current) => !current)}
             className="px-2 py-2 text-white/45 hover:text-white"
           >
@@ -156,6 +160,7 @@ function NavRow({
 
 function NavLinks({ session, onNavigate }: { session: SessionSnapshot; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const language = useDashboardLanguage();
   const allHrefs = collectHrefs(NAV_SECTIONS.flatMap((section) => section.items));
 
   return (
@@ -164,7 +169,7 @@ function NavLinks({ session, onNavigate }: { session: SessionSnapshot; onNavigat
         <div key={section.title ?? si}>
           {section.title ? (
             <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
-              {section.title}
+              {navLabel(section.title, language)}
             </p>
           ) : null}
           <div className="space-y-0.5">

@@ -6,7 +6,9 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 import { clientBadges, isBuildPhaseLabel, LIVE_DATA_LABEL } from "../src/lib/dashboard/client-labels";
-import { QUICK_ACTIONS, STAFF_ONLY_ROUTES } from "../src/lib/dashboard/dashboard-config";
+import { NAV_SECTIONS, QUICK_ACTIONS, STAFF_ONLY_ROUTES } from "../src/lib/dashboard/dashboard-config";
+import { asDashboardLanguage, NAV_FR, navLabel } from "../src/lib/dashboard/nav-fr";
+import { ACCOUNT_LANGUAGES } from "../src/lib/account/account-settings-validation";
 
 // 1. Build-phase labels are recognised; real statuses are kept.
 for (const label of ["Foundation", "Future phase", "Coming soon", "Phase 6/7", "Phase 12", "Internal demo", "Mock data", "No automation"]) {
@@ -86,6 +88,20 @@ for (const [page, target] of [
   assert.ok(source.includes(`redirect("${target}")`), `${page} must lead to ${target}`);
   assert.ok(!/ModulePlaceholder/.test(source), `${page} must not show a placeholder`);
 }
+
+// 5. French first: every menu section and item has a French name; French can be chosen in Account settings.
+type MenuItem = { label: string; children?: MenuItem[] };
+const menuLabels = (items: MenuItem[]): string[] => items.flatMap((item) => [item.label, ...menuLabels(item.children ?? [])]);
+for (const section of NAV_SECTIONS) {
+  if (section.title) assert.ok(NAV_FR[section.title], `French name missing for the section "${section.title}"`);
+  for (const label of menuLabels(section.items as MenuItem[])) assert.ok(NAV_FR[label], `French name missing for the menu item "${label}"`);
+}
+assert.equal(navLabel("Monthly Reports", "fr"), "Rapports mensuels");
+assert.equal(navLabel("Monthly Reports", "en"), "Monthly Reports");
+assert.equal(asDashboardLanguage("fr"), "fr");
+assert.equal(asDashboardLanguage("de"), "en");
+assert.ok((ACCOUNT_LANGUAGES as readonly string[]).includes("fr"), "French is offered in Account settings");
+assert.match(readFileSync(join(ROOT, "src/components/account/account-settings-view.tsx"), "utf8"), /<option value="fr">Français<\/option>/);
 
 console.log(
   `dashboard client labels: ok (${clientPages.length} client screens and ${sharedComponents.length} shared components scanned, ${STAFF_ONLY_ROUTES.size} staff-only)`,

@@ -374,6 +374,7 @@ function AccountPanel({
               className={inputClassName}
             >
               <option value="en">English</option>
+              <option value="fr">Français</option>
             </select>
           </label>
           <label className="block text-sm font-medium text-slate-600">
