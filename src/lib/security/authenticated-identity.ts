@@ -219,6 +219,7 @@ export const HIGH_RISK_PATH_PREFIXES = [
   "/api/account",
   "/api/team",
   "/api/integrations/knowledgeai/token",
+  "/api/integrations/knowledgeai/search",
   "/api/admin",
   "/api/oauth",
   "/oauth",
