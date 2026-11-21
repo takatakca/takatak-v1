@@ -23,7 +23,7 @@ export default async function AdminIntegrationsPage() {
     <div className="space-y-5">
       <ModuleHeader
         title="Integrations (Admin)"
-        description="Provider registry with honest connection states. Metricool (Phase 6) and Upmind (Phase 8) have integration foundations; OpenAI/TryHolo show AI-layer readiness (Phase 9); all others remain planned."
+        description="Every provider TAKATAK can connect, with its real connection state. Live tests run on each provider page; the go-live checklist says what is still missing."
         statuses={["foundation"]}
       />
       <div className="grid gap-3 sm:grid-cols-2">
