@@ -157,17 +157,17 @@ export async function createChatWidget(
   input: { name: unknown; domain: unknown; greeting: unknown; accentColor: unknown; whatsappNumber: unknown; businessBrandId: unknown },
 ): Promise<{ id: string; publicKey: string } | { error: string }> {
   const name = cleanOptional(input.name, 80);
-  if (!name || name.length < 2) return { error: "Name the chat (usually the business name)." };
+  if (!name || name.length < 2) return { error: "Nommez le clavardage (souvent le nom de l’entreprise) · Name the chat (usually the business name)." };
   const domain = normalizeSiteDomain(typeof input.domain === "string" ? input.domain : "");
-  if (!domain) return { error: "Enter the website domain where the chat will appear." };
+  if (!domain) return { error: "Entrez le domaine du site où le clavardage paraîtra · Enter the website domain where the chat will appear." };
   const accent = typeof input.accentColor === "string" && /^#[0-9a-fA-F]{6}$/.test(input.accentColor) ? input.accentColor : "#4f46e5";
   const whatsappDigits = typeof input.whatsappNumber === "string" ? input.whatsappNumber.replace(/\D/g, "") : "";
-  if (whatsappDigits && (whatsappDigits.length < 10 || whatsappDigits.length > 15)) return { error: "WhatsApp number needs 10–15 digits with country code." };
+  if (whatsappDigits && (whatsappDigits.length < 10 || whatsappDigits.length > 15)) return { error: "Le numéro WhatsApp doit compter 10 à 15 chiffres avec l’indicatif · WhatsApp number needs 10–15 digits with country code." };
   const brandId = typeof input.businessBrandId === "string" && /^[0-9a-f-]{36}$/i.test(input.businessBrandId) ? input.businessBrandId : null;
   const prisma = requirePrisma();
   if (brandId) {
     const brand = await prisma.businessBrand.findFirst({ where: { id: brandId, clientId }, select: { id: true } });
-    if (!brand) return { error: "That brand is not in this workspace." };
+    if (!brand) return { error: "Cette marque n’appartient pas à cet espace · That brand is not in this workspace." };
   }
   return prisma.chatWidget.create({
     data: {
