@@ -49,7 +49,7 @@ export default async function SocialAnalyticsPage() {
             subtitle={`${a.days} day record${a.days === 1 ? '' : 's'}`}
             action={
               a.source === 'internal_mock' ? (
-                <Badge tone="muted">Sample data</Badge>
+                <Badge tone="muted">Exemple (démo locale) · Sample (local demo)</Badge>
               ) : null
             }
           />

@@ -311,7 +311,12 @@ export async function getSocialAnalyticsData(access?: TenantAccess): Promise<Sou
   const prisma = scope.kind === "db" ? getPrisma() : null;
   if (prisma && scope.kind === "db") {
     try {
-      const analyticsWhere = { ...clientWhere(scope) };
+      // Sample rows (internal_mock) are for the local foundation demo only:
+      // a real workspace never sees invented numbers.
+      const analyticsWhere = {
+        ...clientWhere(scope),
+        ...(scope.allowMockFallback ? {} : { source: { not: "internal_mock" as const } }),
+      };
       if (scope.clientIds?.length === 1) {
         try {
           const cutoff = await analyticsHistoryCutoffForClient(scope.clientIds[0]);
