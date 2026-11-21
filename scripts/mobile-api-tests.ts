@@ -10,6 +10,7 @@ import {
   readWorkspaceHeader,
   toMobileSession,
 } from "../src/lib/mobile/mobile-session";
+import { isReviewCode, isReviewEmail, REVIEW_TOKEN, reviewAccessConfig, reviewSession } from "../src/lib/mobile/review-access";
 
 const jwt = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.c2lnbmF0dXJlLXZhbHVl";
 assert.equal(readBearerToken(`Bearer ${jwt}`), jwt);
@@ -36,6 +37,21 @@ assert.equal(normalizeEmailCode(123456), null);
 assert.equal(normalizeRefreshToken("v1.abcDEF_123-x"), "v1.abcDEF_123-x");
 assert.equal(normalizeRefreshToken("short"), null);
 assert.equal(normalizeRefreshToken("has space inside"), null);
+
+// Store reviewer access: off unless both values are set, exact email, exact code, and its token opens no real route.
+assert.equal(reviewAccessConfig({}), null);
+assert.equal(reviewAccessConfig({ TAKATAK_MOBILE_REVIEW_EMAIL: "r@example.com" }), null);
+assert.equal(reviewAccessConfig({ TAKATAK_MOBILE_REVIEW_EMAIL: "r@example.com", TAKATAK_MOBILE_REVIEW_CODE: "12345" }), null);
+const review = reviewAccessConfig({ TAKATAK_MOBILE_REVIEW_EMAIL: " R@Example.com ", TAKATAK_MOBILE_REVIEW_CODE: "135790" });
+assert.deepEqual(review, { email: "r@example.com", code: "135790" });
+assert.equal(isReviewEmail("r@example.com", review), true);
+assert.equal(isReviewEmail("other@example.com", review), false);
+assert.equal(isReviewEmail("r@example.com", null), false);
+assert.equal(isReviewCode("135790", review), true);
+assert.equal(isReviewCode("135791", review), false);
+assert.equal(isReviewCode("135790", null), false);
+assert.equal(readBearerToken(`Bearer ${REVIEW_TOKEN}`), null, "the reviewer token is refused by every real route");
+assert.equal(reviewSession(1000).expiresAt, 1000 + 30 * 24 * 3600);
 
 // Every phone route outside sign-in must check the token and the workspace before it reads anything.
 const root = join(__dirname, "../src/app/api/mobile/v1");

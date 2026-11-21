@@ -5,6 +5,7 @@ import type { NextRequest } from "next/server";
 import { authErrorResponse, authJson, readTrustedJsonBody, wrapAuthRoute } from "@/lib/auth/auth-json";
 import { statelessAuthClient } from "@/lib/mobile/mobile-auth";
 import { normalizeRefreshToken, toMobileSession } from "@/lib/mobile/mobile-session";
+import { REVIEW_TOKEN, reviewAccessConfig, reviewSession } from "@/lib/mobile/review-access";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +13,13 @@ export const dynamic = "force-dynamic";
 async function refresh(request: NextRequest) {
   const parsed = await readTrustedJsonBody(request, 2000);
   if (!parsed.ok) return parsed.response;
+  const raw = (parsed.body as { refreshToken?: unknown } | null)?.refreshToken;
+  // Store reviewer session: renewed only while reviewer access is still on.
+  if (raw === REVIEW_TOKEN) {
+    return reviewAccessConfig()
+      ? authJson({ ok: true, message: "Session refreshed.", review: true, session: reviewSession() }, 200)
+      : authErrorResponse("Please sign in again.", 401, { code: "session_expired" });
+  }
   const refreshToken = normalizeRefreshToken((parsed.body as { refreshToken?: unknown } | null)?.refreshToken);
   if (!refreshToken) return authErrorResponse("Please sign in again.", 401, { code: "session_expired" });
 

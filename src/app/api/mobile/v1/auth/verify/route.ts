@@ -9,6 +9,7 @@ import { authErrorResponse, authJson, readTrustedJsonBody, wrapAuthRoute } from 
 import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
 import { normalizeEmail, validateEmail } from "@/lib/auth/registration-validation";
 import { statelessAuthClient } from "@/lib/mobile/mobile-auth";
+import { isReviewCode, isReviewEmail, reviewSession } from "@/lib/mobile/review-access";
 import { normalizeEmailCode, toMobileSession } from "@/lib/mobile/mobile-session";
 
 export const runtime = "nodejs";
@@ -22,6 +23,14 @@ async function verify(request: NextRequest) {
   const code = normalizeEmailCode(body.code);
   if (validateEmail(email) || !code) {
     return authErrorResponse("Enter your email and the code you received.", 400, { code: "invalid_request" });
+  }
+
+  // Store reviewer: fictitious data only, never Supabase or the database (src/lib/mobile/review-access.ts).
+  if (isReviewEmail(email)) {
+    if (!isReviewCode(code)) {
+      return authErrorResponse("This code is not valid or has expired.", 401, { code: "invalid_code" });
+    }
+    return authJson({ ok: true, message: "Signed in.", review: true, session: reviewSession(), user: { id: "review", email } }, 200);
   }
 
   const supabase = statelessAuthClient();

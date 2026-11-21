@@ -14,11 +14,17 @@ export default function SignIn() {
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [review, setReview] = useState(false);
   const valid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
 
   const send = async () => {
     setBusy(true); setError(null);
-    try { await api.requestCode(email.trim()); setStep('code'); } catch (e: any) { setError(e?.message ?? 'Envoi impossible.'); } finally { setBusy(false); }
+    try {
+      const isReview = await api.isReviewEmail(email.trim());
+      setReview(isReview);
+      if (!isReview) await api.requestCode(email.trim());
+      setStep('code');
+    } catch (e: any) { setError(e?.message ?? 'Envoi impossible.'); } finally { setBusy(false); }
   };
 
   if (step === 'code') {
@@ -27,7 +33,7 @@ export default function SignIn() {
         <CodeStep
           email={email.trim()}
           onVerify={async code => { await api.verifyCode(email.trim(), code); await completeSignIn(); }}
-          onResend={async () => { await api.requestCode(email.trim()); }}
+          onResend={async () => { if (!review) await api.requestCode(email.trim()); }}
           onBack={() => setStep('email')}
         />
       </Screen>
