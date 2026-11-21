@@ -107,7 +107,7 @@ export function DashboardHomeView({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Welcome back, {data.welcomeName} 👋
+            {data.welcomeName ? `Welcome back, ${data.welcomeName}` : "Welcome back"} 👋
           </h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-500">
             Here&apos;s what&apos;s happening with your business across all integrated platforms.
@@ -149,7 +149,7 @@ export function DashboardHomeView({
           color="#f97316"
           hint={!data.kpis.conversions.available ? data.kpis.conversions.hint : undefined}
         />
-        <article className="relative rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
+        <article className="relative col-span-2 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)] xl:col-span-1">
           <Star className="absolute right-4 top-4 h-5 w-5 fill-amber-400 text-amber-400" />
           <p className="text-sm text-slate-500">{data.kpis.avgRating.label}</p>
           <div className="mt-1 flex items-center gap-2">
@@ -174,7 +174,7 @@ export function DashboardHomeView({
         <article className="rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex items-center justify-between px-5 py-4">
             <h3 className="text-sm font-semibold text-slate-900">Integration Overview</h3>
-            <Link href="/dashboard/integrations" className="text-sm font-medium text-slate-500 hover:text-slate-800">
+            <Link href="/dashboard/integrations" className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]">
               See all integrations
             </Link>
           </div>
@@ -268,7 +268,7 @@ export function DashboardHomeView({
             </p>
           )}
           <div className="border-t border-slate-100 px-5 py-3">
-            <Link href="/dashboard/reports" className="text-sm font-medium text-slate-500 hover:text-slate-800">
+            <Link href="/dashboard/reports" className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]">
               View full report
             </Link>
           </div>
@@ -296,7 +296,7 @@ export function DashboardHomeView({
             </p>
           )}
           <div className="border-t border-slate-100 px-5 py-3">
-            <Link href="/dashboard/social/posts" className="text-sm font-medium text-slate-500 hover:text-slate-800">
+            <Link href="/dashboard/social/posts" className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]">
               View all posts
             </Link>
           </div>
@@ -307,7 +307,7 @@ export function DashboardHomeView({
             <h3 className="text-sm font-semibold text-slate-900">Recent Reviews</h3>
             <Link
               href="/dashboard/growth/reviews"
-              className="text-sm font-medium text-slate-500 hover:text-slate-800"
+              className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]"
             >
               See all reviews
             </Link>

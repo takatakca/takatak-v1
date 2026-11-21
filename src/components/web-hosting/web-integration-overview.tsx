@@ -306,7 +306,7 @@ export function WebIntegrationOverview({
           ) : (
             <p className="mt-3 text-sm text-slate-400">No recent web activity.</p>
           )}
-          <Link href="/dashboard/activity" className="mt-4 inline-block text-sm font-medium text-slate-500">
+          <Link href="/dashboard/activity" className="mt-4 inline-flex min-h-10 items-center text-sm font-medium text-slate-500">
             View all activity
           </Link>
         </article>
