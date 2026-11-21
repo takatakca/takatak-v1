@@ -107,7 +107,7 @@ export type RunRequestState = { ok: null } | { ok: true; message: string } | { o
 
 export async function requestAgentRunAction(_prev: RunRequestState, formData: FormData): Promise<RunRequestState> {
   const access = await scoped("create_content");
-  if (!access) return { ok: false, error: "You do not have permission to start agents." };
+  if (!access) return { ok: false, error: "Vous n’avez pas la permission de lancer les agents · You do not have permission to start agents." };
   if (!(await clientHasGrowthFeature(access.activeClientId, "ai_autopilot"))) return { ok: false, error: FEATURE_UPSELL.ai_autopilot };
   try {
     const result = await requestAgentRun(
@@ -118,19 +118,20 @@ export async function requestAgentRunAction(_prev: RunRequestState, formData: Fo
     );
     if (!result.ok) {
       const messages = {
-        unknown_agent: "Unknown agent.",
-        agent_disabled: "Turn this agent on first.",
-        already_pending: "This agent already has a run in progress.",
+        unknown_agent: "Agent inconnu · Unknown agent.",
+        agent_disabled: "Activez d’abord cet agent · Turn this agent on first.",
+        already_pending: "Cet agent a déjà une tâche en cours · This agent already has a run in progress.",
         plan_required: FEATURE_UPSELL.ai_autopilot,
+        needs_connection: "Cet agent démarre quand son service est branché · This agent starts once its service is connected.",
       } as const;
       return { ok: false, error: messages[result.error] };
     }
   } catch {
     console.error("[ai-agents] request failed");
-    return { ok: false, error: "The run could not be queued. Try again." };
+    return { ok: false, error: "La tâche n’a pas pu être lancée ; réessayez · The run could not be queued. Try again." };
   }
   revalidatePath(AGENT_PATH);
-  return { ok: true, message: "Queued. The AI Gateway picks it up on its next pass." };
+  return { ok: true, message: "En file : l’agent s’en occupe au prochain passage (toutes les 15 minutes) · Queued: the agent works on it on its next pass (every 15 minutes)." };
 }
 
 export async function decideAgentRunAction(formData: FormData): Promise<void> {
