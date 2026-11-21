@@ -13,9 +13,10 @@ import type {
   LeadSummary,
   SourceMeta,
 } from "./types";
+import { LIVE_DATA_LABEL } from "@/lib/dashboard/client-labels";
 
 const MOCK_LABEL = "Mock foundation data — database not connected yet.";
-const DB_LABEL = "Database — live foundation records (FLEXS not connected, no outreach automation).";
+const DB_LABEL = LIVE_DATA_LABEL;
 
 // ── Mock foundation data (mirrors the seed) ──────────────────
 const DEMO_NOTE = "[Internal demo lead — foundation record, not imported from any provider]";

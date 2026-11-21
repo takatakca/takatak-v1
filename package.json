@@ -44,6 +44,7 @@
     "qa:secrets": "tsx scripts/check-secrets.ts",
     "qa:handoff": "node --test scripts/verify-agent-handoff.test.cjs && node scripts/verify-agent-handoff.cjs",
     "qa:guardian": "node --test scripts/guardian-public-smoke.test.mjs",
+    "qa:dashboard-labels": "tsx --require ./scripts/register-server-only.cjs scripts/dashboard-client-labels-tests.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
     "qa:routes": "tsx scripts/list-routes.ts",
     "bootstrap:owner": "tsx scripts/bootstrap-owner.ts",

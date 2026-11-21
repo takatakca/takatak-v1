@@ -190,7 +190,7 @@ function CancelSubscriptionButton({
           !canManage
             ? 'You need permission to change billing.'
             : !checkoutLive
-              ? 'Stripe checkout is not connected yet.'
+              ? 'Online payment is unavailable right now. Ask the team under Support.'
               : !stripeCustomerReady
                 ? 'Upgrade a plan first so Stripe has a customer for this workspace.'
                 : 'Open Stripe to update the card, invoices, or cancel.'
@@ -966,7 +966,7 @@ function PlanCard({
           !canManage
             ? 'You need permission to change the plan.'
             : !checkoutLive
-              ? 'Stripe checkout is not connected yet.'
+              ? 'Online payment is unavailable right now. Ask the team under Support.'
               : loading
                 ? `Preparing ${title} checkout`
                 : busy

@@ -28,6 +28,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/about",
     "/contact",
     "/freelancers",
+    // Sales pages linked from the homepage, the services page and the menus.
+    "/clover",
+    "/foodhub",
+    "/seo",
+    "/transfert",
   ];
 
   return [

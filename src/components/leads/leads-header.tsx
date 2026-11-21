@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { leadToneForStatus } from "@/lib/leads/status";
+import { clientBadges } from "@/lib/dashboard/client-labels";
 
 export function LeadsHeader({
   title,
@@ -18,7 +19,7 @@ export function LeadsHeader({
       <div className="max-w-2xl">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight text-slate-900">{title}</h1>
-          {badges.map((b) => (
+          {clientBadges(badges).map((b) => (
             <Badge key={b.label} tone={b.status ? leadToneForStatus(b.status) : "warning"}>{b.label}</Badge>
           ))}
         </div>

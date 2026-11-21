@@ -14,9 +14,10 @@ import type {
   SavedOutputSummary,
   SourceMeta,
 } from "./types";
+import { LIVE_DATA_LABEL } from "@/lib/dashboard/client-labels";
 
 const MOCK_LABEL = "Mock foundation data — database not connected yet.";
-const DB_LABEL = "Database — live foundation records (no AI provider connected).";
+const DB_LABEL = LIVE_DATA_LABEL;
 
 // ── Mock foundation data (mirrors the seed; templates, NOT AI) ──
 const MOCK_VOICES: BrandVoiceSummary[] = [

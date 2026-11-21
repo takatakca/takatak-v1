@@ -12,8 +12,7 @@ export default async function LeadActivitiesPage() {
     <div className="space-y-5">
       <LeadsHeader
         title="Activities"
-        subtitle="Follow-ups, notes, and reminders. All internal tracking — the system sends no emails, SMS, or calls."
-        badges={[{ label: "Foundation" }, { label: "No outreach automation" }]}
+        subtitle="Follow-ups, notes and reminders for each lead. Nothing is sent to a lead without a person deciding."
       />
       <LeadsSourceBanner source={data.source} label={data.sourceLabel} />
       {data.activities.length ? (

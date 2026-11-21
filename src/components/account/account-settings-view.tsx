@@ -320,16 +320,9 @@ function AccountPanel({
             {initials}
           </span>
           <div>
-            <button
-              type="button"
-              disabled
-              className="inline-flex h-10 items-center rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-500"
-            >
-              Upload image
-            </button>
-            <p className="mt-2 text-sm text-slate-500">
-              JPG or PNG. Image storage is not connected yet, so your initials
-              are shown instead.
+            <p className="text-sm font-medium text-slate-700">Profile picture</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Your initials are your profile picture across TAKATAK.
             </p>
           </div>
         </div>

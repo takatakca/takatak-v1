@@ -12,8 +12,7 @@ export default async function LeadInboxPage() {
     <div className="space-y-5">
       <LeadsHeader
         title="Lead Inbox"
-        subtitle="All tracked leads, including requests and orders sent from the takatak.ca website. Open a lead for the full request and attached files. No outreach is sent automatically."
-        badges={[{ label: "No automation" }]}
+        subtitle="Every request and order sent from your website, with the full message and attached files. Nothing is sent to a lead without a person deciding."
       />
       <LeadsSourceBanner source={data.source} label={data.sourceLabel} />
       {data.leads.length ? (

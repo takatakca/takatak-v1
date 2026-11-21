@@ -143,7 +143,7 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
         </label>
         <button type="submit" className="rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white sm:col-span-2">Save content brief as draft</button>
       </form>:null}
-    </>:<p className="text-sm text-amber-700">Content brief storage is not connected yet. No drafts are simulated.</p>}
+    </>:<p className="text-sm text-amber-700">Content briefs for this site are prepared by the TAKATAK team on request.</p>}
   </section>
 
   <section className="space-y-3 rounded-2xl border bg-white p-5">

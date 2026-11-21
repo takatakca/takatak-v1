@@ -12,8 +12,7 @@ export default async function BrandVoicePage() {
     <div className="space-y-5">
       <AiHeader
         title="Brand Voice"
-        subtitle="Voice profiles that will feed future AI prompts: tone, audience, keywords, banned phrases, and sample copy. Editing arrives in a later phase."
-        badges={[{ label: "Foundation" }]}
+        subtitle="Your brand voice: tone, audience, keywords, words to avoid and sample copy. AI drafts follow it. To change it, ask the team."
       />
       <AiSourceBanner source={data.source} label={data.sourceLabel} />
       {data.voices.length ? (

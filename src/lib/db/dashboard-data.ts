@@ -12,6 +12,7 @@ import {
 import { getPrisma } from "./prisma";
 import { clientWhere, resolveDataScope } from "@/lib/security/data-scope";
 import type { TenantAccess } from "@/lib/security/tenant-access";
+import { LIVE_DATA_LABEL } from "@/lib/dashboard/client-labels";
 
 export interface OverviewKpis {
   clients: number;
@@ -142,7 +143,7 @@ export async function getDashboardOverviewData(access?: TenantAccess): Promise<D
 
     return {
       source: "database",
-      sourceLabel: "Database connected — live foundation records.",
+      sourceLabel: LIVE_DATA_LABEL,
       kpis: { clients, businessBrands, activeServices, pendingJobs, reportsReady },
       integrations: integrations.length ? integrations : mockFallback().integrations,
       recentActivity: recentActivity.length ? recentActivity : mockFallback().recentActivity,

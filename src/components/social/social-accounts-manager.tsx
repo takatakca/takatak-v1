@@ -1234,12 +1234,13 @@ export function SocialAccountsManager({
           </div>
 
           <Badge tone="neutral">
-            {providers.length} providers
+            {providers.filter((p) => p.implemented).length} providers
           </Badge>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {providers.map(
+          {/* Only networks that can really be connected are shown (no "Coming soon" cards). */}
+          {providers.filter((p) => p.implemented).map(
             (provider) => {
               const connection =
                 connectionForProvider(

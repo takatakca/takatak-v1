@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { webToneForStatus } from "@/lib/web-hosting/status";
+import { clientBadges } from "@/lib/dashboard/client-labels";
 
 export function WebHostingHeader({
   title,
@@ -18,7 +19,7 @@ export function WebHostingHeader({
       <div className="max-w-2xl">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold tracking-tight text-slate-900">{title}</h1>
-          {badges.map((b) => (
+          {clientBadges(badges).map((b) => (
             <Badge key={b.label} tone={b.status ? webToneForStatus(b.status) : "neutral"}>
               {b.label}
             </Badge>

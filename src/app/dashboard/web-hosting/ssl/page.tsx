@@ -12,8 +12,7 @@ export default async function SslPage() {
     <div className="space-y-5">
       <WebHostingHeader
         title="SSL"
-        subtitle="SSL certificate tracking. No installation actions exist yet — real SSL work arrives with the Upmind/provider phase."
-        badges={[{ label: "Foundation" }, { label: "Internal demo" }]}
+        subtitle="The SSL certificates that secure your websites, and their renewal dates."
       />
       <WebSourceBanner source={data.source} label={data.sourceLabel} />
       {data.certificates.length ? (

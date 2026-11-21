@@ -98,11 +98,12 @@ assert.ok(page.includes("No data until MIMT is connected"));
 pass("all six sections render the honest empty state");
 
 assert.ok(page.includes("getVoipConnectionStatus()"));
-assert.ok(page.includes('href="/services/voip"') && page.includes("Join the waitlist"));
+assert.ok(page.includes('href="/services/voip"') && page.includes("See business phone plans"));
 assert.ok(page.includes("Talk to sales") && page.includes("SUPPORT_EMAIL"));
-assert.ok(page.includes("Coming soon"));
+// Owner's order (Nov 2026): no dead "Coming soon" buttons and no build-phase badge in front of clients.
+assert.doesNotMatch(page, /Coming soon|"Planned"|>Foundation</);
 assert.doesNotMatch(page, /<button|onClick|"use client"|getPrisma|fetch\(/);
-pass("status banner, waitlist + sales CTAs, disabled quick actions; server component, no data access");
+pass("status banner, plans + sales CTAs, no dead quick actions; server component, no data access");
 
 // ── Sidebar ───────────────────────────────────────────────────
 const entries = NAV_ITEMS.filter((i) => i.href === "/dashboard/voip");

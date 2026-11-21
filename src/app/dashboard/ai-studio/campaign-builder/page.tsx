@@ -1,9 +1,10 @@
 import { AiHeader } from "@/components/ai-studio/ai-header";
 import { PlannedGeneratorForm } from "@/components/ai-studio/planned-generator-form";
+import { StaffOnly } from "@/components/dashboard/staff-only";
 
 export const dynamic = "force-dynamic";
 
-export default async function CampaignBuilderPage() {
+async function CampaignBuilderPageScreen() {
   return (
     <div className="space-y-5">
       <AiHeader
@@ -25,5 +26,18 @@ export default async function CampaignBuilderPage() {
         footnote="Generated plans will save as campaign drafts for review — real scheduling and publishing stay behind the Metricool verification boundary."
       />
     </div>
+  );
+}
+
+// Not self-serve for clients yet: TAKATAK staff see the screen, clients see
+// what it is for and ask the team (owner's order, Nov 2026: no prototypes).
+export default async function CampaignBuilderPage() {
+  return (
+    <StaffOnly
+      title="Planificateur de campagnes · Campaign builder"
+      purpose="Plans de campagne, calendriers de contenu et idées de publications pour votre entreprise · Campaign plans, content calendars and post ideas for your business."
+    >
+      <CampaignBuilderPageScreen />
+    </StaffOnly>
   );
 }

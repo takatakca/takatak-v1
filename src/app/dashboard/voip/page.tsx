@@ -62,18 +62,10 @@ const SECTIONS: { title: string; subtitle: string; icon: LucideIcon; planned?: b
   },
 ];
 
-const QUICK_ACTIONS = [
-  { label: "Add a phone number", note: "Coming soon" },
-  { label: "Set up call forwarding", note: "Coming soon" },
-  { label: "Record a voicemail greeting", note: "Coming soon" },
-  { label: "Set business hours", note: "Planned" },
-  { label: "Test MIMT connection", note: "Coming soon" },
-];
-
 const OWNER_STEPS = [
-  "Connect MIMT to this workspace. A TAKATAK administrator adds the MIMT address and access key once your MIMT service is ready.",
-  "MIMT handles the phone side: the phone provider account, your Canadian phone number, the CRTC registration and emergency calling setup. None of this is done in TAKATAK.",
-  "After a successful connection test, your numbers, calls and voicemail show up here.",
+  "Choose your business phone plan, or tell the team what you need.",
+  "MIMT sets up the phone side: your Canadian number, the CRTC registration and emergency calling.",
+  "The TAKATAK team links your MIMT service to this workspace. Your numbers, calls and voicemail then show up here.",
 ];
 
 const SALES_HREF =
@@ -94,7 +86,6 @@ export default async function VoipOverviewPage() {
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-semibold tracking-tight text-slate-900">Business phone</h1>
-            <Badge tone="warning">Foundation</Badge>
             <Badge tone={notConfigured ? "warning" : "neutral"}>{status.label}</Badge>
             <Badge tone="muted">Managed by MIMT</Badge>
           </div>
@@ -139,7 +130,7 @@ export default async function VoipOverviewPage() {
               <CardHeader
                 title={s.title}
                 subtitle={s.subtitle}
-                action={s.planned ? <Badge tone="accent">Planned</Badge> : <Badge tone="muted">No data</Badge>}
+                action={<Badge tone="muted">No data</Badge>}
               />
               <CardBody className="flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200">
@@ -161,24 +152,12 @@ export default async function VoipOverviewPage() {
       </section>
 
       <Card>
-        <CardHeader title="Quick Actions" subtitle="Actions activate once MIMT is connected and tested." />
-        <CardBody className="flex flex-wrap gap-2">
-          {QUICK_ACTIONS.map((a) => (
-            <span key={a.label} className="inline-flex items-center gap-2 rounded-lg bg-slate-50 px-3.5 py-2 text-sm font-medium text-slate-400 ring-1 ring-inset ring-slate-200">
-              {a.label}
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">{a.note}</span>
-            </span>
-          ))}
-        </CardBody>
-      </Card>
-
-      <Card>
         <CardHeader
           title="Get a business phone"
-          subtitle="Business phone with MIMT is planned. Join the waitlist or talk to our team about your needs."
+          subtitle="A Canadian business number with calls, voicemail and forwarding, through MIMT. Tell us what you need and the team sets it up."
         />
         <CardBody className="flex flex-wrap gap-2">
-          <Button href="/services/voip">Join the waitlist</Button>
+          <Button href="/services/voip">See business phone plans</Button>
           <Button href={SALES_HREF} variant="secondary">Talk to sales</Button>
         </CardBody>
       </Card>

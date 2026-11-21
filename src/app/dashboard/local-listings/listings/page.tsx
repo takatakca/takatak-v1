@@ -12,8 +12,7 @@ export default async function ListingsPage() {
     <div className="space-y-5">
       <LocalListingsHeader
         title="Listings"
-        subtitle="Business listing profiles with provider, platform, and NAP readiness. Editing arrives in a later phase."
-        badges={[{ label: "Foundation" }, { label: "QMAPS not connected" }]}
+        subtitle="Your business listings by platform, and whether your name, address and phone are ready. To change a listing, ask the team."
       />
       <LocalSourceBanner source={data.source} label={data.sourceLabel} />
       {data.listings.length ? (

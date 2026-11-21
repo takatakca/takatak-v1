@@ -82,8 +82,8 @@ export function AccountApiView({
             Export your data
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Pull connected-network analytics from TAKATAK when the public API is
-            live. Power BI, Tableau, and Looker Studio are not connected yet.
+            The networks connected to this workspace. To export their analytics
+            to Power BI, Tableau or Looker Studio, ask the TAKATAK team.
           </p>
           <div className="mt-8 flex flex-1 items-center justify-center">
             {platforms.length > 0 ? (

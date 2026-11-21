@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { clientBadges } from "@/lib/dashboard/client-labels";
 
 export function GrowthHeader({
   eyebrow = "TAKATAK Growth Suite",
@@ -20,7 +21,7 @@ export function GrowthHeader({
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">{eyebrow}</p>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold text-slate-950">{title}</h1>
-          {badges.map((b) => (
+          {clientBadges(badges).map((b) => (
             <Badge key={b.label} tone={b.tone ?? "neutral"}>
               {b.label}
             </Badge>

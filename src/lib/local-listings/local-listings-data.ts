@@ -14,9 +14,10 @@ import type {
   LocalVisibilitySnapshotSummary,
   SourceMeta,
 } from "./types";
+import { LIVE_DATA_LABEL } from "@/lib/dashboard/client-labels";
 
 const MOCK_LABEL = "Mock foundation data — database not connected yet.";
-const DB_LABEL = "Database — live foundation records (QMAPS and Google Business not connected).";
+const DB_LABEL = LIVE_DATA_LABEL;
 
 // ── Mock foundation data (mirrors the seed) ──────────────────
 const MOCK_LISTINGS: LocalListingSummary[] = [

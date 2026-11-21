@@ -12,8 +12,7 @@ export default async function ReportTemplatesPage() {
     <div className="space-y-5">
       <ReportHeader
         title="Report Templates"
-        subtitle="Reusable report structures. A template editor arrives in a later phase."
-        badges={[{ label: "Foundation", status: "draft" }]}
+        subtitle="The report structures available for your business. For a new template, ask the team."
       />
       <ReportSourceBanner source={data.source} label={data.sourceLabel} />
       {data.templates.length ? (
