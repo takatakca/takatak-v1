@@ -17,7 +17,7 @@ export const metadata = {
 };
 
 function when(date: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat("fr-CA", {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "America/Toronto",
@@ -34,8 +34,8 @@ export default async function NotificationsPage() {
         <h1 className="text-xl font-semibold text-slate-900">Notifications</h1>
         <EmptyState
           icon={Bell}
-          title="Notifications are unavailable"
-          description="The database is not reachable right now. Try again shortly."
+          title="Notifications indisponibles · Notifications are unavailable"
+          description="La base de données ne répond pas pour le moment ; réessayez sous peu · The database is not reachable right now; try again shortly."
         />
       </div>
     );
@@ -53,20 +53,20 @@ export default async function NotificationsPage() {
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Notifications</h1>
           <p className="text-sm text-slate-500">
-            New website requests and orders, approvals and system events for this workspace.
+            Nouvelles demandes du site, commandes, approbations et événements de cet espace · New website requests, orders, approvals and system events for this workspace.
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge tone={unread ? "warning" : "neutral"}>{unread} unread</Badge>
-          {unread ? <MarkReadButton label="Mark all as read" /> : null}
+          <Badge tone={unread ? "warning" : "neutral"}>{unread} non lue{unread > 1 ? "s" : ""} · unread</Badge>
+          {unread ? <MarkReadButton label="Tout marquer comme lu · Mark all as read" /> : null}
         </div>
       </div>
 
       {notifications.length === 0 ? (
         <EmptyState
           icon={Bell}
-          title="No notifications yet"
-          description="New website leads, orders and approvals will appear here."
+          title="Aucune notification pour le moment · No notifications yet"
+          description="Les nouvelles demandes du site, commandes et approbations s’afficheront ici · New website leads, orders and approvals will appear here."
         />
       ) : (
         <ul className="space-y-2">
@@ -77,7 +77,7 @@ export default async function NotificationsPage() {
                   <div className="min-w-0 space-y-1">
                     <div className="flex items-center gap-2">
                       {n.status === "unread" ? (
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-label="Unread" />
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-500" aria-label="Non lue · Unread" />
                       ) : null}
                       <h2 className={`text-sm ${n.status === "unread" ? "font-semibold text-slate-900" : "font-medium text-slate-700"}`}>
                         {n.title}
@@ -89,10 +89,10 @@ export default async function NotificationsPage() {
                   <div className="flex items-center gap-2">
                     {n.href ? (
                       <Link href={n.href} className="text-xs font-semibold text-emerald-700 hover:underline">
-                        Open
+                        Ouvrir · Open
                       </Link>
                     ) : null}
-                    {n.status === "unread" ? <MarkReadButton ids={[n.id]} label="Mark read" /> : null}
+                    {n.status === "unread" ? <MarkReadButton ids={[n.id]} label="Marquer comme lue · Mark read" /> : null}
                   </div>
                 </CardBody>
               </Card>
