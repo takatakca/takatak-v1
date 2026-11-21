@@ -1,4 +1,4 @@
-import { Activity, Bell, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, KeyRound, MapPinned, PackageOpen, PlugZap, Receipt, Settings, ShoppingBag, Users } from "lucide-react";
+import { Activity, Bell, Bot, Briefcase, Building2, CarFront, ClipboardList, HeartPulse, KeyRound, MapPinned, PackageOpen, PlugZap, Receipt, Settings, ShoppingBag, Users } from "lucide-react";
 import { AdminAccessBanner } from "@/components/admin/admin-access-banner";
 import { AdminBoundaryWarning } from "@/components/admin/admin-boundary-warning";
 import { AdminHeader } from "@/components/admin/admin-header";
@@ -17,6 +17,7 @@ import { requireAdminAccess } from "@/lib/security/guard";
 export const dynamic = "force-dynamic";
 
 const OPERATIONS = [
+  { href: "/dashboard/admin/ai", title: "AI Control Center", description: "Every AI on one screen: engines and keys, switches, credits, agents and their latest runs.", icon: Bot },
   { href: "/dashboard/admin/clients", title: "Clients", description: "Client accounts with brand, service, and member counts.", icon: Building2 },
   { href: "/dashboard/admin/users", title: "Users", description: "Profiles and client memberships (read-only).", icon: Users },
   { href: "/dashboard/admin/services", title: "Services", description: "Service instances across all clients.", icon: Briefcase },
@@ -51,8 +52,8 @@ export default async function AdminOverviewPage() {
     <div className="space-y-6">
       <AdminHeader
         title="Admin Control Tower"
-        subtitle="System operations foundation: clients, users, services, jobs, integration events, audit trail, and health — all view-only in Phase 13."
-        badges={["Foundation", "View only", "No write actions"]}
+        subtitle="Run TAKATAK from here: AI, clients, users, billing, integrations, jobs, audit trail and system health."
+        badges={["Platform owners and admins"]}
       />
       <AdminAccessBanner enforced={access.enforced} role={access.role} />
 
