@@ -21,6 +21,7 @@ export default function Team() {
       {data?.available ? (
         <>
           {data.pendingInvitations ? <Notice icon="info">{data.pendingInvitations === 1 ? '1 invitation attend une réponse.' : `${data.pendingInvitations} invitations attendent une réponse.`}</Notice> : null}
+          {data.pendingInvitations ? <View style={{ height: 12 }} /> : null}
           {!data.members.length ? <Empty icon="users" title="Aucun membre" text="Invitez votre équipe depuis takatak.ca." /> : null}
           <Card style={{ paddingVertical: 4 }}>
             {data.members.map((m, i) => (
