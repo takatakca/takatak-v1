@@ -154,8 +154,8 @@ export function goLiveChecklist(env: Env, facts: GoLiveFacts): GoLiveItem[] {
       title: "AI Studio writes drafts for clients",
       status: studio.enabled ? "done" : "todo",
       now: studio.enabled ? `On (${studio.provider}).` : "Off: clients see the team page instead of the generator.",
-      howTo: "Set AI_STUDIO_GENERATION_ENABLED to true and AI_STUDIO_OPENAI_MODEL (or AI_STUDIO_PROVIDER=anthropic with ANTHROPIC_API_KEY).",
-      settings: ["AI_STUDIO_GENERATION_ENABLED", "AI_STUDIO_PROVIDER", "AI_STUDIO_OPENAI_MODEL"],
+      howTo: "Set AI_STUDIO_GENERATION_ENABLED to true (the OpenAI key is already there; the model defaults to the one TAK-TAK uses). Optional: AI_STUDIO_PROVIDER=anthropic once the Claude key is in.",
+      settings: ["AI_STUDIO_GENERATION_ENABLED"],
       who: "owner",
     },
     {

@@ -1,5 +1,7 @@
 // AI Studio live generation — server configuration. Off unless explicitly
-// enabled with a provider key and model. Keys never leave the server.
+// enabled with a provider key. Keys never leave the server.
+
+import { takbotEngine } from "@/lib/takbot/catalog";
 
 export type AiStudioProvider = "openai" | "anthropic";
 
@@ -21,10 +23,12 @@ export function readAiStudioConfig(env: Record<string, string | undefined> = pro
   const apiKey = (provider === "openai" ? env.OPENAI_API_KEY : env.ANTHROPIC_API_KEY)?.trim() ?? "";
   if (apiKey.length < 20) return { enabled: false, reason: "missing_key" };
 
-  // OpenAI model names change often: the model must be chosen explicitly.
+  // OpenAI model names change often, so the default is the one TAK-TAK already
+  // runs in production (one maintained source in the TAK-TAK catalog). An
+  // explicit AI_STUDIO_OPENAI_MODEL still wins.
   const model =
     provider === "openai"
-      ? env.AI_STUDIO_OPENAI_MODEL?.trim() ?? ""
+      ? env.AI_STUDIO_OPENAI_MODEL?.trim() || (takbotEngine("openai")?.defaultModel ?? "")
       : env.AI_STUDIO_ANTHROPIC_MODEL?.trim() || DEFAULT_ANTHROPIC_MODEL;
   if (!MODEL_RE.test(model)) return { enabled: false, reason: "missing_model" };
 
@@ -38,5 +42,5 @@ export const DISABLED_REASON_LABELS: Record<Extract<AiStudioConfig, { enabled: f
   disabled: "Live generation is off (AI_STUDIO_GENERATION_ENABLED is not true).",
   invalid_provider: "AI_STUDIO_PROVIDER must be openai or anthropic.",
   missing_key: "No provider API key: save one in Admin › AI provider keys, or set OPENAI_API_KEY / ANTHROPIC_API_KEY on the server.",
-  missing_model: "No model is set (AI_STUDIO_OPENAI_MODEL is required for OpenAI).",
+  missing_model: "The model name is not valid (check AI_STUDIO_OPENAI_MODEL or AI_STUDIO_ANTHROPIC_MODEL).",
 };

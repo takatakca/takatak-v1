@@ -1,6 +1,7 @@
 // AI Studio live generation — config, prompts, provider adapters and the
 // draft-only service (no network, no DB). Run: npm run qa:ai-studio-generation
 import assert from "node:assert/strict";
+import { takbotEngine } from "../src/lib/takbot/catalog";
 import { readFileSync } from "node:fs";
 
 import { DEFAULT_ANTHROPIC_MODEL, readAiStudioConfig } from "../src/lib/ai/generation/config";
@@ -40,7 +41,10 @@ async function main() {
     assert.deepEqual(readAiStudioConfig({}), { enabled: false, reason: "disabled" });
     assert.deepEqual(readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true" }), { enabled: false, reason: "missing_key" });
     assert.deepEqual(readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", AI_STUDIO_PROVIDER: "gemini", OPENAI_API_KEY: KEY }), { enabled: false, reason: "invalid_provider" });
-    assert.deepEqual(readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", OPENAI_API_KEY: KEY }), { enabled: false, reason: "missing_model" });
+    // Without an explicit model, OpenAI uses the model TAK-TAK already runs in production.
+    const defaulted = readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", OPENAI_API_KEY: KEY });
+    assert.ok(defaulted.enabled && defaulted.model === takbotEngine("openai")?.defaultModel && defaulted.model.length > 0);
+    assert.deepEqual(readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", OPENAI_API_KEY: KEY, AI_STUDIO_OPENAI_MODEL: "bad model!" }), { enabled: false, reason: "missing_model" });
     const openai = readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", OPENAI_API_KEY: KEY, AI_STUDIO_OPENAI_MODEL: "gpt-test", AI_STUDIO_DAILY_LIMIT: "5000" });
     assert.ok(openai.enabled && openai.provider === "openai" && openai.model === "gpt-test" && openai.dailyLimit === 50);
     const claude = readAiStudioConfig({ AI_STUDIO_GENERATION_ENABLED: "true", AI_STUDIO_PROVIDER: "anthropic", ANTHROPIC_API_KEY: KEY, AI_STUDIO_DAILY_LIMIT: "10" });
