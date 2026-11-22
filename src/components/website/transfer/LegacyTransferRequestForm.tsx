@@ -4,6 +4,12 @@ import { useState, type FormEvent } from "react";
 import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { submitWebsiteRequest } from "@/lib/website/website-requests";
 import { EmailFallback } from "@/components/website/support/EmailFallback";
+import {
+  MANAGED_TRANSFER_REVIEW_FEE,
+  buildManagedTransferLeadMessage,
+  isValidDeclaredRenewalDate,
+  type ExistingMailPreference,
+} from "@/lib/web-migration/managed-transfer-intake";
 
 type TransferScope = "site" | "domain" | "both";
 type Provider = "MochaHost" | "GoDaddy" | "Enom" | "Other / unknown";
@@ -23,6 +29,8 @@ export function LegacyTransferRequestForm() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
+  const [declaredRenewalDate, setDeclaredRenewalDate] = useState("");
+  const [existingMail, setExistingMail] = useState<ExistingMailPreference>("keep_current");
   const [website, setWebsite] = useState(""); // Honeypot, never visible to human visitors.
   const [consent, setConsent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -43,8 +51,29 @@ export function LegacyTransferRequestForm() {
       setError("Indiquez un courriel ou un numéro de téléphone pour vous joindre.");
       return;
     }
+    if (!isValidDeclaredRenewalDate(declaredRenewalDate)) {
+      setError("Vérifiez la date de renouvellement ou laissez ce champ vide.");
+      return;
+    }
     if (!consent) {
       setError("Confirmez que vous êtes autorisé à faire cette demande.");
+      return;
+    }
+
+    let transferSummary: string;
+    try {
+      transferSummary = buildManagedTransferLeadMessage({
+        domain: cleanDomain,
+        scope,
+        provider,
+        declaredRenewalDate,
+        existingMail,
+        notes,
+      });
+    } catch (error) {
+      setError(error instanceof RangeError && error.message === "sensitive_data_not_allowed"
+        ? "Ne saisissez pas de mots de passe, de codes EPP ou de clés confidentielles dans les notes."
+        : "Veuillez vérifier les renseignements de transfert.");
       return;
     }
 
@@ -61,13 +90,7 @@ export function LegacyTransferRequestForm() {
         language: "fr",
         sourcePage: "/transfert",
         website,
-        message: [
-          `Domaine concerné: ${cleanDomain}`,
-          `Transfert demandé: ${scope === "site" ? "site Web uniquement" : scope === "domain" ? "domaine uniquement" : "site Web et domaine"}`,
-          `Hébergeur ou registraire actuel (déclaré par le client): ${provider}`,
-          "Statut: demande initiale, aucune autorisation de changement DNS ou de transfert effectif.",
-          notes.trim() ? `Notes: ${notes.trim()}` : "",
-        ].filter(Boolean).join("\n"),
+        message: transferSummary,
       });
 
       if (result.status === "sent") {
@@ -152,6 +175,20 @@ export function LegacyTransferRequestForm() {
           <input type="tel" autoComplete="tel" maxLength={40} value={phone}
             onChange={(event) => setPhone(event.target.value)} className={fieldClass} />
         </label>
+        <label className={labelClass}>
+          Date de renouvellement connue (facultatif)
+          <input type="date" value={declaredRenewalDate} onChange={(event) => setDeclaredRenewalDate(event.target.value)}
+            className={fieldClass} />
+          <span className="mt-1 block text-xs font-normal text-[#B8C4D3]">Date déclarée, à confirmer auprès du registraire. Aucune date inventée.</span>
+        </label>
+        <label className={labelClass}>
+          Que faire des courriels existants? *
+          <select value={existingMail} onChange={(event) => setExistingMail(event.target.value as ExistingMailPreference)} className={fieldClass}>
+            <option value="keep_current">Les conserver sans changement</option>
+            <option value="review_options">Discuter des possibilités</option>
+            <option value="no_existing_mail">Aucun courriel existant</option>
+          </select>
+        </label>
         <label className={`${labelClass} sm:col-span-2`}>
           Détails supplémentaires (facultatif)
           <textarea rows={3} maxLength={1000} value={notes} onChange={(event) => setNotes(event.target.value)}
@@ -161,6 +198,10 @@ export function LegacyTransferRequestForm() {
       </div>
       <div aria-hidden="true" className="absolute -left-[9999px] h-px w-px overflow-hidden">
         <label>Site personnel <input tabIndex={-1} autoComplete="off" value={website} onChange={(event) => setWebsite(event.target.value)} /></label>
+      </div>
+      <div className="mt-6 rounded-xl border border-[#29C3FF]/30 bg-[#060D1F] p-4" aria-label="Information tarifaire du transfert accompagné">
+        <p className="text-sm font-semibold text-white">Service de transfert accompagné : {(MANAGED_TRANSFER_REVIEW_FEE.amountCents / 100).toLocaleString("fr-CA")} $ CAD + taxes applicables</p>
+        <p className="mt-2 text-xs leading-5 text-[#B8C4D3]">Frais uniques proposés sous réserve d’un devis écrit approuvé. L’enregistrement, le renouvellement du domaine, l’hébergement et le forfait VIP annuel sont des services distincts. Aucun paiement n’est demandé maintenant.</p>
       </div>
       <label className="mt-6 flex items-start gap-3 text-sm leading-6 text-[#B8C4D3]">
         <input type="checkbox" required checked={consent} onChange={(event) => setConsent(event.target.checked)}
@@ -180,6 +221,9 @@ export function LegacyTransferRequestForm() {
             `Domaine concerné : ${domain.trim().toLowerCase()}`,
             `Transfert demandé : ${scope === "site" ? "site Web uniquement" : scope === "domain" ? "domaine uniquement" : "site Web et domaine"}`,
             `Hébergeur ou registraire actuel : ${provider}`,
+            declaredRenewalDate ? `Renouvellement déclaré : ${declaredRenewalDate} (à vérifier)` : "Renouvellement : inconnu",
+            `Courriels existants : ${existingMail === "keep_current" ? "conserver" : existingMail === "review_options" ? "discuter des possibilités" : "aucun déclaré"}`,
+            `Service accompagné proposé : 500 $ CAD + taxes, devis écrit requis`,
             name.trim() && `Nom : ${name.trim()}`,
             company.trim() && `Entreprise : ${company.trim()}`,
             phone.trim() && `Téléphone : ${phone.trim()}`,
