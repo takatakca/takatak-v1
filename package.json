@@ -92,6 +92,7 @@
     "worker:social-sync:backfill": "tsx scripts/run-facebook-historical-backfill.ts",
     "qa:upmind-webhook": "tsx scripts/upmind-webhook-tests.ts",
     "qa:domain-renewals": "tsx scripts/verify-domain-renewal-notices.ts",
+    "qa:managed-transfer-intake": "tsx scripts/verify-managed-transfer-intake.ts",
     "qa:social-entitlements": "tsx scripts/verify-social-entitlements.ts",
     "qa:social-access-policy": "tsx scripts/verify-social-connection-access-policy.ts",
     "qa:social-lifecycle": "tsx scripts/verify-social-subscription-lifecycle.ts",
