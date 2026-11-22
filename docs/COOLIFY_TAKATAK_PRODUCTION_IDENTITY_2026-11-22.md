@@ -19,6 +19,7 @@
 
 - The open Coolify view is authenticated and shows a healthy app and deployment records, but this is **not yet independent proof** of the exact image/release being served to every public hostname. Do not infer production runtime SHA from main HEAD or from a successful build. The `5a3061f` webhook is listed, but this observation did not open its detailed result to certify that exact SHA.
 - The Coolify UI also displays `Cannot connect to real-time service`; its `vps1` Terminal page says `Could not connect to the terminal server. Reload the page and try again.` These are terminal/realtime observation failures, not by themselves evidence that web traffic is down.
+- **Historical server/IP records contradict each other.** The 2026-11-04 Google Drive master hosting file “2026-11-04 — TAKATAK hosting (MochaHost → Coolify) — MAIN FILE” lists **vps1 = 31.220.96.134** and **vps2 = 209.145.49.63**; the 2026-11-07 GitHub `docs/DEPLOYMENT.md` instead calls **209.145.49.63** “VPS1”. Therefore neither historical IP-to-label pairing is safe for a DNS/proxy change. Check live Coolify server Configuration and authoritative DNS independently before claiming which physical machine serves a hostname.
 - No current public DNS A/AAAA response or public `X-TAKATAK-Release` header was independently observed by this session. Do not copy the historical IP into new routing/DNS configuration. No shell, SSH, Coolify API or proxy configuration changes were made.
 
 ## Exact steps before any cleanup
