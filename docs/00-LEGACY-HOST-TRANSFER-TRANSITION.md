@@ -1,3 +1,5 @@
+> **2026-11-22 OWNER UPDATE — no staging, no blanket deployment.** The new standalone 30-day domain-renewal notice lives in operator-preview code only; see `docs/domain-renewals/LEGACY_30_DAY_NOTICE_PREVIEW_2026-11-22.md`. This supersedes the old step about uploading to a staging directory. Never replace an active storefront, site or email service. Verify actual registrar dates and client ownership first. Nothing has been published to MochaHost.
+
 # 00 — Legacy host transition notice → TAKATAK transfer request
 
 **Owner correction, 2026-11-05 · Agent GPT-6**
