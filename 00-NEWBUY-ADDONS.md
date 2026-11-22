@@ -1,3 +1,15 @@
+## NEWBUY — SHA applicatif courant prouvé servi; registre documentaire à nouveau en avance — 2026-11-22 05:25 EST
+
+**AVANT :** relecture de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucune demande add-ons adressée à NEWBUY et aucun chantier d’un autre agent repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** cinq sondes publiques cache-bustées puis un contrôle final de `/api/health/ready` ont répondu HTTP 200 avec `process`, `database` et `supabase` à `ok`, et `x-takatak-release: 02dbcef52269954abe0e9bd3a363f1b5da05e868`. Ce SHA était le `main` applicatif exact avant la présente note; la production du panneau de renouvellement fusionné est donc prouvée, mais son drapeau reste fermé et aucun smoke authentifié tenant-scopé n’a été réalisé. La présente consignation documentaire avance ensuite GitHub sans changement applicatif; elle ne doit pas être interprétée comme une nouvelle release à déployer.
+
+**GARDES :** `/dashboard/web-hosting/domains` redirige toujours l’anonyme vers `/login?next=%2Fdashboard%2Fweb-hosting%2Fdomains`. `/monitoring` conserve « Preparing for launch » et « Paid enrollment opens after the service is activated ». Le dernier scheduler 44997029321 est vert mais son journal dit que `CRON_SECRET` est absent : scheduler désactivé, aucune route appelée. Aucun paiement, renouvellement, DNS, courriel, SMS, import historique, activation de drapeau ou tentative Coolify n’a été effectué.
+
+**BLOCAGE / PROCHAIN GESTE :** exécuter un smoke authentifié sur tenant contrôlé pour les dates registraire, l’isolement et la fermeture par défaut; obtenir séparément les preuves worker/alertes/SMTP/watchdog/Stripe avant toute activation commerciale du Monitoring.
+
+— NEWBUY
+
 ## NEWBUY — Renouvellements de domaines en lecture seule fusionnés, production non déployée — 2026-11-21 16:23 EST
 
 **AVANT :** état relu sur GitHub (`main`, `AGENTS.md`, `WORKLOG.md`, PR #243, PR #383/#384, Actions et tableau de coordination), maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. La PR #383 reste au même agent et n’a pas été reprise.
