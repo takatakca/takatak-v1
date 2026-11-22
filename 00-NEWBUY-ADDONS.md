@@ -1,3 +1,13 @@
+## NEWBUY — GUARDIAN public vert; intake active sans stockage — 2026-11-22 14:14 EST
+
+**AVANT :** relecture du `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier d’un autre agent n’a été repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** le run public [45059572328](https://github.com/takatakca/takatak-v1/actions/runs/45059572328) est réussi. Les 10 tests de décision sont verts. Le smoke réel confirme sans blocage : santé minimale, base et Supabase à `ok`, certificats apex/www approuvés, connexion HTTP 200, tableau anonyme renvoyé vers la connexion, www HTTP 200 et release applicative exacte servie `7857e56422bc8db2eb8d7416d2600d08252a5cd2`. La sonde vide du Lead Intake a été refusée HTTP 403, ce qui prouve l’intake actif sans créer ni stocker de demande. Un seul écart non bloquant P2 demeure : `login?lang=fr` affiche encore « Welcome back ».
+
+**GARDES / PROCHAIN GESTE :** aucun déploiement, paiement, DNS, registrar, avis client, activation Monitoring ou essai Coolify n’a été effectué. Le prochain geste reste un test authentifié, tenant-scopé et contrôlé de `/transfert` vers Lead Inbox; l’activation commerciale du Monitoring reste fermée jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
 ## NEWBUY — Transfert géré servi; aperçu 30 jours fusionné mais non servi — 2026-11-22 06:22 EST
 
 **AVANT :** relecture du `main` courant, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Les PR #386/#387 appartenaient déjà à GPT-6; aucune implémentation n’a été reprise ni dupliquée.
