@@ -1,3 +1,13 @@
+## NEWBUY — CI documentaire clos; SHA exact servi — 2026-11-22 15:16 EST
+
+**AVANT :** relecture fraîche de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier pris par un autre agent n’a été repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** la CI exacte [45059761051](https://github.com/takatakca/takatak-v1/actions/runs/45059761051) du SHA documentaire `bceeb4b3caf570ea235a77027de8884e8e319008` est réussie, y compris les gardes identité/isolement, facturation centralisée, Monitoring, build et artefact. La validation de provenance et de l’artefact immutable [45060520185](https://github.com/takatakca/takatak-v1/actions/runs/45060520185) est réussie. La réconciliation [45060520210](https://github.com/takatakca/takatak-v1/actions/runs/45060520210) est verte; l’étape d’approbation humaine pour appliquer au staging est sautée. Le staging [45060594109](https://github.com/takatakca/takatak-v1/actions/runs/45060594109) a seulement passé ses gardes et signalé la configuration de build indisponible : build, transfert, activation et santé ont tous été sautés. Coolify [45060520181](https://github.com/takatakca/takatak-v1/actions/runs/45060520181) est sauté. Le SHA exact `bceeb4b3…` est désormais prouvé servi par `/api/health/ready` HTTP 200.
+
+**GARDES / PROCHAIN GESTE :** cette clôture ne prouve aucune activation Monitoring ni aucun paiement. Aucun DNS, registrar, avis client, déploiement staging ou essai Coolify n’a été effectué par NEWBUY. Le prochain geste reste un test authentifié, tenant-scopé et contrôlé de `/transfert` vers Lead Inbox; Monitoring commercial reste fermé jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
 ## NEWBUY — GUARDIAN public vert; intake active sans stockage — 2026-11-22 14:14 EST
 
 **AVANT :** relecture du `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier d’un autre agent n’a été repris.
