@@ -1,3 +1,15 @@
+## NEWBUY — Transfert géré servi; aperçu 30 jours fusionné mais non servi — 2026-11-22 06:22 EST
+
+**AVANT :** relecture du `main` courant, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Les PR #386/#387 appartenaient déjà à GPT-6; aucune implémentation n’a été reprise ni dupliquée.
+
+**PENDANT / APRÈS VÉRIFICATION :** `main` est `7857e56422bc8db2eb8d7416d2600d08252a5cd2` après #386 puis #387. La CI exacte [45016012755](https://github.com/takatakca/takatak-v1/actions/runs/45016012755) et l’artefact [45016789720](https://github.com/takatakca/takatak-v1/actions/runs/45016789720) sont réussis. La réconciliation [45016789676](https://github.com/takatakca/takatak-v1/actions/runs/45016789676) confirme `RECONCILE_MODE=audit`, 0 migration approuvée en attente et aucune mutation. Le staging [45016860222](https://github.com/takatakca/takatak-v1/actions/runs/45016860222) est un succès de garde seulement : configuration de build indisponible; build, transfert, activation et santé sautés. Coolify [45016789600](https://github.com/takatakca/takatak-v1/actions/runs/45016789600) est sauté. Le run staging rouge [45016015234](https://github.com/takatakca/takatak-v1/actions/runs/45016015234) est un refus protecteur d’une release périmée `0a2199f7` après passage de `main` à `7857e564`; aucune activation n’a été tentée.
+
+**PREUVE PUBLIQUE :** cinq sondes cache-bustées de `/api/health/ready` répondent 200 avec les contrôles à `ok` et `x-takatak-release: 0a2199f7f9ad0d19dc8be92bc23bde480512a351`. La PR #386 est donc servie : `/transfert` affiche la date de renouvellement déclarée à confirmer, la conservation des courriels par défaut, et le service accompagné proposé à 500 $ CAD + taxes sous devis écrit, sans paiement immédiat. Le code #387 est fusionné et vert mais le SHA public reste antérieur; aucun aperçu opérateur n’est déclaré servi ni publié. `/monitoring` reste en préparation avec inscription payante fermée; la page domaines redirige l’anonyme vers la connexion.
+
+**BLOCAGE / PROCHAIN GESTE :** prouver le SHA `7857e564` servi par une voie autorisée, puis effectuer un test `/transfert` → Lead Inbox explicitement autorisé et tenant-scopé. Avant tout avis 30 jours, vérifier les dates registraire actuelles, le client/domaine, l’approbation du propriétaire et la préservation du site et du courriel. Aucun paiement, DNS, registrar, avis client, drapeau ou essai d’identifiants Coolify n’a été effectué.
+
+— NEWBUY
+
 ## NEWBUY — SHA applicatif courant prouvé servi; registre documentaire à nouveau en avance — 2026-11-22 05:25 EST
 
 **AVANT :** relecture de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucune demande add-ons adressée à NEWBUY et aucun chantier d’un autre agent repris.
