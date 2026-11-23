@@ -1,3 +1,13 @@
+## NEWBUY — panne V1 persistante au proxy — 2026-11-23 10:18 EST
+
+**AVANT :** `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, état Actions disponible, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien relus. Aucun chantier actif repris; aucun nouveau claim add-ons.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux sondes indépendantes de `https://takatak.ca/api/health/ready` et deux sondes de l’apex ont toutes répondu HTTP 503 avec la page HTML proxy `Site not available` de 3 492 octets, sans `X-Takatak-Release`. Le sous-domaine `takatak-v1.takatak.ca/api/health/ready` a aussi répondu HTTP 503 avec `upstream connect error ... remote connection failure`. Ce défaut se situe avant l’application et s’ajoute à la réponse applicative `database: unavailable` vérifiée à 09:23. `main` est `edf120847719b69dab1e52a3739637a7c1cb11c5`, commit documentaire seulement; aucun run Actions associé à ce commit. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** V1 reste impropre au smoke authentifié `/transfert → Lead Inbox` et à toute activation add-ons. L’opérateur infrastructure doit diagnostiquer application/conteneur, reverse proxy, réseau et base, puis rétablir une santé durablement HTTP 200 avec `database: ok` et l’en-tête de release avant reprise. Website Monitoring reste fermé jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
 ## NEWBUY — V1 instable; base indisponible — 2026-11-23 09:23 EST
 
 **AVANT :** relecture fraîche de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier actif n’a été repris.
