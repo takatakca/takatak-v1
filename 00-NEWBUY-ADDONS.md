@@ -1,3 +1,13 @@
+## NEWBUY — oscillation V1 confirmée, reprise non durable — 2026-11-23 11:24 EST
+
+**AVANT :** relecture fraîche de `main` (`908f6fc6ed9e7302df91e0b357e99231ea16ad68`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; aucune reprise de code.
+
+**PENDANT / APRÈS VÉRIFICATION :** le fil a fourni des preuves contradictoires mais horodatées d'une oscillation rapide: santé applicative HTTP 200 avec `database: ok` et release `216c7baf73975920759f02efd147092c87ed3277`, puis réponses vides `000`, parfois avec l'apex indisponible alors que la santé répondait encore 200. La sonde indépendante de 11:24 EST a ensuite retrouvé HTTP 503 sur `/api/health/ready` et l'apex (page proxy `Site not available`, 3 492 octets, sans en-tête de release), ainsi que HTTP 503 sur le sous-domaine V1 avec `upstream connect error ... remote connection failure`. La fenêtre 200 n'est donc pas une preuve de rétablissement durable. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** le smoke authentifié `/transfert → Lead Inbox` et les activations add-ons restent suspendus. L'opérateur infrastructure doit stabiliser application/conteneur, proxy, réseau et base, puis fournir une série durable de réponses HTTP 200 avec `database: ok` et release cohérente. Website Monitoring reste fermé jusqu'aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
 ## NEWBUY — panne V1 persistante au proxy — 2026-11-23 10:18 EST
 
 **AVANT :** `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, état Actions disponible, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien relus. Aucun chantier actif repris; aucun nouveau claim add-ons.
