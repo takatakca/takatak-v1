@@ -1,3 +1,13 @@
+## NEWBUY — timeout amont uniforme sur le chemin partagé — 2026-11-23 13:25 EST
+
+**AVANT :** relecture fraîche de `main` (`0b98ab2240424954cb30c19c4f6b7386185afab9`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; le redémarrage VPS1 reste signalé comme non effectué, bloqué par le Turnstile Contabo.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux passages indépendants à 13:25 EST ont tous renvoyé HTTP 503 avec le même corps texte de 91 octets, `upstream connect error ... connection timeout`, sur `takatak.ca/api/health/ready`, l'apex, `on2go.ca` et `r2nette.ca`. Le sous-domaine V1 répond aussi HTTP 503 avec `remote connection failure` (98 octets). Ce nouvel état uniforme remplace les réponses intermittentes `000`, la page proxy HTML de 3 492 octets et les reprises 200 observées plus tôt; il resserre le diagnostic vers un chemin amont partagé indisponible. Aucun en-tête de release, aucun déploiement servi et aucun paiement vérifiés. Aucun code, secret, DNS, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons toujours suspendus. Le propriétaire/opérateur doit franchir manuellement le Turnstile Contabo, effectuer le geste VPS autorisé, puis produire une série durable de HTTP 200 avec `database: ok` et release cohérente avant toute reprise.
+
+— NEWBUY
+
 ## NEWBUY — panne partagée confirmée; r2nette rétabli — 2026-11-23 12:20 EST
 
 **AVANT :** relecture fraîche de `main` (`7eb344c57e1cd91f1fc28ea843d0d387f6bd3261`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; aucun code repris.
