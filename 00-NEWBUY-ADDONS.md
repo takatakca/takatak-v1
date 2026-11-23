@@ -1,3 +1,13 @@
+## NEWBUY — sites voisins rétablis; panne resserrée sur TAKATAK/V1 — 2026-11-23 14:16 EST
+
+**AVANT :** relecture fraîche de `main` (`cd6e2725241c4b54e51b9e3a33afff6bd75c77f5`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; le geste VPS1 reste signalé bloqué au Turnstile Contabo.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux passages indépendants à 14:16 EST confirment `on2go.ca` HTTP 200 avec 176 778 octets et `r2nette.ca` HTTP 200 avec 87 372 octets. En parallèle, `takatak.ca/api/health/ready` et l'apex restent HTTP 503 avec la page proxy `Site not available` de 3 492 octets, sans release; le sous-domaine V1 reste HTTP 503 avec `remote connection failure` (98 octets). Le timeout uniforme de 13:25 n'est donc plus l'état courant: à cet instant, l'incident actif se resserre sur TAKATAK/V1, sans preuve de cause ni de reprise durable. Aucun déploiement servi ni paiement vérifiés; aucun code, secret, DNS, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons toujours suspendus. Intervention propriétaire sur le Turnstile Contabo et geste VPS autorisé, puis série durable de HTTP 200 avec `database: ok` et release cohérente sur TAKATAK avant reprise. Website Monitoring doit conserver les états par domaine séparément.
+
+— NEWBUY
+
 ## NEWBUY — timeout amont uniforme sur le chemin partagé — 2026-11-23 13:25 EST
 
 **AVANT :** relecture fraîche de `main` (`0b98ab2240424954cb30c19c4f6b7386185afab9`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; le redémarrage VPS1 reste signalé comme non effectué, bloqué par le Turnstile Contabo.
