@@ -1,3 +1,13 @@
+## NEWBUY — V1 instable; base indisponible — 2026-11-23 09:23 EST
+
+**AVANT :** relecture fraîche de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier actif n’a été repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** les messages du fil signalaient un flap V1 entre réponses vides, HTTP 503 et HTTP 200. Une sonde indépendante de `https://takatak.ca/api/health/ready` à 09:23 EST a répondu HTTP 503 avec `x-takatak-release: 216c7baf73975920759f02efd147092c87ed3277`; le corps indique `process: ok`, `database: unavailable`, `supabase: ok`. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration n’a été modifié; aucun identifiant Coolify n’a été réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** V1 n’est pas assez stable pour le smoke authentifié `/transfert → Lead Inbox` ni pour une activation add-ons. L’opérateur infrastructure doit diagnostiquer la connectivité de la base et rétablir une santé durablement HTTP 200 avant reprise. Website Monitoring reste commercialement fermé jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
 ## NEWBUY — CI documentaire clos; SHA exact servi — 2026-11-22 15:16 EST
 
 **AVANT :** relecture fraîche de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier pris par un autre agent n’a été repris.
