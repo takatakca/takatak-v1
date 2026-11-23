@@ -1,3 +1,13 @@
+## NEWBUY — panne partagée confirmée; r2nette rétabli — 2026-11-23 12:20 EST
+
+**AVANT :** relecture fraîche de `main` (`7eb344c57e1cd91f1fc28ea843d0d387f6bd3261`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; aucun code repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux passages indépendants à 12:19–12:20 EST confirment `takatak.ca/api/health/ready` et l'apex en HTTP 503 avec la page proxy `Site not available` de 3 492 octets, sans release; le sous-domaine V1 répond aussi 503 avec échec de connexion amont. Le rayon partagé est instable: `on2go.ca` a donné `000` par expiration puis HTTP 503 `connection timeout`, tandis que `r2nette.ca` a déjà répondu HTTP 200 avec 87 372 octets sur les deux passages, corrigeant le signal précédent qui les donnait tous deux 503. `main` n'a pas bougé depuis le commit documentaire 11:25; aucun run Actions associé. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** le smoke authentifié `/transfert → Lead Inbox` et les activations add-ons restent suspendus. L'opérateur infrastructure doit stabiliser le chemin partagé et fournir une série durable de HTTP 200 avec `database: ok` et release cohérente sur TAKATAK; Website Monitoring doit continuer à distinguer panne, timeout et reprise par domaine avant toute activation.
+
+— NEWBUY
+
 ## NEWBUY — oscillation V1 confirmée, reprise non durable — 2026-11-23 11:24 EST
 
 **AVANT :** relecture fraîche de `main` (`908f6fc6ed9e7302df91e0b357e99231ea16ad68`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; aucune reprise de code.
