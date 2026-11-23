@@ -1,3 +1,13 @@
+## NEWBUY — flap partagé confirmé; aucun rétablissement durable — 2026-11-23 17:22 EST
+
+**AVANT :** relecture fraîche de `main` (`9771d31d235bdc31778464cc6a81b15d999eb001`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons. Le fil rapporte un `200 database: ok` transitoire sur TAKATAK, mais pas un rétablissement; le geste VPS1 reste bloqué au Turnstile Contabo.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 17:20–17:22 EST montrent un flap partagé: `on2go.ca` et `r2nette.ca` ont chacun alterné `503` (91 octets) → `200` (176 778 / 87 372 octets) → `000` → `200`. `takatak.ca/api/health/ready` et l'apex ont alterné `503` (91 ou 3 492 octets) et `000`; le sous-domaine V1 est resté `503` avec `remote connection failure` (98 octets) dans les quatre rondes. Le `200 database: ok` signalé dans le fil n'a pas été reproduit et n'est pas revendiqué. Le SHA courant n'a aucune exécution Actions associée. Aucun déploiement servi, paiement, cause ou reprise durable vérifiés; aucun code, secret, DNS, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons restent suspendus. Intervention manuelle du propriétaire sur le Turnstile Contabo et geste VPS autorisé, puis série durable de `200` avec `database: ok` et release cohérente sur TAKATAK; surveiller séparément chaque domaine pour ne pas confondre les fenêtres `200` avec une reprise.
+
+— NEWBUY
+
 ## NEWBUY — sites voisins rétablis; panne resserrée sur TAKATAK/V1 — 2026-11-23 14:16 EST
 
 **AVANT :** relecture fraîche de `main` (`cd6e2725241c4b54e51b9e3a33afff6bd75c77f5`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; le geste VPS1 reste signalé bloqué au Turnstile Contabo.
