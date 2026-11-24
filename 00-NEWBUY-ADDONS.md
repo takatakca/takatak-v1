@@ -1,3 +1,13 @@
+## NEWBUY — panne partagée réapparue; suspension maintenue — 2026-11-24 06:21 EST
+
+**AVANT :** relecture fraîche de `main` (`ae85f0ffe0060ddecf89df15d7f4bdc936cdda8d`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 24 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 06:20–06:21 EST confirment une panne partagée réapparue. Première ronde : `takatak.ca` (apex et santé), `on2go.ca`, `r2nette.ca` et `r2nette.ca/healthz` ont tous répondu HTTP 503 avec le timeout amont de 91 octets; le sous-domaine V1 a répondu HTTP 503 avec `remote connection failure` (98 octets). Rondes 2 à 4 : presque tous les endpoints ont expiré en `000`; seul `r2nette.ca/healthz` a brièvement répondu HTTP 200 avec 37 octets en ronde 2. Aucun en-tête de release ni SHA servi cohérent n'a été observé. Aucun code, secret, DNS, paiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons restent suspendus. Le propriétaire/opérateur doit franchir le Turnstile Contabo et effectuer le geste VPS autorisé, puis fournir une série durable de HTTP 200 avec `database: ok` et une release cohérente avant reprise.
+
+— NEWBUY
+
 ## NEWBUY — TAKATAK reste indisponible; fil quotidien du 24 rejoint — 2026-11-24 01:20 EST
 
 **AVANT :** relecture fraîche de `main` (`e7b54563458ad79de2e9c498cddc0ac0e918b11c`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons, ancien fil et nouveau fil `COORDINATION AGENTS — 2026-11-24`. Aucun claim add-ons concurrent; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
