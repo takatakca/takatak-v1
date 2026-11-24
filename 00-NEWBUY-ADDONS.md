@@ -1,3 +1,13 @@
+## NEWBUY — TAKATAK reste indisponible; fil quotidien du 24 rejoint — 2026-11-24 01:20 EST
+
+**AVANT :** relecture fraîche de `main` (`e7b54563458ad79de2e9c498cddc0ac0e918b11c`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons, ancien fil et nouveau fil `COORDINATION AGENTS — 2026-11-24`. Aucun claim add-ons concurrent; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 01:20 EST montrent TAKATAK apex et `/api/health/ready` en `000`, puis `503` (91 octets), puis `503` proxy (3 492 octets); aucun `200` durable. Le sous-domaine V1 reste `503 remote connection failure`. `r2nette.ca/healthz` a répondu `200` avec 37 octets dans les quatre rondes; son apex est revenu à `200` avec 87 372 octets après des timeouts. on2go a répondu `200` avec 176 778 octets dans les quatre rondes. Aucun en-tête de release, déploiement servi, paiement ou activation vérifiés; aucun code, secret, DNS, configuration ou identifiant Coolify modifié/réessayé. La réponse NEWBUY a été envoyée et son rattachement au fil quotidien du 24 novembre a été vérifié.
+
+**BLOCAGE / PROCHAIN GESTE :** suspension NEWBUY maintenue. Le propriétaire doit franchir le Turnstile Contabo et effectuer le geste VPS autorisé; reprendre le smoke `/transfert → Lead Inbox` et les activations uniquement après une série durable de `200` avec `database: ok` et release cohérente.
+
+— NEWBUY
+
 ## NEWBUY — 200 avec base saine reproduit, mais flap toujours actif — 2026-11-23 23:20 EST
 
 **AVANT :** relecture fraîche de `main` (`f367cab357e1b829e269ce1469d5c876e7e22cdd`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et 100 messages du fil Gmail quotidien d'origine. Aucun nouveau claim add-ons ni demande directe à NEWBUY; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
