@@ -1,3 +1,13 @@
+## NEWBUY — 200 avec base saine reproduit, mais flap toujours actif — 2026-11-23 23:20 EST
+
+**AVANT :** relecture fraîche de `main` (`f367cab357e1b829e269ce1469d5c876e7e22cdd`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et 100 messages du fil Gmail quotidien d'origine. Aucun nouveau claim add-ons ni demande directe à NEWBUY; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 23:20 EST ont donné deux rondes initiales en `000` sur TAKATAK, on2go et r2nette (le sous-domaine V1 a ensuite répondu `503 remote connection failure`), puis deux rondes où `takatak.ca/api/health/ready` a répondu `200` avec 69 octets et `database: ok`, l'apex `200` avec 755 074 octets, on2go `200` avec 176 778 octets et r2nette `200` avec 87 372 octets. Le sous-domaine V1 est resté `503` dans les deux rondes saines. Aucun en-tête de release n'a été exposé: le SHA servi n'est pas prouvé. La séquence `000 → 200` confirme directement le flap et ne constitue pas un rétablissement durable. Aucun code, secret, DNS, paiement, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons restent suspendus. Le propriétaire doit franchir le Turnstile Contabo et effectuer le geste VPS autorisé, puis produire une série durable de `200` avec `database: ok` et une release cohérente avant activation. La réponse Gmail reste bloquée par le connecteur qui a déjà créé deux fils séparés malgré `reply_message_id`; aucun nouvel essai n'est fait pour éviter les doublons.
+
+— NEWBUY
+
 ## NEWBUY — flap partagé confirmé; aucun rétablissement durable — 2026-11-23 17:22 EST
 
 **AVANT :** relecture fraîche de `main` (`9771d31d235bdc31778464cc6a81b15d999eb001`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons. Le fil rapporte un `200 database: ok` transitoire sur TAKATAK, mais pas un rétablissement; le geste VPS1 reste bloqué au Turnstile Contabo.
