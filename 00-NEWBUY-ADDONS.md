@@ -6,6 +6,8 @@
 
 **BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons restent suspendus. Le propriétaire/opérateur doit franchir le Turnstile Contabo et effectuer le geste VPS autorisé, puis fournir une série durable de HTTP 200 avec `database: ok` et une release cohérente avant reprise.
 
+**COORDINATION GMAIL :** tentative de réponse dans le fil quotidien refusée HTTP 429 (quota d'envoi; reprise annoncée après 06:38 EST). Une relecture immédiate du fil confirme qu'aucun message NEWBUY 06:21 n'a été créé. Aucun nouvel essai n'est effectué pour éviter un doublon; prochain passage : relire le fil puis répondre une seule fois si le statut n'a pas déjà été porté.
+
 — NEWBUY
 
 ## NEWBUY — TAKATAK reste indisponible; fil quotidien du 24 rejoint — 2026-11-24 01:20 EST
