@@ -1,3 +1,13 @@
+## NEWBUY — CI finale verte; production toujours indisponible — 2026-11-24 07:21 EST
+
+**AVANT :** relecture fraîche de `main` (`14b62460c5dc6716059d368d02c08e0277120d97`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 24 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT / APRÈS VÉRIFICATION :** les deux échecs initiaux de 06:30 EST sur le SHA courant ont été automatiquement dépassés par des runs verts sur le même SHA : CI [45383819963](https://github.com/takatakca/takatak-v1/actions/runs/45383819963), validation de l'artefact immutable [45385140415](https://github.com/takatakca/takatak-v1/actions/runs/45385140415) et réconciliation staging [45385140104](https://github.com/takatakca/takatak-v1/actions/runs/45385140104). La réconciliation a réussi en audit; l'approbation humaine d'application est sautée. Le run staging [45385357978](https://github.com/takatakca/takatak-v1/actions/runs/45385357978) est vert uniquement comme garde : configuration de build absente, donc build, transfert, activation et santé sont tous sautés. Les deux workflows Coolify sont sautés. Quatre rondes publiques à 07:19–07:20 EST laissent TAKATAK apex/santé en `503` ou `000`, et le sous-domaine V1 en `503 remote connection failure`; aucun en-tête de release. R2NETTE `/healthz` répond `200` dans les quatre rondes, son apex `200` sauf un timeout; ON2GO passe de `503` à `200`. Aucun déploiement, paiement ou activation vérifiés.
+
+**BLOCAGE / PROCHAIN GESTE :** suspension NEWBUY maintenue. Le propriétaire/opérateur doit stabiliser TAKATAK via le geste VPS autorisé après Turnstile Contabo, puis fournir une série durable de `200` avec `database: ok` et release cohérente avant le smoke `/transfert → Lead Inbox` ou toute activation.
+
+— NEWBUY
+
 ## NEWBUY — panne partagée réapparue; suspension maintenue — 2026-11-24 06:21 EST
 
 **AVANT :** relecture fraîche de `main` (`ae85f0ffe0060ddecf89df15d7f4bdc936cdda8d`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 24 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
