@@ -48,6 +48,7 @@ export function ContactForm({
   messageHint,
   submitLabel,
   onSent,
+  defaultMessage,
 }: {
   defaultTopic?: ContactTopic;
   /** Limit the subjects offered (for example, partners only). */
@@ -60,6 +61,8 @@ export function ContactForm({
   /** Button text, when "Send the message" does not fit the page. */
   submitLabel?: Bi;
   onSent?: (reference: string) => void;
+  /** Prefilled message, e.g. a connection request sent from a network card. */
+  defaultMessage?: string;
 }) {
   const { user, isAuthenticated } = useAuth();
   const { lang } = useLanguage();
@@ -72,7 +75,7 @@ export function ContactForm({
   const [email, setEmail] = useState(user?.email ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [company, setCompany] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(defaultMessage?.slice(0, 2000) ?? "");
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "down">("idle");
   const [reference, setReference] = useState<string | null>(null);
