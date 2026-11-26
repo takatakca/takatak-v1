@@ -322,6 +322,15 @@ function DirectLoginConnectPage({
         return;
       }
 
+      // When Meta needs more Instagram permissions, the server answers with
+      // the Facebook authorization page (same as the connections window).
+      const authorizationUrl = result.authorization?.authorizationUrl;
+
+      if (network === "instagram" && authorizationUrl) {
+        window.location.assign(authorizationUrl);
+        return;
+      }
+
       router.refresh();
     } catch {
       setError(`${label} could not be connected from Facebook.`);

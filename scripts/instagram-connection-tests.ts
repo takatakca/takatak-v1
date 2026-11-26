@@ -51,6 +51,20 @@ function readSource(relative: string): string {
   return readFileSync(resolve(process.cwd(), relative), "utf8");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Matches `key: "value"`, `key: 'value'` or `key: \`value\`` so a source
+ * check does not depend on the file's quote style.
+ */
+function quotedProperty(key: string, value: string): RegExp {
+  return new RegExp(
+    escapeRegExp(key) + ":\\s*([\"'`])" + escapeRegExp(value) + "\\1",
+  );
+}
+
 check("Facebook OAuth start excludes Instagram identity scopes", () => {
   const facebookScopes: readonly string[] = META_OAUTH_START_SCOPES;
 
@@ -201,24 +215,23 @@ check("Instagram and Threads start independent OAuth from the modal", () => {
   const modal = readSource(
     "src/components/social/connections/manage-connections-modal.tsx",
   );
-  assert(modal.includes('provider: "instagram"'), "ig provider card");
-  assert(modal.includes('provider: "threads"'), "threads provider card");
+  assert(quotedProperty("provider", "instagram").test(modal), "ig provider card");
+  assert(quotedProperty("provider", "threads").test(modal), "threads provider card");
   assert(modal.includes("connectInstagram"), "facebook-linked instagram");
-  assert(modal.includes("connectThreads"), "facebook-linked threads");
+  // Primary Instagram button: attaches the Instagram account linked to the
+  // selected Facebook Page (connectInstagram). Label was "Use Instagram linked
+  // to Facebook" before 5d3d33a1.
   assert(
-    modal.includes("Use Instagram linked to Facebook"),
+    modal.includes("Connect with Meta"),
     "facebook primary when page is ready",
   );
+  // Secondary Instagram link: independent Instagram Login (connectProvider).
+  // Label was "Or sign in with Instagram independently" before 5d3d33a1.
+  assert(modal.includes("Connect independently"), "independent option");
+  // Threads button: independent Threads login (connectProvider). Label was
+  // "Or sign in with Threads independently" before 5d3d33a1.
   assert(
-    modal.includes("Or sign in with Instagram independently"),
-    "independent option",
-  );
-  assert(
-    modal.includes("Use Threads linked to Facebook"),
-    "threads facebook primary",
-  );
-  assert(
-    modal.includes("Or sign in with Threads independently"),
+    modal.includes("Connect Threads securely"),
     "threads independent option",
   );
   assert(modal.includes("/instagram"), "instagram API");
@@ -227,6 +240,24 @@ check("Instagram and Threads start independent OAuth from the modal", () => {
     "no meta-only hover",
   );
   return "independent Instagram and Threads cards";
+});
+
+// Kept separate so the gap is named on its own line: since 5d3d33a1 the modal
+// offers only the independent Threads login. Threads linked to Facebook is
+// still offered on /dashboard/social/threads (instagram-connect-page.tsx).
+// Owner decision pending: the same commit added
+// scripts/social-avatar-architecture-tests.ts, which requires the opposite
+// (no Meta-linked Threads in the modal, legacy Threads POST route retired).
+check("Threads linked to Facebook can be used from the modal", () => {
+  const modal = readSource(
+    "src/components/social/connections/manage-connections-modal.tsx",
+  );
+  assert(modal.includes("connectThreads"), "facebook-linked threads");
+  assert(
+    modal.includes("Use Threads linked to Facebook"),
+    "threads facebook primary",
+  );
+  return "Facebook-linked Threads from the modal";
 });
 
 check("Independent Instagram Login and Threads callbacks exist", () => {
@@ -271,10 +302,12 @@ check("Instagram page offers Facebook-linked and independent login", () => {
   const resolve = readSource(
     "src/lib/social/connections/instagram-dashboard-resolve.ts",
   );
-  const metaFirst =
-    resolve.indexOf('source: "facebook_page"') <
-    resolve.indexOf('source: "instagram_login"');
-  assert(metaFirst, "meta linked is preferred");
+  const linkedAt = resolve.search(quotedProperty("source", "facebook_page"));
+  const loginAt = resolve.search(quotedProperty("source", "instagram_login"));
+  assert(
+    linkedAt >= 0 && loginAt >= 0 && linkedAt < loginAt,
+    "meta linked is preferred",
+  );
   assert(resolve.includes("instagram_login"), "login source");
   assert(resolve.includes("facebook_page"), "facebook source");
   return "both Instagram routes";
