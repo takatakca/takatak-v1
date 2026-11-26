@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth/supabase-server";
 import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
 import { createBeh4viorExperienceLaunch } from "@/lib/experiences/beh4vior-experience-access";
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
+import { originFromRequest } from "@/lib/config/app-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
   const user=await getSessionUser();
   if(!user){
     const next="/api/experiences/beh4vior/launch?state="+encodeURIComponent(state);
-    return NextResponse.redirect(new URL("/login?next="+encodeURIComponent(next),request.url));
+    return NextResponse.redirect(new URL("/login?next="+encodeURIComponent(next),originFromRequest(request)));
   }
   const sync=await ensureProfileForSupabaseUser(user,{createPersonalWorkspace:false});
   if(sync.outcome==="denied")return jsonResponse({ok:false,message:"BEH4VIOR access denied."},403);
