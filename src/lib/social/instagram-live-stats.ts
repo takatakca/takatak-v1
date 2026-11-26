@@ -396,3 +396,47 @@ export function competitorRow(ref: string, account: InstagramPublicAccount, star
     engagementRate: perPost !== null && account.followers ? round((perPost / account.followers) * 100, 2) : null,
   };
 }
+
+/** Parses GET /{threads-user-id}/threads. Videos go to the video section; reposts of others are skipped. */
+export function parseThreadsPosts(body: unknown): InstagramLiveMedia[] {
+  const rows = asRecord(body).data;
+  if (!Array.isArray(rows)) return [];
+  const out: InstagramLiveMedia[] = [];
+  for (const row of rows) {
+    const item = asRecord(row);
+    const id = typeof item.id === "string" ? item.id : "";
+    const publishedAt = typeof item.timestamp === "string" ? item.timestamp : "";
+    const mediaType = typeof item.media_type === "string" ? item.media_type : "TEXT_POST";
+    if (!id || !publishedAt || Number.isNaN(Date.parse(publishedAt)) || mediaType === "REPOST_FACADE") continue;
+    out.push({
+      id,
+      caption: asText(item.text),
+      mediaType,
+      kind: mediaType === "VIDEO" ? "reel" : "post",
+      publishedAt: new Date(publishedAt).toISOString(),
+      permalink: typeof item.permalink === "string" && item.permalink.startsWith("https://") ? item.permalink : null,
+      likes: null,
+      comments: null,
+      views: null,
+      reach: null,
+      saved: null,
+      shares: null,
+    });
+  }
+  return out;
+}
+
+/** Adds GET /{threads-media-id}/insights to a post: replies count as comments, reposts + quotes + shares as shares. */
+export function withThreadsInsights(item: InstagramLiveMedia, body: unknown): InstagramLiveMedia {
+  const reposts = insightValue(body, "reposts");
+  const quotes = insightValue(body, "quotes");
+  const shares = insightValue(body, "shares");
+  const shared = [reposts, quotes, shares].filter((value): value is number => value !== null);
+  return {
+    ...item,
+    views: insightValue(body, "views"),
+    likes: insightValue(body, "likes"),
+    comments: insightValue(body, "replies"),
+    shares: shared.length ? shared.reduce((total, value) => total + value, 0) : null,
+  };
+}

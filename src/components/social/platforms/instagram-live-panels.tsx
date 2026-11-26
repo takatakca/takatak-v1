@@ -23,6 +23,10 @@ import {
 
 type Lang = "fr" | "en";
 
+export type LiveNetwork = "instagram" | "threads";
+
+const NETWORK_NAME: Record<LiveNetwork, string> = { instagram: "Instagram", threads: "Threads" };
+
 const fmt = (value: number | null, lang: Lang, suffix = "") =>
   value === null ? "—" : `${value.toLocaleString(lang === "fr" ? "fr-CA" : "en-CA")}${suffix}`;
 
@@ -30,6 +34,8 @@ const TYPE_LABEL: Record<string, { fr: string; en: string }> = {
   IMAGE: { fr: "Photo", en: "Photo" },
   VIDEO: { fr: "Vidéo", en: "Video" },
   CAROUSEL_ALBUM: { fr: "Carrousel", en: "Carousel" },
+  TEXT_POST: { fr: "Texte", en: "Text" },
+  AUDIO: { fr: "Audio", en: "Audio" },
 };
 
 const typeLabel = (type: string, lang: Lang) => TYPE_LABEL[type]?.[lang] ?? type;
@@ -107,8 +113,9 @@ function GreyCard({ value, label }: { value: string; label: string }) {
 }
 
 /** Freshness and the parts Instagram did not give, said plainly. */
-export function InstagramLiveNote({ stats }: { stats: InstagramLiveStats }) {
+export function InstagramLiveNote({ stats, network = "instagram" }: { stats: InstagramLiveStats; network?: LiveNetwork }) {
   const lang = useDashboardLanguage();
+  const name = NETWORK_NAME[network];
   const time = new Date(stats.fetchedAt).toLocaleTimeString(lang === "fr" ? "fr-CA" : "en-CA", { hour: "2-digit", minute: "2-digit" });
   const missingLabels: Record<string, { fr: string; en: string }> = {
     profile: { fr: "le profil", en: "the profile" },
@@ -116,19 +123,19 @@ export function InstagramLiveNote({ stats }: { stats: InstagramLiveStats }) {
     media_insights: { fr: "la portée et les vues par publication", en: "reach and views per post" },
     account_insights: { fr: "les statistiques du compte", en: "account insights" },
     new_followers: { fr: "les nouveaux abonnés par jour", en: "new followers per day" },
-    older_media: { fr: "les publications les plus anciennes (Instagram a répondu trop lentement)", en: "the oldest posts (Instagram answered too slowly)" },
+    older_media: { fr: "les publications les plus anciennes (réponse trop lente)", en: "the oldest posts (answer too slow)" },
   };
   const missing = stats.missing.map((key) => missingLabels[key]?.[lang]).filter(Boolean);
   return (
     <div className="rounded-[10px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] leading-5 text-emerald-950">
       {lang === "fr"
-        ? `Chiffres lus en direct sur Instagram à ${time} (mis à jour toutes les 10 minutes).`
-        : `Numbers read live from Instagram at ${time} (refreshed every 10 minutes).`}
+        ? `Chiffres lus en direct sur ${name} à ${time} (mis à jour toutes les 10 minutes).`
+        : `Numbers read live from ${name} at ${time} (refreshed every 10 minutes).`}
       {missing.length ? (
         <span className="block text-amber-900">
           {lang === "fr"
-            ? `Instagram n’a pas fourni ${missing.join(", ")} : reconnectez le compte avec l’accès aux statistiques pour les voir.`
-            : `Instagram did not provide ${missing.join(", ")}: reconnect the account with insights access to see them.`}
+            ? `${name} n’a pas fourni ${missing.join(", ")} : reconnectez le compte avec l’accès aux statistiques pour les voir.`
+            : `${name} did not provide ${missing.join(", ")}: reconnect the account with insights access to see them.`}
         </span>
       ) : null}
     </div>
@@ -176,11 +183,13 @@ export function InstagramLiveMediaSection({
   kind,
   start,
   end,
+  network = "instagram",
 }: {
   stats: InstagramLiveStats;
   kind: InstagramMediaKind;
   start: string;
   end: string;
+  network?: LiveNetwork;
 }) {
   const lang = useDashboardLanguage();
   const fr = lang === "fr";
@@ -206,7 +215,9 @@ export function InstagramLiveMediaSection({
   const tagQuery = tagSearch.trim().toLowerCase().replace(/^#/, "");
   const tagRows = tagQuery ? tags.filter((tag) => tag.tag.includes(tagQuery)) : tags;
   const columns = ALL_COLUMNS.filter((key) => visible.has(key));
-  const noun = kind === "reel" ? (fr ? "reels" : "reels") : fr ? "publications" : "posts";
+  const videos = network === "threads";
+  const reelWord = videos ? (fr ? "vidéos" : "videos") : "reels";
+  const noun = kind === "reel" ? reelWord : fr ? "publications" : "posts";
 
   const toggle = (key: string) =>
     setVisible((current) => {
@@ -218,7 +229,7 @@ export function InstagramLiveMediaSection({
 
   const exportRows = () =>
     downloadCsv(
-      `instagram-${kind === "reel" ? "reels" : "publications"}-${start}-${end}.csv`,
+      `${network}-${kind === "reel" ? reelWord : "publications"}-${start}-${end}.csv`,
       toCsv(
         columns.map((key) => columnLabel(key, lang)),
         rows.map((item) => columns.map((key) => cellValue(item, key, lang))),
@@ -229,7 +240,9 @@ export function InstagramLiveMediaSection({
     <div className="space-y-5">
       <h1 className="text-[23px] font-medium text-[#20242A]">
         {kind === "reel"
-          ? fr ? "Reels publiés dans la période" : "Reels published in period"
+          ? videos
+            ? fr ? "Vidéos publiées dans la période" : "Videos published in period"
+            : fr ? "Reels publiés dans la période" : "Reels published in period"
           : fr ? "Publications de la période" : "Posts published in period"}
       </h1>
 
@@ -240,7 +253,7 @@ export function InstagramLiveMediaSection({
             <Card value={fmt(summary.interactions, lang)} label={fr ? "Interactions" : "Interactions"} color="#96D0A7" />
             <Card value={fmt(summary.averageReach, lang)} label={fr ? "Portée moyenne" : "Avg. reach"} color="#F0A0DB" />
             <Card value={fmt(summary.views, lang)} label={fr ? "Vues" : "Views"} color="#BA89B2" />
-            <Card value={fmt(summary.count, lang)} label={kind === "reel" ? "Reels" : fr ? "Publications" : "Posts"} color="#E9AA2C" />
+            <Card value={fmt(summary.count, lang)} label={kind === "reel" ? (videos ? (fr ? "Vidéos" : "Videos") : "Reels") : fr ? "Publications" : "Posts"} color="#E9AA2C" />
           </div>
           <div className="mt-2 min-h-[270px]">
             <SocialSummaryChart points={points} seriesLabel={fr ? "Interactions" : "Interactions"} seriesColor="#C58AB5" showMarkers />
@@ -296,7 +309,7 @@ export function InstagramLiveMediaSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-6 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            {kind === "reel" ? (fr ? "Liste des reels" : "List of reels") : fr ? "Liste des publications" : "List of posts"}
+            {kind === "reel" ? (fr ? `Liste des ${reelWord}` : `List of ${reelWord}`) : fr ? "Liste des publications" : "List of posts"}
           </h2>
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
             <input
@@ -373,7 +386,7 @@ export function InstagramLiveMediaSection({
                     <td colSpan={columns.length} className="px-3 py-8 text-center text-[#5F6770]">
                       {query
                         ? fr ? `Aucune légende ne contient « ${search.trim()} ».` : `No caption contains “${search.trim()}”.`
-                        : fr ? `Aucun ${kind === "reel" ? "reel" : "post"} publié dans cette période.` : `No ${kind === "reel" ? "reel" : "post"} published in this period.`}
+                        : fr ? `Aucune publication de ce type dans cette période.` : `Nothing of this kind published in this period.`}
                     </td>
                   </tr>
                 )}
@@ -398,7 +411,7 @@ export function InstagramLiveMediaSection({
                 type="button"
                 onClick={() =>
                   downloadCsv(
-                    `instagram-mots-clics-${start}-${end}.csv`,
+                    `${network}-mots-clics-${start}-${end}.csv`,
                     toCsv(
                       [fr ? "Mot-clic" : "Hashtag", fr ? "Publications" : "Posts", "Interactions"],
                       tagRows.map((tag) => [tag.tag, tag.posts, tag.interactions]),
@@ -444,10 +457,11 @@ export function InstagramLiveMediaSection({
 }
 
 /** Account insights for the last 30 days (reach, views, interactions, profile activity). */
-export function InstagramLiveAccountSection({ stats }: { stats: InstagramLiveStats }) {
+export function InstagramLiveAccountSection({ stats, network = "instagram" }: { stats: InstagramLiveStats; network?: LiveNetwork }) {
   const lang = useDashboardLanguage();
   const fr = lang === "fr";
   const account = stats.account;
+  const name = NETWORK_NAME[network];
   const points = useMemo(() => {
     if (!account) return [];
     const values = new Map(account.reachSeries.map((point) => [point.date, point.value]));
@@ -459,13 +473,34 @@ export function InstagramLiveAccountSection({ stats }: { stats: InstagramLiveSta
         <h1 className="text-[23px] font-medium text-[#20242A]">{fr ? "Compte" : "Account"}</h1>
         <p className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 text-sm text-[#5F6770]">
           {fr
-            ? "Instagram n’a pas donné les statistiques du compte. Reconnectez le compte en acceptant l’accès aux statistiques : la portée, les vues et l’activité du profil s’afficheront ici."
-            : "Instagram did not provide account insights. Reconnect the account and accept insights access: reach, views and profile activity will show here."}
+            ? `${name} n’a pas donné les statistiques du compte. Reconnectez le compte en acceptant l’accès aux statistiques : la portée, les vues et l’activité du profil s’afficheront ici.`
+            : `${name} did not provide account insights. Reconnect the account and accept insights access: reach, views and profile activity will show here.`}
         </p>
       </div>
     );
   }
   const reachTotal = account.reachSeries.length ? account.reachSeries.reduce((total, point) => total + point.value, 0) : null;
+  if (network === "threads") {
+    // Threads counts views (no reach); replies, reposts and quotes are its interactions.
+    return (
+      <div className="space-y-5">
+        <h1 className="text-[23px] font-medium text-[#20242A]">{fr ? "Compte · 30 derniers jours" : "Account · last 30 days"}</h1>
+        <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 shadow-[0_2px_12px_rgba(31,41,55,0.04)] sm:px-7">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <Card value={fmt(account.views, lang)} label={fr ? "Vues du profil et des publications" : "Profile and post views"} color="#BA89B2" />
+            <Card value={fmt(account.likes, lang)} label={fr ? "J’aime" : "Likes"} color="#96D0A7" />
+            <Card value={fmt(account.comments, lang)} label={fr ? "Réponses" : "Replies"} color="#F0A0DB" />
+            <Card value={fmt(account.shares, lang)} label={fr ? "Republications et citations" : "Reposts and quotes"} color="#AEB8F4" />
+            <Card value={fmt(account.profileLinksTaps, lang)} label={fr ? "Clics sur les liens" : "Link clicks"} color="#E9AA2C" />
+            <Card value={fmt(stats.followers, lang)} label={fr ? "Abonnés aujourd’hui" : "Followers today"} color="#8994F0" />
+          </div>
+          <div className="mt-2 min-h-[270px]">
+            <SocialSummaryChart points={points} seriesLabel={fr ? "Vues" : "Views"} seriesColor="#BA89B2" showMarkers />
+          </div>
+        </section>
+      </div>
+    );
+  }
   return (
     <div className="space-y-5">
       <h1 className="text-[23px] font-medium text-[#20242A]">{fr ? "Compte · 30 derniers jours" : "Account · last 30 days"}</h1>

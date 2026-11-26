@@ -14,6 +14,12 @@ import {
   enumerateDates,
   metricValue,
 } from "@/components/social/analytics/social-summary-tokens";
+import {
+  InstagramLiveAccountSection,
+  InstagramLiveMediaSection,
+  InstagramLiveNote,
+} from "@/components/social/platforms/instagram-live-panels";
+import { communityFromLive, type InstagramLiveStats } from "@/lib/social/instagram-live-stats";
 
 type ThreadsTab =
   | "community"
@@ -1994,15 +2000,18 @@ function ThreadsCompetitorsSection() {
 }
 
 export function ThreadsSubscribedDashboard({
-  data = EMPTY_DATA,
+  data: storedData = EMPTY_DATA,
   accountName,
   profileImageUrl = null,
   isConnected,
+  live = null,
 }: {
   data?: ThreadsCommunityData;
   accountName: string;
   profileImageUrl?: string | null;
   isConnected: boolean;
+  /** The profile's numbers read live from Threads, when the connection allows it. */
+  live?: InstagramLiveStats | null;
 }) {
   const [tab, setTab] = useState<ThreadsTab>("community");
   const [range, setRange] = useState<number>(30);
@@ -2081,6 +2090,12 @@ export function ThreadsSubscribedDashboard({
       end: dateKey(endDate),
     };
   }, [range]);
+
+  // Live Threads numbers win over stored ones; without them the stored data stays.
+  const data = useMemo<ThreadsCommunityData>(
+    () => (live ? communityFromLive(live, start, end) : storedData),
+    [live, start, end, storedData],
+  );
 
   const hasConfirmedData =
     [
@@ -2257,11 +2272,15 @@ export function ThreadsSubscribedDashboard({
           Threads Community analytics
         </h2>
 
-        <div className="rounded-[10px] border border-[#A8B4FF] bg-[#F0F1FF] px-4 py-3 text-[13px] leading-5 text-[#46516A]">
-          Followers and Stories metrics are available from the day the
-          Threads account is connected. TAKATAK preserves confirmed
-          historical data for this account.
-        </div>
+        {live ? (
+          <InstagramLiveNote stats={live} network="threads" />
+        ) : (
+          <div className="rounded-[10px] border border-[#A8B4FF] bg-[#F0F1FF] px-4 py-3 text-[13px] leading-5 text-[#46516A]">
+            Followers and Stories metrics are available from the day the
+            Threads account is connected. TAKATAK preserves confirmed
+            historical data for this account.
+          </div>
+        )}
 
         <CommunitySection
           data={data}
@@ -2284,7 +2303,7 @@ export function ThreadsSubscribedDashboard({
           Threads Account analytics
         </h2>
 
-        <AccountSection data={data} />
+        {live ? <InstagramLiveAccountSection stats={live} network="threads" /> : <AccountSection data={data} />}
       </section>
 
       <section
@@ -2299,11 +2318,15 @@ export function ThreadsSubscribedDashboard({
           Threads Posts analytics
         </h2>
 
-        <ThreadsPostsSection
-          data={data}
-          start={start}
-          end={end}
-        />
+        {live ? (
+          <InstagramLiveMediaSection stats={live} kind="post" start={start} end={end} network="threads" />
+        ) : (
+          <ThreadsPostsSection
+            data={data}
+            start={start}
+            end={end}
+          />
+        )}
       </section>
 
       <section
@@ -2318,11 +2341,15 @@ export function ThreadsSubscribedDashboard({
           Threads Reels analytics
         </h2>
 
-        <ThreadsReelsSection
-          data={data}
-          start={start}
-          end={end}
-        />
+        {live ? (
+          <InstagramLiveMediaSection stats={live} kind="reel" start={start} end={end} network="threads" />
+        ) : (
+          <ThreadsReelsSection
+            data={data}
+            start={start}
+            end={end}
+          />
+        )}
       </section>
 
       <section

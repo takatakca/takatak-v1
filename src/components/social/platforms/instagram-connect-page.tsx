@@ -141,6 +141,7 @@ export function ThreadsConnectPage({
   facebookPageSelected = false,
   facebookNeedsPage = false,
   instagramLinkedViaFacebook = false,
+  liveStats = null,
 }: {
   activeBrandId: string | null;
   canManage: boolean;
@@ -154,10 +155,12 @@ export function ThreadsConnectPage({
   facebookPageSelected?: boolean;
   facebookNeedsPage?: boolean;
   instagramLinkedViaFacebook?: boolean;
+  liveStats?: InstagramLiveStats | null;
 }) {
   return (
     <DirectLoginConnectPage
       network="threads"
+      liveStats={liveStats}
       activeBrandId={activeBrandId}
       canManage={canManage}
       isConnected={isConnected}
@@ -391,7 +394,7 @@ function DirectLoginConnectPage({
           </section>
         ) : null}
 
-        {isConnected && !(network === "instagram" && liveStats) ? (
+        {isConnected && !liveStats ? (
           <p className="rounded-[14px] border border-slate-200 bg-white px-5 py-4 text-sm leading-6 text-slate-600">
             This {label} account is connected to the brand. TAKATAK does not
             import {label} statistics yet, so the figures below stay empty.
@@ -412,6 +415,7 @@ function DirectLoginConnectPage({
               accountName={connectedLabel ?? "Threads account"}
               profileImageUrl={profileImageUrl}
               isConnected={isConnected}
+              live={liveStats}
             />
           </div>
         )}

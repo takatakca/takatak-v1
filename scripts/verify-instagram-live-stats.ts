@@ -18,7 +18,9 @@ import {
   parseInsightSeries,
   parseInsightTotals,
   parseInstagramMedia,
+  parseThreadsPosts,
   summarizeMedia,
+  withThreadsInsights,
   toCsv,
   type InstagramLiveStats,
 } from "../src/lib/social/instagram-live-stats";
@@ -252,6 +254,38 @@ check("competitor routes check permissions and keep Instagram ids server-side", 
   const lib = readFileSync("src/lib/social/providers/instagram-competitors.ts", "utf8");
   assert.match(lib, /normalizeInstagramUsername\(options\.username\)/);
   assert.match(lib, /platform: "instagram"/);
+});
+
+check("Threads posts are parsed, reposts of others skipped, videos in the video section", () => {
+  const posts = parseThreadsPosts({ data: [
+    { id: "t1", media_type: "TEXT_POST", text: "Ouvert ce soir #ndg", timestamp: "2026-11-21T20:00:00+0000", permalink: "https://www.threads.net/@resto/post/x" },
+    { id: "t2", media_type: "VIDEO", text: "Recette", timestamp: "2026-11-22T20:00:00+0000" },
+    { id: "t3", media_type: "REPOST_FACADE", timestamp: "2026-11-22T21:00:00+0000" },
+  ] });
+  assert.deepEqual(posts.map((p) => [p.id, p.kind]), [["t1", "post"], ["t2", "reel"]]);
+  assert.equal(posts[0].likes, null);
+  const full = withThreadsInsights(posts[0], { data: [
+    { name: "views", values: [{ value: 300 }] },
+    { name: "likes", values: [{ value: 12 }] },
+    { name: "replies", values: [{ value: 3 }] },
+    { name: "reposts", values: [{ value: 2 }] },
+    { name: "quotes", values: [{ value: 1 }] },
+  ] });
+  assert.equal(full.views, 300);
+  assert.equal(full.comments, 3);
+  assert.equal(full.shares, 3);
+  assert.equal(full.saved, null, "Threads has no saves: unknown, not zero");
+});
+
+check("Threads page loads its live numbers inside the workspace", () => {
+  const fetcher = readFileSync("src/lib/social/providers/threads-live-fetch.ts", "utf8");
+  assert.match(fetcher, /^import "server-only";/);
+  assert.match(fetcher, /provider !== "threads"/);
+  assert.doesNotMatch(fetcher, /console\.[a-z]+\([^)]*token/i, "the token is never logged");
+  const page = readFileSync("src/app/dashboard/social/[platform]/page.tsx", "utf8");
+  assert.match(page, /loadThreadsLiveStats\(\{\s*clientId: access\.activeClientId,/);
+  const dashboard = readFileSync("src/components/social/platforms/threads-subscribed-dashboard.tsx", "utf8");
+  assert.match(dashboard, /network="threads"/);
 });
 
 console.log(`${passed} Instagram live checks passed`);
