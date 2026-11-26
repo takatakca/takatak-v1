@@ -1,5 +1,6 @@
 "use client";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import {
   Check,
   Eye,
@@ -43,13 +44,13 @@ function isPlatformKey(value: string): value is SocialPlatformKey {
   return INBOX_PLATFORMS.includes(value as SocialPlatformKey);
 }
 
-function formatThreadTime(value: string): string {
+function formatThreadTime(value: string, fr = false): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return "";
   }
 
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(fr ? "fr-CA" : "en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -59,6 +60,7 @@ function formatThreadTime(value: string): string {
 }
 
 export function SocialInboxView({ data }: { data: InboxPageData }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const connectionsHref = withSocialPreview(
     "/dashboard/social/inbox?connections=open",
@@ -132,8 +134,12 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
                 type="button"
                 title={
                   isConnected
-                    ? `Filter ${platform.replace("_", " ")}`
-                    : "Connect this network to receive inbox items"
+                    ? fr
+                      ? `Filtrer ${platform.replace("_", " ")}`
+                      : `Filter ${platform.replace("_", " ")}`
+                    : fr
+                      ? "Branchez ce réseau pour recevoir ses messages ici"
+                      : "Connect this network to receive inbox items"
                 }
                 onClick={() => {
                   if (!isConnected) {
@@ -160,7 +166,7 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
           })}
           <Link
             href={connectionsHref}
-            aria-label="Add a connected account"
+            aria-label={fr ? "Ajouter un compte branché" : "Add a connected account"}
             className="flex h-9 w-9 items-center justify-center rounded-full text-[#1d1d1f] transition hover:bg-slate-50"
           >
             <Plus className="h-5 w-5" />
@@ -169,20 +175,20 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
 
         <div className="mt-3 flex items-center gap-2 px-4">
           <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Search inbox</span>
+            <span className="sr-only">{fr ? "Chercher dans la boîte" : "Search inbox"}</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input
               type="search"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Write at least 3 characters"
+              placeholder={fr ? "Écrivez au moins 3 caractères" : "Write at least 3 characters"}
               className="h-10 w-full rounded-full border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#4b8bf5] focus:ring-2 focus:ring-[#4b8bf5]/20"
             />
           </label>
           <div className="relative">
             <button
               type="button"
-              aria-label="Filter by type"
+              aria-label={fr ? "Filtrer par type" : "Filter by type"}
               aria-expanded={filterOpen}
               onClick={() => {
                 setBulkOpen(false);
@@ -200,9 +206,9 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
               <div className="absolute right-0 z-30 mt-2 w-[240px] rounded-xl bg-white p-2 shadow-[0_8px_28px_rgba(15,23,42,0.16)]">
                 {(
                   [
-                    ["private", "Private messages"],
-                    ["comment", "Comments"],
-                    ["review", "Reviews"],
+                    ["private", fr ? "Messages privés" : "Private messages"],
+                    ["comment", fr ? "Commentaires" : "Comments"],
+                    ["review", fr ? "Avis" : "Reviews"],
                   ] as const
                 ).map(([kind, label]) => (
                   <button
@@ -242,12 +248,12 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
         </div>
 
         <div className="mt-3 flex items-end justify-between border-b border-slate-200 px-4">
-          <nav className="-mb-px flex gap-5" aria-label="Inbox status">
+          <nav className="-mb-px flex gap-5" aria-label={fr ? "État des conversations" : "Inbox status"}>
             {(
               [
-                ["unresolved", "Unresolved"],
-                ["unread", "Unread"],
-                ["all", "All"],
+                ["unresolved", fr ? "Non résolues" : "Unresolved"],
+                ["unread", fr ? "Non lues" : "Unread"],
+                ["all", fr ? "Toutes" : "All"],
               ] as const
             ).map(([id, label]) => {
               const active = tab === id;
@@ -273,7 +279,7 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
           <div className="relative pb-1">
             <button
               type="button"
-              aria-label="Inbox actions"
+              aria-label={fr ? "Actions de la boîte" : "Inbox actions"}
               aria-expanded={bulkOpen}
               onClick={() => {
                 setFilterOpen(false);
@@ -293,14 +299,18 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
                     setBulkOpen(false);
                     setBulkNotice(
                       data.threads.length === 0
-                        ? "No conversations to mark resolved yet."
-                        : "Marking conversations resolved is not available yet.",
+                        ? fr
+                          ? "Aucune conversation à marquer comme résolue pour l’instant."
+                          : "No conversations to mark resolved yet."
+                        : fr
+                          ? "Le marquage en lot n’est pas encore offert ; ouvrez chaque conversation."
+                          : "Marking conversations resolved is not available yet.",
                     );
                   }}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
                   <Check className="h-4 w-4 text-slate-500" />
-                  Click to mark all as resolved
+                  {fr ? "Tout marquer comme résolu" : "Click to mark all as resolved"}
                 </button>
                 <button
                   type="button"
@@ -308,14 +318,18 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
                     setBulkOpen(false);
                     setBulkNotice(
                       data.threads.length === 0
-                        ? "No conversations to mark read yet."
-                        : "Marking conversations read is not available yet.",
+                        ? fr
+                          ? "Aucune conversation à marquer comme lue pour l’instant."
+                          : "No conversations to mark read yet."
+                        : fr
+                          ? "Le marquage en lot n’est pas encore offert ; ouvrez chaque conversation."
+                          : "Marking conversations read is not available yet.",
                     );
                   }}
                   className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
                 >
                   <Eye className="h-4 w-4 text-slate-500" />
-                  Click to mark all as read
+                  {fr ? "Tout marquer comme lu" : "Click to mark all as read"}
                 </button>
               </div>
             ) : null}
@@ -326,8 +340,12 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
           {rows.length === 0 ? (
             <p className="px-5 py-10 text-center text-sm text-slate-500">
               {data.threads.length === 0
-                ? "No conversations yet. Private messages, comments, and reviews from connected accounts will appear here when inbox sync is live."
-                : "No conversations match those filters."}
+                ? fr
+                  ? "Aucune conversation pour l’instant. Les messages privés, commentaires et avis de vos comptes branchés paraîtront ici dès que la synchronisation de la boîte sera en marche."
+                  : "No conversations yet. Private messages, comments, and reviews from connected accounts will appear here when inbox sync is live."
+                : fr
+                  ? "Aucune conversation ne correspond à ces filtres."
+                  : "No conversations match those filters."}
             </p>
           ) : (
             <ul>
@@ -355,10 +373,10 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
                 </h2>
                 <p className="text-xs uppercase tracking-wide text-slate-400">
                   {selected.kind === "private"
-                    ? "Private message"
+                    ? fr ? "Message privé" : "Private message"
                     : selected.kind === "comment"
-                      ? "Comment"
-                      : "Review"}
+                      ? fr ? "Commentaire" : "Comment"
+                      : fr ? "Avis" : "Review"}
                 </p>
               </div>
             </header>
@@ -372,7 +390,7 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
               <MessageCircleWarning className="h-12 w-12" strokeWidth={1.25} />
             </span>
             <p className="mt-5 text-sm text-slate-500">
-              Please select a conversation on the left to begin.
+              {fr ? "Choisissez une conversation à gauche pour commencer." : "Please select a conversation on the left to begin."}
             </p>
           </div>
         )}
@@ -431,6 +449,7 @@ function InboxThreadRow({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <li>
       <button
@@ -447,7 +466,7 @@ function InboxThreadRow({
               {thread.senderName}
             </span>
             <span className="shrink-0 text-[11px] text-slate-400">
-              {formatThreadTime(thread.occurredAt)}
+              {formatThreadTime(thread.occurredAt, fr)}
             </span>
           </span>
           <span className="mt-1 flex items-center gap-2">

@@ -3,6 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+
 import {
   BLOCK_REASON_LABELS,
   PUBLICATION_STATE_LABELS,
@@ -103,8 +105,11 @@ export function PublicationActions({
   publication,
   canReview,
   canPublish,
-  lang = "en",
+  lang: langProp,
 }: Props) {
+  // Follows the account's dashboard language unless a caller sets one.
+  const accountLang = useDashboardLanguage();
+  const lang = langProp ?? accountLang;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);

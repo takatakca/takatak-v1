@@ -1,5 +1,6 @@
 "use client";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import {
   Columns3,
   Download,
@@ -30,6 +31,13 @@ const COLUMN_LABELS: Record<PostColumn, string> = {
   date: "Date",
 };
 
+const COLUMN_LABELS_FR: Record<PostColumn, string> = {
+  platform: "Plateforme",
+  caption: "Texte",
+  status: "État",
+  date: "Date",
+};
+
 function postDate(post: SocialSummaryData["posts"][number]) {
   return (post.publishedAt ?? post.scheduledAt ?? post.createdAt).slice(0, 10);
 }
@@ -51,6 +59,8 @@ export function SocialSummaryPostsTab({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
+  const LABELS = fr ? COLUMN_LABELS_FR : COLUMN_LABELS;
   const [query, setQuery] = useState("");
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<PostColumn[]>([
@@ -141,7 +151,7 @@ export function SocialSummaryPostsTab({
   }
 
   function downloadCsv() {
-    const headers = visibleColumns.map((column) => COLUMN_LABELS[column]);
+    const headers = visibleColumns.map((column) => LABELS[column]);
     const rows = filteredPosts.map((post) =>
       visibleColumns.map((column) => {
         switch (column) {
@@ -176,14 +186,14 @@ export function SocialSummaryPostsTab({
 
   return (
     <div className="space-y-8">
-      <h2 className="text-[22px] font-semibold text-[#20242A]">Posts</h2>
+      <h2 className="text-[22px] font-semibold text-[#20242A]">{fr ? "Publications" : "Posts"}</h2>
 
       <MetricSection
-        title="Number of posts"
+        title={fr ? "Nombre de publications" : "Number of posts"}
         total={total}
         cards={cards}
         points={points}
-        seriesLabel="Posts"
+        seriesLabel={fr ? "Publications" : "Posts"}
       />
 
       <section className="space-y-4">
@@ -193,12 +203,12 @@ export function SocialSummaryPostsTab({
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Search posts</span>
+            <span className="sr-only">{fr ? "Chercher des publications" : "Search posts"}</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa1a9]" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search"
+              placeholder={fr ? "Chercher" : "Search"}
               className="h-11 w-full rounded-[10px] border border-[#d7dbe0] bg-white pl-10 pr-3 text-sm text-[#30343a] outline-none transition focus:border-[#a8b0ff] focus:ring-2 focus:ring-[#efeeff]"
             />
           </label>
@@ -212,7 +222,7 @@ export function SocialSummaryPostsTab({
               className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d7dbe0] bg-white px-3.5 text-sm font-medium text-[#30343a] transition hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4cff]"
             >
               <Columns3 className="h-4 w-4" />
-              Columns
+              {fr ? "Colonnes" : "Columns"}
             </button>
 
             <button
@@ -221,7 +231,7 @@ export function SocialSummaryPostsTab({
               className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d7dbe0] bg-white px-3.5 text-sm font-medium text-[#30343a] transition hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5c4cff]"
             >
               <Download className="h-4 w-4" />
-              Download CSV
+              {fr ? "Télécharger le CSV" : "Download CSV"}
             </button>
 
             {columnsOpen ? (
@@ -243,7 +253,7 @@ export function SocialSummaryPostsTab({
                         onChange={() => toggleColumn(column)}
                         className="rounded border-[#c5cad1]"
                       />
-                      {COLUMN_LABELS[column]}
+                      {LABELS[column]}
                     </label>
                   );
                 })}
@@ -254,13 +264,17 @@ export function SocialSummaryPostsTab({
 
         {emptySearch ? (
           <EmptyPostsState
-            title="Oops! Nothing found, try another search"
-            description="You can use the filter tools to narrow down your search. Check if the current date range suits your needs."
+            title={fr ? "Aucun résultat ; essayez une autre recherche" : "Oops! Nothing found, try another search"}
+            description={
+              fr
+                ? "Utilisez les filtres pour préciser votre recherche, et vérifiez que la période choisie vous convient."
+                : "You can use the filter tools to narrow down your search. Check if the current date range suits your needs."
+            }
           />
         ) : emptyPeriod ? (
           <EmptyPostsState
-            title="No posts in this period"
-            description="Try another date range, or publish content to see posts appear here."
+            title={fr ? "Aucune publication sur cette période" : "No posts in this period"}
+            description={fr ? "Essayez une autre période, ou publiez du contenu pour le voir apparaître ici." : "Try another date range, or publish content to see posts appear here."}
           />
         ) : (
           <div className="overflow-x-auto rounded-[12px] border border-[#e1e4e7] bg-white">
@@ -269,7 +283,7 @@ export function SocialSummaryPostsTab({
                 <tr>
                   {visibleColumns.map((column) => (
                     <th key={column} className="px-4 py-3 font-semibold">
-                      {COLUMN_LABELS[column]}
+                      {LABELS[column]}
                     </th>
                   ))}
                 </tr>
