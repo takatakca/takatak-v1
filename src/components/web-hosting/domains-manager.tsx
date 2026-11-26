@@ -37,6 +37,7 @@ import {
   websiteUrl,
 } from "@/lib/web-hosting/display";
 import { SSL_STATUS_LABELS } from "@/lib/web-hosting/status";
+import type { DomainRenewalNotice } from "@/lib/web-hosting/domain-renewal-notices";
 import type {
   DnsRecordSummary,
   DomainSummary,
@@ -58,6 +59,7 @@ function formatExpiry(expiresAt: string | null): string {
 
 export function DomainsManager({
   domains,
+  renewalNotices,
   hosting: _hosting,
   records,
   certificates,
@@ -65,6 +67,7 @@ export function DomainsManager({
   sourceLabel,
 }: {
   domains: DomainSummary[];
+  renewalNotices: DomainRenewalNotice[];
   hosting: HostingServiceSummary[];
   records: DnsRecordSummary[];
   certificates: SslCertificateSummary[];
@@ -165,6 +168,41 @@ export function DomainsManager({
   return (
     <div className={selected ? "lg:pr-[420px]" : undefined}>
       <div className="space-y-5">
+        {renewalNotices.length > 0 ? (
+          <section aria-label="Upcoming domain renewals" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-slate-900">
+            <div className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-amber-700" aria-hidden="true" />
+              <h2 className="text-base font-semibold">Upcoming domain renewals</h2>
+            </div>
+            <p className="mt-2 text-sm text-slate-700">
+              These are dates recorded in your TAKATAK workspace, not live registrar confirmations.
+              Check with your domain provider before making renewal decisions.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {renewalNotices.slice(0, 5).map((notice) => (
+                <li key={notice.domainName} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm">
+                  <span className="font-medium">{notice.domainName}</span>
+                  <span className="text-slate-700">
+                    {notice.daysRemaining === 0 ? "Recorded expiry today" : `${notice.daysRemaining} day${notice.daysRemaining === 1 ? "" : "s"} left`}
+                    {" · "}{formatExpiry(notice.expiresAt)}
+                    {notice.autoRenew ? " · Auto-renew recorded as on (confirm with provider)" : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {renewalNotices.length > 5 ? (
+              <p className="mt-2 text-xs text-slate-600">
+                +{renewalNotices.length - 5} more recorded domain renewals
+              </p>
+            ) : null}
+            <p className="mt-3 text-xs text-slate-600">
+              No invoice, renewal, transfer, DNS, email or website change is initiated by this notice.
+            </p>
+            <Link href="/transfert" className="mt-3 inline-flex rounded-lg bg-[#1565D8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#104fab]">
+              Request transfer assistance
+            </Link>
+          </section>
+        ) : null}
         <section className="grid grid-cols-2 gap-3 xl:grid-cols-5">
           {kpis.map((kpi) => {
             const Icon = kpi.icon;

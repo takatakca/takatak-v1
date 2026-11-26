@@ -1,3 +1,173 @@
+## NEWBUY — CI finale verte; production toujours indisponible — 2026-11-24 07:21 EST
+
+**AVANT :** relecture fraîche de `main` (`14b62460c5dc6716059d368d02c08e0277120d97`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 24 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT / APRÈS VÉRIFICATION :** les deux échecs initiaux de 06:30 EST sur le SHA courant ont été automatiquement dépassés par des runs verts sur le même SHA : CI [45383819963](https://github.com/takatakca/takatak-v1/actions/runs/45383819963), validation de l'artefact immutable [45385140415](https://github.com/takatakca/takatak-v1/actions/runs/45385140415) et réconciliation staging [45385140104](https://github.com/takatakca/takatak-v1/actions/runs/45385140104). La réconciliation a réussi en audit; l'approbation humaine d'application est sautée. Le run staging [45385357978](https://github.com/takatakca/takatak-v1/actions/runs/45385357978) est vert uniquement comme garde : configuration de build absente, donc build, transfert, activation et santé sont tous sautés. Les deux workflows Coolify sont sautés. Quatre rondes publiques à 07:19–07:20 EST laissent TAKATAK apex/santé en `503` ou `000`, et le sous-domaine V1 en `503 remote connection failure`; aucun en-tête de release. R2NETTE `/healthz` répond `200` dans les quatre rondes, son apex `200` sauf un timeout; ON2GO passe de `503` à `200`. Aucun déploiement, paiement ou activation vérifiés.
+
+**BLOCAGE / PROCHAIN GESTE :** suspension NEWBUY maintenue. Le propriétaire/opérateur doit stabiliser TAKATAK via le geste VPS autorisé après Turnstile Contabo, puis fournir une série durable de `200` avec `database: ok` et release cohérente avant le smoke `/transfert → Lead Inbox` ou toute activation.
+
+— NEWBUY
+
+## NEWBUY — panne partagée réapparue; suspension maintenue — 2026-11-24 06:21 EST
+
+**AVANT :** relecture fraîche de `main` (`ae85f0ffe0060ddecf89df15d7f4bdc936cdda8d`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 24 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 06:20–06:21 EST confirment une panne partagée réapparue. Première ronde : `takatak.ca` (apex et santé), `on2go.ca`, `r2nette.ca` et `r2nette.ca/healthz` ont tous répondu HTTP 503 avec le timeout amont de 91 octets; le sous-domaine V1 a répondu HTTP 503 avec `remote connection failure` (98 octets). Rondes 2 à 4 : presque tous les endpoints ont expiré en `000`; seul `r2nette.ca/healthz` a brièvement répondu HTTP 200 avec 37 octets en ronde 2. Aucun en-tête de release ni SHA servi cohérent n'a été observé. Aucun code, secret, DNS, paiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons restent suspendus. Le propriétaire/opérateur doit franchir le Turnstile Contabo et effectuer le geste VPS autorisé, puis fournir une série durable de HTTP 200 avec `database: ok` et une release cohérente avant reprise.
+
+**COORDINATION GMAIL :** tentative de réponse dans le fil quotidien refusée HTTP 429 (quota d'envoi; reprise annoncée après 06:38 EST). Une relecture immédiate du fil confirme qu'aucun message NEWBUY 06:21 n'a été créé. Aucun nouvel essai n'est effectué pour éviter un doublon; prochain passage : relire le fil puis répondre une seule fois si le statut n'a pas déjà été porté.
+
+— NEWBUY
+
+## NEWBUY — TAKATAK reste indisponible; fil quotidien du 24 rejoint — 2026-11-24 01:20 EST
+
+**AVANT :** relecture fraîche de `main` (`e7b54563458ad79de2e9c498cddc0ac0e918b11c`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons, ancien fil et nouveau fil `COORDINATION AGENTS — 2026-11-24`. Aucun claim add-ons concurrent; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 01:20 EST montrent TAKATAK apex et `/api/health/ready` en `000`, puis `503` (91 octets), puis `503` proxy (3 492 octets); aucun `200` durable. Le sous-domaine V1 reste `503 remote connection failure`. `r2nette.ca/healthz` a répondu `200` avec 37 octets dans les quatre rondes; son apex est revenu à `200` avec 87 372 octets après des timeouts. on2go a répondu `200` avec 176 778 octets dans les quatre rondes. Aucun en-tête de release, déploiement servi, paiement ou activation vérifiés; aucun code, secret, DNS, configuration ou identifiant Coolify modifié/réessayé. La réponse NEWBUY a été envoyée et son rattachement au fil quotidien du 24 novembre a été vérifié.
+
+**BLOCAGE / PROCHAIN GESTE :** suspension NEWBUY maintenue. Le propriétaire doit franchir le Turnstile Contabo et effectuer le geste VPS autorisé; reprendre le smoke `/transfert → Lead Inbox` et les activations uniquement après une série durable de `200` avec `database: ok` et release cohérente.
+
+— NEWBUY
+
+## NEWBUY — 200 avec base saine reproduit, mais flap toujours actif — 2026-11-23 23:20 EST
+
+**AVANT :** relecture fraîche de `main` (`f367cab357e1b829e269ce1469d5c876e7e22cdd`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et 100 messages du fil Gmail quotidien d'origine. Aucun nouveau claim add-ons ni demande directe à NEWBUY; PR #243 reste fusionnée/fermée et le SHA courant n'a aucune exécution Actions associée.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 23:20 EST ont donné deux rondes initiales en `000` sur TAKATAK, on2go et r2nette (le sous-domaine V1 a ensuite répondu `503 remote connection failure`), puis deux rondes où `takatak.ca/api/health/ready` a répondu `200` avec 69 octets et `database: ok`, l'apex `200` avec 755 074 octets, on2go `200` avec 176 778 octets et r2nette `200` avec 87 372 octets. Le sous-domaine V1 est resté `503` dans les deux rondes saines. Aucun en-tête de release n'a été exposé: le SHA servi n'est pas prouvé. La séquence `000 → 200` confirme directement le flap et ne constitue pas un rétablissement durable. Aucun code, secret, DNS, paiement, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons restent suspendus. Le propriétaire doit franchir le Turnstile Contabo et effectuer le geste VPS autorisé, puis produire une série durable de `200` avec `database: ok` et une release cohérente avant activation. La réponse Gmail reste bloquée par le connecteur qui a déjà créé deux fils séparés malgré `reply_message_id`; aucun nouvel essai n'est fait pour éviter les doublons.
+
+— NEWBUY
+
+## NEWBUY — flap partagé confirmé; aucun rétablissement durable — 2026-11-23 17:22 EST
+
+**AVANT :** relecture fraîche de `main` (`9771d31d235bdc31778464cc6a81b15d999eb001`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons. Le fil rapporte un `200 database: ok` transitoire sur TAKATAK, mais pas un rétablissement; le geste VPS1 reste bloqué au Turnstile Contabo.
+
+**PENDANT / APRÈS VÉRIFICATION :** quatre rondes indépendantes à 17:20–17:22 EST montrent un flap partagé: `on2go.ca` et `r2nette.ca` ont chacun alterné `503` (91 octets) → `200` (176 778 / 87 372 octets) → `000` → `200`. `takatak.ca/api/health/ready` et l'apex ont alterné `503` (91 ou 3 492 octets) et `000`; le sous-domaine V1 est resté `503` avec `remote connection failure` (98 octets) dans les quatre rondes. Le `200 database: ok` signalé dans le fil n'a pas été reproduit et n'est pas revendiqué. Le SHA courant n'a aucune exécution Actions associée. Aucun déploiement servi, paiement, cause ou reprise durable vérifiés; aucun code, secret, DNS, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons restent suspendus. Intervention manuelle du propriétaire sur le Turnstile Contabo et geste VPS autorisé, puis série durable de `200` avec `database: ok` et release cohérente sur TAKATAK; surveiller séparément chaque domaine pour ne pas confondre les fenêtres `200` avec une reprise.
+
+— NEWBUY
+
+## NEWBUY — sites voisins rétablis; panne resserrée sur TAKATAK/V1 — 2026-11-23 14:16 EST
+
+**AVANT :** relecture fraîche de `main` (`cd6e2725241c4b54e51b9e3a33afff6bd75c77f5`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; le geste VPS1 reste signalé bloqué au Turnstile Contabo.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux passages indépendants à 14:16 EST confirment `on2go.ca` HTTP 200 avec 176 778 octets et `r2nette.ca` HTTP 200 avec 87 372 octets. En parallèle, `takatak.ca/api/health/ready` et l'apex restent HTTP 503 avec la page proxy `Site not available` de 3 492 octets, sans release; le sous-domaine V1 reste HTTP 503 avec `remote connection failure` (98 octets). Le timeout uniforme de 13:25 n'est donc plus l'état courant: à cet instant, l'incident actif se resserre sur TAKATAK/V1, sans preuve de cause ni de reprise durable. Aucun déploiement servi ni paiement vérifiés; aucun code, secret, DNS, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons toujours suspendus. Intervention propriétaire sur le Turnstile Contabo et geste VPS autorisé, puis série durable de HTTP 200 avec `database: ok` et release cohérente sur TAKATAK avant reprise. Website Monitoring doit conserver les états par domaine séparément.
+
+— NEWBUY
+
+## NEWBUY — timeout amont uniforme sur le chemin partagé — 2026-11-23 13:25 EST
+
+**AVANT :** relecture fraîche de `main` (`0b98ab2240424954cb30c19c4f6b7386185afab9`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; le redémarrage VPS1 reste signalé comme non effectué, bloqué par le Turnstile Contabo.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux passages indépendants à 13:25 EST ont tous renvoyé HTTP 503 avec le même corps texte de 91 octets, `upstream connect error ... connection timeout`, sur `takatak.ca/api/health/ready`, l'apex, `on2go.ca` et `r2nette.ca`. Le sous-domaine V1 répond aussi HTTP 503 avec `remote connection failure` (98 octets). Ce nouvel état uniforme remplace les réponses intermittentes `000`, la page proxy HTML de 3 492 octets et les reprises 200 observées plus tôt; il resserre le diagnostic vers un chemin amont partagé indisponible. Aucun en-tête de release, aucun déploiement servi et aucun paiement vérifiés. Aucun code, secret, DNS, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** smoke `/transfert → Lead Inbox` et activations add-ons toujours suspendus. Le propriétaire/opérateur doit franchir manuellement le Turnstile Contabo, effectuer le geste VPS autorisé, puis produire une série durable de HTTP 200 avec `database: ok` et release cohérente avant toute reprise.
+
+— NEWBUY
+
+## NEWBUY — panne partagée confirmée; r2nette rétabli — 2026-11-23 12:20 EST
+
+**AVANT :** relecture fraîche de `main` (`7eb344c57e1cd91f1fc28ea843d0d387f6bd3261`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et nouveaux messages du fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; aucun code repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux passages indépendants à 12:19–12:20 EST confirment `takatak.ca/api/health/ready` et l'apex en HTTP 503 avec la page proxy `Site not available` de 3 492 octets, sans release; le sous-domaine V1 répond aussi 503 avec échec de connexion amont. Le rayon partagé est instable: `on2go.ca` a donné `000` par expiration puis HTTP 503 `connection timeout`, tandis que `r2nette.ca` a déjà répondu HTTP 200 avec 87 372 octets sur les deux passages, corrigeant le signal précédent qui les donnait tous deux 503. `main` n'a pas bougé depuis le commit documentaire 11:25; aucun run Actions associé. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** le smoke authentifié `/transfert → Lead Inbox` et les activations add-ons restent suspendus. L'opérateur infrastructure doit stabiliser le chemin partagé et fournir une série durable de HTTP 200 avec `database: ok` et release cohérente sur TAKATAK; Website Monitoring doit continuer à distinguer panne, timeout et reprise par domaine avant toute activation.
+
+— NEWBUY
+
+## NEWBUY — oscillation V1 confirmée, reprise non durable — 2026-11-23 11:24 EST
+
+**AVANT :** relecture fraîche de `main` (`908f6fc6ed9e7302df91e0b357e99231ea16ad68`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun nouveau claim ni demande directe add-ons; aucune reprise de code.
+
+**PENDANT / APRÈS VÉRIFICATION :** le fil a fourni des preuves contradictoires mais horodatées d'une oscillation rapide: santé applicative HTTP 200 avec `database: ok` et release `216c7baf73975920759f02efd147092c87ed3277`, puis réponses vides `000`, parfois avec l'apex indisponible alors que la santé répondait encore 200. La sonde indépendante de 11:24 EST a ensuite retrouvé HTTP 503 sur `/api/health/ready` et l'apex (page proxy `Site not available`, 3 492 octets, sans en-tête de release), ainsi que HTTP 503 sur le sous-domaine V1 avec `upstream connect error ... remote connection failure`. La fenêtre 200 n'est donc pas une preuve de rétablissement durable. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** le smoke authentifié `/transfert → Lead Inbox` et les activations add-ons restent suspendus. L'opérateur infrastructure doit stabiliser application/conteneur, proxy, réseau et base, puis fournir une série durable de réponses HTTP 200 avec `database: ok` et release cohérente. Website Monitoring reste fermé jusqu'aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
+## NEWBUY — panne V1 persistante au proxy — 2026-11-23 10:18 EST
+
+**AVANT :** `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, état Actions disponible, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien relus. Aucun chantier actif repris; aucun nouveau claim add-ons.
+
+**PENDANT / APRÈS VÉRIFICATION :** deux sondes indépendantes de `https://takatak.ca/api/health/ready` et deux sondes de l’apex ont toutes répondu HTTP 503 avec la page HTML proxy `Site not available` de 3 492 octets, sans `X-Takatak-Release`. Le sous-domaine `takatak-v1.takatak.ca/api/health/ready` a aussi répondu HTTP 503 avec `upstream connect error ... remote connection failure`. Ce défaut se situe avant l’application et s’ajoute à la réponse applicative `database: unavailable` vérifiée à 09:23. `main` est `edf120847719b69dab1e52a3739637a7c1cb11c5`, commit documentaire seulement; aucun run Actions associé à ce commit. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration modifié; aucun identifiant Coolify réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** V1 reste impropre au smoke authentifié `/transfert → Lead Inbox` et à toute activation add-ons. L’opérateur infrastructure doit diagnostiquer application/conteneur, reverse proxy, réseau et base, puis rétablir une santé durablement HTTP 200 avec `database: ok` et l’en-tête de release avant reprise. Website Monitoring reste fermé jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
+## NEWBUY — V1 instable; base indisponible — 2026-11-23 09:23 EST
+
+**AVANT :** relecture fraîche de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier actif n’a été repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** les messages du fil signalaient un flap V1 entre réponses vides, HTTP 503 et HTTP 200. Une sonde indépendante de `https://takatak.ca/api/health/ready` à 09:23 EST a répondu HTTP 503 avec `x-takatak-release: 216c7baf73975920759f02efd147092c87ed3277`; le corps indique `process: ok`, `database: unavailable`, `supabase: ok`. Aucun code, secret, paiement, DNS, déploiement, activation ou configuration n’a été modifié; aucun identifiant Coolify n’a été réessayé.
+
+**BLOCAGE / PROCHAIN GESTE :** V1 n’est pas assez stable pour le smoke authentifié `/transfert → Lead Inbox` ni pour une activation add-ons. L’opérateur infrastructure doit diagnostiquer la connectivité de la base et rétablir une santé durablement HTTP 200 avant reprise. Website Monitoring reste commercialement fermé jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
+## NEWBUY — CI documentaire clos; SHA exact servi — 2026-11-22 15:16 EST
+
+**AVANT :** relecture fraîche de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier pris par un autre agent n’a été repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** la CI exacte [45059761051](https://github.com/takatakca/takatak-v1/actions/runs/45059761051) du SHA documentaire `bceeb4b3caf570ea235a77027de8884e8e319008` est réussie, y compris les gardes identité/isolement, facturation centralisée, Monitoring, build et artefact. La validation de provenance et de l’artefact immutable [45060520185](https://github.com/takatakca/takatak-v1/actions/runs/45060520185) est réussie. La réconciliation [45060520210](https://github.com/takatakca/takatak-v1/actions/runs/45060520210) est verte; l’étape d’approbation humaine pour appliquer au staging est sautée. Le staging [45060594109](https://github.com/takatakca/takatak-v1/actions/runs/45060594109) a seulement passé ses gardes et signalé la configuration de build indisponible : build, transfert, activation et santé ont tous été sautés. Coolify [45060520181](https://github.com/takatakca/takatak-v1/actions/runs/45060520181) est sauté. Le SHA exact `bceeb4b3…` est désormais prouvé servi par `/api/health/ready` HTTP 200.
+
+**GARDES / PROCHAIN GESTE :** cette clôture ne prouve aucune activation Monitoring ni aucun paiement. Aucun DNS, registrar, avis client, déploiement staging ou essai Coolify n’a été effectué par NEWBUY. Le prochain geste reste un test authentifié, tenant-scopé et contrôlé de `/transfert` vers Lead Inbox; Monitoring commercial reste fermé jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
+## NEWBUY — GUARDIAN public vert; intake active sans stockage — 2026-11-22 14:14 EST
+
+**AVANT :** relecture du `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucun chantier d’un autre agent n’a été repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** le run public [45059572328](https://github.com/takatakca/takatak-v1/actions/runs/45059572328) est réussi. Les 10 tests de décision sont verts. Le smoke réel confirme sans blocage : santé minimale, base et Supabase à `ok`, certificats apex/www approuvés, connexion HTTP 200, tableau anonyme renvoyé vers la connexion, www HTTP 200 et release applicative exacte servie `7857e56422bc8db2eb8d7416d2600d08252a5cd2`. La sonde vide du Lead Intake a été refusée HTTP 403, ce qui prouve l’intake actif sans créer ni stocker de demande. Un seul écart non bloquant P2 demeure : `login?lang=fr` affiche encore « Welcome back ».
+
+**GARDES / PROCHAIN GESTE :** aucun déploiement, paiement, DNS, registrar, avis client, activation Monitoring ou essai Coolify n’a été effectué. Le prochain geste reste un test authentifié, tenant-scopé et contrôlé de `/transfert` vers Lead Inbox; l’activation commerciale du Monitoring reste fermée jusqu’aux preuves worker/alertes/SMTP/watchdog/Stripe.
+
+— NEWBUY
+
+## NEWBUY — Transfert géré servi; aperçu 30 jours fusionné mais non servi — 2026-11-22 06:22 EST
+
+**AVANT :** relecture du `main` courant, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Les PR #386/#387 appartenaient déjà à GPT-6; aucune implémentation n’a été reprise ni dupliquée.
+
+**PENDANT / APRÈS VÉRIFICATION :** `main` est `7857e56422bc8db2eb8d7416d2600d08252a5cd2` après #386 puis #387. La CI exacte [45016012755](https://github.com/takatakca/takatak-v1/actions/runs/45016012755) et l’artefact [45016789720](https://github.com/takatakca/takatak-v1/actions/runs/45016789720) sont réussis. La réconciliation [45016789676](https://github.com/takatakca/takatak-v1/actions/runs/45016789676) confirme `RECONCILE_MODE=audit`, 0 migration approuvée en attente et aucune mutation. Le staging [45016860222](https://github.com/takatakca/takatak-v1/actions/runs/45016860222) est un succès de garde seulement : configuration de build indisponible; build, transfert, activation et santé sautés. Coolify [45016789600](https://github.com/takatakca/takatak-v1/actions/runs/45016789600) est sauté. Le run staging rouge [45016015234](https://github.com/takatakca/takatak-v1/actions/runs/45016015234) est un refus protecteur d’une release périmée `0a2199f7` après passage de `main` à `7857e564`; aucune activation n’a été tentée.
+
+**PREUVE PUBLIQUE :** cinq sondes cache-bustées de `/api/health/ready` répondent 200 avec les contrôles à `ok` et `x-takatak-release: 0a2199f7f9ad0d19dc8be92bc23bde480512a351`. La PR #386 est donc servie : `/transfert` affiche la date de renouvellement déclarée à confirmer, la conservation des courriels par défaut, et le service accompagné proposé à 500 $ CAD + taxes sous devis écrit, sans paiement immédiat. Le code #387 est fusionné et vert mais le SHA public reste antérieur; aucun aperçu opérateur n’est déclaré servi ni publié. `/monitoring` reste en préparation avec inscription payante fermée; la page domaines redirige l’anonyme vers la connexion.
+
+**BLOCAGE / PROCHAIN GESTE :** prouver le SHA `7857e564` servi par une voie autorisée, puis effectuer un test `/transfert` → Lead Inbox explicitement autorisé et tenant-scopé. Avant tout avis 30 jours, vérifier les dates registraire actuelles, le client/domaine, l’approbation du propriétaire et la préservation du site et du courriel. Aucun paiement, DNS, registrar, avis client, drapeau ou essai d’identifiants Coolify n’a été effectué.
+
+— NEWBUY
+
+## NEWBUY — SHA applicatif courant prouvé servi; registre documentaire à nouveau en avance — 2026-11-22 05:25 EST
+
+**AVANT :** relecture de `main`, `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau de coordination, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. Aucune demande add-ons adressée à NEWBUY et aucun chantier d’un autre agent repris.
+
+**PENDANT / APRÈS VÉRIFICATION :** cinq sondes publiques cache-bustées puis un contrôle final de `/api/health/ready` ont répondu HTTP 200 avec `process`, `database` et `supabase` à `ok`, et `x-takatak-release: 02dbcef52269954abe0e9bd3a363f1b5da05e868`. Ce SHA était le `main` applicatif exact avant la présente note; la production du panneau de renouvellement fusionné est donc prouvée, mais son drapeau reste fermé et aucun smoke authentifié tenant-scopé n’a été réalisé. La présente consignation documentaire avance ensuite GitHub sans changement applicatif; elle ne doit pas être interprétée comme une nouvelle release à déployer.
+
+**GARDES :** `/dashboard/web-hosting/domains` redirige toujours l’anonyme vers `/login?next=%2Fdashboard%2Fweb-hosting%2Fdomains`. `/monitoring` conserve « Preparing for launch » et « Paid enrollment opens after the service is activated ». Le dernier scheduler 44997029321 est vert mais son journal dit que `CRON_SECRET` est absent : scheduler désactivé, aucune route appelée. Aucun paiement, renouvellement, DNS, courriel, SMS, import historique, activation de drapeau ou tentative Coolify n’a été effectué.
+
+**BLOCAGE / PROCHAIN GESTE :** exécuter un smoke authentifié sur tenant contrôlé pour les dates registraire, l’isolement et la fermeture par défaut; obtenir séparément les preuves worker/alertes/SMTP/watchdog/Stripe avant toute activation commerciale du Monitoring.
+
+— NEWBUY
+
+## NEWBUY — Renouvellements de domaines en lecture seule fusionnés, production non déployée — 2026-11-21 16:23 EST
+
+**AVANT :** état relu sur GitHub (`main`, `AGENTS.md`, `WORKLOG.md`, PR #243, PR #383/#384, Actions et tableau de coordination), maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil Gmail quotidien. La PR #383 reste au même agent et n’a pas été reprise.
+
+**PENDANT / APRÈS VÉRIFICATION :** la PR #384 est fusionnée sous `380b0d00c50b67a845b2cdb841b5a3b078e5f7b5`. Elle ajoute sur la page authentifiée des domaines un panneau 0–30 jours en lecture seule, limité aux enregistrements réels du tenant et fermé par défaut derrière le drapeau serveur `TAKATAK_DOMAIN_RENEWAL_NOTICES_ENABLED`. Les données fictives, absentes, expirées, annulées, non reliées ou en doublon échouent fermées. Aucun import des 42 domaines historiques, paiement, renouvellement, courriel, SMS, DNS, appel registraire ou injection sur site client n’est effectué.
+
+**PREUVES :** CI exact-main [44947496772](https://github.com/takatakca/takatak-v1/actions/runs/44947496772) réussie, y compris identité/isolement, facturation, Monitoring, build et artefact; validation d’artefact [44948403446](https://github.com/takatakca/takatak-v1/actions/runs/44948403446) réussie. La réconciliation [44948403457](https://github.com/takatakca/takatak-v1/actions/runs/44948403457) était en mode audit : 0 migration approuvée en attente, aucune application humaine. Le workflow staging [44948466244](https://github.com/takatakca/takatak-v1/actions/runs/44948466244) a seulement passé ses gardes : approbation de migration manquante, aucun artefact construit, aucune activation; production explicitement intacte. Le workflow Coolify [44948403516](https://github.com/takatakca/takatak-v1/actions/runs/44948403516) est sauté.
+
+**PREUVE PUBLIQUE :** `/api/health/ready` répond 200 mais sert encore `x-takatak-release: 595c32f7e7f45fec008c610ffef2c8ce615b0d48`, donc #384 n’est pas prouvée déployée. `/dashboard/web-hosting/domains` refuse l’anonyme par redirection vers la connexion. `/monitoring` répond 200 et conserve « Preparing for launch » / inscription payante après activation.
+
+**BLOCAGE / PROCHAIN GESTE :** aucune activation du panneau ni du Monitoring payant. Un opérateur autorisé doit d’abord obtenir une chaîne de déploiement approuvée, prouver le SHA servi exact, puis comparer dans des comptes contrôlés les dates registraire réelles et l’isolement tenant. Ensuite seulement, activer le drapeau sur liste autorisée et faire un smoke authentifié. Les preuves worker/alertes/SMTP/watchdog/Stripe restent requises avant l’ouverture payante de Monitoring. Aucun identifiant Coolify rejeté n’a été réessayé.
+
+— **NEWBUY**
+
 # 00 — NEWBUY — TAKATAK ecosystem add-ons
 
 Signed: **NEWBUY** @ ChatGPT Work · 2026-11-02.

@@ -1,4 +1,5 @@
 import { DomainsManager } from "@/components/web-hosting/domains-manager";
+import { getDomainRenewalNotices } from "@/lib/web-hosting/domain-renewal-notices";
 import { syncUpmindDomainsForSession } from "@/lib/integrations/upmind/upmind-domain-sync";
 import {
   getDnsRecordsData,
@@ -37,9 +38,17 @@ export default async function DomainsPage() {
         : "No Upmind domains yet. Demo placeholders are hidden until a real registration lands."
       : domains.sourceLabel;
 
+  // A server-side opt-in: no notices from demo/fallback data or unverified imports.
+  // This read-only card is not the website-wide renewal banner or notification job.
+  const renewalNotices =
+    process.env.TAKATAK_DOMAIN_RENEWAL_NOTICES_ENABLED === "true"
+      ? getDomainRenewalNotices({ source: domains.source, domains: liveDomains })
+      : [];
+
   return (
     <DomainsManager
       domains={liveDomains}
+      renewalNotices={renewalNotices}
       hosting={hosting.hostingServices.filter(
         (row) => !row.primaryDomain || liveNames.has(row.primaryDomain),
       )}
