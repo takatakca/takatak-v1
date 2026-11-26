@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, CreditCard, Loader2 } from "lucide-react";
 
@@ -81,16 +82,17 @@ export function HockeyMembershipActions({
   if (!checkoutLive) {
     return (
       <div>
-        <button
-          type="button"
-          disabled
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-200 px-5 text-sm font-semibold text-slate-500"
+        <Link
+          href="/dashboard/support?demande=hockey-membership"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-900 px-5 text-sm font-semibold text-white hover:bg-slate-800"
         >
-          Checkout activation pending
-        </button>
+          S’inscrire par l’équipe · Join through the team
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
         <p className="mt-2 max-w-lg text-xs leading-5 text-slate-500">
-          TAKATAK will enable self-serve checkout only after the live Stripe
-          weekly Price and dedicated webhook are configured and verified.
+          Le paiement en ligne s’ouvre dès que le prix Stripe hebdomadaire et son webhook sont vérifiés ; d’ici là,
+          l’équipe confirme votre inscription et vous envoie le lien de paiement · Online checkout opens once the weekly
+          Stripe price and its webhook are verified; until then the team confirms your membership and sends the payment link.
         </p>
       </div>
     );

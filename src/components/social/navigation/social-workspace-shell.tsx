@@ -180,9 +180,9 @@ const TOP_NAVIGATION = [
   },
   {
     label: 'Ads',
-    href: '/dashboard/social/campaigns',
+    href: '/dashboard/growth/ads-manager',
     icon: Megaphone,
-    enabled: false,
+    enabled: true,
   },
 ] as const;
 
