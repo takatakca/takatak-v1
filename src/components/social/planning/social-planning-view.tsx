@@ -1,22 +1,20 @@
 "use client";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import {
   CalendarDays,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronsLeft,
   Clock,
   Filter,
   Gem,
-  Image as ImageIcon,
-  MoreVertical,
   Plus,
   Search,
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -34,18 +32,35 @@ import {
   type PlanningPost,
 } from "@/lib/social/planning/planning-types";
 
+const POST_STATUS_LABELS_FR: Record<string, string> = {
+  draft: "Brouillon",
+  pending_approval: "À approuver",
+  approved: "Approuvée",
+  scheduled: "Planifiée",
+  published: "Publiée",
+  failed: "Échec",
+  blocked_by_plan: "Bloquée par le forfait",
+};
+
+function postStatusLabel(status: string, fr: boolean): string {
+  return (fr ? POST_STATUS_LABELS_FR[status] : POST_STATUS_LABELS[status]) ?? status;
+}
+
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const ROW_H = 60;
 const TIME_COL = 72;
 
+// Only views that work today: the calendar, the scheduled/published list and
+// the drafts library. (Autolists, flows and a deleted-posts bin do not exist yet,
+// so they are not shown as tabs.)
 const TABS = [
-  { id: "calendar", label: "Calendar", premium: false },
-  { id: "list", label: "Scheduled & published", premium: false },
-  { id: "library", label: "Posts library", premium: true },
-  { id: "autolists", label: "Autolists", premium: false },
-  { id: "deleted", label: "Deleted posts", premium: false },
-  { id: "flows", label: "Flows", premium: true, badge: "New" },
+  { id: "calendar", label: "Calendar", labelFr: "Calendrier", premium: false },
+  { id: "list", label: "Scheduled & published", labelFr: "Planifiées et publiées", premium: false },
+  { id: "library", label: "Posts library", labelFr: "Bibliothèque", premium: true },
 ] as const;
+
+/** Where a new post is written today: the AI Studio content generator, then Saved › send to a social account. */
+const CREATE_POST_HREF = "/dashboard/ai-studio/content-generator";
 
 type TabId = (typeof TABS)[number]["id"];
 
@@ -88,7 +103,8 @@ function sameDay(a: Date, b: Date): boolean {
   );
 }
 
-function formatHour(hour: number): string {
+function formatHour(hour: number, fr = false): string {
+  if (fr) return `${String(hour).padStart(2, "0")} h`;
   if (hour === 0) {
     return "12:00am";
   }
@@ -101,17 +117,18 @@ function formatHour(hour: number): string {
   return `${hour - 12}:00pm`;
 }
 
-function formatRange(start: Date, end: Date): string {
+function formatRange(start: Date, end: Date, fr = false): string {
   const opts: Intl.DateTimeFormatOptions = {
     month: "short",
     day: "numeric",
     year: "numeric",
   };
-  return `${start.toLocaleDateString("en-US", opts)} - ${end.toLocaleDateString("en-US", opts)}`;
+  const locale = fr ? "fr-CA" : "en-US";
+  return `${start.toLocaleDateString(locale, opts)} - ${end.toLocaleDateString(locale, opts)}`;
 }
 
-function formatClock(now: Date, timeZone: string): string {
-  const time = now.toLocaleTimeString("en-US", {
+function formatClock(now: Date, timeZone: string, fr = false): string {
+  const time = now.toLocaleTimeString(fr ? "fr-CA" : "en-US", {
     timeZone,
     hour: "numeric",
     minute: "2-digit",
@@ -143,37 +160,6 @@ function PremiumMark() {
   );
 }
 
-/**
- * Lavender best-times wash from the Planning calendar screenshot.
- * Early morning stays near-white; color builds through late morning.
- * Weekends stay a cooler gray-lavender.
- */
-function heatColor(dayIndex: number, hour: number): string {
-  const weekend = dayIndex === 0 || dayIndex === 6;
-  if (hour < 5) {
-    return weekend ? "#f1f2f7" : "#fbfaff";
-  }
-  if (hour < 7) {
-    return weekend ? "#eceef6" : "#f5f8ff";
-  }
-  if (hour < 9) {
-    return weekend ? "#e4e7f4" : "#e8edff";
-  }
-  if (hour < 11) {
-    return weekend ? "#d5daf0" : "#dce3ff";
-  }
-  if (hour < 14) {
-    return weekend ? "#c4ccfa" : "#ccd3ff";
-  }
-  if (hour < 18) {
-    return weekend ? "#c4ccfa" : "#d7ddff";
-  }
-  if (hour < 21) {
-    return weekend ? "#d9dcf0" : "#e4e8fb";
-  }
-  return weekend ? "#eef0f6" : "#f6f7fc";
-}
-
 export function SocialPlanningView({
   data,
   canCreate,
@@ -183,6 +169,8 @@ export function SocialPlanningView({
   canCreate: boolean;
   canPublish?: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
+  const router = useRouter();
   const searchParams = useSearchParams();
   const billingHref = withSocialPreview(SOCIAL_BILLING_HREF, searchParams);
   const gridRef = useRef<HTMLDivElement>(null);
@@ -194,7 +182,6 @@ export function SocialPlanningView({
   );
   const [platformFilter, setPlatformFilter] = useState("any");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [bestTimes, setBestTimes] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [now, setNow] = useState(() => new Date());
   const [timeZone, setTimeZone] = useState("UTC");
@@ -224,10 +211,6 @@ export function SocialPlanningView({
   const connected = data.connectedPlatforms.map((platform) =>
     platform.toLowerCase(),
   );
-  const bestTimesPlatform =
-    connected.find((platform) => platform === "facebook") ??
-    connected[0] ??
-    "facebook";
 
   const visiblePosts = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -266,10 +249,10 @@ export function SocialPlanningView({
 
   function openCreate() {
     if (!canCreate) {
-      setNotice("You need permission to create posts in this workspace.");
+      setNotice(fr ? "Vous n’avez pas la permission de créer des publications dans cet espace." : "You need permission to create posts in this workspace.");
       return;
     }
-    setNotice("The post composer is not available yet. Nothing was scheduled.");
+    router.push(CREATE_POST_HREF);
   }
 
   const showLimitBanner = data.monthlyPostAllowance !== null;
@@ -285,7 +268,7 @@ export function SocialPlanningView({
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#eaeeef] px-[50px] py-[30px]">
       <div className="shrink-0 border-b border-[#e4e7ec] bg-[#eaeeef]">
         <div className="flex items-center justify-between gap-6">
-          <nav className="-mb-px flex flex-wrap gap-8" aria-label="Planning">
+          <nav className="-mb-px flex flex-wrap gap-8" aria-label={fr ? "Planification" : "Planning"}>
             {TABS.map((item) => {
               const active = tab === item.id;
               return (
@@ -299,12 +282,7 @@ export function SocialPlanningView({
                       : "border-transparent text-[#6b7280] hover:text-[#1d1d1f]"
                   }`}
                 >
-                  {item.label}
-                  {"badge" in item && item.badge ? (
-                    <span className="rounded-full bg-[#22c55e] px-1.5 py-px text-[9px] font-semibold leading-4 text-white">
-                      {item.badge}
-                    </span>
-                  ) : null}
+                  {fr ? item.labelFr : item.label}
                   {item.premium ? <PremiumMark /> : null}
                 </button>
               );
@@ -312,7 +290,7 @@ export function SocialPlanningView({
           </nav>
           <p className="hidden items-center gap-1 text-[12px] text-[#6b7280] sm:inline-flex">
             <Clock className="h-3.5 w-3.5" />
-            {formatClock(now, timeZone)}
+            {formatClock(now, timeZone, fr)}
             <ChevronDown className="h-3 w-3" />
           </p>
         </div>
@@ -340,16 +318,16 @@ export function SocialPlanningView({
                 </span>
                 <div className="flex flex-col gap-2">
                   <p className="text-[18px] font-semibold leading-5 text-[#1d1d1f]">
-                    Do you need a higher plan?
+                    {fr ? "Besoin d’un forfait supérieur ?" : "Do you need a higher plan?"}
                   </p>
                   <p className="text-[15px] leading-5 text-[#6b7280]">
-                    You have posted{" "}
+                    {fr ? "Vous avez publié " : "You have posted "}
                     <span className="font-semibold text-[#1d1d1f]">
-                      {data.postsUsedThisMonth} out of your{" "}
-                      {data.monthlyPostAllowance}
+                      {data.postsUsedThisMonth} {fr ? "sur" : "out of your"} {data.monthlyPostAllowance}
                     </span>{" "}
-                    available posts in your plan this month. Upgrade your plan
-                    to increase the limit.
+                    {fr
+                      ? "publications permises par votre forfait ce mois-ci. Passez à un forfait supérieur pour augmenter la limite."
+                      : "available posts in your plan this month. Upgrade your plan to increase the limit."}
                   </p>
                 </div>
               </div>
@@ -357,7 +335,7 @@ export function SocialPlanningView({
                 href={billingHref}
                 className="inline-flex h-8 shrink-0 items-center justify-center rounded-md bg-[#2a1728] px-3 text-[13px] font-semibold text-[#dfff32]"
               >
-                Upgrade your plan
+                {fr ? "Changer de forfait" : "Upgrade your plan"}
               </Link>
             </div>
           </aside>
@@ -368,13 +346,13 @@ export function SocialPlanningView({
             <div 
               className="mb-6 flex w-full flex-nowrap items-center gap-2.5">
               <label className="relative min-w-0 flex-1">
-                <span className="sr-only">Search posts</span>
+                <span className="sr-only">{fr ? "Chercher des publications" : "Search posts"}</span>
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search"
+                  placeholder={fr ? "Chercher" : "Search"}
                   className="h-11 w-full rounded-lg border border-[#e3e6ea] bg-white py-0 pl-8 pr-2.5 text-[14.5px] outline-none placeholder:text-slate-400 focus:border-[#4b8bf5]"
                 />
               </label>
@@ -386,13 +364,13 @@ export function SocialPlanningView({
                   isThisWeek ? "font-medium" : "text-slate-600"
                 }`}
               >
-                This week
+                {fr ? "Cette semaine" : "This week"}
               </button>
 
               <div className="flex h-11 items-center overflow-hidden rounded-lg border border-[#e3e6ea] bg-white gap-5">
                 <button
                   type="button"
-                  aria-label="Previous week"
+                  aria-label={fr ? "Semaine précédente" : "Previous week"}
                   onClick={() => setWeekStart((current) => addDays(current, -7))}
                   className="flex h-11 w-10 border-r-1 items-center justify-center text-slate-500 hover:bg-[#fafbfc] hover:text-[#1d1d1f]"
                 >
@@ -400,12 +378,12 @@ export function SocialPlanningView({
                 </button>
                 <p className="inline-flex h-11 items-center justify-center gap-1 px-2 text-[14.5px] text-[#1d1d1f]">
                   <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
-                  {formatRange(weekStart, weekEnd)}
+                  {formatRange(weekStart, weekEnd, fr)}
                   <ChevronDown className="h-3 w-3 text-slate-400" />
                 </p>
                 <button
                   type="button"
-                  aria-label="Next week"
+                  aria-label={fr ? "Semaine suivante" : "Next week"}
                   onClick={() => setWeekStart((current) => addDays(current, 7))}
                   className="flex h-11 w-10 border-l-1 items-center justify-center text-slate-500 hover:bg-[#fafbfc] hover:text-[#1d1d1f]"
                 >
@@ -416,9 +394,9 @@ export function SocialPlanningView({
               <div className="relative flex items-center">
                 <button
                   type="button"
-                  aria-label="Filter by network"
+                  aria-label={fr ? "Filtrer par réseau" : "Filter by network"}
                   onClick={() => setFilterOpen((open) => !open)}
-                  className={`${iconBox} py-5 rounded-r-none ${
+                  className={`${iconBox} py-5 ${
                     platformFilter !== "any" ? "border-slate-300" : ""
                   }`}
                 >
@@ -434,7 +412,7 @@ export function SocialPlanningView({
                       }}
                       className="block w-full px-3 py-1.5 text-left text-[13px] hover:bg-slate-50"
                     >
-                      Any network
+                      {fr ? "Tous les réseaux" : "Any network"}
                     </button>
                     {connected.map((platform) => (
                       <button
@@ -458,64 +436,17 @@ export function SocialPlanningView({
                   </div>
                 ) : null}
 
-                <button
-                  type="button"
-                  aria-label="More"
-                  className={`${iconBox} h-11 rounded-l-none`}
-                >
-                  <MoreVertical className="h-3.5 w-3.5 " />
-                </button>
               </div>
 
 
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setBestTimes((on) => !on)}
-                  className={`${box} gap-2 px-5 justify-center text`}
-                >
-                  {asPlatform(bestTimesPlatform) ? (
-                    <SocialPlatformIcon
-                      platform={asPlatform(bestTimesPlatform)!}
-                    />
-                  ) : null}
-                  Best times
-                  <ChevronDown className="h-3 w-3 text-slate-400" />
-                </button>
-
-                <button
-                  type="button"
-                  aria-label="Media library"
-                  onClick={() =>
-                    setNotice("The media library is not available yet.")
-                  }
-                  className={`${iconBox} h-11 w-11`}
-                >
-                  <ImageIcon className="h-5 w-5" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setNotice(
-                      "Custom calendar views are not available yet. This week grid is the live view.",
-                    )
-                  }
-                  className={`${box} gap-1 px-5`}
-                >
-                  <ChevronsLeft className="h-3.5 w-3.5 text-slate-400" />
-                  Create view
-                  <PremiumMark />
-                  <ChevronDown className="h-3 w-3 text-slate-400" />
-                </button>
-
-                <button
-                  type="button"
                   onClick={openCreate}
                   className="inline-flex h-9 items-center gap-1 rounded-lg bg-[#2a1728] px-7 text-[13px] font-semibold text-[#dfff32] hover:bg-[#3b2438]"
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  Create post
+                  {fr ? "Créer une publication" : "Create post"}
                 </button>
               </div>
             </div>
@@ -545,7 +476,7 @@ export function SocialPlanningView({
                       <span className="font-medium text-[#1d1d1f]">
                         {day.getDate()}
                       </span>{" "}
-                      {day.toLocaleDateString("en-US", { weekday: "long" })}
+                      {day.toLocaleDateString(fr ? "fr-CA" : "en-US", { weekday: "long" })}
                     </div>
                   );
                 })}
@@ -573,13 +504,11 @@ export function SocialPlanningView({
                           lineHeight: `${ROW_H}px`,
                         }}
                       >
-                        {formatHour(hour)}
+                        {formatHour(hour, fr)}
                       </div>
-                      {weekDays.map((day, dayIndex) => {
+                      {weekDays.map((day) => {
                         const cellPosts = postsInCell(day, hour);
-                        const fill = bestTimes
-                          ? heatColor(dayIndex, hour)
-                          : "#ffffff";
+                        const fill = "#ffffff";
                         return (
                           <div
                             key={`${day.toISOString()}-${hour}`}
@@ -630,36 +559,24 @@ export function SocialPlanningView({
         <div className="min-h-0 flex-1 overflow-y-auto">
           <PlanningList
             posts={library}
-            empty="No drafts or unscheduled posts in the library yet."
+            empty={fr ? "Aucun brouillon ni publication non planifiée pour l’instant." : "No drafts or unscheduled posts in the library yet."}
           />
         </div>
-      ) : tab === "deleted" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <EmptyPanel text="Deleted posts are not stored yet, so this list is empty." />
-        </div>
-      ) : tab === "autolists" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <EmptyPanel text="Autolists are not available yet." />
-        </div>
-      ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <EmptyPanel text="Flows are not available yet." />
-        </div>
-      )}
+      ) : null}
       </div>
 
       {notice ? (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/35 p-4">
           <button
             type="button"
-            aria-label="Close"
+            aria-label={fr ? "Fermer" : "Close"}
             className="absolute inset-0 cursor-default"
             onClick={() => setNotice(null)}
           />
           <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.28)]">
             <button
               type="button"
-              aria-label="Close"
+              aria-label={fr ? "Fermer" : "Close"}
               onClick={() => setNotice(null)}
               className="absolute right-3 top-3 rounded-full p-1.5 text-slate-500 hover:bg-slate-100"
             >
@@ -682,23 +599,24 @@ export function SocialPlanningView({
   );
 }
 
-function chipMarker(post: PlanningPost): { symbol: string; className: string; title: string } | null {
+function chipMarker(post: PlanningPost, fr: boolean): { symbol: string; className: string; title: string } | null {
   const state = post.publication?.state ?? null;
   if (post.status === "published" || state === "confirmed") {
-    return { symbol: "✓", className: "text-emerald-600", title: "Published (verified)" };
+    return { symbol: "✓", className: "text-emerald-600", title: fr ? "Publiée (vérifiée)" : "Published (verified)" };
   }
   if (post.status === "failed" || state === "failed" || state === "needs_reconnect") {
-    return { symbol: "!", className: "text-rose-600", title: "Publication failed" };
+    return { symbol: "!", className: "text-rose-600", title: fr ? "Échec de la publication" : "Publication failed" };
   }
   if (state === "uncertain" || state === "sending") {
-    return { symbol: "…", className: "text-amber-600", title: "Publishing / awaiting verification" };
+    return { symbol: "…", className: "text-amber-600", title: fr ? "Publication en cours ou en attente de vérification" : "Publishing / awaiting verification" };
   }
   return null;
 }
 
 function CalendarPostChip({ post }: { post: PlanningPost }) {
+  const fr = useDashboardLanguage() === "fr";
   const platform = asPlatform(post.platform);
-  const marker = chipMarker(post);
+  const marker = chipMarker(post, fr);
   return (
     <div className="group/post relative mb-0.5">
       <div className="flex cursor-default items-center gap-1 rounded-md bg-white/90 px-1.5 py-1 shadow-sm">
@@ -706,7 +624,7 @@ function CalendarPostChip({ post }: { post: PlanningPost }) {
           <SocialPlatformIcon platform={platform} className="h-3 w-3" />
         ) : null}
         <span className="truncate text-[11px] text-[#1d1d1f]">
-          {post.caption || "Untitled post"}
+          {post.caption || (fr ? "Publication sans titre" : "Untitled post")}
         </span>
         {marker ? (
           <span className={`ml-auto shrink-0 text-[11px] font-bold ${marker.className}`} title={marker.title} aria-label={marker.title}>
@@ -718,7 +636,7 @@ function CalendarPostChip({ post }: { post: PlanningPost }) {
         role="tooltip"
         className="pointer-events-none absolute bottom-[calc(100%+6px)] left-0 z-20 hidden max-w-[240px] rounded-lg bg-white px-3 py-2 text-left text-[12px] leading-5 text-[#1d1d1f] shadow-[0_8px_24px_rgba(15,23,42,0.16)] group-hover/post:block"
       >
-        {post.caption || "Untitled post"}
+        {post.caption || (fr ? "Publication sans titre" : "Untitled post")}
       </span>
     </div>
   );
@@ -731,6 +649,7 @@ function PlanningList({
   posts: PlanningPost[];
   empty: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   if (posts.length === 0) {
     return <EmptyPanel text={empty} />;
   }
@@ -747,20 +666,20 @@ function PlanningList({
               <span className="w-4" />
             )}
             <p className="min-w-0 flex-1 truncate text-sm text-[#1d1d1f]">
-              {post.caption || "Untitled post"}
+              {post.caption || (fr ? "Publication sans titre" : "Untitled post")}
             </p>
             <span className="shrink-0 text-xs text-slate-400">
-              {POST_STATUS_LABELS[post.status] ?? post.status}
+              {postStatusLabel(post.status, fr)}
             </span>
             <span className="shrink-0 text-xs text-slate-400">
               {post.scheduledAt
-                ? new Date(post.scheduledAt).toLocaleString("en-US", {
+                ? new Date(post.scheduledAt).toLocaleString(fr ? "fr-CA" : "en-US", {
                     month: "short",
                     day: "numeric",
                     hour: "numeric",
                     minute: "2-digit",
                   })
-                : "Unscheduled"}
+                : fr ? "Non planifiée" : "Unscheduled"}
             </span>
           </li>
         );
@@ -769,9 +688,9 @@ function PlanningList({
   );
 }
 
-function formatWhen(value: string | null): string {
-  if (!value) return "Unscheduled";
-  return new Date(value).toLocaleString("en-US", {
+function formatWhen(value: string | null, fr = false): string {
+  if (!value) return fr ? "Non planifiée" : "Unscheduled";
+  return new Date(value).toLocaleString(fr ? "fr-CA" : "en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -788,18 +707,35 @@ function ScheduledPublishedPanel({
   now: Date;
   canPublish: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const groups = groupPlanningPosts(posts, now);
   const total = groups.upcoming.length + groups.attention.length + groups.published.length + groups.inProgress.length;
   if (total === 0) {
     return (
-      <EmptyPanel text="No scheduled or published posts yet. Approve a post, then choose Publish now or Schedule." />
+      <EmptyPanel
+        text={
+          fr
+            ? "Aucune publication planifiée ou publiée pour l’instant. Approuvez une publication, puis choisissez Publier maintenant ou Planifier."
+            : "No scheduled or published posts yet. Approve a post, then choose Publish now or Schedule."
+        }
+      />
     );
   }
   const sections: Array<{ key: string; title: string; hint: string; posts: PlanningPost[] }> = [
-    { key: "attention", title: "Needs attention", hint: "Failed, waiting for a reconnection, or awaiting verification.", posts: groups.attention },
-    { key: "inProgress", title: "Publishing", hint: "Scheduled time reached; the worker is delivering or verifying.", posts: groups.inProgress },
-    { key: "upcoming", title: "Upcoming", hint: "Scheduled posts, earliest first.", posts: groups.upcoming },
-    { key: "published", title: "Published", hint: "Verified with the provider's post id.", posts: groups.published },
+    {
+      key: "attention",
+      title: fr ? "À corriger" : "Needs attention",
+      hint: fr ? "En échec, en attente d’une reconnexion ou d’une vérification." : "Failed, waiting for a reconnection, or awaiting verification.",
+      posts: groups.attention,
+    },
+    {
+      key: "inProgress",
+      title: fr ? "Publication en cours" : "Publishing",
+      hint: fr ? "L’heure prévue est passée ; l’envoi ou la vérification est en cours." : "Scheduled time reached; the worker is delivering or verifying.",
+      posts: groups.inProgress,
+    },
+    { key: "upcoming", title: fr ? "À venir" : "Upcoming", hint: fr ? "Publications planifiées, les plus proches d’abord." : "Scheduled posts, earliest first.", posts: groups.upcoming },
+    { key: "published", title: fr ? "Publiées" : "Published", hint: fr ? "Vérifiées auprès du réseau." : "Verified with the provider's post id.", posts: groups.published },
   ];
   return (
     <div className="space-y-6 bg-white px-1 py-3">
@@ -825,14 +761,14 @@ function ScheduledPublishedPanel({
                         <span className="w-4 shrink-0" />
                       )}
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm text-[#1d1d1f]">{post.caption || "Untitled post"}</p>
+                        <p className="truncate text-sm text-[#1d1d1f]">{post.caption || (fr ? "Publication sans titre" : "Untitled post")}</p>
                         <p className="mt-0.5 text-xs text-slate-400">
-                          {POST_STATUS_LABELS[post.status] ?? post.status}
+                          {postStatusLabel(post.status, fr)}
                           {" · "}
                           {post.status === "published" && post.publishedAt
-                            ? `Published ${formatWhen(post.publishedAt)}`
-                            : formatWhen(post.scheduledAt)}
-                          {state && state !== "confirmed" ? ` · ${PUBLICATION_STATE_LABELS[state].en}` : ""}
+                            ? `${fr ? "Publiée le" : "Published"} ${formatWhen(post.publishedAt, fr)}`
+                            : formatWhen(post.scheduledAt, fr)}
+                          {state && state !== "confirmed" ? ` · ${PUBLICATION_STATE_LABELS[state][fr ? "fr" : "en"]}` : ""}
                           {post.publication?.errorMessage ? ` — ${post.publication.errorMessage}` : ""}
                         </p>
                         {post.publication?.permalinkUrl ? (
@@ -842,7 +778,7 @@ function ScheduledPublishedPanel({
                             rel="noreferrer"
                             className="mt-1 inline-block text-xs font-medium text-[#0a1f44] underline"
                           >
-                            Open on {platform ?? post.platform}
+                            {fr ? "Ouvrir sur" : "Open on"} {platform ?? post.platform}
                           </a>
                         ) : null}
                         {canPublish && section.key !== "published" ? (
