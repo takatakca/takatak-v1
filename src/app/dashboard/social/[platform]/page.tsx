@@ -44,6 +44,7 @@ import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
 import { SOCIAL_BILLING_HREF } from "@/lib/billing/social/billing-banner-policy";
 import type { InstagramLiveStats } from "@/lib/social/instagram-live-stats";
 import { loadInstagramLiveStats } from "@/lib/social/providers/instagram-live-fetch";
+import { loadThreadsLiveStats } from "@/lib/social/providers/threads-live-fetch";
 
 const SOCIAL_PLATFORMS = {
   instagram: {
@@ -282,6 +283,7 @@ export default async function SocialPlatformPage({
     let facebookPageSelected = false;
     let facebookNeedsPage = false;
     let instagramLinkedViaFacebook = false;
+    let threadsLive: InstagramLiveStats | null = null;
 
     try {
       const facebook = await resolveCanonicalFacebookDashboard({
@@ -328,6 +330,14 @@ export default async function SocialPlatformPage({
         connectedLabel = threads.accountName;
         profileImageUrl = toAccountPictureSrc(threads.socialAccountId);
         connectedVia = threads.source;
+        try {
+          threadsLive = await loadThreadsLiveStats({
+            clientId: access.activeClientId,
+            socialAccountId: threads.socialAccountId,
+          });
+        } catch {
+          console.error("[social-threads] Live Threads numbers could not be read");
+        }
       }
     } catch (error) {
       console.error(
@@ -353,6 +363,7 @@ export default async function SocialPlatformPage({
         facebookPageSelected={facebookPageSelected}
         facebookNeedsPage={facebookNeedsPage}
         instagramLinkedViaFacebook={instagramLinkedViaFacebook}
+        liveStats={threadsLive}
       />
     );
   }
@@ -954,7 +965,11 @@ export default async function SocialPlatformPage({
 
     if (handle) {
       return (
-        <BlueskySubscribedDashboard handle={handle} imageUrl={profileImageUrl} />
+        <BlueskySubscribedDashboard
+          handle={handle}
+          imageUrl={profileImageUrl}
+          canManage={hasEffectivePermission(access, "manage_social_accounts")}
+        />
       );
     }
   }

@@ -10,7 +10,7 @@ import {
   LayoutDashboard,
   Search,
 } from "lucide-react";
-import Link from "next/link";
+import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import {
@@ -278,16 +278,13 @@ function CampaignList({
             <span className="absolute -right-1 -top-3 rounded-full bg-[#D9F6EA] px-2 py-0.5 text-[10px] font-medium text-[#3E8F6E]">
               New
             </span>
-            <Link
-              href="/dashboard/billing"
+            <PinToDashboardButton
               className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Add to dashboard
-              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
+              icon={<LayoutDashboard className="h-4 w-4" />}
+              badge={<span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
                 <Check className="h-2.5 w-2.5" strokeWidth={3} />
-              </span>
-            </Link>
+              </span>}
+            />
           </div>
         </div>
       </div>

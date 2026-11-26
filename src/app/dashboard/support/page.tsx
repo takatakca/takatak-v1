@@ -19,6 +19,7 @@ const PREFILLED_REQUESTS: Record<string, string> = {
   deploy: "Bonjour, je veux déployer une nouvelle version de mon site. · Hello, I want to deploy a new version of my website.",
   "hosting-upgrade": "Bonjour, je veux passer à un forfait d’hébergement supérieur. · Hello, I want to upgrade my hosting plan.",
   "site-favicon": "Bonjour, je veux changer l’icône (favicon) de mon site. · Hello, I want to change my website's favicon.",
+  "hockey-membership": "Bonjour, je veux m’inscrire à l’abonnement hockey hebdomadaire. · Hello, I want to join the weekly hockey membership.",
   diagnostics: "Bonjour, je veux un diagnostic complet de mon hébergement (journaux, sauvegardes, performance). · Hello, I want a full hosting diagnostic (logs, backups, performance).",
 };
 

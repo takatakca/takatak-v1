@@ -8,7 +8,9 @@ import {
   communityFromLive,
   competitorRow,
   csvCell,
+  normalizeBlueskyHandle,
   normalizeInstagramUsername,
+  parseBlueskyPublicAccount,
   parseBusinessDiscovery,
   dailyInteractions,
   hashtagsFromMedia,
@@ -18,7 +20,9 @@ import {
   parseInsightSeries,
   parseInsightTotals,
   parseInstagramMedia,
+  parseThreadsPosts,
   summarizeMedia,
+  withThreadsInsights,
   toCsv,
   type InstagramLiveStats,
 } from "../src/lib/social/instagram-live-stats";
@@ -252,6 +256,68 @@ check("competitor routes check permissions and keep Instagram ids server-side", 
   const lib = readFileSync("src/lib/social/providers/instagram-competitors.ts", "utf8");
   assert.match(lib, /normalizeInstagramUsername\(options\.username\)/);
   assert.match(lib, /platform: "instagram"/);
+});
+
+check("Threads posts are parsed, reposts of others skipped, videos in the video section", () => {
+  const posts = parseThreadsPosts({ data: [
+    { id: "t1", media_type: "TEXT_POST", text: "Ouvert ce soir #ndg", timestamp: "2026-11-21T20:00:00+0000", permalink: "https://www.threads.net/@resto/post/x" },
+    { id: "t2", media_type: "VIDEO", text: "Recette", timestamp: "2026-11-22T20:00:00+0000" },
+    { id: "t3", media_type: "REPOST_FACADE", timestamp: "2026-11-22T21:00:00+0000" },
+  ] });
+  assert.deepEqual(posts.map((p) => [p.id, p.kind]), [["t1", "post"], ["t2", "reel"]]);
+  assert.equal(posts[0].likes, null);
+  const full = withThreadsInsights(posts[0], { data: [
+    { name: "views", values: [{ value: 300 }] },
+    { name: "likes", values: [{ value: 12 }] },
+    { name: "replies", values: [{ value: 3 }] },
+    { name: "reposts", values: [{ value: 2 }] },
+    { name: "quotes", values: [{ value: 1 }] },
+  ] });
+  assert.equal(full.views, 300);
+  assert.equal(full.comments, 3);
+  assert.equal(full.shares, 3);
+  assert.equal(full.saved, null, "Threads has no saves: unknown, not zero");
+});
+
+check("Threads page loads its live numbers inside the workspace", () => {
+  const fetcher = readFileSync("src/lib/social/providers/threads-live-fetch.ts", "utf8");
+  assert.match(fetcher, /^import "server-only";/);
+  assert.match(fetcher, /provider !== "threads"/);
+  assert.doesNotMatch(fetcher, /console\.[a-z]+\([^)]*token/i, "the token is never logged");
+  const page = readFileSync("src/app/dashboard/social/[platform]/page.tsx", "utf8");
+  assert.match(page, /loadThreadsLiveStats\(\{\s*clientId: access\.activeClientId,/);
+  const dashboard = readFileSync("src/components/social/platforms/threads-subscribed-dashboard.tsx", "utf8");
+  assert.match(dashboard, /network="threads"/);
+});
+
+check("Bluesky competitors: handles validated, public profile and posts parsed", () => {
+  assert.equal(normalizeBlueskyHandle("@Resto.bsky.social"), "resto.bsky.social");
+  assert.equal(normalizeBlueskyHandle("cafe"), "cafe.bsky.social");
+  assert.equal(normalizeBlueskyHandle("https://bsky.app/profile/news.example.com"), "news.example.com");
+  assert.equal(normalizeBlueskyHandle("bad handle"), null);
+  const account = parseBlueskyPublicAccount(
+    { did: "did:plc:abc", handle: "cafe.bsky.social", displayName: "Café", followersCount: 500, postsCount: 80 },
+    { feed: [
+      { post: { uri: "at://did:plc:abc/app.bsky.feed.post/3kx", record: { text: "Hello", createdAt: "2026-11-20T10:00:00Z" }, likeCount: 9, replyCount: 1, repostCount: 2, quoteCount: 1 } },
+      { reason: { $type: "app.bsky.feed.defs#reasonRepost" }, post: { uri: "at://x/app.bsky.feed.post/1", record: { createdAt: "2026-11-21T10:00:00Z" } } },
+    ] },
+  );
+  assert.ok(account);
+  assert.equal(account.media.length, 1, "reposts of others are not the competitor's posts");
+  assert.equal(account.media[0].shares, 3);
+  assert.equal(account.media[0].permalink, "https://bsky.app/profile/cafe.bsky.social/post/3kx");
+  assert.equal(parseBlueskyPublicAccount({ handle: "x" }, null), null);
+  const route = readFileSync("src/app/api/social/bluesky/competitors/route.ts", "utf8");
+  assert.equal((route.match(/requireWorkspaceApiPermission\("manage_social_accounts"\)/g) ?? []).length, 2);
+});
+
+check("Add to dashboard pins the section instead of sending people to billing", () => {
+  for (const name of ["instagram", "threads", "x", "tiktok", "bluesky", "meta-ads"]) {
+    const file = readFileSync(`src/components/social/platforms/${name}-subscribed-dashboard.tsx`, "utf8");
+    assert.doesNotMatch(file, /Add to dashboard/, `${name} still has a dead Add to dashboard link`);
+  }
+  const summary = readFileSync("src/components/social/analytics/social-summary-dashboard.tsx", "utf8");
+  assert.match(summary, /<PinnedSocialSections \/>/);
 });
 
 console.log(`${passed} Instagram live checks passed`);

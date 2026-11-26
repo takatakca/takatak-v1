@@ -396,3 +396,98 @@ export function competitorRow(ref: string, account: InstagramPublicAccount, star
     engagementRate: perPost !== null && account.followers ? round((perPost / account.followers) * 100, 2) : null,
   };
 }
+
+/** Parses GET /{threads-user-id}/threads. Videos go to the video section; reposts of others are skipped. */
+export function parseThreadsPosts(body: unknown): InstagramLiveMedia[] {
+  const rows = asRecord(body).data;
+  if (!Array.isArray(rows)) return [];
+  const out: InstagramLiveMedia[] = [];
+  for (const row of rows) {
+    const item = asRecord(row);
+    const id = typeof item.id === "string" ? item.id : "";
+    const publishedAt = typeof item.timestamp === "string" ? item.timestamp : "";
+    const mediaType = typeof item.media_type === "string" ? item.media_type : "TEXT_POST";
+    if (!id || !publishedAt || Number.isNaN(Date.parse(publishedAt)) || mediaType === "REPOST_FACADE") continue;
+    out.push({
+      id,
+      caption: asText(item.text),
+      mediaType,
+      kind: mediaType === "VIDEO" ? "reel" : "post",
+      publishedAt: new Date(publishedAt).toISOString(),
+      permalink: typeof item.permalink === "string" && item.permalink.startsWith("https://") ? item.permalink : null,
+      likes: null,
+      comments: null,
+      views: null,
+      reach: null,
+      saved: null,
+      shares: null,
+    });
+  }
+  return out;
+}
+
+/** Adds GET /{threads-media-id}/insights to a post: replies count as comments, reposts + quotes + shares as shares. */
+export function withThreadsInsights(item: InstagramLiveMedia, body: unknown): InstagramLiveMedia {
+  const reposts = insightValue(body, "reposts");
+  const quotes = insightValue(body, "quotes");
+  const shares = insightValue(body, "shares");
+  const shared = [reposts, quotes, shares].filter((value): value is number => value !== null);
+  return {
+    ...item,
+    views: insightValue(body, "views"),
+    likes: insightValue(body, "likes"),
+    comments: insightValue(body, "replies"),
+    shares: shared.length ? shared.reduce((total, value) => total + value, 0) : null,
+  };
+}
+
+/** Bluesky handles are domain names; a bare name means name.bsky.social. */
+export function normalizeBlueskyHandle(value: string): string | null {
+  let clean = value.trim().replace(/^@+/, "").replace(/^https?:\/\/(www\.)?bsky\.app\/profile\//i, "").replace(/\/.*$/, "").toLowerCase();
+  if (/^[a-z0-9-]{1,63}$/.test(clean)) clean = `${clean}.bsky.social`;
+  return clean.length <= 253 && /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(clean) ? clean : null;
+}
+
+/** Parses app.bsky.actor.getProfile + app.bsky.feed.getAuthorFeed into the shared competitor shape. */
+export function parseBlueskyPublicAccount(profile: unknown, feed: unknown): InstagramPublicAccount | null {
+  const p = asRecord(profile);
+  const did = typeof p.did === "string" ? p.did : "";
+  const handle = typeof p.handle === "string" ? p.handle : "";
+  if (!did.startsWith("did:") || !handle) return null;
+  const rows = asRecord(feed).feed;
+  const media: InstagramLiveMedia[] = [];
+  for (const raw of Array.isArray(rows) ? rows : []) {
+    const row = asRecord(raw);
+    if (String(asRecord(row.reason).$type ?? "").includes("reasonRepost")) continue;
+    const post = asRecord(row.post);
+    const record = asRecord(post.record);
+    const createdAt = typeof record.createdAt === "string" ? record.createdAt : "";
+    const uri = typeof post.uri === "string" ? post.uri : "";
+    if (!uri || !createdAt || Number.isNaN(Date.parse(createdAt))) continue;
+    const rkey = uri.split("/").at(-1) ?? "";
+    const reposts = asNumber(post.repostCount);
+    const quotes = asNumber(post.quoteCount);
+    media.push({
+      id: uri,
+      caption: asText(record.text, 300),
+      mediaType: "TEXT_POST",
+      kind: "post",
+      publishedAt: new Date(createdAt).toISOString(),
+      permalink: /^[a-z0-9]+$/i.test(rkey) ? `https://bsky.app/profile/${handle}/post/${rkey}` : null,
+      likes: asNumber(post.likeCount),
+      comments: asNumber(post.replyCount),
+      views: null,
+      reach: null,
+      saved: null,
+      shares: reposts === null && quotes === null ? null : (reposts ?? 0) + (quotes ?? 0),
+    });
+  }
+  return {
+    id: did,
+    username: handle,
+    name: typeof p.displayName === "string" && p.displayName.trim() ? p.displayName.slice(0, 120) : null,
+    followers: asNumber(p.followersCount),
+    mediaCount: asNumber(p.postsCount),
+    media,
+  };
+}

@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
 import { CsvColumnsControls } from "@/components/social/platforms/csv-columns-controls";
 import { SocialSummaryChart } from "@/components/social/analytics/social-summary-chart";
 import {
@@ -82,6 +84,16 @@ const TABS: Array<{
   { key: "collabs", label: "COLLABS" },
   { key: "competitors", label: "COMPETITORS" },
 ];
+
+const TAB_FR: Record<string, string> = {
+  community: "COMMUNAUTÉ",
+  account: "COMPTE",
+  posts: "PUBLICATIONS",
+  reels: "REELS",
+  stories: "STORIES",
+  collabs: "COLLABS",
+  competitors: "CONCURRENTS",
+};
 
 const RANGES = [30, 90, 180, 365] as const;
 
@@ -164,6 +176,7 @@ function CommunitySection({
   accountName: string;
   profileImageUrl: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const growthPoints = useMemo(
     () => dateSeries(data.followersSeries, start, end),
     [data.followersSeries, start, end],
@@ -181,7 +194,7 @@ function CommunitySection({
     <div className="space-y-7">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-[23px] font-medium text-[#20242A]">
-          Community
+          {fr ? "Communauté" : "Community"}
         </h1>
 
         <div className="flex min-w-0 items-center gap-3">
@@ -231,24 +244,24 @@ function CommunitySection({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <h2 className="pt-2 text-[18px] font-medium text-[#20242A]">
-              Growth
+              {fr ? "Croissance" : "Growth"}
             </h2>
 
             <div className="flex w-full flex-wrap gap-3 xl:max-w-[600px]">
               <ColoredMetricCard
                 value={data.followers}
-                label="Followers"
+                label={fr ? "Abonnés" : "Followers"}
                 color="#8994F0"
               />
               <ColoredMetricCard
                 value={data.following}
-                label="Following"
+                label={fr ? "Abonnements" : "Following"}
                 color="#DDEDE2"
                 muted={data.following === null}
               />
               <ColoredMetricCard
                 value={data.totalContent}
-                label="Total content"
+                label={fr ? "Contenus au total" : "Total content"}
                 color="#E9AA2C"
               />
             </div>
@@ -256,7 +269,7 @@ function CommunitySection({
 
           <SocialSummaryChart
             points={growthPoints}
-            seriesLabel="Followers"
+            seriesLabel={fr ? "Abonnés" : "Followers"}
             seriesColor="#C58AB5"
             showMarkers
           />
@@ -264,27 +277,27 @@ function CommunitySection({
           <div className="flex flex-wrap gap-3">
             <GreyMetricCard
               value={data.followers}
-              label="Followers"
+              label={fr ? "Abonnés" : "Followers"}
             />
             <GreyMetricCard
               value={data.dailyFollowers}
-              label="Daily followers"
+              label={fr ? "Abonnés par jour" : "Daily followers"}
             />
             <GreyMetricCard
               value={data.followersPerPost}
-              label="Followers per post"
+              label={fr ? "Abonnés par publication" : "Followers per post"}
             />
             <GreyMetricCard
               value={data.following}
-              label="Following"
+              label={fr ? "Abonnements" : "Following"}
             />
             <GreyMetricCard
               value={data.dailyPosts}
-              label="Daily posts"
+              label={fr ? "Publications par jour" : "Daily posts"}
             />
             <GreyMetricCard
               value={data.postsPerWeek}
-              label="Posts per week"
+              label={fr ? "Publications par semaine" : "Posts per week"}
             />
           </div>
         </div>
@@ -294,23 +307,23 @@ function CommunitySection({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <h2 className="pt-2 text-[18px] font-medium text-[#20242A]">
-              Balance of Followers
+              {fr ? "Bilan des abonnés" : "Balance of Followers"}
             </h2>
 
             <div className="flex w-full flex-wrap gap-3 xl:max-w-[600px]">
               <ColoredMetricCard
                 value={data.acquired}
-                label="Acquired"
+                label={fr ? "Gagnés" : "Acquired"}
                 color="#8994F0"
               />
               <ColoredMetricCard
                 value={data.lost}
-                label="Lost"
+                label={fr ? "Perdus" : "Lost"}
                 color="#EFA0DA"
               />
               <ColoredMetricCard
                 value={data.totalContent}
-                label="Total content"
+                label={fr ? "Contenus au total" : "Total content"}
                 color="#E9AA2C"
               />
             </div>
@@ -319,7 +332,7 @@ function CommunitySection({
           <SocialSummaryChart
             points={balancePoints}
             seriesLabel={
-              data.acquiredSeries?.length ? "Acquired" : "Lost"
+              data.acquiredSeries?.length ? (fr ? "Gagnés" : "Acquired") : fr ? "Perdus" : "Lost"
             }
             seriesColor={
               data.acquiredSeries?.length ? "#8994F0" : "#EFA0DA"
@@ -1046,14 +1059,11 @@ function PostsToolbar({
               New
             </span>
 
-            <Link
-              href="/dashboard/billing"
+            <PinToDashboardButton
               className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-            >
-              <PostsActionIcon kind="dashboard" />
-              Add to dashboard
-              <PremiumDiamond />
-            </Link>
+              icon={<PostsActionIcon kind="dashboard" />}
+              badge={<PremiumDiamond />}
+            />
           </div>
         ) : null}
       </div>
@@ -1507,14 +1517,11 @@ function InstagramReelsSection({
                   New
                 </span>
 
-                <Link
-                  href="/dashboard/billing"
+                <PinToDashboardButton
                   className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-                >
-                  <PostsActionIcon kind="dashboard" />
-                  Add to dashboard
-                  <PremiumDiamond />
-                </Link>
+                  icon={<PostsActionIcon kind="dashboard" />}
+                  badge={<PremiumDiamond />}
+                />
               </div>
             </div>
           </div>
@@ -1675,14 +1682,11 @@ function InstagramStoriesSection({
                   New
                 </span>
 
-                <Link
-                  href="/dashboard/billing"
+                <PinToDashboardButton
                   className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-                >
-                  <PostsActionIcon kind="dashboard" />
-                  Add to dashboard
-                  <PremiumDiamond />
-                </Link>
+                  icon={<PostsActionIcon kind="dashboard" />}
+                  badge={<PremiumDiamond />}
+                />
               </div>
             </div>
           </div>
@@ -2093,6 +2097,7 @@ export function InstagramSubscribedDashboard({
   const [tab, setTab] = useState<InstagramTab>("community");
   const [range, setRange] = useState<number>(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
+  const fr = useDashboardLanguage() === "fr";
 
   function scrollToSection(section: InstagramTab) {
     setTab(section);
@@ -2191,10 +2196,10 @@ export function InstagramSubscribedDashboard({
     Boolean(data.lostSeries?.length);
 
   const accountStatus = !isConnected
-    ? "History saved"
+    ? fr ? "Historique conservé" : "History saved"
     : hasConfirmedData
-      ? "Data available"
-      : "No data";
+      ? fr ? "Données disponibles" : "Data available"
+      : fr ? "Aucune donnée" : "No data";
 
   return (
     <div className="-mx-1 space-y-5 bg-[#FCFCFD] px-4 pb-24 pt-1 sm:px-5 lg:px-6">
@@ -2203,7 +2208,7 @@ export function InstagramSubscribedDashboard({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6B7280]">
-                Instagram account
+                {fr ? "Compte Instagram" : "Instagram account"}
               </p>
 
               <span
@@ -2227,15 +2232,15 @@ export function InstagramSubscribedDashboard({
             </h1>
 
             <p className="mt-1 text-sm text-[#5F6770]">
-              Selected {start} → {end}
+              {fr ? "Période" : "Selected"} {start} → {end}
               {hasConfirmedData
-                ? " · Confirmed account-specific Instagram data"
-                : " · Waiting for synchronized Instagram data"}
+                ? fr ? " · Données confirmées de ce compte Instagram" : " · Confirmed account-specific Instagram data"
+                : fr ? " · En attente des données Instagram" : " · Waiting for synchronized Instagram data"}
             </p>
 
             {!hasConfirmedData ? (
               <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                No synchronized Instagram data overlaps this range.
+                {fr ? "Aucune donnée Instagram sur cette période." : "No synchronized Instagram data overlaps this range."}
               </p>
             ) : null}
           </div>
@@ -2261,7 +2266,7 @@ export function InstagramSubscribedDashboard({
                     : "text-[#6B7280] hover:text-[#20242A]"
                 }`}
               >
-                {item.label}
+                {fr ? TAB_FR[item.key] ?? item.label : item.label}
                 {selected ? (
                   <span className="absolute inset-x-2 bottom-0 h-[2px] bg-[#20242A]" />
                 ) : null}
@@ -2272,7 +2277,7 @@ export function InstagramSubscribedDashboard({
 
         <div className="ml-auto flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-            <span>Main period</span>
+            <span>{fr ? "Période principale" : "Main period"}</span>
             <span className="flex h-11 items-center gap-2 rounded-[10px] border border-[#D7DBE0] bg-white px-3 text-sm shadow-sm">
               <span className="font-medium text-[#20242A]">
                 {displayDate(start)} - {displayDate(end)}
@@ -2287,8 +2292,8 @@ export function InstagramSubscribedDashboard({
                 {RANGES.map((days) => (
                   <option key={days} value={days}>
                     {days === 365
-                      ? "Last 12 months"
-                      : `Last ${days} days`}
+                      ? fr ? "12 derniers mois" : "Last 12 months"
+                      : fr ? `${days} derniers jours` : `Last ${days} days`}
                   </option>
                 ))}
               </select>
@@ -2296,7 +2301,7 @@ export function InstagramSubscribedDashboard({
           </label>
 
           <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-            <span>Comparison period</span>
+            <span>{fr ? "Période de comparaison" : "Comparison period"}</span>
             <button
               type="button"
               onClick={() => setCompareEnabled((current) => !current)}
@@ -2308,8 +2313,8 @@ export function InstagramSubscribedDashboard({
             >
               <GitCompareArrows className="h-4 w-4 text-[#9AA1A9]" />
               {compareEnabled
-                ? "Comparison on"
-                : "Create comparison view"}
+                ? fr ? "Comparaison activée" : "Comparison on"
+                : fr ? "Créer une vue de comparaison" : "Create comparison view"}
             </button>
           </label>
         </div>
@@ -2331,7 +2336,7 @@ export function InstagramSubscribedDashboard({
         >
           {TABS.map((item) => (
             <option key={item.key} value={item.key}>
-              {item.label}
+              {fr ? TAB_FR[item.key] ?? item.label : item.label}
             </option>
           ))}
         </select>
