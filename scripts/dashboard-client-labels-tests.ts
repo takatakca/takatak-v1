@@ -9,6 +9,7 @@ import { clientBadges, isBuildPhaseLabel, LIVE_DATA_LABEL } from "../src/lib/das
 import { NAV_SECTIONS, QUICK_ACTIONS, STAFF_ONLY_ROUTES } from "../src/lib/dashboard/dashboard-config";
 import { asDashboardLanguage, HOME_FR, homeText, NAV_FR, navLabel } from "../src/lib/dashboard/nav-fr";
 import { ACCOUNT_LANGUAGES } from "../src/lib/account/account-settings-validation";
+import { bestTimeScores } from "../src/lib/social/planning/planning-types";
 
 // 1. Build-phase labels are recognised; real statuses are kept.
 for (const label of ["Foundation", "Future phase", "Coming soon", "Phase 6/7", "Phase 12", "Internal demo", "Mock data", "No automation"]) {
@@ -150,6 +151,23 @@ assert.match(inboxData, /externalReview\.findMany\(\{\s*where: \{ clientId \}/);
 assert.match(inboxData, /googleReviewThreads\(access\.activeClientId\)/);
 assert.doesNotMatch(readFileSync(join(ROOT, "src/components/social/inbox/social-inbox-view.tsx"), "utf8"), /mark all as (resolved|read)/i);
 assert.match(readFileSync(join(ROOT, "src/app/dashboard/services/page.tsx"), "utf8"), /listClientServices\(access\.activeClientId\)/);
+
+// Planning "best times" come from the brand's own measured posts, never a fixed pattern.
+{
+  const tuesday10 = (week: number) => ({ publishedAt: new Date(Date.UTC(2026, 10, 3 + week * 7, 15, 0)), engagement: 40 }); // Tue 10:00 Toronto
+  const friday20 = (week: number) => ({ publishedAt: new Date(Date.UTC(2026, 10, 7 + week * 7, 1, 30)), engagement: 10 }); // Fri 20:30 Toronto
+  const scores = bestTimeScores([0, 1, 2].map(tuesday10).concat([0, 1].map(friday20)), "America/Toronto");
+  assert.ok(scores, "five measured posts are enough");
+  assert.equal(scores!.sample, 5);
+  assert.equal(scores!.scores[2][10], 1, "the best slot scores 1");
+  assert.equal(scores!.scores[5][20], 0.25, "Friday 20:00 in Toronto");
+  assert.equal(scores!.scores[0][3], 0, "an empty slot stays 0, nothing is invented");
+  assert.equal(bestTimeScores([tuesday10(0)], "America/Toronto"), null, "too few posts: no best times");
+  assert.equal(bestTimeScores([{ publishedAt: new Date(), engagement: null }, tuesday10(0)], "America/Toronto"), null);
+  const planningView = readFileSync(join(ROOT, "src/components/social/planning/social-planning-view.tsx"), "utf8");
+  assert.doesNotMatch(planningView, /not available yet/i, "every planning control works");
+  assert.match(planningView, /heatFromScore\(data\.bestTimes\.scores/);
+}
 
 console.log(
   `dashboard client labels: ok (${clientPages.length} client screens and ${sharedComponents.length} shared components scanned, ${STAFF_ONLY_ROUTES.size} staff-only)`,

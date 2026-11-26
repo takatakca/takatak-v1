@@ -9,6 +9,8 @@ import {
   Clock,
   Filter,
   Gem,
+  Image as ImageIcon,
+  MoreVertical,
   Plus,
   Search,
   X,
@@ -50,14 +52,50 @@ const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
 const ROW_H = 60;
 const TIME_COL = 72;
 
-// Only views that work today: the calendar, the scheduled/published list and
-// the drafts library. (Autolists, flows and a deleted-posts bin do not exist yet,
-// so they are not shown as tabs.)
+// Every tab works on real data or a real module: autolists are the Social
+// Autopilot agent's weekly posts, flows are the running AI agents, and the
+// rejected tab lists the posts refused at approval.
 const TABS = [
   { id: "calendar", label: "Calendar", labelFr: "Calendrier", premium: false },
   { id: "list", label: "Scheduled & published", labelFr: "Planifiées et publiées", premium: false },
   { id: "library", label: "Posts library", labelFr: "Bibliothèque", premium: true },
+  { id: "autolists", label: "Autolists", labelFr: "Listes automatiques", premium: false },
+  { id: "deleted", label: "Rejected posts", labelFr: "Publications refusées", premium: false },
+  { id: "flows", label: "Flows", labelFr: "Flux", premium: true },
 ] as const;
+
+const MEDIA_LIBRARY_HREF = "/dashboard/ai-studio/saved";
+const AGENTS_HREF = "/dashboard/growth/ai-engine";
+const VIEWS_STORAGE_KEY = "takatak.planning.views";
+
+type SavedView = { name: string; platform: string; query: string };
+
+function readSavedViews(): SavedView[] {
+  try {
+    const raw = window.localStorage.getItem(VIEWS_STORAGE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((v): v is SavedView => typeof v?.name === "string" && typeof v?.platform === "string" && typeof v?.query === "string").slice(0, 20)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeSavedViews(views: SavedView[]) {
+  try {
+    window.localStorage.setItem(VIEWS_STORAGE_KEY, JSON.stringify(views.slice(0, 20)));
+  } catch {
+    // Storage blocked: the view still applies for this visit.
+  }
+}
+
+/** White to lavender by score (0–1): the brand's own best posting hours. */
+function heatFromScore(score: number): string {
+  const t = Math.min(1, Math.max(0, score));
+  const mix = (from: number, to: number) => Math.round(from + (to - from) * t);
+  return `rgb(${mix(255, 196)}, ${mix(255, 204)}, ${mix(255, 250)})`;
+}
 
 /** Where a new post is written today: the AI Studio content generator, then Saved › send to a social account. */
 const CREATE_POST_HREF = "/dashboard/ai-studio/content-generator";
@@ -182,7 +220,15 @@ export function SocialPlanningView({
   );
   const [platformFilter, setPlatformFilter] = useState("any");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [viewsOpen, setViewsOpen] = useState(false);
+  const [savedViews, setSavedViews] = useState<SavedView[]>([]);
+  const [bestTimes, setBestTimes] = useState(Boolean(data.bestTimes));
   const [notice, setNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSavedViews(readSavedViews());
+  }, []);
   const [now, setNow] = useState(() => new Date());
   const [timeZone, setTimeZone] = useState("UTC");
 
@@ -245,6 +291,38 @@ export function SocialPlanningView({
       const at = new Date(post.scheduledAt);
       return sameDay(at, day) && at.getHours() === hour;
     });
+  }
+
+  function saveCurrentView() {
+    const suggested = platformFilter !== "any" ? platformFilter.replaceAll("_", " ") : fr ? "Tous les réseaux" : "All networks";
+    const name = window.prompt(fr ? "Nom de la vue" : "View name", query ? `${suggested} · ${query}` : suggested)?.trim();
+    if (!name) return;
+    const next = [{ name: name.slice(0, 60), platform: platformFilter, query }, ...savedViews.filter((view) => view.name !== name)];
+    setSavedViews(next);
+    writeSavedViews(next);
+    setViewsOpen(false);
+  }
+
+  function exportWeekCsv() {
+    const start = weekDays[0];
+    const end = addDays(weekStart, 7);
+    const rows = visiblePosts.filter((post) => {
+      if (!post.scheduledAt) return false;
+      const at = new Date(post.scheduledAt);
+      return at >= start && at < end;
+    });
+    const escape = (value: string) => (/[",\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value);
+    const header = fr ? ["Réseau", "Date", "État", "Texte"] : ["Network", "Date", "Status", "Caption"];
+    const lines = [header.join(",")].concat(
+      rows.map((post) => [post.platform, post.scheduledAt ?? "", postStatusLabel(post.status, fr), post.caption ?? ""].map((v) => escape(String(v))).join(",")),
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `takatak-planification-${start.toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   function openCreate() {
@@ -436,10 +514,136 @@ export function SocialPlanningView({
                   </div>
                 ) : null}
 
+                <button
+                  type="button"
+                  aria-label={fr ? "Plus d’actions" : "More"}
+                  aria-expanded={moreOpen}
+                  onClick={() => setMoreOpen((open) => !open)}
+                  className={`${iconBox} ml-1 h-11`}
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </button>
+                {moreOpen ? (
+                  <div className="absolute right-0 top-12 z-20 w-60 rounded-lg bg-white py-1 shadow-[0_8px_28px_rgba(15,23,42,0.16)]">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPlatformFilter("any");
+                        setQuery("");
+                        setMoreOpen(false);
+                      }}
+                      className="block w-full px-3 py-2 text-left text-[13px] hover:bg-slate-50"
+                    >
+                      {fr ? "Réinitialiser les filtres" : "Reset filters"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        exportWeekCsv();
+                        setMoreOpen(false);
+                      }}
+                      className="block w-full px-3 py-2 text-left text-[13px] hover:bg-slate-50"
+                    >
+                      {fr ? "Exporter la semaine (CSV)" : "Export this week (CSV)"}
+                    </button>
+                  </div>
+                ) : null}
               </div>
 
-
               <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  aria-pressed={bestTimes}
+                  onClick={() => {
+                    if (!data.bestTimes) {
+                      setNotice(
+                        fr
+                          ? "Les meilleures heures se calculent sur l’engagement réel de vos publications mesurées. Il en faut au moins 5 sur les 180 derniers jours ; elles s’afficheront dès qu’elles seront synchronisées."
+                          : "Best times are computed from the real engagement of your measured posts. At least 5 are needed over the last 180 days; they appear as soon as they are synced.",
+                      );
+                      return;
+                    }
+                    setBestTimes((on) => !on);
+                  }}
+                  title={
+                    data.bestTimes
+                      ? fr
+                        ? `Calculé sur ${data.bestTimes.sample} publications mesurées`
+                        : `From ${data.bestTimes.sample} measured posts`
+                      : undefined
+                  }
+                  className={`${box} gap-2 px-5 justify-center ${bestTimes && data.bestTimes ? "border-[#566DF1] text-[#20242A]" : ""}`}
+                >
+                  <Clock className="h-3.5 w-3.5 text-slate-400" />
+                  {fr ? "Meilleures heures" : "Best times"}
+                </button>
+
+                <button
+                  type="button"
+                  aria-label={fr ? "Médiathèque" : "Media library"}
+                  title={fr ? "Médiathèque (brouillons et médias du Studio IA)" : "Media library (AI Studio drafts and media)"}
+                  onClick={() => router.push(MEDIA_LIBRARY_HREF)}
+                  className={`${iconBox} h-11 w-11`}
+                >
+                  <ImageIcon className="h-5 w-5" />
+                </button>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    aria-expanded={viewsOpen}
+                    onClick={() => setViewsOpen((open) => !open)}
+                    className={`${box} gap-1 px-5`}
+                  >
+                    {fr ? "Créer une vue" : "Create view"}
+                    <ChevronDown className="h-3 w-3 text-slate-400" />
+                  </button>
+                  {viewsOpen ? (
+                    <div className="absolute right-0 top-12 z-20 w-64 rounded-lg bg-white py-1 shadow-[0_8px_28px_rgba(15,23,42,0.16)]">
+                      <button
+                        type="button"
+                        onClick={saveCurrentView}
+                        className="block w-full px-3 py-2 text-left text-[13px] font-semibold hover:bg-slate-50"
+                      >
+                        {fr ? "Enregistrer les filtres actuels" : "Save the current filters"}
+                      </button>
+                      {savedViews.length === 0 ? (
+                        <p className="px-3 py-2 text-[12px] text-slate-400">
+                          {fr ? "Aucune vue enregistrée" : "No saved view yet"}
+                        </p>
+                      ) : (
+                        savedViews.map((view) => (
+                          <div key={view.name} className="flex items-center gap-2 px-3 py-1.5 text-[13px] hover:bg-slate-50">
+                            <button
+                              type="button"
+                              className="min-w-0 flex-1 truncate text-left"
+                              onClick={() => {
+                                setPlatformFilter(view.platform);
+                                setQuery(view.query);
+                                setViewsOpen(false);
+                              }}
+                            >
+                              {view.name}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={fr ? `Supprimer la vue ${view.name}` : `Delete view ${view.name}`}
+                              onClick={() => {
+                                const next = savedViews.filter((item) => item.name !== view.name);
+                                setSavedViews(next);
+                                writeSavedViews(next);
+                              }}
+                              className="text-slate-400 hover:text-rose-600"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+
                 <button
                   type="button"
                   onClick={openCreate}
@@ -506,9 +710,12 @@ export function SocialPlanningView({
                       >
                         {formatHour(hour, fr)}
                       </div>
-                      {weekDays.map((day) => {
+                      {weekDays.map((day, dayIndex) => {
                         const cellPosts = postsInCell(day, hour);
-                        const fill = "#ffffff";
+                        const fill =
+                          bestTimes && data.bestTimes
+                            ? heatFromScore(data.bestTimes.scores[dayIndex]?.[hour] ?? 0)
+                            : "#ffffff";
                         return (
                           <div
                             key={`${day.toISOString()}-${hour}`}
@@ -562,7 +769,18 @@ export function SocialPlanningView({
             empty={fr ? "Aucun brouillon ni publication non planifiée pour l’instant." : "No drafts or unscheduled posts in the library yet."}
           />
         </div>
-      ) : null}
+      ) : tab === "deleted" ? (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <PlanningList
+            posts={visiblePosts.filter((post) => post.approvalStatus === "rejected")}
+            empty={fr ? "Aucune publication refusée." : "No rejected posts."}
+          />
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <AutomationPanel kind={tab === "autolists" ? "autolists" : "flows"} />
+        </div>
+      )}
       </div>
 
       {notice ? (
@@ -800,6 +1018,59 @@ function ScheduledPublishedPanel({
             </ul>
           </section>
         ))}
+    </div>
+  );
+}
+
+/** Autolists and flows run on the real AI agents (Growth › AI Engine & Credits). */
+function AutomationPanel({ kind }: { kind: "autolists" | "flows" }) {
+  const fr = useDashboardLanguage() === "fr";
+  const items =
+    kind === "autolists"
+      ? [
+          {
+            title: fr ? "Social Autopilot" : "Social Autopilot",
+            text: fr
+              ? "Écrit les publications de la semaine (une par jour, adaptée à chaque réseau) chaque jour ou chaque semaine à l’heure choisie, puis les garde pour votre approbation."
+              : "Writes the week's posts (one a day, adapted to each network) daily or weekly at the time you choose, then keeps them for your approval.",
+          },
+        ]
+      : [
+          {
+            title: fr ? "Publication → approbation → envoi" : "Post → approval → send",
+            text: fr
+              ? "Chaque brouillon attend votre approbation, puis part tout de suite ou à l’heure planifiée, avec reçu du réseau."
+              : "Every draft waits for your approval, then goes out now or at the scheduled time, with the network's receipt.",
+          },
+          {
+            title: "Chat Concierge",
+            text: fr ? "Répond aux messages du clavardage du site et crée les prospects." : "Answers website chat messages and creates leads.",
+          },
+          {
+            title: fr ? "Réponses aux avis" : "Review replies",
+            text: fr ? "Prépare une réponse à chaque nouvel avis, à approuver dans Avis." : "Drafts a reply to every new review, to approve in Reviews.",
+          },
+          {
+            title: fr ? "Rapport mensuel et veille SEO" : "Monthly report and SEO watch",
+            text: fr ? "Résumé du mois et liste de correctifs du site, écrits à partir de vos vrais chiffres." : "Month summary and website fix list, written from your real numbers.",
+          },
+        ];
+  return (
+    <div className="space-y-3 bg-white px-3 py-4">
+      {items.map((item) => (
+        <div key={item.title} className="rounded-xl border border-slate-200 p-4">
+          <p className="text-sm font-semibold text-[#1d1d1f]">{item.title}</p>
+          <p className="mt-1 text-sm text-slate-600">{item.text}</p>
+        </div>
+      ))}
+      <Link
+        href={AGENTS_HREF}
+        className="inline-flex h-10 items-center justify-center rounded-lg bg-[#2a1728] px-4 text-sm font-semibold text-white hover:bg-[#3b2438]"
+      >
+        {kind === "autolists"
+          ? fr ? "Régler Social Autopilot" : "Set up Social Autopilot"
+          : fr ? "Gérer les agents IA" : "Manage AI agents"}
+      </Link>
     </div>
   );
 }

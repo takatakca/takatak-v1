@@ -7,7 +7,7 @@ import {
 import { getPrisma } from "@/lib/db/prisma";
 import { resolveBrandSessionContext } from "@/lib/security/brand-context";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
-import type { PlanningPageData } from "@/lib/social/planning/planning-types";
+import { bestTimeScores, type PlanningPageData } from "@/lib/social/planning/planning-types";
 import { readPublicationReceipt } from "@/lib/social/publishing/publication-model";
 
 export type {
@@ -43,7 +43,8 @@ export async function getSocialPlanningData(
   }
 
   try {
-    const [{ entitlements }, postsUsedThisMonth, posts] = await Promise.all([
+    const since = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+    const [{ entitlements }, postsUsedThisMonth, posts, measured, client] = await Promise.all([
       loadClientSocialEntitlementContext(prisma, access.activeClientId),
       countBillablePostsThisMonth(prisma, access.activeClientId),
       prisma.socialPost.findMany({
@@ -67,12 +68,26 @@ export async function getSocialPlanningData(
         },
         orderBy: { scheduledAt: "asc" },
       }),
+      // Best times come from this brand's own measured posts (last 180 days).
+      prisma.socialContentItem.findMany({
+        where: {
+          clientId: access.activeClientId,
+          businessBrandId: brand.activeBrandId,
+          publishedAt: { gte: since },
+          engagement: { not: null },
+        },
+        select: { publishedAt: true, engagement: true },
+        orderBy: { publishedAt: "desc" },
+        take: 2000,
+      }),
+      prisma.client.findUnique({ where: { id: access.activeClientId }, select: { timezone: true } }),
     ]);
 
     return {
       connectedPlatforms,
       postsUsedThisMonth,
       monthlyPostAllowance: entitlements.monthlyPostAllowance,
+      bestTimes: bestTimeScores(measured, client?.timezone ?? "America/Toronto"),
       posts: posts.map((post) => {
         const receipt = readPublicationReceipt(post.metadata);
         return {
