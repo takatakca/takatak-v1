@@ -230,8 +230,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
         <h2 className="text-[22px] font-semibold text-[#20242A]">{fr ? "Concurrents" : "Competitors"}</h2>
         <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
           <p className="text-sm text-[#6b7280]">
-            Connect a Facebook Page to track competitors through Meta’s Graph API
-            only. Takatak never scrapes Facebook pages.
+            {fr ? "Branchez une page Facebook pour suivre des concurrents par l’API Graph de Meta seulement. TAKATAK n’extrait jamais les pages Facebook." : "Connect a Facebook Page to track competitors through Meta’s Graph API only. Takatak never scrapes Facebook pages."}
           </p>
         </section>
       </div>
@@ -277,8 +276,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
           <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-[#6b5400]">
             <li>{fr ? "Aucune extraction par navigateur ni collecte non officielle." : "No browser scraping or unofficial collection."}</li>
             <li>
-              Competitor reach, impressions, demographics, and clicks stay
-              unsupported.
+              {fr ? "La portée, les impressions, la démographie et les clics des concurrents ne sont pas disponibles chez Meta." : "Competitor reach, impressions, demographics, and clicks stay unsupported."}
             </li>
             <li>
               Status: {capability?.status} · pages/search:{" "}
@@ -295,10 +293,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
             {fr ? "Comment fonctionne le suivi des concurrents" : "How competitor tracking works"}
           </h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#6b7280]">
-            Add a public Facebook Page URL or username. Takatak resolves it
-            through Meta Graph API endpoints only, stores dated public
-            snapshots, and compares equivalent confirmed metrics. Private Page
-            insights are never claimed for competitors.
+            {fr ? "Ajoutez l’adresse ou le nom d’utilisateur d’une page Facebook publique. TAKATAK la lit seulement par l’API Graph de Meta, garde des instantanés publics datés et compare des mesures confirmées équivalentes. Les statistiques privées d’une page concurrente ne sont jamais prétendues." : "Add a public Facebook Page URL or username. Takatak resolves it through Meta Graph API endpoints only, stores dated public snapshots, and compares equivalent confirmed metrics. Private Page insights are never claimed for competitors."}
           </p>
 
           <form onSubmit={onAdd} className="mt-5 grid gap-3 lg:grid-cols-[1fr_220px_auto]">
@@ -340,9 +335,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
             {fr ? "Aucun concurrent suivi pour l’instant" : "No competitors tracked yet"}
           </p>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#6b7280]">
-            Add a public Facebook Page to start dated public snapshots. If
-            Meta later revokes access, prior confirmed snapshots stay visible
-            as stale.
+            {fr ? "Ajoutez une page Facebook publique pour commencer les instantanés publics datés. Si Meta retire l’accès plus tard, les instantanés déjà confirmés restent visibles, marqués comme anciens." : "Add a public Facebook Page to start dated public snapshots. If Meta later revokes access, prior confirmed snapshots stay visible as stale."}
           </p>
         </section>
       ) : null}
@@ -456,9 +449,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                           </div>
                           {confirmRemove === row.publicRef ? (
                             <div className="mt-2 rounded-[8px] border border-[#f3d1d1] bg-[#fff5f5] p-2 text-xs text-[#7a1f1f]">
-                              Remove this competitor track? Historical snapshots
-                              remain stored for audit, but it leaves the active
-                              list.
+                              {fr ? "Retirer ce concurrent ? Les instantanés passés restent conservés pour l’audit, mais il quitte la liste active." : "Remove this competitor track? Historical snapshots remain stored for audit, but it leaves the active list."}
                               <div className="mt-2 flex gap-2">
                                 <button
                                   type="button"
@@ -558,8 +549,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                         </div>
                       ) : (
                         <p className="text-xs text-[#9aa1a9]">
-                          Chart omitted — non-equivalent or missing confirmed
-                          values.
+                          {fr ? "Graphique omis : valeurs confirmées manquantes ou non équivalentes." : "Chart omitted — non-equivalent or missing confirmed values."}
                         </p>
                       )}
                     </div>

@@ -66,8 +66,7 @@ function EmptySearch() {
         {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </p>
       <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-[#9AA3AB]">
-        You can use the filter tools to narrow down your search. Check if the
-        current date range suits your needs.
+        {fr ? "Utilisez les filtres pour affiner votre recherche. Vérifiez que la période choisie vous convient." : "You can use the filter tools to narrow down your search. Check if the current date range suits your needs."}
       </p>
     </div>
   );

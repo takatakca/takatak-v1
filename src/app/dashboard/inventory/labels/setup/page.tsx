@@ -79,28 +79,13 @@ export default async function InventoryRetailSetupPage() {
           Référence du pot hexagonal MIEL AISSA · MIEL AISSA hexagonal jar reference
         </h2>
         <p className="text-sm leading-6 text-slate-600">
-          The supplied Alibaba screenshot shows a clear hexagonal jar advertised
-          as 288 mL with a gold-coloured lid. It gives no usable label
-          dimensions. Measure around all six sides at label height, the width of
-          one flat glass face excluding rounded corners, and the straight-sided
-          label height between shoulder and base. Capacity is not the honey’s
-          net weight; weigh the actual fill before entering the retail quantity.
+          La capture Alibaba fournie montre un pot hexagonal transparent annoncé à 288 mL, avec un couvercle doré. Elle ne donne aucune dimension d’étiquette utilisable. Mesurez le tour des six faces à la hauteur de l’étiquette, la largeur d’une face plane sans les coins arrondis et la hauteur droite entre l’épaule et la base. La capacité n’est pas le poids net du miel : pesez le vrai remplissage avant d’entrer la quantité de vente. · The supplied Alibaba screenshot shows a clear hexagonal jar advertised as 288 mL with a gold-coloured lid. It gives no usable label dimensions. Measure around all six sides at label height, the width of one flat glass face excluding rounded corners, and the straight-sided label height between shoulder and base. Capacity is not the honey’s net weight; weigh the actual fill before entering the retail quantity.
         </p>
         <p className="text-sm leading-6 text-slate-600">
-          Choose Hexagonal jar in the label studio and enter the measured flat
-          face. The studio rejects a barcode wider than that face, including its
-          white space and application allowance. Centre it on a flat face when
-          applying; keep all bars and white space off corners and seams. First
-          test a paper wrap at 100% size, then test the printed adhesive label
-          on the finished jar. Do not derive the perimeter from six flat widths:
-          the rounded corners also take space.
+          Choisissez « Pot hexagonal » dans le studio d’étiquettes et entrez la face plane mesurée. Le studio refuse un code-barres plus large que cette face, marges blanches et jeu d’application compris. Centrez-le sur une face plane à la pose ; gardez barres et marges loin des coins et des joints. Testez d’abord un papier à 100 %, puis l’étiquette adhésive imprimée sur le pot fini. Ne calculez pas le périmètre à partir de six largeurs planes : les coins arrondis prennent aussi de la place. · Choose Hexagonal jar in the label studio and enter the measured flat face. The studio rejects a barcode wider than that face, including its white space and application allowance. Centre it on a flat face when applying; keep all bars and white space off corners and seams. First test a paper wrap at 100% size, then test the printed adhesive label on the finished jar. Do not derive the perimeter from six flat widths: the rounded corners also take space.
         </p>
         <p className="text-sm leading-6 text-slate-600">
-          Ask the supplier for a dimensioned drawing, usable flat-face width and
-          label height, whether 288 mL is brimful or working capacity, and a
-          quote for jars plus lids delivered to H1S 1M4. The screenshot’s small
-          displayed price is not a verified delivered quote. Select label stock
-          and any applicator after the jar measurements are confirmed.
+          Demandez au fournisseur un dessin coté, la largeur utile de la face plane et la hauteur d’étiquette, si 288 mL est la capacité à ras bord ou utile, et une soumission pour pots et couvercles livrés à H1S 1M4. Le petit prix de la capture d’écran n’est pas une soumission livrée vérifiée. Choisissez le papier d’étiquette et l’applicateur une fois les mesures du pot confirmées. · Ask the supplier for a dimensioned drawing, usable flat-face width and label height, whether 288 mL is brimful or working capacity, and a quote for jars plus lids delivered to H1S 1M4. The screenshot’s small displayed price is not a verified delivered quote. Select label stock and any applicator after the jar measurements are confirmed.
         </p>
         <a
           className="inline-block text-sm text-blue-700 underline"
@@ -189,8 +174,7 @@ export default async function InventoryRetailSetupPage() {
                 <td className="whitespace-nowrap p-3">$36.32</td>
                 <td className="p-3">Lecture à petit prix sur papier ou écran · Low-cost paper/screen scanning</td>
                 <td className="p-3">
-                  Marketplace seller; confirm USB keyboard mode and UPC/EAN
-                  support. No reviews shown when checked.
+                  Vendeur de place de marché ; confirmez le mode clavier USB et la prise en charge UPC/EAN. Aucun avis affiché lors de la vérification. · Marketplace seller; confirm USB keyboard mode and UPC/EAN support. No reviews shown when checked.
                 </td>
               </tr>
               <tr>
@@ -207,8 +191,7 @@ export default async function InventoryRetailSetupPage() {
                 <td className="whitespace-nowrap p-3">$79.99</td>
                 <td className="p-3">Peu de frais au départ, étiquettes couleur en feuilles · Low upfront cost, colour sheet labels</td>
                 <td className="p-3">
-                  Ink refills and water resistance matter. Use compatible inkjet
-                  label stock and test the finished label.
+                  Les recharges d’encre et la résistance à l’eau comptent. Utilisez un papier d’étiquette compatible jet d’encre et testez l’étiquette finie. · Ink refills and water resistance matter. Use compatible inkjet label stock and test the finished label.
                 </td>
               </tr>
               <tr>
@@ -225,8 +208,7 @@ export default async function InventoryRetailSetupPage() {
                 <td className="whitespace-nowrap p-3">$119.99</td>
                 <td className="p-3">Lots de feuilles adhésives noir et blanc · Black-and-white adhesive sheet batches</td>
                 <td className="p-3">
-                  Use laser-compatible label stock. Cut full-sheet labels at the
-                  PDF crop marks.
+                  Utilisez un papier d’étiquette compatible laser. Coupez les feuilles complètes aux traits de coupe du PDF. · Use laser-compatible label stock. Cut full-sheet labels at the PDF crop marks.
                 </td>
               </tr>
               <tr>
@@ -245,20 +227,14 @@ export default async function InventoryRetailSetupPage() {
                   Étiquettes rapides noir et blanc en rouleau, 203 ppp · Quick black-and-white roll labels, 203 DPI
                 </td>
                 <td className="p-3">
-                  Direct thermal can fade with heat/light. Confirm a matching
-                  custom label length and media; better suited to
-                  trials/short-life labels than long shelf-life packaging.
+                  L’impression thermique directe peut pâlir à la chaleur et à la lumière. Confirmez une longueur d’étiquette et un support adaptés ; mieux pour des essais ou des étiquettes de courte durée que pour un emballage de longue conservation. · Direct thermal can fade with heat/light. Confirm a matching custom label length and media; better suited to trials/short-life labels than long shelf-life packaging.
                 </td>
               </tr>
             </tbody>
           </table>
         </div>
         <p className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900">
-          Lowest additional cost: reuse a suitable printer you already own. The
-          Aofa USB scanner plus Canon costs $104.98 before tax and supplies;
-          Aofa USB scanner plus Brother costs $144.98. A roll printer feeds a
-          long wrap lengthwise—the label height must fit across its printhead.
-          Measure before ordering media.
+          Coût supplémentaire le plus bas : réutilisez une imprimante adaptée que vous avez déjà. Le lecteur USB Aofa avec la Canon coûte 104,98 $ avant taxes et fournitures ; le lecteur USB Aofa avec la Brother coûte 144,98 $. Une imprimante à rouleau fait passer une longue étiquette dans le sens de la longueur : la hauteur de l’étiquette doit tenir sur la tête d’impression. Mesurez avant de commander le support. · Lowest additional cost: reuse a suitable printer you already own. The Aofa USB scanner plus Canon costs $104.98 before tax and supplies; Aofa USB scanner plus Brother costs $144.98. A roll printer feeds a long wrap lengthwise—the label height must fit across its printhead. Measure before ordering media.
         </p>
       </section>
       <section className="rounded-xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600">
@@ -266,16 +242,10 @@ export default async function InventoryRetailSetupPage() {
           Ce que vous pouvez faire sans service EDI mensuel · What you can do without a monthly EDI service
         </h2>
         <p className="mt-2">
-          Manage products and stock, generate and print your labels, scan your
-          product numbers and export a retailer product sheet. An EDI connection
-          is needed only if the buyer’s ordering/shipping process requires it;
-          it is not what makes a UPC/EAN barcode readable.
+          Gérez vos produits et votre stock, créez et imprimez vos étiquettes, lisez vos numéros de produit et exportez une fiche produit pour le détaillant. Une connexion EDI n’est nécessaire que si le processus de commande ou d’expédition de l’acheteur l’exige ; ce n’est pas elle qui rend un code-barres UPC/EAN lisible. · Manage products and stock, generate and print your labels, scan your product numbers and export a retailer product sheet. An EDI connection is needed only if the buyer’s ordering/shipping process requires it; it is not what makes a UPC/EAN barcode readable.
         </p>
         <p className="mt-2">
-          No registration, purchase or retailer submission has been made by this
-          page. Registration requires the actual business contact details,
-          eligibility and agreement to the provider’s terms; retailer acceptance
-          remains the retailer’s decision.
+          Cette page n’a fait aucune inscription, aucun achat ni aucune soumission à un détaillant. L’inscription demande les vraies coordonnées de l’entreprise, l’admissibilité et l’accord aux conditions du fournisseur ; l’acceptation reste la décision du détaillant. · No registration, purchase or retailer submission has been made by this page. Registration requires the actual business contact details, eligibility and agreement to the provider’s terms; retailer acceptance remains the retailer’s decision.
         </p>
       </section>
     </div>

@@ -300,8 +300,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
       ) : null}
       {!canManage ? (
         <p className="text-sm text-slate-500">
-          You have read-only inventory access. Ask your workspace owner for
-          permission to manage products and stock.
+          {fr ? "Votre accès à l’inventaire est en lecture seule. Demandez au propriétaire de l’espace l’autorisation de gérer les produits et le stock." : "You have read-only inventory access. Ask your workspace owner for permission to manage products and stock."}
         </p>
       ) : null}
       {loading ? (
@@ -485,13 +484,11 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
               </div>
               {!found.length ? (
                 <p className="p-8 text-center text-sm text-slate-500">
-                  No matching products. Add your first product or change the
-                  search.
+                  {fr ? "Aucun produit correspondant. Ajoutez votre premier produit ou changez la recherche." : "No matching products. Add your first product or change the search."}
                 </p>
               ) : null}
               <p className="border-t border-slate-100 p-4 text-xs text-slate-500">
-                Scanning finds a product. Record a stock adjustment to receive
-                or remove units.
+                {fr ? "La lecture trouve un produit. Inscrivez un ajustement de stock pour recevoir ou retirer des unités." : "Scanning finds a product. Record a stock adjustment to receive or remove units."}
               </p>
             </section>
           ) : null}
@@ -499,8 +496,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
             <section className="rounded-xl border border-slate-200 bg-white p-5">
               <h2 className="font-semibold">{fr ? "Derniers mouvements de stock" : "Latest stock movements"}</h2>
               <p className="mt-1 text-xs text-slate-500">
-                Latest 100 movements across the workspace, filtered by business
-                below. Times in UTC.
+                {fr ? "Les 100 derniers mouvements de l’espace, filtrés par entreprise ci-dessous. Heures en UTC." : "Latest 100 movements across the workspace, filtered by business below. Times in UTC."}
               </p>
               {data.movements
                 .filter(
@@ -559,20 +555,13 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                 zero. We check the check digit; GS1 ownership is not verified.
               </p>
               <p>
-                Super C, Maxi, Walmart and local stores have their own supplier
-                onboarding and product data requirements. A barcode identifies a
-                product. Ingredients, pricing and other information must be
-                supplied to the retailer separately.
+                {fr ? "Super C, Maxi, Walmart et les commerces locaux ont leurs propres exigences d’inscription des fournisseurs et de données produit. Un code-barres identifie un produit ; les ingrédients, le prix et les autres informations se fournissent au détaillant à part." : "Super C, Maxi, Walmart and local stores have their own supplier onboarding and product data requirements. A barcode identifies a product. Ingredients, pricing and other information must be supplied to the retailer separately."}
               </p>
               <p>
-                Print at actual size and verify with physical scanners before
-                use. Long internal SKUs may need wider labels. This module does
-                not generate compliant nutrition labels or connect to retailer
-                tills.
+                {fr ? "Imprimez à la taille réelle et vérifiez avec de vrais lecteurs avant usage. Les longs codes internes peuvent demander des étiquettes plus larges. Ce module ne produit pas de tableau de valeur nutritive conforme et ne se branche pas aux caisses des détaillants." : "Print at actual size and verify with physical scanners before use. Long internal SKUs may need wider labels. This module does not generate compliant nutrition labels or connect to retailer tills."}
               </p>
               <p>
-                Lot references are recorded on stock movements. Expiry tracking,
-                lot-level balances and recall workflows are not included yet.
+                {fr ? "Les références de lot sont inscrites sur les mouvements de stock. Le suivi des dates d’expiration, les soldes par lot et les rappels de produits ne sont pas encore inclus." : "Lot references are recorded on stock movements. Expiry tracking, lot-level balances and recall workflows are not included yet."}
               </p>
             </section>
           ) : null}
@@ -689,9 +678,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                 )}
               </div>
               <p className="text-xs text-slate-500">
-                New products start at zero stock. Use ± Stock to record opening
-                quantities with a reason and lot reference. Retail barcodes
-                require legitimate GS1 assignment.
+                {fr ? "Un nouveau produit commence avec un stock à zéro. Utilisez ± Stock pour inscrire les quantités de départ avec un motif et une référence de lot. Les codes-barres de détail demandent une attribution GS1 légitime." : "New products start at zero stock. Use ± Stock to record opening quantities with a reason and lot reference. Retail barcodes require legitimate GS1 assignment."}
               </p>
             </>
           )}

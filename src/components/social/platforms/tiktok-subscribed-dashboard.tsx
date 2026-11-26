@@ -857,9 +857,7 @@ export function TikTokSubscribedDashboard({
         <div className="flex items-center gap-2 rounded-[8px] border border-[#D5E2FB] bg-[#F3F6FF] px-4 py-2.5 text-[13px] leading-5 text-[#5C6A82]">
           <Info className="h-4 w-4 shrink-0 text-[#8EA0C4]" />
           <p>
-            Some TikTok metrics may not be available for the last 1-2 days. The
-            number of followers will only be available from the day the account
-            got connected.
+            {fr ? "Certaines mesures TikTok peuvent manquer pour les 1 ou 2 derniers jours. Le nombre d’abonnés n’existe qu’à partir du jour où le compte a été branché." : "Some TikTok metrics may not be available for the last 1-2 days. The number of followers will only be available from the day the account got connected."}
           </p>
         </div>
         <div className="flex items-center justify-between gap-4 pt-2">

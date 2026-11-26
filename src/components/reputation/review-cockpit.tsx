@@ -123,8 +123,7 @@ function ReviewResults({
             {fr ? "Avis par plateforme" : "Reviews by platform"}
           </h2>
           <p className="mt-1 text-xs text-slate-600">
-            Source columns show this page of the filtered feed. Select any
-            review to work on it below.
+            {fr ? "Les colonnes de source montrent cette page du fil filtré. Choisissez un avis pour le traiter ci-dessous." : "Source columns show this page of the filtered feed. Select any review to work on it below."}
           </p>
         </div>
         <div
@@ -323,8 +322,7 @@ export function ReviewCockpit({
               {fr ? "Chaque expérience. Une seule réputation." : "Every experience. One reputation."}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Your existing TAKATAK feedback, Google reviews and linked QMAPS
-              records, together in the same workspace.
+              {fr ? "Vos commentaires TAKATAK, vos avis Google et vos fiches QMAPS liées, réunis dans le même espace." : "Your existing TAKATAK feedback, Google reviews and linked QMAPS records, together in the same workspace."}
             </p>
           </div>
           <Link
@@ -340,14 +338,12 @@ export function ReviewCockpit({
           </Link>
         </div>
         <p className="relative mt-5 border-t border-slate-700 pt-4 text-xs text-[#B8C4D3]">
-          Digital Solutions. Real Results. Manage customer feedback across your
-          connected TAKATAK businesses.
+          {fr ? "Solutions numériques. Résultats réels. Gérez les commentaires clients de toutes vos entreprises TAKATAK branchées." : "Digital Solutions. Real Results. Manage customer feedback across your connected TAKATAK businesses."}
         </p>
       </div>
       {!snapshot ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-          Select an authorized client workspace to load its review cockpit. No
-          sample records are mixed into this feed.
+          {fr ? "Choisissez un espace client autorisé pour charger son centre des avis. Aucun exemple n’est mêlé à ce fil." : "Select an authorized client workspace to load its review cockpit. No sample records are mixed into this feed."}
         </div>
       ) : (
         <>
@@ -634,8 +630,7 @@ export function ReviewCockpit({
                             {googleDrafts[r.id].text}
                           </p>
                           <p className="mt-2 text-[11px] text-slate-600">
-                            Review the wording before publishing. A generated
-                            draft is not a public response.
+                            {fr ? "Relisez le texte avant de publier. Un brouillon généré n’est pas une réponse publique." : "Review the wording before publishing. A generated draft is not a public response."}
                           </p>
                         </div>
                       )}
@@ -788,8 +783,7 @@ export function ReviewCockpit({
                   : "Your next customer story starts here"}
               </h3>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                Create a first-party review page or use an approved source
-                connection. Unsupported provider actions stay unavailable.
+                {fr ? "Créez une page d’avis TAKATAK ou utilisez une source approuvée. Les actions qu’un fournisseur ne permet pas restent impossibles." : "Create a first-party review page or use an approved source connection. Unsupported provider actions stay unavailable."}
               </p>
             </div>
           )}

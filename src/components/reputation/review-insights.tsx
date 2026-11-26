@@ -77,8 +77,7 @@ export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
             })}
           </div>
           <p className="mt-4 text-[11px] leading-5 text-slate-500">
-            Recommendations and source-excluded reviews are excluded from star
-            calculations.
+            Les recommandations et les avis exclus par la source ne comptent pas dans le calcul des étoiles. · Recommendations and source-excluded reviews are excluded from star calculations.
           </p>
         </CardBody>
       </Card>
@@ -91,8 +90,7 @@ export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
           <div className="max-h-56 overflow-auto">
             <table className="w-full text-left text-xs">
               <caption className="sr-only">
-                Review metrics per location for the currently filtered loaded
-                window
+                Mesures des avis par emplacement pour la période chargée et filtrée · Review metrics per location for the currently filtered loaded window
               </caption>
               <thead>
                 <tr className="border-b border-slate-100 text-slate-500">

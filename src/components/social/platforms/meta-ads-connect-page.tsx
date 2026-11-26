@@ -188,8 +188,7 @@ export function MetaAdsConnectPage({
   if (state === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        More than one Meta ad account is selected for this brand. Open Manage
-        connections and keep a single ad account.
+        {fr ? "Plus d’un compte publicitaire Meta est choisi pour cette marque. Ouvrez Gérer les connexions et gardez un seul compte publicitaire." : "More than one Meta ad account is selected for this brand. Open Manage connections and keep a single ad account."}
       </div>
     );
   }
@@ -208,8 +207,7 @@ export function MetaAdsConnectPage({
             {fr ? "Choisir un compte publicitaire Meta" : "Choose a Meta ad account"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            This Facebook login can access more than one ad account. Connect
-            one account to this brand.
+            {fr ? "Ce compte Facebook a accès à plus d’un compte publicitaire. Branchez un seul compte à cette marque." : "This Facebook login can access more than one ad account. Connect one account to this brand."}
           </p>
           <fieldset className="mt-5 space-y-2">
             <legend className="sr-only">{fr ? "Comptes publicitaires Meta" : "Meta ad accounts"}</legend>
@@ -268,9 +266,7 @@ export function MetaAdsConnectPage({
             {fr ? "Aucun compte publicitaire disponible" : "No ad account was available"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            This Facebook login does not have a Meta ad account we can read.
-            Create one in Meta Ads Manager, or sign in with a Facebook user
-            that can access an ad account.
+            {fr ? "Ce compte Facebook n’a aucun compte publicitaire Meta lisible. Créez-en un dans le Gestionnaire de publicités Meta, ou connectez-vous avec un utilisateur Facebook qui a accès à un compte publicitaire." : "This Facebook login does not have a Meta ad account we can read. Create one in Meta Ads Manager, or sign in with a Facebook user that can access an ad account."}
           </p>
           <button
             type="button"
@@ -297,9 +293,7 @@ export function MetaAdsConnectPage({
                 {fr ? "Brancher un compte publicitaire Meta" : "Connect a Meta ad account"}
               </h2>
               <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-                Sign in with Facebook to choose an ad account for this brand.
-                TAKATAK requests read access to ads. Facebook Page publishing
-                is not included.
+                {fr ? "Connectez-vous avec Facebook pour choisir un compte publicitaire pour cette marque. TAKATAK demande un accès en lecture aux publicités. La publication sur la page Facebook n’est pas incluse." : "Sign in with Facebook to choose an ad account for this brand. TAKATAK requests read access to ads. Facebook Page publishing is not included."}
               </p>
             </div>
             <button

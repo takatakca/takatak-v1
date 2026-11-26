@@ -55,8 +55,7 @@ export default async function DashboardLayout({
           <p className="text-sm font-semibold uppercase tracking-wide text-amber-500">Configuration requise · Setup required</p>
           <h1 className="mt-2 text-xl font-semibold text-slate-900">Tableau de bord injoignable · Dashboard unavailable</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
-            Authentication is not configured for this deployment, so the dashboard is disabled.
-            An administrator must set the Supabase environment variables before access is possible.
+            L’authentification n’est pas configurée pour ce déploiement : le tableau de bord est désactivé. Un administrateur doit définir les variables d’environnement Supabase pour ouvrir l’accès. · Authentication is not configured for this deployment, so the dashboard is disabled. An administrator must set the Supabase environment variables before access is possible.
           </p>
         </div>
       </main>

@@ -90,8 +90,7 @@ export default async function VoipOverviewPage() {
             <Badge tone="muted">Géré par MIMT · Managed by MIMT</Badge>
           </div>
           <p className="mt-1 text-sm leading-relaxed text-slate-500">
-            An overview of your business phone service. The phone service itself runs in MIMT, an
-            independent telecom app; TAKATAK only shows what MIMT shares with this workspace.
+            Un aperçu de votre service de téléphone d’affaires. Le service lui-même roule dans MIMT, une app télécom indépendante ; TAKATAK montre seulement ce que MIMT partage avec cet espace. · An overview of your business phone service. The phone service itself runs in MIMT, an independent telecom app; TAKATAK only shows what MIMT shares with this workspace.
           </p>
         </div>
       </div>

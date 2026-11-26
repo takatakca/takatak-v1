@@ -95,8 +95,7 @@ export function HostingEnvironmentView({
             </span>
           </div>
           <p className="mt-2 max-w-2xl text-sm text-slate-500">
-            Operate one environment safely: deployments, runtime, data, backups, logs, domains, SSL, workers, CDN and
-            incidents.
+            Gérez un environnement en toute sécurité : déploiements, exécution, données, sauvegardes, journaux, domaines, SSL, tâches, CDN et incidents. · Operate one environment safely: deployments, runtime, data, backups, logs, domains, SSL, workers, CDN and incidents.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

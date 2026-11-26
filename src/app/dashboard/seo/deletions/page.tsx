@@ -27,9 +27,7 @@ export default async function SeoDeletionsPage({searchParams}:{
    <p className="mt-2 text-sm text-blue-100">Enregistré sur le serveur quand un site SEO est supprimé pour de bon. Les reçus appartiennent seulement à l’espace client TAKATAK choisi. · Recorded server-side when SEO sites are permanently removed. Receipts belong only to the selected TAKATAK client workspace.</p>
   </header>
   <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-   These are operational database receipts, not legal certification that all personal data
-   across TAKATAK products was erased. Retention policy and external backup lifecycle
-   require separate approval.
+   Ce sont des reçus opérationnels de la base de données, pas une attestation légale que toutes les données personnelles des produits TAKATAK ont été effacées. La politique de conservation et le cycle des sauvegardes externes demandent une approbation à part. · These are operational database receipts, not legal certification that all personal data across TAKATAK products was erased. Retention policy and external backup lifecycle require separate approval.
   </p>
   {!validOffset?<p role="alert" className="text-sm text-red-700">Position de page invalide. · Invalid pagination offset.</p>:null}
   {validOffset&&result?.kind!=="ready"?<p role="status" className="rounded-xl border bg-white p-4 text-sm text-amber-800">

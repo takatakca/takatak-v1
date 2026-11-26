@@ -40,21 +40,17 @@ export function ReviewDeliveryHistory({
       />
       <CardBody>
         <p className="mb-4 text-xs leading-5 text-slate-500">
-          Provider accepted means the send API accepted a request. It does not
-          confirm delivery to the customer. Shared links, SMS and email sent
-          outside TAKATAK have no automatic sending receipt.
+          « Accepté par le fournisseur » veut dire que l’API d’envoi a accepté la demande, pas que le client l’a reçue. Les liens partagés, textos et courriels envoyés hors de TAKATAK n’ont pas de reçu d’envoi automatique. · Provider accepted means the send API accepted a request. It does not confirm delivery to the customer. Shared links, SMS and email sent outside TAKATAK have no automatic sending receipt.
         </p>
         {!requests.length ? (
           <p className="py-4 text-sm text-slate-500">
-            No tracked requests yet. Create a request above to start following
-            its activity.
+            Aucune demande suivie pour l’instant. Créez une demande ci-dessus pour suivre son activité. · No tracked requests yet. Create a request above to start following its activity.
           </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-xs">
               <caption className="sr-only">
-                Latest review requests, source sending outcomes and first-party
-                engagement timestamps
+                Dernières demandes d’avis, résultats d’envoi des sources et heures d’engagement recueillies par TAKATAK · Latest review requests, source sending outcomes and first-party engagement timestamps
               </caption>
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500">
@@ -167,9 +163,7 @@ export function ReviewDeliveryHistory({
           </div>
         )}
         <p className="mt-4 text-[11px] leading-5 text-slate-500">
-          A recorded first-party rating does not confirm that a review was
-          published on Google or another provider. No message is resent from
-          this activity log.
+          Une note recueillie par TAKATAK ne confirme pas qu’un avis a été publié sur Google ou ailleurs. Aucun message n’est renvoyé depuis ce journal. · A recorded first-party rating does not confirm that a review was published on Google or another provider. No message is resent from this activity log.
         </p>
       </CardBody>
     </Card>

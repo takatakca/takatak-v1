@@ -152,8 +152,7 @@ function NewUserView() {
           </h2>
 
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
 
           <Link
@@ -443,8 +442,7 @@ export function SocialSummaryDashboard({
   if (!previewing && data.dataUnavailable) {
     return (
       <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-5 text-sm text-rose-700">
-        TAKATAK could not safely load the social analytics database. No
-        replacement or sample values are displayed.
+        {fr ? "TAKATAK n’a pas pu charger la base de statistiques sociales en toute sécurité. Aucune valeur de remplacement ni d’exemple n’est affichée." : "TAKATAK could not safely load the social analytics database. No replacement or sample values are displayed."}
       </div>
     );
   }

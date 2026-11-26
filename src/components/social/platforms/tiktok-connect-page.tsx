@@ -153,8 +153,7 @@ export function TikTokConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple TikTok selections need attention. Open Manage connections and
-        confirm a single TikTok account for this brand.
+        {fr ? "Plusieurs comptes TikTok sont choisis. Ouvrez Gérer les connexions et confirmez un seul compte TikTok pour cette marque." : "Multiple TikTok selections need attention. Open Manage connections and confirm a single TikTok account for this brand."}
       </div>
     );
   }
@@ -169,8 +168,7 @@ export function TikTokConnectPage({
                 {fr ? "Aucun compte TikTok branché" : "No TikTok account connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Your saved TikTok history remains stored. Reconnect the same
-                account to restore only that account’s analytics.
+                {fr ? "Votre historique TikTok reste enregistré. Reconnectez le même compte pour retrouver les statistiques de ce compte seulement." : "Your saved TikTok history remains stored. Reconnect the same account to restore only that account’s analytics."}
               </p>
             </div>
             <Link
@@ -212,8 +210,7 @@ export function TikTokConnectPage({
               {fr ? "Branchez votre compte TikTok" : "Connect your TikTok account"}
             </h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-              Sign in with TikTok to import a personal account. Business and Ads
-              connections stay separate.
+              {fr ? "Connectez-vous avec TikTok pour importer un compte personnel. Les branchements Business et Ads restent séparés." : "Sign in with TikTok to import a personal account. Business and Ads connections stay separate."}
             </p>
             {error ? (
               <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -269,8 +266,7 @@ export function TikTokConnectPage({
             {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(

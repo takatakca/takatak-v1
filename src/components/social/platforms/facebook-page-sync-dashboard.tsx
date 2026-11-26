@@ -872,15 +872,13 @@ export function FacebookPageSyncDashboard({
 
         {status === "empty" ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Sync succeeded. No data available for this period. TAKATAK does not
-            invent zero metrics before Facebook returns data.
+            {fr ? "Synchronisation réussie. Aucune donnée pour cette période. TAKATAK n’invente pas de zéros avant que Facebook renvoie des données." : "Sync succeeded. No data available for this period. TAKATAK does not invent zero metrics before Facebook returns data."}
           </div>
         ) : null}
 
         {status === "degraded" ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Partial analytics synchronized. Some pages of Meta insights were
-            unavailable — resume to continue safely.
+            {fr ? "Statistiques synchronisées en partie. Certaines pages des statistiques Meta étaient injoignables : reprenez pour continuer en toute sécurité." : "Partial analytics synchronized. Some pages of Meta insights were unavailable — resume to continue safely."}
           </div>
         ) : null}
 

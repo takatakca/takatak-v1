@@ -117,9 +117,7 @@ export function RolesPremiumModal({
                 {fr ? "Répartissez le travail : donnez un rôle à chaque membre de l’équipe." : "Divide and conquer: assign roles to your team members."}
               </h3>
               <p className="mt-3 max-w-[380px] text-[15px] leading-6 text-[#5b5b5b]">
-                Create a role for each job on the team. Agencies that manage
-                several brands can give each person only the sections they need
-                in TAKATAK.
+                {fr ? "Créez un rôle pour chaque tâche de l’équipe. Les agences qui gèrent plusieurs marques peuvent donner à chacun seulement les sections dont il a besoin dans TAKATAK." : "Create a role for each job on the team. Agencies that manage several brands can give each person only the sections they need in TAKATAK."}
               </p>
 
               <ul className="mt-6 max-w-[400px] space-y-2.5">

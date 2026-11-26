@@ -114,8 +114,7 @@ export function VerificationPanel() {
       </div>
 
       <div className="rounded-lg bg-slate-50 p-3 text-left text-xs leading-5 text-slate-600 ring-1 ring-inset ring-slate-200">
-        The email may take a few minutes to arrive. Check your
-        spam or junk folder before requesting another email.
+        {fr ? "Le courriel peut prendre quelques minutes. Vérifiez vos pourriels avant d’en demander un autre." : "The email may take a few minutes to arrive. Check your spam or junk folder before requesting another email."}
       </div>
 
       {successMessage ? (
@@ -166,8 +165,7 @@ export function VerificationPanel() {
 
         {!email ? (
           <p className="text-xs leading-5 text-slate-500">
-            Return to registration to request another
-            verification email.
+            {fr ? "Retournez à l’inscription pour demander un autre courriel de vérification." : "Return to registration to request another verification email."}
           </p>
         ) : null}
 

@@ -199,9 +199,7 @@ export function BrandSettingsAi({
         {fr ? "Configuration des consignes" : "Instructions configuration"}
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-        Define the writing style for your messages. The AI assistant will use
-        it as a guide when creating your posts. Tip: Writing your instructions
-        in English usually leads to more accurate results.
+        {fr ? "Définissez le style d’écriture de vos messages. L’assistant IA s’en sert de guide pour rédiger vos publications. Astuce : des consignes en anglais donnent souvent des résultats plus précis." : "Define the writing style for your messages. The AI assistant will use it as a guide when creating your posts. Tip: Writing your instructions in English usually leads to more accurate results."}
       </p>
 
       {message ? (
@@ -297,8 +295,7 @@ export function BrandSettingsAi({
         </div>
       ) : (
         <p className="mt-8 text-sm text-slate-500">
-          You can view these instructions, but you need permission to change
-          them.
+          {fr ? "Vous pouvez voir ces consignes, mais il faut une autorisation pour les modifier." : "You can view these instructions, but you need permission to change them."}
         </p>
       )}
     </form>

@@ -669,9 +669,7 @@ const forcePreview =
                 id="social-onboarding-description"
                 className="mt-1.5 text-sm leading-6 text-slate-500"
               >
-                Choose the option that
-                matches how you manage
-                social media.
+                {fr ? "Choisissez l’option qui correspond à votre façon de gérer les réseaux sociaux." : "Choose the option that matches how you manage social media."}
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -714,9 +712,7 @@ const forcePreview =
               </h2>
 
               <p className="mt-1.5 text-sm leading-6 text-slate-500">
-                This prepares the correct
-                collaboration experience
-                for your workspace.
+                {fr ? "Cela prépare la bonne façon de collaborer dans votre espace." : "This prepares the correct collaboration experience for your workspace."}
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -759,9 +755,7 @@ const forcePreview =
               </h2>
 
               <p className="mt-1.5 text-sm leading-6 text-slate-500">
-                Select one or more features.
-                You can change your setup
-                later.
+                {fr ? "Choisissez une ou plusieurs fonctions. Vous pourrez changer votre configuration plus tard." : "Select one or more features. You can change your setup later."}
               </p>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -811,10 +805,7 @@ const forcePreview =
               </h2>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-                Connect your social
-                accounts now or enter the
-                dashboard and connect them
-                later.
+                {fr ? "Branchez vos comptes sociaux maintenant, ou entrez dans le tableau de bord et branchez-les plus tard." : "Connect your social accounts now or enter the dashboard and connect them later."}
               </p>
 
               <div className="mx-auto mt-6 grid max-w-md gap-3">

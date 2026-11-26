@@ -78,8 +78,7 @@ export function ReviewSourceDirectory() {
             ))}
           </div>
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            These are platform capabilities. Account connections and permissions
-            are checked separately in each workspace.
+            {fr ? "Ce sont les capacités de la plateforme. Les branchements et autorisations des comptes se vérifient à part dans chaque espace." : "These are platform capabilities. Account connections and permissions are checked separately in each workspace."}
           </p>
         </CardBody>
         <div className="grid gap-px border-t border-slate-100 bg-slate-100 md:grid-cols-2 xl:grid-cols-3">

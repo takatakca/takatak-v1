@@ -219,9 +219,7 @@ export default async function ReputationPage({
               </CardBody>
             </Card>
             <HonestyNote>
-              Every rating receives the public review option. Automatic delivery
-              requires configured messaging providers; a created link alone does
-              not mean a message was sent.
+              Chaque note reçoit l’option d’avis public. L’envoi automatique demande des fournisseurs de messagerie configurés ; un lien créé ne veut pas dire qu’un message est parti. · Every rating receives the public review option. Automatic delivery requires configured messaging providers; a created link alone does not mean a message was sent.
             </HonestyNote>
           </>
         }
@@ -231,8 +229,7 @@ export default async function ReputationPage({
               <ReviewImportWorkspace locations={importLocations} />
             ) : (
               <HonestyNote>
-                Import locations could not be loaded. Retry later; no reviews
-                have been imported from this form.
+                Les emplacements d’importation n’ont pas pu se charger. Réessayez plus tard ; aucun avis n’a été importé par ce formulaire. · Import locations could not be loaded. Retry later; no reviews have been imported from this form.
               </HonestyNote>
             )
           ) : (
@@ -285,9 +282,7 @@ export default async function ReputationPage({
               />
             </section>
             <HonestyNote>
-              Provider publishing requires an authorized connection and source
-              approval. Operator imports are separately marked and do not
-              establish a live provider connection.
+              La publication chez un fournisseur demande un branchement autorisé et l’approbation de la source. Les importations par un opérateur sont marquées à part et ne créent pas de branchement en direct. · Provider publishing requires an authorized connection and source approval. Operator imports are separately marked and do not establish a live provider connection.
             </HonestyNote>
           </>
         }

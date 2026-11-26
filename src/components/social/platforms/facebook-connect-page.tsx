@@ -175,8 +175,7 @@ export function FacebookConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple Facebook Page selections need attention. Open Manage
-        connections and confirm a single Page for this brand.
+        {fr ? "Plusieurs pages Facebook sont choisies. Ouvrez Gérer les connexions et confirmez une seule page pour cette marque." : "Multiple Facebook Page selections need attention. Open Manage connections and confirm a single Page for this brand."}
       </div>
     );
   }
@@ -201,8 +200,7 @@ export function FacebookConnectPage({
                 {fr ? "Aucune page Facebook branchée" : "No Facebook Page connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Your saved Facebook history remains stored. Reconnect the same
-                Page to restore only that Page&apos;s analytics.
+                {fr ? "Votre historique Facebook reste enregistré. Reconnectez la même page pour retrouver les statistiques de cette page seulement." : "Your saved Facebook history remains stored. Reconnect the same Page to restore only that Page's analytics."}
               </p>
               {error ? (
                 <p className="mt-2 text-sm text-rose-700" role="alert">
@@ -296,8 +294,7 @@ export function FacebookConnectPage({
             {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(

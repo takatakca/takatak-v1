@@ -177,8 +177,7 @@ export function DomainsManager({
               <h2 className="text-base font-semibold">{fr ? "Renouvellements de domaines à venir" : "Upcoming domain renewals"}</h2>
             </div>
             <p className="mt-2 text-sm text-slate-700">
-              These are dates recorded in your TAKATAK workspace, not live registrar confirmations.
-              Check with your domain provider before making renewal decisions.
+              {fr ? "Ce sont des dates inscrites dans votre espace TAKATAK, pas des confirmations en direct du registraire. Vérifiez auprès de votre fournisseur de domaine avant de décider d’un renouvellement." : "These are dates recorded in your TAKATAK workspace, not live registrar confirmations. Check with your domain provider before making renewal decisions."}
             </p>
             <ul className="mt-3 space-y-2">
               {renewalNotices.slice(0, 5).map((notice) => (

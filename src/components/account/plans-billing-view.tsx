@@ -92,8 +92,7 @@ function CheckoutReturnNotice() {
   if (checkout === 'success') {
     return (
       <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950">
-        Stripe is confirming this payment. This page does not unlock the plan.
-        Refresh in a few seconds after the webhook arrives.
+        {fr ? "Stripe confirme ce paiement. Cette page ne débloque pas le forfait. Actualisez dans quelques secondes, après l’arrivée du webhook." : "Stripe is confirming this payment. This page does not unlock the plan. Refresh in a few seconds after the webhook arrives."}
       </p>
     );
   }
@@ -265,8 +264,7 @@ function CurrentPlanCard({
         data.subscriptionStatus === 'grace_period') &&
       data.subscriptionAccess === 'paid' ? (
         <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Payment failed. Access stays on until retries finish. Update the
-          payment method to keep this plan.
+          {fr ? "Le paiement a échoué. L’accès reste ouvert pendant les nouvelles tentatives. Mettez à jour le moyen de paiement pour garder ce forfait." : "Payment failed. Access stays on until retries finish. Update the payment method to keep this plan."}
         </p>
       ) : null}
       <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-500">
@@ -287,8 +285,7 @@ function CurrentPlanCard({
         <p className="mt-4 text-xs text-slate-600">{fr ? "Aucun paiement d’abonnement TAKATAK Social n’est requis pour cet espace." : "No TAKATAK Social subscription payment is required for this workspace."}</p>
       ) : !data.checkoutLive ? (
         <p className="mt-4 text-xs text-slate-400">
-          Checkout is not live yet. Add Stripe keys and Price IDs to enable
-          Upgrade. Viewing plans does not charge this workspace.
+          {fr ? "Le paiement en ligne n’est pas encore actif : ajoutez les clés Stripe et les identifiants de prix pour activer le changement de forfait. Consulter les forfaits ne facture rien à cet espace." : "Checkout is not live yet. Add Stripe keys and Price IDs to enable Upgrade. Viewing plans does not charge this workspace."}
         </p>
       ) : null}
     </section>
@@ -368,8 +365,7 @@ function BrandFreezePanel({
         </p>
       ) : freeze.canAutoRestore ? (
         <p className="mt-2 text-sm text-slate-500">
-          This plan has spare brand slots. Restore frozen brands up to the
-          allowance. Scheduled posts stay paused until you review them.
+          {fr ? "Ce forfait a des places de marque libres. Rétablissez des marques gelées jusqu’à la limite. Les publications planifiées restent en pause jusqu’à votre révision." : "This plan has spare brand slots. Restore frozen brands up to the allowance. Scheduled posts stay paused until you review them."}
         </p>
       ) : (
         <p className="mt-2 text-sm text-slate-500">
@@ -493,9 +489,7 @@ function AddOnsRow({
     <section>
       <h2 className="text-lg font-semibold text-[#1d1d1f]">{fr ? "Modules complémentaires" : "Add-ons"}</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Add-ons bill with the Social plan. Adding charges now. Removing waits
-        until the period ends. This page does not unlock them — the Stripe
-        webhook does.
+        {fr ? "Les modules se facturent avec le forfait Social. Un ajout est facturé tout de suite ; un retrait attend la fin de la période. Cette page ne les débloque pas : c’est le webhook Stripe qui le fait." : "Add-ons bill with the Social plan. Adding charges now. Removing waits until the period ends. This page does not unlock them — the Stripe webhook does."}
       </p>
       {message ? (
         <p className="mt-3 text-sm text-slate-600">{message}</p>
@@ -1018,8 +1012,7 @@ function PaymentsHistory() {
       </div>
       <p className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-6 text-sm text-slate-500">
         <FileText className="h-4 w-4 text-slate-400" />
-        No payments yet. Invoices appear here when Stripe billing is connected.
-        The screenshot amounts are not copied into this workspace.
+        {fr ? "Aucun paiement pour l’instant. Les factures apparaissent ici une fois la facturation Stripe branchée. Les montants de la capture d’écran ne sont pas copiés dans cet espace." : "No payments yet. Invoices appear here when Stripe billing is connected. The screenshot amounts are not copied into this workspace."}
       </p>
     </section>
   );
@@ -1268,8 +1261,7 @@ function BillingInformationForm({
         </div>
       ) : (
         <p className="mt-6 text-sm text-slate-500">
-          You can view billing information, but you need permission to change
-          it.
+          {fr ? "Vous pouvez voir la facturation, mais il faut une autorisation pour la modifier." : "You can view billing information, but you need permission to change it."}
         </p>
       )}
     </form>

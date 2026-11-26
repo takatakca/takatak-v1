@@ -20,9 +20,7 @@ export default async function ContributionsPage() {
           Modération du contenu · Content moderation
         </h1>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
-          Review community-proposed edits for AHMV posts, news, photos, galleries, arenas,
-          teams, pages and schedules. Paid membership changes review priority only.
-          Every accepted change remains human-approved, versioned and auditable.
+          Révisez les modifications proposées par la communauté pour les publications, nouvelles, photos, galeries, arénas, équipes, pages et horaires AHMV. L’abonnement payant change seulement la priorité de révision. Chaque changement accepté reste approuvé par une personne, versionné et vérifiable. · Review community-proposed edits for AHMV posts, news, photos, galleries, arenas, teams, pages and schedules. Paid membership changes review priority only. Every accepted change remains human-approved, versioned and auditable.
         </p>
       </section>
 

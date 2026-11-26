@@ -543,8 +543,7 @@ function UsersPanel({
 
       {teamUnlocked && !capabilities.canInvite ? (
         <p className="mt-3 text-sm text-slate-500">
-          You can view this workspace team, but you need permission to invite
-          people.
+          {fr ? "Vous pouvez voir l’équipe de cet espace, mais il faut une autorisation pour inviter des gens." : "You can view this workspace team, but you need permission to invite people."}
         </p>
       ) : null}
 
@@ -1062,8 +1061,7 @@ function RolesPanel({
           onClose={() => setAddNoticeOpen(false)}
         >
           <p className="text-sm leading-6 text-slate-600">
-            This plan includes custom roles. A custom-role editor is not
-            available yet, so the built-in roles still apply.
+            {fr ? "Ce forfait comprend des rôles sur mesure. L’éditeur de rôles sur mesure arrive bientôt ; les rôles intégrés s’appliquent en attendant." : "This plan includes custom roles. A custom-role editor is not available yet, so the built-in roles still apply."}
           </p>
         </SidePanel>
       ) : null}
@@ -1228,8 +1226,7 @@ function MemberDetail({
         </div>
       ) : (
         <p className="text-sm text-slate-500">
-          You can view this member, but you need permission to change their
-          access.
+          {fr ? "Vous pouvez voir ce membre, mais il faut une autorisation pour changer son accès." : "You can view this member, but you need permission to change their access."}
         </p>
       )}
     </div>

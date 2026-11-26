@@ -142,8 +142,7 @@ export function BlogConnectDialog({
                 {fr ? "Brancher un blogue" : "Connect a blog"}
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                TAKATAK creates a blog page for the website already connected to
-                this brand.
+                {fr ? "TAKATAK crée une page de blogue pour le site déjà branché à cette marque." : "TAKATAK creates a blog page for the website already connected to this brand."}
               </p>
             </div>
           </div>

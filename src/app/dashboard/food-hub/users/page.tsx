@@ -17,8 +17,7 @@ export default async function FoodHubUsersPage() {
         <div>
           <h1>Users &amp; Roles</h1>
           <div className="small" style={{ maxWidth: 760 }}>
-            Everyone signs in with their own TAKATAK account. To add someone, invite them to this workspace in TAKATAK → Team &amp; Permissions;
-            their workspace role decides what they can do in Food Hub.
+            Chacun se connecte avec son propre compte TAKATAK. Pour ajouter quelqu’un, invitez-le dans cet espace sous TAKATAK → Équipe et autorisations ; son rôle dans l’espace décide de ce qu’il peut faire dans Food Hub. · Everyone signs in with their own TAKATAK account. To add someone, invite them to this workspace in TAKATAK → Team &amp; Permissions; their workspace role decides what they can do in Food Hub.
           </div>
         </div>
         <Link className="button" href="/dashboard/team">Inviter ou changer les rôles · Invite or change roles</Link>

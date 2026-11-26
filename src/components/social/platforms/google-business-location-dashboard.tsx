@@ -574,8 +574,7 @@ function EmptyMediaSearch() {
         {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </p>
       <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-[#9AA3AB]">
-        You can use the filter tools to narrow down your search. Check if the
-        current date range suits your needs.
+        {fr ? "Utilisez les filtres pour affiner votre recherche. Vérifiez que la période choisie vous convient." : "You can use the filter tools to narrow down your search. Check if the current date range suits your needs."}
       </p>
     </div>
   );
@@ -1057,9 +1056,7 @@ export function GoogleBusinessLocationDashboard({
       <div className="flex items-start gap-3 rounded-[10px] border border-[#8495FF] bg-[#EEF0FF] px-4 py-3 text-sm text-[#303B78]">
         <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#6477F3]" />
         <p>
-          Some Google Business Profile metrics may not be available for the last
-          5–6 days. Keywords from the previous month may not be fully updated
-          during the first days of the current month.
+          {fr ? "Certaines mesures de Google Business Profile peuvent manquer pour les 5 ou 6 derniers jours. Les mots-clés du mois précédent peuvent être incomplets pendant les premiers jours du mois en cours." : "Some Google Business Profile metrics may not be available for the last 5–6 days. Keywords from the previous month may not be fully updated during the first days of the current month."}
         </p>
       </div>
 

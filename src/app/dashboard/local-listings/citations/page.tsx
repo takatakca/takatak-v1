@@ -18,8 +18,7 @@ export default async function CitationsPage() {
       <section className="rounded-xl border border-blue-200 bg-blue-50 p-4" aria-label="Citation audit tool">
         <h2 className="text-base font-semibold text-slate-900">Local Citation Audit</h2>
         <p className="mt-1 text-sm text-slate-600">
-          Compare business details against your own CSV of directory citations. Identify mismatched phone numbers,
-          addresses and websites; download a correction report. This does not scan or modify external directories.
+          Comparez vos informations d’entreprise à votre propre CSV de citations d’annuaires. Repérez les téléphones, adresses et sites qui ne concordent pas ; téléchargez un rapport de correction. Les annuaires externes ne sont ni parcourus ni modifiés. · Compare business details against your own CSV of directory citations. Identify mismatched phone numbers, addresses and websites; download a correction report. This does not scan or modify external directories.
         </p>
         <Link href="/dashboard/local-listings/citations/audit"
           className="mt-3 inline-flex rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">

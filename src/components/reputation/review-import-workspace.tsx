@@ -27,6 +27,7 @@ function CommitImport({
 }: {
   preview: Extract<ReviewImportResult, { ok: true }>;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, action, pending] = useActionState(importReviewedReviewsAction, {
     ok: null,
   });
@@ -53,8 +54,7 @@ function CommitImport({
           disabled={pending || state.ok === true}
           className="mt-1"
         />
-        I am authorized to store these reviews for this business. I checked the
-        source and removed unrelated personal information.
+        {fr ? "Je suis autorisé à conserver ces avis pour cette entreprise. J’ai vérifié la source et retiré les renseignements personnels sans rapport." : "I am authorized to store these reviews for this business. I checked the source and removed unrelated personal information."}
       </label>
       <button
         type="submit"
@@ -171,9 +171,7 @@ export function ReviewImportWorkspace({
           </p>
           {!locations.length ? (
             <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              Create an active business listing in Local Listings before
-              importing reviews. Demo, planned and archived listings cannot
-              receive imports.
+              {fr ? "Créez une fiche d’entreprise active dans Fiches locales avant d’importer des avis. Les fiches de démonstration, prévues ou archivées ne reçoivent pas d’importation." : "Create an active business listing in Local Listings before importing reviews. Demo, planned and archived listings cannot receive imports."}
             </p>
           ) : (
             <>
@@ -226,10 +224,7 @@ export function ReviewImportWorkspace({
                       />
                     </label>
                     <p className="break-words text-xs leading-6 text-slate-500">
-                      Required columns: source, externalId, text, reviewedAt
-                      (ISO date/time). Optional: author, rating, url. Quoted
-                      commas and multiline comments are supported. Reuse source
-                      IDs to prevent duplicates.
+                      {fr ? "Colonnes requises : source, externalId, text, reviewedAt (date et heure ISO). Facultatives : author, rating, url. Les virgules entre guillemets et les commentaires sur plusieurs lignes sont acceptés. Réutilisez les identifiants de source pour éviter les doublons." : "Required columns: source, externalId, text, reviewedAt (ISO date/time). Optional: author, rating, url. Quoted commas and multiline comments are supported. Reuse source IDs to prevent duplicates."}
                     </p>
                     <a
                       href="data:text/csv;charset=utf-8,source%2CexternalId%2Cauthor%2Ctext%2Crating%2CreviewedAt%2Curl%0A"

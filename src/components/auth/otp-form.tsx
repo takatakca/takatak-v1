@@ -551,8 +551,7 @@ export function OtpForm() {
 
       {locked ? (
         <p className="text-center text-xs font-medium text-rose-700">
-          You have reached the maximum number of attempts. Please try again
-          later.
+          {fr ? "Vous avez atteint le nombre maximal de tentatives. Réessayez plus tard." : "You have reached the maximum number of attempts. Please try again later."}
         </p>
       ) : null}
 

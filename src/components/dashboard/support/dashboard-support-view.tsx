@@ -9,6 +9,7 @@ import { CreditCard, FileText, LifeBuoy, Mail } from "lucide-react";
 import { ContactForm } from "@/components/website/support/ContactForm";
 import { SUPPORT_EMAIL } from "@/lib/website/live-chat-config";
 import { WebsiteProviders } from "@/lib/website/website-providers";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const LINKS = [
   { href: "/dashboard/billing", icon: CreditCard, fr: "Mon forfait et ma facturation", en: "My plan and billing" },
@@ -16,6 +17,7 @@ const LINKS = [
 ] as const;
 
 export function DashboardSupportView({ email, defaultMessage }: { email: string | null; defaultMessage?: string }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <WebsiteProviders isAuthenticated email={email} initialLanguage="fr">
       <div className="space-y-6">
@@ -30,8 +32,7 @@ export function DashboardSupportView({ email, defaultMessage }: { email: string 
               français ou en anglais.
             </p>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
-              Write to the TAKATAK team: your message is linked to your account and a person answers, in French or
-              English.
+              {fr ? "Écrivez à l’équipe TAKATAK : votre message est lié à votre compte et une personne vous répond, en français ou en anglais." : "Write to the TAKATAK team: your message is linked to your account and a person answers, in French or English."}
             </p>
           </div>
         </div>

@@ -153,8 +153,7 @@ export function XConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple X selections need attention. Open Manage connections and
-        confirm a single X account for this brand.
+        {fr ? "Plusieurs comptes X sont choisis. Ouvrez Gérer les connexions et confirmez un seul compte X pour cette marque." : "Multiple X selections need attention. Open Manage connections and confirm a single X account for this brand."}
       </div>
     );
   }
@@ -169,8 +168,7 @@ export function XConnectPage({
                 {fr ? "Aucun compte X branché" : "No X account connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Your saved X history remains stored. Reconnect the same
-                account to restore only that account&apos;s analytics.
+                {fr ? "Votre historique X reste enregistré. Reconnectez le même compte pour retrouver les statistiques de ce compte seulement." : "Your saved X history remains stored. Reconnect the same account to restore only that account's analytics."}
               </p>
             </div>
             <Link
@@ -187,8 +185,7 @@ export function XConnectPage({
 
         {isConnected ? (
           <p className="rounded-[14px] border border-slate-200 bg-white px-5 py-4 text-sm leading-6 text-slate-600">
-            This X account is connected to the brand. TAKATAK does not import
-            X statistics yet, so the figures below stay empty.
+            {fr ? "Ce compte X est branché à la marque. TAKATAK n’importe pas encore les statistiques X (API payante) : les chiffres ci-dessous restent vides." : "This X account is connected to the brand. TAKATAK does not import X statistics yet, so the figures below stay empty."}
           </p>
         ) : null}
 
@@ -218,8 +215,7 @@ export function XConnectPage({
               {fr ? "Branchez votre compte X" : "Connect your X account"}
             </h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-              Sign in with X to import this brand’s account. X is a paid add-on
-              and needs an available slot.
+              {fr ? "Connectez-vous avec X pour importer le compte de cette marque. X est un module payant et demande une place libre." : "Sign in with X to import this brand’s account. X is a paid add-on and needs an available slot."}
             </p>
             {error ? (
               <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -275,8 +271,7 @@ export function XConnectPage({
             {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(

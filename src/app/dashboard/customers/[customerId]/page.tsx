@@ -182,10 +182,7 @@ export default async function CustomerDetailPage({
               {customer.evidenceStatus}
             </Badge>
             <p className="text-sm leading-relaxed text-slate-600">
-              The customer record is a normalized view. Reservation rows, matched
-              messages, and source links below remain separate evidence; the
-              dashboard does not treat a historical export as proof of a current
-              stay or current marketing consent.
+              La fiche client est une vue normalisée. Les réservations, messages associés et liens de source ci-dessous restent des preuves distinctes ; le tableau de bord ne prend pas un ancien export pour la preuve d’un séjour actuel ou d’un consentement marketing actuel. · The customer record is a normalized view. Reservation rows, matched messages, and source links below remain separate evidence; the dashboard does not treat a historical export as proof of a current stay or current marketing consent.
             </p>
           </CardBody>
         </Card>

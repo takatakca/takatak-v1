@@ -155,8 +155,7 @@ export function TwitchConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple Twitch selections need attention. Open Manage connections and
-        confirm a single Twitch channel for this brand.
+        {fr ? "Plusieurs chaînes Twitch sont choisies. Ouvrez Gérer les connexions et confirmez une seule chaîne Twitch pour cette marque." : "Multiple Twitch selections need attention. Open Manage connections and confirm a single Twitch channel for this brand."}
       </div>
     );
   }
@@ -201,8 +200,7 @@ export function TwitchConnectPage({
                 {fr ? "Aucune chaîne Twitch branchée" : "No Twitch channel connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-[#505761]">
-                Your saved Twitch history remains stored. Reconnect the same
-                channel to restore it.
+                {fr ? "Votre historique Twitch reste enregistré. Reconnectez la même chaîne pour la retrouver." : "Your saved Twitch history remains stored. Reconnect the same channel to restore it."}
               </p>
             </div>
           </div>
@@ -245,8 +243,7 @@ export function TwitchConnectPage({
               {fr ? "Branchez votre chaîne Twitch" : "Connect your Twitch channel"}
             </h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-              Sign in with Twitch to import this brand’s channel. Twitch uses
-              OAuth 2.0. Facebook is not required.
+              {fr ? "Connectez-vous avec Twitch pour importer la chaîne de cette marque. Twitch utilise OAuth 2.0 ; Facebook n’est pas requis." : "Sign in with Twitch to import this brand’s channel. Twitch uses OAuth 2.0. Facebook is not required."}
             </p>
             {error ? (
               <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -302,8 +299,7 @@ export function TwitchConnectPage({
             {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(

@@ -132,9 +132,7 @@ export function AccountIntegrationsView({
             {fr ? "IA de la marque" : "Brand AI"}
           </h2>
           <p className="mt-2 max-w-[36rem] text-sm leading-6 text-slate-500">
-            Writing instructions for captions and replies on connected
-            platforms. This is TAKATAK brand configuration, not a Claude or
-            ChatGPT MCP connection.
+            {fr ? "Consignes de rédaction des légendes et réponses sur les plateformes branchées. C’est un réglage de marque TAKATAK, pas un branchement MCP à Claude ou ChatGPT." : "Writing instructions for captions and replies on connected platforms. This is TAKATAK brand configuration, not a Claude or ChatGPT MCP connection."}
           </p>
           <div className="relative mt-8 flex flex-1 items-center justify-center">
             <div className="relative z-10 w-full max-w-xs space-y-2">

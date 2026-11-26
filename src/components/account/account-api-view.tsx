@@ -84,8 +84,7 @@ export function AccountApiView({
             {fr ? "Exporter vos données" : "Export your data"}
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            The networks connected to this workspace. To export their analytics
-            to Power BI, Tableau or Looker Studio, ask the TAKATAK team.
+            {fr ? "Les réseaux branchés à cet espace. Pour exporter leurs statistiques vers Power BI, Tableau ou Looker Studio, écrivez à l’équipe TAKATAK." : "The networks connected to this workspace. To export their analytics to Power BI, Tableau or Looker Studio, ask the TAKATAK team."}
           </p>
           <div className="mt-8 flex flex-1 items-center justify-center">
             {platforms.length > 0 ? (
@@ -121,8 +120,7 @@ export function AccountApiView({
             {fr ? "Automatisez votre travail" : "Automate your workflow"}
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Trigger actions from social activity through the TAKATAK API.
-            Zapier, Make, and similar connectors are not available yet.
+            {fr ? "Déclenchez des actions à partir de l’activité sociale par l’API TAKATAK. Zapier, Make et les connecteurs semblables arrivent plus tard." : "Trigger actions from social activity through the TAKATAK API. Zapier, Make, and similar connectors are not available yet."}
           </p>
           <div className="mt-8 flex flex-1 items-center justify-center">
             <div className="w-full max-w-[220px] space-y-2">
@@ -144,8 +142,7 @@ export function AccountApiView({
             {fr ? "Créer des rapports sur mesure" : "Build custom reports"}
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Custom report builders and API exports are planned. This page does
-            not invent dashboard totals or third-party report tools.
+            {fr ? "Les créateurs de rapports sur mesure et les exports par API sont prévus. Cette page n’invente ni totaux ni outils de rapport tiers." : "Custom report builders and API exports are planned. This page does not invent dashboard totals or third-party report tools."}
           </p>
           <div className="mt-8 flex flex-1 items-end justify-center gap-2 pb-2">
             <span className="h-8 w-6 rounded-t-sm bg-slate-200" />

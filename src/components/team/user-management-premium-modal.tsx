@@ -137,10 +137,7 @@ export function UserManagementPremiumModal({
                 {fr ? "L’union fait la force : gérez le contenu avec votre équipe." : "Unity is strength, manage content with your team."}
               </h3>
               <p className="mt-3 max-w-[380px] text-[15px] leading-6 text-[#5b5b5b]">
-                Give agencies and companies that manage several brands a shared
-                workspace. Invite the people who write, approve, and publish —
-                each with a role that matches what they can actually do in
-                TAKATAK.
+                {fr ? "Donnez un espace commun aux agences et entreprises qui gèrent plusieurs marques. Invitez les personnes qui rédigent, approuvent et publient, chacune avec un rôle qui correspond à ce qu’elle fait vraiment dans TAKATAK." : "Give agencies and companies that manage several brands a shared workspace. Invite the people who write, approve, and publish — each with a role that matches what they can actually do in TAKATAK."}
               </p>
 
               <ul className="mt-6 max-w-[400px] space-y-2.5">

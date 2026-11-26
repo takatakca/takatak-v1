@@ -35,8 +35,7 @@ export function BlogConnectPage({
         <p className="text-sm font-medium text-slate-500">{fr ? "Statistiques" : "Analytics"}</p>
         <h1 className="mt-1 text-3xl font-semibold text-slate-950">Blog</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          TAKATAK creates a blog page for a website that is already connected to
-          this brand.
+          {fr ? "TAKATAK crée une page de blogue pour un site déjà branché à cette marque." : "TAKATAK creates a blog page for a website that is already connected to this brand."}
         </p>
       </header>
 
@@ -46,8 +45,7 @@ export function BlogConnectPage({
             {fr ? "Plus d’un blogue est branché" : "More than one blog is connected"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-            Disconnect the extra blog and keep a single TAKATAK blog page for
-            this brand.
+            {fr ? "Débranchez le blogue en trop et gardez une seule page de blogue TAKATAK pour cette marque." : "Disconnect the extra blog and keep a single TAKATAK blog page for this brand."}
           </p>
         </section>
       ) : isConnected && blogUrl ? (

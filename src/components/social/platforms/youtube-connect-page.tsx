@@ -253,8 +253,7 @@ export function YoutubeConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple YouTube channel selections need attention. Open Manage
-        connections and confirm a single channel for this brand.
+        {fr ? "Plusieurs chaînes YouTube sont choisies. Ouvrez Gérer les connexions et confirmez une seule chaîne pour cette marque." : "Multiple YouTube channel selections need attention. Open Manage connections and confirm a single channel for this brand."}
       </div>
     );
   }
@@ -403,8 +402,7 @@ export function YoutubeConnectPage({
             {fr ? "Branchez votre chaîne YouTube" : "Connect your YouTube channel"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            Sign in with Google, then TAKATAK uses the YouTube channel on that
-            account. Google Business Profile is not part of this step.
+            {fr ? "Connectez-vous avec Google : TAKATAK utilise ensuite la chaîne YouTube de ce compte. Google Business Profile ne fait pas partie de cette étape." : "Sign in with Google, then TAKATAK uses the YouTube channel on that account. Google Business Profile is not part of this step."}
           </p>
           {error ? (
             <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -457,8 +455,7 @@ export function YoutubeConnectPage({
             {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(

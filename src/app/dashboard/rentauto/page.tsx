@@ -183,9 +183,7 @@ export default async function RentautoDashboardPage() {
                 Rentauto
               </h1>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-                One TAKATAK identity for your Rentauto account, trips, host
-                access and payment summaries. Rental operations remain isolated
-                inside Rentauto.
+                Une seule identité TAKATAK pour votre compte Rentauto, vos trajets, votre accès d’hôte et vos sommaires de paiement. Les opérations de location restent séparées dans Rentauto. · One TAKATAK identity for your Rentauto account, trips, host access and payment summaries. Rental operations remain isolated inside Rentauto.
               </p>
             </div>
           </div>

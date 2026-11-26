@@ -94,8 +94,7 @@ export default async function SeoOverviewPage({
         <h2 className="text-sm font-semibold text-slate-900">Fournisseurs de données SEO · SEO data providers</h2>
         <ConnectorGrid connectors={seoConnectors} showSetupDetails={showSetupDetails} />
         <HonestyNote>
-          Keyword volumes, rankings and backlink counts are never estimated. They appear only after a provider above has real credentials and a
-          verified API call.
+          Les volumes de mots-clés, les classements et les nombres de liens entrants ne sont jamais estimés. Ils apparaissent seulement quand un fournisseur ci-dessus a de vrais identifiants et un appel d’API vérifié. · Keyword volumes, rankings and backlink counts are never estimated. They appear only after a provider above has real credentials and a verified API call.
         </HonestyNote>
       </section>
     </div>

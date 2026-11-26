@@ -213,8 +213,7 @@ export function LookerStudioConnectPage({
   if (state === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple Looker Studio selections need attention. Open Manage
-        connections and confirm a single report for this brand.
+        {fr ? "Plusieurs rapports Looker Studio sont choisis. Ouvrez Gérer les connexions et confirmez un seul rapport pour cette marque." : "Multiple Looker Studio selections need attention. Open Manage connections and confirm a single report for this brand."}
       </div>
     );
   }
@@ -242,8 +241,7 @@ export function LookerStudioConnectPage({
             {fr ? "Choisir un rapport Looker Studio" : "Choose a Looker Studio report"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            This Google login can access more than one report. Connect one
-            report to this brand.
+            {fr ? "Ce compte Google a accès à plus d’un rapport. Branchez un seul rapport à cette marque." : "This Google login can access more than one report. Connect one report to this brand."}
           </p>
           <fieldset className="mt-5 space-y-2">
             <legend className="sr-only">{fr ? "Rapports Looker Studio" : "Looker Studio reports"}</legend>
@@ -310,8 +308,7 @@ export function LookerStudioConnectPage({
                 {fr ? "Aucun rapport Looker Studio branché" : "No Looker Studio report connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-[#505761]">
-                Your saved Looker Studio history remains stored. Reconnect the
-                same report to restore it.
+                {fr ? "Votre historique Looker Studio reste enregistré. Reconnectez le même rapport pour le retrouver." : "Your saved Looker Studio history remains stored. Reconnect the same report to restore it."}
               </p>
             </div>
           </div>
@@ -354,9 +351,7 @@ export function LookerStudioConnectPage({
               {fr ? "Branchez votre rapport Looker Studio" : "Connect your Looker Studio report"}
             </h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-              Sign in with Google to import a report for this brand. Looker
-              Studio uses its own Google login. YouTube, Business Profile, and
-              Google Ads stay separate.
+              {fr ? "Connectez-vous avec Google pour importer un rapport pour cette marque. Looker Studio utilise sa propre connexion Google. YouTube, Business Profile et Google Ads restent séparés." : "Sign in with Google to import a report for this brand. Looker Studio uses its own Google login. YouTube, Business Profile, and Google Ads stay separate."}
             </p>
             {error ? (
               <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -412,8 +407,7 @@ export function LookerStudioConnectPage({
             {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(

@@ -719,10 +719,7 @@ function SettingsForm({
               Engagement
             </h2>
             <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">
-              You can configure which ratio to use when calculating the
-              engagement metric. This way you will be able to see how many
-              interactions your publication has received, every 100 or 1000
-              accounts reached.
+              {fr ? "Vous pouvez choisir le ratio du calcul de l’engagement, pour voir combien d’interactions votre publication reçoit par 100 ou par 1000 comptes atteints." : "You can configure which ratio to use when calculating the engagement metric. This way you will be able to see how many interactions your publication has received, every 100 or 1000 accounts reached."}
             </p>
 
             <div ref={ratioRef} className="relative mt-4 max-w-md">

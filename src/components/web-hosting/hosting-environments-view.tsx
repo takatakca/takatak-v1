@@ -116,8 +116,7 @@ export function HostingEnvironmentsView({
           <p className="text-xs font-medium text-slate-400">Web & Domain &gt; Hosting Overview</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{fr ? "Vue d’ensemble de l’hébergement" : "Hosting Overview"}</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-500">
-            Monitor websites, environments, resources, deployments, backups and infrastructure health from one
-            client-safe workspace.
+            {fr ? "Surveillez sites, environnements, ressources, déploiements, sauvegardes et santé de l’infrastructure depuis un seul espace client sécurisé." : "Monitor websites, environments, resources, deployments, backups and infrastructure health from one client-safe workspace."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

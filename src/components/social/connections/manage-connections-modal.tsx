@@ -2860,8 +2860,7 @@ export function ManageConnectionsModal({
                   id="bluesky-handle-help"
                   className="mt-2 text-xs leading-5 text-slate-500"
                 >
-                  You will continue to Bluesky to securely approve access.
-                  GROUPE TAKATAK never receives your Bluesky password.
+                  {fr ? "Vous allez sur Bluesky pour approuver l’accès en toute sécurité. GROUPE TAKATAK ne reçoit jamais votre mot de passe Bluesky." : "You will continue to Bluesky to securely approve access. GROUPE TAKATAK never receives your Bluesky password."}
                 </p>
               )}
 

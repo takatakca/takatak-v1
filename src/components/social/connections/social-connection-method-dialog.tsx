@@ -100,8 +100,7 @@ export function SocialConnectionMethodDialog({
                     {fr ? "Instagram lié à Facebook" : "Instagram linked to Facebook"}
                   </h3>
                   <p className="mt-1 text-sm leading-5 text-slate-600">
-                    Use the professional Instagram account linked to the
-                    Facebook Page selected for this brand.
+                    {fr ? "Utilisez le compte Instagram professionnel lié à la page Facebook choisie pour cette marque." : "Use the professional Instagram account linked to the Facebook Page selected for this brand."}
                   </p>
 
                   {!facebookConnected ? (
@@ -111,8 +110,7 @@ export function SocialConnectionMethodDialog({
                         className="mt-0.5 h-4 w-4 shrink-0"
                       />
                       <span>
-                        Connect and select a Facebook Page first. TAKATAK will
-                        not send you to an invalid provider page.
+                        {fr ? "Branchez et choisissez d’abord une page Facebook. TAKATAK ne vous envoie jamais vers une page de fournisseur invalide." : "Connect and select a Facebook Page first. TAKATAK will not send you to an invalid provider page."}
                       </span>
                     </div>
                   ) : null}
@@ -154,8 +152,7 @@ export function SocialConnectionMethodDialog({
                   Connect {platformLabel} independently
                 </h3>
                 <p className="mt-1 text-sm leading-5 text-slate-600">
-                  Authorize this account directly. It does not depend on a
-                  Facebook connection and uses separate credentials and tokens.
+                  {fr ? "Autorisez ce compte directement. Il ne dépend pas d’un branchement Facebook et utilise ses propres identifiants et jetons." : "Authorize this account directly. It does not depend on a Facebook connection and uses separate credentials and tokens."}
                 </p>
 
                 {isInstagram ? (

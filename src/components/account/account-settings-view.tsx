@@ -790,8 +790,7 @@ function AccessPanel({
           {fr ? "Double authentification" : "Two factor authentication"}
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          To increase the security of your account you can enable 2-factor
-          authentication (2FA) with your mobile device.
+          {fr ? "Pour mieux protéger votre compte, activez la double authentification avec votre appareil mobile." : "To increase the security of your account you can enable 2-factor authentication (2FA) with your mobile device."}
         </p>
 
         {!data.mfaAvailable ? (
@@ -812,8 +811,7 @@ function AccessPanel({
         ) : enrollment ? (
           <form onSubmit={confirmEnrollment} className="mt-5 space-y-4">
             <p className="text-sm text-slate-600">
-              Scan this code in your authenticator app, then enter the 6-digit
-              code to finish enabling 2FA.
+              {fr ? "Lisez ce code avec votre application d’authentification, puis entrez le code à 6 chiffres pour terminer l’activation de la double authentification." : "Scan this code in your authenticator app, then enter the 6-digit code to finish enabling 2FA."}
             </p>
             {/* QR is a data URL from the MFA enroll response. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}

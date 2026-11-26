@@ -303,8 +303,7 @@ export function MemberPermissionsForm({
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Choose whether each permission is inherited,
-                  specifically granted, or denied.
+                  {fr ? "Choisissez si chaque autorisation est héritée, accordée précisément ou refusée." : "Choose whether each permission is inherited, specifically granted, or denied."}
                 </p>
               </div>
 

@@ -408,10 +408,7 @@ export function LabelStudio({
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
               <h2 className="font-bold text-slate-900">1. Fit the jar</h2>
               <p className="text-xs leading-5 text-slate-500">
-                Measure around the jar and the straight-sided label height.
-                Label width is circumference minus a 2 mm gap. The starting 180
-                × 65 mm is an example. The blank seam strip is white space on
-                the label itself.
+                {fr ? "Mesurez le tour du pot et la hauteur de la partie droite. La largeur de l’étiquette est la circonférence moins un jeu de 2 mm. Le format de départ de 180 × 65 mm n’est qu’un exemple. La bande de joint vide est un espace blanc sur l’étiquette elle-même." : "Measure around the jar and the straight-sided label height. Label width is circumference minus a 2 mm gap. The starting 180 × 65 mm is an example. The blank seam strip is white space on the label itself."}
               </p>
               <label className="block text-sm text-slate-700">
                 {fr ? "Forme du pot" : "Jar shape"}
@@ -450,13 +447,7 @@ export function LabelStudio({
                     />
                   </label>
                   <p className="text-xs leading-5 text-blue-900">
-                    Measure only the flat glass, excluding rounded corners. When
-                    applying the wrap, centre the complete barcode on one flat
-                    face and keep it off corners and seams. The studio checks
-                    the symbol plus 2 mm application allowance on each side.
-                    Paper fitting and a scan on the finished jar are still
-                    required. A 288 mL capacity does not establish honey weight
-                    or label dimensions.
+                    {fr ? "Mesurez seulement le verre plat, sans les coins arrondis. À la pose, centrez tout le code-barres sur une face plane, loin des coins et des joints. Le studio vérifie le symbole plus un jeu d’application de 2 mm de chaque côté. Un essai sur papier et une lecture sur le pot fini restent nécessaires. Une capacité de 288 mL ne donne ni le poids du miel ni les dimensions de l’étiquette." : "Measure only the flat glass, excluding rounded corners. When applying the wrap, centre the complete barcode on one flat face and keep it off corners and seams. The studio checks the symbol plus 2 mm application allowance on each side. Paper fitting and a scan on the finished jar are still required. A 288 mL capacity does not establish honey weight or label dimensions."}
                   </p>
                   {scene?.flatFaceFit ? (
                     <p
@@ -680,9 +671,7 @@ export function LabelStudio({
                 </label>
               ) : null}
               <p className="text-xs leading-5 text-slate-500">
-                The app does not invent nutrition values or determine legal
-                exemptions. Supply reviewed artwork or record the exemption that
-                applies to this product and sales channel.
+                {fr ? "L’app n’invente pas de valeurs nutritives et ne décide pas des exemptions légales. Fournissez un visuel révisé ou inscrivez l’exemption qui s’applique à ce produit et à ce canal de vente." : "The app does not invent nutrition values or determine legal exemptions. Supply reviewed artwork or record the exemption that applies to this product and sales channel."}
               </p>
               <h2 className="pt-2 font-bold text-slate-900">
                 3. This print batch
@@ -698,8 +687,7 @@ export function LabelStudio({
               </button>
               {!canManage ? (
                 <p className="text-xs text-slate-500">
-                  You can make a local print preview. Saving requires inventory
-                  management permission.
+                  {fr ? "Vous pouvez faire un aperçu d’impression local. Enregistrer demande l’autorisation de gérer l’inventaire." : "You can make a local print preview. Saving requires inventory management permission."}
                 </p>
               ) : null}
             </section>
@@ -726,9 +714,7 @@ export function LabelStudio({
                   <p className="text-sm text-white">Preparing artwork…</p>
                 )}
                 <p className="mt-3 text-xs leading-5 text-slate-300">
-                  Grey strip shows the blank seam area. It prints white. Barcode
-                  bars and white space keep their size; long text must fit
-                  before export.
+                  {fr ? "La bande grise montre la zone de joint vide ; elle s’imprime en blanc. Les barres et marges du code-barres gardent leur taille ; un long texte doit tenir avant l’export." : "Grey strip shows the blank seam area. It prints white. Barcode bars and white space keep their size; long text must fit before export."}
                 </p>
               </section>
               <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
@@ -769,20 +755,15 @@ export function LabelStudio({
                   </ul>
                 ) : scene ? (
                   <p className="text-xs text-blue-800">
-                    Owner checklist complete. This is not retailer approval or
-                    barcode quality certification.
+                    {fr ? "Liste du propriétaire terminée. Ce n’est ni une approbation du détaillant ni une certification de qualité du code-barres." : "Owner checklist complete. This is not retailer approval or barcode quality certification."}
                   </p>
                 ) : (
                   <p className="text-xs text-amber-800">
-                    Resolve the label fit before reviewing the packaging
-                    checklist.
+                    {fr ? "Réglez l’ajustement de l’étiquette avant de revoir la liste d’emballage." : "Resolve the label fit before reviewing the packaging checklist."}
                   </p>
                 )}
                 <p className="text-xs leading-5 text-slate-500">
-                  Unfinished proofs print a DRAFT banner. This editor can embed
-                  your approved nutrition artwork. It does not calculate
-                  nutrition values, assess exemptions, or replace a mandatory
-                  panel with free text.
+                  {fr ? "Les épreuves non finies s’impriment avec une bannière BROUILLON. Cet éditeur peut intégrer votre visuel nutritionnel approuvé. Il ne calcule pas de valeurs nutritives, ne juge pas les exemptions et ne remplace pas un tableau obligatoire par du texte libre." : "Unfinished proofs print a DRAFT banner. This editor can embed your approved nutrition artwork. It does not calculate nutrition values, assess exemptions, or replace a mandatory panel with free text."}
                 </p>
               </section>
               <QuebecReviewEditor
@@ -848,12 +829,7 @@ export function LabelStudio({
                   </button>
                 </div>
                 <p className="text-xs leading-5 text-slate-500">
-                  Print at 100% / Actual size. Disable Fit to page. Use
-                  full-sheet adhesive stock and trim at the crop marks, or use a
-                  matching custom roll size. A printer does not apply the label
-                  to the jar. Wrap it smoothly, keep the barcode off the seam,
-                  and on hexagonal jars keep it entirely on one flat face, then
-                  scan it.
+                  {fr ? "Imprimez à 100 % / taille réelle. Désactivez « Ajuster à la page ». Utilisez des feuilles adhésives complètes et coupez aux traits de coupe, ou un rouleau sur mesure adapté. L’imprimante ne pose pas l’étiquette sur le pot. Enroulez-la sans plis, gardez le code-barres loin du joint et, sur un pot hexagonal, entièrement sur une face plane, puis lisez-le." : "Print at 100% / Actual size. Disable Fit to page. Use full-sheet adhesive stock and trim at the crop marks, or use a matching custom roll size. A printer does not apply the label to the jar. Wrap it smoothly, keep the barcode off the seam, and on hexagonal jars keep it entirely on one flat face, then scan it."}
                 </p>
               </section>
               <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
@@ -861,9 +837,7 @@ export function LabelStudio({
                   <ScanLine size={18} /> 6. Test the printed barcode
                 </h2>
                 <p className="text-xs leading-5 text-slate-500">
-                  Plug in a USB keyboard scanner, click below and scan the
-                  label. This checks the decoded product number, not print
-                  quality or retailer listing.
+                  {fr ? "Branchez un lecteur USB en mode clavier, cliquez ci-dessous et lisez l’étiquette. Cela vérifie le numéro de produit lu, pas la qualité d’impression ni l’inscription chez le détaillant." : "Plug in a USB keyboard scanner, click below and scan the label. This checks the decoded product number, not print quality or retailer listing."}
                 </p>
                 <form
                   className="flex gap-2"

@@ -31,8 +31,7 @@ export function WebConnectPage({
         <p className="text-sm font-medium text-slate-500">{fr ? "Statistiques" : "Analytics"}</p>
         <h1 className="mt-1 text-3xl font-semibold text-slate-950">Web</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Connect a public website to this brand. A homepage verification tag
-          confirms the site belongs here.
+          {fr ? "Branchez un site public à cette marque. Une balise de vérification sur la page d’accueil confirme qu’il lui appartient." : "Connect a public website to this brand. A homepage verification tag confirms the site belongs here."}
         </p>
       </header>
 
@@ -42,8 +41,7 @@ export function WebConnectPage({
             {fr ? "Plus d’un site est branché" : "More than one website is connected"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
-            Disconnect the extra website from connections, then keep a single
-            verified site for this brand.
+            {fr ? "Débranchez le site en trop dans les connexions, puis gardez un seul site vérifié pour cette marque." : "Disconnect the extra website from connections, then keep a single verified site for this brand."}
           </p>
         </section>
       ) : isConnected && siteUrl ? (
@@ -63,8 +61,7 @@ export function WebConnectPage({
             {siteUrl}
           </a>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-600">
-            This website is verified for the active brand. Blog connection stays
-            available after the website is connected.
+            {fr ? "Ce site est vérifié pour la marque active. Le branchement d’un blogue reste possible une fois le site branché." : "This website is verified for the active brand. Blog connection stays available after the website is connected."}
           </p>
         </section>
       ) : (
@@ -73,8 +70,7 @@ export function WebConnectPage({
             {fr ? "Branchez votre site Web" : "Connect your website"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Enter the public https address. TAKATAK gives you a tag to place on
-            the homepage before the site is marked connected.
+            {fr ? "Entrez l’adresse https publique. TAKATAK vous donne une balise à placer sur la page d’accueil avant de marquer le site comme branché." : "Enter the public https address. TAKATAK gives you a tag to place on the homepage before the site is marked connected."}
           </p>
           {!activeBrandId ? (
             <p className="mt-4 text-sm text-amber-800">

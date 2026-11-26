@@ -285,8 +285,7 @@ function EmptyPostSearch() {
         {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </p>
       <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-[#9AA3AB]">
-        You can use the filter tools to narrow down your search. Check if the current date range
-        suits your needs.
+        {fr ? "Utilisez les filtres pour affiner votre recherche. Vérifiez que la période choisie vous convient." : "You can use the filter tools to narrow down your search. Check if the current date range suits your needs."}
       </p>
     </div>
   );
@@ -737,10 +736,7 @@ export function BlueskySubscribedDashboard({
         <div className="flex items-start gap-3 rounded-[10px] border border-[#C9D4FF] bg-[#EEF2FF] px-4 py-3 text-sm text-[#303B78]">
           <Info className="mt-0.5 h-5 w-5 shrink-0 text-[#6477F3]" />
           <p className="min-w-0 flex-1">
-            The number of followers acquired and lost may not match the total
-            number of followers. This is because Bluesky does not remove blocked
-            accounts from the total number of followers, our balance is based on
-            real actual accounts.
+            {fr ? "Le nombre d’abonnés gagnés et perdus peut ne pas correspondre au total d’abonnés : Bluesky ne retire pas les comptes bloqués de son total, alors que notre bilan compte seulement les vrais comptes actifs." : "The number of followers acquired and lost may not match the total number of followers. This is because Bluesky does not remove blocked accounts from the total number of followers, our balance is based on real actual accounts."}
           </p>
           <button
             type="button"
