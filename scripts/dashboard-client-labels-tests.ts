@@ -143,6 +143,12 @@ for (const mode of ["platform_admin", "client_scoped"]) {
 }
 assert.match(readFileSync(join(ROOT, "src/lib/admin/admin-data.ts"), "utf8"), /function dbGateOrUnavailable\(\): AdminGate \{\n  if \(!getPrisma\(\)\) return \{ kind: "unavailable"/);
 assert.match(readFileSync(join(ROOT, "src/lib/db/dashboard-data.ts"), "utf8"), /integrations\.length \|\| !scope\.allowMockFallback/);
+// The Social inbox shows the workspace's own imported Google reviews (read only),
+// never another workspace's, and keeps no dead bulk-action menu.
+const inboxData = readFileSync(join(ROOT, "src/lib/social/inbox/inbox-data.ts"), "utf8");
+assert.match(inboxData, /externalReview\.findMany\(\{\s*where: \{ clientId \}/);
+assert.match(inboxData, /googleReviewThreads\(access\.activeClientId\)/);
+assert.doesNotMatch(readFileSync(join(ROOT, "src/components/social/inbox/social-inbox-view.tsx"), "utf8"), /mark all as (resolved|read)/i);
 assert.match(readFileSync(join(ROOT, "src/app/dashboard/services/page.tsx"), "utf8"), /listClientServices\(access\.activeClientId\)/);
 
 console.log(

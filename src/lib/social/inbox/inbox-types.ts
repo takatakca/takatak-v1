@@ -11,6 +11,11 @@ export type InboxThread = {
   occurredAt: string;
   unread: boolean;
   unresolved: boolean;
+  /** Reviews only: star rating (1–5), the published reply, and where to answer it. */
+  rating?: number | null;
+  reply?: string | null;
+  locationTitle?: string | null;
+  replyHref?: string | null;
 };
 
 export type InboxPageData = {

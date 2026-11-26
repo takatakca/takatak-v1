@@ -3,11 +3,9 @@
 import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import {
   Check,
-  Eye,
   Filter,
   Mail,
   MessageCircleWarning,
-  MoreVertical,
   Plus,
   Search,
   UserRound,
@@ -74,9 +72,7 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
   const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [kindFilter, setKindFilter] = useState<InboxKind | "all">("all");
   const [filterOpen, setFilterOpen] = useState(false);
-  const [bulkOpen, setBulkOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [bulkNotice, setBulkNotice] = useState<string | null>(null);
 
   const connected = new Set(
     data.connectedPlatforms.map((platform) => platform.toLowerCase()),
@@ -190,10 +186,7 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
               type="button"
               aria-label={fr ? "Filtrer par type" : "Filter by type"}
               aria-expanded={filterOpen}
-              onClick={() => {
-                setBulkOpen(false);
-                setFilterOpen((open) => !open);
-              }}
+              onClick={() => setFilterOpen((open) => !open)}
               className={`flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 transition ${
                 filterOpen || kindFilter !== "all"
                   ? "bg-slate-100"
@@ -276,64 +269,6 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
               );
             })}
           </nav>
-          <div className="relative pb-1">
-            <button
-              type="button"
-              aria-label={fr ? "Actions de la boîte" : "Inbox actions"}
-              aria-expanded={bulkOpen}
-              onClick={() => {
-                setFilterOpen(false);
-                setBulkOpen((open) => !open);
-              }}
-              className={`flex h-8 w-8 items-center justify-center rounded-md transition ${
-                bulkOpen ? "bg-slate-100" : "hover:bg-slate-50"
-              }`}
-            >
-              <MoreVertical className="h-4 w-4 text-slate-500" />
-            </button>
-            {bulkOpen ? (
-              <div className="absolute right-0 z-30 mt-1 w-[240px] rounded-xl bg-white py-1.5 shadow-[0_8px_28px_rgba(15,23,42,0.16)]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBulkOpen(false);
-                    setBulkNotice(
-                      data.threads.length === 0
-                        ? fr
-                          ? "Aucune conversation à marquer comme résolue pour l’instant."
-                          : "No conversations to mark resolved yet."
-                        : fr
-                          ? "Le marquage en lot n’est pas encore offert ; ouvrez chaque conversation."
-                          : "Marking conversations resolved is not available yet.",
-                    );
-                  }}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  <Check className="h-4 w-4 text-slate-500" />
-                  {fr ? "Tout marquer comme résolu" : "Click to mark all as resolved"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBulkOpen(false);
-                    setBulkNotice(
-                      data.threads.length === 0
-                        ? fr
-                          ? "Aucune conversation à marquer comme lue pour l’instant."
-                          : "No conversations to mark read yet."
-                        : fr
-                          ? "Le marquage en lot n’est pas encore offert ; ouvrez chaque conversation."
-                          : "Marking conversations read is not available yet.",
-                    );
-                  }}
-                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-                >
-                  <Eye className="h-4 w-4 text-slate-500" />
-                  {fr ? "Tout marquer comme lu" : "Click to mark all as read"}
-                </button>
-              </div>
-            ) : null}
-          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -341,8 +276,8 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
             <p className="px-5 py-10 text-center text-sm text-slate-500">
               {data.threads.length === 0
                 ? fr
-                  ? "Aucune conversation pour l’instant. Les messages privés, commentaires et avis de vos comptes branchés paraîtront ici dès que la synchronisation de la boîte sera en marche."
-                  : "No conversations yet. Private messages, comments, and reviews from connected accounts will appear here when inbox sync is live."
+                  ? "Aucune conversation pour l’instant. Les avis Google de votre fiche paraissent ici dès qu’ils sont importés ; les messages privés et commentaires des autres réseaux suivront avec leur synchronisation."
+                  : "No conversations yet. Google reviews from your profile appear here once imported; private messages and comments from other networks will follow with their sync."
                 : fr
                   ? "Aucune conversation ne correspond à ces filtres."
                   : "No conversations match those filters."}
@@ -380,9 +315,38 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
                 </p>
               </div>
             </header>
+            {selected.kind === "review" && (selected.rating || selected.locationTitle) ? (
+              <p className="mb-2 text-sm text-slate-600">
+                {selected.rating ? (
+                  <span className="mr-2 text-amber-500" aria-label={fr ? `${selected.rating} sur 5` : `${selected.rating} out of 5`}>
+                    {"★".repeat(selected.rating)}
+                    <span className="text-slate-300">{"★".repeat(5 - selected.rating)}</span>
+                  </span>
+                ) : null}
+                {selected.locationTitle ?? ""}
+              </p>
+            ) : null}
             <div className="rounded-2xl bg-white px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm">
-              {selected.body}
+              {selected.body || (fr ? "Avis sans commentaire." : "Rating without a comment.")}
             </div>
+            {selected.reply ? (
+              <div className="mt-3 rounded-2xl bg-[#eef4ff] px-4 py-3 text-sm leading-6 text-slate-700">
+                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  {fr ? "Votre réponse publiée" : "Your published reply"}
+                </p>
+                {selected.reply}
+              </div>
+            ) : null}
+            {selected.replyHref ? (
+              <a
+                href={selected.replyHref}
+                className="mt-4 inline-flex h-10 items-center justify-center rounded-lg bg-[#2a1728] px-4 text-sm font-semibold text-white hover:bg-[#3b2438]"
+              >
+                {selected.reply
+                  ? fr ? "Voir dans Avis" : "Open in Reviews"
+                  : fr ? "Répondre dans Avis" : "Reply in Reviews"}
+              </a>
+            ) : null}
           </div>
         ) : (
           <div className="text-center">
@@ -396,18 +360,7 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
         )}
       </section>
 
-      {bulkNotice ? (
-        <div className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 rounded-lg bg-[#1d1d1f] px-4 py-2 text-sm text-white shadow-lg">
-          {bulkNotice}
-          <button
-            type="button"
-            className="ml-3 underline"
-            onClick={() => setBulkNotice(null)}
-          >
-            Dismiss
-          </button>
-        </div>
-      ) : null}
+
     </div>
   );
 }
