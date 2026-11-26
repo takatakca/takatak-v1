@@ -472,9 +472,12 @@ export function HostingAccountsOverview({
                 >
                   Manage Plan
                 </Link>
-                <button type="button" className="rounded-lg bg-blue-600 py-2 text-sm font-medium text-white">
-                  Upgrade Plan
-                </button>
+                <Link
+                  href="/dashboard/web-hosting/hosting"
+                  className="rounded-lg bg-blue-600 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Changer de forfait · Upgrade plan
+                </Link>
               </div>
               <Link
                 href="/dashboard/web-hosting/environments"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import {
   Clock3,
   Eye,
@@ -101,6 +102,15 @@ export function WebsitesManager({
                 { value: "not connected", label: "Not connected" },
               ]}
               addLabel="Add Website"
+              addHref="/dashboard/support?demande=website"
+              exportName="takatak-sites-web"
+              exportRows={filtered.map((domain) => ({
+                Site: domain.domainName,
+                Marque: domain.brandName ?? "",
+                Statut: displayWebsiteStatus(domain, hostingForDomain(domain, hosting)).label,
+                DNS: domain.dnsStatus,
+                SSL: domain.sslStatus,
+              }))}
             />
           </div>
           {rows.length ? (
@@ -163,8 +173,13 @@ export function WebsitesManager({
                             </a>
                             <button
                               type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedId(domain.id);
+                                setTab("Edit Details");
+                              }}
                               className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700"
-                              aria-label="Settings"
+                              aria-label="Réglages · Settings"
                             >
                               <Settings className="h-4 w-4" />
                             </button>
@@ -261,6 +276,7 @@ export function WebsitesManager({
           tabs={WEBSITE_TABS}
           activeTab={tab}
           onTab={setTab}
+          requestHref="/dashboard/support?demande=website-settings"
         >
           {tab === "Overview" ? (
             <div className="space-y-3 text-sm text-slate-600">
@@ -307,13 +323,12 @@ export function WebsitesManager({
                 <p className="mb-2 text-xs font-medium text-slate-600">Favicon</p>
                 <div className="flex items-center gap-3">
                   <SiteMark domain={selected.domainName} imageUrl={selected.brandImageUrl} />
-                  <button
-                    type="button"
-                    disabled
-                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-400"
+                  <Link
+                    href="/dashboard/support?demande=site-favicon"
+                    className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-blue-300"
                   >
-                    Change Favicon
-                  </button>
+                    Changer l’icône · Change favicon
+                  </Link>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">

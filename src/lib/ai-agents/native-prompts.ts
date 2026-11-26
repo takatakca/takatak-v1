@@ -3,8 +3,8 @@
 // promotions: the business's own instructions, the run's input and the facts
 // the runner measured (report numbers, site checks) are the only sources.
 
-export const NATIVE_AGENT_KEYS = new Set(["chat_concierge", "social_autopilot", "report_writer", "seo_watchdog"] as const);
-export type NativeAgentKey = "chat_concierge" | "social_autopilot" | "report_writer" | "seo_watchdog";
+export const NATIVE_AGENT_KEYS = new Set(["chat_concierge", "social_autopilot", "report_writer", "seo_watchdog", "ads_optimizer"] as const);
+export type NativeAgentKey = "chat_concierge" | "social_autopilot" | "report_writer" | "seo_watchdog" | "ads_optimizer";
 
 export function isNativeAgent(key: string): key is NativeAgentKey {
   return (NATIVE_AGENT_KEYS as Set<string>).has(key);
@@ -13,6 +13,7 @@ export function isNativeAgent(key: string): key is NativeAgentKey {
 /** TAK-TAK mode used for each agent. */
 export function nativeMode(agentKey: NativeAgentKey): "chat" | "write" | "research" {
   if (agentKey === "chat_concierge") return "chat";
+  // ads_optimizer bills the published "Ad copy set" action through the write mode.
   if (agentKey === "seo_watchdog") return "research";
   return "write";
 }
@@ -36,6 +37,8 @@ export function nativeSummary(agentKey: NativeAgentKey): string {
       return "Résumé du rapport mensuel prêt à relire · Monthly report summary ready for review";
     case "seo_watchdog":
       return "Liste de correctifs SEO prête à relire · SEO fix list ready for review";
+    case "ads_optimizer":
+      return "Propositions pour vos annonces prêtes à relire · Ad proposals ready for review";
   }
 }
 
@@ -85,6 +88,26 @@ export function reportFactLines(facts: ReportFacts): string[] {
     pair("Chat conversations", c.conversations, p.conversations),
     pair("Tasks done by AI agents", c.aiRunsCompleted, p.aiRunsCompleted),
   );
+  return lines;
+}
+
+/** The TAKATAK ADS facts the Ads Optimizer may use (real campaigns and event totals). */
+export interface AdsFacts {
+  campaigns: Array<{ name: string; status: string; budgetCents: number; spentCents: number; startsAt: Date | null; endsAt: Date | null }>;
+  totals: { impressions: number; clicks: number; leads: number; conversions: number };
+}
+
+export function adsFactLines(facts: AdsFacts): string[] {
+  const money = (cents: number) => `${(cents / 100).toFixed(2)} CAD`;
+  const day = (d: Date | null) => (d ? d.toISOString().slice(0, 10) : "open");
+  const lines = facts.campaigns.slice(0, 20).map(
+    (c) => `- Campaign "${clip(c.name, 80)}" (${clip(c.status, 20)}): budget ${money(c.budgetCents)}, spent ${money(c.spentCents)}, ${day(c.startsAt)} → ${day(c.endsAt)}`,
+  );
+  const { impressions, clicks, leads, conversions } = facts.totals;
+  const ctr = impressions > 0 ? `${((clicks / impressions) * 100).toFixed(2)}%` : "n/a";
+  const spent = facts.campaigns.reduce((total, c) => total + c.spentCents, 0);
+  const cpl = leads > 0 ? money(Math.round(spent / leads)) : "n/a";
+  lines.push(`Totals: ${impressions} impressions, ${clicks} clicks (CTR ${ctr}), ${leads} leads, ${conversions} conversions, cost per lead ${cpl}`);
   return lines;
 }
 
@@ -144,6 +167,17 @@ export function buildAgentPrompt(
       "Numbers measured by TAKATAK for this period:",
       facts || "(no numbers recorded)",
       "Write: (1) a summary of the period in 3 sentences, (2) what went up or down compared with the previous month, (3) three concrete next steps the business can take.",
+      "Write it in Canadian French first, then the same text in English.",
+      NUMBER_RULES,
+      RULES,
+    );
+  } else if (agentKey === "ads_optimizer") {
+    lines.push(
+      `You are the ads optimizer of ${business} on TAKATAK ADS.`,
+      "Campaigns and results measured by TAKATAK:",
+      facts || "(no campaign data)",
+      "Write: (1) what is working and what is not, from these numbers only, (2) budget shifts you recommend between campaigns, with the reason, (3) a fresh ad copy set: 5 headlines (30 characters at most) and 3 descriptions (90 characters at most).",
+      "These are proposals for the owner to approve. Never say money was moved or spent.",
       "Write it in Canadian French first, then the same text in English.",
       NUMBER_RULES,
       RULES,

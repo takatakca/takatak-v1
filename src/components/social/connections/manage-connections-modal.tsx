@@ -673,6 +673,12 @@ export function ManageConnectionsModal({
       isPrimaryStartCard: true,
     });
 
+    if (!startDecision.allowed && startDecision.reason === 'coming_soon') {
+      // Connected by the TAKATAK team: open a ready-made request.
+      router.push(`/dashboard/support?demande=${encodeURIComponent(card.key)}`);
+      return;
+    }
+
     if (!startDecision.allowed) {
       setNotice({
         tone: 'info',
@@ -1812,8 +1818,8 @@ export function ManageConnectionsModal({
               // className="grid gap-x-5 gap-y-8 md:grid-cols-2 xl:grid-cols-3"
               className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
             >
-              {/* Only networks that can really be connected are shown (no "planned" cards). */}
-              {CONNECTION_CARDS.filter((card) => !card.planned).map((card) => {
+              {/* Networks TAKATAK connects for you (planned cards) send a real connection request to the team. */}
+              {CONNECTION_CARDS.map((card) => {
                 const provider = card.provider
                   ? (providers.find(
                       (item) => item.provider === card.provider,
@@ -2120,8 +2126,9 @@ export function ManageConnectionsModal({
                                       : card.actionLabel,
                                 }));
 
-                const displayedButtonLabel =
-                  provider?.implemented === true &&
+                const displayedButtonLabel = card.planned
+                  ? 'Demander le branchement · Request connection'
+                  : provider?.implemented === true &&
                   provider.state === 'ready_for_authorization' &&
                   provider.planAllowed === false &&
                   !platformConnected &&
@@ -2325,9 +2332,14 @@ export function ManageConnectionsModal({
                     ) : (
                       <button
                         type="button"
-                        disabled={(!canStart && !canExplainBlock) || busy}
+                        disabled={(!card.planned && !canStart && !canExplainBlock) || busy}
                         aria-busy={busy}
                         onClick={() => {
+                          if (card.planned) {
+                            // Connected by the TAKATAK team: open a ready-made request.
+                            router.push(`/dashboard/support?demande=${encodeURIComponent(card.key)}`);
+                            return;
+                          }
                           if (canExplainBlock) {
                             const reason =
                               !activeBrandId
@@ -2339,7 +2351,7 @@ export function ManageConnectionsModal({
                                     : provider?.planAllowed === false
                                       ? `${card.label} is not included in this workspace subscription. Review Plans and billing.`
                                       : card.planned || provider?.implemented === false
-                                        ? `${card.label} is not available yet.`
+                                        ? `Demander le branchement de ${card.label} à l’équipe · Request a ${card.label} connection`
                                         : connection?.status === 'pending_authorization'
                                           ? 'Authorization is pending. Continue or cancel the existing request.'
                                           : connection?.status === 'authorized'

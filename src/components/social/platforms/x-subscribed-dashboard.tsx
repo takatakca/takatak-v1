@@ -6,6 +6,9 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
+import { CsvColumnsControls } from "@/components/social/platforms/csv-columns-controls";
 import { SocialSummaryChart } from "@/components/social/analytics/social-summary-chart";
 import {
   dateKey,
@@ -73,6 +76,16 @@ const TABS: Array<{
   { key: "engagement", label: "ENGAGEMENT" },
   { key: "competitors", label: "COMPETITORS" },
 ];
+
+const TAB_FR: Record<string, string> = {
+  community: "COMMUNAUTÉ",
+  account: "COMPTE",
+  posts: "PUBLICATIONS",
+  reels: "REELS",
+  stories: "STORIES",
+  collabs: "COLLABS",
+  competitors: "CONCURRENTS",
+};
 
 const RANGES = [30, 90, 180, 365] as const;
 
@@ -155,6 +168,7 @@ function CommunitySection({
   accountName: string;
   profileImageUrl: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const growthPoints = useMemo(
     () => dateSeries(data.followersSeries, start, end),
     [data.followersSeries, start, end],
@@ -172,7 +186,7 @@ function CommunitySection({
     <div className="space-y-7">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-[23px] font-medium text-[#20242A]">
-          Community
+          {fr ? "Communauté" : "Community"}
         </h1>
 
         <div className="flex min-w-0 items-center gap-3">
@@ -207,18 +221,18 @@ function CommunitySection({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <h2 className="pt-2 text-[18px] font-medium text-[#20242A]">
-              Growth
+              {fr ? "Croissance" : "Growth"}
             </h2>
 
             <div className="flex w-full flex-wrap gap-3 xl:max-w-[600px]">
               <ColoredMetricCard
                 value={data.followers}
-                label="Followers"
+                label={fr ? "Abonnés" : "Followers"}
                 color="#8994F0"
               />
               <ColoredMetricCard
                 value={data.following}
-                label="Following"
+                label={fr ? "Abonnements" : "Following"}
                 color="#DDEDE2"
                 muted={data.following === null}
               />
@@ -232,7 +246,7 @@ function CommunitySection({
 
           <SocialSummaryChart
             points={growthPoints}
-            seriesLabel="Followers"
+            seriesLabel={fr ? "Abonnés" : "Followers"}
             seriesColor="#C58AB5"
             showMarkers
           />
@@ -240,27 +254,27 @@ function CommunitySection({
           <div className="flex flex-wrap gap-3">
             <GreyMetricCard
               value={data.followers}
-              label="Followers"
+              label={fr ? "Abonnés" : "Followers"}
             />
             <GreyMetricCard
               value={data.dailyFollowers}
-              label="Daily followers"
+              label={fr ? "Abonnés par jour" : "Daily followers"}
             />
             <GreyMetricCard
               value={data.followersPerPost}
-              label="Followers per post"
+              label={fr ? "Abonnés par publication" : "Followers per post"}
             />
             <GreyMetricCard
               value={data.following}
-              label="Following"
+              label={fr ? "Abonnements" : "Following"}
             />
             <GreyMetricCard
               value={data.dailyPosts}
-              label="Daily posts"
+              label={fr ? "Publications par jour" : "Daily posts"}
             />
             <GreyMetricCard
               value={data.postsPerWeek}
-              label="Posts per week"
+              label={fr ? "Publications par semaine" : "Posts per week"}
             />
           </div>
         </div>
@@ -270,18 +284,18 @@ function CommunitySection({
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
             <h2 className="pt-2 text-[18px] font-medium text-[#20242A]">
-              Balance of Followers
+              {fr ? "Bilan des abonnés" : "Balance of Followers"}
             </h2>
 
             <div className="flex w-full flex-wrap gap-3 xl:max-w-[600px]">
               <ColoredMetricCard
                 value={data.acquired}
-                label="Acquired"
+                label={fr ? "Gagnés" : "Acquired"}
                 color="#8994F0"
               />
               <ColoredMetricCard
                 value={data.lost}
-                label="Lost"
+                label={fr ? "Perdus" : "Lost"}
                 color="#EFA0DA"
               />
               <ColoredMetricCard
@@ -295,7 +309,7 @@ function CommunitySection({
           <SocialSummaryChart
             points={balancePoints}
             seriesLabel={
-              data.acquiredSeries?.length ? "Acquired" : "Lost"
+              data.acquiredSeries?.length ? (fr ? "Gagnés" : "Acquired") : fr ? "Perdus" : "Lost"
             }
             seriesColor={
               data.acquiredSeries?.length ? "#8994F0" : "#EFA0DA"
@@ -329,6 +343,7 @@ function LockIcon() {
 }
 
 function EmptyAccountChart() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex min-h-[390px] flex-col items-center justify-center px-5 py-10 text-center">
       <span className="flex h-[142px] w-[142px] items-center justify-center rounded-full bg-[#F1F5FD] text-white">
@@ -352,18 +367,18 @@ function EmptyAccountChart() {
       </span>
 
       <h3 className="mt-5 text-[22px] font-medium text-[#30343A]">
-        No data available
+        {fr ? "Aucune donnée" : "No data available"}
       </h3>
 
       <p className="mt-3 text-[15px] text-[#93A0AD]">
-        Start publishing content to see how your results evolve
+        {fr ? "Publiez du contenu pour voir l’évolution de vos résultats" : "Start publishing content to see how your results evolve"}
       </p>
 
       <Link
         href="/dashboard/social/calendar"
         className="mt-5 inline-flex h-11 items-center justify-center rounded-[9px] border border-[#493546] bg-white px-6 text-sm font-medium text-[#30242E] transition hover:bg-[#F8F8F8]"
       >
-        Go to calendar
+        {fr ? "Ouvrir le calendrier" : "Go to calendar"}
       </Link>
     </div>
   );
@@ -434,6 +449,7 @@ function AdvancedAccountContent({
 }: {
   view: Exclude<XAccountView, "general">;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const content = ADVANCED_ACCOUNT_CONTENT[view];
 
   return (
@@ -441,7 +457,7 @@ function AdvancedAccountContent({
       <div className="mt-8 flex flex-col gap-5 sm:flex-row">
         <label className="block w-full max-w-[325px] text-sm text-[#81909D]">
           <span className="mb-2 block">
-            Metric
+            {fr ? "Mesure" : "Metric"}
           </span>
 
           <select
@@ -458,7 +474,7 @@ function AdvancedAccountContent({
 
         <label className="block w-full max-w-[325px] text-sm text-[#81909D]">
           <span className="mb-2 block">
-            Divide by
+            {fr ? "Répartir par" : "Divide by"}
           </span>
 
           <select
@@ -500,14 +516,14 @@ function AdvancedAccountContent({
         </h3>
 
         <p className="mt-4 text-[16px] text-[#91A0AC]">
-          This data starts being collected when you activate Advanced
+          {fr ? "Ces données se recueillent une fois le compte branché avec l’accès aux statistiques" : "This data starts being collected when you activate Advanced"}
         </p>
 
         <Link
           href="/dashboard/billing"
           className="mt-6 inline-flex h-[53px] items-center justify-center rounded-[9px] bg-[#2C1929] px-7 text-[15px] font-semibold text-[#DDFF35] transition hover:bg-[#3B2237]"
         >
-          Upgrade your plan
+          {fr ? "Voir les forfaits" : "Upgrade your plan"}
         </Link>
       </div>
     </>
@@ -519,6 +535,7 @@ function AccountSection({
 }: {
   data: XCommunityData;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [accountView, setAccountView] =
     useState<XAccountView>("general");
 
@@ -529,7 +546,7 @@ function AccountSection({
   return (
     <div className="space-y-7">
       <h1 className="text-[23px] font-medium text-[#20242A]">
-        Account
+        {fr ? "Compte" : "Account"}
       </h1>
 
       <section className="overflow-hidden rounded-[14px] border border-[#E8EAED] bg-white px-5 pb-2 pt-6 shadow-[0_2px_12px_rgba(31,41,55,0.04)] sm:px-7">
@@ -572,7 +589,7 @@ function AccountSection({
             <>
               <label className="mt-8 block max-w-[260px] text-sm text-[#8B97A2]">
                 <span className="mb-2 block">
-                  Metric
+                  {fr ? "Mesure" : "Metric"}
                 </span>
 
                 <select
@@ -825,6 +842,7 @@ function PostsChartPanel({
 }: {
   title: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   /*
    * This state belongs to this individual panel instance.
    * Types and Views therefore toggle independently.
@@ -868,12 +886,12 @@ function PostsChartPanel({
                 <path d="M12 3a9 9 0 1 0 9 9h-9V3Z" />
                 <path d="M15 3.6A9 9 0 0 1 20.4 9H15V3.6Z" />
               </svg>
-              View chart
+              {fr ? "Voir le graphique" : "View chart"}
             </>
           ) : (
             <>
               <PostsActionIcon kind="table" />
-              View table
+              {fr ? "Voir le tableau" : "View table"}
             </>
           )}
         </button>
@@ -898,13 +916,13 @@ function PostsChartPanel({
               ].join(" ")}
             >
               <span role="columnheader" className="font-normal">
-                Group
+                {fr ? "Groupe" : "Group"}
               </span>
               <span
                 role="columnheader"
                 className="min-w-16 text-right font-normal"
               >
-                Count
+                {fr ? "Nombre" : "Count"}
               </span>
             </div>
 
@@ -913,7 +931,7 @@ function PostsChartPanel({
               className="flex min-h-14 items-center justify-center px-5 py-4"
             >
               <span role="cell" className="text-[#393D43]">
-                No data available
+                {fr ? "Aucune donnée" : "No data available"}
               </span>
             </div>
           </div>
@@ -928,26 +946,6 @@ function PostsChartPanel({
   );
 }
 
-function downloadEmptyXCsv(
-  filename: string,
-  columns: string[],
-) {
-  const csv = `${columns.join(",")}\n`;
-  const blob = new Blob([csv], {
-    type: "text/csv;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-
-  URL.revokeObjectURL(url);
-}
-
 function PostsToolbar({
   search,
   onSearchChange,
@@ -957,6 +955,7 @@ function PostsToolbar({
   onSearchChange: (value: string) => void;
   type: "posts" | "hashtags";
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
       <label className="relative min-w-0 flex-1">
@@ -980,56 +979,24 @@ function PostsToolbar({
       </label>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          aria-label={`Choose ${type} table columns`}
-          className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-        >
-          <PostsActionIcon kind="columns" />
-          Columns
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            downloadEmptyXCsv(
-              `x-${type}.csv`,
-              type === "posts"
-                ? [
-                    "post",
-                    "published_at",
-                    "likes",
-                    "comments",
-                    "views",
-                  ]
-                : [
-                    "hashtag",
-                    "posts",
-                    "interactions",
-                  ],
-            )
-          }
-          className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-        >
-          <PostsActionIcon kind="download" />
-          Download CSV
-          <PremiumDiamond />
-        </button>
+        <CsvColumnsControls
+          filename={`x-${type}.csv`}
+          columns={type === "posts" ? ["post", "published_at", "likes", "comments", "views"] : ["hashtag", "posts", "interactions"]}
+          icon={<PostsActionIcon kind="download" />}
+          badge={<PremiumDiamond />}
+        />
 
         {type === "posts" ? (
           <div className="relative">
             <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
-              New
+              {fr ? "Nouveau" : "New"}
             </span>
 
-            <Link
-              href="/dashboard/billing"
+            <PinToDashboardButton
               className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-            >
-              <PostsActionIcon kind="dashboard" />
-              Add to dashboard
-              <PremiumDiamond />
-            </Link>
+              icon={<PostsActionIcon kind="dashboard" />}
+              badge={<PremiumDiamond />}
+            />
           </div>
         ) : null}
       </div>
@@ -1044,6 +1011,7 @@ function EmptyPostsTable({
   type: "posts" | "hashtags";
   search: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const hasSearch = search.trim().length > 0;
 
   return (
@@ -1051,7 +1019,7 @@ function EmptyPostsTable({
       <EmptySearchIllustration />
 
       <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-        Oops! Nothing found, try another search
+        {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </h3>
 
       <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1162,6 +1130,7 @@ function XPostsSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [postSearch, setPostSearch] = useState("");
   const [hashtagSearch, setHashtagSearch] = useState("");
 
@@ -1231,7 +1200,7 @@ function XPostsSection({
   return (
     <div className="space-y-5">
       <h1 className="text-[23px] font-medium text-[#20242A]">
-        Posts published in period
+        {fr ? "Publications de la période" : "Posts published in period"}
       </h1>
 
       <div className="overflow-hidden rounded-[14px] border border-[#E8EAED] bg-white shadow-[0_2px_12px_rgba(31,41,55,0.04)]">
@@ -1283,7 +1252,7 @@ function XPostsSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-0 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            List of posts
+            {fr ? "Liste des publications" : "List of posts"}
           </h2>
 
           <PostsToolbar
@@ -1300,7 +1269,7 @@ function XPostsSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-0 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            List of hashtags
+            {fr ? "Liste des mots-clics" : "List of hashtags"}
           </h2>
 
           <PostsToolbar
@@ -1328,6 +1297,7 @@ function XRepliesSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [reelSearch, setReelSearch] = useState("");
 
   /*
@@ -1448,50 +1418,23 @@ function XRepliesSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose replies table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyXCsv(
-                    "x-replies.csv",
-                    [
-                      "reel",
-                      "published_at",
-                      "likes",
-                      "comments",
-                      "views",
-                      "shares",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"x-replies.csv"}
+                columns={["reel", "published_at", "likes", "comments", "views", "shares"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
-                  New
+                  {fr ? "Nouveau" : "New"}
                 </span>
 
-                <Link
-                  href="/dashboard/billing"
+                <PinToDashboardButton
                   className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-                >
-                  <PostsActionIcon kind="dashboard" />
-                  Add to dashboard
-                  <PremiumDiamond />
-                </Link>
+                  icon={<PostsActionIcon kind="dashboard" />}
+                  badge={<PremiumDiamond />}
+                />
               </div>
             </div>
           </div>
@@ -1500,7 +1443,7 @@ function XRepliesSection({
             <EmptySearchIllustration />
 
             <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-              Oops! Nothing found, try another search
+              {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
             </h3>
 
             <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1528,6 +1471,7 @@ function XMentionsEvolution({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const emptyPoints = useMemo(
     () =>
       enumerateDates(start, end).map((date) => ({
@@ -1541,7 +1485,7 @@ function XMentionsEvolution({
     <section className="px-5 py-7 sm:px-7">
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <h3 className="pt-2 text-[18px] font-medium text-[#20242A]">
-          Evolution
+          {fr ? "Évolution" : "Evolution"}
         </h3>
 
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:max-w-[610px]">
@@ -1586,6 +1530,7 @@ function XMentionsSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [storySearch, setStorySearch] = useState("");
 
   /*
@@ -1640,48 +1585,23 @@ function XMentionsSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose mentions table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyXCsv(
-                    "x-mentions.csv",
-                    [
-                      "story",
-                      "published_at",
-                      "impressions",
-                      "reach",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"x-mentions.csv"}
+                columns={["story", "published_at", "impressions", "reach"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
-                  New
+                  {fr ? "Nouveau" : "New"}
                 </span>
 
-                <Link
-                  href="/dashboard/billing"
+                <PinToDashboardButton
                   className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-                >
-                  <PostsActionIcon kind="dashboard" />
-                  Add to dashboard
-                  <PremiumDiamond />
-                </Link>
+                  icon={<PostsActionIcon kind="dashboard" />}
+                  badge={<PremiumDiamond />}
+                />
               </div>
             </div>
           </div>
@@ -1690,7 +1610,7 @@ function XMentionsSection({
             <EmptySearchIllustration />
 
             <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-              Oops! Nothing found, try another search
+              {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
             </h3>
 
             <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1714,6 +1634,7 @@ function XEngagementEvolution({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const emptyPoints = useMemo(
     () =>
       enumerateDates(start, end).map((date) => ({
@@ -1757,7 +1678,7 @@ function XEngagementEvolution({
   return (
     <section className="px-5 py-7 sm:px-7">
       <h3 className="text-[18px] font-medium text-[#20242A]">
-        Evolution
+        {fr ? "Évolution" : "Evolution"}
       </h3>
 
       <div className="mt-5 grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
@@ -1792,6 +1713,7 @@ function XEngagementSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [collabSearch, setCollabSearch] = useState("");
 
   /*
@@ -1812,7 +1734,7 @@ function XEngagementSection({
         </h1>
 
         <span className="rounded-full bg-[#DDF8ED] px-3 py-1 text-[11px] font-medium text-[#4E7B68]">
-          New
+          {fr ? "Nouveau" : "New"}
         </span>
       </div>
 
@@ -1850,38 +1772,12 @@ function XEngagementSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose Engagement table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyXCsv(
-                    "x-engagement.csv",
-                    [
-                      "collab",
-                      "published_at",
-                      "views",
-                      "likes",
-                      "comments",
-                      "reposts",
-                      "saved",
-                      "shares",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"x-engagement.csv"}
+                columns={["collab", "published_at", "views", "likes", "comments", "reposts", "saved", "shares"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
             </div>
           </div>
 
@@ -1889,7 +1785,7 @@ function XEngagementSection({
             <EmptySearchIllustration />
 
             <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-              Oops! Nothing found, try another search
+              {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
             </h3>
 
             <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1956,6 +1852,7 @@ function CompetitorsPostListIcon() {
 }
 
 function XCompetitorsSection() {
+  const fr = useDashboardLanguage() === "fr";
   const [competitorSearch, setCompetitorSearch] = useState("");
 
   const hasSearch =
@@ -1964,7 +1861,7 @@ function XCompetitorsSection() {
   return (
     <div className="space-y-1">
       <h2 className="pb-5 text-[23px] font-medium text-[#20242A]">
-        Competitors
+        {fr ? "Concurrents" : "Competitors"}
       </h2>
 
       <section className="rounded-[14px] border border-[#E8EAED] bg-white px-6 py-6 shadow-[0_2px_12px_rgba(31,41,55,0.04)] sm:px-7">
@@ -1976,24 +1873,22 @@ function XCompetitorsSection() {
 
             <div className="min-w-0">
               <h3 className="text-[22px] font-semibold text-[#20242A]">
-                Do you need a higher plan?
+                {fr ? "Suivi des concurrents" : "Competitor tracking"}
               </h3>
 
               <p className="mt-1 text-[15px] leading-6 text-[#68717A]">
-                Upgrade your plan and add up to{" "}
-                <strong className="font-semibold text-[#46505A]">
-                  100 competitors
-                </strong>{" "}
-                which you can modify and/or delete at any time
+                {fr
+                  ? "Lire d’autres comptes X passe par l’accès payant à l’API de X. En attendant, suivez vos concurrents en direct sur Instagram et Bluesky."
+                  : "Reading other X accounts goes through X's paid API access. Meanwhile, follow your competitors live on Instagram and Bluesky."}
               </p>
             </div>
           </div>
 
           <Link
-            href="/dashboard/billing"
+            href="/dashboard/social/instagram#instagram-competitors"
             className="inline-flex h-[38px] shrink-0 items-center justify-center self-start rounded-[9px] bg-[#2B1725] px-5 text-sm font-semibold text-[#DFFF38] transition hover:bg-[#3A2133] lg:self-auto"
           >
-            Upgrade your plan
+            {fr ? "Concurrents Instagram" : "Instagram competitors"}
           </Link>
         </div>
       </section>
@@ -2001,7 +1896,7 @@ function XCompetitorsSection() {
       <section className="min-h-[610px] rounded-[14px] border border-[#E8EAED] bg-white px-6 py-7 shadow-[0_2px_12px_rgba(31,41,55,0.04)] sm:px-7">
         <div className="flex items-center gap-2">
           <h3 className="text-[20px] font-medium text-[#20242A]">
-            List of competitors
+            {fr ? "Liste des concurrents" : "List of competitors"}
           </h3>
 
           <CompetitorsHelpIcon />
@@ -2035,7 +1930,7 @@ function XCompetitorsSection() {
               aria-label="Filter competitors"
               className="inline-flex h-[42px] min-w-[158px] cursor-not-allowed items-center justify-between gap-4 rounded-[9px] border border-[#E4E7EA] bg-white px-3 text-xs font-medium text-[#C1C6CA]"
             >
-              All competitors
+              {fr ? "Tous les concurrents" : "All competitors"}
 
               <svg
                 aria-hidden="true"
@@ -2049,35 +1944,12 @@ function XCompetitorsSection() {
               </svg>
             </button>
 
-            <button
-              type="button"
-              aria-label="Choose competitors table columns"
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-            >
-              <PostsActionIcon kind="columns" />
-              Columns
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                downloadEmptyXCsv(
-                  "x-competitors.csv",
-                  [
-                    "competitor",
-                    "followers",
-                    "posts",
-                    "interactions",
-                    "engagement",
-                  ],
-                )
-              }
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-            >
-              <PostsActionIcon kind="download" />
-              Download CSV
-              <PremiumDiamond />
-            </button>
+            <CsvColumnsControls
+              filename={"x-competitors.csv"}
+              columns={["competitor", "followers", "posts", "interactions", "engagement"]}
+              icon={<PostsActionIcon kind="download" />}
+              badge={<PremiumDiamond />}
+            />
 
             <button
               type="button"
@@ -2085,7 +1957,7 @@ function XCompetitorsSection() {
               className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
             >
               <CompetitorsPostListIcon />
-              Post List (All)
+              {fr ? "Liste des publications (toutes)" : "Post List (All)"}
             </button>
 
             <Link
@@ -2098,7 +1970,7 @@ function XCompetitorsSection() {
               >
                 +
               </span>
-              Add
+              {fr ? "Ajouter" : "Add"}
             </Link>
           </div>
         </div>
@@ -2107,7 +1979,7 @@ function XCompetitorsSection() {
           <EmptySearchIllustration />
 
           <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-            Oops! Nothing found, try another search
+            {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
           </h3>
 
           <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -2135,6 +2007,7 @@ export function XSubscribedDashboard({
   const [tab, setTab] = useState<XTab>("community");
   const [range, setRange] = useState<number>(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
+  const fr = useDashboardLanguage() === "fr";
 
   function scrollToSection(section: XTab) {
     setTab(section);
@@ -2227,10 +2100,10 @@ export function XSubscribedDashboard({
     Boolean(data.lostSeries?.length);
 
   const accountStatus = !isConnected
-    ? "History saved"
+    ? fr ? "Historique conservé" : "History saved"
     : hasConfirmedData
-      ? "Data available"
-      : "No data";
+      ? fr ? "Données disponibles" : "Data available"
+      : fr ? "Aucune donnée" : "No data";
 
   return (
     <div className="-mx-1 space-y-5 bg-[#FCFCFD] px-4 pb-24 pt-1 sm:px-5 lg:px-6">
@@ -2239,7 +2112,7 @@ export function XSubscribedDashboard({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6B7280]">
-                X account
+                {fr ? "Compte X" : "X account"}
               </p>
 
               <span
@@ -2263,15 +2136,15 @@ export function XSubscribedDashboard({
             </h1>
 
             <p className="mt-1 text-sm text-[#5F6770]">
-              Selected {start} → {end}
+              {fr ? "Période" : "Selected"} {start} → {end}
               {hasConfirmedData
-                ? " · Confirmed account-specific X data"
-                : " · Waiting for synchronized X data"}
+                ? fr ? " · Données confirmées de ce compte X" : " · Confirmed account-specific X data"
+                : fr ? " · En attente des données X" : " · Waiting for synchronized X data"}
             </p>
 
             {!hasConfirmedData ? (
               <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                No synchronized X data overlaps this range.
+                {fr ? "Aucune donnée X sur cette période." : "No synchronized X data overlaps this range."}
               </p>
             ) : null}
           </div>
@@ -2297,7 +2170,7 @@ export function XSubscribedDashboard({
                     : "text-[#6B7280] hover:text-[#20242A]"
                 }`}
               >
-                {item.label}
+                {fr ? TAB_FR[item.key] ?? item.label : item.label}
                 {selected ? (
                   <span className="absolute inset-x-2 bottom-0 h-[2px] bg-[#20242A]" />
                 ) : null}
@@ -2308,7 +2181,7 @@ export function XSubscribedDashboard({
 
         <div className="ml-auto flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-            <span>Main period</span>
+            <span>{fr ? "Période principale" : "Main period"}</span>
             <span className="flex h-11 items-center gap-2 rounded-[10px] border border-[#D7DBE0] bg-white px-3 text-sm shadow-sm">
               <span className="font-medium text-[#20242A]">
                 {displayDate(start)} - {displayDate(end)}
@@ -2323,8 +2196,8 @@ export function XSubscribedDashboard({
                 {RANGES.map((days) => (
                   <option key={days} value={days}>
                     {days === 365
-                      ? "Last 12 months"
-                      : `Last ${days} days`}
+                      ? fr ? "12 derniers mois" : "Last 12 months"
+                      : fr ? `${days} derniers jours` : `Last ${days} days`}
                   </option>
                 ))}
               </select>
@@ -2332,7 +2205,7 @@ export function XSubscribedDashboard({
           </label>
 
           <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-            <span>Comparison period</span>
+            <span>{fr ? "Période de comparaison" : "Comparison period"}</span>
             <button
               type="button"
               onClick={() => setCompareEnabled((current) => !current)}
@@ -2344,8 +2217,8 @@ export function XSubscribedDashboard({
             >
               <GitCompareArrows className="h-4 w-4 text-[#9AA1A9]" />
               {compareEnabled
-                ? "Comparison on"
-                : "Create comparison view"}
+                ? fr ? "Comparaison activée" : "Comparison on"
+                : fr ? "Créer une vue de comparaison" : "Create comparison view"}
             </button>
           </label>
         </div>
@@ -2367,7 +2240,7 @@ export function XSubscribedDashboard({
         >
           {TABS.map((item) => (
             <option key={item.key} value={item.key}>
-              {item.label}
+              {fr ? TAB_FR[item.key] ?? item.label : item.label}
             </option>
           ))}
         </select>

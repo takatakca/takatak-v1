@@ -170,6 +170,9 @@ jobs:
       - name: Native agent runner stays within its limits
         run: npm run qa:native-agents
 
+      - name: Instagram dashboard reads real Instagram numbers safely
+        run: npm run qa:instagram-live
+
       - name: Native app API checks tokens and workspaces
         run: npm run qa:mobile-api
 

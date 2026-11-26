@@ -345,8 +345,8 @@ export function BrandSettingsConnections({
 
     const meta = providerMeta(card.provider);
     if (card.planned || !meta?.implemented) {
-      setError(null);
-      setMessage(`${card.label} connection is not available yet.`);
+      // Connected by the TAKATAK team: open a ready-made request.
+      router.push(`/dashboard/support?demande=${encodeURIComponent(card.key)}`);
       return;
     }
 
@@ -500,8 +500,8 @@ export function BrandSettingsConnections({
       ) : null}
 
       <div className="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2 xl:grid-cols-3">
-        {/* Only networks that can really be connected are shown (no "planned" cards). */}
-        {CONNECTION_CARDS.filter((card) => !card.planned).map((card) => {
+        {/* Networks TAKATAK connects for you (planned cards) send a real connection request to the team. */}
+        {CONNECTION_CARDS.map((card) => {
           const account = accountFor(card);
           const meta = providerMeta(card.provider);
           const shell = shellFor(card.provider);
@@ -614,7 +614,7 @@ export function BrandSettingsConnections({
                   disabled={busy || !canManage}
                   title={
                     card.planned || !meta?.implemented
-                      ? `${card.label} is not available yet.`
+                      ? `Demander le branchement de ${card.label} à l’équipe · Request a ${card.label} connection`
                       : !canManage
                         ? "You can view connections, but you cannot change them."
                         : card.actionLabel

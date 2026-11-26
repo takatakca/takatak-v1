@@ -3,6 +3,8 @@
 import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import {
   Check,
+  Eye,
+  MoreVertical,
   Filter,
   Mail,
   MessageCircleWarning,
@@ -12,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   SocialPlatformIcon,
@@ -57,6 +59,29 @@ function formatThreadTime(value: string, fr = false): string {
   });
 }
 
+/** Read and resolved marks are kept per device for this inbox (they never change anything on the network). */
+const INBOX_STATE_KEY = "takatak.socialInbox.v1";
+const UNREAD_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+
+function readInboxState(): { read: string[]; resolved: string[] } {
+  try {
+    const raw = window.localStorage.getItem(INBOX_STATE_KEY);
+    const parsed = raw ? (JSON.parse(raw) as { read?: unknown; resolved?: unknown }) : {};
+    const list = (value: unknown) => (Array.isArray(value) ? value.filter((v): v is string => typeof v === "string").slice(0, 5000) : []);
+    return { read: list(parsed.read), resolved: list(parsed.resolved) };
+  } catch {
+    return { read: [], resolved: [] };
+  }
+}
+
+function writeInboxState(read: Set<string>, resolved: Set<string>) {
+  try {
+    window.localStorage.setItem(INBOX_STATE_KEY, JSON.stringify({ read: [...read].slice(-5000), resolved: [...resolved].slice(-5000) }));
+  } catch {
+    // Storage blocked: the marks still apply until the page is reloaded.
+  }
+}
+
 export function SocialInboxView({ data }: { data: InboxPageData }) {
   const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
@@ -73,6 +98,45 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
   const [kindFilter, setKindFilter] = useState<InboxKind | "all">("all");
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkNotice, setBulkNotice] = useState<string | null>(null);
+  const [readIds, setReadIds] = useState<Set<string>>(() => new Set());
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => new Set());
+  const [loadedAt] = useState(() => Date.now());
+
+  useEffect(() => {
+    const saved = readInboxState();
+    setReadIds(new Set(saved.read));
+    setResolvedIds(new Set(saved.resolved));
+  }, []);
+
+  // A thread is unread until it is opened (recent reviews start unread) and
+  // unresolved until it is answered or marked resolved here.
+  const threads = useMemo(
+    () =>
+      data.threads.map((thread) => ({
+        ...thread,
+        unread:
+          !readIds.has(thread.id) &&
+          (thread.unread || loadedAt - new Date(thread.occurredAt).getTime() < UNREAD_WINDOW_MS),
+        unresolved: thread.unresolved && !resolvedIds.has(thread.id),
+      })),
+    [data.threads, loadedAt, readIds, resolvedIds],
+  );
+
+  function markRead(ids: string[]) {
+    const next = new Set(readIds);
+    ids.forEach((id) => next.add(id));
+    setReadIds(next);
+    writeInboxState(next, resolvedIds);
+  }
+
+  function markResolved(ids: string[]) {
+    const next = new Set(resolvedIds);
+    ids.forEach((id) => next.add(id));
+    setResolvedIds(next);
+    writeInboxState(readIds, next);
+  }
 
   const connected = new Set(
     data.connectedPlatforms.map((platform) => platform.toLowerCase()),
@@ -81,13 +145,13 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
     data.attentionPlatforms.map((platform) => platform.toLowerCase()),
   );
 
-  const unreadCount = data.threads.filter((thread) => thread.unread).length;
+  const unreadCount = threads.filter((thread) => thread.unread).length;
 
   const rows = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const searchReady = needle.length >= 3;
 
-    return data.threads.filter((thread) => {
+    return threads.filter((thread) => {
       if (tab === "unresolved" && !thread.unresolved) {
         return false;
       }
@@ -112,7 +176,7 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
       }
       return true;
     });
-  }, [data.threads, kindFilter, platformFilter, query, tab]);
+  }, [threads, kindFilter, platformFilter, query, tab]);
 
   const selected =
     rows.find((thread) => thread.id === selectedId) ?? null;
@@ -269,6 +333,66 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
               );
             })}
           </nav>
+          <div className="relative pb-1">
+            <button
+              type="button"
+              aria-label={fr ? "Actions de la boîte" : "Inbox actions"}
+              aria-expanded={bulkOpen}
+              onClick={() => {
+                setFilterOpen(false);
+                setBulkOpen((open) => !open);
+              }}
+              className={`flex h-8 w-8 items-center justify-center rounded-md transition ${bulkOpen ? "bg-slate-100" : "hover:bg-slate-50"}`}
+            >
+              <MoreVertical className="h-4 w-4 text-slate-500" />
+            </button>
+            {bulkOpen ? (
+              <div className="absolute right-0 z-30 mt-1 w-[260px] rounded-xl bg-white py-1.5 shadow-[0_8px_28px_rgba(15,23,42,0.16)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkOpen(false);
+                    const ids = rows.filter((thread) => thread.unresolved).map((thread) => thread.id);
+                    markResolved(ids);
+                    setBulkNotice(
+                      ids.length
+                        ? fr
+                          ? `${ids.length} conversation${ids.length > 1 ? "s" : ""} marquée${ids.length > 1 ? "s" : ""} comme résolue${ids.length > 1 ? "s" : ""}.`
+                          : `${ids.length} conversation${ids.length > 1 ? "s" : ""} marked resolved.`
+                        : fr
+                          ? "Rien à marquer comme résolu."
+                          : "Nothing to mark resolved.",
+                    );
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <Check className="h-4 w-4 text-slate-500" />
+                  {fr ? "Tout marquer comme résolu" : "Mark all as resolved"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkOpen(false);
+                    const ids = rows.filter((thread) => thread.unread).map((thread) => thread.id);
+                    markRead(ids);
+                    setBulkNotice(
+                      ids.length
+                        ? fr
+                          ? `${ids.length} conversation${ids.length > 1 ? "s" : ""} marquée${ids.length > 1 ? "s" : ""} comme lue${ids.length > 1 ? "s" : ""}.`
+                          : `${ids.length} conversation${ids.length > 1 ? "s" : ""} marked read.`
+                        : fr
+                          ? "Rien à marquer comme lu."
+                          : "Nothing to mark read.",
+                    );
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
+                >
+                  <Eye className="h-4 w-4 text-slate-500" />
+                  {fr ? "Tout marquer comme lu" : "Mark all as read"}
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -289,7 +413,10 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
                   key={thread.id}
                   thread={thread}
                   selected={selected?.id === thread.id}
-                  onSelect={() => setSelectedId(thread.id)}
+                  onSelect={() => {
+                    setSelectedId(thread.id);
+                    if (thread.unread) markRead([thread.id]);
+                  }}
                 />
               ))}
             </ul>
@@ -337,6 +464,15 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
                 {selected.reply}
               </div>
             ) : null}
+            {selected.unresolved ? (
+              <button
+                type="button"
+                onClick={() => markResolved([selected.id])}
+                className="mr-2 mt-4 inline-flex h-10 items-center justify-center rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                {fr ? "Marquer comme résolu" : "Mark resolved"}
+              </button>
+            ) : null}
             {selected.replyHref ? (
               <a
                 href={selected.replyHref}
@@ -361,6 +497,14 @@ export function SocialInboxView({ data }: { data: InboxPageData }) {
       </section>
 
 
+      {bulkNotice ? (
+        <div role="status" className="fixed bottom-5 left-1/2 z-40 -translate-x-1/2 rounded-lg bg-[#1d1d1f] px-4 py-2 text-sm text-white shadow-lg">
+          {bulkNotice}
+          <button type="button" onClick={() => setBulkNotice(null)} className="ml-3 text-white/70 hover:text-white">
+            {fr ? "OK" : "OK"}
+          </button>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
+  adsFactLines,
   buildAgentPrompt,
   compareSiteCheck,
   isNativeAgent,
@@ -30,10 +31,10 @@ const takbotServer = readFileSync("src/lib/takbot/server.ts", "utf8");
 const service = readFileSync("src/lib/ai-agents/service.ts", "utf8");
 
 check("only agents whose whole job can be done here run natively", () => {
-  for (const key of ["chat_concierge", "social_autopilot", "report_writer", "seo_watchdog"]) assert.ok(isNativeAgent(key), key);
-  // SMS review requests and ad accounts need connectors this runner does not have;
+  for (const key of ["chat_concierge", "social_autopilot", "report_writer", "seo_watchdog", "ads_optimizer"]) assert.ok(isNativeAgent(key), key);
+  // SMS review requests need a messaging connector this runner does not have;
   // review replies run through the Reputation cockpit's own native workflow.
-  for (const key of ["review_requester", "review_responder", "ads_optimizer"]) assert.ok(!isNativeAgent(key), key);
+  for (const key of ["review_requester", "review_responder"]) assert.ok(!isNativeAgent(key), key);
   assert.match(runner, /"agentKey" IN \(\$\{Prisma\.join\(nativeKeys\)\}\)/);
 });
 
@@ -63,7 +64,9 @@ check("credits: each run is billed at most once through the TAK-TAK ledger", () 
   // The Report Writer is billed as the published "monthly report summary" action.
   assert.equal(nativeActionKey("report_writer"), "monthly_report_summary");
   assert.ok(AI_CREDIT_ACTIONS.some((a) => a.key === nativeActionKey("report_writer")));
-  for (const key of ["chat_concierge", "social_autopilot", "seo_watchdog"] as const) assert.equal(nativeActionKey(key), undefined);
+  for (const key of ["chat_concierge", "social_autopilot", "seo_watchdog", "ads_optimizer"] as const) assert.equal(nativeActionKey(key), undefined);
+  // The Ads Optimizer bills the published "Ad copy set" action through the write mode.
+  assert.equal(nativeMode("ads_optimizer"), "write");
   assert.match(runner, /actionKey: nativeActionKey\(run\.agentKey\)/);
   // runTakbot refuses an unknown billed action instead of billing it.
   assert.match(takbotServer, /code: "unknown_action"/);
@@ -140,10 +143,24 @@ check("SEO Watchdog re-checks real sites, flags what newly fails, never debits w
   assert.match(runner, /no_website_on_file/);
 });
 
+check("Ads Optimizer works on real TAKATAK ADS numbers and never spends", () => {
+  const lines = adsFactLines({
+    campaigns: [{ name: "Hiver", status: "active", budgetCents: 50000, spentCents: 12000, startsAt: new Date("2026-11-01T00:00:00Z"), endsAt: null }],
+    totals: { impressions: 2000, clicks: 50, leads: 4, conversions: 1 },
+  });
+  assert.ok(lines.some((l) => l.includes('Campaign "Hiver" (active): budget 500.00 CAD, spent 120.00 CAD')));
+  assert.ok(lines.some((l) => l.includes("CTR 2.50%") && l.includes("cost per lead 30.00 CAD")));
+  const prompt = buildAgentPrompt("ads_optimizer", { businessName: "Garage Test", instructions: null, input: {}, facts: lines });
+  assert.match(prompt, /Never say money was moved or spent/);
+  assert.match(prompt, /5 headlines/);
+  assert.match(runner, /no_ad_campaign/);
+  assert.match(runner, /getAdsWorkspaceSnapshot\(run\.clientId\)/);
+});
+
 check("the approval card shows what the agent wrote", () => {
   assert.match(service, /key === "preview" \? record\.draft/);
   assert.match(runner, /summary: nativeSummary\(run\.agentKey\)/);
-  for (const key of ["chat_concierge", "social_autopilot", "report_writer", "seo_watchdog"] as const) assert.match(nativeSummary(key), / · /);
+  for (const key of ["chat_concierge", "social_autopilot", "report_writer", "seo_watchdog", "ads_optimizer"] as const) assert.match(nativeSummary(key), / · /);
 });
 
 console.log(`${passed} native agent checks passed`);

@@ -7,18 +7,27 @@ import {
 import type { HostingServiceSummary, SslCertificateSummary } from "@/lib/web-hosting/types";
 import { HOSTING_STATUS_LABELS, SERVER_STATUS_LABELS, SSL_STATUS_LABELS } from "@/lib/web-hosting/status";
 
-const TABS = [
-  "Overview",
-  "Deployments",
-  "Runtime",
-  "Database",
-  "Backups",
-  "Logs",
-  "Domains & SSL",
-  "CDN & Cache",
-  "Env Vars",
-  "Monitoring",
-  "History",
+/** Each tab opens the dashboard screen that holds that part of the environment. */
+const TABS: Array<{ label: string; href: string | null }> = [
+  { label: "Overview", href: null },
+  { label: "Deployments", href: "/dashboard/web-hosting/staging" },
+  { label: "Runtime", href: "/dashboard/web-hosting/performance" },
+  { label: "Database", href: "/dashboard/web-hosting/backups" },
+  { label: "Backups", href: "/dashboard/web-hosting/backups" },
+  { label: "Logs", href: "/dashboard/web-hosting/monitoring" },
+  { label: "Domains & SSL", href: "/dashboard/web-hosting/ssl" },
+  { label: "CDN & Cache", href: "/dashboard/web-hosting/performance" },
+  { label: "Env Vars", href: "/dashboard/support?demande=hosting-settings" },
+  { label: "Monitoring", href: "/dashboard/web-hosting/monitoring" },
+  { label: "History", href: "/dashboard/activity" },
+];
+
+const MORE_ACTIONS = [
+  { label: "Sauvegardes · Backups", href: "/dashboard/web-hosting/backups" },
+  { label: "Certificats SSL · SSL", href: "/dashboard/web-hosting/ssl" },
+  { label: "Zone DNS · DNS", href: "/dashboard/web-hosting/dns" },
+  { label: "Vérification de sécurité · Security check", href: "/dashboard/web-hosting/security" },
+  { label: "Diagnostic par l’équipe · Team diagnostic", href: "/dashboard/support?demande=diagnostics" },
 ];
 
 function healthLabel(serverStatus: string): { label: string; className: string } {
@@ -101,32 +110,39 @@ export function HostingEnvironmentView({
           >
             Open Site <ExternalLink className="h-3.5 w-3.5" />
           </a>
-          <button type="button" disabled className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white/70">
-            Deploy
-          </button>
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-400"
+          <Link
+            href="/dashboard/support?demande=deploy"
+            className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
-            More <ChevronDown className="h-3.5 w-3.5" />
-          </button>
+            Déployer · Deploy
+          </Link>
+          <details className="relative">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-blue-300 [&::-webkit-details-marker]:hidden">
+              Plus · More <ChevronDown className="h-3.5 w-3.5" />
+            </summary>
+            <div className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+              {MORE_ACTIONS.map((action) => (
+                <Link key={action.label} href={action.href} className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                  {action.label}
+                </Link>
+              ))}
+            </div>
+          </details>
         </div>
       </div>
 
       <nav className="flex gap-4 overflow-x-auto border-b border-slate-200 text-sm">
-        {TABS.map((tab) => (
-          <span
-            key={tab}
-            className={`shrink-0 pb-2 ${
-              tab === "Overview"
-                ? "border-b-2 border-violet-600 font-medium text-slate-900"
-                : "text-slate-400"
-            }`}
-          >
-            {tab}
-          </span>
-        ))}
+        {TABS.map((tab) =>
+          tab.href ? (
+            <Link key={tab.label} href={tab.href} className="shrink-0 pb-2 text-slate-500 hover:text-slate-900">
+              {tab.label}
+            </Link>
+          ) : (
+            <span key={tab.label} className="shrink-0 border-b-2 border-violet-600 pb-2 font-medium text-slate-900">
+              {tab.label}
+            </span>
+          ),
+        )}
       </nav>
 
       <section className="grid grid-cols-2 gap-3 xl:grid-cols-6">

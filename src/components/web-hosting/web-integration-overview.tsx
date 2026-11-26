@@ -114,13 +114,12 @@ export function WebIntegrationOverview({
           >
             Add Domain
           </Link>
-          <button
-            type="button"
-            disabled
-            className="rounded-lg bg-[#1f2125] px-4 py-2 text-sm font-medium text-white/70"
+          <Link
+            href="/dashboard/support?demande=website-connect"
+            className="rounded-lg bg-[#1f2125] px-4 py-2 text-sm font-medium text-white hover:bg-black"
           >
-            Connect Website
-          </button>
+            Brancher un site · Connect website
+          </Link>
         </div>
       </div>
 
@@ -193,20 +192,21 @@ export function WebIntegrationOverview({
           <h3 className="text-sm font-semibold text-slate-900">Quick Actions</h3>
           <div className="mt-3 space-y-1">
             {[
-              { label: "Add New Domain", icon: Plus },
-              { label: "Connect Website", icon: Globe },
-              { label: "Install SSL", icon: Lock },
-              { label: "Domain Transfer", icon: Upload },
+              { label: "Nouveau domaine · Add new domain", icon: Plus, href: "/domain" },
+              { label: "Brancher un site · Connect website", icon: Globe, href: "/dashboard/support?demande=website-connect" },
+              { label: "Certificat SSL · Install SSL", icon: Lock, href: "/dashboard/web-hosting/ssl" },
+              { label: "Transfert de domaine · Domain transfer", icon: Upload, href: "/transfert" },
             ].map((action) => {
               const Icon = action.icon;
               return (
-                <div
+                <Link
                   key={action.label}
-                  className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-400"
+                  href={action.href}
+                  className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="h-4 w-4 text-slate-400" />
                   {action.label}
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -218,15 +218,16 @@ export function WebIntegrationOverview({
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
             <h3 className="text-sm font-semibold text-slate-900">All Websites & Domains</h3>
             <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-400">
-                <Search className="h-4 w-4" /> Search
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-400">
-                <Filter className="h-4 w-4" /> Filters
-              </span>
-              <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-400">
-                <Download className="h-4 w-4" /> Export
-              </span>
+              {/* Search, filters and CSV export work on the full domain manager. */}
+              <Link href="/dashboard/web-hosting/domains" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:border-blue-300">
+                <Search className="h-4 w-4" /> Rechercher · Search
+              </Link>
+              <Link href="/dashboard/web-hosting/domains" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:border-blue-300">
+                <Filter className="h-4 w-4" /> Filtres · Filters
+              </Link>
+              <Link href="/dashboard/web-hosting/domains" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:border-blue-300">
+                <Download className="h-4 w-4" /> Exporter · Export
+              </Link>
             </div>
           </div>
           {data.domains.length ? (
