@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { CsvColumnsControls } from "@/components/social/platforms/csv-columns-controls";
 import { SocialSummaryChart } from "@/components/social/analytics/social-summary-chart";
 import {
   dateKey,
@@ -1661,34 +1662,12 @@ function InstagramStoriesSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose stories table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyInstagramCsv(
-                    "instagram-stories.csv",
-                    [
-                      "story",
-                      "published_at",
-                      "impressions",
-                      "reach",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"instagram-stories.csv"}
+                columns={["story", "published_at", "impressions", "reach"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
@@ -1871,38 +1850,12 @@ function InstagramCollabsSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose Collabs table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyInstagramCsv(
-                    "instagram-collabs.csv",
-                    [
-                      "collab",
-                      "published_at",
-                      "views",
-                      "likes",
-                      "comments",
-                      "reposts",
-                      "saved",
-                      "shares",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"instagram-collabs.csv"}
+                columns={["collab", "published_at", "views", "likes", "comments", "reposts", "saved", "shares"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
             </div>
           </div>
 
@@ -2070,35 +2023,12 @@ function InstagramCompetitorsSection() {
               </svg>
             </button>
 
-            <button
-              type="button"
-              aria-label="Choose competitors table columns"
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-            >
-              <PostsActionIcon kind="columns" />
-              Columns
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                downloadEmptyInstagramCsv(
-                  "instagram-competitors.csv",
-                  [
-                    "competitor",
-                    "followers",
-                    "posts",
-                    "interactions",
-                    "engagement",
-                  ],
-                )
-              }
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-            >
-              <PostsActionIcon kind="download" />
-              Download CSV
-              <PremiumDiamond />
-            </button>
+            <CsvColumnsControls
+              filename={"instagram-competitors.csv"}
+              columns={["competitor", "followers", "posts", "interactions", "engagement"]}
+              icon={<PostsActionIcon kind="download" />}
+              badge={<PremiumDiamond />}
+            />
 
             <button
               type="button"
