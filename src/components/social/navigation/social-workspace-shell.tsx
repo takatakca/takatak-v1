@@ -15,6 +15,8 @@ import {
   FileBarChart2,
   Gem,
   Globe2,
+  Handshake,
+  Hash,
   Inbox,
   Link2,
   Loader2,
@@ -1279,6 +1281,14 @@ function ModuleDrawer({
               onClose={onClose}
             />
 
+            <DrawerRow
+              label={fr ? "Programme partenaire" : "Partner program"}
+              href="/freelancers"
+              icon={Handshake}
+              active={pathname.startsWith('/freelancers')}
+              onClose={onClose}
+            />
+
           </section>
         </div>
 
@@ -1634,6 +1644,17 @@ function SocialSidebarContent({
           <FileBarChart2 className="h-5 w-5 shrink-0" />
 
           {!collapsed ? <span>{fr ? 'Rapports' : 'Reports'}</span> : null}
+        </Link>
+
+        <Link
+          href={`${withSocialPreview('/dashboard/social/reports', searchParams)}#hashtag`}
+          onClick={onNavigate}
+          title={collapsed ? (fr ? 'Suivi de mots-clics' : 'Hashtag Tracker') : undefined}
+          className="flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+        >
+          <Hash className="h-5 w-5 shrink-0" />
+
+          {!collapsed ? <span>{fr ? 'Suivi de mots-clics' : 'Hashtag Tracker'}</span> : null}
         </Link>
 
         <Link

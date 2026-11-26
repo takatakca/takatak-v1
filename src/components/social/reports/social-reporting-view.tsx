@@ -4,6 +4,7 @@ import {
   BarChart3,
   FileText,
   Gem,
+  Shield,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -11,6 +12,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+import { HashtagTracker } from "@/components/social/reports/hashtag-tracker";
 
 function GemCircle({ size = "sm" }: { size?: "sm" | "md" }) {
   const wrap = size === "sm" ? "h-4 w-4" : "h-6 w-6";
@@ -44,17 +46,19 @@ function UpgradeButton({
 }
 
 /**
- * Social reporting: only tools that work today. The monthly report builder
- * (real workspace numbers, PDF, scheduled delivery), the Social statistics and
- * the Looker Studio link. Builders that do not exist yet are not offered, and
- * nothing is sold that the account cannot use.
+ * Social reporting: every card opens a working tool. The monthly report
+ * builder (real workspace numbers, PDF, scheduled delivery), campaign
+ * dashboards (the brand's real campaigns), TAKATAK Studio (AI Studio), the
+ * Social statistics, Looker Studio and the hashtag tracker (TAK-TAK research).
  */
 export function SocialReportingView({
   reportsUnlocked,
   billingHref,
+  researchCredits,
 }: {
   reportsUnlocked: boolean;
   billingHref: string;
+  researchCredits: number;
 }) {
   const fr = useDashboardLanguage() === "fr";
   const action =
@@ -75,6 +79,40 @@ export function SocialReportingView({
 
       <div className="px-5 pt-5 sm:px-6">
         <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <FeatureCard
+            title={fr ? "Tableaux de campagnes" : "Campaign dashboards"}
+            description={
+              fr
+                ? "Regroupez le contenu par campagne et suivez ses objectifs, ses dates et ses publications pour chaque marque de l’espace."
+                : "Group content by campaign and follow its goals, dates and posts for each brand in this workspace."
+            }
+            icon={Shield}
+            iconClass="bg-[#dcfce7] text-[#16a34a]"
+            imageSrc="/img/campaign-dashboards.png"
+            imageAlt=""
+          >
+            <Link href="/dashboard/social/campaigns" className={action}>
+              {fr ? "Ouvrir les campagnes" : "Open campaigns"}
+            </Link>
+          </FeatureCard>
+
+          <FeatureCard
+            title="TAKATAK Studio"
+            description={
+              fr
+                ? "Créez publications, campagnes et idées vidéo avec l’IA, dans la voix de votre marque, puis envoyez-les à vos réseaux."
+                : "Create posts, campaigns and video ideas with AI in your brand voice, then send them to your networks."
+            }
+            icon={Sparkles}
+            iconClass="bg-[#ede9fe] text-[#7c3aed]"
+            imageSrc="/img/studiotak.png"
+            imageAlt=""
+          >
+            <Link href="/dashboard/ai-studio" className={action}>
+              {fr ? "Ouvrir le Studio" : "Open Studio"}
+            </Link>
+          </FeatureCard>
+
           <FeatureCard
             title={fr ? "Rapport mensuel" : "Monthly report"}
             description={
@@ -107,9 +145,9 @@ export function SocialReportingView({
                 ? "Portée, impressions, engagement, clics et abonnés de vos comptes branchés, avec les vrais chiffres de vos comptes."
                 : "Reach, impressions, engagement, clicks and followers of your connected accounts, with your accounts' real numbers."
             }
-            icon={Sparkles}
-            iconClass="bg-[#ede9fe] text-[#7c3aed]"
-            imageSrc="/img/studiotak.png"
+            icon={BarChart3}
+            iconClass="bg-[#e0f2fe] text-[#0284c7]"
+            imageSrc="/img/reports.png"
             imageAlt=""
           >
             <Link href="/dashboard/social/analytics" className={action}>
@@ -138,6 +176,8 @@ export function SocialReportingView({
             )}
           </FeatureCard>
         </div>
+
+        <HashtagTracker researchCredits={researchCredits} />
       </div>
     </div>
   );
