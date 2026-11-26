@@ -106,17 +106,17 @@ export default async function ActivityPage() {
       <main className="space-y-6">
         <header>
           <p className="text-sm font-medium text-indigo-600">
-            Workspace administration
+            Administration de l’espace · Workspace administration
           </p>
 
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">
-            Activity
+            Activité · Activity
           </h1>
         </header>
 
         <section className="rounded-2xl border border-rose-200 bg-rose-50 p-6">
           <h2 className="font-semibold text-rose-900">
-            Activity unavailable
+            Activité injoignable · Activity unavailable
           </h2>
 
           <p className="mt-2 text-sm text-rose-700">
@@ -132,11 +132,11 @@ export default async function ActivityPage() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-medium text-indigo-600">
-            Workspace administration
+            Administration de l’espace · Workspace administration
           </p>
 
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">
-            Activity
+            Activité · Activity
           </h1>
 
           <p className="mt-2 text-sm text-slate-600">
@@ -154,7 +154,7 @@ export default async function ActivityPage() {
             className="h-3.5 w-3.5"
           />
 
-          Live database records
+          Fiches en direct de la base de données · Live database records
         </div>
       </header>
 
@@ -170,7 +170,7 @@ export default async function ActivityPage() {
 
             <div>
               <p className="text-sm text-slate-500">
-                Recorded events
+                Événements enregistrés · Recorded events
               </p>
 
               <p className="text-2xl font-semibold text-slate-950">
@@ -191,11 +191,11 @@ export default async function ActivityPage() {
 
             <div>
               <p className="text-sm text-slate-500">
-                Data protection
+                Protection des données · Data protection
               </p>
 
               <p className="text-sm font-semibold text-slate-950">
-                Workspace-scoped
+                Limité à l’espace · Workspace-scoped
               </p>
             </div>
           </div>
@@ -205,11 +205,11 @@ export default async function ActivityPage() {
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="font-semibold text-slate-950">
-            Recent activity
+            Activité récente · Recent activity
           </h2>
 
           <p className="mt-1 text-sm text-slate-500">
-            The latest 100 security and administrative events.
+            Les 100 derniers événements de sécurité et d’administration. · The latest 100 security and administrative events.
           </p>
         </div>
 
@@ -223,11 +223,11 @@ export default async function ActivityPage() {
             </span>
 
             <h3 className="mt-4 font-semibold text-slate-900">
-              No activity recorded
+              Aucune activité enregistrée · No activity recorded
             </h3>
 
             <p className="mt-1 text-sm text-slate-500">
-              Workspace actions will appear here after they occur.
+              Les actions de l’espace apparaissent ici dès qu’elles se produisent. · Workspace actions will appear here after they occur.
             </p>
           </div>
         ) : (
@@ -291,7 +291,7 @@ export default async function ActivityPage() {
                       </p>
                     ) : (
                       <p className="mt-3 text-xs text-slate-400">
-                        No additional event note was recorded.
+                        Aucune note supplémentaire enregistrée. · No additional event note was recorded.
                       </p>
                     )}
                   </div>

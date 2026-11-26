@@ -29,6 +29,7 @@ import {
   SUMMARY_PAGE_BG,
   metricValue,
 } from '@/components/social/analytics/social-summary-tokens';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type AnalyticsPoint = {
   date: string;
@@ -255,6 +256,7 @@ function ReviewStars({ rating }: { rating: number | null }) {
 }
 
 function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
+  const fr = useDashboardLanguage() === "fr";
   const [query, setQuery] = useState('');
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [insightsOpen, setInsightsOpen] = useState(false);
@@ -317,7 +319,7 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
 
   return (
     <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 sm:px-7">
-      <h3 className="text-[18px] font-medium text-[#20242A]">List of reviews</h3>
+      <h3 className="text-[18px] font-medium text-[#20242A]">{fr ? "Liste des avis" : "List of reviews"}</h3>
 
       <button
         type="button"
@@ -329,10 +331,10 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
           <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-[#7E8CFF]" />
           <span>
             <span className="block text-[15px] font-medium text-[#20242A]">
-              Explore insights
+              {fr ? "Explorer les constats" : "Explore insights"}
             </span>
             <span className="mt-0.5 block text-[13px] text-[#6B7280]">
-              Explore patterns and opportunities detected in your reviews
+              {fr ? "Explorez les tendances et les occasions repérées dans vos avis" : "Explore patterns and opportunities detected in your reviews"}
             </span>
           </span>
         </span>
@@ -342,7 +344,7 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
       </button>
       {insightsOpen ? (
         <p className="px-4 py-3 text-[13px] text-[#6B7280]">
-          No review insights for this period.
+          {fr ? "Aucun constat sur les avis pour cette période." : "No review insights for this period."}
         </p>
       ) : null}
 
@@ -368,7 +370,7 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
             className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
           >
             <Columns3 className="h-4 w-4" />
-            Columns
+            {fr ? "Colonnes" : "Columns"}
           </button>
           {columnsOpen ? (
             <div className="absolute right-0 z-20 mt-1 w-44 rounded-[8px] border border-[#E6E8EC] bg-white p-2 text-[13px] shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
@@ -399,7 +401,7 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
           className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
         >
           <Download className="h-4 w-4" />
-          Download CSV
+          {fr ? "Télécharger le CSV" : "Download CSV"}
           <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
             <Check className="h-2.5 w-2.5" strokeWidth={3} />
           </span>
@@ -410,11 +412,11 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
         <table className="w-full text-left text-[13px] text-[#30343A]">
           <thead>
             <tr className="border-b border-[#EEF0F2] text-[#8B939C]">
-              {showUser ? <th className="px-3 py-3 font-medium">User</th> : null}
+              {showUser ? <th className="px-3 py-3 font-medium">{fr ? "Utilisateur" : "User"}</th> : null}
               {showMessage ? <th className="px-3 py-3 font-medium">Message</th> : null}
               {showDate ? <th className="px-3 py-3 font-medium">Date</th> : null}
-              {showRating ? <th className="px-3 py-3 font-medium">Star rating</th> : null}
-              {showReplied ? <th className="px-3 py-3 font-medium">Replied</th> : null}
+              {showRating ? <th className="px-3 py-3 font-medium">{fr ? "Note en étoiles" : "Star rating"}</th> : null}
+              {showReplied ? <th className="px-3 py-3 font-medium">{fr ? "Répondu" : "Replied"}</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -473,7 +475,7 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
                           </span>
                           {item.replied ? null : (
                             <span className="inline-flex h-8 items-center rounded-[8px] border border-[#E3E6EA] px-3 text-[13px] text-[#30343A]">
-                              Reply
+                              {fr ? "Répondre" : "Reply"}
                             </span>
                           )}
                         </span>
@@ -485,7 +487,7 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
             ) : (
               <tr>
                 <td colSpan={5} className="px-3 py-10 text-center text-[#8B939C]">
-                  No data available
+                  {fr ? "Aucune donnée" : "No data available"}
                 </td>
               </tr>
             )}
@@ -557,6 +559,7 @@ function ReviewList({ items }: { items: GoogleBusinessReview[] }) {
 }
 
 function EmptyMediaSearch() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex flex-col items-center px-6 py-16 text-center">
       <svg viewBox="0 0 220 120" className="h-[120px] w-[220px]" aria-hidden="true">
@@ -568,7 +571,7 @@ function EmptyMediaSearch() {
         <path d="M148 80 168 100" stroke="#20242A" strokeWidth="8" strokeLinecap="round" />
       </svg>
       <p className="mt-2 text-[18px] font-medium text-[#30343A]">
-        Oops! Nothing found, try another search
+        {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </p>
       <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-[#9AA3AB]">
         You can use the filter tools to narrow down your search. Check if the
@@ -595,6 +598,7 @@ function MediaList({
   fileName: string;
   valueLabel: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [query, setQuery] = useState('');
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [showDate, setShowDate] = useState(true);
@@ -662,7 +666,7 @@ function MediaList({
             className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
           >
             <Columns3 className="h-4 w-4" />
-            Columns
+            {fr ? "Colonnes" : "Columns"}
           </button>
           {columnsOpen ? (
             <div className="absolute right-0 z-20 mt-1 w-40 rounded-[8px] border border-[#E6E8EC] bg-white p-2 text-[13px] shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
@@ -691,7 +695,7 @@ function MediaList({
           className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
         >
           <Download className="h-4 w-4" />
-          Download CSV
+          {fr ? "Télécharger le CSV" : "Download CSV"}
           <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
             <Check className="h-2.5 w-2.5" strokeWidth={3} />
           </span>
@@ -736,6 +740,7 @@ export function GoogleBusinessLocationDashboard({
   accountName: string;
   profileImageUrl?: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [rangeDays, setRangeDays] = useState<number>(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [section, setSection] = useState<GoogleBusinessSection>('location');
@@ -1010,7 +1015,7 @@ export function GoogleBusinessLocationDashboard({
 
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-            <span>Main period</span>
+            <span>{fr ? "Période principale" : "Main period"}</span>
             <span className="flex h-11 items-center gap-2 rounded-[10px] border border-[#D7DBE0] bg-white px-3 text-sm text-[#30343A] shadow-sm">
               <CalendarDays className="h-4 w-4 text-[#9AA1A9]" />
               <span className="font-medium text-[#20242A]">
@@ -1032,7 +1037,7 @@ export function GoogleBusinessLocationDashboard({
           </label>
 
           <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-            <span>Comparison period</span>
+            <span>{fr ? "Période de comparaison" : "Comparison period"}</span>
             <button
               type="button"
               onClick={() => setCompareEnabled((current) => !current)}
@@ -1060,7 +1065,7 @@ export function GoogleBusinessLocationDashboard({
 
       <section id="gbp-location" className="scroll-mt-[150px] space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-[22px] font-medium text-[#20242A]">Location</h1>
+        <h1 className="text-[22px] font-medium text-[#20242A]">{fr ? "Emplacement" : "Location"}</h1>
 
         <div className="flex min-w-0 items-center gap-3">
           <div className="relative h-12 w-12 shrink-0">
@@ -1097,7 +1102,7 @@ export function GoogleBusinessLocationDashboard({
             onClick={() => void loadAnalytics()}
             className="mt-4 rounded-[9px] bg-[#20242A] px-4 py-2 text-sm font-semibold text-white"
           >
-            Try again
+            {fr ? "Réessayer" : "Try again"}
           </button>
         </div>
       ) : analytics?.connected === false ? (
@@ -1109,7 +1114,7 @@ export function GoogleBusinessLocationDashboard({
         <>
           <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 shadow-[0_3px_14px_rgba(15,23,42,0.04)] sm:px-7">
             <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <h2 className="text-[19px] font-medium text-[#20242A]">Reach</h2>
+              <h2 className="text-[19px] font-medium text-[#20242A]">{fr ? "Portée" : "Reach"}</h2>
 
               <div className="flex flex-wrap gap-4 lg:w-[52%]">
                 <MetricCard
@@ -1154,7 +1159,7 @@ export function GoogleBusinessLocationDashboard({
             <div className="min-h-[520px] bg-white px-5 py-6 sm:px-7">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="text-[18px] font-medium text-[#20242A]">
-                  Reach distribution by source
+                  {fr ? "Répartition de la portée par source" : "Reach distribution by source"}
                 </h2>
 
                 <button
@@ -1225,9 +1230,9 @@ export function GoogleBusinessLocationDashboard({
                   <table className="w-full text-left text-sm">
                     <thead className="bg-[#FAFAFB] text-[#30343A]">
                       <tr>
-                        <th className="px-5 py-5 font-medium">Group</th>
+                        <th className="px-5 py-5 font-medium">{fr ? "Groupe" : "Group"}</th>
                         <th className="px-5 py-5 text-right font-medium">
-                          Count
+                          {fr ? "Nombre" : "Count"}
                         </th>
                       </tr>
                     </thead>
@@ -1246,7 +1251,7 @@ export function GoogleBusinessLocationDashboard({
 
                           {typeof search === 'number' ? (
                             <tr>
-                              <td className="px-5 py-4">Google Search</td>
+                              <td className="px-5 py-4">{fr ? "Recherche Google" : "Google Search"}</td>
                               <td className="px-5 py-4 text-right">
                                 {search.toLocaleString()}
                               </td>
@@ -1259,7 +1264,7 @@ export function GoogleBusinessLocationDashboard({
                             colSpan={2}
                             className="px-5 py-6 text-center text-[#30343A]"
                           >
-                            No data available
+                            {fr ? "Aucune donnée" : "No data available"}
                           </td>
                         </tr>
                       )}
@@ -1271,14 +1276,14 @@ export function GoogleBusinessLocationDashboard({
 
             <div className="flex min-h-[520px] flex-col bg-white px-5 py-6 sm:px-7">
               <h2 className="text-[18px] font-medium text-[#20242A]">
-                Keywords
+                {fr ? "Mots-clés" : "Keywords"}
               </h2>
 
               <div className="mt-6 flex-1">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-[#FAFAFB] text-[#D0D2D4]">
                     <tr>
-                      <th className="px-5 py-5 font-medium">Keyword</th>
+                      <th className="px-5 py-5 font-medium">{fr ? "Mot-clé" : "Keyword"}</th>
                       <th className="px-5 py-5 font-medium">
                         <span className="inline-flex items-center gap-2">
                           Impressions
@@ -1313,7 +1318,7 @@ export function GoogleBusinessLocationDashboard({
                           colSpan={2}
                           className="px-5 py-8 text-center text-[#30343A]"
                         >
-                          No keyword data available
+                          {fr ? "Aucune donnée de mots-clés" : "No keyword data available"}
                         </td>
                       </tr>
                     )}
@@ -1395,7 +1400,7 @@ export function GoogleBusinessLocationDashboard({
 
           <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 shadow-[0_3px_14px_rgba(15,23,42,0.04)] sm:px-7">
             <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <h2 className="text-[19px] font-medium text-[#20242A]">Clicks</h2>
+              <h2 className="text-[19px] font-medium text-[#20242A]">{fr ? "Clics" : "Clicks"}</h2>
               <div className="flex flex-wrap gap-4 lg:w-[68%]">
                 <MetricCard
                   label="Website"
@@ -1447,17 +1452,17 @@ export function GoogleBusinessLocationDashboard({
       </section>
 
       <section id="gbp-reviews" className="scroll-mt-[150px] space-y-6">
-        <h2 className="text-[22px] font-medium text-[#20242A]">Reviews</h2>
+        <h2 className="text-[22px] font-medium text-[#20242A]">{fr ? "Avis" : "Reviews"}</h2>
         <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 shadow-[0_3px_14px_rgba(15,23,42,0.04)] sm:px-7">
           <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <h3 className="text-[19px] font-medium text-[#20242A]">Reviews</h3>
+            <h3 className="text-[19px] font-medium text-[#20242A]">{fr ? "Avis" : "Reviews"}</h3>
             <div className="flex flex-wrap gap-4 lg:w-[42%]">
               <div className="flex min-h-[98px] min-w-[150px] flex-1 flex-col items-center justify-center rounded-[11px] bg-[#8994F2] px-5 py-4 text-center">
                 <strong className="text-[30px] font-medium leading-none text-[#20242A]">
                   {reviewAverage == null ? '-' : reviewAverage}
                 </strong>
                 <span className="mt-2 text-[14px] font-medium text-[#30343A]">
-                  Star rating
+                  {fr ? "Note en étoiles" : "Star rating"}
                 </span>
               </div>
               <div className="flex min-h-[98px] min-w-[150px] flex-1 flex-col items-center justify-center rounded-[11px] bg-[#E9AA2D] px-5 py-4 text-center">
@@ -1482,11 +1487,11 @@ export function GoogleBusinessLocationDashboard({
       </section>
 
       <section id="gbp-photos" className="scroll-mt-[150px] space-y-6">
-        <h2 className="text-[22px] font-medium text-[#20242A]">Photos and videos</h2>
+        <h2 className="text-[22px] font-medium text-[#20242A]">{fr ? "Photos et vidéos" : "Photos and videos"}</h2>
         <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 shadow-[0_3px_14px_rgba(15,23,42,0.04)] sm:px-7">
           <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <h3 className="text-[19px] font-medium text-[#20242A]">
-              Photos and videos
+              {fr ? "Photos et vidéos" : "Photos and videos"}
             </h3>
             <div className="flex min-h-[98px] w-[150px] flex-col items-center justify-center rounded-[11px] bg-[#E9AA2D] px-5 py-4 text-center">
               <strong className="text-[30px] font-medium leading-none text-[#20242A]">
@@ -1514,10 +1519,10 @@ export function GoogleBusinessLocationDashboard({
       </section>
 
       <section id="gbp-posts" className="scroll-mt-[150px] space-y-6">
-        <h2 className="text-[22px] font-medium text-[#20242A]">Posts</h2>
+        <h2 className="text-[22px] font-medium text-[#20242A]">{fr ? "Publications" : "Posts"}</h2>
         <section className="rounded-[14px] border border-[#E8EAED] bg-white px-5 py-6 shadow-[0_3px_14px_rgba(15,23,42,0.04)] sm:px-7">
           <div className="mb-7 flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <h3 className="text-[19px] font-medium text-[#20242A]">Posts</h3>
+            <h3 className="text-[19px] font-medium text-[#20242A]">{fr ? "Publications" : "Posts"}</h3>
             <div className="flex min-h-[98px] w-[150px] flex-col items-center justify-center rounded-[11px] bg-[#E9AA2D] px-5 py-4 text-center">
               <strong className="text-[30px] font-medium leading-none text-[#20242A]">
                 {postTotal}

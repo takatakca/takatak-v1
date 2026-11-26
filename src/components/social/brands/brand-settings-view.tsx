@@ -36,6 +36,7 @@ import type {
   BrandSettingsTab,
 } from "@/lib/brands/brand-settings-data";
 import type { EngagementRatioValue } from "@/lib/brands/brand-settings-validation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PLATFORM_KEYS: SocialPlatformKey[] = [
   "web",
@@ -169,6 +170,7 @@ export function BrandSettingsView({
   canManageBrands: boolean;
   canManageSocial: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -252,7 +254,7 @@ export function BrandSettingsView({
     return (
       <section className="px-5 py-10 text-center sm:px-6">
         <h1 className="text-2xl font-semibold text-slate-900">
-          Brand settings
+          {fr ? "Réglages de la marque" : "Brand settings"}
         </h1>
         <p className="mt-2 text-sm text-slate-500">{data.message}</p>
       </section>
@@ -271,7 +273,7 @@ export function BrandSettingsView({
     <div className="bg-white pb-16">
       <div className="px-5 pt-5 sm:px-6">
         <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
-          Brand settings
+          {fr ? "Réglages de la marque" : "Brand settings"}
         </h1>
       </div>
 
@@ -279,7 +281,7 @@ export function BrandSettingsView({
       <section className="mt-5 rounded-2xl bg-[#f5fafd] p-4">
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-[15px]">
-            <span className="font-semibold text-[#1d1d1f]">Brands</span>
+            <span className="font-semibold text-[#1d1d1f]">{fr ? "Marques" : "Brands"}</span>
             <span className="text-sm font-normal text-slate-500">
               {brands.length === 0 ? "0" : activeIndex + 1} of {brands.length}
             </span>
@@ -307,7 +309,7 @@ export function BrandSettingsView({
 
         {brands.length === 0 ? (
           <p className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">
-            No brands in this workspace yet.
+            {fr ? "Aucune marque dans cet espace pour l’instant." : "No brands in this workspace yet."}
             {canManageBrands
               ? " Add a brand to configure its name, image, and connections."
               : ""}
@@ -475,7 +477,7 @@ export function BrandSettingsView({
 
       {!data.brand ? (
         <p className="mt-8 text-sm text-slate-500">
-          Select a brand to configure its settings.
+          {fr ? "Choisissez une marque pour la configurer." : "Select a brand to configure its settings."}
         </p>
       ) : tab === "connections" ? (
         <BrandSettingsConnections
@@ -521,13 +523,14 @@ function BrandTable({
   activeBrandId: string | null;
   onSelect: (brandId: string) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200">
       <table className="min-w-full text-left text-sm">
         <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
           <tr>
-            <th className="px-4 py-2.5">Brand</th>
-            <th className="px-4 py-2.5">Connections</th>
+            <th className="px-4 py-2.5">{fr ? "Marque" : "Brand"}</th>
+            <th className="px-4 py-2.5">{fr ? "Connexions" : "Connections"}</th>
           </tr>
         </thead>
         <tbody>
@@ -558,7 +561,7 @@ function BrandTable({
                       <PlatformMark key={platform} platform={platform} />
                     ))}
                     {brand.connectedPlatforms.length === 0 ? (
-                      <span className="text-xs text-slate-400">None</span>
+                      <span className="text-xs text-slate-400">{fr ? "Aucun" : "None"}</span>
                     ) : null}
                   </span>
                 </td>
@@ -586,6 +589,7 @@ function SettingsForm({
   images: BrandSettingsAccountImage[];
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [brandName, setBrandName] = useState(name);
   const [ratio, setRatio] = useState<EngagementRatioValue>(engagementRatio);
@@ -689,12 +693,12 @@ function SettingsForm({
       <div className="grid gap-10 lg:grid-cols-2">
         <div className="space-y-10">
           <section>
-            <h2 className="text-lg font-semibold text-[#1d1d1f]">Name</h2>
+            <h2 className="text-lg font-semibold text-[#1d1d1f]">{fr ? "Nom" : "Name"}</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Define a name to properly identify this brand.
+              {fr ? "Donnez un nom pour bien reconnaître cette marque." : "Define a name to properly identify this brand."}
             </p>
             <label className="mt-4 block text-[13px] font-medium text-slate-700">
-              Brand name
+              {fr ? "Nom de la marque" : "Brand name"}
               <input
                 name="name"
                 value={brandName}
@@ -785,7 +789,7 @@ function SettingsForm({
                   }`}
                 />
               </button>
-              Save for all my brands
+              {fr ? "Enregistrer pour toutes mes marques" : "Save for all my brands"}
             </label>
           </section>
         </div>
@@ -797,7 +801,7 @@ function SettingsForm({
           </p>
           {images.length === 0 ? (
             <p className="mt-4 rounded-xl border border-dashed border-slate-300 px-4 py-8 text-sm text-slate-500">
-              Connect a social account to choose a brand image.
+              {fr ? "Branchez un compte social pour choisir l’image de la marque." : "Connect a social account to choose a brand image."}
             </p>
           ) : (
             <div className="mt-4 flex flex-wrap gap-3">
@@ -869,7 +873,7 @@ function SettingsForm({
         </div>
       ) : (
         <p className="mt-8 text-sm text-slate-500">
-          You can view these settings, but you need permission to change them.
+          {fr ? "Vous pouvez voir ces réglages, mais il faut une autorisation pour les modifier." : "You can view these settings, but you need permission to change them."}
         </p>
       )}
     </form>

@@ -25,6 +25,7 @@ import {
   useRouter,
   useSearchParams,
 } from "next/navigation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Persona =
   | "creator"
@@ -225,6 +226,7 @@ function ChoiceCard({
 }
 
 export function SocialOnboardingModal() {
+  const fr = useDashboardLanguage() === "fr";
   const pathname = usePathname();
   const router = useRouter();
 
@@ -617,7 +619,7 @@ const forcePreview =
                   id="social-onboarding-title"
                   className="mt-0.5 truncate text-[18px] font-semibold text-slate-950 sm:text-[20px]"
                 >
-                  Set up your social workspace
+                  {fr ? "Configurez votre espace Social" : "Set up your social workspace"}
                 </h1>
               </div>
             </div>
@@ -660,7 +662,7 @@ const forcePreview =
           {step === 1 ? (
             <div>
               <h2 className="text-xl font-semibold text-slate-950">
-                What best describes you?
+                {fr ? "Qu’est-ce qui vous décrit le mieux ?" : "What best describes you?"}
               </h2>
 
               <p
@@ -708,7 +710,7 @@ const forcePreview =
           {step === 2 ? (
             <div>
               <h2 className="text-xl font-semibold text-slate-950">
-                How will you work?
+                {fr ? "Comment allez-vous travailler ?" : "How will you work?"}
               </h2>
 
               <p className="mt-1.5 text-sm leading-6 text-slate-500">
@@ -753,7 +755,7 @@ const forcePreview =
           {step === 3 ? (
             <div>
               <h2 className="text-xl font-semibold text-slate-950">
-                How will you use TAKATAK?
+                {fr ? "Comment utiliserez-vous TAKATAK ?" : "How will you use TAKATAK?"}
               </h2>
 
               <p className="mt-1.5 text-sm leading-6 text-slate-500">
@@ -805,7 +807,7 @@ const forcePreview =
               </span>
 
               <h2 className="mt-5 text-2xl font-semibold text-slate-950">
-                Your workspace is ready
+                {fr ? "Votre espace est prêt" : "Your workspace is ready"}
               </h2>
 
               <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
@@ -845,7 +847,7 @@ const forcePreview =
                   }}
                   className="inline-flex h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-wait disabled:opacity-60"
                 >
-                  Enter Social dashboard
+                  {fr ? "Ouvrir le tableau de bord Social" : "Enter Social dashboard"}
                 </button>
               </div>
             </div>
@@ -874,7 +876,7 @@ const forcePreview =
                   className="inline-flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:cursor-wait disabled:opacity-50"
                 >
                   <ChevronLeft className="h-4 w-4" />
-                  Back
+                  {fr ? "Retour" : "Back"}
                 </button>
               ) : (
                 <span />

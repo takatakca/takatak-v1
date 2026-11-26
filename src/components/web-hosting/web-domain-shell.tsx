@@ -22,6 +22,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { APP_NAME, APP_NAME_BADGE } from "@/lib/dashboard/dashboard-config";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export const WEB_DOMAIN_NAV: { label: string; href: string; icon: LucideIcon }[] = [
   { label: "Overview", href: "/dashboard/web-hosting", icon: LayoutDashboard },
@@ -72,6 +73,7 @@ function BrandMark() {
 }
 
 export function WebDomainShell({ children }: { children: ReactNode }) {
+  const fr = useDashboardLanguage() === "fr";
   const pathname = usePathname();
 
   return (
@@ -92,12 +94,12 @@ export function WebDomainShell({ children }: { children: ReactNode }) {
             className="flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2.5 text-[13px] font-medium text-white/80 hover:bg-white/10"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Web Integration
+            {fr ? "Retour à l’intégration Web" : "Back to Web Integration"}
           </Link>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-2">
           <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/35">
-            Web & Domain
+            {fr ? "Web et domaine" : "Web & Domain"}
           </p>
           <div className="space-y-0.5">
             {WEB_DOMAIN_NAV.map((item) => {
@@ -128,9 +130,9 @@ export function WebDomainShell({ children }: { children: ReactNode }) {
           className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Web Integration
+          {fr ? "Retour à l’intégration Web" : "Back to Web Integration"}
         </Link>
-        <p className="mt-2 text-sm font-semibold text-slate-900">Web & Domain</p>
+        <p className="mt-2 text-sm font-semibold text-slate-900">{fr ? "Web et domaine" : "Web & Domain"}</p>
         <div className="mt-2 flex gap-2 overflow-x-auto pb-1 text-sm">
           {WEB_DOMAIN_NAV.map((item) => (
             <Link

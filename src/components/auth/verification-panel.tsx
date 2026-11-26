@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, MailCheck } from "lucide-react";
 import { useRef, useState } from "react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type ResendVerificationResponse = {
   ok: boolean;
@@ -11,6 +12,7 @@ type ResendVerificationResponse = {
 };
 
 export function VerificationPanel() {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const email = searchParams.get("email")?.trim() ?? "";
 
@@ -96,11 +98,11 @@ export function VerificationPanel() {
 
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Check your email
+          {fr ? "Vérifiez vos courriels" : "Check your email"}
         </h1>
 
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          We sent a verification link
+          {fr ? "Nous avons envoyé un lien de vérification" : "We sent a verification link"}
           {email ? (
             <>
               {" "}
@@ -173,7 +175,7 @@ export function VerificationPanel() {
           href="/login"
           className="block rounded-md text-xs font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          Go to Login
+          {fr ? "Aller à la connexion" : "Go to Login"}
         </Link>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, money, NotifyPanel, ReasonDialog, STATUS_LABEL, useCatalog, useMe, useNotify } from './ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 // ---------- Types (mirror lib/food-hub/command.ts) ----------
 type ChannelKey = 'uber_eats' | 'doordash' | 'skip' | 'tgtg';
@@ -69,6 +70,7 @@ function countdown(deadline: string, now: number) {
 }
 
 export default function CommandCenter() {
+  const fr = useDashboardLanguage() === "fr";
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState('');
   const [now, setNow] = useState(() => Date.now());
@@ -236,13 +238,13 @@ export default function CommandCenter() {
 
       {/* ---------- KPI strip ---------- */}
       <section className="cc-kpis">
-        <div className="cc-kpi big"><div className="lbl">Total sales today</div><div className="val">{money(k.combinedSales)}</div><div className="sub">delivery + in-store (Clover)</div></div>
-        <div className="cc-kpi"><div className="lbl">Delivery sales</div><div className="val">{money(k.deliverySales)}</div><div className={`sub ${diff >= 0 ? 'up' : 'down'}`}>{diff >= 0 ? '▲' : '▼'} {money(Math.abs(diff))} vs yesterday same time</div></div>
-        <div className="cc-kpi"><div className="lbl">Delivery orders</div><div className="val">{k.deliveryOrders}</div><div className="sub">avg ticket {money(k.avgTicket)}{k.cancelled ? ` · ${k.cancelled} cancelled` : ''}</div></div>
-        <div className="cc-kpi"><div className="lbl">In-store (Clover)</div><div className="val">{data.clover.configured ? money(k.inStore) : '—'}</div><div className="sub">{data.clover.configured ? `${k.inStorePayments} payments` : 'Clover not connected'}</div></div>
-        <div className={`cc-kpi ${k.newOrders ? 'alert' : ''}`}><div className="lbl">Open orders</div><div className="val">{k.openOrders}</div><div className="sub">{k.newOrders ? `${k.newOrders} waiting to accept` : 'none waiting'}</div></div>
-        <div className={`cc-kpi ${data.alertCounts.critical ? 'alert' : ''}`}><div className="lbl">Needs attention</div><div className="val">{data.alertCounts.critical + data.alertCounts.warning}</div><div className="sub">{data.alertCounts.critical} critical · {data.alertCounts.warning} warnings</div></div>
-        <div className="cc-kpi"><div className="lbl">Stores online</div><div className="val">{k.storesOnline}<span className="of">/{k.storesMapped}</span></div><div className="sub">{k.storesPaused} paused · {k.storesDeactivated} deactivated</div></div>
+        <div className="cc-kpi big"><div className="lbl">{fr ? "Ventes totales aujourd’hui" : "Total sales today"}</div><div className="val">{money(k.combinedSales)}</div><div className="sub">delivery + in-store (Clover)</div></div>
+        <div className="cc-kpi"><div className="lbl">{fr ? "Ventes en livraison" : "Delivery sales"}</div><div className="val">{money(k.deliverySales)}</div><div className={`sub ${diff >= 0 ? 'up' : 'down'}`}>{diff >= 0 ? '▲' : '▼'} {money(Math.abs(diff))} vs yesterday same time</div></div>
+        <div className="cc-kpi"><div className="lbl">{fr ? "Commandes en livraison" : "Delivery orders"}</div><div className="val">{k.deliveryOrders}</div><div className="sub">avg ticket {money(k.avgTicket)}{k.cancelled ? ` · ${k.cancelled} cancelled` : ''}</div></div>
+        <div className="cc-kpi"><div className="lbl">{fr ? "En magasin (Clover)" : "In-store (Clover)"}</div><div className="val">{data.clover.configured ? money(k.inStore) : '—'}</div><div className="sub">{data.clover.configured ? `${k.inStorePayments} payments` : 'Clover not connected'}</div></div>
+        <div className={`cc-kpi ${k.newOrders ? 'alert' : ''}`}><div className="lbl">{fr ? "Commandes ouvertes" : "Open orders"}</div><div className="val">{k.openOrders}</div><div className="sub">{k.newOrders ? `${k.newOrders} waiting to accept` : 'none waiting'}</div></div>
+        <div className={`cc-kpi ${data.alertCounts.critical ? 'alert' : ''}`}><div className="lbl">{fr ? "À vérifier" : "Needs attention"}</div><div className="val">{data.alertCounts.critical + data.alertCounts.warning}</div><div className="sub">{data.alertCounts.critical} critical · {data.alertCounts.warning} warnings</div></div>
+        <div className="cc-kpi"><div className="lbl">{fr ? "Magasins en ligne" : "Stores online"}</div><div className="val">{k.storesOnline}<span className="of">/{k.storesMapped}</span></div><div className="sub">{k.storesPaused} paused · {k.storesDeactivated} deactivated</div></div>
       </section>
 
       {/* ---------- Queue + Alerts ---------- */}
@@ -250,7 +252,7 @@ export default function CommandCenter() {
         <div className="cc-panel">
           <div className="cc-panel-head"><h2>Orders to handle <span className="count">{data.queue.length}</span></h2><Link className="small" href="/dashboard/food-hub/board">Full order board →</Link></div>
           <div className="cc-scroll">
-            {data.queue.length === 0 && <div className="cc-empty">No open orders. New orders appear here instantly, go to Clover automatically, and are accepted on the platform.</div>}
+            {data.queue.length === 0 && <div className="cc-empty">{fr ? "Aucune commande ouverte. Les nouvelles commandes apparaissent ici tout de suite, partent automatiquement vers Clover et sont acceptées sur la plateforme." : "No open orders. New orders appear here instantly, go to Clover automatically, and are accepted on the platform."}</div>}
             {data.queue.map((o) => {
               const cd = o.deadlineAt ? countdown(o.deadlineAt, now) : null;
               return (
@@ -273,17 +275,17 @@ export default function CommandCenter() {
                     {o.notes && <span className="cc-note">“{o.notes}”</span>}
                   </div>
                   <div className="cc-order-foot">
-                    {o.posOrderId ? <span className="badge badge-green" title={o.posPaid ? 'Recorded as paid in Clover with the platform tender' : 'In Clover'}>In Clover{o.posPaid ? ' · paid' : ''}</span> : o.posError ? <span className="badge badge-red" title={o.posError}>Clover failed</span> : <span className="badge badge-yellow">Clover pending</span>}
-                    {o.channelError && <span className="badge badge-yellow" title={o.channelError}>Platform not updated</span>}
+                    {o.posOrderId ? <span className="badge badge-green" title={o.posPaid ? 'Recorded as paid in Clover with the platform tender' : 'In Clover'}>In Clover{o.posPaid ? ' · paid' : ''}</span> : o.posError ? <span className="badge badge-red" title={o.posError}>{fr ? "Échec Clover" : "Clover failed"}</span> : <span className="badge badge-yellow">{fr ? "Clover en attente" : "Clover pending"}</span>}
+                    {o.channelError && <span className="badge badge-yellow" title={o.channelError}>{fr ? "Plateforme non mise à jour" : "Platform not updated"}</span>}
                     <span className="small">{sinceLabel(o.createdAt, now)}{o.customerName ? ` · ${o.customerName}` : ''}</span>
                     <span className="cc-grow" />
-                    {can('orders:act') && o.actions.includes('accept') && <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => act(o, 'accept')}>Accept</button>}
+                    {can('orders:act') && o.actions.includes('accept') && <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => act(o, 'accept')}>{fr ? "Accepter" : "Accept"}</button>}
                     {can('orders:act') && o.actions.includes('deny') && <button className="btn-sm btn-danger" disabled={!!busy} onClick={() => act(o, 'deny')}>{o.channel === 'skip' ? 'To Skip tablet' : 'Reject'}</button>}
-                    {can('orders:act') && o.actions.includes('ready') && <button className="btn-sm" disabled={!!busy} onClick={() => act(o, 'ready')}>Ready</button>}
-                    {can('orders:act') && o.actions.includes('dispatch') && <button className="btn-sm" disabled={!!busy} onClick={() => act(o, 'dispatch')}>Courier picked up</button>}
-                    {can('orders:act') && o.actions.includes('complete') && <button className="btn-sm btn-light" disabled={!!busy} onClick={() => act(o, 'complete')}>Done</button>}
-                    {can('orders:act') && o.actions.includes('retry_pos') && <button className="btn-sm btn-light" disabled={!!busy} onClick={() => act(o, 'retry_pos')}>Send to Clover</button>}
-                    {can('orders:act') && o.actions.includes('print') && <button className="btn-sm btn-light" disabled={!!busy} onClick={() => act(o, 'print')} title="Print the Clover kitchen ticket again">Reprint</button>}
+                    {can('orders:act') && o.actions.includes('ready') && <button className="btn-sm" disabled={!!busy} onClick={() => act(o, 'ready')}>{fr ? "Prêt" : "Ready"}</button>}
+                    {can('orders:act') && o.actions.includes('dispatch') && <button className="btn-sm" disabled={!!busy} onClick={() => act(o, 'dispatch')}>{fr ? "Livreur passé" : "Courier picked up"}</button>}
+                    {can('orders:act') && o.actions.includes('complete') && <button className="btn-sm btn-light" disabled={!!busy} onClick={() => act(o, 'complete')}>{fr ? "Terminé" : "Done"}</button>}
+                    {can('orders:act') && o.actions.includes('retry_pos') && <button className="btn-sm btn-light" disabled={!!busy} onClick={() => act(o, 'retry_pos')}>{fr ? "Envoyer à Clover" : "Send to Clover"}</button>}
+                    {can('orders:act') && o.actions.includes('print') && <button className="btn-sm btn-light" disabled={!!busy} onClick={() => act(o, 'print')} title="Print the Clover kitchen ticket again">{fr ? "Réimprimer" : "Reprint"}</button>}
                     {can('orders:act') && o.actions.includes('cancel') && <button className="btn-sm btn-light" disabled={!!busy} onClick={() => act(o, 'cancel')}>Cancel…</button>}
                   </div>
                 </div>
@@ -295,7 +297,7 @@ export default function CommandCenter() {
         <div className="cc-panel">
           <div className="cc-panel-head"><h2>Alerts <span className="count">{data.alerts.length}</span></h2><span className="small">{data.alertCounts.critical} critical · {data.alertCounts.warning} warning · {data.alertCounts.info} info</span></div>
           <div className="cc-scroll">
-            {data.alerts.length === 0 && <div className="cc-empty">All clear.</div>}
+            {data.alerts.length === 0 && <div className="cc-empty">{fr ? "Tout est en ordre." : "All clear."}</div>}
             {data.alerts.map((a) => (
               <div key={a.id} className={`cc-alert ${a.severity}`}>
                 <div className="cc-alert-title"><span className="dot" />{a.href ? <Link href={a.href}>{a.title}</Link> : a.title}</div>
@@ -334,7 +336,7 @@ export default function CommandCenter() {
             <h2>Every brand · every location · every app <span className="count">{data.matrixSummary.complete}/{data.matrixSummary.rows} complete</span></h2>
             <div className="fh-row">
               <select value={locFilter} onChange={(e) => setLocFilter(e.target.value)}>
-                <option value="">All locations</option>
+                <option value="">{fr ? "Tous les emplacements" : "All locations"}</option>
                 {[...new Set(data.matrix.map((r) => r.locationCode))].map((code) => <option key={code} value={code}>{shortLoc(code, locName)}</option>)}
               </select>
               <label className="small fh-row"><input type="checkbox" checked={issuesOnly} onChange={(e) => setIssuesOnly(e.target.checked)} /> Issues only</label>
@@ -347,13 +349,13 @@ export default function CommandCenter() {
               <span className="cc-grow" />
               <button className="btn-sm btn-light" disabled={busy === 'store'} onClick={() => storeAction(false, 30)}>Pause 30 min</button>
               <button className="btn-sm btn-light" disabled={busy === 'store'} onClick={() => storeAction(false)}>Pause</button>
-              <button className="btn-sm btn-ok" disabled={busy === 'store'} onClick={() => storeAction(true)}>Resume</button>
+              <button className="btn-sm btn-ok" disabled={busy === 'store'} onClick={() => storeAction(true)}>{fr ? "Reprendre" : "Resume"}</button>
               <button className="btn-sm btn-light" onClick={() => setPicked(null)}>×</button>
             </div>
           )}
           <div className="cc-scroll cc-matrix-wrap">
             <table className="cc-matrix">
-              <thead><tr><th>Brand</th><th>Location</th>{CH.map((c) => <th key={c}>{CH_SHORT[c]}{c !== 'tgtg' ? ' *' : ''}</th>)}</tr></thead>
+              <thead><tr><th>{fr ? "Marque" : "Brand"}</th><th>{fr ? "Emplacement" : "Location"}</th>{CH.map((c) => <th key={c}>{CH_SHORT[c]}{c !== 'tgtg' ? ' *' : ''}</th>)}</tr></thead>
               <tbody>
                 {rows.map((r) => (
                   <tr key={`${r.brandName}|${r.locationCode}`} className={r.issues ? 'has-issues' : ''}>
@@ -374,13 +376,13 @@ export default function CommandCenter() {
                     })}
                   </tr>
                 ))}
-                {rows.length === 0 && <tr><td colSpan={6} className="small">Nothing to show with these filters.</td></tr>}
+                {rows.length === 0 && <tr><td colSpan={6} className="small">{fr ? "Rien à afficher avec ces filtres." : "Nothing to show with these filters."}</td></tr>}
               </tbody>
             </table>
           </div>
           <div className="cc-legend small">
             {(['online', 'closed', 'paused', 'deactivated', 'not_synced', 'missing'] as CellState[]).map((s) => <span key={s}><span className={`cc-cell s-${s}`}>{STATE_LABEL[s]}</span> {STATE_HINT[s].split(' — ')[0]}</span>)}
-            <span><span className="cc-cell s-closed snap">Closed</span> faded = from screenshot</span>
+            <span><span className="cc-cell s-closed snap">{fr ? "Fermé" : "Closed"}</span> faded = from screenshot</span>
             <span>* required service</span>
           </div>
         </div>
@@ -388,7 +390,7 @@ export default function CommandCenter() {
         <div className="cc-side">
           {data.kitchen?.length > 0 && (
             <div className="cc-panel">
-              <div className="cc-panel-head"><h2>Kitchen</h2><Link className="small" href="/dashboard/food-hub/stores">Prep times →</Link></div>
+              <div className="cc-panel-head"><h2>{fr ? "Cuisine" : "Kitchen"}</h2><Link className="small" href="/dashboard/food-hub/stores">Prep times →</Link></div>
               {data.kitchen.map((k) => (
                 <div key={k.locationCode} className={`cc-kitchen ${k.isBusy ? 'busy' : ''}`}>
                   <span className="name"><strong>{shortLoc(k.locationCode, locName)}</strong> <span className="small">prep {k.minutes} min</span></span>
@@ -397,11 +399,11 @@ export default function CommandCenter() {
                     : <span className="small">{k.isBusy ? 'Busy' : 'Normal'}</span>}
                 </div>
               ))}
-              <div className="small cc-faint">Busy mode adds prep time to new orders: DoorDash receives it with the confirmation, and every ticket shows the ready-by time. For Uber Eats and Skip, also raise prep time in their own store settings when busy for long.</div>
+              <div className="small cc-faint">{fr ? "Le mode achalandé ajoute du temps de préparation aux nouvelles commandes : DoorDash le reçoit avec la confirmation et chaque billet affiche l’heure de remise. Pour Uber Eats et Skip, augmentez aussi le temps de préparation dans leurs propres réglages de magasin quand l’achalandage dure." : "Busy mode adds prep time to new orders: DoorDash receives it with the confirmation, and every ticket shows the ready-by time. For Uber Eats and Skip, also raise prep time in their own store settings when busy for long."}</div>
             </div>
           )}
           <div className="cc-panel">
-            <div className="cc-panel-head"><h2>Sales by hour</h2><span className="small"><span className="cc-key today" /> today <span className="cc-key yday" /> yesterday</span></div>
+            <div className="cc-panel-head"><h2>{fr ? "Ventes par heure" : "Sales by hour"}</h2><span className="small"><span className="cc-key today" /> today <span className="cc-key yday" /> yesterday</span></div>
             <svg className="cc-hours" viewBox="0 0 480 122" preserveAspectRatio="none" role="img" aria-label="Delivery sales by hour">
               {data.byHour.map((h) => {
                 const x = h.hour * 20;
@@ -418,8 +420,8 @@ export default function CommandCenter() {
             <div className="cc-hours-axis">{[0, 3, 6, 9, 12, 15, 18, 21].map((h) => <span key={h} style={{ left: `${((h + 0.5) / 24) * 100}%` }}>{h}h</span>)}</div>
           </div>
           <div className="cc-panel">
-            <div className="cc-panel-head"><h2>Top brands today</h2></div>
-            {data.byBrand.length === 0 && <div className="cc-empty">No delivery sales yet today.</div>}
+            <div className="cc-panel-head"><h2>{fr ? "Meilleures marques aujourd’hui" : "Top brands today"}</h2></div>
+            {data.byBrand.length === 0 && <div className="cc-empty">{fr ? "Aucune vente en livraison aujourd’hui pour l’instant." : "No delivery sales yet today."}</div>}
             {data.byBrand.slice(0, 8).map((b) => (
               <div key={b.brandName} className="cc-bar">
                 <span className="name">{b.brandName}</span>
@@ -429,7 +431,7 @@ export default function CommandCenter() {
             ))}
           </div>
           <div className="cc-panel">
-            <div className="cc-panel-head"><h2>By location</h2></div>
+            <div className="cc-panel-head"><h2>{fr ? "Par emplacement" : "By location"}</h2></div>
             <table className="cc-loc">
               <tbody>
                 {data.byLocation.map((l) => (

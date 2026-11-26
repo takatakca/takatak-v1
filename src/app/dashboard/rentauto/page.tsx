@@ -177,7 +177,7 @@ export default async function RentautoDashboardPage() {
             </span>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-600">
-                TAKATAK connected service
+                Service TAKATAK branché · TAKATAK connected service
               </p>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
                 Rentauto
@@ -194,7 +194,7 @@ export default async function RentautoDashboardPage() {
             href="https://rentauto.ca"
             className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800"
           >
-            Open Rentauto
+            Ouvrir Rentauto · Open Rentauto
             <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
           </Link>
         </div>
@@ -202,7 +202,7 @@ export default async function RentautoDashboardPage() {
         <div className="grid border-t border-slate-100 sm:grid-cols-3">
           <div className="px-6 py-4">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Upcoming trips
+              Trajets à venir · Upcoming trips
             </p>
             <p className="mt-1 text-2xl font-semibold text-slate-950">
               {data.upcomingTripCount}
@@ -210,7 +210,7 @@ export default async function RentautoDashboardPage() {
           </div>
           <div className="border-t border-slate-100 px-6 py-4 sm:border-l sm:border-t-0">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Active now
+              Actif maintenant · Active now
             </p>
             <p className="mt-1 text-2xl font-semibold text-slate-950">
               {data.activeTripCount}
@@ -218,7 +218,7 @@ export default async function RentautoDashboardPage() {
           </div>
           <div className="border-t border-slate-100 px-6 py-4 sm:border-l sm:border-t-0">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-              Unread Rentauto notices
+              Avis Rentauto non lus · Unread Rentauto notices
             </p>
             <p className="mt-1 text-2xl font-semibold text-slate-950">
               {data.unreadNotifications}
@@ -233,7 +233,7 @@ export default async function RentautoDashboardPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  Next Rentauto trip
+                  Prochain trajet Rentauto · Next Rentauto trip
                 </p>
                 <Badge tone={tripTone(data.nextTrip.status)}>
                   {sentenceStatus(data.nextTrip.status)}
@@ -279,22 +279,22 @@ export default async function RentautoDashboardPage() {
         <CardBody>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Completed trips</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Trajets terminés · Completed trips</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{data.completedTripCount}</p>
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Lifetime paid</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Total payé · Lifetime paid</p>
               <p className="mt-2 text-2xl font-semibold text-slate-950">{money(data.lifetimePaidCents, "CAD")}</p>
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Open support</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Ouvrir le soutien · Open support</p>
               <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-slate-950">
                 <LifeBuoy className="h-5 w-5 text-slate-400" aria-hidden="true" />
                 {data.openSupportCount}
               </p>
             </div>
             <div className="rounded-xl border border-slate-200 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Open incidents</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Incidents ouverts · Open incidents</p>
               <p className="mt-2 inline-flex items-center gap-2 text-2xl font-semibold text-slate-950">
                 <AlertTriangle className="h-5 w-5 text-slate-400" aria-hidden="true" />
                 {data.openIncidentCount}
@@ -305,13 +305,13 @@ export default async function RentautoDashboardPage() {
           <div className="mt-5 border-t border-slate-100 pt-5">
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">Action center</p>
-                <p className="text-xs text-slate-500">Only items that need your attention appear here.</p>
+                <p className="text-sm font-semibold text-slate-900">Centre d’actions · Action center</p>
+                <p className="text-xs text-slate-500">Seuls les éléments qui demandent votre attention apparaissent ici. · Only items that need your attention appear here.</p>
               </div>
               {actionItems.length === 0 ? (
                 <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
                   <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                  All clear
+                  Tout est en ordre · All clear
                 </span>
               ) : null}
             </div>
@@ -332,7 +332,7 @@ export default async function RentautoDashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">No verification, payout, vehicle, support or notification action is waiting.</p>
+              <p className="text-sm text-slate-500">Aucune vérification, aucun versement, véhicule, demande de soutien ni avis n’attend. · No verification, payout, vehicle, support or notification action is waiting.</p>
             )}
           </div>
         </CardBody>
@@ -349,7 +349,7 @@ export default async function RentautoDashboardPage() {
                   aria-hidden="true"
                 />
                 <span className="text-sm font-medium text-slate-900">
-                  Master identity
+                  Identité principale · Master identity
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-500">
@@ -364,7 +364,7 @@ export default async function RentautoDashboardPage() {
                   aria-hidden="true"
                 />
                 <span className="text-sm font-medium text-slate-900">
-                  Email verification
+                  Vérification du courriel · Email verification
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-500">
@@ -379,7 +379,7 @@ export default async function RentautoDashboardPage() {
                   aria-hidden="true"
                 />
                 <span className="text-sm font-medium text-slate-900">
-                  Driver eligibility
+                  Admissibilité des conducteurs · Driver eligibility
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-500">
@@ -399,7 +399,7 @@ export default async function RentautoDashboardPage() {
                   aria-hidden="true"
                 />
                 <span className="text-sm font-medium text-slate-900">
-                  Phone verification
+                  Vérification du téléphone · Phone verification
                 </span>
               </div>
               <p className="mt-2 text-sm text-slate-500">
@@ -429,7 +429,7 @@ export default async function RentautoDashboardPage() {
                   href="https://rentauto.ca/host"
                   className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-950"
                 >
-                  Open host dashboard
+                  Ouvrir le tableau de bord de l’hôte · Open host dashboard
                   <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
               ) : undefined
@@ -439,7 +439,7 @@ export default async function RentautoDashboardPage() {
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Application
+                  Demande · Application
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">
                   {sentenceStatus(data.host.applicationStatus)}
@@ -447,7 +447,7 @@ export default async function RentautoDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Identity review
+                  Vérification d’identité · Identity review
                 </p>
                 <p className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-900">
                   <ShieldCheck className="h-4 w-4 text-slate-500" aria-hidden="true" />
@@ -456,7 +456,7 @@ export default async function RentautoDashboardPage() {
               </div>
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Fleet
+                  Flotte · Fleet
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-900">
                   {data.host.activeVehicleCount} active / {data.host.vehicleCount} total
@@ -486,46 +486,46 @@ export default async function RentautoDashboardPage() {
 
             <div className="mt-5 grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2 lg:grid-cols-6">
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Booking requests</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Demandes de réservation · Booking requests</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.pendingRequestCount}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Approved / unpaid</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Approuvé / non payé · Approved / unpaid</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.approvedAwaitingPaymentCount}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Upcoming bookings</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Réservations à venir · Upcoming bookings</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.upcomingTripCount}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Active rentals</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Locations en cours · Active rentals</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.activeTripCount}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Completed rentals</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Locations terminées · Completed rentals</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">{data.host.completedTripCount}</p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Gross booking value</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Valeur brute des réservations · Gross booking value</p>
                 <p className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-slate-950">
                   <TrendingUp className="h-4 w-4 text-slate-400" aria-hidden="true" />
                   {money(data.host.grossBookingValueCents, "CAD")}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Eligible earnings</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Revenus admissibles · Eligible earnings</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">
                   {money(data.host.eligibleEarningsCents, data.host.settlementCurrency)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Held / blocked</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Retenu / bloqué · Held / blocked</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">
                   {money(data.host.heldEarningsCents, data.host.settlementCurrency)}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Net transferred</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Net transféré · Net transferred</p>
                 <p className="mt-1 text-lg font-semibold text-slate-950">
                   {money(data.host.transferredEarningsCents, data.host.settlementCurrency)}
                 </p>
@@ -597,7 +597,7 @@ export default async function RentautoDashboardPage() {
             </div>
           ) : (
             <p className="text-sm text-slate-500">
-              No Rentauto payment summaries are linked to this TAKATAK account yet.
+              Aucun sommaire de paiement Rentauto n’est lié à ce compte TAKATAK pour l’instant. · No Rentauto payment summaries are linked to this TAKATAK account yet.
             </p>
           )}
         </CardBody>

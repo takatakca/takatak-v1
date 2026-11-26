@@ -96,9 +96,9 @@ export function WebIntegrationOverview({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Web & Domain Integration</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Intégration Web et domaines · Web & Domain Integration</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Manage your websites, domains, SSL, and performance all in one place.
+            Gérez vos sites, domaines, SSL et performance au même endroit. · Manage your websites, domains, SSL, and performance all in one place.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -106,13 +106,13 @@ export function WebIntegrationOverview({
             href="/dashboard/web-hosting/domain-portal"
             className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
           >
-            Domain Provider Portal
+            Portail des fournisseurs de domaines · Domain Provider Portal
           </Link>
           <Link
             href="/checkout"
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
-            Add Domain
+            Ajouter un domaine · Add Domain
           </Link>
           <Link
             href="/dashboard/support?demande=website-connect"
@@ -143,14 +143,14 @@ export function WebIntegrationOverview({
 
       <section className="grid gap-4 xl:grid-cols-[1.4fr_0.9fr_0.7fr]">
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Domain & Website Overview</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Vue d’ensemble des domaines et sites · Domain & Website Overview</h3>
           <p className="mt-8 text-sm text-slate-400">
-            Traffic and page-view charts appear when website analytics is connected.
+            Les graphiques de trafic et de pages vues apparaissent une fois les statistiques du site branchées. · Traffic and page-view charts appear when website analytics is connected.
           </p>
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Domains Status</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Statut des domaines · Domains Status</h3>
           <div className="mt-4 flex items-center gap-4">
             <DonutChart slices={donutSlices} totalLabel={formatCompactNumber(data.domains.length || null)} />
             <ul className="space-y-2 text-sm">
@@ -184,12 +184,12 @@ export function WebIntegrationOverview({
             href="/dashboard/web-hosting/domains"
             className="mt-4 inline-flex rounded-lg bg-[#1f2125] px-3 py-2 text-sm font-medium text-white"
           >
-            Manage Domains
+            Gérer les domaines · Manage Domains
           </Link>
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Quick Actions</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Actions rapides · Quick Actions</h3>
           <div className="mt-3 space-y-1">
             {[
               { label: "Nouveau domaine · Add new domain", icon: Plus, href: "/domain" },
@@ -216,7 +216,7 @@ export function WebIntegrationOverview({
       <section className="grid gap-4 xl:grid-cols-[1.7fr_0.8fr]">
         <article className="rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <h3 className="text-sm font-semibold text-slate-900">All Websites & Domains</h3>
+            <h3 className="text-sm font-semibold text-slate-900">Tous les sites et domaines · All Websites & Domains</h3>
             <div className="flex items-center gap-2">
               {/* Search, filters and CSV export work on the full domain manager. */}
               <Link href="/dashboard/web-hosting/domains" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600 hover:border-blue-300">
@@ -235,11 +235,11 @@ export function WebIntegrationOverview({
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="text-xs text-slate-400">
                   <tr>
-                    <th className="px-5 pb-2 font-medium">Domain / Website</th>
-                    <th className="px-3 pb-2 font-medium">Status</th>
+                    <th className="px-5 pb-2 font-medium">Domaine / site · Domain / Website</th>
+                    <th className="px-3 pb-2 font-medium">Statut · Status</th>
                     <th className="px-3 pb-2 font-medium">SSL</th>
-                    <th className="px-3 pb-2 font-medium">Hosting</th>
-                    <th className="px-3 pb-2 font-medium">Expiry</th>
+                    <th className="px-3 pb-2 font-medium">Hébergement · Hosting</th>
+                    <th className="px-3 pb-2 font-medium">Expiration · Expiry</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -283,12 +283,12 @@ export function WebIntegrationOverview({
               </table>
             </div>
           ) : (
-            <p className="px-5 pb-5 text-sm text-slate-400">No domains yet. They appear here when tracked.</p>
+            <p className="px-5 pb-5 text-sm text-slate-400">Aucun domaine pour l’instant. Ils apparaissent ici dès qu’ils sont suivis. · No domains yet. They appear here when tracked.</p>
           )}
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Recent Activity</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Activité récente · Recent Activity</h3>
           {data.provisioningSteps.length ? (
             <ul className="mt-3 space-y-3">
               {data.provisioningSteps.slice(0, 6).map((step) => (
@@ -305,10 +305,10 @@ export function WebIntegrationOverview({
               ))}
             </ul>
           ) : (
-            <p className="mt-3 text-sm text-slate-400">No recent web activity.</p>
+            <p className="mt-3 text-sm text-slate-400">Aucune activité Web récente. · No recent web activity.</p>
           )}
           <Link href="/dashboard/activity" className="mt-4 inline-flex min-h-10 items-center text-sm font-medium text-slate-500">
-            View all activity
+            Voir toute l’activité · View all activity
           </Link>
         </article>
       </section>

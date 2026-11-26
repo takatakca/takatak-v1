@@ -24,6 +24,7 @@ import {
   LOCATION_STATUSES,
   type LocationStatusValue,
 } from "@/lib/locations/location-validation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export interface LocationFormValues {
   businessBrandId: string;
@@ -72,6 +73,7 @@ export function LocationForm({
   brands: BrandOption[];
   initialValues: LocationFormValues;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
 
   const formRef =
@@ -334,7 +336,7 @@ export function LocationForm({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-emerald-900">
-                Location created successfully
+                {fr ? "Emplacement créé" : "Location created successfully"}
               </p>
 
               <p className="mt-1 text-sm text-emerald-700">
@@ -354,7 +356,7 @@ export function LocationForm({
                 }
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-600"
               >
-                Go to location page
+                {fr ? "Ouvrir la page de l’emplacement" : "Go to location page"}
 
                 <ArrowRight className="h-4 w-4" />
               </button>
@@ -390,7 +392,7 @@ export function LocationForm({
           className="sm:col-span-2"
         >
           <option value="">
-            Select a brand
+            {fr ? "Choisir une marque" : "Select a brand"}
           </option>
 
           {brands.map((brand) => (
@@ -606,7 +608,7 @@ export function LocationForm({
           disabled={loading}
           className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Cancel
+          {fr ? "Annuler" : "Cancel"}
         </button>
 
         <button

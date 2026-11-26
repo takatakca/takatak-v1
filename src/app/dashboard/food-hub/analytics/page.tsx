@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChartCard, Columns, CompareLine, compactMoney, fmtInt, fmtMoney, HBars, Heatmap, LineLegend, StatTile, VIZ } from '../charts';
 import { api, FilterBar, useCatalog, useFilters } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Kpi = { value: number; previous: number; change: number };
 type Group = { key: string; label: string; sales: number; orders: number; lostOrders: number; lostRevenue: number; prevSales: number; aov: number; share: number; change: number };
@@ -28,6 +29,7 @@ const STAGE: Record<string, string> = { before_accept: 'Before accepting', after
 
 // Analytics (Atlas Analytics): any period vs the previous one, by location, platform and brand.
 export default function AnalyticsPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { filters, set, query } = useFilters('7d');
   const { brands, activeLocations } = useCatalog();
   const [data, setData] = useState<Analytics | null>(null);
@@ -65,12 +67,12 @@ export default function AnalyticsPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Analytics</h1>
-          <div className="small">Every number compares the selected period with the period just before it (same length). Cancelled orders are counted as lost, not as sales.</div>
+          <h1>{fr ? "Statistiques" : "Analytics"}</h1>
+          <div className="small">{fr ? "Chaque chiffre compare la période choisie à la période juste avant (même durée). Les commandes annulées comptent comme perdues, pas comme ventes." : "Every number compares the selected period with the period just before it (same length). Cancelled orders are counted as lost, not as sales."}</div>
         </div>
         <div className="fh-row">
           <button className="btn-light" onClick={copyLink}>{copied ? 'Link copied' : 'Copy link'}</button>
-          <a className="button btn-light" href={`/api/food-hub/reports/order_transactions?format=xlsx&${query}`}>Orders (Excel)</a>
+          <a className="button btn-light" href={`/api/food-hub/reports/order_transactions?format=xlsx&${query}`}>{fr ? "Commandes (Excel)" : "Orders (Excel)"}</a>
         </div>
       </div>
       <FilterBar filters={filters} set={set} brands={brands.filter((b) => b.active).map((b) => b.name)} locations={activeLocations} />
@@ -96,8 +98,8 @@ export default function AnalyticsPage() {
             legend={<>
               <LineLegend items={[{ label: 'This period', color: VIZ.series }, { label: 'Previous period', color: VIZ.compare, dash: true }]} />
               <span className="viz-switch" role="group" aria-label="Metric">
-                <button className={metric === 'sales' ? 'on' : ''} aria-pressed={metric === 'sales'} onClick={() => setMetric('sales')}>Sales</button>
-                <button className={metric === 'orders' ? 'on' : ''} aria-pressed={metric === 'orders'} onClick={() => setMetric('orders')}>Orders</button>
+                <button className={metric === 'sales' ? 'on' : ''} aria-pressed={metric === 'sales'} onClick={() => setMetric('sales')}>{fr ? "Ventes" : "Sales"}</button>
+                <button className={metric === 'orders' ? 'on' : ''} aria-pressed={metric === 'orders'} onClick={() => setMetric('orders')}>{fr ? "Commandes" : "Orders"}</button>
               </span>
             </>}
             table={{ columns: ['Date', 'Sales', 'Orders', 'Previous sales', 'Previous orders'], rows: data.daily.map((d) => [d.date, fmtMoney(d.sales), d.orders, fmtMoney(d.prevSales), d.prevOrders]), filename: 'takatak-daily' }}

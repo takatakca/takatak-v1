@@ -63,7 +63,7 @@ export default async function CustomerDatabasePage({
               type="submit"
               className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500"
             >
-              Search
+              Rechercher · Search
             </button>
           </form>
           <p className="mt-3 text-xs text-slate-500">
@@ -79,7 +79,7 @@ export default async function CustomerDatabasePage({
               {data.total.toLocaleString("en-CA")}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Matching customer records
+              Fiches clients correspondantes · Matching customer records
             </p>
           </CardBody>
         </Card>
@@ -89,7 +89,7 @@ export default async function CustomerDatabasePage({
               {data.page.toLocaleString("en-CA")}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Current page
+              Page actuelle · Current page
             </p>
           </CardBody>
         </Card>
@@ -99,7 +99,7 @@ export default async function CustomerDatabasePage({
               {data.totalPages.toLocaleString("en-CA")}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Total pages
+              Pages au total · Total pages
             </p>
           </CardBody>
         </Card>
@@ -110,14 +110,14 @@ export default async function CustomerDatabasePage({
           <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
             <thead className="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">Customer</th>
-                {data.globalView ? <th className="px-4 py-3">Workspace</th> : null}
+                <th className="px-4 py-3">Client · Customer</th>
+                {data.globalView ? <th className="px-4 py-3">Espace · Workspace</th> : null}
                 <th className="px-4 py-3">Contact</th>
-                <th className="px-4 py-3">Location</th>
-                <th className="px-4 py-3">Reservations</th>
+                <th className="px-4 py-3">Emplacement · Location</th>
+                <th className="px-4 py-3">Réservations · Reservations</th>
                 <th className="px-4 py-3">Interactions</th>
-                <th className="px-4 py-3">Last seen</th>
-                <th className="px-4 py-3">Evidence</th>
+                <th className="px-4 py-3">Dernière visite · Last seen</th>
+                <th className="px-4 py-3">Preuve · Evidence</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -190,7 +190,7 @@ export default async function CustomerDatabasePage({
               : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
           }`}
         >
-          Previous
+          Précédent · Previous
         </Link>
         <p className="text-xs text-slate-500">
           Page {data.page.toLocaleString("en-CA")} of {data.totalPages.toLocaleString("en-CA")}
@@ -204,7 +204,7 @@ export default async function CustomerDatabasePage({
               : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
           }`}
         >
-          Next
+          Suivant · Next
         </Link>
       </div>
     </div>

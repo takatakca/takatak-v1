@@ -11,6 +11,7 @@ import {
 } from "@/components/social/navigation/social-platform-icon";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import type { AccountIntegrationsPageData } from "@/lib/account/account-integrations-data";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PLATFORM_KEYS: SocialPlatformKey[] = [
   "facebook",
@@ -40,12 +41,13 @@ export function AccountIntegrationsView({
 }: {
   data: AccountIntegrationsPageData;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
 
   if (data.source === "unavailable") {
     return (
       <section className="mt-8 rounded-xl border border-slate-200 bg-white px-6 py-10 text-center">
-        <h2 className="text-lg font-semibold text-slate-900">Integrations</h2>
+        <h2 className="text-lg font-semibold text-slate-900">{fr ? "Intégrations" : "Integrations"}</h2>
         <p className="mt-2 text-sm text-slate-500">{data.message}</p>
       </section>
     );
@@ -81,7 +83,7 @@ export function AccountIntegrationsView({
             <Share2 className="h-5 w-5" />
           </span>
           <h2 className="pr-14 text-[22px] font-semibold tracking-tight text-[#1d1d1f]">
-            Social networks
+            {fr ? "Réseaux sociaux" : "Social networks"}
           </h2>
           <p className="mt-2 max-w-[36rem] text-sm leading-6 text-slate-500">
             Connect and manage Facebook, Instagram, YouTube, TikTok, and more
@@ -108,7 +110,7 @@ export function AccountIntegrationsView({
               </ul>
             ) : (
               <p className="relative z-10 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm ring-1 ring-slate-200">
-                No accounts connected
+                {fr ? "Aucun compte branché" : "No accounts connected"}
               </p>
             )}
           </div>
@@ -127,7 +129,7 @@ export function AccountIntegrationsView({
             <Sparkles className="h-5 w-5" />
           </span>
           <h2 className="pr-14 text-[22px] font-semibold tracking-tight text-[#1d1d1f]">
-            Brand AI
+            {fr ? "IA de la marque" : "Brand AI"}
           </h2>
           <p className="mt-2 max-w-[36rem] text-sm leading-6 text-slate-500">
             Writing instructions for captions and replies on connected
@@ -156,7 +158,7 @@ export function AccountIntegrationsView({
             </div>
           </div>
           <p className="mt-6 text-sm text-slate-500">
-            Open AI Configuration on the current brand to edit instructions.
+            {fr ? "Ouvrez la configuration de l’IA de la marque pour modifier les consignes." : "Open AI Configuration on the current brand to edit instructions."}
           </p>
         </Link>
       </div>

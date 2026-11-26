@@ -70,7 +70,7 @@ export default async function SeoOverviewPage({
 
       <Link href="/dashboard/seo/portfolio" className="block rounded-2xl border border-slate-200 bg-white p-4 text-slate-900 shadow-sm transition hover:border-blue-400">
         <p className="text-sm font-bold">Managed SEO sites →</p>
-        <p className="mt-1 text-xs text-slate-600">See portfolio sites for the active TAKATAK workspace, powered by the SEOTAKATAK service when connected.</p>
+        <p className="mt-1 text-xs text-slate-600">Voyez les sites du portfolio de l’espace TAKATAK actif, fournis par le service SEOTAKATAK une fois branché. · See portfolio sites for the active TAKATAK workspace, powered by the SEOTAKATAK service when connected.</p>
       </Link>
 
       <Link href="/dashboard/seo/free-tools" className="block rounded-2xl border border-blue-200 bg-gradient-to-r from-[#0B1B3D] to-[#1565D8] p-5 text-white shadow-lg transition hover:shadow-xl">
@@ -82,16 +82,16 @@ export default async function SeoOverviewPage({
       <div className="grid gap-3 sm:grid-cols-2">
         <Link href="/dashboard/seo/keywords" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-indigo-300">
           <p className="text-sm font-semibold text-slate-900">Keywords →</p>
-          <p className="mt-1 text-xs text-slate-600">Rank tracking, search volume and opportunities.</p>
+          <p className="mt-1 text-xs text-slate-600">Suivi du classement, volume de recherche et occasions. · Rank tracking, search volume and opportunities.</p>
         </Link>
         <Link href="/dashboard/seo/backlinks" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm hover:border-indigo-300">
           <p className="text-sm font-semibold text-slate-900">Backlinks →</p>
-          <p className="mt-1 text-xs text-slate-600">Referring domains, new and lost links, toxic link watch.</p>
+          <p className="mt-1 text-xs text-slate-600">Domaines référents, liens gagnés et perdus, surveillance des liens toxiques. · Referring domains, new and lost links, toxic link watch.</p>
         </Link>
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900">SEO data providers</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Fournisseurs de données SEO · SEO data providers</h2>
         <ConnectorGrid connectors={seoConnectors} showSetupDetails={showSetupDetails} />
         <HonestyNote>
           Keyword volumes, rankings and backlink counts are never estimated. They appear only after a provider above has real credentials and a

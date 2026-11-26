@@ -23,25 +23,25 @@ export default async function SeoDeletionsPage({searchParams}:{
   <Link href="/dashboard/seo/portfolio" className="text-sm font-semibold text-blue-700 hover:underline">← Managed SEO sites</Link>
   <header className="rounded-2xl bg-gradient-to-r from-[#060D1F] to-[#145CCB] p-6 text-white">
    <p className="text-xs uppercase tracking-wider text-cyan-200">GROUPE TAKATAK · Client workspace audit</p>
-   <h1 className="mt-2 text-2xl font-bold">SEO deletion receipts</h1>
-   <p className="mt-2 text-sm text-blue-100">Recorded server-side when SEO sites are permanently removed. Receipts belong only to the selected TAKATAK client workspace.</p>
+   <h1 className="mt-2 text-2xl font-bold">Reçus de suppression SEO · SEO deletion receipts</h1>
+   <p className="mt-2 text-sm text-blue-100">Enregistré sur le serveur quand un site SEO est supprimé pour de bon. Les reçus appartiennent seulement à l’espace client TAKATAK choisi. · Recorded server-side when SEO sites are permanently removed. Receipts belong only to the selected TAKATAK client workspace.</p>
   </header>
   <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
    These are operational database receipts, not legal certification that all personal data
    across TAKATAK products was erased. Retention policy and external backup lifecycle
    require separate approval.
   </p>
-  {!validOffset?<p role="alert" className="text-sm text-red-700">Invalid pagination offset.</p>:null}
+  {!validOffset?<p role="alert" className="text-sm text-red-700">Position de page invalide. · Invalid pagination offset.</p>:null}
   {validOffset&&result?.kind!=="ready"?<p role="status" className="rounded-xl border bg-white p-4 text-sm text-amber-800">
-   The SEO deletion audit is unavailable or not yet migrated. No receipts are simulated.
+   L’audit des suppressions SEO est injoignable ou pas encore migré. Aucun reçu n’est simulé. · The SEO deletion audit is unavailable or not yet migrated. No receipts are simulated.
   </p>:null}
   {result?.kind==="ready"?<section className="space-y-4 rounded-2xl border bg-white p-5">
-   <h2 className="text-lg font-semibold text-slate-950">Deletion events</h2>
-   {result.page.receipts.length===0?<p className="text-sm text-slate-600">No deletion receipts on this page.</p>:
+   <h2 className="text-lg font-semibold text-slate-950">Suppressions · Deletion events</h2>
+   {result.page.receipts.length===0?<p className="text-sm text-slate-600">Aucun reçu de suppression sur cette page. · No deletion receipts on this page.</p>:
     <div className="overflow-x-auto">
      <table className="w-full min-w-[690px] text-left text-xs">
       <thead className="bg-slate-50 text-slate-700">
-       <tr><th className="p-3">Deleted (UTC)</th><th className="p-3">Site ID</th><th className="p-3">Receipt ID</th><th className="p-3 text-right">Queries</th><th className="p-3 text-right">Prospects</th><th className="p-3 text-right">Briefs</th></tr>
+       <tr><th className="p-3">Supprimé (UTC) · Deleted (UTC)</th><th className="p-3">Identifiant du site · Site ID</th><th className="p-3">Numéro de reçu · Receipt ID</th><th className="p-3 text-right">Requêtes · Queries</th><th className="p-3 text-right">Prospects</th><th className="p-3 text-right">Plans de contenu · Briefs</th></tr>
       </thead>
       <tbody className="divide-y divide-slate-100">
        {result.page.receipts.map(item=><tr key={item.id}>
@@ -56,7 +56,7 @@ export default async function SeoDeletionsPage({searchParams}:{
      </table>
     </div>}
    <div className="flex flex-wrap gap-3">
-    {offset>0?<Link href="/dashboard/seo/deletions" className="rounded-lg border px-4 py-2 text-sm text-blue-700">First page</Link>:null}
+    {offset>0?<Link href="/dashboard/seo/deletions" className="rounded-lg border px-4 py-2 text-sm text-blue-700">Première page · First page</Link>:null}
     {result.page.hasMore&&result.page.nextOffset!==null?
       <Link href={"/dashboard/seo/deletions?offset="+result.page.nextOffset}
        className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white">Next receipts →</Link>:null}

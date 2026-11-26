@@ -113,7 +113,7 @@ export default async function ClientDetailPage({
             href="/dashboard/clients"
             className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            Back to workspaces
+            Retour aux espaces · Back to workspaces
           </Link>
         }
       />
@@ -168,7 +168,7 @@ export default async function ClientDetailPage({
             <CardBody className="space-y-3">
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-slate-500">
-                  Status
+                  Statut · Status
                 </span>
 
                 <StatusBadge
@@ -178,7 +178,7 @@ export default async function ClientDetailPage({
 
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-slate-500">
-                  Timezone
+                  Fuseau horaire · Timezone
                 </span>
 
                 <span className="text-right font-medium text-slate-700">
@@ -188,7 +188,7 @@ export default async function ClientDetailPage({
 
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-slate-500">
-                  Updated
+                  Mis à jour · Updated
                 </span>
 
                 <span className="text-right font-medium text-slate-700">
@@ -216,7 +216,7 @@ export default async function ClientDetailPage({
             <CardBody className="space-y-3">
               {client.owners.length === 0 ? (
                 <p className="text-sm text-amber-700">
-                  No owner membership is assigned.
+                  Aucun propriétaire n’est attribué. · No owner membership is assigned.
                 </p>
               ) : (
                 client.owners.map((owner) => (

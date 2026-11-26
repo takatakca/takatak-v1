@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatTile, fmtInt } from '../charts';
 import { api, downloadCsv, Section, useCatalog, useMe } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type BagDay = { id: string; date: string; locationCode: string; bagsOffered: number; bagsSold: number; pricePerBag: number; note?: string; by: string; at: string; orderId: string | null; feedOrders: number };
 const cad = (n: number) => new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(n);
@@ -14,6 +15,7 @@ const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
 const PRICE_KEY = 'takatak.tgtg.price';
 
 export default function TgtgPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { activeLocations, locName } = useCatalog();
   const { me, can } = useMe();
   const mine = useMemo(() => activeLocations.filter((l) => !me?.locations.length || me.locations.includes(l.code)), [activeLocations, me]);
@@ -61,7 +63,7 @@ export default function TgtgPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Too Good To Go bags</h1>
+          <h1>{fr ? "Sacs Too Good To Go" : "Too Good To Go bags"}</h1>
           <div className="small" style={{ maxWidth: 820 }}>Too Good To Go has no public store API — bag quantities are set in the TGTG Store app. Enter each day’s bags here (takes 10 seconds at closing) and they count in sales, analytics, reports and payout checks. If TGTG orders already reach Food Hub through an integration, the log is not counted twice.</div>
         </div>
       </div>
@@ -83,8 +85,8 @@ export default function TgtgPage() {
                 {mine.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
               </select>
             </label>
-            <label>Bags offered<input type="number" min={0} step={1} value={form.bagsOffered} onChange={(e) => setForm({ ...form, bagsOffered: e.target.value })} /></label>
-            <label>Bags sold (picked up)<input type="number" min={0} step={1} value={form.bagsSold} onChange={(e) => setForm({ ...form, bagsSold: e.target.value })} /></label>
+            <label>{fr ? "Sacs offerts" : "Bags offered"}<input type="number" min={0} step={1} value={form.bagsOffered} onChange={(e) => setForm({ ...form, bagsOffered: e.target.value })} /></label>
+            <label>{fr ? "Sacs vendus (récupérés)" : "Bags sold (picked up)"}<input type="number" min={0} step={1} value={form.bagsSold} onChange={(e) => setForm({ ...form, bagsSold: e.target.value })} /></label>
             <label>Price customers pay per bag ($)<input type="number" min={0} step={0.01} value={form.pricePerBag} onChange={(e) => setForm({ ...form, pricePerBag: e.target.value })} /></label>
             <label>Note<input value={form.note} maxLength={200} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="optional" /></label>
           </div>
@@ -95,10 +97,10 @@ export default function TgtgPage() {
         </Section>
       )}
 
-      <Section title="Last 60 days" right={<button className="btn-sm btn-light" disabled={!days.length} onClick={() => downloadCsv('tgtg-bags', ['Date', 'Location', 'Offered', 'Sold', 'Price', 'Sales', 'Counted as sales', 'Note', 'By'], days.map((d) => [d.date, d.locationCode, d.bagsOffered, d.bagsSold, d.pricePerBag.toFixed(2), (d.bagsSold * d.pricePerBag).toFixed(2), d.feedOrders ? 'no — orders came by webhook' : d.bagsSold ? 'yes' : 'no', d.note ?? '', d.by]))}>Download CSV</button>}>
+      <Section title="Last 60 days" right={<button className="btn-sm btn-light" disabled={!days.length} onClick={() => downloadCsv('tgtg-bags', ['Date', 'Location', 'Offered', 'Sold', 'Price', 'Sales', 'Counted as sales', 'Note', 'By'], days.map((d) => [d.date, d.locationCode, d.bagsOffered, d.bagsSold, d.pricePerBag.toFixed(2), (d.bagsSold * d.pricePerBag).toFixed(2), d.feedOrders ? 'no — orders came by webhook' : d.bagsSold ? 'yes' : 'no', d.note ?? '', d.by]))}>{fr ? "Télécharger le CSV" : "Download CSV"}</button>}>
         <div className="fh-table-wrap">
           <table className="fin-table">
-            <thead><tr><th>Date</th><th>Location</th><th className="num">Offered</th><th className="num">Sold</th><th className="num">Price</th><th className="num">Sales</th><th>Counted</th><th>Note</th><th>By</th></tr></thead>
+            <thead><tr><th>Date</th><th>{fr ? "Emplacement" : "Location"}</th><th className="num">{fr ? "Offert" : "Offered"}</th><th className="num">{fr ? "Vendu" : "Sold"}</th><th className="num">{fr ? "Prix" : "Price"}</th><th className="num">{fr ? "Ventes" : "Sales"}</th><th>{fr ? "Compté" : "Counted"}</th><th>Note</th><th>By</th></tr></thead>
             <tbody>
               {days.map((d) => (
                 <tr key={d.id}>
@@ -108,7 +110,7 @@ export default function TgtgPage() {
                   <td className="small">{d.note ?? ''}</td><td className="small">{d.by}</td>
                 </tr>
               ))}
-              {days.length === 0 && <tr><td colSpan={9} className="small">No day logged yet.</td></tr>}
+              {days.length === 0 && <tr><td colSpan={9} className="small">{fr ? "Aucune journée enregistrée pour l’instant." : "No day logged yet."}</td></tr>}
             </tbody>
           </table>
         </div>

@@ -18,6 +18,7 @@ import { FaXTwitter } from "react-icons/fa6";
 import { requestSocialBrandSelectorRefresh } from "@/components/social/navigation/social-brand-selector-events";
 import { brandInitials } from "@/lib/brands/brand-display-image";
 import type { BrandSettingsBrandCard } from "@/lib/brands/brand-settings-data";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PLATFORM_ROW = [
   "blog",
@@ -180,6 +181,7 @@ export function AddBrandsModal({
   onSelectBrand: (brandId: string) => void;
   onCreated: (brandId: string) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const onCloseRef = useRef(onClose);
@@ -331,7 +333,7 @@ export function AddBrandsModal({
                   id="add-brands-title"
                   className="text-[22px] font-bold tracking-tight text-[#1d1d1f]"
                 >
-                  Add brands
+                  {fr ? "Ajouter des marques" : "Add brands"}
                 </h2>
               </div>
 
@@ -379,7 +381,7 @@ export function AddBrandsModal({
                   onClick={onClose}
                   className="inline-flex h-10 min-w-[118px] items-center justify-center rounded-md border border-[#d0d0d0] bg-white px-4 text-[14px] font-medium text-[#1d1d1f] transition hover:bg-slate-50"
                 >
-                  Maybe later
+                  {fr ? "Plus tard" : "Maybe later"}
                 </button>
                 <Link
                   href={billingHref}
@@ -389,7 +391,7 @@ export function AddBrandsModal({
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dfff32] text-[#1d1d1f]">
                     <Gem className="h-2.5 w-2.5" />
                   </span>
-                  Upgrade plan
+                  {fr ? "Changer de forfait" : "Upgrade plan"}
                 </Link>
               </div>
             </div>
@@ -401,7 +403,7 @@ export function AddBrandsModal({
               {subscribed ? (
                 <div className="relative w-full max-w-[320px] overflow-hidden rounded-[16px] bg-white p-3.5 shadow-[0_18px_40px_rgba(88,70,160,0.22)]">
                 <label className="sr-only" htmlFor="add-brands-search">
-                  Search a brand
+                  {fr ? "Rechercher une marque" : "Search a brand"}
                 </label>
                 <input
                   id="add-brands-search"
@@ -434,7 +436,7 @@ export function AddBrandsModal({
                       )}
                     </span>
                   </span>
-                  Add brand
+                  {fr ? "Ajouter une marque" : "Add brand"}
                 </button>
 
                 <div

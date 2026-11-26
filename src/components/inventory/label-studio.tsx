@@ -20,6 +20,7 @@ import {
 } from "@/lib/inventory/label-layout";
 import { labelPdf } from "@/lib/inventory/label-pdf";
 import { csvCell } from "@/lib/inventory/barcodes";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 const input =
   "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900";
 const button =
@@ -49,6 +50,7 @@ export function LabelStudio({
   canManage: boolean;
   initialProductId: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [products, setProducts] = useState<LabelProduct[]>([]),
     [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
   const [id, setId] = useState(""),
@@ -367,7 +369,7 @@ export function LabelStudio({
           <ArrowLeft size={16} /> Inventory
         </Link>
         <Link href="/dashboard/inventory/labels/setup" className={button}>
-          Retail setup & equipment
+          {fr ? "Installation et équipement de vente" : "Retail setup & equipment"}
         </Link>
         <Link href="/dashboard/inventory/quebec" className={button}>
           Exigences de vente au Québec
@@ -381,14 +383,14 @@ export function LabelStudio({
         <p role="status">Loading products…</p>
       ) : !products.length ? (
         <p className="rounded-lg bg-blue-50 p-4">
-          Add a product in Inventory, then open its label studio.
+          {fr ? "Ajoutez un produit dans l’inventaire, puis ouvrez son studio d’étiquettes." : "Add a product in Inventory, then open its label studio."}
         </p>
       ) : null}
       {labelLoading ? <p role="status">Loading saved label…</p> : null}
       {product && !error && !labelLoading ? (
         <>
           <label className="block max-w-xl text-sm font-medium text-slate-700">
-            Product
+            {fr ? "Produit" : "Product"}
             <select
               aria-label="Label product"
               className={input}
@@ -412,7 +414,7 @@ export function LabelStudio({
                 the label itself.
               </p>
               <label className="block text-sm text-slate-700">
-                Jar shape
+                {fr ? "Forme du pot" : "Jar shape"}
                 <select
                   aria-label="Jar shape"
                   className={input}
@@ -424,7 +426,7 @@ export function LabelStudio({
                     )
                   }
                 >
-                  <option value="round">Round jar</option>
+                  <option value="round">{fr ? "Pot rond" : "Round jar"}</option>
                   <option value="hexagonal">
                     Hexagonal jar — six flat faces
                   </option>
@@ -433,7 +435,7 @@ export function LabelStudio({
               {config.jarShape === "hexagonal" ? (
                 <div className="space-y-2 rounded-lg bg-blue-50 p-3">
                   <label className="block text-sm text-slate-700">
-                    Flat-face width mm
+                    {fr ? "Largeur de la face plane (mm)" : "Flat-face width mm"}
                     <input
                       className={input}
                       type="number"
@@ -514,7 +516,7 @@ export function LabelStudio({
                 </span>
               </label>
               <label className="block text-sm text-slate-700">
-                Printer resolution
+                {fr ? "Résolution de l’imprimante" : "Printer resolution"}
                 <select
                   aria-label="Printer resolution"
                   className={input}
@@ -529,7 +531,7 @@ export function LabelStudio({
                 </select>
               </label>
               <label className="block text-sm text-slate-700">
-                Barcode orientation
+                {fr ? "Orientation du code-barres" : "Barcode orientation"}
                 <select
                   aria-label="Barcode orientation"
                   className={input}
@@ -550,7 +552,7 @@ export function LabelStudio({
                 </select>
               </label>
               <label className="block text-sm text-slate-700">
-                Print style
+                {fr ? "Style d’impression" : "Print style"}
                 <select
                   className={input}
                   value={config.theme}
@@ -603,9 +605,9 @@ export function LabelStudio({
               {textField("colour", "Honey colour class (if applicable)")}
               {textField("storage", "Storage instructions / conservation", 2)}
               {textField("notes", "Additional approved text", 2)}
-              <h2 className="pt-2 font-bold text-slate-900">Nutrition panel</h2>
+              <h2 className="pt-2 font-bold text-slate-900">{fr ? "Tableau de valeur nutritive" : "Nutrition panel"}</h2>
               <label className="block text-sm text-slate-700">
-                Nutrition label review
+                {fr ? "Révision du tableau de valeur nutritive" : "Nutrition label review"}
                 <select
                   className={input}
                   value={config.nutritionStatus}
@@ -617,13 +619,13 @@ export function LabelStudio({
                   }
                 >
                   <option value="unreviewed">Not reviewed yet — draft</option>
-                  <option value="provided">Include approved artwork</option>
-                  <option value="exempt">Reviewed exemption applies</option>
+                  <option value="provided">{fr ? "Inclure le visuel approuvé" : "Include approved artwork"}</option>
+                  <option value="exempt">{fr ? "L’exemption révisée s’applique" : "Reviewed exemption applies"}</option>
                 </select>
               </label>
               {config.nutritionStatus === "provided" ? (
                 <label className="block text-sm text-slate-700">
-                  Approved bilingual panel (PNG/JPEG, max 300 KB)
+                  {fr ? "Panneau bilingue approuvé (PNG/JPEG, 300 Ko max.)" : "Approved bilingual panel (PNG/JPEG, max 300 KB)"}
                   <input
                     className={input}
                     type="file"
@@ -643,14 +645,14 @@ export function LabelStudio({
                         }));
                       }}
                     >
-                      Remove artwork
+                      {fr ? "Retirer le visuel" : "Remove artwork"}
                     </button>
                   ) : null}
                 </label>
               ) : null}
               {config.nutritionStatus === "provided" ? (
                 <label className="block text-sm text-slate-700">
-                  Approved panel width (mm)
+                  {fr ? "Largeur du panneau approuvé (mm)" : "Approved panel width (mm)"}
                   <input
                     className={input}
                     type="number"
@@ -666,7 +668,7 @@ export function LabelStudio({
               ) : null}
               {config.nutritionStatus === "exempt" ? (
                 <label className="block text-sm text-slate-700">
-                  Reviewed exemption and basis
+                  {fr ? "Exemption révisée et motif" : "Reviewed exemption and basis"}
                   <textarea
                     className={input}
                     maxLength={400}
@@ -704,7 +706,7 @@ export function LabelStudio({
             <div className="min-w-0 space-y-5">
               <section className="rounded-xl bg-[#060D1F] p-5">
                 <div className="mb-4 flex flex-wrap justify-between gap-2 text-sm text-white">
-                  <h2 className="font-bold">Full wrap preview</h2>
+                  <h2 className="font-bold">{fr ? "Aperçu de l’étiquette complète" : "Full wrap preview"}</h2>
                   <span>
                     {config.widthMm} × {config.heightMm} mm
                   </span>
@@ -739,7 +741,7 @@ export function LabelStudio({
                     className="text-blue-700 underline"
                     href="/dashboard/inventory"
                   >
-                    Edit product barcode
+                    {fr ? "Modifier le code-barres du produit" : "Edit product barcode"}
                   </Link>
                 </p>
                 <label className="flex gap-2 text-sm">
@@ -791,7 +793,7 @@ export function LabelStudio({
                 <h2 className="font-bold">5. Print your labels</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm">
-                    Paper / output
+                    {fr ? "Papier / sortie" : "Paper / output"}
                     <select
                       className={input}
                       aria-label="Paper / output"
@@ -801,14 +803,14 @@ export function LabelStudio({
                       <option value="letter">
                         Letter adhesive sheet (8.5 × 11 in)
                       </option>
-                      <option value="a4">A4 adhesive sheet</option>
+                      <option value="a4">{fr ? "Feuille adhésive A4" : "A4 adhesive sheet"}</option>
                       <option value="roll">
                         Custom roll — up to 104 mm print width
                       </option>
                     </select>
                   </label>
                   <label className="text-sm">
-                    Number of labels
+                    {fr ? "Nombre d’étiquettes" : "Number of labels"}
                     <input
                       className={input}
                       type="number"
@@ -842,7 +844,7 @@ export function LabelStudio({
                     <Printer size={16} /> Open print PDF
                   </button>
                   <button className={button} onClick={productSheet}>
-                    Retailer product CSV
+                    {fr ? "CSV des produits du détaillant" : "Retailer product CSV"}
                   </button>
                 </div>
                 <p className="text-xs leading-5 text-slate-500">
@@ -884,7 +886,7 @@ export function LabelStudio({
                     autoComplete="off"
                   />
                   <button className={button} type="submit">
-                    Check
+                    {fr ? "Vérifier" : "Check"}
                   </button>
                 </form>
                 {scanResult ? (

@@ -1,6 +1,7 @@
 'use client';
 
 import { CircleAlert, Link2, Loader2, Unplug, X } from 'lucide-react';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type SocialConnectionMethodDialogProps = {
   open: boolean;
@@ -23,6 +24,7 @@ export function SocialConnectionMethodDialog({
   onDirect,
   onLinkedInstagram,
 }: SocialConnectionMethodDialogProps) {
+  const fr = useDashboardLanguage() === "fr";
   if (!open) {
     return null;
   }
@@ -95,7 +97,7 @@ export function SocialConnectionMethodDialog({
 
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-slate-950">
-                    Instagram linked to Facebook
+                    {fr ? "Instagram lié à Facebook" : "Instagram linked to Facebook"}
                   </h3>
                   <p className="mt-1 text-sm leading-5 text-slate-600">
                     Use the professional Instagram account linked to the
@@ -158,11 +160,11 @@ export function SocialConnectionMethodDialog({
 
                 {isInstagram ? (
                   <span className="sr-only">
-                    Or sign in with Instagram independently
+                    {fr ? "Ou connectez-vous à Instagram séparément" : "Or sign in with Instagram independently"}
                   </span>
                 ) : (
                   <span className="sr-only">
-                    Or sign in with Threads independently
+                    {fr ? "Ou connectez-vous à Threads séparément" : "Or sign in with Threads independently"}
                   </span>
                 )}
 

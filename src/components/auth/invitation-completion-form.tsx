@@ -26,6 +26,7 @@ import {
   getPasswordRequirements,
   REGISTRATION_LIMITS,
 } from "@/lib/auth/registration-validation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type InvitationCompletionResponse = {
   ok: boolean;
@@ -67,6 +68,7 @@ export function InvitationCompletionForm({
   initialFirstName = "",
   initialLastName = "",
 }: InvitationCompletionFormProps) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const formReference =
     useRef<HTMLFormElement>(null);
@@ -343,7 +345,7 @@ export function InvitationCompletionForm({
           htmlFor="invited-email"
           className="mb-1.5 block text-xs font-semibold text-slate-700"
         >
-          Invited email
+          {fr ? "Courriel invité" : "Invited email"}
         </label>
 
         <div className="relative">
@@ -369,7 +371,7 @@ export function InvitationCompletionForm({
             htmlFor="firstName"
             className="mb-1.5 block text-xs font-semibold text-slate-700"
           >
-            First name
+            {fr ? "Prénom" : "First name"}
           </label>
 
           <div className="relative">
@@ -421,7 +423,7 @@ export function InvitationCompletionForm({
             htmlFor="lastName"
             className="mb-1.5 block text-xs font-semibold text-slate-700"
           >
-            Last name
+            {fr ? "Nom" : "Last name"}
           </label>
 
           <div className="relative">
@@ -474,7 +476,7 @@ export function InvitationCompletionForm({
           htmlFor="password"
           className="mb-1.5 block text-xs font-semibold text-slate-700"
         >
-          Create password
+          {fr ? "Créer le mot de passe" : "Create password"}
         </label>
 
         <div className="relative">
@@ -581,7 +583,7 @@ export function InvitationCompletionForm({
           htmlFor="confirmPassword"
           className="mb-1.5 block text-xs font-semibold text-slate-700"
         >
-          Confirm password
+          {fr ? "Confirmer le mot de passe" : "Confirm password"}
         </label>
 
         <div className="relative">

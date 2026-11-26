@@ -5,12 +5,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, useCatalog, useFilters, useMe } from '@/app/dashboard/food-hub/ui';
 import { CH_NAME, FinanceError, FinanceFilters, FinanceHead, cad, day } from '../finance-ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Line = { account: string; debit: number; credit: number; memo?: string };
 type Entry = { key: string; date: string | null; channel: string; memo: string; lines: Line[]; debit: number; credit: number; balanced: boolean; status: 'draft' | 'approved'; approvedBy?: string; approvedAt?: string; warnings: string[] };
 type Tab = 'draft' | 'approved' | 'all';
 
 export default function LedgerPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { filters, set, query } = useFilters('last_month');
   const { activeLocations } = useCatalog();
   const { can } = useMe();
@@ -42,7 +44,7 @@ export default function LedgerPage() {
   return (
     <div>
       <FinanceHead title="Internal ledger" intro="The TAKATAK internal ledger: one journal entry per payout — bank deposit, delivery sales, GST and QST collected, commissions, tax on fees (input tax credits), promotions, refunds and other charges. Entries are drafts until you approve them. Nothing is posted to QuickBooks or anywhere else; download the CSV for your accountant."
-        right={<a className="button btn-sm btn-light" href={csvHref}>Download CSV</a>} />
+        right={<a className="button btn-sm btn-light" href={csvHref}>{fr ? "Télécharger le CSV" : "Download CSV"}</a>} />
       <FinanceError message={err} />
       {msg && <div className="fh-banner info" role="status">{msg}</div>}
       <FinanceFilters filters={filters} set={set} locations={activeLocations} showLocations={false} extra={
@@ -67,7 +69,7 @@ export default function LedgerPage() {
           {e.warnings.map((w, i) => <div key={i} className="fh-banner warn" style={{ marginBottom: 6 }}>{w}</div>)}
           <div className="fh-table-wrap">
             <table className="fin-table">
-              <thead><tr><th>Account</th><th className="num">Debit</th><th className="num">Credit</th><th>Memo</th></tr></thead>
+              <thead><tr><th>{fr ? "Compte" : "Account"}</th><th className="num">{fr ? "Débit" : "Debit"}</th><th className="num">{fr ? "Crédit" : "Credit"}</th><th>{fr ? "Note" : "Memo"}</th></tr></thead>
               <tbody>
                 {e.lines.map((l, i) => <tr key={i}><td>{l.account}</td><td className="num">{l.debit ? cad(l.debit) : ''}</td><td className="num">{l.credit ? cad(l.credit) : ''}</td><td className="small">{l.memo ?? ''}</td></tr>)}
                 <tr><td><strong>Total</strong></td><td className="num"><strong>{cad(e.debit)}</strong></td><td className="num"><strong>{cad(e.credit)}</strong></td><td /></tr>
@@ -80,14 +82,14 @@ export default function LedgerPage() {
 
       {byAccount.length > 0 && (
         <section className="card" style={{ marginTop: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: 17 }}>Totals by account (period)</h2>
+          <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Totaux par compte (période)" : "Totals by account (period)"}</h2>
           <div className="fh-table-wrap">
             <table className="fin-table">
-              <thead><tr><th>Account</th><th className="num">Debit</th><th className="num">Credit</th><th className="num">Balance</th></tr></thead>
+              <thead><tr><th>{fr ? "Compte" : "Account"}</th><th className="num">{fr ? "Débit" : "Debit"}</th><th className="num">{fr ? "Crédit" : "Credit"}</th><th className="num">{fr ? "Solde" : "Balance"}</th></tr></thead>
               <tbody>{byAccount.map(([a, v]) => <tr key={a}><td>{a}</td><td className="num">{cad(v.debit)}</td><td className="num">{cad(v.credit)}</td><td className="num">{cad(v.debit - v.credit)}</td></tr>)}</tbody>
             </table>
           </div>
-          <p className="small">GST/QST collected (2310, 2320) minus input tax credits (1310, 1320) is what the platforms’ sales add to your GST/QST return. Check with your accountant.</p>
+          <p className="small">{fr ? "La TPS/TVQ perçue (2310, 2320) moins les crédits de taxe sur les intrants (1310, 1320) correspond à ce que les ventes des plateformes ajoutent à votre déclaration de TPS/TVQ. Vérifiez avec votre comptable." : "GST/QST collected (2310, 2320) minus input tax credits (1310, 1320) is what the platforms’ sales add to your GST/QST return. Check with your accountant."}</p>
         </section>
       )}
     </div>

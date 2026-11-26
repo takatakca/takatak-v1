@@ -13,6 +13,7 @@ import { useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { XSubscribedDashboard } from "@/components/social/platforms/x-subscribed-dashboard";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -92,6 +93,7 @@ export function XConnectPage({
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -164,7 +166,7 @@ export function XConnectPage({
           <section className="flex flex-col gap-4 rounded-[14px] border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-[17px] font-semibold text-slate-950">
-                No X account connected
+                {fr ? "Aucun compte X branché" : "No X account connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
                 Your saved X history remains stored. Reconnect the same
@@ -178,7 +180,7 @@ export function XConnectPage({
               )}
               className="inline-flex h-11 shrink-0 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
             >
-              Reconnect X
+              {fr ? "Reconnecter X" : "Reconnect X"}
             </Link>
           </section>
         ) : null}
@@ -213,7 +215,7 @@ export function XConnectPage({
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-              Connect your X account
+              {fr ? "Branchez votre compte X" : "Connect your X account"}
             </h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
               Sign in with X to import this brand’s account. X is a paid add-on
@@ -270,7 +272,7 @@ export function XConnectPage({
       <section className="relative min-h-[245px] overflow-hidden rounded-[18px] border border-[#e1e4e7] bg-white px-8 py-9">
         <div className="relative z-10 max-w-2xl">
           <h2 className="text-[21px] font-medium leading-7 text-[#30343a]">
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
             Connect your accounts once. TAKATAK shows only real data received
@@ -283,7 +285,7 @@ export function XConnectPage({
             )}
             className="mt-5 inline-flex h-12 items-center justify-center rounded-[10px] border border-[#493546] bg-white px-5 text-[15px] font-medium text-[#342431] transition hover:bg-[#f8f8f8]"
           >
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </Link>
         </div>
       </section>

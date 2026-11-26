@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { LookerStudioSubscribedDashboard } from "@/components/social/platforms/looker-studio-subscribed-dashboard";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Choice = {
   id: string;
@@ -113,6 +114,7 @@ export function LookerStudioConnectPage({
   reportUrl?: string | null;
   choices?: Choice[];
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
@@ -237,14 +239,14 @@ export function LookerStudioConnectPage({
 
         <section className="rounded-[18px] border border-[#d7d4ff] bg-[#f4f2ff] px-7 py-6">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            Choose a Looker Studio report
+            {fr ? "Choisir un rapport Looker Studio" : "Choose a Looker Studio report"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
             This Google login can access more than one report. Connect one
             report to this brand.
           </p>
           <fieldset className="mt-5 space-y-2">
-            <legend className="sr-only">Looker Studio reports</legend>
+            <legend className="sr-only">{fr ? "Rapports Looker Studio" : "Looker Studio reports"}</legend>
             {choices.map((choice) => (
               <label
                 key={choice.id}
@@ -305,7 +307,7 @@ export function LookerStudioConnectPage({
             </span>
             <div className="min-w-0">
               <h2 className="truncate text-[18px] font-semibold text-[#20242A]">
-                No Looker Studio report connected
+                {fr ? "Aucun rapport Looker Studio branché" : "No Looker Studio report connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-[#505761]">
                 Your saved Looker Studio history remains stored. Reconnect the
@@ -349,7 +351,7 @@ export function LookerStudioConnectPage({
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-              Connect your Looker Studio report
+              {fr ? "Branchez votre rapport Looker Studio" : "Connect your Looker Studio report"}
             </h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
               Sign in with Google to import a report for this brand. Looker
@@ -407,7 +409,7 @@ export function LookerStudioConnectPage({
       <section className="relative min-h-[245px] overflow-hidden rounded-[18px] border border-[#e1e4e7] bg-white px-8 py-9">
         <div className="relative z-10 max-w-2xl">
           <h2 className="text-[21px] font-medium leading-7 text-[#30343a]">
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
             Connect your accounts once. TAKATAK shows only real data received
@@ -420,7 +422,7 @@ export function LookerStudioConnectPage({
             )}
             className="mt-5 inline-flex h-12 items-center justify-center rounded-[10px] border border-[#493546] bg-white px-5 text-[15px] font-medium text-[#342431] transition hover:bg-[#f8f8f8]"
           >
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </Link>
         </div>
       </section>

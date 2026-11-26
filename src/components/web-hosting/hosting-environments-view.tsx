@@ -12,6 +12,7 @@ import {
 import type { HostingServiceSummary, SslCertificateSummary } from "@/lib/web-hosting/types";
 import { pricing } from "@/lib/website/pricing";
 import { SSL_STATUS_LABELS } from "@/lib/web-hosting/status";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const HOSTING_ACTIONS = [
   { label: "Sauvegardes · Backups", href: "/dashboard/web-hosting/backups" },
@@ -70,6 +71,7 @@ export function HostingEnvironmentsView({
   certificates: SslCertificateSummary[];
   sourceLabel: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
@@ -112,7 +114,7 @@ export function HostingEnvironmentsView({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-medium text-slate-400">Web & Domain &gt; Hosting Overview</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">Hosting Overview</h2>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900">{fr ? "Vue d’ensemble de l’hébergement" : "Hosting Overview"}</h2>
           <p className="mt-1 max-w-2xl text-sm text-slate-500">
             Monitor websites, environments, resources, deployments, backups and infrastructure health from one
             client-safe workspace.
@@ -166,28 +168,28 @@ export function HostingEnvironmentsView({
           className="h-9 min-w-[220px] flex-1 rounded-lg border border-slate-200 bg-white px-3 text-sm"
         />
         <select className="h-9 rounded-lg border border-slate-200 px-3 text-sm">
-          <option>All environments</option>
+          <option>{fr ? "Tous les environnements" : "All environments"}</option>
         </select>
         <select className="h-9 rounded-lg border border-slate-200 px-3 text-sm">
-          <option>All providers</option>
+          <option>{fr ? "Tous les fournisseurs" : "All providers"}</option>
         </select>
         <select
           value={statusFilter}
           onChange={(event) => setStatusFilter(event.target.value)}
           className="h-9 rounded-lg border border-slate-200 px-3 text-sm"
         >
-          <option value="all">All statuses</option>
-          <option value="healthy">Healthy</option>
+          <option value="all">{fr ? "Tous les statuts" : "All statuses"}</option>
+          <option value="healthy">{fr ? "En bonne santé" : "Healthy"}</option>
           <option value="attention">Attention</option>
-          <option value="alert">Alert</option>
-          <option value="staging">Staging</option>
+          <option value="alert">{fr ? "Alerte" : "Alert"}</option>
+          <option value="staging">{fr ? "Préproduction" : "Staging"}</option>
         </select>
         <select
           value={planFilter}
           onChange={(event) => setPlanFilter(event.target.value)}
           className="h-9 rounded-lg border border-slate-200 px-3 text-sm"
         >
-          <option value="all">All plans</option>
+          <option value="all">{fr ? "Tous les forfaits" : "All plans"}</option>
           {plans.map((plan) => (
             <option key={plan} value={plan}>{plan}</option>
           ))}
@@ -204,23 +206,23 @@ export function HostingEnvironmentsView({
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
         <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="px-5 py-4">
-            <h3 className="text-sm font-semibold text-slate-900">Hosting Environments</h3>
-            <p className="text-xs text-slate-400">Production and staging inventory from tracked hosting records.</p>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Environnements d’hébergement" : "Hosting Environments"}</h3>
+            <p className="text-xs text-slate-400">{fr ? "Inventaire de production et de préproduction tiré des fiches d’hébergement suivies." : "Production and staging inventory from tracked hosting records."}</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-left text-sm">
               <thead>
                 <tr className="border-y border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                  <th className="px-5 py-2">Website</th>
+                  <th className="px-5 py-2">{fr ? "Site Web" : "Website"}</th>
                   <th className="px-3 py-2">Env</th>
-                  <th className="px-3 py-2">Plan</th>
-                  <th className="px-3 py-2">Uptime</th>
+                  <th className="px-3 py-2">{fr ? "Forfait" : "Plan"}</th>
+                  <th className="px-3 py-2">{fr ? "Disponibilité" : "Uptime"}</th>
                   <th className="px-3 py-2">CPU</th>
                   <th className="px-3 py-2">Mem</th>
-                  <th className="px-3 py-2">Storage</th>
-                  <th className="px-3 py-2">Deploy</th>
-                  <th className="px-3 py-2">Backup</th>
-                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">{fr ? "Stockage" : "Storage"}</th>
+                  <th className="px-3 py-2">{fr ? "Déployer" : "Deploy"}</th>
+                  <th className="px-3 py-2">{fr ? "Sauvegarde" : "Backup"}</th>
+                  <th className="px-3 py-2">{fr ? "Statut" : "Status"}</th>
                   <th className="px-3 py-2">Action</th>
                 </tr>
               </thead>
@@ -274,7 +276,7 @@ export function HostingEnvironmentsView({
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={11} className="px-5 py-8 text-sm text-slate-400">
-                      No hosting environments yet.
+                      {fr ? "Aucun environnement d’hébergement pour l’instant." : "No hosting environments yet."}
                     </td>
                   </tr>
                 ) : null}
@@ -286,7 +288,7 @@ export function HostingEnvironmentsView({
         <article className="h-fit rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-xs text-slate-400">Selected Environment</p>
+              <p className="text-xs text-slate-400">{fr ? "Environnement choisi" : "Selected Environment"}</p>
               <p className="text-sm font-semibold text-slate-900">
                 {selected ? `${selected.primaryDomain ?? selected.planName} — Production` : "None"}
               </p>
@@ -338,7 +340,7 @@ export function HostingEnvironmentsView({
                   href={`/dashboard/web-hosting/environments?env=${selected.id}`}
                   className="rounded-lg bg-slate-900 py-2 text-center text-sm font-medium text-white"
                 >
-                  Open Environment
+                  {fr ? "Ouvrir l’environnement" : "Open Environment"}
                 </Link>
                 <Link
                   href="/dashboard/web-hosting/monitoring"
@@ -349,25 +351,25 @@ export function HostingEnvironmentsView({
               </div>
             </>
           ) : (
-            <p className="mt-4 text-sm text-slate-400">Select an environment from the table.</p>
+            <p className="mt-4 text-sm text-slate-400">{fr ? "Choisissez un environnement dans le tableau." : "Select an environment from the table."}</p>
           )}
         </article>
       </div>
 
       <section className="grid gap-4 xl:grid-cols-3">
         <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Capacity & Limits</h3>
+          <h3 className="text-sm font-semibold text-slate-900">{fr ? "Capacité et limites" : "Capacity & Limits"}</h3>
           <p className="mt-3 text-sm text-slate-400">
-            Peak CPU, memory, and storage appear when hosting telemetry is connected.
+            {fr ? "Les pointes de processeur, de mémoire et de stockage apparaissent une fois la télémétrie de l’hébergement branchée." : "Peak CPU, memory, and storage appear when hosting telemetry is connected."}
           </p>
         </article>
         <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Reliability & Operations</h3>
+          <h3 className="text-sm font-semibold text-slate-900">{fr ? "Fiabilité et opérations" : "Reliability & Operations"}</h3>
           <ul className="mt-3 space-y-2 text-sm text-slate-600">
-            <li className="flex justify-between"><span>Incidents</span><span className="text-slate-400">Not connected</span></li>
-            <li className="flex justify-between"><span>Backups</span><span className="text-slate-400">Not connected</span></li>
-            <li className="flex justify-between"><span>Restore tests</span><span className="text-slate-400">Not connected</span></li>
-            <li className="flex justify-between"><span>Deployments</span><span className="text-slate-400">Not connected</span></li>
+            <li className="flex justify-between"><span>Incidents</span><span className="text-slate-400">{fr ? "Non branché" : "Not connected"}</span></li>
+            <li className="flex justify-between"><span>{fr ? "Sauvegardes" : "Backups"}</span><span className="text-slate-400">{fr ? "Non branché" : "Not connected"}</span></li>
+            <li className="flex justify-between"><span>{fr ? "Tests de restauration" : "Restore tests"}</span><span className="text-slate-400">{fr ? "Non branché" : "Not connected"}</span></li>
+            <li className="flex justify-between"><span>{fr ? "Déploiements" : "Deployments"}</span><span className="text-slate-400">{fr ? "Non branché" : "Not connected"}</span></li>
           </ul>
           <div className="mt-4 flex gap-2">
             <Link href="/dashboard/web-hosting/monitoring" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-blue-300">
@@ -380,9 +382,9 @@ export function HostingEnvironmentsView({
         </article>
         {assistantOpen ? (
         <article className="rounded-2xl bg-violet-50 p-5">
-          <h3 className="text-sm font-semibold text-violet-950">TakaTak AI Hosting Assistant</h3>
+          <h3 className="text-sm font-semibold text-violet-950">{fr ? "Assistant IA d’hébergement TakaTak" : "TakaTak AI Hosting Assistant"}</h3>
           <p className="mt-2 text-sm text-violet-800">
-            Live analysis appears after hosting telemetry is connected. Nothing is inferred from placeholder records.
+            {fr ? "L’analyse en direct apparaît une fois la télémétrie de l’hébergement branchée. Rien n’est déduit de fiches fictives." : "Live analysis appears after hosting telemetry is connected. Nothing is inferred from placeholder records."}
           </p>
           {alerts.length ? (
             <p className="mt-2 text-sm text-violet-900">

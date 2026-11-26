@@ -85,9 +85,9 @@ export default async function VoipOverviewPage() {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-2xl">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-xl font-semibold tracking-tight text-slate-900">Business phone</h1>
+            <h1 className="text-xl font-semibold tracking-tight text-slate-900">Téléphone d’affaires · Business phone</h1>
             <Badge tone={notConfigured ? "warning" : "neutral"}>{status.label}</Badge>
-            <Badge tone="muted">Managed by MIMT</Badge>
+            <Badge tone="muted">Géré par MIMT · Managed by MIMT</Badge>
           </div>
           <p className="mt-1 text-sm leading-relaxed text-slate-500">
             An overview of your business phone service. The phone service itself runs in MIMT, an
@@ -112,7 +112,7 @@ export default async function VoipOverviewPage() {
           <div className="space-y-2">
             <p className="text-sm font-semibold text-slate-900">{status.label}</p>
             <p className="text-sm text-slate-600">{status.detail}</p>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">What happens next</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">La suite · What happens next</p>
             <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-600">
               {OWNER_STEPS.map((step) => (
                 <li key={step}>{step}</li>
@@ -130,7 +130,7 @@ export default async function VoipOverviewPage() {
               <CardHeader
                 title={s.title}
                 subtitle={s.subtitle}
-                action={<Badge tone="muted">No data</Badge>}
+                action={<Badge tone="muted">Aucune donnée · No data</Badge>}
               />
               <CardBody className="flex items-center gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-400 ring-1 ring-inset ring-slate-200">
@@ -157,8 +157,8 @@ export default async function VoipOverviewPage() {
           subtitle="A Canadian business number with calls, voicemail and forwarding, through MIMT. Tell us what you need and the team sets it up."
         />
         <CardBody className="flex flex-wrap gap-2">
-          <Button href="/services/voip">See business phone plans</Button>
-          <Button href={SALES_HREF} variant="secondary">Talk to sales</Button>
+          <Button href="/services/voip">Voir les forfaits de téléphone d’affaires · See business phone plans</Button>
+          <Button href={SALES_HREF} variant="secondary">Parler aux ventes · Talk to sales</Button>
         </CardBody>
       </Card>
     </div>

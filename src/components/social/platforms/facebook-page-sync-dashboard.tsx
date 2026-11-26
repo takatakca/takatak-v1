@@ -8,6 +8,7 @@ import { requestSocialBrandSelectorRefresh } from "@/components/social/navigatio
 import { FacebookSubscribedDashboard } from "@/components/social/platforms/facebook-subscribed-dashboard";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { dateKey } from "@/components/social/analytics/social-summary-tokens";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type SyncStatus =
   | "idle"
@@ -211,6 +212,7 @@ export function FacebookPageSyncDashboard({
   profileImageUrl: string | null;
   initialSyncStatus?: SyncStatus | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [sync, setSync] = useState<SyncPayload | null>(
     initialSyncStatus
@@ -698,7 +700,7 @@ export function FacebookPageSyncDashboard({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-[12px] font-semibold uppercase tracking-wide text-[#6b7280]">
-                Facebook Page
+                {fr ? "Page Facebook" : "Facebook Page"}
               </p>
               <span
                 className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
@@ -854,7 +856,7 @@ export function FacebookPageSyncDashboard({
 
         {syncTimedOut && (status === "syncing" || jobActive) ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status">
-            Facebook synchronization has not completed. The background worker may be delayed or unavailable.
+            {fr ? "La synchronisation Facebook n’est pas terminée. La tâche de fond est peut-être en retard ou indisponible." : "Facebook synchronization has not completed. The background worker may be delayed or unavailable."}
             {sync?.operation?.jobStatus === "queued" && sync.operation.attempts === 0
               ? " The job is queued but has not started; check the Social sync worker schedule."
               : " Check the worker status before retrying to avoid duplicate requests."}
@@ -863,7 +865,7 @@ export function FacebookPageSyncDashboard({
               onClick={() => { setSyncTimedOut(false); void loadStatus(); }}
               className="ml-2 font-semibold underline"
             >
-              Check status
+              {fr ? "Vérifier l’état" : "Check status"}
             </button>
           </div>
         ) : null}

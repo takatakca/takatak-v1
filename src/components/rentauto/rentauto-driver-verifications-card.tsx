@@ -14,6 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type DriverVerification = {
   id: string;
@@ -64,6 +65,7 @@ function dateOnly(value: string | null): string {
 }
 
 export function RentautoDriverVerificationsCard() {
+  const fr = useDashboardLanguage() === "fr";
   const [verifications, setVerifications] = useState<DriverVerification[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -164,7 +166,7 @@ export function RentautoDriverVerificationsCard() {
               className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
               aria-hidden="true"
             />
-            Refresh
+            {fr ? "Actualiser" : "Refresh"}
           </button>
         }
       />
@@ -182,7 +184,7 @@ export function RentautoDriverVerificationsCard() {
           </div>
         ) : verifications.length === 0 ? (
           <p className="py-4 text-sm text-slate-500">
-            No driver verifications are waiting for review.
+            {fr ? "Aucune vérification de conducteur en attente." : "No driver verifications are waiting for review."}
           </p>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -201,7 +203,7 @@ export function RentautoDriverVerificationsCard() {
                           verification.profile.email ||
                           "Rentauto driver"}
                       </p>
-                      <Badge tone="warning">Review pending</Badge>
+                      <Badge tone="warning">{fr ? "Révision en attente" : "Review pending"}</Badge>
                     </div>
 
                     <div className="mt-2 grid gap-1 text-xs text-slate-500 sm:grid-cols-2">
@@ -224,7 +226,7 @@ export function RentautoDriverVerificationsCard() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <FileImage className="h-3.5 w-3.5" aria-hidden="true" />
-                          Licence front
+                          {fr ? "Permis (recto)" : "Licence front"}
                           <ExternalLink className="h-3 w-3" aria-hidden="true" />
                         </a>
                       ) : null}
@@ -236,7 +238,7 @@ export function RentautoDriverVerificationsCard() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <FileImage className="h-3.5 w-3.5" aria-hidden="true" />
-                          Licence back
+                          {fr ? "Permis (verso)" : "Licence back"}
                           <ExternalLink className="h-3 w-3" aria-hidden="true" />
                         </a>
                       ) : null}
@@ -277,7 +279,7 @@ export function RentautoDriverVerificationsCard() {
                       className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <XCircle className="h-4 w-4" aria-hidden="true" />
-                      Reject
+                      {fr ? "Refuser" : "Reject"}
                     </button>
                   </div>
                 </div>

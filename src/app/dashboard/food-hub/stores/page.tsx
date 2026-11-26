@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, LOCATIONS, ModeBanner, ResultsTable, Section, useCatalog, useMe } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Store = {
   id: string; channel: string; channelStoreId: string; brandName: string; locationCode: string; cloverMerchantId?: string | null; autoAccept: boolean; online: boolean;
@@ -22,6 +23,7 @@ const PAUSES: Array<[string, number]> = [['15 min', 15], ['30 min', 30], ['1 hou
 const blank = { channel: 'uber_eats', channelStoreId: '', brandName: '', locationCode: LOCATIONS[0].code, cloverMerchantId: '', autoAccept: true };
 
 export default function StoresPage() {
+  const fr = useDashboardLanguage() === "fr";
   const [stores, setStores] = useState<Store[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [mode, setMode] = useState<string>();
@@ -114,12 +116,12 @@ export default function StoresPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Stores</h1>
-          <div className="small">Map each brand + location to its store on every channel, then pause or resume from here.</div>
+          <h1>{fr ? "Magasins" : "Stores"}</h1>
+          <div className="small">{fr ? "Associez chaque marque et emplacement à son magasin sur chaque canal, puis mettez en pause ou reprenez d’ici." : "Map each brand + location to its store on every channel, then pause or resume from here."}</div>
         </div>
         <div className="fh-row">
-          <a className="button btn-ok" href="/api/food-hub/uber-connect/start">Connect Uber Eats stores</a>
-          <span className="small">Pause length</span>
+          <a className="button btn-ok" href="/api/food-hub/uber-connect/start">{fr ? "Brancher les magasins Uber Eats" : "Connect Uber Eats stores"}</a>
+          <span className="small">{fr ? "Durée de la pause" : "Pause length"}</span>
           <select value={pause} onChange={(e) => setPause(Number(e.target.value))}>{PAUSES.map(([l, v]) => <option key={l} value={v}>{l}</option>)}</select>
         </div>
       </div>
@@ -131,7 +133,7 @@ export default function StoresPage() {
         <Section title={`Uber Eats stores on your account (${picks.length})`} right={<button className="btn-ok" disabled={!!busy || !picks.some((p) => p.include)} onClick={activateUber}>{busy === 'activate' ? 'Activating…' : 'Activate & map selected'}</button>}>
           <p className="small">Brand and location are pre-filled from the Uber store name and address — check them, then activate. Orders from these stores start arriving here and in Clover.</p>
           <table>
-            <thead><tr><th></th><th>Uber store</th><th>Brand</th><th>Location</th><th>Result</th></tr></thead>
+            <thead><tr><th></th><th>{fr ? "Magasin Uber" : "Uber store"}</th><th>{fr ? "Marque" : "Brand"}</th><th>{fr ? "Emplacement" : "Location"}</th><th>{fr ? "Résultat" : "Result"}</th></tr></thead>
             <tbody>
               {picks.map((p, i) => {
                 const done = connectDone.find((r) => r.storeId === p.storeId);
@@ -154,14 +156,14 @@ export default function StoresPage() {
       {byLocation.map((loc) => (
         <Section key={loc.code} title={`${loc.name} (${loc.stores.length})`} right={loc.stores.length > 0 ? (
           <div className="fh-row">
-            <button className="btn-sm btn-danger" disabled={!!busy} onClick={() => setOnline(loc.stores.map((s) => s.id), false)}>Pause whole location</button>
-            <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => setOnline(loc.stores.map((s) => s.id), true)}>Resume whole location</button>
+            <button className="btn-sm btn-danger" disabled={!!busy} onClick={() => setOnline(loc.stores.map((s) => s.id), false)}>{fr ? "Mettre tout l’emplacement en pause" : "Pause whole location"}</button>
+            <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => setOnline(loc.stores.map((s) => s.id), true)}>{fr ? "Reprendre tout l’emplacement" : "Resume whole location"}</button>
           </div>
         ) : undefined}>
           <PrepRow code={loc.code} value={prep[loc.code]} editable={can('stores:toggle')} busy={!!busy} onSave={savePrep} />
-          {loc.stores.length === 0 ? <p className="small">No stores mapped here yet.</p> : (
+          {loc.stores.length === 0 ? <p className="small">{fr ? "Aucun magasin associé ici pour l’instant." : "No stores mapped here yet."}</p> : (
             <table>
-              <thead><tr><th>Brand</th><th>Channel</th><th>Store id</th><th>Clover</th><th>Auto-accept</th><th>Status</th><th></th></tr></thead>
+              <thead><tr><th>{fr ? "Marque" : "Brand"}</th><th>{fr ? "Canal" : "Channel"}</th><th>{fr ? "Identifiant du magasin" : "Store id"}</th><th>Clover</th><th>{fr ? "Acceptation automatique" : "Auto-accept"}</th><th>{fr ? "Statut" : "Status"}</th><th></th></tr></thead>
               <tbody>
                 {loc.stores.map((s) => (
                   <tr key={s.id}>
@@ -182,9 +184,9 @@ export default function StoresPage() {
                     <td style={{ whiteSpace: 'nowrap' }}>
                       {s.online
                         ? <button className="btn-sm btn-danger" disabled={!!busy} onClick={() => setOnline([s.id], false)}>Pause</button>
-                        : <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => setOnline([s.id], true)}>Resume</button>}
-                      {' '}<button className="btn-sm btn-light" onClick={() => setForm({ channel: s.channel, channelStoreId: s.channelStoreId, brandName: s.brandName, locationCode: s.locationCode, cloverMerchantId: s.cloverMerchantId || '', autoAccept: s.autoAccept })}>Edit</button>
-                      {' '}<button className="btn-sm btn-light" onClick={() => remove(s.id)}>Remove</button>
+                        : <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => setOnline([s.id], true)}>{fr ? "Reprendre" : "Resume"}</button>}
+                      {' '}<button className="btn-sm btn-light" onClick={() => setForm({ channel: s.channel, channelStoreId: s.channelStoreId, brandName: s.brandName, locationCode: s.locationCode, cloverMerchantId: s.cloverMerchantId || '', autoAccept: s.autoAccept })}>{fr ? "Modifier" : "Edit"}</button>
+                      {' '}<button className="btn-sm btn-light" onClick={() => remove(s.id)}>{fr ? "Retirer" : "Remove"}</button>
                     </td>
                   </tr>
                 ))}
@@ -196,21 +198,21 @@ export default function StoresPage() {
 
       <Section title="Add or update a store mapping" right={<button className="btn-sm btn-light" disabled={!!busy} onClick={discover}>{busy === 'discover' ? 'Asking Uber…' : 'Discover Uber stores'}</button>}>
         <div className="fh-row" style={{ alignItems: 'flex-end' }}>
-          <label className="small">Channel<br /><select value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })}>{CHANNELS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
-          <label className="small">Store id<br /><input value={form.channelStoreId} placeholder={hint} onChange={(e) => setForm({ ...form, channelStoreId: e.target.value })} style={{ minWidth: 220 }} /></label>
-          <label className="small">Brand<br /><select value={form.brandName} onChange={(e) => setForm({ ...form, brandName: e.target.value })}>{brands.map((b) => <option key={b}>{b}</option>)}</select></label>
-          <label className="small">Location<br /><select value={form.locationCode} onChange={(e) => setForm({ ...form, locationCode: e.target.value })}>{activeLocations.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</select></label>
-          <label className="small">Clover merchant id (optional)<br /><input value={form.cloverMerchantId} placeholder="default merchant" onChange={(e) => setForm({ ...form, cloverMerchantId: e.target.value })} /></label>
+          <label className="small">{fr ? "Canal" : "Channel"}<br /><select value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })}>{CHANNELS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label>
+          <label className="small">{fr ? "Identifiant du magasin" : "Store id"}<br /><input value={form.channelStoreId} placeholder={hint} onChange={(e) => setForm({ ...form, channelStoreId: e.target.value })} style={{ minWidth: 220 }} /></label>
+          <label className="small">{fr ? "Marque" : "Brand"}<br /><select value={form.brandName} onChange={(e) => setForm({ ...form, brandName: e.target.value })}>{brands.map((b) => <option key={b}>{b}</option>)}</select></label>
+          <label className="small">{fr ? "Emplacement" : "Location"}<br /><select value={form.locationCode} onChange={(e) => setForm({ ...form, locationCode: e.target.value })}>{activeLocations.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}</select></label>
+          <label className="small">{fr ? "Identifiant marchand Clover (facultatif)" : "Clover merchant id (optional)"}<br /><input value={form.cloverMerchantId} placeholder="default merchant" onChange={(e) => setForm({ ...form, cloverMerchantId: e.target.value })} /></label>
           <label className="small fh-row"><input type="checkbox" checked={form.autoAccept} onChange={(e) => setForm({ ...form, autoAccept: e.target.checked })} /> Auto-accept</label>
         </div>
         <div style={{ marginTop: 12 }}><button disabled={!!busy || !form.channelStoreId || !form.brandName} onClick={save}>{busy === 'save' ? 'Saving…' : 'Save mapping'}</button></div>
         {discovered.length > 0 && (
           <table style={{ marginTop: 14 }}>
-            <thead><tr><th>Uber store</th><th>Store id</th><th></th></tr></thead>
+            <thead><tr><th>{fr ? "Magasin Uber" : "Uber store"}</th><th>{fr ? "Identifiant du magasin" : "Store id"}</th><th></th></tr></thead>
             <tbody>
               {discovered.map((d) => (
                 <tr key={d.id}><td>{d.name}<div className="small">{d.address}</div></td><td className="fh-mono">{d.id}</td>
-                  <td><button className="btn-sm btn-light" onClick={() => setForm({ ...form, channel: 'uber_eats', channelStoreId: d.id })}>Use</button></td></tr>
+                  <td><button className="btn-sm btn-light" onClick={() => setForm({ ...form, channel: 'uber_eats', channelStoreId: d.id })}>{fr ? "Utiliser" : "Use"}</button></td></tr>
               ))}
             </tbody>
           </table>
@@ -221,16 +223,17 @@ export default function StoresPage() {
 }
 
 function PrepRow({ code, value, editable, busy, onSave }: { code: string; value?: { normal: number; busy: number; isBusy: boolean }; editable: boolean; busy: boolean; onSave: (code: string, patch: Partial<{ normal: number; busy: number; isBusy: boolean }>) => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [normal, setNormal] = useState(value?.normal ?? 15);
   const [busyMin, setBusyMin] = useState(value?.busy ?? 25);
   useEffect(() => { if (value) { setNormal(value.normal); setBusyMin(value.busy); } }, [value]);
   const changed = value ? normal !== value.normal || busyMin !== value.busy : false;
   return (
     <div className="fh-row fh-prep">
-      <strong className="small">Kitchen prep time</strong>
+      <strong className="small">{fr ? "Temps de préparation en cuisine" : "Kitchen prep time"}</strong>
       <label className="small">normal <input type="number" min={1} max={180} value={normal} disabled={!editable} onChange={(e) => setNormal(Number(e.target.value))} style={{ width: 64 }} /> min</label>
       <label className="small">busy <input type="number" min={1} max={180} value={busyMin} disabled={!editable} onChange={(e) => setBusyMin(Number(e.target.value))} style={{ width: 64 }} /> min</label>
-      {editable && changed && <button className="btn-sm" disabled={busy} onClick={() => onSave(code, { normal, busy: busyMin })}>Save</button>}
+      {editable && changed && <button className="btn-sm" disabled={busy} onClick={() => onSave(code, { normal, busy: busyMin })}>{fr ? "Enregistrer" : "Save"}</button>}
       {editable
         ? <button className={`btn-sm ${value?.isBusy ? 'btn-danger' : 'btn-light'}`} disabled={busy} aria-pressed={Boolean(value?.isBusy)} onClick={() => onSave(code, { isBusy: !value?.isBusy })}>{value?.isBusy ? 'Busy mode ON — turn off' : 'Turn on busy mode'}</button>
         : <span className="small">{value?.isBusy ? 'Busy mode on' : ''}</span>}

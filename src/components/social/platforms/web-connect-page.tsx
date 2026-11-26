@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { WebSiteConnectDialog } from "@/components/social/connections/web-site-connect-dialog";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export function WebConnectPage({
   activeBrandId,
@@ -20,13 +21,14 @@ export function WebConnectPage({
   accountName: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-sm font-medium text-slate-500">Analytics</p>
+        <p className="text-sm font-medium text-slate-500">{fr ? "Statistiques" : "Analytics"}</p>
         <h1 className="mt-1 text-3xl font-semibold text-slate-950">Web</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
           Connect a public website to this brand. A homepage verification tag
@@ -37,7 +39,7 @@ export function WebConnectPage({
       {resolutionIssue === "ambiguous" ? (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-7">
           <h2 className="text-xl font-semibold text-slate-950">
-            More than one website is connected
+            {fr ? "Plus d’un site est branché" : "More than one website is connected"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-700">
             Disconnect the extra website from connections, then keep a single
@@ -47,7 +49,7 @@ export function WebConnectPage({
       ) : isConnected && siteUrl ? (
         <section className="rounded-2xl border border-slate-200 bg-white px-6 py-7">
           <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-            Website
+            {fr ? "Site Web" : "Website"}
           </p>
           <h2 className="mt-2 text-2xl font-semibold text-slate-950">
             {accountName ?? siteUrl}
@@ -68,7 +70,7 @@ export function WebConnectPage({
       ) : (
         <section className="rounded-2xl border border-[#b8c1ff] bg-[#f0f1ff] px-6 py-7">
           <h2 className="text-xl font-semibold text-slate-950">
-            Connect your website
+            {fr ? "Branchez votre site Web" : "Connect your website"}
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
             Enter the public https address. TAKATAK gives you a tag to place on
@@ -76,11 +78,11 @@ export function WebConnectPage({
           </p>
           {!activeBrandId ? (
             <p className="mt-4 text-sm text-amber-800">
-              Select or create a brand before connecting a website.
+              {fr ? "Choisissez ou créez une marque avant de brancher un site." : "Select or create a brand before connecting a website."}
             </p>
           ) : !canManage ? (
             <p className="mt-4 text-sm text-slate-600">
-              You can view connections, but you cannot change them.
+              {fr ? "Vous pouvez voir les connexions, mais pas les modifier." : "You can view connections, but you cannot change them."}
             </p>
           ) : (
             <button
@@ -88,7 +90,7 @@ export function WebConnectPage({
               onClick={() => setOpen(true)}
               className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-[#8790f6] px-5 text-sm font-semibold text-white transition hover:bg-[#7883ec]"
             >
-              Connect a web page
+              {fr ? "Brancher une page Web" : "Connect a web page"}
             </button>
           )}
         </section>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Choice = {
   id: string;
@@ -61,6 +62,7 @@ export function GoogleAdsConnectPage({
   currency?: string | null;
   choices?: Choice[];
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
@@ -204,7 +206,7 @@ export function GoogleAdsConnectPage({
         <section className="flex flex-col gap-5 rounded-[18px] border border-[#e1e4e7] bg-white px-7 py-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-              Ad account
+              {fr ? "Compte publicitaire" : "Ad account"}
             </p>
             <h2 className="mt-1 truncate text-[18px] font-semibold text-[#20242A]">
               {connectedLabel ?? "Google Ads account"}
@@ -221,14 +223,14 @@ export function GoogleAdsConnectPage({
       {state === "choose" ? (
         <section className="rounded-[18px] border border-[#c9dcff] bg-[#f3f7ff] px-7 py-6">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            Choose a Google Ads account
+            {fr ? "Choisir un compte Google Ads" : "Choose a Google Ads account"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
             This Google login can access more than one ad account. Connect one
             account to this brand.
           </p>
           <fieldset className="mt-5 space-y-2">
-            <legend className="sr-only">Google Ads accounts</legend>
+            <legend className="sr-only">{fr ? "Comptes Google Ads" : "Google Ads accounts"}</legend>
             {choices.map((choice) => (
               <label
                 key={choice.id}
@@ -272,7 +274,7 @@ export function GoogleAdsConnectPage({
               }}
               className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[#c5ced6] bg-white px-5 text-sm font-semibold text-[#30343a] disabled:opacity-60"
             >
-              Use a different Google account
+              {fr ? "Utiliser un autre compte Google" : "Use a different Google account"}
             </button>
           </div>
         </section>
@@ -281,7 +283,7 @@ export function GoogleAdsConnectPage({
       {state === "empty" ? (
         <section className="rounded-[18px] border border-[#c9dcff] bg-[#f3f7ff] px-7 py-6">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            No ad account was available
+            {fr ? "Aucun compte publicitaire disponible" : "No ad account was available"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
             This Google login does not have a Google Ads account we can read.
@@ -310,7 +312,7 @@ export function GoogleAdsConnectPage({
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-                Connect a Google Ads account
+                {fr ? "Brancher un compte Google Ads" : "Connect a Google Ads account"}
               </h2>
               <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
                 Sign in with Google to choose an ad account for this brand.

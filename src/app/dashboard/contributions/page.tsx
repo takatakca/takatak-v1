@@ -17,7 +17,7 @@ export default async function ContributionsPage() {
           TAKATAK Community Content Engine
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-          Content moderation
+          Modération du contenu · Content moderation
         </h1>
         <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
           Review community-proposed edits for AHMV posts, news, photos, galleries, arenas,
@@ -32,12 +32,12 @@ export default async function ContributionsPage() {
           <p className="mt-1 text-xl font-semibold text-slate-950">1–7 days</p>
         </div>
         <div className="rounded-xl border border-orange-200 bg-orange-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">Paid member</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-orange-700">Membre payant · Paid member</p>
           <p className="mt-1 text-xl font-semibold text-orange-950">48 hours</p>
         </div>
         <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Authority</p>
-          <p className="mt-1 text-xl font-semibold text-slate-950">Human approval</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Autorité · Authority</p>
+          <p className="mt-1 text-xl font-semibold text-slate-950">Approbation humaine · Human approval</p>
         </div>
       </section>
 

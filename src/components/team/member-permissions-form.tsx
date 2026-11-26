@@ -17,6 +17,7 @@ import {
   ALL_PERMISSIONS,
   type Permission,
 } from "@/lib/security/roles";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type PermissionState = "inherit" | "grant" | "deny";
 
@@ -69,6 +70,7 @@ export function MemberPermissionsForm({
   deniedPermissions,
   assignablePermissions,
 }: MemberPermissionsFormProps) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const submissionInProgress = useRef(false);
 
@@ -272,7 +274,7 @@ export function MemberPermissionsForm({
           className="h-4 w-4"
         />
 
-        Edit permissions
+        {fr ? "Modifier les autorisations" : "Edit permissions"}
       </button>
 
       {open ? (
@@ -297,7 +299,7 @@ export function MemberPermissionsForm({
                   id={`permission-title-${membershipId}`}
                   className="text-lg font-semibold text-slate-950"
                 >
-                  Custom permissions
+                  {fr ? "Autorisations sur mesure" : "Custom permissions"}
                 </h2>
 
                 <p className="mt-1 text-sm text-slate-500">
@@ -373,24 +375,24 @@ export function MemberPermissionsForm({
                           className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                         >
                           <option value="inherit">
-                            Inherit from role
+                            {fr ? "Hériter du rôle" : "Inherit from role"}
                           </option>
 
                           <option
                             value="grant"
                             disabled={!canGrant}
                           >
-                            Grant permission
+                            {fr ? "Accorder l’autorisation" : "Grant permission"}
                           </option>
 
                           <option value="deny">
-                            Deny permission
+                            {fr ? "Refuser l’autorisation" : "Deny permission"}
                           </option>
                         </select>
 
                         {!canGrant ? (
                           <p className="mt-2 text-xs text-slate-400">
-                            You cannot grant this permission.
+                            {fr ? "Vous ne pouvez pas accorder cette autorisation." : "You cannot grant this permission."}
                           </p>
                         ) : null}
                       </div>
@@ -425,7 +427,7 @@ export function MemberPermissionsForm({
                     disabled={loading}
                     className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    Cancel
+                    {fr ? "Annuler" : "Cancel"}
                   </button>
 
                   <button

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export const MK_LABEL: Record<string, string> = { uber_eats: 'Uber Eats', doordash: 'DoorDash', skip: 'Skip', tgtg: 'TGTG', other: 'Other' };
 export const LOCATIONS = [
@@ -38,19 +39,21 @@ export function ago(iso: string) {
 }
 
 export function ModeBanner({ mode }: { mode?: string }) {
+  const fr = useDashboardLanguage() === "fr";
   if (mode !== 'memory') return null;
   return (
     <div className="fh-banner warn">
-      Test mode: the Food Hub database is not reachable, so data is kept in memory and lost on restart. Check the TAKATAK Supabase keys and apply the migrations (npm run db:deploy).
+      {fr ? "Mode test : la base de données Food Hub est injoignable, les données restent en mémoire et se perdent au redémarrage. Vérifiez les clés Supabase de TAKATAK et appliquez les migrations (npm run db:deploy)." : "Test mode: the Food Hub database is not reachable, so data is kept in memory and lost on restart. Check the TAKATAK Supabase keys and apply the migrations (npm run db:deploy)."}
     </div>
   );
 }
 
 export function ResultsTable({ results }: { results: Array<{ channel: string; brandName: string; locationCode: string; channelStoreId: string; result: { status: string; message: string } }> }) {
+  const fr = useDashboardLanguage() === "fr";
   if (!results?.length) return null;
   return (
     <table className="fh-result">
-      <thead><tr><th>Channel</th><th>Store</th><th>Result</th></tr></thead>
+      <thead><tr><th>{fr ? "Canal" : "Channel"}</th><th>{fr ? "Magasin" : "Store"}</th><th>{fr ? "Résultat" : "Result"}</th></tr></thead>
       <tbody>
         {results.map((r, i) => (
           <tr key={i}>
@@ -130,6 +133,7 @@ export const REASONS: Array<[string, string]> = [
 
 /** Reject / cancel with a standard reason (mapped to each platform's own codes on the server). */
 export function ReasonDialog({ title, note, onPick, onClose }: { title: string; note?: string; onPick: (code: string, details: string) => void; onClose: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [code, setCode] = useState('out_of_stock');
   const [details, setDetails] = useState('');
   return (
@@ -142,8 +146,8 @@ export function ReasonDialog({ title, note, onPick, onClose }: { title: string; 
       </div>
       <input style={{ width: '100%', marginTop: 8 }} placeholder="Details (optional)" value={details} onChange={(e) => setDetails(e.target.value)} />
       <div className="fh-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
-        <button className="btn-light" onClick={onClose}>Back</button>
-        <button className="btn-danger" onClick={() => onPick(code, details)}>Confirm</button>
+        <button className="btn-light" onClick={onClose}>{fr ? "Retour" : "Back"}</button>
+        <button className="btn-danger" onClick={() => onPick(code, details)}>{fr ? "Confirmer" : "Confirm"}</button>
       </div>
     </Modal>
   );
@@ -202,18 +206,19 @@ export function useNotify() {
 }
 
 export function NotifyPanel({ settings, update, onClose }: { settings: NotifySettings; update: (p: Partial<NotifySettings>) => void; onClose: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <Modal title="Alerts on this screen" onClose={onClose}>
       <div className="fh-col-form">
         <label className="fh-row"><input type="checkbox" checked={settings.sound} onChange={(e) => update({ sound: e.target.checked })} /> Sound for new orders</label>
-        <label className="fh-row small">Tone <select value={settings.tone} onChange={(e) => update({ tone: e.target.value as NotifySettings['tone'] })}><option value="chime">Chime</option><option value="bell">Bell</option><option value="beep">Beep</option></select>
-          <button className="btn-sm btn-light" onClick={() => playTone(settings.tone)}>Test</button></label>
+        <label className="fh-row small">Tone <select value={settings.tone} onChange={(e) => update({ tone: e.target.value as NotifySettings['tone'] })}><option value="chime">{fr ? "Carillon" : "Chime"}</option><option value="bell">{fr ? "Cloche" : "Bell"}</option><option value="beep">{fr ? "Bip" : "Beep"}</option></select>
+          <button className="btn-sm btn-light" onClick={() => playTone(settings.tone)}>{fr ? "Tester" : "Test"}</button></label>
         <label className="fh-row"><input type="checkbox" checked={settings.repeat} onChange={(e) => update({ repeat: e.target.checked })} /> Repeat every 20 s until every new order is handled</label>
         <label className="fh-row"><input type="checkbox" checked={settings.cancellations} onChange={(e) => update({ cancellations: e.target.checked })} /> Alert when a platform cancels an order</label>
         <label className="fh-row"><input type="checkbox" checked={settings.critical} onChange={(e) => update({ critical: e.target.checked })} /> Alert on critical problems (Clover down, store deactivated)</label>
         <label className="fh-row"><input type="checkbox" checked={settings.desktop} onChange={(e) => update({ desktop: e.target.checked })} /> Desktop notifications when this tab is in the background</label>
         <label className="fh-row"><input type="checkbox" checked={settings.keepAwake} onChange={(e) => update({ keepAwake: e.target.checked })} /> Keep this screen on (kitchen tablet / wall screen)</label>
-        <p className="small">Install as an app: on iPad, Share → <em>Add to Home Screen</em>; on Android / Chrome, menu → <em>Install app</em>.</p>
+        <p className="small">Install as an app: on iPad, Share → <em>{fr ? "Ajouter à l’écran d’accueil" : "Add to Home Screen"}</em>; on Android / Chrome, menu → <em>{fr ? "Installer l’app" : "Install app"}</em>.</p>
         <p className="small">These settings are saved on this device only — set them on each screen (kitchen tablet, office PC).</p>
       </div>
     </Modal>
@@ -279,11 +284,12 @@ export function useFilters(defaultPreset: RangePreset = '7d') {
 }
 
 export function MultiPick({ label, options, value, onChange }: { label: string; options: Array<[string, string]>; value: string[]; onChange: (v: string[]) => void }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <details className="fh-pick">
       <summary>{label}: {value.length === 0 ? 'All' : value.length === 1 ? options.find(([k]) => k === value[0])?.[1] ?? value[0] : `${value.length} selected`}</summary>
       <div className="fh-pick-menu">
-        <button className="btn-sm btn-light" onClick={() => onChange([])}>All</button>
+        <button className="btn-sm btn-light" onClick={() => onChange([])}>{fr ? "Tous" : "All"}</button>
         {options.map(([k, l]) => (
           <label key={k} className="fh-row"><input type="checkbox" checked={value.includes(k)} onChange={(e) => onChange(e.target.checked ? [...value, k] : value.filter((x) => x !== k))} /> {l}</label>
         ))}
@@ -352,6 +358,7 @@ export function weekProblems(week: Week): string[] {
 
 /** One row per day, several open/close slots per day. A slot that closes after midnight (18:00–02:00) is allowed. */
 export function WeekEditor({ value, onChange, disabled }: { value: Week; onChange: (w: Week) => void; disabled?: boolean }) {
+  const fr = useDashboardLanguage() === "fr";
   const setDay = (day: string, slots: Slot[]) => onChange({ ...value, [day]: slots });
   const copyToAll = (day: string) => onChange(Object.fromEntries(WEEK_DAYS.map(([d]) => [d, (value[day] ?? []).map((s) => ({ ...s }))])));
   return (
@@ -362,7 +369,7 @@ export function WeekEditor({ value, onChange, disabled }: { value: Week; onChang
           <div key={day} className="fh-week-row">
             <span className="fh-week-day">{label}</span>
             <div className="fh-row" style={{ flex: 1 }}>
-              {slots.length === 0 && <span className="fh-chip st-cancelled">Closed</span>}
+              {slots.length === 0 && <span className="fh-chip st-cancelled">{fr ? "Fermé" : "Closed"}</span>}
               {slots.map((s, i) => (
                 <span key={i} className="fh-slot">
                   <input type="time" value={s.open} disabled={disabled} aria-label={`${label} opens`} onChange={(e) => setDay(day, slots.map((x, j) => (j === i ? { ...x, open: e.target.value } : x)))} />
@@ -377,7 +384,7 @@ export function WeekEditor({ value, onChange, disabled }: { value: Week; onChang
               <span className="fh-row">
                 <button className="btn-sm btn-light" onClick={() => setDay(day, [...slots, slots.length ? { open: '17:00', close: '22:00' } : { open: '11:00', close: '23:00' }])}>+ slot</button>
                 <button className="btn-sm btn-light" onClick={() => setDay(day, [{ open: '00:00', close: '23:59' }])} title="Open all day">24 h</button>
-                <button className="btn-sm btn-light" onClick={() => copyToAll(day)} title="Copy this day to every day">Copy to all</button>
+                <button className="btn-sm btn-light" onClick={() => copyToAll(day)} title="Copy this day to every day">{fr ? "Copier partout" : "Copy to all"}</button>
               </span>
             )}
           </div>

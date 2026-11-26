@@ -3,6 +3,7 @@
 import { Check, Gem, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PRIMARY_FEATURES = [
   "Owner, admin, manager, editor, staff, or viewer.",
@@ -48,6 +49,7 @@ export function RolesPremiumModal({
   billingHref: string;
   onClose: () => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const onCloseRef = useRef(onClose);
 
   useLayoutEffect(() => {
@@ -107,12 +109,12 @@ export function RolesPremiumModal({
                   id="roles-premium-title"
                   className="text-[22px] font-bold tracking-tight text-[#1d1d1f]"
                 >
-                  Roles and permissions
+                  {fr ? "Rôles et autorisations" : "Roles and permissions"}
                 </h2>
               </div>
 
               <h3 className="mt-6 max-w-[380px] text-[18px] font-semibold leading-7 text-[#1d1d1f]">
-                Divide and conquer: assign roles to your team members.
+                {fr ? "Répartissez le travail : donnez un rôle à chaque membre de l’équipe." : "Divide and conquer: assign roles to your team members."}
               </h3>
               <p className="mt-3 max-w-[380px] text-[15px] leading-6 text-[#5b5b5b]">
                 Create a role for each job on the team. Agencies that manage
@@ -141,7 +143,7 @@ export function RolesPremiumModal({
                   onClick={onClose}
                   className="inline-flex h-10 min-w-[118px] items-center justify-center rounded-md border border-[#d0d0d0] bg-white px-4 text-[14px] font-medium text-[#1d1d1f] transition hover:bg-slate-50"
                 >
-                  Maybe later
+                  {fr ? "Plus tard" : "Maybe later"}
                 </button>
                 <Link
                   href={billingHref}
@@ -149,7 +151,7 @@ export function RolesPremiumModal({
                   className="inline-flex h-10 min-w-[148px] items-center justify-center gap-2 rounded-md bg-[#2a1728] px-4 text-[14px] font-semibold text-[#dfff32] transition hover:bg-[#3b2438]"
                 >
                   <GemCircle size="sm" />
-                  Upgrade plan
+                  {fr ? "Changer de forfait" : "Upgrade plan"}
                 </Link>
               </div>
             </div>

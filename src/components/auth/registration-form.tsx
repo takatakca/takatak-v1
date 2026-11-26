@@ -32,6 +32,7 @@ import {
   formatAuthErrorMessage,
   parseAuthResponse,
 } from "@/lib/auth/parse-auth-response";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const INITIAL_VALUES: RegistrationInput = {
   firstName: "",
@@ -66,6 +67,7 @@ function FieldError({
 }
 
 export function RegistrationForm() {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const formReference = useRef<HTMLFormElement>(null);
   const submissionInProgressReference = useRef(false);
@@ -359,7 +361,7 @@ export function RegistrationForm() {
             htmlFor="firstName"
             className="mb-1.5 block text-xs font-semibold text-foreground"
           >
-            First Name
+            {fr ? "Prénom" : "First Name"}
           </label>
 
           <div className="relative">
@@ -409,7 +411,7 @@ export function RegistrationForm() {
             htmlFor="lastName"
             className="mb-1.5 block text-xs font-semibold text-foreground"
           >
-            Last Name
+            {fr ? "Nom" : "Last Name"}
           </label>
 
           <div className="relative">
@@ -460,7 +462,7 @@ export function RegistrationForm() {
           htmlFor="email"
           className="mb-1.5 block text-xs font-semibold text-foreground"
         >
-          Email
+          {fr ? "Courriel" : "Email"}
         </label>
 
         <div className="relative">
@@ -506,7 +508,7 @@ export function RegistrationForm() {
           htmlFor="phone"
           className="mb-1.5 block text-xs font-semibold text-foreground"
         >
-          Phone
+          {fr ? "Téléphone" : "Phone"}
         </label>
 
         <div className="relative">
@@ -548,7 +550,7 @@ export function RegistrationForm() {
           htmlFor="password"
           className="mb-1.5 block text-xs font-semibold text-foreground"
         >
-          Password
+          {fr ? "Mot de passe" : "Password"}
         </label>
 
         <div className="relative">
@@ -620,7 +622,7 @@ export function RegistrationForm() {
         >
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-foreground">
-              Password strength
+              {fr ? "Force du mot de passe" : "Password strength"}
             </p>
 
             <p
@@ -681,7 +683,7 @@ export function RegistrationForm() {
           htmlFor="confirmPassword"
           className="mb-1.5 block text-xs font-semibold text-foreground"
         >
-          Confirm Password
+          {fr ? "Confirmer le mot de passe" : "Confirm Password"}
         </label>
 
         <div className="relative">
@@ -789,14 +791,14 @@ export function RegistrationForm() {
               href="/terms"
               className="font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              Terms
+              {fr ? "Conditions" : "Terms"}
             </Link>{" "}
             and{" "}
             <Link
               href="/privacy"
               className="font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              Privacy Policy
+              {fr ? "Politique de confidentialité" : "Privacy Policy"}
             </Link>
             .
           </label>
@@ -852,7 +854,7 @@ export function RegistrationForm() {
           href="/login"
           className="font-semibold text-primary hover:opacity-80 focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          Go to Login
+          {fr ? "Aller à la connexion" : "Go to Login"}
         </Link>
       </p>
     </form>

@@ -7,6 +7,7 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { validateInvoiceDraftInput } from "@/lib/billing/invoices/draft-input";
 import { dollarsToCents, percentToMilliPercent } from "@/lib/billing/invoices/money-input";
 import { estimateInvoice, formatCad } from "@/lib/billing/invoices/preview";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type LineState = {
   description: string;
@@ -50,6 +51,7 @@ const INPUT =
   "w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100";
 
 export function ManualInvoiceRequestForm() {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [sourceReference, setSourceReference] = useState(newReference);
   const [customerName, setCustomerName] = useState("");
@@ -184,29 +186,29 @@ export function ManualInvoiceRequestForm() {
     >
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-xs font-medium text-slate-600">
-          Customer name
+          {fr ? "Nom du client" : "Customer name"}
           <input className={INPUT} value={customerName} maxLength={160} onChange={(e) => setCustomerName(e.target.value)} />
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-600">
-          Customer email
+          {fr ? "Courriel du client" : "Customer email"}
           <input className={INPUT} type="email" value={customerEmail} maxLength={254} onChange={(e) => setCustomerEmail(e.target.value)} />
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-600 sm:col-span-2">
-          Address (optional)
+          {fr ? "Adresse (facultatif)" : "Address (optional)"}
           <input className={INPUT} value={customerAddress} maxLength={500} onChange={(e) => setCustomerAddress(e.target.value)} />
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-600">
-          Invoice date
+          {fr ? "Date de la facture" : "Invoice date"}
           <input className={INPUT} type="date" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-600">
-          Due date
+          {fr ? "Échéance" : "Due date"}
           <input className={INPUT} type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
         </label>
       </div>
 
       <fieldset className="space-y-2">
-        <legend className="text-xs font-semibold text-slate-700">Lines (CAD)</legend>
+        <legend className="text-xs font-semibold text-slate-700">{fr ? "Lignes (CAD)" : "Lines (CAD)"}</legend>
         {lines.map((line, index) => (
           <div key={index} className="grid grid-cols-12 items-end gap-2">
             <label className="col-span-12 space-y-1 text-xs text-slate-600 sm:col-span-6">
@@ -214,7 +216,7 @@ export function ManualInvoiceRequestForm() {
               <input className={INPUT} value={line.description} maxLength={250} onChange={(e) => updateLine(index, { description: e.target.value })} />
             </label>
             <label className="col-span-3 space-y-1 text-xs text-slate-600 sm:col-span-1">
-              Qty
+              {fr ? "Qté" : "Qty"}
               <input className={INPUT} inputMode="numeric" value={line.quantity} onChange={(e) => updateLine(index, { quantity: e.target.value })} />
             </label>
             <label className="col-span-5 space-y-1 text-xs text-slate-600 sm:col-span-2">
@@ -257,7 +259,7 @@ export function ManualInvoiceRequestForm() {
               <input className={INPUT} value={tax.code} maxLength={20} onChange={(e) => updateTax(index, { code: e.target.value })} />
             </label>
             <label className="col-span-5 space-y-1 text-xs text-slate-600">
-              Label
+              {fr ? "Étiquette" : "Label"}
               <input className={INPUT} value={tax.label} maxLength={80} onChange={(e) => updateTax(index, { label: e.target.value })} />
             </label>
             <label className="col-span-3 space-y-1 text-xs text-slate-600">
@@ -298,7 +300,7 @@ export function ManualInvoiceRequestForm() {
       </fieldset>
 
       <label className="block space-y-1 text-xs font-medium text-slate-600">
-        Notes (optional)
+        {fr ? "Notes (facultatif)" : "Notes (optional)"}
         <textarea className={INPUT} rows={2} value={notes} maxLength={1000} onChange={(e) => setNotes(e.target.value)} />
       </label>
 

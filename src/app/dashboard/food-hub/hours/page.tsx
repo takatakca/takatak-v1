@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, fullWeekUi, MultiPick, Section, useCatalog, useMe, WEEK_DAYS, WeekEditor, weekProblems, type Slot, type Week } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Holiday = { id: string; date: string; name: string; locationCodes: string[]; closed: boolean; slots?: Slot[] };
 type Hours = { locations: Record<string, Week>; brands: Record<string, Week>; holidays: Holiday[]; updatedAt?: string };
@@ -20,6 +21,7 @@ function slotsLabel(w?: Week) {
 
 // Store hours (Atlas "Store hours, holiday hours & category schedules").
 export default function HoursPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { activeLocations, locName, brands } = useCatalog();
   const { can } = useMe();
   const [hours, setHours] = useState<Hours | null>(null);
@@ -79,7 +81,7 @@ export default function HoursPage() {
     setBusy('');
   }
 
-  if (!hours) return <div><h1>Store hours</h1><p className="small">{msg || 'Loading…'}</p></div>;
+  if (!hours) return <div><h1>{fr ? "Heures du magasin" : "Store hours"}</h1><p className="small">{msg || 'Loading…'}</p></div>;
   const locWeek = hours.locations[loc];
   const brandWeek = hours.brands[brand];
   const upcoming = [...hours.holidays].sort((a, b) => a.date.localeCompare(b.date));
@@ -89,7 +91,7 @@ export default function HoursPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Store hours</h1>
+          <h1>{fr ? "Heures du magasin" : "Store hours"}</h1>
           <div className="small">Opening hours per location, brand exceptions and holidays — published to every platform with the menu. Times are Montréal time.</div>
         </div>
         {editable && (
@@ -103,7 +105,7 @@ export default function HoursPage() {
       {problems.length > 0 && <div className="fh-banner warn">{problems.slice(0, 4).join(' · ')}</div>}
       {published.length > 0 && (
         <table className="fh-result" style={{ marginBottom: 14 }}>
-          <thead><tr><th>Brand</th><th>Result</th></tr></thead>
+          <thead><tr><th>{fr ? "Marque" : "Brand"}</th><th>{fr ? "Résultat" : "Result"}</th></tr></thead>
           <tbody>{published.map((r) => <tr key={r.brand}><td>{r.brand}</td><td><span className={`badge ${r.ok ? 'badge-green' : 'badge-red'}`}>{r.ok ? 'sent' : 'check'}</span> <span className="small">{r.message}</span></td></tr>)}</tbody>
         </table>
       )}
@@ -133,7 +135,7 @@ export default function HoursPage() {
                     <button key={l.code} className="btn-sm btn-light" onClick={() => patch((h) => ({ ...h, locations: { ...h.locations, [l.code]: JSON.parse(JSON.stringify(locWeek)) } }))}>{l.name}</button>
                   ))}
                   <span className="cc-grow" />
-                  <button className="btn-sm btn-light" onClick={() => { if (window.confirm(`Remove the hours for ${locName(loc)}?`)) patch((h) => { const next = { ...h.locations }; delete next[loc]; return { ...h, locations: next }; }); }}>Remove hours</button>
+                  <button className="btn-sm btn-light" onClick={() => { if (window.confirm(`Remove the hours for ${locName(loc)}?`)) patch((h) => { const next = { ...h.locations }; delete next[loc]; return { ...h, locations: next }; }); }}>{fr ? "Retirer les heures" : "Remove hours"}</button>
                 </div>
               )}
             </>
@@ -143,13 +145,13 @@ export default function HoursPage() {
 
       {tab === 'brands' && (
         <Section title="Brand exceptions" right={<select value={brand} onChange={(e) => setBrand(e.target.value)}>{brandNames.map((b) => <option key={b} value={b}>{b}{hours.brands[b] ? ' — custom hours' : ''}</option>)}</select>}>
-          <p className="small">A brand exception replaces the location hours for that brand at every location (for example a breakfast-only brand). Leave it off to follow the location hours.</p>
+          <p className="small">{fr ? "Une exception de marque remplace les heures de l’emplacement pour cette marque partout (par exemple une marque déjeuner seulement). Laissez-la désactivée pour suivre les heures de l’emplacement." : "A brand exception replaces the location hours for that brand at every location (for example a breakfast-only brand). Leave it off to follow the location hours."}</p>
           {!brandWeek ? (
             editable && <button onClick={() => patch((h) => ({ ...h, brands: { ...h.brands, [brand]: hours.locations[loc] ? JSON.parse(JSON.stringify(hours.locations[loc])) : fullWeekUi() } }))}>Give {brand} its own hours</button>
           ) : (
             <>
               <WeekEditor value={brandWeek} disabled={!editable} onChange={(w) => patch((h) => ({ ...h, brands: { ...h.brands, [brand]: w } }))} />
-              {editable && <button className="btn-light" style={{ marginTop: 10 }} onClick={() => patch((h) => { const next = { ...h.brands }; delete next[brand]; return { ...h, brands: next }; })}>Follow location hours again</button>}
+              {editable && <button className="btn-light" style={{ marginTop: 10 }} onClick={() => patch((h) => { const next = { ...h.brands }; delete next[brand]; return { ...h, brands: next }; })}>{fr ? "Revenir aux heures de l’emplacement" : "Follow location hours again"}</button>}
             </>
           )}
         </Section>
@@ -164,7 +166,7 @@ export default function HoursPage() {
         ) : undefined}>
           <p className="small">Closed days and special hours are sent to Uber Eats (holiday hours) and DoorDash (special hours) when you publish. SkipTheDishes has no holiday API — TAKATAK takes the Skip stores offline for the day automatically and brings them back after midnight.</p>
           <table>
-            <thead><tr><th>Date</th><th>Name</th><th>Locations</th><th>Hours</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>{fr ? "Nom" : "Name"}</th><th>{fr ? "Emplacements" : "Locations"}</th><th>{fr ? "Heures" : "Hours"}</th><th></th></tr></thead>
             <tbody>
               {upcoming.map((hol) => {
                 const set = (p: Partial<Holiday>) => patch((h) => ({ ...h, holidays: h.holidays.map((x) => (x.id === hol.id ? { ...x, ...p } : x)) }));
@@ -182,11 +184,11 @@ export default function HoursPage() {
                         </span>
                       ))}
                     </td>
-                    <td>{editable && <button className="btn-sm btn-light" onClick={() => patch((h) => ({ ...h, holidays: h.holidays.filter((x) => x.id !== hol.id) }))}>Remove</button>}</td>
+                    <td>{editable && <button className="btn-sm btn-light" onClick={() => patch((h) => ({ ...h, holidays: h.holidays.filter((x) => x.id !== hol.id) }))}>{fr ? "Retirer" : "Remove"}</button>}</td>
                   </tr>
                 );
               })}
-              {upcoming.length === 0 && <tr><td colSpan={5} className="small">No holidays yet.</td></tr>}
+              {upcoming.length === 0 && <tr><td colSpan={5} className="small">{fr ? "Aucun congé pour l’instant." : "No holidays yet."}</td></tr>}
             </tbody>
           </table>
         </Section>

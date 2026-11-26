@@ -17,8 +17,10 @@ import {
   formatAuthErrorMessage,
   parseAuthResponse,
 } from "@/lib/auth/parse-auth-response";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export function OtpForm() {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
   const submissionInProgressReference = useRef(false);
@@ -449,7 +451,7 @@ export function OtpForm() {
             htmlFor="otp-email"
             className="mb-1.5 block text-xs font-semibold text-foreground"
           >
-            Previously verified recovery email
+            {fr ? "Courriel de récupération déjà vérifié" : "Previously verified recovery email"}
           </label>
           <div className="relative">
             <Mail
@@ -499,7 +501,7 @@ export function OtpForm() {
           }}
           className="block w-full text-center text-xs font-semibold text-primary"
         >
-          Use the code already sent
+          {fr ? "Utiliser le code déjà envoyé" : "Use the code already sent"}
         </button>
       </form>
     );
@@ -519,7 +521,7 @@ export function OtpForm() {
         </p>
       ) : (
         <p className="text-sm font-medium text-rose-700">
-          No contact info found. Please return to the login page.
+          {fr ? "Aucune coordonnée trouvée. Retournez à la page de connexion." : "No contact info found. Please return to the login page."}
         </p>
       )}
 
@@ -594,13 +596,13 @@ export function OtpForm() {
           }}
           className="block w-full text-xs font-semibold text-muted-foreground hover:text-foreground"
         >
-          Sign in using an already verified recovery email
+          {fr ? "Se connecter avec un courriel de récupération déjà vérifié" : "Sign in using an already verified recovery email"}
         </button>
         <Link
           href="/login"
           className="block text-xs font-semibold text-primary"
         >
-          Go to Login
+          {fr ? "Aller à la connexion" : "Go to Login"}
         </Link>
       </div>
     </form>

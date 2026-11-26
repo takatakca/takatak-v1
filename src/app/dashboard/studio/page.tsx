@@ -9,7 +9,7 @@ import { creditsFor, takbotMode } from "@/lib/takbot/catalog";
 export const dynamic = "force-dynamic";
 export default async function StudioPage() {
   const access = await requireWorkspacePermission("create_content", "/dashboard/studio");
-  if (!studioEnabled(process.env)) return <section className="rounded-2xl border border-slate-200 bg-white p-8"><h1 className="text-2xl font-bold">TAKATAKSTUDIO</h1><p className="my-4 text-slate-600">Studio is being prepared for this platform. Existing AI Studio tools remain available.</p><Link className="text-blue-700 underline" href="/dashboard/ai-studio">Open AI Studio</Link></section>;
+  if (!studioEnabled(process.env)) return <section className="rounded-2xl border border-slate-200 bg-white p-8"><h1 className="text-2xl font-bold">TAKATAKSTUDIO</h1><p className="my-4 text-slate-600">Le Studio se prépare pour cette plateforme. Les outils actuels du Studio IA restent disponibles. · Studio is being prepared for this platform. Existing AI Studio tools remain available.</p><Link className="text-blue-700 underline" href="/dashboard/ai-studio">Ouvrir le Studio IA · Open AI Studio</Link></section>;
   const mode = takbotMode("write");
   const canConfigureOrganizer = hasEffectivePermission(access, "manage_settings") &&
     await hasOrganizerEntitlement(access.activeClientId);

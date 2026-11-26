@@ -59,22 +59,22 @@ export function ReviewDeliveryHistory({
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500">
                   <th scope="col" className="pb-3 pr-4 font-medium">
-                    Review page / recipient
+                    Page d’avis / destinataire · Review page / recipient
                   </th>
                   <th scope="col" className="pb-3 pr-4 font-medium">
-                    Channel
+                    Canal · Channel
                   </th>
                   <th scope="col" className="pb-3 pr-4 font-medium">
-                    Send outcome
+                    Résultat de l’envoi · Send outcome
                   </th>
                   <th scope="col" className="pb-3 pr-4 font-medium">
-                    Link activity
+                    Activité des liens · Link activity
                   </th>
                   <th scope="col" className="pb-3 pr-4 font-medium">
-                    Created / sent
+                    Créé / envoyé · Created / sent
                   </th>
                   <th scope="col" className="pb-3 pr-4 font-medium">
-                    Opened / rated
+                    Ouvert / noté · Opened / rated
                   </th>
                 </tr>
               </thead>
@@ -139,7 +139,7 @@ export function ReviewDeliveryHistory({
                                 : "Not opened"}
                           </Badge>
                           {expired && (
-                            <Badge tone="warning">Link expired</Badge>
+                            <Badge tone="warning">Lien expiré · Link expired</Badge>
                           )}
                         </div>
                       </td>

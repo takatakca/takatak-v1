@@ -43,7 +43,7 @@ export default async function InventoryRetailSetupPage() {
         href="/dashboard/inventory/labels"
         className="text-sm font-medium text-blue-700 underline"
       >
-        Back to label studio
+        Retour au studio d’étiquettes · Back to label studio
       </Link>
       <section className="space-y-2 rounded-xl border border-blue-200 bg-blue-50 p-5">
         <h2 className="font-bold text-[#0B1B3D]">
@@ -76,7 +76,7 @@ export default async function InventoryRetailSetupPage() {
       </div>
       <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
         <h2 className="font-bold text-[#0B1B3D]">
-          MIEL AISSA hexagonal jar reference
+          Référence du pot hexagonal MIEL AISSA · MIEL AISSA hexagonal jar reference
         </h2>
         <p className="text-sm leading-6 text-slate-600">
           The supplied Alibaba screenshot shows a clear hexagonal jar advertised
@@ -108,7 +108,7 @@ export default async function InventoryRetailSetupPage() {
           target="_blank"
           rel="noreferrer"
         >
-          GS1 guidance: keep barcodes off corners and seams
+          Conseil GS1 : gardez les codes-barres loin des coins et des joints · GS1 guidance: keep barcodes off corners and seams
         </a>
       </section>
       <div className="flex flex-wrap gap-4 text-sm text-blue-700 underline">
@@ -117,25 +117,25 @@ export default async function InventoryRetailSetupPage() {
           target="_blank"
           rel="noreferrer"
         >
-          GS1 Canada registration and fees
+          Inscription et frais GS1 Canada · GS1 Canada registration and fees
         </a>
         <a
           href="https://gs1ca.org/barcode-scan-verification/"
           target="_blank"
           rel="noreferrer"
         >
-          Barcode print verification
+          Vérification d’impression des codes-barres · Barcode print verification
         </a>
         <a
           href="https://inspection.canada.ca/en/food-labels/labelling/industry/honey"
           target="_blank"
           rel="noreferrer"
         >
-          Canadian honey label requirements
+          Exigences canadiennes d’étiquetage du miel · Canadian honey label requirements
         </a>
       </div>
       <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
-        <h2 className="text-lg font-bold">Low-cost equipment shortlist</h2>
+        <h2 className="text-lg font-bold">Liste d’équipement à petit prix · Low-cost equipment shortlist</h2>
         <p className="text-sm text-slate-600">
           Prices checked October 20, 2026, in CAD before tax, shipping, labels
           and replacement ink/toner. Recheck price, stock, Québec delivery and
@@ -168,7 +168,7 @@ export default async function InventoryRetailSetupPage() {
                   </a>
                 </td>
                 <td className="whitespace-nowrap p-3">$24.99</td>
-                <td className="p-3">Lowest new scanner price verified</td>
+                <td className="p-3">Plus bas prix vérifié d’un lecteur neuf · Lowest new scanner price verified</td>
                 <td className="p-3">
                   Select the USB variant; the default Bluetooth version costs
                   more. Marketplace shipment from China; verify keyboard mode,
@@ -187,7 +187,7 @@ export default async function InventoryRetailSetupPage() {
                   </a>
                 </td>
                 <td className="whitespace-nowrap p-3">$36.32</td>
-                <td className="p-3">Low-cost paper/screen scanning</td>
+                <td className="p-3">Lecture à petit prix sur papier ou écran · Low-cost paper/screen scanning</td>
                 <td className="p-3">
                   Marketplace seller; confirm USB keyboard mode and UPC/EAN
                   support. No reviews shown when checked.
@@ -205,7 +205,7 @@ export default async function InventoryRetailSetupPage() {
                   </a>
                 </td>
                 <td className="whitespace-nowrap p-3">$79.99</td>
-                <td className="p-3">Low upfront cost, colour sheet labels</td>
+                <td className="p-3">Peu de frais au départ, étiquettes couleur en feuilles · Low upfront cost, colour sheet labels</td>
                 <td className="p-3">
                   Ink refills and water resistance matter. Use compatible inkjet
                   label stock and test the finished label.
@@ -223,7 +223,7 @@ export default async function InventoryRetailSetupPage() {
                   </a>
                 </td>
                 <td className="whitespace-nowrap p-3">$119.99</td>
-                <td className="p-3">Black-and-white adhesive sheet batches</td>
+                <td className="p-3">Lots de feuilles adhésives noir et blanc · Black-and-white adhesive sheet batches</td>
                 <td className="p-3">
                   Use laser-compatible label stock. Cut full-sheet labels at the
                   PDF crop marks.
@@ -242,7 +242,7 @@ export default async function InventoryRetailSetupPage() {
                 </td>
                 <td className="whitespace-nowrap p-3">$99.99</td>
                 <td className="p-3">
-                  Quick black-and-white roll labels, 203 DPI
+                  Étiquettes rapides noir et blanc en rouleau, 203 ppp · Quick black-and-white roll labels, 203 DPI
                 </td>
                 <td className="p-3">
                   Direct thermal can fade with heat/light. Confirm a matching
@@ -263,7 +263,7 @@ export default async function InventoryRetailSetupPage() {
       </section>
       <section className="rounded-xl border border-slate-200 bg-white p-5 text-sm leading-6 text-slate-600">
         <h2 className="font-bold text-slate-900">
-          What you can do without a monthly EDI service
+          Ce que vous pouvez faire sans service EDI mensuel · What you can do without a monthly EDI service
         </h2>
         <p className="mt-2">
           Manage products and stock, generate and print your labels, scan your

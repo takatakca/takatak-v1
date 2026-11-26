@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { csvCell } from "@/lib/inventory/barcodes";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Product = {
   id: string;
@@ -71,6 +72,7 @@ async function request(path: string, method = "GET", body?: unknown) {
   return data;
 }
 export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
+  const fr = useDashboardLanguage() === "fr";
   const [data, setData] = useState<Directory | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true);
@@ -235,10 +237,10 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#060D1F] p-5 text-white">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#29C3FF]">
-            Your products, accounted for
+            {fr ? "Vos produits, bien comptés" : "Your products, accounted for"}
           </p>
           <p className="mt-2 text-sm text-slate-300">
-            Manage each business from your TAKATAK workspace.
+            {fr ? "Gérez chaque entreprise depuis votre espace TAKATAK." : "Manage each business from your TAKATAK workspace."}
           </p>
         </div>
         <button
@@ -251,13 +253,13 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
       </div>
       <div className="flex flex-wrap gap-3">
         <label className="min-w-56">
-          <span className="sr-only">Business</span>
+          <span className="sr-only">{fr ? "Entreprise" : "Business"}</span>
           <select
             className={input}
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
           >
-            <option value="">All businesses</option>
+            <option value="">{fr ? "Toutes les entreprises" : "All businesses"}</option>
             {data?.brands.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -342,7 +344,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
             <p className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900">
               Create a business in{" "}
               <Link href="/dashboard/brands" className="underline">
-                Businesses / Brands
+                {fr ? "Entreprises / marques" : "Businesses / Brands"}
               </Link>{" "}
               before adding products.
             </p>
@@ -382,9 +384,9 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                 >
-                  <option value="all">All stock levels</option>
-                  <option value="low">Low stock</option>
-                  <option value="out">Out of stock</option>
+                  <option value="all">{fr ? "Tous les niveaux de stock" : "All stock levels"}</option>
+                  <option value="low">{fr ? "Stock bas" : "Low stock"}</option>
+                  <option value="out">{fr ? "Rupture de stock" : "Out of stock"}</option>
                 </select>
               </div>
               <div className="overflow-x-auto">
@@ -459,7 +461,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                               disabled={!canManage}
                               onClick={() => open(p)}
                             >
-                              Edit
+                              {fr ? "Modifier" : "Edit"}
                             </button>
                             <button
                               className={button}
@@ -495,7 +497,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
           ) : null}
           {tab === "activity" ? (
             <section className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="font-semibold">Latest stock movements</h2>
+              <h2 className="font-semibold">{fr ? "Derniers mouvements de stock" : "Latest stock movements"}</h2>
               <p className="mt-1 text-xs text-slate-500">
                 Latest 100 movements across the workspace, filtered by business
                 below. Times in UTC.
@@ -535,7 +537,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                 (m) => !brand || products.some((p) => p.id === m.productId),
               ) ? (
                 <p className="mt-4 text-sm text-slate-500">
-                  No recent movements for this business.
+                  {fr ? "Aucun mouvement récent pour cette entreprise." : "No recent movements for this business."}
                 </p>
               ) : null}
             </section>
@@ -543,7 +545,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
           {tab === "barcodes" ? (
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600">
               <h2 className="text-lg font-bold text-slate-900">
-                From your shelf to the checkout
+                {fr ? "De vos tablettes jusqu’à la caisse" : "From your shelf to the checkout"}
               </h2>
               <p>
                 <b>Internal labels:</b> Code 39 encodes your SKU. Enable Code 39
@@ -636,7 +638,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1 text-sm text-slate-700">
-                  <span>Business</span>
+                  <span>{fr ? "Entreprise" : "Business"}</span>
                   <select
                     name="businessBrandId"
                     required
@@ -645,7 +647,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                     disabled={!!editing}
                   >
                     {!editing ? (
-                      <option value="">Select a business</option>
+                      <option value="">{fr ? "Choisir une entreprise" : "Select a business"}</option>
                     ) : null}
                     {data?.brands.map((b) => (
                       <option key={b.id} value={b.id}>

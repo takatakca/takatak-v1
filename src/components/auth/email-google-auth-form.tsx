@@ -9,6 +9,7 @@ import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
 import { normalizeEmail, validateEmail } from "@/lib/auth/registration-validation";
 import { formatAuthErrorMessage, parseAuthResponse } from "@/lib/auth/parse-auth-response";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Mode = "login" | "register";
 
@@ -22,6 +23,7 @@ const GOOGLE_MARK = (
 );
 
 export function EmailGoogleAuthForm({ mode, nextPath }: { mode: Mode; nextPath?: string }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const searchParams = useSearchParams();
   const inFlight = useRef(false);
@@ -113,7 +115,7 @@ export function EmailGoogleAuthForm({ mode, nextPath }: { mode: Mode; nextPath?:
     <div className="space-y-4" data-auth-form={mode}>
       <form onSubmit={handleEmail} className="space-y-4" noValidate>
         <div>
-          <label htmlFor="auth-email" className="mb-1.5 block text-xs font-semibold text-foreground">Email</label>
+          <label htmlFor="auth-email" className="mb-1.5 block text-xs font-semibold text-foreground">{fr ? "Courriel" : "Email"}</label>
           <div className="relative">
             <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input id="auth-email" type="email" autoComplete="email" inputMode="email" value={email} disabled={busy}
@@ -143,15 +145,15 @@ export function EmailGoogleAuthForm({ mode, nextPath }: { mode: Mode; nextPath?:
             onChange={(event) => { setAccepted(event.target.checked); setError(null); }}
             className="mt-0.5 h-4 w-4 rounded border-border" />
           <span>
-            I accept the <a href="/terms" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">Terms</a> and
-            the <a href="/privacy" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+            I accept the <a href="/terms" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">{fr ? "Conditions" : "Terms"}</a> and
+            the <a href="/privacy" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">{fr ? "Politique de confidentialité" : "Privacy Policy"}</a>.
           </span>
         </label>
       ) : (
         <p className="text-center text-xs text-muted-foreground">
           By continuing you accept the{" "}
-          <a href="/terms" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">Terms</a> and the{" "}
-          <a href="/privacy" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+          <a href="/terms" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">{fr ? "Conditions" : "Terms"}</a> and the{" "}
+          <a href="/privacy" className="font-semibold text-primary" target="_blank" rel="noopener noreferrer">{fr ? "Politique de confidentialité" : "Privacy Policy"}</a>.
         </p>
       )}
 

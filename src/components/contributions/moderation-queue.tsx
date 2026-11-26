@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   XCircle,
 } from "lucide-react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type QueueItem = {
   id: string;
@@ -44,6 +45,7 @@ function contributorName(item: QueueItem) {
 }
 
 export function ModerationQueue() {
+  const fr = useDashboardLanguage() === "fr";
   const [items, setItems] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -133,7 +135,7 @@ export function ModerationQueue() {
           className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 hover:bg-slate-50"
         >
           <RefreshCw className="h-3.5 w-3.5" />
-          Refresh
+          {fr ? "Actualiser" : "Refresh"}
         </button>
       </div>
 
@@ -146,8 +148,8 @@ export function ModerationQueue() {
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
           <BadgeCheck className="mx-auto h-8 w-8 text-emerald-600" />
-          <p className="mt-3 font-semibold text-slate-900">Moderation queue is clear</p>
-          <p className="mt-1 text-sm text-slate-500">No AHMV contributions currently require review.</p>
+          <p className="mt-3 font-semibold text-slate-900">{fr ? "Rien à modérer" : "Moderation queue is clear"}</p>
+          <p className="mt-1 text-sm text-slate-500">{fr ? "Aucune contribution AHMV n’attend de révision." : "No AHMV contributions currently require review."}</p>
         </div>
       ) : null}
 
@@ -198,12 +200,12 @@ export function ModerationQueue() {
 
             <div className="grid gap-5 p-5 xl:grid-cols-[1fr_1fr]">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Contributor reason</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{fr ? "Motif du contributeur" : "Contributor reason"}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-700">{item.reason || "No explanation supplied."}</p>
 
                 {item.evidenceUrls.length ? (
                   <div className="mt-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Evidence</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{fr ? "Preuve" : "Evidence"}</p>
                     <div className="mt-2 space-y-1">
                       {item.evidenceUrls.map((url) => (
                         <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block truncate text-sm text-indigo-600 hover:underline">
@@ -216,7 +218,7 @@ export function ModerationQueue() {
 
                 {item.attachmentUrls.length ? (
                   <div className="mt-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Attachments / proposed media</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{fr ? "Pièces jointes / médias proposés" : "Attachments / proposed media"}</p>
                     <div className="mt-2 space-y-1">
                       {item.attachmentUrls.map((url) => (
                         <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block truncate text-sm text-indigo-600 hover:underline">
@@ -229,7 +231,7 @@ export function ModerationQueue() {
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Proposed patch</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{fr ? "Correctif proposé" : "Proposed patch"}</p>
                 <pre className="mt-2 max-h-64 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-5 text-slate-100">
                   {JSON.stringify(item.proposedPatch, null, 2)}
                 </pre>
@@ -249,7 +251,7 @@ export function ModerationQueue() {
                 className="inline-flex h-10 items-center gap-2 rounded-lg bg-emerald-600 px-4 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
               >
                 <CheckCircle2 className="h-4 w-4" />
-                Approve & queue publication
+                {fr ? "Approuver et mettre en file de publication" : "Approve & queue publication"}
               </button>
               <button
                 type="button"
@@ -258,7 +260,7 @@ export function ModerationQueue() {
                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-800 hover:bg-amber-50 disabled:opacity-50"
               >
                 <AlertTriangle className="h-4 w-4" />
-                Request changes
+                {fr ? "Demander des changements" : "Request changes"}
               </button>
               <button
                 type="button"
@@ -267,7 +269,7 @@ export function ModerationQueue() {
                 className="inline-flex h-10 items-center gap-2 rounded-lg border border-red-200 bg-white px-4 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50"
               >
                 <XCircle className="h-4 w-4" />
-                Reject
+                {fr ? "Refuser" : "Reject"}
               </button>
             </div>
           </article>

@@ -97,16 +97,16 @@ export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
               <thead>
                 <tr className="border-b border-slate-100 text-slate-500">
                   <th scope="col" className="pb-3 pr-3 font-medium">
-                    Location
+                    Emplacement · Location
                   </th>
                   <th scope="col" className="pb-3 pr-3 font-medium">
-                    Reviews
+                    Avis · Reviews
                   </th>
                   <th scope="col" className="pb-3 pr-3 font-medium">
-                    Rating
+                    Note · Rating
                   </th>
                   <th scope="col" className="pb-3 font-medium">
-                    Pending
+                    En attente · Pending
                   </th>
                 </tr>
               </thead>
@@ -131,7 +131,7 @@ export function ReviewInsights({ records }: { records: ReviewRecord[] }) {
             </table>
             {!locations.length && (
               <p className="py-4 text-xs text-slate-500">
-                No location data matches these filters.
+                Aucune donnée d’emplacement ne correspond à ces filtres. · No location data matches these filters.
               </p>
             )}
           </div>

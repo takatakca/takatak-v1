@@ -4,6 +4,7 @@ import { Loader2, X } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 
 import { SocialPlatformIcon } from "@/components/social/navigation/social-platform-icon";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type WebConnectionView = {
   status: "pending_verification" | "connected";
@@ -36,6 +37,7 @@ export function WebSiteConnectDialog({
   onClose: () => void;
   onConnected: (host: string) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [siteUrl, setSiteUrl] = useState("");
   const [connection, setConnection] = useState<WebConnectionView | null>(null);
   const [loading, setLoading] = useState(true);
@@ -186,10 +188,10 @@ export function WebSiteConnectDialog({
                 id="web-connect-title"
                 className="text-lg font-semibold text-slate-950"
               >
-                Connect a web page
+                {fr ? "Brancher une page Web" : "Connect a web page"}
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                Verify the public homepage so this brand can claim the website.
+                {fr ? "Vérifiez la page d’accueil publique pour que cette marque puisse réclamer le site." : "Verify the public homepage so this brand can claim the website."}
               </p>
             </div>
           </div>
@@ -213,7 +215,7 @@ export function WebSiteConnectDialog({
         {loading ? (
           <div className="mt-6 flex items-center gap-2 text-sm text-slate-600">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading website verification
+            {fr ? "Chargement de la vérification du site" : "Loading website verification"}
           </div>
         ) : connection?.status === "connected" ? (
           <div className="mt-5 space-y-4">
@@ -226,7 +228,7 @@ export function WebSiteConnectDialog({
               onClick={() => onConnected(connection.host)}
               className="inline-flex h-10 items-center justify-center rounded-lg bg-[#4934d4] px-4 text-sm font-semibold text-white transition hover:bg-[#3e2bc0]"
             >
-              Done
+              {fr ? "Terminé" : "Done"}
             </button>
           </div>
         ) : connection?.status === "pending_verification" && connection.metaTag ? (
@@ -269,14 +271,14 @@ export function WebSiteConnectDialog({
                 }}
                 className="inline-flex h-10 items-center justify-center px-2 text-sm font-medium text-slate-600 hover:text-slate-900"
               >
-                Change address
+                {fr ? "Changer d’adresse" : "Change address"}
               </button>
             </div>
           </div>
         ) : (
           <form className="mt-5 space-y-4" onSubmit={(event) => void startVerification(event)}>
             <label className="block text-sm font-medium text-slate-800">
-              Website address
+              {fr ? "Adresse du site" : "Website address"}
               <input
                 type="url"
                 required

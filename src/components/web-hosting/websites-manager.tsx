@@ -27,6 +27,7 @@ import {
   websiteUrl,
 } from "@/lib/web-hosting/display";
 import type { DomainSummary, HostingServiceSummary } from "@/lib/web-hosting/types";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const WEBSITE_TABS = ["Overview", "Edit Details", "SEO Settings", "Integrations", "Security"];
 const RANGES = ["7D", "30D", "3M", "6M", "1Y"] as const;
@@ -40,6 +41,7 @@ export function WebsitesManager({
   hosting: HostingServiceSummary[];
   sourceLabel: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -118,10 +120,10 @@ export function WebsitesManager({
               <table className="w-full min-w-[720px] text-left text-sm">
                 <thead className="text-xs text-slate-400">
                   <tr>
-                    <th className="px-5 pb-2 font-medium">Website</th>
-                    <th className="px-3 pb-2 font-medium">Status</th>
-                    <th className="px-3 pb-2 font-medium">Traffic (30D)</th>
-                    <th className="px-3 pb-2 font-medium">Uptime</th>
+                    <th className="px-5 pb-2 font-medium">{fr ? "Site Web" : "Website"}</th>
+                    <th className="px-3 pb-2 font-medium">{fr ? "Statut" : "Status"}</th>
+                    <th className="px-3 pb-2 font-medium">{fr ? "Trafic (30 j)" : "Traffic (30D)"}</th>
+                    <th className="px-3 pb-2 font-medium">{fr ? "Disponibilité" : "Uptime"}</th>
                     <th className="px-3 pb-2 font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -154,10 +156,10 @@ export function WebsitesManager({
                           <StatusDot tone={status.tone} label={status.label} />
                         </td>
                         <td className="px-3 py-3 text-sm text-slate-400">
-                          —<p className="text-[11px]">Analytics not connected</p>
+                          —<p className="text-[11px]">{fr ? "Statistiques non branchées" : "Analytics not connected"}</p>
                         </td>
                         <td className="px-3 py-3 text-sm text-slate-400">
-                          —<p className="text-[11px]">Uptime not connected</p>
+                          —<p className="text-[11px]">{fr ? "Disponibilité non branchée" : "Uptime not connected"}</p>
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 text-slate-400">
@@ -195,7 +197,7 @@ export function WebsitesManager({
               </table>
             </div>
           ) : (
-            <p className="px-5 pb-5 text-sm text-slate-400">No websites match these filters.</p>
+            <p className="px-5 pb-5 text-sm text-slate-400">{fr ? "Aucun site ne correspond à ces filtres." : "No websites match these filters."}</p>
           )}
           <PagePager
             page={safePage}
@@ -212,7 +214,7 @@ export function WebsitesManager({
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-slate-900">Website Performance</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Performance du site" : "Website Performance"}</h3>
             <div className="flex rounded-lg bg-slate-100 p-0.5 text-xs font-medium">
               {RANGES.map((item) => (
                 <button
@@ -239,7 +241,7 @@ export function WebsitesManager({
                   </div>
                   <p className="mt-2 text-2xl font-semibold text-slate-900">—</p>
                   <Sparkline values={[]} color={metric.color} />
-                  <p className="text-[11px] text-slate-400">Website analytics is not connected</p>
+                  <p className="text-[11px] text-slate-400">{fr ? "Les statistiques du site ne sont pas branchées" : "Website analytics is not connected"}</p>
                 </article>
               );
             })}
@@ -248,15 +250,15 @@ export function WebsitesManager({
 
         <section className="grid gap-4 xl:grid-cols-2">
           <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h3 className="text-sm font-semibold text-slate-900">Traffic Sources</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Sources de trafic" : "Traffic Sources"}</h3>
             <div className="mt-4 flex items-center gap-4">
               <DonutChart slices={[]} totalLabel={formatCompactNumber(null)} />
-              <p className="text-sm text-slate-400">Traffic sources appear when analytics is connected.</p>
+              <p className="text-sm text-slate-400">{fr ? "Les sources de trafic apparaissent une fois les statistiques branchées." : "Traffic sources appear when analytics is connected."}</p>
             </div>
           </article>
           <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h3 className="text-sm font-semibold text-slate-900">Top Pages</h3>
-            <p className="mt-4 text-sm text-slate-400">Top pages appear when analytics is connected.</p>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Pages principales" : "Top Pages"}</h3>
+            <p className="mt-4 text-sm text-slate-400">{fr ? "Les pages principales apparaissent une fois les statistiques branchées." : "Top pages appear when analytics is connected."}</p>
           </article>
         </section>
 
@@ -281,12 +283,12 @@ export function WebsitesManager({
           {tab === "Overview" ? (
             <div className="space-y-3 text-sm text-slate-600">
               <p>
-                <span className="text-slate-400">Hosting</span>
+                <span className="text-slate-400">{fr ? "Hébergement" : "Hosting"}</span>
                 <br />
                 {selectedHosting?.planName ?? "None"}
               </p>
               <p>
-                <span className="text-slate-400">Category</span>
+                <span className="text-slate-400">{fr ? "Catégorie" : "Category"}</span>
                 <br />
                 {selected.brandCategory ?? "—"}
               </p>
@@ -320,7 +322,7 @@ export function WebsitesManager({
                 <p className="mt-1 text-right text-[11px] text-slate-400">0/160</p>
               </Field>
               <div>
-                <p className="mb-2 text-xs font-medium text-slate-600">Favicon</p>
+                <p className="mb-2 text-xs font-medium text-slate-600">{fr ? "Icône du site" : "Favicon"}</p>
                 <div className="flex items-center gap-3">
                   <SiteMark domain={selected.domainName} imageUrl={selected.brandImageUrl} />
                   <Link
@@ -357,13 +359,13 @@ export function WebsitesManager({
           ) : null}
 
           {tab === "SEO Settings" ? (
-            <p className="text-sm text-slate-400">SEO settings appear when the website module is connected.</p>
+            <p className="text-sm text-slate-400">{fr ? "Les réglages SEO apparaissent une fois le module du site branché." : "SEO settings appear when the website module is connected."}</p>
           ) : null}
           {tab === "Integrations" ? (
-            <p className="text-sm text-slate-400">Analytics and search integrations are not connected.</p>
+            <p className="text-sm text-slate-400">{fr ? "Les statistiques et la recherche ne sont pas branchées." : "Analytics and search integrations are not connected."}</p>
           ) : null}
           {tab === "Security" ? (
-            <p className="text-sm text-slate-400">Security controls appear after hosting is provisioned.</p>
+            <p className="text-sm text-slate-400">{fr ? "Les contrôles de sécurité apparaissent une fois l’hébergement mis en place." : "Security controls appear after hosting is provisioned."}</p>
           ) : null}
         </SideDrawer>
       ) : null}

@@ -52,8 +52,8 @@ export default async function DashboardLayout({
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wide text-amber-500">Setup required</p>
-          <h1 className="mt-2 text-xl font-semibold text-slate-900">Dashboard unavailable</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-amber-500">Configuration requise · Setup required</p>
+          <h1 className="mt-2 text-xl font-semibold text-slate-900">Tableau de bord injoignable · Dashboard unavailable</h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-500">
             Authentication is not configured for this deployment, so the dashboard is disabled.
             An administrator must set the Supabase environment variables before access is possible.
@@ -131,11 +131,11 @@ export default async function DashboardLayout({
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
           <h1 className="text-xl font-semibold text-slate-900">
-            Select a workspace
+            Choisir un espace · Select a workspace
           </h1>
 
           <p className="mt-1 text-sm text-slate-500">
-            Choose the workspace you want to access.
+            Choisissez l’espace où entrer. · Choose the workspace you want to access.
           </p>
 
           <div className="mt-5 space-y-2">
@@ -163,7 +163,7 @@ export default async function DashboardLayout({
 
             {clients.length === 0 ? (
               <p className="text-sm text-slate-500">
-                No accessible workspace could be loaded.
+                Aucun espace accessible n’a pu être chargé. · No accessible workspace could be loaded.
               </p>
             ) : null}
           </div>

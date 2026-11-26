@@ -1037,7 +1037,7 @@ export default async function SocialPlatformPage({
   return (
     <div className="space-y-6">
       <header>
-        <p className="text-sm font-medium text-slate-500">Analytics</p>
+        <p className="text-sm font-medium text-slate-500">Statistiques · Analytics</p>
 
         <h1 className="mt-1 text-3xl font-semibold text-slate-950">
           {configuration.name}
@@ -1054,20 +1054,20 @@ export default async function SocialPlatformPage({
         </h2>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Connect or manage the account for this brand in Connections.
+          Branchez ou gérez le compte de cette marque dans Connexions. · Connect or manage the account for this brand in Connections.
         </p>
 
         <Link
           href={connectionHref}
           className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-[#4934d4] px-5 text-sm font-semibold text-white transition hover:bg-[#3e2bc0]"
         >
-          Open connections
+          Ouvrir les connexions · Open connections
         </Link>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white px-6 py-7">
         <h2 className="text-lg font-semibold text-slate-950">
-          Analytics unavailable
+          Statistiques injoignables · Analytics unavailable
         </h2>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
