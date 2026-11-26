@@ -9,7 +9,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { getPrisma } from "../src/lib/db/prisma";
 
 type Status = "PASS" | "FAIL" | "BLOCKED";
 type Result = { id: number; name: string; status: Status; evidence: string };
@@ -111,14 +111,22 @@ async function main() {
     process.exit(1);
   }
 
-  if (!process.env.SOCIAL_TOKEN_ENCRYPTION_KEY) {
+  // The app reads versioned keys (SOCIAL_TOKEN_ENCRYPTION_KEY_V1).
+  if (!process.env.SOCIAL_TOKEN_ENCRYPTION_KEY_V1) {
     // Deterministic local test key (32 bytes base64) — not a production secret.
-    process.env.SOCIAL_TOKEN_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString(
+    process.env.SOCIAL_TOKEN_ENCRYPTION_KEY_V1 = Buffer.alloc(32, 7).toString(
       "base64",
     );
   }
 
-  const prisma = new PrismaClient();
+  // Same client as the app (Prisma 6 "client" engine needs the pg adapter).
+  const maybePrisma = getPrisma();
+  if (!maybePrisma) {
+    record(0, "database", "BLOCKED", "database client could not start");
+    printSummary();
+    process.exit(1);
+  }
+  const prisma = maybePrisma;
   const stamp = Date.now().toString(36);
   let clientId = "";
   let brandId = "";
@@ -515,7 +523,13 @@ async function main() {
       const brands = await loadBrandSelectorSnapshots(clientId);
       const brand = brands.find((row) => row.id === brandId);
       assert(brand?.displayLabel === targetName, "top-bar name");
-      assert(brand?.displayImageUrl === targetImage, "top-bar image");
+      // The top bar shows the selected Page through the app's own durable
+      // avatar endpoint, never the raw provider CDN address.
+      assert(
+        brand?.displayImageUrl ===
+          `/api/social/media/picture/${middleSocialAccountId}`,
+        "top-bar image",
+      );
       assert(brand?.name === "My Test Brand", "workspace name retained");
 
       const uploaded = resolveBrandDisplayImage({
@@ -583,7 +597,11 @@ async function main() {
       const brands = await loadBrandSelectorSnapshots(clientId);
       const brand = brands.find((row) => row.id === brandId);
       assert(brand?.displayLabel === targetName, "reload label");
-      assert(brand?.displayImageUrl === targetImage, "reload image");
+      assert(
+        brand?.displayImageUrl ===
+          `/api/social/media/picture/${middleSocialAccountId}`,
+        "reload image",
+      );
       const account = await prisma.socialAccount.findUniqueOrThrow({
         where: { id: middleSocialAccountId },
         select: { displayName: true, accessStatus: true, status: true },

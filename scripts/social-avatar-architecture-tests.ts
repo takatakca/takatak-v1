@@ -42,6 +42,9 @@ const connectionsModal = read(
 const legacyThreadsRoute = read(
   "src/app/api/social/connections/[connectionId]/threads/route.ts",
 );
+const threadsAccountService = read(
+  "src/lib/social/connections/social-threads-account-service.ts",
+);
 const pictureRoute = read(
   "src/app/api/social/media/picture/[accountId]/route.ts",
 );
@@ -150,22 +153,45 @@ assert.match(
   "Direct OAuth must seed the durable avatar.",
 );
 
+// "Use Threads linked to Facebook" (owner decision 2026-11-26, option 2):
+// allowed only as an entry point to the real Threads login. Threads data is
+// never derived from the Meta connection; the linked path starts a stored
+// Threads OAuth state, so the result is a `threads` connection with its own
+// credential (see threadsAdapter above).
 assert.doesNotMatch(
-  connectionsModal,
-  /threadsAttachDecision/,
-  "The UI must not offer Meta-linked Threads attachment.",
+  legacyThreadsRoute,
+  /connectLinkedThreadsAccount/,
+  "The Threads POST route must not derive a Threads account from Instagram.",
 );
 
 assert.doesNotMatch(
-  connectionsModal,
-  /connectThreads\(metaConnection\)/,
-  "The UI must not derive Threads from a Meta connection.",
+  legacyThreadsRoute,
+  /state:\s*connectionId/,
+  "The Threads POST route must never use a raw connection id as OAuth state.",
 );
 
 assert.match(
   legacyThreadsRoute,
-  /status code|no longer derived from Instagram|410/,
-  "The legacy Threads POST route must remain retired.",
+  /startLinkedThreadsAuthorization/,
+  "Threads linked to Facebook must start a stored Threads authorization.",
+);
+
+assert.match(
+  threadsAccountService,
+  /export async function startLinkedThreadsAuthorization[\s\S]*?createSocialOAuthState\(\{[\s\S]*?provider: "threads"/,
+  "The linked Threads path must create a Threads OAuth state.",
+);
+
+assert.match(
+  connectionsModal,
+  /async function connectThreads[\s\S]*?window\.location\.assign\(authorizationUrl\)/,
+  "The UI must send Threads linked to Facebook to the Threads authorization page.",
+);
+
+assert.doesNotMatch(
+  connectionsModal,
+  /threads-from-ig|`threads-\$\{connection\.id\}`/,
+  "The UI must not create a Threads account from a Meta connection.",
 );
 
 assert.match(

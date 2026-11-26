@@ -6,7 +6,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { getPrisma } from "../src/lib/db/prisma";
 
 type Status = "PASS" | "FAIL" | "BLOCKED";
 type Result = { id: number; name: string; status: Status; evidence: string };
@@ -79,7 +79,14 @@ async function main() {
     process.exit(1);
   }
 
-  const prisma = new PrismaClient();
+  // Same client as the app (Prisma 6 "client" engine needs the pg adapter).
+  const maybePrisma = getPrisma();
+  if (!maybePrisma) {
+    record(0, "database", "BLOCKED", "database client could not start");
+    printSummary();
+    process.exit(1);
+  }
+  const prisma = maybePrisma;
   const stamp = Date.now().toString(36);
   let clientId = "";
   let brandId = "";
@@ -398,9 +405,24 @@ async function main() {
       );
       assert(modal.includes("pickCanonicalProviderConnection"), "modal conn");
       assert(modal.includes("pickSelectedFacebookAccount"), "modal page");
-      assert(shell.includes("pickConnectedPlatformAccount"), "shell");
+      // The layout resolves one identity per platform and hands the result to
+      // the sidebar shell (accounts prop); the shell no longer re-resolves.
+      assert(
+        /<SocialWorkspaceShell[\s\S]*?\baccounts,/.test(layout) &&
+          shell.includes("accounts"),
+        "shell",
+      );
       assert(layout.includes("pickConnectedPlatformAccount"), "layout");
-      assert(platform.includes("pickSelectedFacebookAccount"), "facebook page");
+      // The Facebook page resolves through the shared canonical resolver,
+      // which uses the strict selected-Page picker.
+      const facebookResolve = readSource(
+        "src/lib/social/connections/facebook-dashboard-resolve.ts",
+      );
+      assert(
+        platform.includes("resolveCanonicalFacebookDashboard") &&
+          facebookResolve.includes("pickSelectedFacebookAccount"),
+        "facebook page",
+      );
       record(
         7,
         "Every UI surface uses the shared selected-identity resolver",

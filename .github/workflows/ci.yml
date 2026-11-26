@@ -101,6 +101,19 @@ jobs:
       - name: X connection and paid API cost safeguards
         run: npm run qa:social-x-cost
 
+      - name: Instagram and Threads connection safeguards
+        run: npm run qa:social-instagram
+
+      - name: Threads and avatar architecture (own credentials, durable avatars)
+        run: npm run qa:social-avatars
+
+      - name: X, Twitch, TikTok and YouTube connection safeguards
+        run: |
+          npm run qa:social-x
+          npm run qa:social-twitch
+          npm run qa:social-tiktok
+          npm run qa:social-youtube
+
       - name: Authentication tests
         run: npm run test:auth
 
@@ -553,6 +566,21 @@ jobs:
         env:
           NODE_ENV: development
         run: npm run qa:ai-provider-keys-db
+
+      - name: Facebook Page discovery, selection and identity against the ephemeral database
+        env:
+          NODE_ENV: development
+        run: |
+          npm run qa:social-step5-pages
+          npm run qa:social-step5-canonical
+          npm run qa:social-step5-identity
+          npm run qa:social-step6-reauth
+          npm run qa:brand-selector
+
+      - name: Threads linked to Facebook starts a stored Threads authorization (ephemeral DB)
+        env:
+          NODE_ENV: development
+        run: npm run qa:social-threads-linked-db
 
       - name: Build diagnostic privacy and classification checks
         run: node scripts/build-diagnostics-tests.cjs

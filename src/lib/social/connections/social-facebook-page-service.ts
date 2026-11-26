@@ -492,6 +492,23 @@ export async function discoverFacebookPages(options: {
   profileId: string;
   connectionId: string;
 }): Promise<DiscoverFacebookPagesResult> {
+  // The cache and in-flight coalescing are keyed by workspace + connection,
+  // so check this person's permission first: a cached result must never be
+  // handed to a suspended member or a member without manage_social_accounts.
+  const prisma = getPrisma();
+
+  if (!prisma) {
+    throw new ServiceError(
+      "unavailable",
+      "The social connection database is unavailable.",
+    );
+  }
+
+  await assertProfileCanManageSocialAccounts(prisma, {
+    clientId: options.clientId,
+    profileId: options.profileId,
+  });
+
   const key = discoveryCacheKey(options);
 
   const cached = discoveryResultCache.get(key);

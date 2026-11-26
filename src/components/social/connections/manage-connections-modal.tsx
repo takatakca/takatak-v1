@@ -1522,6 +1522,80 @@ export function ManageConnectionsModal({
     }
   }
 
+  async function connectThreads(connection: ManageConnectionsConnection) {
+    if (!canManage) {
+      setNotice({
+        tone: 'error',
+        message: 'You do not have permission to manage social connections.',
+      });
+      return;
+    }
+
+    if (
+      connectInFlightRef.current ||
+      busyCardKey !== null ||
+      busyConnectionId !== null
+    ) {
+      return;
+    }
+
+    connectInFlightRef.current = true;
+    setBusyCardKey('threads');
+    setBusyConnectionId(connection.id);
+    setNotice(null);
+
+    let redirected = false;
+
+    try {
+      // Threads linked to Facebook: the server checks the selected Page and
+      // Instagram account, then returns the Threads authorization page.
+      const response = await fetch(
+        `/api/social/connections/${encodeURIComponent(connection.id)}/threads`,
+        {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            Accept: 'application/json',
+          },
+        },
+      );
+
+      const result = await readApiResult(response);
+
+      if (!response.ok || !result.ok) {
+        setNotice({
+          tone: 'error',
+          message: result.message ?? 'Threads could not be connected.',
+        });
+        return;
+      }
+
+      const authorizationUrl = result.authorization?.authorizationUrl;
+
+      if (!authorizationUrl) {
+        setNotice({
+          tone: 'error',
+          message: 'Threads authorization could not be started.',
+        });
+        return;
+      }
+
+      redirected = true;
+      window.location.assign(authorizationUrl);
+    } catch {
+      setNotice({
+        tone: 'error',
+        message: 'A network error occurred while connecting Threads.',
+      });
+    } finally {
+      if (!redirected) {
+        connectInFlightRef.current = false;
+        setBusyCardKey(null);
+        setBusyConnectionId(null);
+      }
+    }
+  }
+
   async function clearThreads(
     connection: ManageConnectionsConnection,
     confirmed = false,
@@ -1985,6 +2059,17 @@ export function ManageConnectionsModal({
                       })
                     : null;
 
+                const threadsAttachDecision =
+                  card.accountPlatform === 'threads'
+                    ? canAttachLinkedThreads({
+                        facebookPageSelected: metaFacebookSelected,
+                        metaInstagramConnected,
+                        threadsAlreadyConnected:
+                          platformConnected || independentThreadsLive,
+                        connectionStatus: metaConnection?.status ?? null,
+                      })
+                    : null;
+
                 const metaProjection =
                   card.accountPlatform === 'facebook' &&
                   card.provider === 'meta' &&
@@ -2093,7 +2178,11 @@ export function ManageConnectionsModal({
                   card.accountPlatform === 'instagram'
                     ? 'Connect with Meta'
                     : card.accountPlatform === 'threads'
-                      ? 'Connect Threads securely'
+                      ? threadsAttachDecision?.allowed
+                        ? busy
+                          ? 'Connecting Threads…'
+                          : 'Use Threads linked to Facebook'
+                        : 'Connect Threads securely'
                       : lookerStudioNeedsChoice
                         ? 'Choose a report'
                         : metaAdsNeedsChoice || googleAdsNeedsChoice
@@ -2425,6 +2514,16 @@ export function ManageConnectionsModal({
                             return;
                           }
 
+                          if (
+                            card.accountPlatform === 'threads' &&
+                            threadsAttachDecision?.allowed &&
+                            metaConnection
+                          ) {
+                            setNotice(null);
+                            void connectThreads(metaConnection);
+                            return;
+                          }
+
                           void connectProvider(card);
                         }}
                         className={`flex min-h-13 w-full items-center justify-between rounded-md px-5 py-3.5 text-[15px] font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-100 ${
@@ -2447,7 +2546,10 @@ export function ManageConnectionsModal({
                       </button>
                     )}
 
-                    {card.accountPlatform === 'instagram' ? (
+                    {card.accountPlatform === 'instagram' ||
+                    (card.accountPlatform === 'threads' &&
+                      !showConnectedPageCard &&
+                      threadsAttachDecision?.allowed) ? (
                       <div className="mt-2 px-1 text-sm">
                         <button
                           type="button"

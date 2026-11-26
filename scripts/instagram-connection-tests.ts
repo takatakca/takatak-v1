@@ -242,12 +242,10 @@ check("Instagram and Threads start independent OAuth from the modal", () => {
   return "independent Instagram and Threads cards";
 });
 
-// Kept separate so the gap is named on its own line: since 5d3d33a1 the modal
-// offers only the independent Threads login. Threads linked to Facebook is
-// still offered on /dashboard/social/threads (instagram-connect-page.tsx).
-// Owner decision pending: the same commit added
-// scripts/social-avatar-architecture-tests.ts, which requires the opposite
-// (no Meta-linked Threads in the modal, legacy Threads POST route retired).
+// Threads linked to Facebook: removed from the modal in 5d3d33a1, restored
+// on the owner's decision (2026-11-26). It is only an entry point to the real
+// Threads login (stored OAuth state, Threads credential); the rules for that
+// are in scripts/social-avatar-architecture-tests.ts.
 check("Threads linked to Facebook can be used from the modal", () => {
   const modal = readSource(
     "src/components/social/connections/manage-connections-modal.tsx",

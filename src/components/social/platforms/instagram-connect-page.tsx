@@ -322,11 +322,12 @@ function DirectLoginConnectPage({
         return;
       }
 
-      // When Meta needs more Instagram permissions, the server answers with
-      // the Facebook authorization page (same as the connections window).
+      // Threads linked to Facebook continues on the Threads authorization
+      // page; Instagram does the same on Facebook when Meta needs more
+      // permissions (as the connections window does).
       const authorizationUrl = result.authorization?.authorizationUrl;
 
-      if (network === "instagram" && authorizationUrl) {
+      if (authorizationUrl) {
         window.location.assign(authorizationUrl);
         return;
       }

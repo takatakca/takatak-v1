@@ -7,7 +7,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { getPrisma } from "../src/lib/db/prisma";
 
 type Status = "PASS" | "FAIL" | "BLOCKED";
 type Result = {
@@ -151,6 +151,27 @@ function ensureEncryptionKey() {
 function readSource(relativePath: string): string {
   return readFileSync(resolve(process.cwd(), relativePath), "utf8");
 }
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Matches `key: "value"`, `key: 'value'` or `key: \`value\`` so a source
+ * check does not depend on the file's quote style.
+ */
+function quotedProperty(key: string, value: string): RegExp {
+  return new RegExp(
+    escapeRegExp(key) + ":\\s*([\"'`])" + escapeRegExp(value) + "\\1",
+  );
+}
+
+/** `status === "authorized"` in any quote style or line wrapping. */
+const AUTHORIZED_GATE = /status\s*===\s*(["'`])authorized\1/;
+
+/** The Page selection panel flips the card only from its onConnected callback. */
+const PAGE_SELECTION_ON_CONNECTED =
+  /<FacebookPageSelectionPanel[\s\S]*?onConnected=\{\(\w+\)\s*=>/;
 
 type PageMock = {
   id: string;
@@ -318,7 +339,14 @@ async function main() {
     process.exit(1);
   }
 
-  const prisma = new PrismaClient();
+  // Same client as the app (Prisma 6 "client" engine needs the pg adapter).
+  const maybePrisma = getPrisma();
+  if (!maybePrisma) {
+    record(0, "database", "BLOCKED", "database client could not start");
+    printSummary();
+    process.exit(1);
+  }
+  const prisma = maybePrisma;
   const stamp = Date.now().toString(36);
   const fixtureIds: {
     clientIds: string[];
@@ -490,8 +518,28 @@ async function main() {
       const connectionId = uuid();
       fixtureIds.connectionIds.push(connectionId);
       const client = options?.client ?? clientId;
-      const brand = options?.brand ?? brandId;
       const provider = options?.provider ?? "meta";
+      let brand = options?.brand ?? brandId;
+
+      // One connection per (workspace, brand, provider) is enforced by a
+      // unique index added after this suite was written. Each fixture
+      // connection gets its own brand in the same workspace when the
+      // requested brand already has one.
+      const taken = await prisma.socialProviderConnection.findFirst({
+        where: { clientId: client, businessBrandId: brand, provider },
+        select: { id: true },
+      });
+      if (taken) {
+        brand = uuid();
+        await prisma.businessBrand.create({
+          data: {
+            id: brand,
+            clientId: client,
+            name: `Fixture Brand ${stamp} ${brand.slice(0, 8)}`,
+            status: "active",
+          },
+        });
+      }
       const userToken =
         options?.userToken ?? "SYNTH_USER_ACCESS_TOKEN";
 
@@ -860,7 +908,7 @@ async function main() {
           assert(
             error instanceof Error &&
               /active membership/i.test(error.message),
-            "inactive",
+            `inactive: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
         return "forbidden";
@@ -882,7 +930,7 @@ async function main() {
           assert(
             error instanceof Error &&
               /permission/i.test(error.message),
-            "viewer",
+            `viewer: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
         return "forbidden";
@@ -1988,7 +2036,7 @@ async function main() {
         const rows = await prisma.$queryRawUnsafe<
           Array<{ indexname: string; indexdef: string }>
         >(
-          `SELECT indexname, indexdef FROM pg_indexes WHERE indexname = 'sa_one_connected_facebook_page_per_client_key'`,
+          `SELECT indexname::text AS indexname, indexdef FROM pg_indexes WHERE indexname = 'sa_one_connected_facebook_page_per_client_key'`,
         );
         assert(rows.length === 1, "index exists");
         const def = rows[0]!.indexdef.toLowerCase();
@@ -2022,9 +2070,15 @@ async function main() {
           connectionId: conn,
         });
 
-        // Archive brand so final tx fails after credential write attempt.
+        // Archive this connection's brand so the final tx fails after the
+        // credential write attempt.
+        const { businessBrandId: connBrandId } =
+          await prisma.socialProviderConnection.findUniqueOrThrow({
+            where: { id: conn },
+            select: { businessBrandId: true },
+          });
         await prisma.businessBrand.update({
-          where: { id: brandId },
+          where: { id: connBrandId },
           data: { status: "archived" },
         });
 
@@ -2041,7 +2095,7 @@ async function main() {
         }
 
         await prisma.businessBrand.update({
-          where: { id: brandId },
+          where: { id: connBrandId },
           data: { status: "active" },
         });
 
@@ -2339,9 +2393,7 @@ async function main() {
         );
         assert(source.includes("Select Facebook Page"), "label");
         assert(
-          source.includes('connection.status ===\n                      "authorized"') ||
-            source.includes('status ===\n                      "authorized"') ||
-            source.includes('"authorized"'),
+          AUTHORIZED_GATE.test(source),
           "authorized gate",
         );
         return "CTA present for authorized Meta";
@@ -2393,8 +2445,8 @@ async function main() {
         const source = readSource(
           "src/components/social/connections/manage-connections-modal.tsx",
         );
-        assert(source.includes('status: "connected"'), "sets connected");
-        assert(source.includes("displayName: pageName"), "shows page name");
+        assert(quotedProperty("status", "connected").test(source), "sets connected");
+        assert(/displayName:\s*(\w+\.)?pageName\b/.test(source), "shows page name");
         assert(source.includes("is connected"), "success notice");
         assert(
           source.includes("refreshConnectionsFromServer"),
@@ -2429,7 +2481,7 @@ async function main() {
           "src/components/social/connections/manage-connections-modal.tsx",
         );
         assert(
-          modal.includes("onConnected={(pageName)"),
+          PAGE_SELECTION_ON_CONNECTED.test(modal),
           "status flip only onConnected",
         );
         assert(
@@ -2614,7 +2666,7 @@ async function main() {
         );
         assert(
           modal.includes("Select Facebook Page") &&
-            modal.includes('"authorized"'),
+            AUTHORIZED_GATE.test(modal),
           "Select only for authorized",
         );
 
@@ -2715,7 +2767,7 @@ async function main() {
           "sync from RSC props",
         );
         assert(
-          modal.includes("onConnected={(pageName)"),
+          PAGE_SELECTION_ON_CONNECTED.test(modal),
           "post-select refresh path",
         );
 
@@ -2723,11 +2775,12 @@ async function main() {
           "src/app/dashboard/social/layout.tsx",
         );
         assert(
-          /account\.status ===\s*\n?\s*"connected"/.test(layout),
+          // Either "keep connected" (===) or "drop the rest" (!==).
+          /account\.status\s*(===|!==)\s*(["'`])connected\2/.test(layout),
           "shell accounts require connected",
         );
         assert(
-          /connection\.status ===\s*\n?\s*"connected"/.test(layout),
+          /connection\.status\s*===\s*(["'`])connected\1/.test(layout),
           "shell requires connection connected",
         );
         return "refetch on open + shell filters connected only";
@@ -2769,8 +2822,7 @@ async function main() {
           "setup warning for authorized",
         );
         assert(
-          modal.includes('connection.status ===\n                      "authorized"') ||
-            modal.includes('status ===\n                      "authorized"'),
+          AUTHORIZED_GATE.test(modal),
           "warning gated on authorized",
         );
         assert(
@@ -2878,8 +2930,8 @@ async function main() {
         const modal = readSource(
           "src/components/social/connections/manage-connections-modal.tsx",
         );
-        assert(modal.includes('provider: "instagram"'), "ig provider card");
-        assert(modal.includes('provider: "threads"'), "threads provider card");
+        assert(quotedProperty("provider", "instagram").test(modal), "ig provider card");
+        assert(quotedProperty("provider", "threads").test(modal), "threads provider card");
         return "independent Instagram and Threads OAuth";
       },
     );

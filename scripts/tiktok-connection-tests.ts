@@ -36,6 +36,20 @@ function readSource(relative: string): string {
   return readFileSync(resolve(process.cwd(), relative), "utf8");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Matches `key: "value"`, `key: 'value'` or `key: \`value\`` so a source
+ * check does not depend on the file's quote style.
+ */
+function quotedProperty(key: string, value: string): RegExp {
+  return new RegExp(
+    escapeRegExp(key) + ":\\s*([\"'`])" + escapeRegExp(value) + "\\1",
+  );
+}
+
 check("OAuth start requests Login Kit identity scopes", () => {
   assert(
     TIKTOK_OAUTH_START_SCOPES.includes("user.info.basic"),
@@ -154,9 +168,11 @@ check("TikTok personal card starts independent Login Kit", () => {
   const modal = readSource(
     "src/components/social/connections/manage-connections-modal.tsx",
   );
-  assert(modal.includes('key: "tiktok-personal"'), "personal card");
-  assert(modal.includes('provider: "tiktok"'), "tiktok provider");
-  const businessCard = modal.slice(modal.indexOf('key: "tiktok-business"'));
+  assert(quotedProperty("key", "tiktok-personal").test(modal), "personal card");
+  assert(quotedProperty("provider", "tiktok").test(modal), "tiktok provider");
+  const businessAt = modal.search(quotedProperty("key", "tiktok-business"));
+  assert(businessAt >= 0, "business card");
+  const businessCard = modal.slice(businessAt);
   assert(businessCard.includes("planned: true"), "business planned");
   const registry = readSource("src/lib/social/providers/registry.ts");
   const tiktokBlock = registry.slice(registry.indexOf("tiktok:"));
@@ -193,7 +209,7 @@ check("TikTok page starts independent Login Kit", () => {
   const page = readSource(
     "src/components/social/platforms/tiktok-connect-page.tsx",
   );
-  assert(page.includes('provider: "tiktok"'), "independent start");
+  assert(quotedProperty("provider", "tiktok").test(page), "independent start");
   assert(page.includes("Connect TikTok"), "connect CTA");
   const start = readSource("src/lib/social/connections/social-connection-service.ts");
   assert(start.includes("buildTikTokAuthorizationUrl"), "authorization builder");
