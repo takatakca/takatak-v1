@@ -134,6 +134,15 @@ for (const [route, target] of [
   assert.doesNotMatch(source, /mock-data|FoundationNotice|DisabledActionButton/, `${route}: no sample records or dead buttons`);
 }
 assert.ok(!STAFF_ONLY_ROUTES.has("/dashboard/services"), "Services is a real client screen now");
+// A real workspace (client or platform staff) never reaches a sample-data
+// return: without a database its data scope is "unavailable".
+const dataScope = readFileSync(join(ROOT, "src/lib/security/data-scope.ts"), "utf8");
+for (const mode of ["platform_admin", "client_scoped"]) {
+  const block = dataScope.slice(dataScope.indexOf(`case "${mode}":`), dataScope.indexOf(`case "${mode}":`) + 400);
+  assert.match(block, /if \(!getPrisma\(\)\) return \{ kind: "unavailable"/, `${mode}: no database means unavailable, never sample rows`);
+}
+assert.match(readFileSync(join(ROOT, "src/lib/admin/admin-data.ts"), "utf8"), /function dbGateOrUnavailable\(\): AdminGate \{\n  if \(!getPrisma\(\)\) return \{ kind: "unavailable"/);
+assert.match(readFileSync(join(ROOT, "src/lib/db/dashboard-data.ts"), "utf8"), /integrations\.length \|\| !scope\.allowMockFallback/);
 assert.match(readFileSync(join(ROOT, "src/app/dashboard/services/page.tsx"), "utf8"), /listClientServices\(access\.activeClientId\)/);
 
 console.log(
