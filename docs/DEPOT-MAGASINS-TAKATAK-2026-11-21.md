@@ -68,3 +68,9 @@ Les consoles refusent le sélecteur de fichiers piloté à distance. Les images 
 - **Huawei, Samsung :** même `.apk`, mêmes textes et réponses ; icônes `huawei-icon-216.png`, `samsung-galaxy-icon-512.png`, bannière `samsung-galaxy-feature-1024x500.png`, captures téléphone et tablette.
 - **Microsoft :** images `microsoft-*.png`, captures `desktop-1920x1080-*.png`. Le `.msix` se génère seulement après la réservation du nom (Partner Center › Product identity donne « Package ID », « Publisher » et « Publisher display name »).
 - **Apple :** `apple-app-icon-1024.png`, captures `apple-iphone-6.9-*.png` et `apple-ipad-13-*.png`. Voir la règle 4.2 dans `APPS-MAGASINS.md` section 5.
+
+## Mise à jour du 2026-11-26
+
+- Google Play : app native 2.0.0 (code de version 100) signée et téléversée, brouillon de production enregistré, Canada ciblé. Reste : « Sign in details » (accès examinateur fourni par le développeur), « Target audience » (18 ans et plus), enregistrement de la sécurité des données, déclaration sur les images faites par IA dans la fiche, puis envoi en révision avec l'accord du propriétaire.
+- Amazon : l'ancien paquet est en révision ; `TAKATAK-v2-amazon.apk` signé est prêt pour la version suivante.
+- Fichiers signés : dossier `TAKATAK-KIT-V2` sur le PC du propriétaire. La clé de signature reste sur le PC.

@@ -19,3 +19,11 @@ Notes signées avant, pendant et après le travail, comme dans `takatakca/BESOIN
 - Application Coolify réelle de takatak.ca : projet GROUPE TAKATAK, production, `takatak-v1:main-cu7j0hwri5jmgri2gozfqc6v` (l'identifiant `lt05flq7…` de DEPLOYMENT.md ne répond plus dans Coolify).
 - `/.well-known/assetlinks.json` répond 404 en ligne : `TAKATAK_ANDROID_CERT_SHA256` reste à poser après le premier envoi du paquet à Google Play.
 - Portail BesoinAvocat : déployé sur `4b823d1` (PR 103) ; les fusions suivantes ne touchent que `mobile/` et les notes. Variable `BESOINAVOCAT_GOOGLE_SIGNIN_ENABLED` absente et `https://portail.besoinavocat.ca/**` absent des URL de redirection Supabase : ne pas activer l'un sans l'autre (sinon retour vers takatak.ca).
+
+### 2026-11-26 04:50 UTC — Claude (fil « Connecter et activer toutes les intégrations »)
+- TAKATAK 2.0.0 (app native, trousse de la run Actions 44932708896, avec l'accès examinateur de la PR 381) signée sur le PC du propriétaire avec la clé d'origine (CN=TAKATAK Admin, SHA-256 `ED:9B:BE:01:…:4B:69:45`). La clé ne quitte pas le PC. Fichiers : `TAKATAK-KIT-V2/TAKATAK-v2-google-play.aab` et `TAKATAK-v2-amazon.apk`.
+- Google Play : le `.aab` est téléversé et accepté (version 100, 2.0.0, API 24+, cible SDK 36), notes de version fr-CA, brouillon de production enregistré, Canada ajouté comme pays. Fiche et sécurité des données déjà remplies.
+- Bloqué, dans cet ordre : « Sign in details » (identifiants de l'examinateur, fournis par le développeur du propriétaire, mêmes valeurs que `TAKATAK_MOBILE_REVIEW_EMAIL` et `TAKATAK_MOBILE_REVIEW_CODE` dans Coolify), puis « Target audience » (18 ans et plus), puis l'envoi de la sécurité des données. La fiche attend aussi la déclaration du propriétaire sur les images faites par IA. Rien n'est envoyé en révision.
+- Amazon : QMAPS envoyé en révision (statut « Submitted », fichier `QMAPS-Android-test.apk`, à remplacer s'il est refusé). L'APK TAKATAK v2 signé est prêt pour une nouvelle version sur Amazon.
+- Consigne du propriétaire (2026-11-25/26) : ce fil ne touche plus à Supabase ; son développeur s'en occupe, ainsi que de Coolify.
+- Après la publication : empreinte de signature de Google Play à poser dans `TAKATAK_ANDROID_CERT_SHA256` (assetlinks). Aucun fichier de code touché.
