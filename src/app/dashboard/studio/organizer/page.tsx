@@ -27,9 +27,7 @@ export default async function StudioOrganizerPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
           <h1 className="text-2xl font-bold text-slate-900">AI File Organizer</h1>
           <p className="mt-3 text-slate-700">
-            This workspace does not have an enabled Organizer pilot. Existing
-            Studio drafts and files remain accessible through their normal tools.
-            No AI processing or organizer charges have been enabled.
+            Cet espace n’a pas de projet pilote de l’Organisateur activé. Les brouillons et fichiers du Studio restent accessibles par leurs outils habituels. Aucun traitement par IA ni frais d’organisateur n’ont été activés. · This workspace does not have an enabled Organizer pilot. Existing Studio drafts and files remain accessible through their normal tools. No AI processing or organizer charges have been enabled.
           </p>
         </section>
         {process.env.TAKATAK_AI_FILE_ORGANIZER_ENABLED === "true" && (

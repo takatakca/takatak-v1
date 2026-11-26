@@ -33,8 +33,8 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
    <p className="mt-1 text-sm text-blue-100">{site.niche} · {site.market}</p>
   </header>
   {canManage?<section className="space-y-3 rounded-2xl border bg-white p-5">
-    <h2 className="text-lg font-bold text-slate-950">Verify domain ownership (DNS TXT)</h2>
-    <p className="text-sm text-slate-600">Registration alone is not proof of ownership. Only a TAKATAK client manager may start or complete this independent verification. No publishing or site changes occur automatically.</p>
+    <h2 className="text-lg font-bold text-slate-950">Vérifier la propriété du domaine (DNS TXT) · Verify domain ownership (DNS TXT)</h2>
+    <p className="text-sm text-slate-600">L’inscription seule ne prouve pas la propriété. Seul un gestionnaire client TAKATAK peut lancer ou terminer cette vérification indépendante. Rien n’est publié ni modifié automatiquement sur le site. · Registration alone is not proof of ownership. Only a TAKATAK client manager may start or complete this independent verification. No publishing or site changes occur automatically.</p>
     {verificationResult?<p role="status" className={"rounded-xl p-3 text-sm "+(["verified","challenge_created"].includes(verificationResult)?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>
       {verificationResult==="verified"?"Domain ownership confirmed from live DNS.":
        verificationResult==="challenge_created"?"A new TXT challenge has been generated. Publish it at your DNS provider before checking.":
@@ -48,12 +48,12 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
         {verification.verification.verifiedAt?" · "+verification.verification.verifiedAt:""}
       </p>
       {verification.verification.challenge&&!verification.verification.verified?<div className="space-y-2 rounded-xl border border-blue-200 bg-blue-50 p-4">
-        <p className="text-xs font-semibold uppercase text-blue-900">Create this DNS TXT record</p>
+        <p className="text-xs font-semibold uppercase text-blue-900">Créez cet enregistrement DNS TXT · Create this DNS TXT record</p>
         <dl className="space-y-2 text-sm">
-          <div><dt className="text-xs text-blue-800">Host / name</dt><dd className="break-all font-mono text-blue-950">{verification.verification.challenge.recordName}</dd></div>
-          <div><dt className="text-xs text-blue-800">TXT record value</dt><dd className="break-all font-mono text-blue-950">{verification.verification.challenge.recordValue}</dd></div>
+          <div><dt className="text-xs text-blue-800">Hôte / nom · Host / name</dt><dd className="break-all font-mono text-blue-950">{verification.verification.challenge.recordName}</dd></div>
+          <div><dt className="text-xs text-blue-800">Valeur de l’enregistrement TXT · TXT record value</dt><dd className="break-all font-mono text-blue-950">{verification.verification.challenge.recordValue}</dd></div>
         </dl>
-        <p className="text-xs text-blue-900">Challenges expire after seven days. Creating another challenge invalidates the previous one. DNS propagation may take time.</p>
+        <p className="text-xs text-blue-900">Les vérifications expirent après sept jours. En créer une nouvelle annule la précédente. La propagation DNS peut prendre du temps. · Challenges expire after seven days. Creating another challenge invalidates the previous one. DNS propagation may take time.</p>
       </div>:null}
       <div className="flex flex-wrap gap-2">
         <form action={changeSeoDomainVerification}>
@@ -64,12 +64,12 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
         {verification.verification.challenge&&!verification.verification.verified?<form action={changeSeoDomainVerification}>
           <input type="hidden" name="siteId" value={site.id}/>
           <input type="hidden" name="action" value="check"/>
-          <button type="submit" className="rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Verify published DNS record</button>
+          <button type="submit" className="rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800">Vérifier l’enregistrement DNS publié · Verify published DNS record</button>
         </form>:null}
       </div>
-    </>:<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Domain ownership checks are unavailable until the SEO service and approved database migration are deployed.</p>}
+    </>:<p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">La vérification de propriété des domaines arrive avec le service SEO et sa migration de base de données approuvée. · Domain ownership checks are unavailable until the SEO service and approved database migration are deployed.</p>}
   </section>:null}
-  {report.kind!=="ready"?<p role="status" className="rounded-xl border bg-amber-50 p-4 text-sm text-amber-900">The SEOTAKATAK reporting service is not available for this workspace. No metrics have been invented.</p>:<section className="space-y-4">
+  {report.kind!=="ready"?<p role="status" className="rounded-xl border bg-amber-50 p-4 text-sm text-amber-900">Le service de rapports SEOTAKATAK est injoignable pour cet espace. Aucune mesure n’a été inventée. · The SEOTAKATAK reporting service is not available for this workspace. No metrics have been invented.</p>:<section className="space-y-4">
    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
     {[
      {name:"Keywords sampled",value:report.summary.opportunitiesSampled},
@@ -79,30 +79,30 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
     ].map(item=><div key={item.name} className="rounded-2xl border bg-white p-5"><p className="text-xs text-slate-500">{item.name}</p><p className="mt-2 text-2xl font-bold text-slate-950">{item.value.toLocaleString("en-CA")}</p></div>)}
    </div>
    <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">
-    <p className="font-semibold">Evidence and limitations</p>
+    <p className="font-semibold">Preuves et limites · Evidence and limitations</p>
     <p className="mt-1">{report.summary.note}</p>
     <p className="mt-1">Source: {report.summary.source}. No current search rankings, complete totals or AI citations are claimed. Verified backlinks: provider not connected.</p>
    </div>
    {opportunities.kind==="ready"&&opportunities.rows.length>0?<section className="overflow-hidden rounded-2xl border bg-white">
     <header className="border-b bg-slate-50 p-4"><h2 className="font-semibold text-slate-900">Top query opportunities — current import</h2><p className="mt-1 text-xs text-slate-600">Up to 50 imported Search Console queries. Priority is a TAKATAK heuristic; positions and clicks come from the import.</p></header>
     <div className="overflow-x-auto"><table className="w-full min-w-[560px] text-left text-xs">
-      <thead className="bg-slate-50 text-slate-600"><tr><th className="p-3">Query</th><th className="p-3 text-right">Clicks</th><th className="p-3 text-right">Impressions</th><th className="p-3 text-right">Position</th><th className="p-3 text-right">Priority</th></tr></thead>
+      <thead className="bg-slate-50 text-slate-600"><tr><th className="p-3">Requête · Query</th><th className="p-3 text-right">Clics · Clicks</th><th className="p-3 text-right">Impressions</th><th className="p-3 text-right">Position</th><th className="p-3 text-right">Priorité · Priority</th></tr></thead>
       <tbody className="divide-y divide-slate-100">{opportunities.rows.map((item,index)=><tr key={item.keyword+"-"+index}>
         <td className="p-3 font-medium text-slate-900">{item.keyword}</td><td className="p-3 text-right">{item.clicks.toLocaleString("en-CA")}</td><td className="p-3 text-right">{item.impressions.toLocaleString("en-CA")}</td><td className="p-3 text-right">{Number.isFinite(item.position)?item.position.toFixed(1):"—"}</td><td className="p-3 text-right">{item.priority}/100</td>
       </tr>)}</tbody>
     </table></div>
-   </section>:<p className="rounded-xl border bg-white p-4 text-sm text-slate-500">No imported queries available for this client site yet. Link an owned Search Console property and use the import button in the portfolio.</p>}
+   </section>:<p className="rounded-xl border bg-white p-4 text-sm text-slate-500">Aucune requête importée pour ce site client. Liez une propriété Search Console qui vous appartient et utilisez le bouton d’importation du portfolio. · No imported queries available for this client site yet. Link an owned Search Console property and use the import button in the portfolio.</p>}
 
    <div className="flex flex-wrap items-center gap-3">
     <Link href={"/api/seo/sites/"+site.id+"/opportunities.csv"} className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800">Download keyword sample (CSV) →</Link>
     <Link href={"/api/seo/sites/"+site.id+"/snapshot.json"} className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50">Export site SEO data (JSON) →</Link>
    </div>
-   <p className="text-xs text-slate-500">JSON snapshots cover up to 200 records per collection and indicate when the limit may omit data. They exclude DNS secrets and reviewer profile IDs. This does not export TAKATAK account data.</p>
+   <p className="text-xs text-slate-500">Les instantanés JSON couvrent jusqu’à 200 fiches par collection et indiquent quand la limite peut en omettre. Ils excluent les secrets DNS et les identifiants des réviseurs. Les données du compte TAKATAK ne sont pas exportées. · JSON snapshots cover up to 200 records per collection and indicate when the limit may omit data. They exclude DNS secrets and reviewer profile IDs. This does not export TAKATAK account data.</p>
   </section>}
 
   <section className="space-y-3 rounded-2xl border bg-white p-5">
-    <h2 className="text-lg font-bold text-slate-950">Original SEO content briefs</h2>
-    <p className="text-sm text-slate-600">Create editorial briefs for the site’s actual niche and audience. A client manager can approve or reject a draft after human review. Approval never publishes an article or creates a CMS record.</p>
+    <h2 className="text-lg font-bold text-slate-950">Plans de contenu SEO originaux · Original SEO content briefs</h2>
+    <p className="text-sm text-slate-600">Créez des plans éditoriaux pour la vraie niche et le vrai public du site. Un gestionnaire client peut approuver ou refuser un brouillon après relecture humaine. L’approbation ne publie jamais d’article et ne crée rien dans le CMS. · Create editorial briefs for the site’s actual niche and audience. A client manager can approve or reject a draft after human review. Approval never publishes an article or creates a CMS record.</p>
     {briefResult?<p role="status" className={"rounded-xl p-3 text-sm "+(["created","reviewed"].includes(briefResult)?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>
       {briefResult==="created"?"Content brief saved as a draft.":briefResult==="reviewed"?"Editorial decision saved. No content was published.":
        briefResult==="invalid"?"Provide a valid keyword and a detailed editorial angle.":
@@ -110,7 +110,7 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
        "The SEO service has not confirmed your brief. Please retry later."}
     </p>:null}
     {briefs.kind==="ready"?<>
-      {briefs.rows.length===0?<p className="text-sm text-slate-500">No content briefs exist for this website yet.</p>:<div className="grid gap-3 md:grid-cols-2">
+      {briefs.rows.length===0?<p className="text-sm text-slate-500">Aucun plan de contenu pour ce site pour l’instant. · No content briefs exist for this website yet.</p>:<div className="grid gap-3 md:grid-cols-2">
         {briefs.rows.map(item=><article key={item.id} className="rounded-xl border border-slate-200 p-4">
           <p className="font-semibold text-slate-900">{item.keyword}</p>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-600">{item.angle}</p>
@@ -121,15 +121,15 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
             <input type="hidden" name="briefId" value={item.id}/>
             <label className="block text-xs font-semibold text-slate-700">Human review decision
               <select name="status" defaultValue="approved" className="mt-1 w-full rounded-lg border p-2 text-xs">
-                <option value="approved">Approve editorial plan</option>
-                <option value="rejected">Reject and request changes</option>
+                <option value="approved">Approuver le plan éditorial · Approve editorial plan</option>
+                <option value="rejected">Refuser et demander des changements · Reject and request changes</option>
               </select>
             </label>
             <label className="block text-xs font-semibold text-slate-700">Review note (at least 10 characters if rejecting)
               <textarea name="note" maxLength={500} rows={2} className="mt-1 w-full rounded-lg border p-2 text-xs"/>
             </label>
-            <p className="text-xs text-amber-800">The decision is final. It will not publish or distribute any article.</p>
-            <button type="submit" className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white">Save review decision</button>
+            <p className="text-xs text-amber-800">La décision est définitive. Elle ne publie ni ne diffuse aucun article. · The decision is final. It will not publish or distribute any article.</p>
+            <button type="submit" className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white">Enregistrer la décision de révision · Save review decision</button>
           </form>:null}
         </article>)}
       </div>}
@@ -141,19 +141,19 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
         <label className="text-xs font-semibold text-slate-700 sm:col-span-2">Original editorial angle
           <textarea name="angle" required minLength={10} maxLength={500} rows={3} className="mt-1 w-full rounded-xl border p-3 text-sm" placeholder="Who is the reader? What first-hand facts and independent sources should this article include?"/>
         </label>
-        <button type="submit" className="rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white sm:col-span-2">Save content brief as draft</button>
+        <button type="submit" className="rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white sm:col-span-2">Enregistrer le plan de contenu en brouillon · Save content brief as draft</button>
       </form>:null}
-    </>:<p className="text-sm text-amber-700">Content briefs for this site are prepared by the TAKATAK team on request.</p>}
+    </>:<p className="text-sm text-amber-700">L’équipe TAKATAK prépare les plans de contenu de ce site sur demande. · Content briefs for this site are prepared by the TAKATAK team on request.</p>}
   </section>
 
   <section className="space-y-3 rounded-2xl border bg-white p-5">
     <div>
-      <h2 className="text-lg font-bold text-slate-950">Editorial backlink prospects</h2>
+      <h2 className="text-lg font-bold text-slate-950">Prospects de liens éditoriaux · Editorial backlink prospects</h2>
       {prospectResult?<p role="status" className={"mt-2 rounded-xl p-3 text-sm "+(["created","updated"].includes(prospectResult)?"bg-emerald-50 text-emerald-800":"bg-amber-50 text-amber-900")}>{prospectResult==="created"?"Editorial opportunity recorded.":prospectResult==="updated"?"Prospect status saved.":prospectResult==="invalid"?"Check the publication URL, description and selected status.":prospectResult==="unauthorized"?"Your workspace role cannot modify these prospects.":"The backlink service did not confirm your change. Retry later."}</p>:null}
       <p className="mt-1 text-sm text-slate-600">Track relevant external publications and editorial outreach. A prospect is not a verified earned backlink; no emails are sent automatically.</p>
     </div>
     {prospects.kind==="ready"?<div className="space-y-3">
-      {prospects.rows.length===0?<p className="text-sm text-slate-500">No backlink prospects recorded for this website.</p>:<div className="grid gap-3 md:grid-cols-2">{prospects.rows.map(item=><div key={item.id} className="rounded-xl border border-slate-200 p-4">
+      {prospects.rows.length===0?<p className="text-sm text-slate-500">Aucun prospect de lien entrant enregistré pour ce site. · No backlink prospects recorded for this website.</p>:<div className="grid gap-3 md:grid-cols-2">{prospects.rows.map(item=><div key={item.id} className="rounded-xl border border-slate-200 p-4">
        <p className="font-semibold text-slate-900">{item.publication}</p>
        <a href={item.url} target="_blank" rel="noopener noreferrer" className="mt-1 block break-all text-xs text-blue-700 underline">{item.url}</a>
        <p className="mt-2 text-sm text-slate-600">{item.relevance}</p>
@@ -161,21 +161,21 @@ export default async function SeoEvidencePage({params,searchParams}:{params:Prom
        {canManage?<form action={changeBacklinkProspectStatus} className="mt-3 flex flex-wrap gap-2">
          <input type="hidden" name="siteId" value={siteId}/>
          <input type="hidden" name="prospectId" value={item.id}/>
-         <label htmlFor={"prospect-status-"+item.id} className="sr-only">Prospect status</label>
+         <label htmlFor={"prospect-status-"+item.id} className="sr-only">Statut du prospect · Prospect status</label>
          <select id={"prospect-status-"+item.id} name="status" defaultValue={item.status} className="rounded-lg border px-2 py-2 text-xs">
-           <option value="identified">Identified</option><option value="researching">Researching</option>
-           <option value="contacted">Contacted manually</option><option value="declined">Declined</option>
+           <option value="identified">Identifié · Identified</option><option value="researching">En recherche · Researching</option>
+           <option value="contacted">Contacté à la main · Contacted manually</option><option value="declined">Refusé · Declined</option>
          </select>
-         <button type="submit" className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white">Save status</button>
+         <button type="submit" className="rounded-lg bg-blue-700 px-3 py-2 text-xs font-semibold text-white">Enregistrer le statut · Save status</button>
        </form>:null}
       </div>)}</div>}
-    </div>:<p className="text-sm text-amber-700">Backlink prospect service not available. No results are simulated.</p>}
+    </div>:<p className="text-sm text-amber-700">Le service de prospects de liens entrants est injoignable. Aucun résultat n’est simulé. · Backlink prospect service not available. No results are simulated.</p>}
     {canManage&&prospects.kind==="ready"?<form action={createBacklinkProspect} className="grid gap-3 border-t pt-4 sm:grid-cols-2">
       <input type="hidden" name="siteId" value={siteId}/>
-      <label className="text-xs font-semibold text-slate-700">Publication name<input name="publication" required minLength={2} maxLength={150} className="mt-1 w-full rounded-lg border p-3 text-sm" placeholder="Relevant industry publisher"/></label>
-      <label className="text-xs font-semibold text-slate-700">Public HTTPS page<input name="url" required type="url" maxLength={512} className="mt-1 w-full rounded-lg border p-3 text-sm" placeholder="https://publisher.example/article"/></label>
-      <label className="text-xs font-semibold text-slate-700 sm:col-span-2">Why is this relevant?<textarea name="relevance" required minLength={10} maxLength={500} rows={3} className="mt-1 w-full rounded-lg border p-3 text-sm" placeholder="Explain the niche and editorial connection."/></label>
-      <button type="submit" className="rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white sm:col-span-2">Add editorial opportunity</button>
+      <label className="text-xs font-semibold text-slate-700">Nom de la publication · Publication name<input name="publication" required minLength={2} maxLength={150} className="mt-1 w-full rounded-lg border p-3 text-sm" placeholder="Relevant industry publisher"/></label>
+      <label className="text-xs font-semibold text-slate-700">Page HTTPS publique · Public HTTPS page<input name="url" required type="url" maxLength={512} className="mt-1 w-full rounded-lg border p-3 text-sm" placeholder="https://publisher.example/article"/></label>
+      <label className="text-xs font-semibold text-slate-700 sm:col-span-2">Pourquoi est-ce pertinent ? · Why is this relevant?<textarea name="relevance" required minLength={10} maxLength={500} rows={3} className="mt-1 w-full rounded-lg border p-3 text-sm" placeholder="Explain the niche and editorial connection."/></label>
+      <button type="submit" className="rounded-xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white sm:col-span-2">Ajouter une occasion éditoriale · Add editorial opportunity</button>
     </form>:null}
   </section>
  </main>;

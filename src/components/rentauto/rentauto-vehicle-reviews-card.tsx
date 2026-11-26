@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type VehicleReview = {
   id: string;
@@ -53,6 +54,7 @@ function dateTime(value: string): string {
 }
 
 export function RentautoVehicleReviewsCard() {
+  const fr = useDashboardLanguage() === "fr";
   const [vehicles, setVehicles] = useState<VehicleReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -155,7 +157,7 @@ export function RentautoVehicleReviewsCard() {
               className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
               aria-hidden="true"
             />
-            Refresh
+            {fr ? "Actualiser" : "Refresh"}
           </button>
         }
       />
@@ -173,7 +175,7 @@ export function RentautoVehicleReviewsCard() {
           </div>
         ) : vehicles.length === 0 ? (
           <p className="py-4 text-sm text-slate-500">
-            No vehicle documents are waiting for review.
+            {fr ? "Aucun document de véhicule en attente." : "No vehicle documents are waiting for review."}
           </p>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -189,7 +191,7 @@ export function RentautoVehicleReviewsCard() {
                       <p className="font-semibold text-slate-900">
                         {vehicle.year} {vehicle.make} {vehicle.model}
                       </p>
-                      <Badge tone="warning">Documents pending</Badge>
+                      <Badge tone="warning">{fr ? "Documents en attente" : "Documents pending"}</Badge>
                       <Badge>{vehicle.status}</Badge>
                     </div>
                     <p className="mt-1 text-sm text-slate-600">
@@ -212,7 +214,7 @@ export function RentautoVehicleReviewsCard() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
-                          Registration
+                          {fr ? "Enregistrement" : "Registration"}
                           <ExternalLink className="h-3 w-3" aria-hidden="true" />
                         </a>
                       ) : null}
@@ -224,7 +226,7 @@ export function RentautoVehicleReviewsCard() {
                           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50"
                         >
                           <FileCheck2 className="h-3.5 w-3.5" aria-hidden="true" />
-                          Insurance
+                          {fr ? "Assurance" : "Insurance"}
                           <ExternalLink className="h-3 w-3" aria-hidden="true" />
                         </a>
                       ) : null}
@@ -252,7 +254,7 @@ export function RentautoVehicleReviewsCard() {
                       className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <XCircle className="h-4 w-4" aria-hidden="true" />
-                      Reject
+                      {fr ? "Refuser" : "Reject"}
                     </button>
                   </div>
                 </div>

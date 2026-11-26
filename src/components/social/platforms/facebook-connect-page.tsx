@@ -14,6 +14,7 @@ import { useState } from "react";
 import { FacebookSubscribedDashboard } from "@/components/social/platforms/facebook-subscribed-dashboard";
 import { FacebookPageSyncDashboard } from "@/components/social/platforms/facebook-page-sync-dashboard";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -105,6 +106,7 @@ export function FacebookConnectPage({
     | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const subscribedPreview = searchParams.get("preview") === "subscribed";
   const [busy, setBusy] = useState(false);
@@ -173,8 +175,7 @@ export function FacebookConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple Facebook Page selections need attention. Open Manage
-        connections and confirm a single Page for this brand.
+        {fr ? "Plusieurs pages Facebook sont choisies. Ouvrez Gérer les connexions et confirmez une seule page pour cette marque." : "Multiple Facebook Page selections need attention. Open Manage connections and confirm a single Page for this brand."}
       </div>
     );
   }
@@ -196,11 +197,10 @@ export function FacebookConnectPage({
           <section className="flex flex-col gap-4 rounded-[14px] border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-[17px] font-semibold text-slate-950">
-                No Facebook Page connected
+                {fr ? "Aucune page Facebook branchée" : "No Facebook Page connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Your saved Facebook history remains stored. Reconnect the same
-                Page to restore only that Page&apos;s analytics.
+                {fr ? "Votre historique Facebook reste enregistré. Reconnectez la même page pour retrouver les statistiques de cette page seulement." : "Your saved Facebook history remains stored. Reconnect the same Page to restore only that Page's analytics."}
               </p>
               {error ? (
                 <p className="mt-2 text-sm text-rose-700" role="alert">
@@ -236,7 +236,7 @@ export function FacebookConnectPage({
       <section className="flex flex-col gap-6 rounded-[18px] border border-[#a8b4ff] bg-[#ebeaff] px-7 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
         <div className="min-w-0">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            Connect your Facebook page
+            {fr ? "Branchez votre page Facebook" : "Connect your Facebook page"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
             {activeBrandName?.trim().toLowerCase() === "ahm verdun"
@@ -291,11 +291,10 @@ export function FacebookConnectPage({
       <section className="relative min-h-[245px] overflow-hidden rounded-[18px] border border-[#e1e4e7] bg-white px-8 py-9">
         <div className="relative z-10 max-w-2xl">
           <h2 className="text-[21px] font-medium leading-7 text-[#30343a]">
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(
@@ -304,7 +303,7 @@ export function FacebookConnectPage({
             )}
             className="mt-5 inline-flex h-12 items-center justify-center rounded-[10px] border border-[#493546] bg-white px-7 text-[15px] font-medium text-[#342431] transition hover:bg-[#f8f8f8]"
           >
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </Link>
         </div>
 

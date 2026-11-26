@@ -213,9 +213,7 @@ export default async function LocationDetailPage({
 
           <CardBody>
             <p className="text-sm leading-6 text-amber-700">
-              Select a non-archived brand
-              before saving changes to this
-              location.
+              Choisissez une marque non archivée avant d’enregistrer les changements de cet emplacement. · Select a non-archived brand before saving changes to this location.
             </p>
           </CardBody>
         </Card>

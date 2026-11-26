@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { api, FilterBar, fmtTime, Marketplace, ModeBanner, money, STATUS_LABEL, useCatalog, useFilters } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Order = {
   id: string; channel: string; marketplace: string; externalOrderId: string; displayId?: string; brandName?: string; locationCode?: string;
@@ -15,6 +16,7 @@ const STATUSES = ['new', 'accepted', 'ready', 'dispatched', 'completed', 'cancel
 
 // Order history (Atlas "Orders"): every order from every app, filterable, searchable, exportable.
 export default function OrdersHistoryPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { filters, set, query } = useFilters('today');
   const { brands, activeLocations, locName } = useCatalog();
   const [status, setStatus] = useState('');
@@ -47,12 +49,12 @@ export default function OrdersHistoryPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Order history</h1>
-          <div className="small">Every order from Uber Eats, DoorDash, SkipTheDishes and Too Good To Go. Click an order for its full timeline.</div>
+          <h1>{fr ? "Historique des commandes" : "Order history"}</h1>
+          <div className="small">{fr ? "Chaque commande d’Uber Eats, DoorDash, SkipTheDishes et Too Good To Go. Cliquez une commande pour voir tout son parcours." : "Every order from Uber Eats, DoorDash, SkipTheDishes and Too Good To Go. Click an order for its full timeline."}</div>
         </div>
         <div className="fh-row">
-          <a className="button btn-light" href={`/api/food-hub/reports/order_transactions?format=csv&${exportQuery}`}>Export CSV</a>
-          <a className="button btn-light" href={`/api/food-hub/reports/order_transactions?format=xlsx&${exportQuery}`}>Export Excel</a>
+          <a className="button btn-light" href={`/api/food-hub/reports/order_transactions?format=csv&${exportQuery}`}>{fr ? "Exporter en CSV" : "Export CSV"}</a>
+          <a className="button btn-light" href={`/api/food-hub/reports/order_transactions?format=xlsx&${exportQuery}`}>{fr ? "Exporter en Excel" : "Export Excel"}</a>
         </div>
       </div>
       <ModeBanner mode={mode} />
@@ -60,7 +62,7 @@ export default function OrdersHistoryPage() {
         filters={filters} set={set} brands={brands.filter((b) => b.active).map((b) => b.name)} locations={activeLocations}
         extra={<>
           <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status">
-            <option value="">All statuses</option>
+            <option value="">{fr ? "Tous les statuts" : "All statuses"}</option>
             {STATUSES.map((s) => <option key={s} value={s}>{STATUS_LABEL[s] ?? s}</option>)}
           </select>
           <input type="search" placeholder="Order #, customer, Clover id…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ minWidth: 220 }} />
@@ -78,7 +80,7 @@ export default function OrdersHistoryPage() {
 
       <div className="fh-table-wrap">
         <table>
-          <thead><tr><th>Placed</th><th>Platform</th><th>Order</th><th>Brand</th><th>Location</th><th>Customer</th><th>Items</th><th>Status</th><th>Clover</th><th style={{ textAlign: 'right' }}>Total</th></tr></thead>
+          <thead><tr><th>{fr ? "Passée" : "Placed"}</th><th>{fr ? "Plateforme" : "Platform"}</th><th>{fr ? "Commande" : "Order"}</th><th>{fr ? "Marque" : "Brand"}</th><th>{fr ? "Emplacement" : "Location"}</th><th>{fr ? "Client" : "Customer"}</th><th>{fr ? "Articles" : "Items"}</th><th>{fr ? "Statut" : "Status"}</th><th>Clover</th><th style={{ textAlign: 'right' }}>Total</th></tr></thead>
           <tbody>
             {shown.map((o) => (
               <tr key={o.id}>
@@ -90,11 +92,11 @@ export default function OrdersHistoryPage() {
                 <td className="small">{o.customerName ?? '—'}</td>
                 <td>{o.lines.reduce((s, l) => s + l.quantity, 0)}</td>
                 <td><span className={`fh-chip st-${o.status}`} title={o.timeline?.cancelReason ?? ''}>{STATUS_LABEL[o.status] ?? o.status}</span></td>
-                <td>{o.posOrderId ? <span className="badge badge-green">Yes</span> : o.posError ? <span className="badge badge-red" title={o.posError}>Failed</span> : <span className="small">—</span>}</td>
+                <td>{o.posOrderId ? <span className="badge badge-green">{fr ? "Oui" : "Yes"}</span> : o.posError ? <span className="badge badge-red" title={o.posError}>{fr ? "Échec" : "Failed"}</span> : <span className="small">—</span>}</td>
                 <td style={{ textAlign: 'right' }}>{money(o.total)}</td>
               </tr>
             ))}
-            {!loading && orders.length === 0 && <tr><td colSpan={10} className="small">No orders match these filters.</td></tr>}
+            {!loading && orders.length === 0 && <tr><td colSpan={10} className="small">{fr ? "Aucune commande ne correspond à ces filtres." : "No orders match these filters."}</td></tr>}
           </tbody>
         </table>
       </div>

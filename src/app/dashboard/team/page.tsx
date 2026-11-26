@@ -83,15 +83,15 @@ export default async function TeamPermissionsPage() {
       <main className="space-y-6">
         <header>
           <p className="text-sm font-medium text-indigo-600">
-            Workspace administration
+            Administration de l’espace · Workspace administration
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">
-            Team & Permissions
+            Équipe et autorisations · Team & Permissions
           </h1>
         </header>
 
         <section className="rounded-2xl border border-red-200 bg-red-50 p-6">
-          <h2 className="font-semibold text-red-900">Team data unavailable</h2>
+          <h2 className="font-semibold text-red-900">Données de l’équipe injoignables · Team data unavailable</h2>
           <p className="mt-2 text-sm text-red-700">{data.message}</p>
         </section>
       </main>
@@ -137,10 +137,10 @@ export default async function TeamPermissionsPage() {
       <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-sm font-medium text-indigo-600">
-            Workspace administration
+            Administration de l’espace · Workspace administration
           </p>
           <h1 className="mt-1 text-2xl font-semibold text-slate-950">
-            Team & Permissions
+            Équipe et autorisations · Team & Permissions
           </h1>
           <p className="mt-2 text-sm text-slate-600">
             Invite people, edit roles and permissions, and remove access for{" "}
@@ -151,12 +151,12 @@ export default async function TeamPermissionsPage() {
         <div className="flex flex-wrap gap-2">
           {canInvite ? (
             <span className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">
-              Invitation access
+              Accès par invitation · Invitation access
             </span>
           ) : null}
           {canManageUsers ? (
             <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200">
-              User management access
+              Accès à la gestion des utilisateurs · User management access
             </span>
           ) : null}
         </div>
@@ -165,9 +165,9 @@ export default async function TeamPermissionsPage() {
       {canInvite ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-5">
-            <h2 className="font-semibold text-slate-950">Invite a team member</h2>
+            <h2 className="font-semibold text-slate-950">Inviter un membre de l’équipe · Invite a team member</h2>
             <p className="mt-1 text-sm text-slate-500">
-              Send secure workspace access by email.
+              Envoyez un accès sécurisé à l’espace par courriel. · Send secure workspace access by email.
             </p>
           </div>
           <InvitationForm allowedRoles={allowedInvitationRoles} />
@@ -176,19 +176,19 @@ export default async function TeamPermissionsPage() {
 
       <section className="grid gap-4 sm:grid-cols-3">
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Active members</p>
+          <p className="text-sm text-slate-500">Membres actifs · Active members</p>
           <p className="mt-2 text-3xl font-semibold text-slate-950">
             {activeMembers}
           </p>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Suspended members</p>
+          <p className="text-sm text-slate-500">Membres suspendus · Suspended members</p>
           <p className="mt-2 text-3xl font-semibold text-slate-950">
             {suspendedMembers}
           </p>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Pending invitations</p>
+          <p className="text-sm text-slate-500">Invitations en attente · Pending invitations</p>
           <p className="mt-2 text-3xl font-semibold text-slate-950">
             {pendingInvitations.length}
           </p>
@@ -197,15 +197,15 @@ export default async function TeamPermissionsPage() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-200 px-5 py-4">
-          <h2 className="font-semibold text-slate-950">Workspace members</h2>
+          <h2 className="font-semibold text-slate-950">Membres de l’espace · Workspace members</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Roles and permissions are enforced for this workspace.
+            Les rôles et autorisations s’appliquent à cet espace. · Roles and permissions are enforced for this workspace.
           </p>
         </div>
 
         {data.members.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="font-medium text-slate-800">No team members found</p>
+            <p className="font-medium text-slate-800">Aucun membre de l’équipe trouvé · No team members found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -213,19 +213,19 @@ export default async function TeamPermissionsPage() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    User
+                    Utilisateur · User
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Role
+                    Rôle · Role
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Status
+                    Statut · Status
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Custom access
+                    Accès sur mesure · Custom access
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Joined
+                    Inscrit · Joined
                   </th>
                   {canShowMemberActions ? (
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -242,7 +242,7 @@ export default async function TeamPermissionsPage() {
                         {member.displayName ?? member.email ?? "Unknown user"}
                         {member.profileId === access.profileId ? (
                           <span className="ml-2 text-xs font-medium text-indigo-600">
-                            You
+                            Vous · You
                           </span>
                         ) : null}
                       </p>
@@ -270,10 +270,10 @@ export default async function TeamPermissionsPage() {
                       {member.role === "owner" && !member.customRoleId ? (
                         <>
                           <div className="font-medium text-emerald-700">
-                            All access
+                            Accès complet · All access
                           </div>
                           <div className="mt-1 text-xs text-slate-400">
-                            Granted automatically by Owner role
+                            Accordé automatiquement par le rôle de propriétaire · Granted automatically by Owner role
                           </div>
                         </>
                       ) : (
@@ -294,7 +294,7 @@ export default async function TeamPermissionsPage() {
                       <td className="px-5 py-4 align-top">
                         {member.profileId === access.profileId ? (
                           <span className="text-xs text-slate-400">
-                            Your access cannot be changed here.
+                            Votre accès ne se modifie pas ici. · Your access cannot be changed here.
                           </span>
                         ) : (
                           <div className="space-y-3">
@@ -317,7 +317,7 @@ export default async function TeamPermissionsPage() {
 
                             {canManagePermissions && member.role === "owner" ? (
                               <p className="text-xs text-slate-400">
-                                Owner permissions are fixed.
+                                Les autorisations du propriétaire ne changent pas. · Owner permissions are fixed.
                               </p>
                             ) : null}
 
@@ -359,15 +359,15 @@ export default async function TeamPermissionsPage() {
         <div className="border-b border-slate-200 px-5 py-4">
           <h2 className="font-semibold text-slate-950">Invitations</h2>
           <p className="mt-1 text-sm text-slate-500">
-            Invitations created for this workspace.
+            Invitations créées pour cet espace. · Invitations created for this workspace.
           </p>
         </div>
 
         {data.invitations.length === 0 ? (
           <div className="p-8 text-center">
-            <p className="font-medium text-slate-800">No invitations yet</p>
+            <p className="font-medium text-slate-800">Aucune invitation pour l’instant · No invitations yet</p>
             <p className="mt-1 text-sm text-slate-500">
-              Invitations will appear here after they are sent.
+              Les invitations apparaissent ici une fois envoyées. · Invitations will appear here after they are sent.
             </p>
           </div>
         ) : (
@@ -376,19 +376,19 @@ export default async function TeamPermissionsPage() {
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Email
+                    Courriel · Email
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Role
+                    Rôle · Role
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Status
+                    Statut · Status
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Invited by
+                    Invité par · Invited by
                   </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Expires
+                    Expire · Expires
                   </th>
                   {canInvite ? (
                     <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -438,7 +438,7 @@ export default async function TeamPermissionsPage() {
                           />
                         ) : (
                           <span className="text-xs text-slate-400">
-                            Accepted invitation retained
+                            Invitation acceptée conservée · Accepted invitation retained
                           </span>
                         )}
                       </td>

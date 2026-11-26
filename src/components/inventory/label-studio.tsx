@@ -20,6 +20,7 @@ import {
 } from "@/lib/inventory/label-layout";
 import { labelPdf } from "@/lib/inventory/label-pdf";
 import { csvCell } from "@/lib/inventory/barcodes";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 const input =
   "mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900";
 const button =
@@ -49,6 +50,7 @@ export function LabelStudio({
   canManage: boolean;
   initialProductId: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [products, setProducts] = useState<LabelProduct[]>([]),
     [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
   const [id, setId] = useState(""),
@@ -367,7 +369,7 @@ export function LabelStudio({
           <ArrowLeft size={16} /> Inventory
         </Link>
         <Link href="/dashboard/inventory/labels/setup" className={button}>
-          Retail setup & equipment
+          {fr ? "Installation et équipement de vente" : "Retail setup & equipment"}
         </Link>
         <Link href="/dashboard/inventory/quebec" className={button}>
           Exigences de vente au Québec
@@ -381,14 +383,14 @@ export function LabelStudio({
         <p role="status">Loading products…</p>
       ) : !products.length ? (
         <p className="rounded-lg bg-blue-50 p-4">
-          Add a product in Inventory, then open its label studio.
+          {fr ? "Ajoutez un produit dans l’inventaire, puis ouvrez son studio d’étiquettes." : "Add a product in Inventory, then open its label studio."}
         </p>
       ) : null}
       {labelLoading ? <p role="status">Loading saved label…</p> : null}
       {product && !error && !labelLoading ? (
         <>
           <label className="block max-w-xl text-sm font-medium text-slate-700">
-            Product
+            {fr ? "Produit" : "Product"}
             <select
               aria-label="Label product"
               className={input}
@@ -406,13 +408,10 @@ export function LabelStudio({
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-5">
               <h2 className="font-bold text-slate-900">1. Fit the jar</h2>
               <p className="text-xs leading-5 text-slate-500">
-                Measure around the jar and the straight-sided label height.
-                Label width is circumference minus a 2 mm gap. The starting 180
-                × 65 mm is an example. The blank seam strip is white space on
-                the label itself.
+                {fr ? "Mesurez le tour du pot et la hauteur de la partie droite. La largeur de l’étiquette est la circonférence moins un jeu de 2 mm. Le format de départ de 180 × 65 mm n’est qu’un exemple. La bande de joint vide est un espace blanc sur l’étiquette elle-même." : "Measure around the jar and the straight-sided label height. Label width is circumference minus a 2 mm gap. The starting 180 × 65 mm is an example. The blank seam strip is white space on the label itself."}
               </p>
               <label className="block text-sm text-slate-700">
-                Jar shape
+                {fr ? "Forme du pot" : "Jar shape"}
                 <select
                   aria-label="Jar shape"
                   className={input}
@@ -424,7 +423,7 @@ export function LabelStudio({
                     )
                   }
                 >
-                  <option value="round">Round jar</option>
+                  <option value="round">{fr ? "Pot rond" : "Round jar"}</option>
                   <option value="hexagonal">
                     Hexagonal jar — six flat faces
                   </option>
@@ -433,7 +432,7 @@ export function LabelStudio({
               {config.jarShape === "hexagonal" ? (
                 <div className="space-y-2 rounded-lg bg-blue-50 p-3">
                   <label className="block text-sm text-slate-700">
-                    Flat-face width mm
+                    {fr ? "Largeur de la face plane (mm)" : "Flat-face width mm"}
                     <input
                       className={input}
                       type="number"
@@ -448,13 +447,7 @@ export function LabelStudio({
                     />
                   </label>
                   <p className="text-xs leading-5 text-blue-900">
-                    Measure only the flat glass, excluding rounded corners. When
-                    applying the wrap, centre the complete barcode on one flat
-                    face and keep it off corners and seams. The studio checks
-                    the symbol plus 2 mm application allowance on each side.
-                    Paper fitting and a scan on the finished jar are still
-                    required. A 288 mL capacity does not establish honey weight
-                    or label dimensions.
+                    {fr ? "Mesurez seulement le verre plat, sans les coins arrondis. À la pose, centrez tout le code-barres sur une face plane, loin des coins et des joints. Le studio vérifie le symbole plus un jeu d’application de 2 mm de chaque côté. Un essai sur papier et une lecture sur le pot fini restent nécessaires. Une capacité de 288 mL ne donne ni le poids du miel ni les dimensions de l’étiquette." : "Measure only the flat glass, excluding rounded corners. When applying the wrap, centre the complete barcode on one flat face and keep it off corners and seams. The studio checks the symbol plus 2 mm application allowance on each side. Paper fitting and a scan on the finished jar are still required. A 288 mL capacity does not establish honey weight or label dimensions."}
                   </p>
                   {scene?.flatFaceFit ? (
                     <p
@@ -514,7 +507,7 @@ export function LabelStudio({
                 </span>
               </label>
               <label className="block text-sm text-slate-700">
-                Printer resolution
+                {fr ? "Résolution de l’imprimante" : "Printer resolution"}
                 <select
                   aria-label="Printer resolution"
                   className={input}
@@ -529,7 +522,7 @@ export function LabelStudio({
                 </select>
               </label>
               <label className="block text-sm text-slate-700">
-                Barcode orientation
+                {fr ? "Orientation du code-barres" : "Barcode orientation"}
                 <select
                   aria-label="Barcode orientation"
                   className={input}
@@ -550,7 +543,7 @@ export function LabelStudio({
                 </select>
               </label>
               <label className="block text-sm text-slate-700">
-                Print style
+                {fr ? "Style d’impression" : "Print style"}
                 <select
                   className={input}
                   value={config.theme}
@@ -603,9 +596,9 @@ export function LabelStudio({
               {textField("colour", "Honey colour class (if applicable)")}
               {textField("storage", "Storage instructions / conservation", 2)}
               {textField("notes", "Additional approved text", 2)}
-              <h2 className="pt-2 font-bold text-slate-900">Nutrition panel</h2>
+              <h2 className="pt-2 font-bold text-slate-900">{fr ? "Tableau de valeur nutritive" : "Nutrition panel"}</h2>
               <label className="block text-sm text-slate-700">
-                Nutrition label review
+                {fr ? "Révision du tableau de valeur nutritive" : "Nutrition label review"}
                 <select
                   className={input}
                   value={config.nutritionStatus}
@@ -617,13 +610,13 @@ export function LabelStudio({
                   }
                 >
                   <option value="unreviewed">Not reviewed yet — draft</option>
-                  <option value="provided">Include approved artwork</option>
-                  <option value="exempt">Reviewed exemption applies</option>
+                  <option value="provided">{fr ? "Inclure le visuel approuvé" : "Include approved artwork"}</option>
+                  <option value="exempt">{fr ? "L’exemption révisée s’applique" : "Reviewed exemption applies"}</option>
                 </select>
               </label>
               {config.nutritionStatus === "provided" ? (
                 <label className="block text-sm text-slate-700">
-                  Approved bilingual panel (PNG/JPEG, max 300 KB)
+                  {fr ? "Panneau bilingue approuvé (PNG/JPEG, 300 Ko max.)" : "Approved bilingual panel (PNG/JPEG, max 300 KB)"}
                   <input
                     className={input}
                     type="file"
@@ -643,14 +636,14 @@ export function LabelStudio({
                         }));
                       }}
                     >
-                      Remove artwork
+                      {fr ? "Retirer le visuel" : "Remove artwork"}
                     </button>
                   ) : null}
                 </label>
               ) : null}
               {config.nutritionStatus === "provided" ? (
                 <label className="block text-sm text-slate-700">
-                  Approved panel width (mm)
+                  {fr ? "Largeur du panneau approuvé (mm)" : "Approved panel width (mm)"}
                   <input
                     className={input}
                     type="number"
@@ -666,7 +659,7 @@ export function LabelStudio({
               ) : null}
               {config.nutritionStatus === "exempt" ? (
                 <label className="block text-sm text-slate-700">
-                  Reviewed exemption and basis
+                  {fr ? "Exemption révisée et motif" : "Reviewed exemption and basis"}
                   <textarea
                     className={input}
                     maxLength={400}
@@ -678,9 +671,7 @@ export function LabelStudio({
                 </label>
               ) : null}
               <p className="text-xs leading-5 text-slate-500">
-                The app does not invent nutrition values or determine legal
-                exemptions. Supply reviewed artwork or record the exemption that
-                applies to this product and sales channel.
+                {fr ? "L’app n’invente pas de valeurs nutritives et ne décide pas des exemptions légales. Fournissez un visuel révisé ou inscrivez l’exemption qui s’applique à ce produit et à ce canal de vente." : "The app does not invent nutrition values or determine legal exemptions. Supply reviewed artwork or record the exemption that applies to this product and sales channel."}
               </p>
               <h2 className="pt-2 font-bold text-slate-900">
                 3. This print batch
@@ -696,15 +687,14 @@ export function LabelStudio({
               </button>
               {!canManage ? (
                 <p className="text-xs text-slate-500">
-                  You can make a local print preview. Saving requires inventory
-                  management permission.
+                  {fr ? "Vous pouvez faire un aperçu d’impression local. Enregistrer demande l’autorisation de gérer l’inventaire." : "You can make a local print preview. Saving requires inventory management permission."}
                 </p>
               ) : null}
             </section>
             <div className="min-w-0 space-y-5">
               <section className="rounded-xl bg-[#060D1F] p-5">
                 <div className="mb-4 flex flex-wrap justify-between gap-2 text-sm text-white">
-                  <h2 className="font-bold">Full wrap preview</h2>
+                  <h2 className="font-bold">{fr ? "Aperçu de l’étiquette complète" : "Full wrap preview"}</h2>
                   <span>
                     {config.widthMm} × {config.heightMm} mm
                   </span>
@@ -724,9 +714,7 @@ export function LabelStudio({
                   <p className="text-sm text-white">Preparing artwork…</p>
                 )}
                 <p className="mt-3 text-xs leading-5 text-slate-300">
-                  Grey strip shows the blank seam area. It prints white. Barcode
-                  bars and white space keep their size; long text must fit
-                  before export.
+                  {fr ? "La bande grise montre la zone de joint vide ; elle s’imprime en blanc. Les barres et marges du code-barres gardent leur taille ; un long texte doit tenir avant l’export." : "Grey strip shows the blank seam area. It prints white. Barcode bars and white space keep their size; long text must fit before export."}
                 </p>
               </section>
               <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
@@ -739,7 +727,7 @@ export function LabelStudio({
                     className="text-blue-700 underline"
                     href="/dashboard/inventory"
                   >
-                    Edit product barcode
+                    {fr ? "Modifier le code-barres du produit" : "Edit product barcode"}
                   </Link>
                 </p>
                 <label className="flex gap-2 text-sm">
@@ -767,20 +755,15 @@ export function LabelStudio({
                   </ul>
                 ) : scene ? (
                   <p className="text-xs text-blue-800">
-                    Owner checklist complete. This is not retailer approval or
-                    barcode quality certification.
+                    {fr ? "Liste du propriétaire terminée. Ce n’est ni une approbation du détaillant ni une certification de qualité du code-barres." : "Owner checklist complete. This is not retailer approval or barcode quality certification."}
                   </p>
                 ) : (
                   <p className="text-xs text-amber-800">
-                    Resolve the label fit before reviewing the packaging
-                    checklist.
+                    {fr ? "Réglez l’ajustement de l’étiquette avant de revoir la liste d’emballage." : "Resolve the label fit before reviewing the packaging checklist."}
                   </p>
                 )}
                 <p className="text-xs leading-5 text-slate-500">
-                  Unfinished proofs print a DRAFT banner. This editor can embed
-                  your approved nutrition artwork. It does not calculate
-                  nutrition values, assess exemptions, or replace a mandatory
-                  panel with free text.
+                  {fr ? "Les épreuves non finies s’impriment avec une bannière BROUILLON. Cet éditeur peut intégrer votre visuel nutritionnel approuvé. Il ne calcule pas de valeurs nutritives, ne juge pas les exemptions et ne remplace pas un tableau obligatoire par du texte libre." : "Unfinished proofs print a DRAFT banner. This editor can embed your approved nutrition artwork. It does not calculate nutrition values, assess exemptions, or replace a mandatory panel with free text."}
                 </p>
               </section>
               <QuebecReviewEditor
@@ -791,7 +774,7 @@ export function LabelStudio({
                 <h2 className="font-bold">5. Print your labels</h2>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm">
-                    Paper / output
+                    {fr ? "Papier / sortie" : "Paper / output"}
                     <select
                       className={input}
                       aria-label="Paper / output"
@@ -801,14 +784,14 @@ export function LabelStudio({
                       <option value="letter">
                         Letter adhesive sheet (8.5 × 11 in)
                       </option>
-                      <option value="a4">A4 adhesive sheet</option>
+                      <option value="a4">{fr ? "Feuille adhésive A4" : "A4 adhesive sheet"}</option>
                       <option value="roll">
                         Custom roll — up to 104 mm print width
                       </option>
                     </select>
                   </label>
                   <label className="text-sm">
-                    Number of labels
+                    {fr ? "Nombre d’étiquettes" : "Number of labels"}
                     <input
                       className={input}
                       type="number"
@@ -842,16 +825,11 @@ export function LabelStudio({
                     <Printer size={16} /> Open print PDF
                   </button>
                   <button className={button} onClick={productSheet}>
-                    Retailer product CSV
+                    {fr ? "CSV des produits du détaillant" : "Retailer product CSV"}
                   </button>
                 </div>
                 <p className="text-xs leading-5 text-slate-500">
-                  Print at 100% / Actual size. Disable Fit to page. Use
-                  full-sheet adhesive stock and trim at the crop marks, or use a
-                  matching custom roll size. A printer does not apply the label
-                  to the jar. Wrap it smoothly, keep the barcode off the seam,
-                  and on hexagonal jars keep it entirely on one flat face, then
-                  scan it.
+                  {fr ? "Imprimez à 100 % / taille réelle. Désactivez « Ajuster à la page ». Utilisez des feuilles adhésives complètes et coupez aux traits de coupe, ou un rouleau sur mesure adapté. L’imprimante ne pose pas l’étiquette sur le pot. Enroulez-la sans plis, gardez le code-barres loin du joint et, sur un pot hexagonal, entièrement sur une face plane, puis lisez-le." : "Print at 100% / Actual size. Disable Fit to page. Use full-sheet adhesive stock and trim at the crop marks, or use a matching custom roll size. A printer does not apply the label to the jar. Wrap it smoothly, keep the barcode off the seam, and on hexagonal jars keep it entirely on one flat face, then scan it."}
                 </p>
               </section>
               <section className="space-y-3 rounded-xl border border-slate-200 bg-white p-5">
@@ -859,9 +837,7 @@ export function LabelStudio({
                   <ScanLine size={18} /> 6. Test the printed barcode
                 </h2>
                 <p className="text-xs leading-5 text-slate-500">
-                  Plug in a USB keyboard scanner, click below and scan the
-                  label. This checks the decoded product number, not print
-                  quality or retailer listing.
+                  {fr ? "Branchez un lecteur USB en mode clavier, cliquez ci-dessous et lisez l’étiquette. Cela vérifie le numéro de produit lu, pas la qualité d’impression ni l’inscription chez le détaillant." : "Plug in a USB keyboard scanner, click below and scan the label. This checks the decoded product number, not print quality or retailer listing."}
                 </p>
                 <form
                   className="flex gap-2"
@@ -884,7 +860,7 @@ export function LabelStudio({
                     autoComplete="off"
                   />
                   <button className={button} type="submit">
-                    Check
+                    {fr ? "Vérifier" : "Check"}
                   </button>
                 </form>
                 {scanResult ? (

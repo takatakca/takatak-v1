@@ -46,6 +46,7 @@ import {
   resolveConnectedAccountLabel,
   resolveProviderCardLabel,
 } from '@/lib/social/connections/social-connection-lifecycle-policy';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export type ManageConnectionsProvider = {
   provider:
@@ -473,6 +474,7 @@ export function ManageConnectionsModal({
   initialConnections: ManageConnectionsConnection[];
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1767,7 +1769,7 @@ export function ManageConnectionsModal({
           >
             <div className="flex flex-col items-center gap-3 text-[#2a1728]">
               <Loader2 className="h-9 w-9 animate-spin" />
-              <p className="text-sm font-medium">Loading connections...</p>
+              <p className="text-sm font-medium">{fr ? "Chargement des connexions…" : "Loading connections..."}</p>
             </div>
           </div>
         ) : null}
@@ -1781,7 +1783,7 @@ export function ManageConnectionsModal({
               id="manage-connections-title"
               className="text-[22px] font-normal text-slate-950"
             >
-              Manage connections
+              {fr ? "Gérer les connexions" : "Manage connections"}
             </h2>
           </header>
 
@@ -1810,7 +1812,7 @@ export function ManageConnectionsModal({
 
             {!activeBrandId ? (
               <div className="mb-7 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                Select or create a brand before connecting social accounts.
+                {fr ? "Choisissez ou créez une marque avant de brancher des comptes sociaux." : "Select or create a brand before connecting social accounts."}
               </div>
             ) : null}
 
@@ -2463,7 +2465,7 @@ export function ManageConnectionsModal({
                           }}
                           className="text-slate-700 underline-offset-2 hover:text-slate-950 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Connect independently
+                          {fr ? "Brancher séparément" : "Connect independently"}
                         </button>
                       </div>
                     ) : null}
@@ -2608,7 +2610,7 @@ export function ManageConnectionsModal({
                             }}
                             className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 transition hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                           >
-                            Cancel reconnect
+                            {fr ? "Annuler la reconnexion" : "Cancel reconnect"}
                           </button>
                         ) : null}
                       </div>
@@ -2680,7 +2682,7 @@ export function ManageConnectionsModal({
                     {showSelectFacebookPage ? (
                       <div className="mt-2 flex flex-wrap items-center gap-3 px-1">
                         <span className="text-xs font-medium text-amber-700">
-                          Select a Facebook Page to finish setup
+                          {fr ? "Choisissez une page Facebook pour terminer la configuration" : "Select a Facebook Page to finish setup"}
                         </span>
                         <button
                           type="button"
@@ -2693,7 +2695,7 @@ export function ManageConnectionsModal({
                           }
                           className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 transition hover:text-indigo-900 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Select Facebook Page
+                          {fr ? "Choisir la page Facebook" : "Select Facebook Page"}
                         </button>
                       </div>
                     ) : null}
@@ -2771,11 +2773,11 @@ export function ManageConnectionsModal({
                     id="bluesky-connect-title"
                     className="text-lg font-semibold text-slate-950"
                   >
-                    Connect Bluesky
+                    {fr ? "Brancher Bluesky" : "Connect Bluesky"}
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-600">
-                    Enter the handle of the Bluesky account you want to connect.
+                    {fr ? "Entrez l’identifiant du compte Bluesky à brancher." : "Enter the handle of the Bluesky account you want to connect."}
                   </p>
                 </div>
               </div>
@@ -2806,7 +2808,7 @@ export function ManageConnectionsModal({
                 htmlFor="bluesky-handle"
                 className="block text-sm font-medium text-slate-800"
               >
-                Bluesky handle
+                {fr ? "Identifiant Bluesky" : "Bluesky handle"}
               </label>
 
               <div className="relative mt-2">
@@ -2858,8 +2860,7 @@ export function ManageConnectionsModal({
                   id="bluesky-handle-help"
                   className="mt-2 text-xs leading-5 text-slate-500"
                 >
-                  You will continue to Bluesky to securely approve access.
-                  GROUPE TAKATAK never receives your Bluesky password.
+                  {fr ? "Vous allez sur Bluesky pour approuver l’accès en toute sécurité. GROUPE TAKATAK ne reçoit jamais votre mot de passe Bluesky." : "You will continue to Bluesky to securely approve access. GROUPE TAKATAK never receives your Bluesky password."}
                 </p>
               )}
 
@@ -2874,7 +2875,7 @@ export function ManageConnectionsModal({
                     setBlueskyHandleError(null);
                   }}
                 >
-                  Cancel
+                  {fr ? "Annuler" : "Cancel"}
                 </button>
 
                 <button

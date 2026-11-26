@@ -13,6 +13,7 @@ import { DashboardTopbar } from "./dashboard-topbar";
 import { isWebDomainWorkspace, WebDomainShell } from "@/components/web-hosting/web-domain-shell";
 import { DashboardLanguageProvider } from "@/components/layout/dashboard-language";
 import type { DashboardLanguage } from "@/lib/dashboard/nav-fr";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 /** Dashboard frame in the account's language (Account settings › Preferences). */
 export function DashboardShell({
@@ -40,6 +41,7 @@ function DashboardShellFrame({
   session: SessionSnapshot;
   unreadNotificationCount?: number;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] =
     useState(false);
@@ -86,9 +88,7 @@ function DashboardShellFrame({
 
         {!session.configured ? (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-center text-xs text-amber-800">
-            Authentication is not configured.
-            Add the required Supabase
-            environment variables.
+            {fr ? "L’authentification n’est pas configurée. Ajoutez les variables d’environnement Supabase requises." : "Authentication is not configured. Add the required Supabase environment variables."}
           </div>
         ) : null}
 

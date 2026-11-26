@@ -22,6 +22,7 @@ import {
   WEEK_STARTS,
   type AccountSettingsFieldErrors,
 } from "@/lib/account/account-settings-validation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const TIMEZONES = [
   "America/Toronto",
@@ -87,6 +88,7 @@ export function AccountSettingsView({
   canManageBilling: boolean;
   integrationsData: AccountIntegrationsPageData;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
 
   function tabHref(next: AccountSettingsTab) {
@@ -97,7 +99,7 @@ export function AccountSettingsView({
   if (data.source === "unavailable") {
     return (
       <section className="px-5 py-10 text-center sm:px-6">
-        <h1 className="text-2xl font-semibold text-slate-900">Settings</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">{fr ? "Réglages" : "Settings"}</h1>
         <p className="mt-2 text-sm text-slate-500">{data.message}</p>
       </section>
     );
@@ -107,7 +109,7 @@ export function AccountSettingsView({
     <div className="bg-white pb-16">
       <div className="bg-[#f5fafd] px-5 pt-5 sm:px-6">
         <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
-          Settings
+          {fr ? "Réglages" : "Settings"}
         </h1>
 
         <nav
@@ -173,6 +175,7 @@ function AccountPanel({
 }: {
   data: Extract<AccountSettingsPageData, { source: "database" }>;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const initials = initialsFor(data);
   const timezones = useMemo(() => {
@@ -320,16 +323,16 @@ function AccountPanel({
             {initials}
           </span>
           <div>
-            <p className="text-sm font-medium text-slate-700">Profile picture</p>
+            <p className="text-sm font-medium text-slate-700">{fr ? "Photo de profil" : "Profile picture"}</p>
             <p className="mt-1 text-sm text-slate-500">
-              Your initials are your profile picture across TAKATAK.
+              {fr ? "Vos initiales servent de photo de profil partout dans TAKATAK." : "Your initials are your profile picture across TAKATAK."}
             </p>
           </div>
         </div>
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-600">
-            First name
+            {fr ? "Prénom" : "First name"}
             <input
               value={firstName}
               onChange={(event) => setFirstName(event.target.value)}
@@ -344,7 +347,7 @@ function AccountPanel({
             ) : null}
           </label>
           <label className="block text-sm font-medium text-slate-600">
-            Last name
+            {fr ? "Nom" : "Last name"}
             <input
               value={lastName}
               onChange={(event) => setLastName(event.target.value)}
@@ -362,7 +365,7 @@ function AccountPanel({
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-[#1d1d1f]">Preferences</h2>
+        <h2 className="text-base font-semibold text-[#1d1d1f]">{fr ? "Préférences" : "Preferences"}</h2>
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-600">
             Language *
@@ -373,7 +376,7 @@ function AccountPanel({
               }
               className={inputClassName}
             >
-              <option value="en">English</option>
+              <option value="en">{fr ? "Anglais" : "English"}</option>
               <option value="fr">Français</option>
             </select>
           </label>
@@ -398,7 +401,7 @@ function AccountPanel({
           </label>
         </div>
         <label className="mt-5 block max-w-md text-sm font-medium text-slate-600">
-          First day of the week
+          {fr ? "Premier jour de la semaine" : "First day of the week"}
           <select
             value={weekStartsOn}
             onChange={(event) =>
@@ -406,15 +409,15 @@ function AccountPanel({
             }
             className={inputClassName}
           >
-            <option value="sunday">Sunday</option>
-            <option value="monday">Monday</option>
+            <option value="sunday">{fr ? "Dimanche" : "Sunday"}</option>
+            <option value="monday">{fr ? "Lundi" : "Monday"}</option>
           </select>
         </label>
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="text-base font-semibold text-[#1d1d1f]">
-          Monthly summary
+          {fr ? "Résumé mensuel" : "Monthly summary"}
         </h2>
         <button
           type="button"
@@ -434,10 +437,10 @@ function AccountPanel({
               }`}
             />
           </span>
-          Receive monthly summary
+          {fr ? "Recevoir le résumé mensuel" : "Receive monthly summary"}
         </button>
         <label className="mt-5 block text-sm font-medium text-slate-600">
-          Custom e-mail for the monthly summary
+          {fr ? "Courriel choisi pour le résumé mensuel" : "Custom e-mail for the monthly summary"}
           <input
             type="email"
             value={monthlySummaryEmail}
@@ -487,7 +490,7 @@ function AccountPanel({
           onClick={() => setConfirmDelete(true)}
           className="mt-4 inline-flex h-10 items-center rounded-md border border-rose-400 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
         >
-          Delete account
+          {fr ? "Supprimer le compte" : "Delete account"}
         </button>
       </section>
 
@@ -515,6 +518,7 @@ function AccessPanel({
 }: {
   data: Extract<AccountSettingsPageData, { source: "database" }>;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [email, setEmail] = useState(data.email ?? "");
   const [loading, setLoading] = useState(false);
@@ -739,15 +743,15 @@ function AccessPanel({
         noValidate
       >
         <h2 className="text-base font-semibold text-[#1d1d1f]">
-          Access information
+          {fr ? "Informations d’accès" : "Access information"}
         </h2>
         <p className="mt-3 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
-          TAKATAK uses passwordless sign-in. Add an email address and confirm the link sent to your inbox to enable email login.
+          {fr ? "TAKATAK se connecte sans mot de passe. Ajoutez une adresse courriel et confirmez le lien reçu pour activer la connexion par courriel." : "TAKATAK uses passwordless sign-in. Add an email address and confirm the link sent to your inbox to enable email login."}
         </p>
 
         <div className="mt-5 grid gap-5 sm:grid-cols-2">
           <label className="block text-sm font-medium text-slate-600">
-            E-mail
+            {fr ? "Courriel" : "E-mail"}
             <input
               type="email"
               value={email}
@@ -783,16 +787,15 @@ function AccessPanel({
 
       <section className="rounded-xl border border-slate-200 bg-white p-6">
         <h2 className="text-base font-semibold text-[#1d1d1f]">
-          Two factor authentication
+          {fr ? "Double authentification" : "Two factor authentication"}
         </h2>
         <p className="mt-2 text-sm text-slate-500">
-          To increase the security of your account you can enable 2-factor
-          authentication (2FA) with your mobile device.
+          {fr ? "Pour mieux protéger votre compte, activez la double authentification avec votre appareil mobile." : "To increase the security of your account you can enable 2-factor authentication (2FA) with your mobile device."}
         </p>
 
         {!data.mfaAvailable ? (
           <p className="mt-4 text-sm text-slate-500">
-            Authenticator 2FA is not enabled on this authentication project yet.
+            {fr ? "La double authentification par application n’est pas encore activée sur ce projet d’authentification." : "Authenticator 2FA is not enabled on this authentication project yet."}
           </p>
         ) : data.mfaEnabled && !enrollment ? (
           <button
@@ -808,8 +811,7 @@ function AccessPanel({
         ) : enrollment ? (
           <form onSubmit={confirmEnrollment} className="mt-5 space-y-4">
             <p className="text-sm text-slate-600">
-              Scan this code in your authenticator app, then enter the 6-digit
-              code to finish enabling 2FA.
+              {fr ? "Lisez ce code avec votre application d’authentification, puis entrez le code à 6 chiffres pour terminer l’activation de la double authentification." : "Scan this code in your authenticator app, then enter the 6-digit code to finish enabling 2FA."}
             </p>
             {/* QR is a data URL from the MFA enroll response. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -824,7 +826,7 @@ function AccessPanel({
               </p>
             ) : null}
             <label className="block max-w-xs text-sm font-medium text-slate-600">
-              Authenticator code
+              {fr ? "Code de l’application d’authentification" : "Authenticator code"}
               <input
                 value={verifyCode}
                 onChange={(event) => setVerifyCode(event.target.value)}
@@ -851,7 +853,7 @@ function AccessPanel({
                 }}
                 className="inline-flex h-10 items-center rounded-md border border-slate-300 px-4 text-sm font-medium text-slate-800"
               >
-                Cancel
+                {fr ? "Annuler" : "Cancel"}
               </button>
             </div>
           </form>

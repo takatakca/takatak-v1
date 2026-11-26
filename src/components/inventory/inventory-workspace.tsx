@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { csvCell } from "@/lib/inventory/barcodes";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Product = {
   id: string;
@@ -71,6 +72,7 @@ async function request(path: string, method = "GET", body?: unknown) {
   return data;
 }
 export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
+  const fr = useDashboardLanguage() === "fr";
   const [data, setData] = useState<Directory | null>(null),
     [error, setError] = useState(""),
     [loading, setLoading] = useState(true);
@@ -235,10 +237,10 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#060D1F] p-5 text-white">
         <div>
           <p className="text-xs font-semibold uppercase tracking-widest text-[#29C3FF]">
-            Your products, accounted for
+            {fr ? "Vos produits, bien comptés" : "Your products, accounted for"}
           </p>
           <p className="mt-2 text-sm text-slate-300">
-            Manage each business from your TAKATAK workspace.
+            {fr ? "Gérez chaque entreprise depuis votre espace TAKATAK." : "Manage each business from your TAKATAK workspace."}
           </p>
         </div>
         <button
@@ -251,13 +253,13 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
       </div>
       <div className="flex flex-wrap gap-3">
         <label className="min-w-56">
-          <span className="sr-only">Business</span>
+          <span className="sr-only">{fr ? "Entreprise" : "Business"}</span>
           <select
             className={input}
             value={brand}
             onChange={(e) => setBrand(e.target.value)}
           >
-            <option value="">All businesses</option>
+            <option value="">{fr ? "Toutes les entreprises" : "All businesses"}</option>
             {data?.brands.map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
@@ -298,8 +300,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
       ) : null}
       {!canManage ? (
         <p className="text-sm text-slate-500">
-          You have read-only inventory access. Ask your workspace owner for
-          permission to manage products and stock.
+          {fr ? "Votre accès à l’inventaire est en lecture seule. Demandez au propriétaire de l’espace l’autorisation de gérer les produits et le stock." : "You have read-only inventory access. Ask your workspace owner for permission to manage products and stock."}
         </p>
       ) : null}
       {loading ? (
@@ -342,7 +343,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
             <p className="rounded-lg bg-blue-50 p-4 text-sm text-blue-900">
               Create a business in{" "}
               <Link href="/dashboard/brands" className="underline">
-                Businesses / Brands
+                {fr ? "Entreprises / marques" : "Businesses / Brands"}
               </Link>{" "}
               before adding products.
             </p>
@@ -382,9 +383,9 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                   value={filter}
                   onChange={(e) => setFilter(e.target.value)}
                 >
-                  <option value="all">All stock levels</option>
-                  <option value="low">Low stock</option>
-                  <option value="out">Out of stock</option>
+                  <option value="all">{fr ? "Tous les niveaux de stock" : "All stock levels"}</option>
+                  <option value="low">{fr ? "Stock bas" : "Low stock"}</option>
+                  <option value="out">{fr ? "Rupture de stock" : "Out of stock"}</option>
                 </select>
               </div>
               <div className="overflow-x-auto">
@@ -459,7 +460,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                               disabled={!canManage}
                               onClick={() => open(p)}
                             >
-                              Edit
+                              {fr ? "Modifier" : "Edit"}
                             </button>
                             <button
                               className={button}
@@ -483,22 +484,19 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
               </div>
               {!found.length ? (
                 <p className="p-8 text-center text-sm text-slate-500">
-                  No matching products. Add your first product or change the
-                  search.
+                  {fr ? "Aucun produit correspondant. Ajoutez votre premier produit ou changez la recherche." : "No matching products. Add your first product or change the search."}
                 </p>
               ) : null}
               <p className="border-t border-slate-100 p-4 text-xs text-slate-500">
-                Scanning finds a product. Record a stock adjustment to receive
-                or remove units.
+                {fr ? "La lecture trouve un produit. Inscrivez un ajustement de stock pour recevoir ou retirer des unités." : "Scanning finds a product. Record a stock adjustment to receive or remove units."}
               </p>
             </section>
           ) : null}
           {tab === "activity" ? (
             <section className="rounded-xl border border-slate-200 bg-white p-5">
-              <h2 className="font-semibold">Latest stock movements</h2>
+              <h2 className="font-semibold">{fr ? "Derniers mouvements de stock" : "Latest stock movements"}</h2>
               <p className="mt-1 text-xs text-slate-500">
-                Latest 100 movements across the workspace, filtered by business
-                below. Times in UTC.
+                {fr ? "Les 100 derniers mouvements de l’espace, filtrés par entreprise ci-dessous. Heures en UTC." : "Latest 100 movements across the workspace, filtered by business below. Times in UTC."}
               </p>
               {data.movements
                 .filter(
@@ -535,7 +533,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                 (m) => !brand || products.some((p) => p.id === m.productId),
               ) ? (
                 <p className="mt-4 text-sm text-slate-500">
-                  No recent movements for this business.
+                  {fr ? "Aucun mouvement récent pour cette entreprise." : "No recent movements for this business."}
                 </p>
               ) : null}
             </section>
@@ -543,7 +541,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
           {tab === "barcodes" ? (
             <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 text-sm leading-6 text-slate-600">
               <h2 className="text-lg font-bold text-slate-900">
-                From your shelf to the checkout
+                {fr ? "De vos tablettes jusqu’à la caisse" : "From your shelf to the checkout"}
               </h2>
               <p>
                 <b>Internal labels:</b> Code 39 encodes your SKU. Enable Code 39
@@ -557,20 +555,13 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                 zero. We check the check digit; GS1 ownership is not verified.
               </p>
               <p>
-                Super C, Maxi, Walmart and local stores have their own supplier
-                onboarding and product data requirements. A barcode identifies a
-                product. Ingredients, pricing and other information must be
-                supplied to the retailer separately.
+                {fr ? "Super C, Maxi, Walmart et les commerces locaux ont leurs propres exigences d’inscription des fournisseurs et de données produit. Un code-barres identifie un produit ; les ingrédients, le prix et les autres informations se fournissent au détaillant à part." : "Super C, Maxi, Walmart and local stores have their own supplier onboarding and product data requirements. A barcode identifies a product. Ingredients, pricing and other information must be supplied to the retailer separately."}
               </p>
               <p>
-                Print at actual size and verify with physical scanners before
-                use. Long internal SKUs may need wider labels. This module does
-                not generate compliant nutrition labels or connect to retailer
-                tills.
+                {fr ? "Imprimez à la taille réelle et vérifiez avec de vrais lecteurs avant usage. Les longs codes internes peuvent demander des étiquettes plus larges. Ce module ne produit pas de tableau de valeur nutritive conforme et ne se branche pas aux caisses des détaillants." : "Print at actual size and verify with physical scanners before use. Long internal SKUs may need wider labels. This module does not generate compliant nutrition labels or connect to retailer tills."}
               </p>
               <p>
-                Lot references are recorded on stock movements. Expiry tracking,
-                lot-level balances and recall workflows are not included yet.
+                {fr ? "Les références de lot sont inscrites sur les mouvements de stock. Le suivi des dates d’expiration, les soldes par lot et les rappels de produits ne sont pas encore inclus." : "Lot references are recorded on stock movements. Expiry tracking, lot-level balances and recall workflows are not included yet."}
               </p>
             </section>
           ) : null}
@@ -636,7 +627,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1 text-sm text-slate-700">
-                  <span>Business</span>
+                  <span>{fr ? "Entreprise" : "Business"}</span>
                   <select
                     name="businessBrandId"
                     required
@@ -645,7 +636,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                     disabled={!!editing}
                   >
                     {!editing ? (
-                      <option value="">Select a business</option>
+                      <option value="">{fr ? "Choisir une entreprise" : "Select a business"}</option>
                     ) : null}
                     {data?.brands.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -687,9 +678,7 @@ export function InventoryWorkspace({ canManage }: { canManage: boolean }) {
                 )}
               </div>
               <p className="text-xs text-slate-500">
-                New products start at zero stock. Use ± Stock to record opening
-                quantities with a reason and lot reference. Retail barcodes
-                require legitimate GS1 assignment.
+                {fr ? "Un nouveau produit commence avec un stock à zéro. Utilisez ± Stock pour inscrire les quantités de départ avec un motif et une référence de lot. Les codes-barres de détail demandent une attribution GS1 légitime." : "New products start at zero stock. Use ± Stock to record opening quantities with a reason and lot reference. Retail barcodes require legitimate GS1 assignment."}
               </p>
             </>
           )}

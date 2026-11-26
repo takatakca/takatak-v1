@@ -14,6 +14,7 @@ import {
   type AiInstructionPlatform,
 } from "@/lib/brands/brand-ai-instructions";
 import type { BrandSettingsVoice } from "@/lib/brands/brand-settings-data";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PLATFORM_ORDER: AiInstructionPlatform[] = [
   "bluesky",
@@ -112,6 +113,7 @@ export function BrandSettingsAi({
   connectedPlatforms: string[];
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const voice = voices[0] ?? null;
 
@@ -194,12 +196,10 @@ export function BrandSettingsAi({
   return (
     <form onSubmit={handleSubmit} className="mt-8" noValidate>
       <h2 className="text-lg font-semibold text-[#1d1d1f]">
-        Instructions configuration
+        {fr ? "Configuration des consignes" : "Instructions configuration"}
       </h2>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-        Define the writing style for your messages. The AI assistant will use
-        it as a guide when creating your posts. Tip: Writing your instructions
-        in English usually leads to more accurate results.
+        {fr ? "Définissez le style d’écriture de vos messages. L’assistant IA s’en sert de guide pour rédiger vos publications. Astuce : des consignes en anglais donnent souvent des résultats plus précis." : "Define the writing style for your messages. The AI assistant will use it as a guide when creating your posts. Tip: Writing your instructions in English usually leads to more accurate results."}
       </p>
 
       {message ? (
@@ -222,7 +222,7 @@ export function BrandSettingsAi({
           onToggle={() => setGeneralOpen((current) => !current)}
         >
           <label className="block text-sm text-slate-600">
-            General instructions
+            {fr ? "Consignes générales" : "General instructions"}
             <textarea
               value={general}
               onChange={(event) => setGeneral(event.target.value)}
@@ -238,7 +238,7 @@ export function BrandSettingsAi({
 
       {platforms.length === 0 ? (
         <p className="mt-2 rounded-lg border border-dashed border-slate-300 bg-white px-4 py-8 text-sm text-slate-500">
-          Connect a social account to add platform-specific instructions.
+          {fr ? "Branchez un compte social pour ajouter des consignes propres à la plateforme." : "Connect a social account to add platform-specific instructions."}
         </p>
       ) : (
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-x-10">
@@ -295,8 +295,7 @@ export function BrandSettingsAi({
         </div>
       ) : (
         <p className="mt-8 text-sm text-slate-500">
-          You can view these instructions, but you need permission to change
-          them.
+          {fr ? "Vous pouvez voir ces consignes, mais il faut une autorisation pour les modifier." : "You can view these instructions, but you need permission to change them."}
         </p>
       )}
     </form>

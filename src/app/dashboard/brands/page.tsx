@@ -74,10 +74,7 @@ export default async function BrandsPage() {
             </div>
 
             <p className="mt-3 text-xs leading-5 text-slate-500">
-              Selecting “All brands” keeps
-              workspace-wide views active.
-              Archived brands cannot be
-              selected.
+              Choisir « Toutes les marques » garde les vues de tout l’espace. Les marques archivées ne peuvent pas être choisies. · Selecting “All brands” keeps workspace-wide views active. Archived brands cannot be selected.
             </p>
           </CardBody>
         </Card>

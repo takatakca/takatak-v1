@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 
 import { createAudienceAction, createSiteAction, linkGoogleAction, verifySiteAction, type AnalyticsFormState } from "@/app/dashboard/growth/analytics/actions";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const initialState: AnalyticsFormState = { ok: null };
 const inputClass =
@@ -20,6 +21,7 @@ function Feedback({ state }: { state: AnalyticsFormState }) {
 }
 
 export function CreateSiteForm({ brands }: { brands: Array<{ id: string; name: string }> }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, formAction, pending] = useActionState(createSiteAction, initialState);
   return (
     <form action={formAction} className="grid gap-3 md:grid-cols-4">
@@ -32,7 +34,7 @@ export function CreateSiteForm({ brands }: { brands: Array<{ id: string; name: s
         <input name="domain" required maxLength={253} placeholder="garageverdun.ca" className={inputClass} />
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
-        Brand (optional)
+        {fr ? "Marque (facultatif)" : "Brand (optional)"}
         <select name="businessBrandId" defaultValue="" className={inputClass}>
           <option value="">— None —</option>
           {brands.map((b) => (
@@ -55,6 +57,7 @@ export function CreateSiteForm({ brands }: { brands: Array<{ id: string; name: s
 }
 
 export function CreateAudienceForm({ sites }: { sites: Array<{ id: string; name: string }> }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, formAction, pending] = useActionState(createAudienceAction, initialState);
   return (
     <form action={formAction} className="grid gap-3 md:grid-cols-4">
@@ -63,7 +66,7 @@ export function CreateAudienceForm({ sites }: { sites: Array<{ id: string; name:
         <input name="name" required maxLength={80} placeholder="Viewed pricing, no call" className={inputClass} />
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
-        Website
+        {fr ? "Site Web" : "Website"}
         <select name="siteId" className={inputClass}>
           {sites.map((s) => (
             <option key={s.id} value={s.id}>
@@ -73,15 +76,15 @@ export function CreateAudienceForm({ sites }: { sites: Array<{ id: string; name:
         </select>
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
-        Visited pages starting with
+        {fr ? "Pages visitées qui commencent par" : "Visited pages starting with"}
         <input name="pathPrefixes" maxLength={500} placeholder="/pricing, /booking" className={inputClass} />
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
-        Or did events
+        {fr ? "Ou les événements « did »" : "Or did events"}
         <input name="eventNames" maxLength={500} placeholder="form_submit, call_click" className={inputClass} />
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
-        In the last (days)
+        {fr ? "Dans les derniers (jours)" : "In the last (days)"}
         <input name="lookbackDays" type="number" min={1} max={540} defaultValue={30} className={inputClass} />
       </label>
       <div className="flex items-end gap-3 md:col-span-3">
@@ -103,16 +106,17 @@ export function LinkGoogleForm({
   ga4PropertyId: string | null;
   searchConsoleProperty: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, formAction, pending] = useActionState(linkGoogleAction, initialState);
   return (
     <form action={formAction} className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
       <input type="hidden" name="siteId" value={siteId} />
       <label className="space-y-1 text-[11px] font-medium text-slate-600">
-        GA4 property ID
+        {fr ? "Identifiant de propriété GA4" : "GA4 property ID"}
         <input name="ga4PropertyId" defaultValue={ga4PropertyId ?? ""} placeholder="123456789" inputMode="numeric" maxLength={30} className={inputClass} />
       </label>
       <label className="space-y-1 text-[11px] font-medium text-slate-600">
-        Search Console property
+        {fr ? "Propriété Search Console" : "Search Console property"}
         <input name="searchConsoleProperty" defaultValue={searchConsoleProperty ?? ""} placeholder="sc-domain:example.com" maxLength={300} className={inputClass} />
       </label>
       <div className="flex items-end">

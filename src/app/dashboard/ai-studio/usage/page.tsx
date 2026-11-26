@@ -29,7 +29,7 @@ export default async function AiUsagePage() {
         }
       />
       <p className="text-xs text-slate-500">
-        Credit balance for this workspace and an estimate at the published Starter pack rate. This is not an invoice.
+        Solde de crédits de cet espace et estimation au tarif publié du forfait Starter. Ce n’est pas une facture. · Credit balance for this workspace and an estimate at the published Starter pack rate. This is not an invoice.
       </p>
       <AiSourceBanner source={data.source === "database" ? "database" : "unavailable"} label={data.label} />
 

@@ -30,6 +30,7 @@ import {
   canStartProviderConnect,
   resolveProviderCardLabel,
 } from "@/lib/social/connections/social-connection-lifecycle-policy";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type ProviderKey =
   | "meta"
@@ -306,6 +307,7 @@ export function SocialAccountsManager({
   canManage: boolean;
   dataMessage?: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
 
   const [
@@ -1100,20 +1102,18 @@ export function SocialAccountsManager({
         <Building2 className="mx-auto h-9 w-9 text-slate-400" />
 
         <h2 className="mt-4 text-base font-semibold text-slate-950">
-          Create a brand first
+          {fr ? "Créez d’abord une marque" : "Create a brand first"}
         </h2>
 
         <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-          Every provider connection must
-          belong to a real brand inside the
-          active workspace.
+          {fr ? "Chaque branchement à un fournisseur doit appartenir à une vraie marque de l’espace actif." : "Every provider connection must belong to a real brand inside the active workspace."}
         </p>
 
         <Link
           href="/dashboard/brands/new"
           className="mt-5 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-500"
         >
-          Create brand
+          {fr ? "Créer la marque" : "Create brand"}
         </Link>
       </section>
     );
@@ -1162,7 +1162,7 @@ export function SocialAccountsManager({
               htmlFor="social-brand"
               className="text-xs font-semibold uppercase tracking-wide text-slate-500"
             >
-              Brand context
+              {fr ? "Contexte de la marque" : "Brand context"}
             </label>
 
             <select
@@ -1221,15 +1221,11 @@ export function SocialAccountsManager({
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-950">
-              Direct provider connections
+              {fr ? "Branchements directs aux fournisseurs" : "Direct provider connections"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Connections use each
-              platform&apos;s official
-              authorization system. TAKATAK
-              does not request social account
-              passwords.
+              {fr ? "Les branchements passent par le système d’autorisation officiel de chaque plateforme. TAKATAK ne demande jamais le mot de passe d’un compte social." : "Connections use each platform's official authorization system. TAKATAK does not request social account passwords."}
             </p>
           </div>
 
@@ -1452,13 +1448,11 @@ export function SocialAccountsManager({
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-slate-950">
-              Workspace connections
+              {fr ? "Connexions de l’espace" : "Workspace connections"}
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Stored connection records never
-              expose provider tokens in the
-              browser.
+              {fr ? "Les fiches de branchement enregistrées n’exposent jamais les jetons des fournisseurs dans le navigateur." : "Stored connection records never expose provider tokens in the browser."}
             </p>
           </div>
 
@@ -1478,15 +1472,11 @@ export function SocialAccountsManager({
             <Users className="mx-auto h-8 w-8 text-slate-400" />
 
             <h3 className="mt-3 font-semibold text-slate-950">
-              No native connections yet
+              {fr ? "Aucun branchement direct pour l’instant" : "No native connections yet"}
             </h3>
 
             <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-              Select a brand and choose a
-              provider above. Planned providers
-              will return an honest readiness
-              message until their real adapter
-              is implemented.
+              {fr ? "Choisissez une marque et un fournisseur ci-dessus. Les fournisseurs prévus affichent un message d’état honnête tant que leur vrai branchement n’est pas en place." : "Select a brand and choose a provider above. Planned providers will return an honest readiness message until their real adapter is implemented."}
             </p>
           </div>
         ) : (
@@ -1703,7 +1693,7 @@ export function SocialAccountsManager({
                           }
                           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-indigo-200 px-3.5 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          Add another account
+                          {fr ? "Ajouter un autre compte" : "Add another account"}
                         </button>
                       ) : null}
 

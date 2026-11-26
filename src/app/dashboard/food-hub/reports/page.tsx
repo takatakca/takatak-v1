@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, CHANNEL_OPTIONS, FilterBar, Modal, MultiPick, Section, useCatalog, useFilters } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Report = { key: string; title: string; description: string };
 type Schedule = { id: string; report: string; frequency: 'daily' | 'weekly' | 'monthly'; emails: string[]; format: 'csv' | 'xlsx'; filter: { locationCodes?: string[]; channels?: string[]; brands?: string[] }; createdBy: string; lastSentAt?: string; lastError?: string | null };
@@ -11,6 +12,7 @@ const FREQ: Record<string, string> = { daily: 'Daily — yesterday, sent each mo
 
 // Reports (Atlas Reports): 7 standard reports, CSV or Excel, emailed now or on a schedule.
 export default function ReportsPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { filters, set, query } = useFilters('yesterday');
   const { brands, activeLocations, locName } = useCatalog();
   const [reports, setReports] = useState<Report[]>([]);
@@ -42,8 +44,8 @@ export default function ReportsPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Reports</h1>
-          <div className="small">Download any report for the period and filters below, email it now, or have it emailed every day, week or month.</div>
+          <h1>{fr ? "Rapports" : "Reports"}</h1>
+          <div className="small">{fr ? "Téléchargez n’importe quel rapport pour la période et les filtres ci-dessous, envoyez-le maintenant par courriel, ou recevez-le chaque jour, semaine ou mois." : "Download any report for the period and filters below, email it now, or have it emailed every day, week or month."}</div>
         </div>
       </div>
       {!emailOn && <div className="fh-banner warn">Email is not set up yet — downloads work, but “Email” and schedules need RESEND_API_KEY and REPORT_EMAIL_FROM (run npm run food-hub:setup).</div>}
@@ -58,9 +60,9 @@ export default function ReportsPage() {
             <div className="fh-row" style={{ marginTop: 'auto' }}>
               <a className="button btn-sm" href={`/api/food-hub/reports/${r.key}?format=xlsx&${query}`}>Excel</a>
               <a className="button btn-sm btn-light" href={`/api/food-hub/reports/${r.key}?format=csv&${query}`}>CSV</a>
-              <button className="btn-sm btn-light" onClick={() => showPreview(r.key)}>Preview</button>
-              <button className="btn-sm btn-light" disabled={!emailOn} onClick={() => setEmailFor(r)}>Email</button>
-              <button className="btn-sm btn-light" disabled={!emailOn} onClick={() => setSchedFor(r)}>Schedule</button>
+              <button className="btn-sm btn-light" onClick={() => showPreview(r.key)}>{fr ? "Aperçu" : "Preview"}</button>
+              <button className="btn-sm btn-light" disabled={!emailOn} onClick={() => setEmailFor(r)}>{fr ? "Courriel" : "Email"}</button>
+              <button className="btn-sm btn-light" disabled={!emailOn} onClick={() => setSchedFor(r)}>{fr ? "Horaire" : "Schedule"}</button>
             </div>
           </div>
         ))}
@@ -68,7 +70,7 @@ export default function ReportsPage() {
 
       <Section title={`Scheduled emails (${schedules.length})`}>
         <table>
-          <thead><tr><th>Report</th><th>When</th><th>To</th><th>Filters</th><th>Last sent</th><th></th></tr></thead>
+          <thead><tr><th>{fr ? "Rapport" : "Report"}</th><th>{fr ? "Quand" : "When"}</th><th>To</th><th>{fr ? "Filtres" : "Filters"}</th><th>{fr ? "Dernier envoi" : "Last sent"}</th><th></th></tr></thead>
           <tbody>
             {schedules.map((s) => (
               <tr key={s.id}>
@@ -77,7 +79,7 @@ export default function ReportsPage() {
                 <td className="small">{s.emails.join(', ')}</td>
                 <td className="small">{[s.filter.locationCodes?.map(locName).join(', '), s.filter.channels?.join(', '), s.filter.brands?.join(', ')].filter(Boolean).join(' · ') || 'Everything'}</td>
                 <td className="small">{s.lastSentAt ? new Date(s.lastSentAt).toLocaleString('fr-CA') : 'not yet'}{s.lastError ? <><br /><span className="badge badge-red" title={s.lastError}>last attempt failed</span></> : null}</td>
-                <td><button className="btn-sm btn-light" onClick={() => removeSchedule(s.id)}>Stop</button></td>
+                <td><button className="btn-sm btn-light" onClick={() => removeSchedule(s.id)}>{fr ? "Arrêter" : "Stop"}</button></td>
               </tr>
             ))}
             {schedules.length === 0 && <tr><td colSpan={6} className="small">No scheduled reports. Use “Schedule” on any report.</td></tr>}
@@ -108,6 +110,7 @@ export default function ReportsPage() {
 }
 
 function EmailDialog({ report, query, onClose, onDone }: { report: Report; query: string; onClose: () => void; onDone: (msg: string) => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [emails, setEmails] = useState('');
   const [format, setFormat] = useState<'xlsx' | 'csv'>('xlsx');
   const [busy, setBusy] = useState(false);
@@ -122,17 +125,18 @@ function EmailDialog({ report, query, onClose, onDone }: { report: Report; query
   return (
     <Modal title={`Email “${report.title}”`} onClose={onClose}>
       <div className="fh-col-form">
-        <label>To (comma-separated)<input style={{ width: '100%' }} value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="owner@example.com, accountant@example.com" /></label>
+        <label>{fr ? "À (séparés par des virgules)" : "To (comma-separated)"}<input style={{ width: '100%' }} value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="owner@example.com, accountant@example.com" /></label>
         <label>Format <select value={format} onChange={(e) => setFormat(e.target.value as 'xlsx' | 'csv')}><option value="xlsx">Excel</option><option value="csv">CSV</option></select></label>
-        <p className="small">Uses the period and filters currently selected on the page.</p>
+        <p className="small">{fr ? "Utilise la période et les filtres choisis sur la page." : "Uses the period and filters currently selected on the page."}</p>
         {err && <div className="fh-banner warn">{err}</div>}
-        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>Cancel</button><button disabled={busy || !emails.trim()} onClick={send}>{busy ? 'Sending…' : 'Send'}</button></div>
+        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button><button disabled={busy || !emails.trim()} onClick={send}>{busy ? 'Sending…' : 'Send'}</button></div>
       </div>
     </Modal>
   );
 }
 
 function ScheduleDialog({ report, locations, brands, onClose, onDone }: { report: Report; locations: Array<[string, string]>; brands: Array<[string, string]>; onClose: () => void; onDone: (msg: string) => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [emails, setEmails] = useState('');
   const [frequency, setFrequency] = useState<'daily' | 'weekly' | 'monthly'>('daily');
   const [format, setFormat] = useState<'xlsx' | 'csv'>('xlsx');
@@ -151,7 +155,7 @@ function ScheduleDialog({ report, locations, brands, onClose, onDone }: { report
   return (
     <Modal title={`Schedule “${report.title}”`} onClose={onClose}>
       <div className="fh-col-form">
-        <label>Send to (comma-separated)<input style={{ width: '100%' }} value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="owner@example.com" /></label>
+        <label>{fr ? "Envoyer à (séparés par des virgules)" : "Send to (comma-separated)"}<input style={{ width: '100%' }} value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="owner@example.com" /></label>
         <label>How often <select value={frequency} onChange={(e) => setFrequency(e.target.value as typeof frequency)}>{Object.entries(FREQ).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
         <label>Format <select value={format} onChange={(e) => setFormat(e.target.value as 'xlsx' | 'csv')}><option value="xlsx">Excel</option><option value="csv">CSV</option></select></label>
         <div className="fh-row">
@@ -160,7 +164,7 @@ function ScheduleDialog({ report, locations, brands, onClose, onDone }: { report
           <MultiPick label="Brands" options={brands} value={brandSel} onChange={setBrands} />
         </div>
         {err && <div className="fh-banner warn">{err}</div>}
-        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>Cancel</button><button disabled={busy || !emails.trim()} onClick={save}>{busy ? 'Saving…' : 'Save schedule'}</button></div>
+        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button><button disabled={busy || !emails.trim()} onClick={save}>{busy ? 'Saving…' : 'Save schedule'}</button></div>
       </div>
     </Modal>
   );

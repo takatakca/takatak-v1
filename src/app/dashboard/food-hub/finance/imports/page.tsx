@@ -4,6 +4,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { api, Modal, useMe } from '@/app/dashboard/food-hub/ui';
 import { CH_NAME, FinanceError, FinanceHead, cad, day, toBase64 } from '../finance-ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Imp = { id: string; channel: string; fileName: string; format: string; rows: number; lines: number; newLines: number; skipped: number; totalNet: number; periodFrom: string | null; periodTo: string | null; importedBy: string; importedAt: string; source: string };
 type Mapping = Record<string, number | number[] | undefined>;
@@ -21,6 +22,7 @@ const WHERE: Array<[string, string]> = [
 ];
 
 export default function ImportsPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { can } = useMe();
   const edit = can('finance:edit');
   const [imports, setImports] = useState<Imp[]>([]);
@@ -87,12 +89,12 @@ export default function ImportsPage() {
 
       <div className="viz-grid2" style={{ marginBottom: 16 }}>
         <section className="card">
-          <h2 style={{ marginTop: 0, fontSize: 17 }}>Import a statement</h2>
-          {!edit && <p className="small">Your role can view statements but not import them.</p>}
+          <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Importer un relevé" : "Import a statement"}</h2>
+          {!edit && <p className="small">{fr ? "Votre rôle peut voir les relevés, mais pas les importer." : "Your role can view statements but not import them."}</p>}
           <div className="fh-row" style={{ flexWrap: 'wrap' }}>
             <label className="small">Platform{' '}
               <select value={channel} onChange={(e) => setChannel(e.target.value)} disabled={!edit}>
-                <option value="">Detect automatically</option>
+                <option value="">{fr ? "Détecter automatiquement" : "Detect automatically"}</option>
                 {Object.entries(CH_NAME).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
               </select>
             </label>
@@ -103,17 +105,17 @@ export default function ImportsPage() {
         </section>
 
         <section className="card">
-          <h2 style={{ marginTop: 0, fontSize: 17 }}>Request from Uber Eats</h2>
+          <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Demander à Uber Eats" : "Request from Uber Eats"}</h2>
           <p className="small">Uber’s Reporting API builds the Payment details report for all your Uber Eats stores and sends it to Food Hub, which imports it by itself. Needs the Uber app to have the <span className="fh-mono">eats.report</span> scope.</p>
           <div className="fh-row">
             <input type="date" value={uber.from} onChange={(e) => setUber({ ...uber, from: e.target.value })} aria-label="From" disabled={!edit} />
             <span className="small">to</span>
             <input type="date" value={uber.to} onChange={(e) => setUber({ ...uber, to: e.target.value })} aria-label="To" disabled={!edit} />
-            <button className="btn-sm" disabled={!edit || busy} onClick={requestUber}>Request from Uber</button>
+            <button className="btn-sm" disabled={!edit || busy} onClick={requestUber}>{fr ? "Demander à Uber" : "Request from Uber"}</button>
           </div>
           {requests.length > 0 && (
             <table className="fin-table" style={{ marginTop: 10 }}>
-              <thead><tr><th>Asked</th><th>Period</th><th>Status</th></tr></thead>
+              <thead><tr><th>{fr ? "Demandé" : "Asked"}</th><th>{fr ? "Période" : "Period"}</th><th>{fr ? "Statut" : "Status"}</th></tr></thead>
               <tbody>
                 {requests.slice(0, 5).map((r) => (
                   <tr key={r.id}><td className="small">{new Date(r.at).toLocaleString('en-CA')}<br />{r.requestedBy}</td><td className="small">{r.from} → {r.to}</td>
@@ -129,7 +131,7 @@ export default function ImportsPage() {
         <h2 style={{ marginTop: 0, fontSize: 17 }}>Imported statements ({imports.length})</h2>
         <div className="fh-table-wrap">
           <table className="fin-table">
-            <thead><tr><th>Imported</th><th>Platform</th><th>File</th><th>Format</th><th>Period</th><th className="num">Lines</th><th className="num">Net</th><th>Source</th><th></th></tr></thead>
+            <thead><tr><th>{fr ? "Importé" : "Imported"}</th><th>{fr ? "Plateforme" : "Platform"}</th><th>{fr ? "Fichier" : "File"}</th><th>Format</th><th>{fr ? "Période" : "Period"}</th><th className="num">{fr ? "Lignes" : "Lines"}</th><th className="num">Net</th><th>Source</th><th></th></tr></thead>
             <tbody>
               {imports.map((i) => (
                 <tr key={i.id}>
@@ -141,17 +143,17 @@ export default function ImportsPage() {
                   <td className="num">{i.lines}{i.newLines !== i.lines ? <span className="small"> ({i.newLines} new)</span> : null}{i.skipped ? <span className="small"> · {i.skipped} skipped</span> : null}</td>
                   <td className="num">{cad(i.totalNet)}</td>
                   <td className="small">{i.source === 'uber_reporting_api' ? 'Uber Reporting API' : 'Upload'}</td>
-                  <td>{edit && <button className="btn-sm btn-light" onClick={() => remove(i)}>Remove</button>}</td>
+                  <td>{edit && <button className="btn-sm btn-light" onClick={() => remove(i)}>{fr ? "Retirer" : "Remove"}</button>}</td>
                 </tr>
               ))}
-              {imports.length === 0 && <tr><td colSpan={9} className="small">No statement imported yet.</td></tr>}
+              {imports.length === 0 && <tr><td colSpan={9} className="small">{fr ? "Aucun relevé importé pour l’instant." : "No statement imported yet."}</td></tr>}
             </tbody>
           </table>
         </div>
       </section>
 
       <section className="card">
-        <h2 style={{ marginTop: 0, fontSize: 17 }}>Where to download each statement</h2>
+        <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Où télécharger chaque relevé" : "Where to download each statement"}</h2>
         <div className="fin-help">
           {WHERE.map(([t, d]) => <div key={t}><h3>{t}</h3>{d}</div>)}
         </div>
@@ -164,6 +166,7 @@ export default function ImportsPage() {
 }
 
 function MappingDialog({ ask, fileName, fields, defaultChannel, busy, onClose, onSubmit }: { ask: Ask; fileName: string; fields: Record<string, string>; defaultChannel: string; busy: boolean; onClose: () => void; onSubmit: (channel: string, m: Mapping) => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [ch, setCh] = useState(ask.channel ?? defaultChannel ?? '');
   const [map, setMap] = useState<Mapping>(ask.mapping ?? {});
   const first = (v: number | number[] | undefined) => (Array.isArray(v) ? v[0] : v);
@@ -196,8 +199,8 @@ function MappingDialog({ ask, fileName, fields, defaultChannel, busy, onClose, o
         ))}
       </div>
       <div className="fh-row" style={{ marginTop: 12, justifyContent: 'flex-end' }}>
-        {(!ch || first(map.orderRef) === undefined || !netOk) && <span className="small">Choose the platform, the order column and the net payout column.</span>}
-        <button className="btn-light" onClick={onClose}>Cancel</button>
+        {(!ch || first(map.orderRef) === undefined || !netOk) && <span className="small">{fr ? "Choisissez la plateforme, la colonne des commandes et la colonne du versement net." : "Choose the platform, the order column and the net payout column."}</span>}
+        <button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button>
         <button disabled={busy || !ch || first(map.orderRef) === undefined || !netOk} onClick={() => onSubmit(ch, map)}>{busy ? 'Importing…' : 'Import'}</button>
       </div>
     </Modal>

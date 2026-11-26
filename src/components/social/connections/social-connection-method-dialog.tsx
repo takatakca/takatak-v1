@@ -1,6 +1,7 @@
 'use client';
 
 import { CircleAlert, Link2, Loader2, Unplug, X } from 'lucide-react';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type SocialConnectionMethodDialogProps = {
   open: boolean;
@@ -23,6 +24,7 @@ export function SocialConnectionMethodDialog({
   onDirect,
   onLinkedInstagram,
 }: SocialConnectionMethodDialogProps) {
+  const fr = useDashboardLanguage() === "fr";
   if (!open) {
     return null;
   }
@@ -95,11 +97,10 @@ export function SocialConnectionMethodDialog({
 
                 <div className="min-w-0 flex-1">
                   <h3 className="font-semibold text-slate-950">
-                    Instagram linked to Facebook
+                    {fr ? "Instagram lié à Facebook" : "Instagram linked to Facebook"}
                   </h3>
                   <p className="mt-1 text-sm leading-5 text-slate-600">
-                    Use the professional Instagram account linked to the
-                    Facebook Page selected for this brand.
+                    {fr ? "Utilisez le compte Instagram professionnel lié à la page Facebook choisie pour cette marque." : "Use the professional Instagram account linked to the Facebook Page selected for this brand."}
                   </p>
 
                   {!facebookConnected ? (
@@ -109,8 +110,7 @@ export function SocialConnectionMethodDialog({
                         className="mt-0.5 h-4 w-4 shrink-0"
                       />
                       <span>
-                        Connect and select a Facebook Page first. TAKATAK will
-                        not send you to an invalid provider page.
+                        {fr ? "Branchez et choisissez d’abord une page Facebook. TAKATAK ne vous envoie jamais vers une page de fournisseur invalide." : "Connect and select a Facebook Page first. TAKATAK will not send you to an invalid provider page."}
                       </span>
                     </div>
                   ) : null}
@@ -152,17 +152,16 @@ export function SocialConnectionMethodDialog({
                   Connect {platformLabel} independently
                 </h3>
                 <p className="mt-1 text-sm leading-5 text-slate-600">
-                  Authorize this account directly. It does not depend on a
-                  Facebook connection and uses separate credentials and tokens.
+                  {fr ? "Autorisez ce compte directement. Il ne dépend pas d’un branchement Facebook et utilise ses propres identifiants et jetons." : "Authorize this account directly. It does not depend on a Facebook connection and uses separate credentials and tokens."}
                 </p>
 
                 {isInstagram ? (
                   <span className="sr-only">
-                    Or sign in with Instagram independently
+                    {fr ? "Ou connectez-vous à Instagram séparément" : "Or sign in with Instagram independently"}
                   </span>
                 ) : (
                   <span className="sr-only">
-                    Or sign in with Threads independently
+                    {fr ? "Ou connectez-vous à Threads séparément" : "Or sign in with Threads independently"}
                   </span>
                 )}
 

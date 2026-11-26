@@ -801,9 +801,7 @@ export function FacebookSubscribedDashboard({
     >
       {isPreview ? (
         <div className="rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          Preview layout only. Metrics below are placeholders (—), not
-          synchronized Facebook data. Connect and confirm a Page to load real
-          analytics.
+          {fr ? "Aperçu de la mise en page seulement. Les mesures ci-dessous sont vides (—), pas des données Facebook synchronisées. Branchez et confirmez une page pour charger les vraies statistiques." : "Preview layout only. Metrics below are placeholders (—), not synchronized Facebook data. Connect and confirm a Page to load real analytics."}
         </div>
       ) : null}
       <div

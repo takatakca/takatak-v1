@@ -180,7 +180,7 @@ export function DashboardHomeView({
           <div className="flex items-center justify-between px-5 py-4">
             <h3 className="text-sm font-semibold text-slate-900">{t("Integration Overview")}</h3>
             <Link href="/dashboard/integrations" className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]">
-              See all integrations
+              {language === "fr" ? "Voir toutes les intégrations" : "See all integrations"}
             </Link>
           </div>
           <div className="divide-y divide-slate-100">
@@ -269,12 +269,12 @@ export function DashboardHomeView({
             </table>
           ) : (
             <p className="px-5 pb-4 text-sm text-slate-400">
-              Page traffic appears when website analytics is connected.
+              {language === "fr" ? "Le trafic des pages apparaît une fois les statistiques du site branchées." : "Page traffic appears when website analytics is connected."}
             </p>
           )}
           <div className="border-t border-slate-100 px-5 py-3">
             <Link href="/dashboard/reports" className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]">
-              View full report
+              {language === "fr" ? "Voir le rapport complet" : "View full report"}
             </Link>
           </div>
         </article>
@@ -297,12 +297,12 @@ export function DashboardHomeView({
             </ul>
           ) : (
             <p className="px-5 pb-4 text-sm text-slate-400">
-              Published posts appear here after a social account is connected.
+              {language === "fr" ? "Les publications apparaissent ici une fois un compte social branché." : "Published posts appear here after a social account is connected."}
             </p>
           )}
           <div className="border-t border-slate-100 px-5 py-3">
             <Link href="/dashboard/social/posts" className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]">
-              View all posts
+              {language === "fr" ? "Voir toutes les publications" : "View all posts"}
             </Link>
           </div>
         </article>
@@ -314,7 +314,7 @@ export function DashboardHomeView({
               href="/dashboard/growth/reviews"
               className="-my-2 inline-flex min-h-10 items-center text-sm font-medium text-[#1565D8] hover:text-[#0B1B3D]"
             >
-              See all reviews
+              {language === "fr" ? "Voir tous les avis" : "See all reviews"}
             </Link>
           </div>
           {data.reviews.length ? (

@@ -6,6 +6,7 @@ import { CheckCircle2, Loader2, RefreshCw, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { createSupabaseBrowserClient } from "@/lib/auth/supabase-browser";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type HostApplication = {
   id: string;
@@ -44,6 +45,7 @@ function dateTime(value: string): string {
 }
 
 export function RentautoHostApplicationsCard() {
+  const fr = useDashboardLanguage() === "fr";
   const [applications, setApplications] = useState<HostApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -145,7 +147,7 @@ export function RentautoHostApplicationsCard() {
               className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
               aria-hidden="true"
             />
-            Refresh
+            {fr ? "Actualiser" : "Refresh"}
           </button>
         }
       />
@@ -163,7 +165,7 @@ export function RentautoHostApplicationsCard() {
           </div>
         ) : applications.length === 0 ? (
           <p className="py-4 text-sm text-slate-500">
-            No pending Rentauto host applications.
+            {fr ? "Aucune demande d’hôte Rentauto en attente." : "No pending Rentauto host applications."}
           </p>
         ) : (
           <div className="divide-y divide-slate-100">
@@ -225,7 +227,7 @@ export function RentautoHostApplicationsCard() {
                       className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <XCircle className="h-4 w-4" aria-hidden="true" />
-                      Reject
+                      {fr ? "Refuser" : "Reject"}
                     </button>
                   </div>
                 </div>

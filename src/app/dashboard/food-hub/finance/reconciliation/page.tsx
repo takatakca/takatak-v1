@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { api, downloadCsv, STATUS_LABEL, useCatalog, useFilters } from '@/app/dashboard/food-hub/ui';
 import { CaseBadge, CH_NAME, FinanceError, FinanceFilters, FinanceHead, PROBLEM, RECON_LABEL, ReconBadge, cad, day, signed, toRecover, type OrderRecon, type Recon, type ReconStatus, type Unmatched } from '../finance-ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type View = 'problems' | 'all' | 'matched' | 'waiting' | 'statement';
 const VIEWS: Array<[View, string]> = [['problems', 'Problems'], ['all', 'All orders'], ['matched', 'Paid as expected'], ['waiting', 'Not due / no statement'], ['statement', 'Only on statements']];
@@ -13,6 +14,7 @@ const KIND: Record<string, string> = { order: 'Order', refund: 'Refund', adjustm
 const PAGE = 300;
 
 export default function ReconciliationPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { filters, set, query } = useFilters('30d');
   const { activeLocations, locName } = useCatalog();
   const [view, setView] = useState<View>('problems');
@@ -48,7 +50,7 @@ export default function ReconciliationPage() {
       <FinanceError message={err} />
       <FinanceFilters filters={filters} set={set} locations={activeLocations} extra={<>
         <input type="search" placeholder="Order # or brand" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Search orders" />
-        <button className="btn-sm btn-light" onClick={exportCsv} disabled={!rows.length}>Download CSV</button>
+        <button className="btn-sm btn-light" onClick={exportCsv} disabled={!rows.length}>{fr ? "Télécharger le CSV" : "Download CSV"}</button>
       </>} />
       <div className="fh-tabs" role="tablist">
         {VIEWS.map(([k, l]) => <button key={k} role="tab" aria-selected={view === k} className={view === k ? 'on' : ''} onClick={() => setView(k)}>{l} ({count(k)})</button>)}
@@ -58,7 +60,7 @@ export default function ReconciliationPage() {
         <section className="card">
           <div className="fh-table-wrap">
             <table className="fin-table">
-              <thead><tr><th>Date</th><th>Platform</th><th>Order</th><th>Brand · location</th><th className="num">Customer paid</th><th className="num">Expected</th><th className="num">Paid</th><th className="num">Difference</th><th>Status</th></tr></thead>
+              <thead><tr><th>Date</th><th>{fr ? "Plateforme" : "Platform"}</th><th>{fr ? "Commande" : "Order"}</th><th>Brand · location</th><th className="num">{fr ? "Payé par le client" : "Customer paid"}</th><th className="num">{fr ? "Attendu" : "Expected"}</th><th className="num">{fr ? "Payé" : "Paid"}</th><th className="num">{fr ? "Écart" : "Difference"}</th><th>{fr ? "Statut" : "Status"}</th></tr></thead>
               <tbody>
                 {rows.slice(0, limit).map((o) => (
                   <Fragment key={o.orderId}>
@@ -88,40 +90,41 @@ export default function ReconciliationPage() {
 }
 
 function Detail({ o }: { o: OrderRecon }) {
+  const fr = useDashboardLanguage() === "fr";
   const e = o.expected;
   return (
     <div className="fin-detail">
       <div>
-        <strong>Expected payout</strong>
+        <strong>{fr ? "Versement attendu" : "Expected payout"}</strong>
         <div className="fin-calc" style={{ marginTop: 6 }}>
-          <span>Food sales (after your promotions)</span><span>{cad(e.sales)}</span>
+          <span>{fr ? "Ventes de nourriture (après vos promotions)" : "Food sales (after your promotions)"}</span><span>{cad(e.sales)}</span>
           <span>+ Sales tax passed through (GST + QST)</span><span>{cad(e.tax)}</span>
           <span>− Commission {e.ratePct}% ({o.fulfillment === 'pickup' ? 'pickup' : 'delivery'})</span><span>−{cad(e.commission)}</span>
           <span>− Tax on commission (recoverable)</span><span>−{cad(e.commissionTax)}</span>
           {e.fixedFee ? <><span>− Fixed fee per order</span><span>−{cad(e.fixedFee)}</span></> : null}
-          <span className="tot">Expected</span><span className="tot">{cad(e.net)}</span>
+          <span className="tot">{fr ? "Attendu" : "Expected"}</span><span className="tot">{cad(e.net)}</span>
         </div>
         {!o.planConfirmed && <p className="small">Uses the published rate card — <Link href="/dashboard/food-hub/finance/fees">confirm your plan</Link>.</p>}
       </div>
       <div>
-        <strong>What the statement says</strong>
+        <strong>{fr ? "Ce que dit le relevé" : "What the statement says"}</strong>
         <div className="fin-calc" style={{ marginTop: 6 }}>
-          <span>Statement lines</span><span>{o.lines}</span>
-          <span>Paid (net)</span><span>{cad(o.actual)}</span>
-          {o.refunds ? <><span>Refunds / chargebacks</span><span>{cad(o.refunds)}</span></> : null}
-          {o.errorCharges ? <><span>Error charges</span><span>{cad(o.errorCharges)}</span></> : null}
-          {o.adjustments ? <><span>Adjustments</span><span>{cad(o.adjustments)}</span></> : null}
-          <span>Payout date</span><span>{day(o.payoutDate)}</span>
-          <span className="tot">Difference</span><span className="tot">{signed(o.diff)}</span>
+          <span>{fr ? "Lignes du relevé" : "Statement lines"}</span><span>{o.lines}</span>
+          <span>{fr ? "Payé (net)" : "Paid (net)"}</span><span>{cad(o.actual)}</span>
+          {o.refunds ? <><span>{fr ? "Remboursements / rétrofacturations" : "Refunds / chargebacks"}</span><span>{cad(o.refunds)}</span></> : null}
+          {o.errorCharges ? <><span>{fr ? "Frais d’erreurs" : "Error charges"}</span><span>{cad(o.errorCharges)}</span></> : null}
+          {o.adjustments ? <><span>{fr ? "Ajustements" : "Adjustments"}</span><span>{cad(o.adjustments)}</span></> : null}
+          <span>{fr ? "Date du versement" : "Payout date"}</span><span>{day(o.payoutDate)}</span>
+          <span className="tot">{fr ? "Écart" : "Difference"}</span><span className="tot">{signed(o.diff)}</span>
         </div>
         <p className="small">{explain(o)}</p>
       </div>
       <div>
-        <strong>Order</strong>
+        <strong>{fr ? "Commande" : "Order"}</strong>
         <dl className="fh-kv" style={{ marginTop: 6 }}>
-          <dt>Platform id</dt><dd className="fh-mono small">{o.ref}</dd>
-          <dt>Status</dt><dd>{STATUS_LABEL[o.orderStatus] ?? o.orderStatus}</dd>{o.caseStatus && <><dt>Dispute</dt><dd><CaseBadge status={o.caseStatus} /></dd></>}
-          <dt>Customer paid</dt><dd>{cad(o.total)}</dd>
+          <dt>{fr ? "Identifiant de plateforme" : "Platform id"}</dt><dd className="fh-mono small">{o.ref}</dd>
+          <dt>{fr ? "Statut" : "Status"}</dt><dd>{STATUS_LABEL[o.orderStatus] ?? o.orderStatus}</dd>{o.caseStatus && <><dt>{fr ? "Contestation" : "Dispute"}</dt><dd><CaseBadge status={o.caseStatus} /></dd></>}
+          <dt>{fr ? "Payé par le client" : "Customer paid"}</dt><dd>{cad(o.total)}</dd>
         </dl>
         <p><Link href={`/dashboard/food-hub/orders/${o.orderId}`}>Open the order →</Link>{toRecover(o) >= 1 && <> · <Link href="/dashboard/food-hub/finance/disputes">Dispute ({cad(toRecover(o))}) →</Link></>}</p>
       </div>
@@ -145,10 +148,11 @@ function explain(o: OrderRecon) {
 }
 
 function StatementTable({ rows, empty }: { rows: Unmatched[]; empty: string }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="fh-table-wrap">
       <table className="fin-table">
-        <thead><tr><th>Platform</th><th>Order date</th><th>Payout date</th><th>Reference</th><th>Type</th><th>Description</th><th className="num">Amount</th></tr></thead>
+        <thead><tr><th>{fr ? "Plateforme" : "Platform"}</th><th>{fr ? "Date de la commande" : "Order date"}</th><th>{fr ? "Date du versement" : "Payout date"}</th><th>{fr ? "Référence" : "Reference"}</th><th>Type</th><th>Description</th><th className="num">{fr ? "Montant" : "Amount"}</th></tr></thead>
         <tbody>
           {rows.map((l) => (
             <tr key={l.id}><td>{CH_NAME[l.channel] ?? l.channel}</td><td>{day(l.orderDate)}</td><td>{day(l.payoutDate)}</td><td className="fh-mono small">{l.ref ?? '—'}</td><td>{KIND[l.kind] ?? l.kind}</td><td className="small" style={{ whiteSpace: 'normal' }}>{l.description || '—'}</td><td className="num">{signed(l.net)}</td></tr>
@@ -161,15 +165,16 @@ function StatementTable({ rows, empty }: { rows: Unmatched[]; empty: string }) {
 }
 
 function StatementOnly({ data }: { data: Recon | null }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <>
       <section className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ marginTop: 0, fontSize: 17 }}>Paid orders Food Hub never received</h2>
+        <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Commandes payées jamais reçues par Food Hub" : "Paid orders Food Hub never received"}</h2>
         <p className="small">The platform paid these orders but Food Hub has no order with that number: a webhook was missed, or the store is not connected to Food Hub yet. Check the store mapping in Channels &amp; Setup.</p>
         <StatementTable rows={data?.unmatched ?? []} empty="None — every paid order on the statements is in Food Hub." />
       </section>
       <section className="card">
-        <h2 style={{ marginTop: 0, fontSize: 17 }}>Charges and credits without an order</h2>
+        <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Frais et crédits sans commande" : "Charges and credits without an order"}</h2>
         <p className="small">Ads, tablet fees, monthly fees, adjustments and credits that are not tied to one order. They go to the internal ledger under “Ads &amp; other platform charges”.</p>
         <StatementTable rows={data?.other ?? []} empty="None in this period." />
       </section>

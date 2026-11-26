@@ -1,8 +1,10 @@
 "use client";
 
 import { WifiOff } from "lucide-react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export function CheckNetworkScreen() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
@@ -11,8 +13,7 @@ export function CheckNetworkScreen() {
           Check your network
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
-          TAKATAK could not reach the server. Confirm your internet connection,
-          then try again.
+          {fr ? "TAKATAK n’a pas pu joindre le serveur. Vérifiez votre connexion Internet, puis réessayez." : "TAKATAK could not reach the server. Confirm your internet connection, then try again."}
         </p>
         <button
           type="button"

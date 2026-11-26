@@ -2369,9 +2369,7 @@ export function InstagramSubscribedDashboard({
           <InstagramLiveNote stats={live} />
         ) : (
           <div className="rounded-[10px] border border-[#A8B4FF] bg-[#F0F1FF] px-4 py-3 text-[13px] leading-5 text-[#46516A]">
-            Followers and Stories metrics are available from the day the
-            Instagram account is connected. TAKATAK preserves confirmed
-            historical data for this account.
+            {fr ? "Les mesures d’abonnés et de stories existent à partir du jour où le compte Instagram est branché. TAKATAK conserve l’historique confirmé de ce compte." : "Followers and Stories metrics are available from the day the Instagram account is connected. TAKATAK preserves confirmed historical data for this account."}
           </div>
         )}
 

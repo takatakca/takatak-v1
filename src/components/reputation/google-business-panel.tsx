@@ -58,7 +58,7 @@ export function GoogleBusinessPanel({ data, canManage, notice }: { data: GoogleB
         {!connected ? (
           canManage && data.configured ? (
             <form action={connectGoogleBusinessAction}>
-              <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Connect Google Business Profile</button>
+              <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">Brancher Google Business Profile · Connect Google Business Profile</button>
             </form>
           ) : (
             <p className="text-sm text-slate-500">
@@ -80,10 +80,10 @@ export function GoogleBusinessPanel({ data, canManage, notice }: { data: GoogleB
               {canManage ? (
                 <>
                   <form action={syncGoogleReviewsAction} className="ml-auto">
-                    <button className="rounded-lg border border-slate-300 px-3 py-1 font-medium text-slate-700 hover:border-indigo-300">Sync now</button>
+                    <button className="rounded-lg border border-slate-300 px-3 py-1 font-medium text-slate-700 hover:border-indigo-300">Synchroniser maintenant · Sync now</button>
                   </form>
                   <form action={disconnectGoogleBusinessAction}>
-                    <button className="text-slate-400 hover:text-rose-600">Disconnect</button>
+                    <button className="text-slate-400 hover:text-rose-600">Débrancher · Disconnect</button>
                   </form>
                 </>
               ) : null}
@@ -106,17 +106,17 @@ export function GoogleBusinessPanel({ data, canManage, notice }: { data: GoogleB
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-slate-500">No locations found on this Google account yet.</p>
+              <p className="text-xs text-slate-500">Aucun emplacement trouvé sur ce compte Google pour l’instant. · No locations found on this Google account yet.</p>
             )}
             <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200">
-              {data.reviews.length === 0 ? <li className="px-4 py-4 text-sm text-slate-500">No Google reviews imported yet.</li> : null}
+              {data.reviews.length === 0 ? <li className="px-4 py-4 text-sm text-slate-500">Aucun avis Google importé pour l’instant. · No Google reviews imported yet.</li> : null}
               {data.reviews.map((r) => (
                 <li key={r.id} className="space-y-1.5 px-4 py-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <Stars rating={r.rating} />
                     <span className="font-medium text-slate-800">{r.reviewerName ?? "Google user"}</span>
                     <span className="text-slate-400">· {r.locationTitle}</span>
-                    {r.replyComment ? <Badge tone="success">Answered</Badge> : <Badge tone="warning">Unanswered</Badge>}
+                    {r.replyComment ? <Badge tone="success">Répondu · Answered</Badge> : <Badge tone="warning">Sans réponse · Unanswered</Badge>}
                     <span className="ml-auto text-slate-400">{r.createdAt.toLocaleDateString("en-CA")}</span>
                   </div>
                   {r.comment ? <p className="whitespace-pre-wrap text-sm text-slate-700">{r.comment}</p> : null}

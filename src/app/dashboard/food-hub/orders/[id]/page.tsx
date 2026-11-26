@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { use, useCallback, useEffect, useState } from 'react';
 import { api, fmtTime, Marketplace, Modal, money, ReasonDialog, Section, STATUS_LABEL, useCatalog, useMe } from '../../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Order = {
   id: string; channel: string; marketplace: string; externalOrderId: string; displayId?: string; channelStoreId: string; brandName?: string; locationCode?: string;
@@ -34,6 +35,7 @@ function minutesBetween(a?: string, b?: string) {
 }
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const fr = useDashboardLanguage() === "fr";
   const { id } = use(params);
   const [order, setOrder] = useState<Order | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
@@ -75,7 +77,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
     run(action);
   }
 
-  if (!order) return <div><h1>Order</h1>{error ? <div className="fh-banner warn">{error}</div> : <p className="small">Loading…</p>}</div>;
+  if (!order) return <div><h1>{fr ? "Commande" : "Order"}</h1>{error ? <div className="fh-banner warn">{error}</div> : <p className="small">Loading…</p>}</div>;
   const t = order.timeline ?? {};
   const steps: Array<[string, string | undefined, string?]> = [
     ['Placed', order.placedAt || order.createdAt],
@@ -99,7 +101,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div className="small">{order.brandName ?? 'Unmapped brand'} · {order.locationCode ? locName(order.locationCode) : `unmapped store ${order.channelStoreId}`} · {order.fulfillment} · placed {fmtTime(order.placedAt || order.createdAt, true)}</div>
         </div>
         <div className="fh-row">
-          <Link className="button btn-light" href={`/dashboard/food-hub/orders/${order.id}/ticket`} target="_blank">Print ticket</Link>
+          <Link className="button btn-light" href={`/dashboard/food-hub/orders/${order.id}/ticket`} target="_blank">{fr ? "Imprimer le billet" : "Print ticket"}</Link>
           {can('orders:act') && actions.map((a) => (
             <button key={a} disabled={busy} className={a === 'accept' ? 'btn-ok' : a === 'deny' || a === 'cancel' ? 'btn-danger' : a === 'ready' || a === 'dispatch' ? '' : 'btn-light'} onClick={() => act(a)}>
               {a === 'deny' && order.channel === 'skip' ? 'Send to Skip tablet' : ACTION_LABEL[a] ?? a}
@@ -127,7 +129,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
       <div className="grid grid-2" style={{ alignItems: 'start' }}>
         <Section title="Items">
           <table>
-            <thead><tr><th>Qty</th><th>Item</th><th style={{ textAlign: 'right' }}>Price</th></tr></thead>
+            <thead><tr><th>{fr ? "Qté" : "Qty"}</th><th>{fr ? "Article" : "Item"}</th><th style={{ textAlign: 'right' }}>{fr ? "Prix" : "Price"}</th></tr></thead>
             <tbody>
               {order.lines.map((l, i) => (
                 <tr key={i}>
@@ -142,11 +144,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
             </tbody>
           </table>
           <dl className="fh-kv" style={{ marginTop: 12 }}>
-            <dt>Subtotal</dt><dd>{money(order.subtotal)}</dd>
-            {order.discount ? <><dt>Discount</dt><dd>−{money(order.discount)}</dd></> : null}
-            <dt>Tax</dt><dd>{money(order.tax)}</dd>
-            {order.deliveryFee ? <><dt>Delivery fee</dt><dd>{money(order.deliveryFee)}</dd></> : null}
-            {order.tip ? <><dt>Tip</dt><dd>{money(order.tip)}</dd></> : null}
+            <dt>{fr ? "Sous-total" : "Subtotal"}</dt><dd>{money(order.subtotal)}</dd>
+            {order.discount ? <><dt>{fr ? "Rabais" : "Discount"}</dt><dd>−{money(order.discount)}</dd></> : null}
+            <dt>{fr ? "Taxe" : "Tax"}</dt><dd>{money(order.tax)}</dd>
+            {order.deliveryFee ? <><dt>{fr ? "Frais de livraison" : "Delivery fee"}</dt><dd>{money(order.deliveryFee)}</dd></> : null}
+            {order.tip ? <><dt>{fr ? "Pourboire" : "Tip"}</dt><dd>{money(order.tip)}</dd></> : null}
             <dt><strong>Total</strong></dt><dd><strong>{money(order.total)}</strong></dd>
           </dl>
           {order.notes && <p className="small"><strong>Customer note:</strong> {order.notes}</p>}
@@ -164,11 +166,11 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           {t.courier && (
             <Section title="Courier" right={<span className="small">{t.courier.source.replace(':', ' · ')} · {fmtTime(t.courier.updatedAt)}</span>}>
               <dl className="fh-kv">
-                <dt>Status</dt><dd><strong>🛵 {COURIER[t.courier.status] ?? t.courier.status}</strong></dd>
-                {t.courier.name && <><dt>Name</dt><dd>{t.courier.name}</dd></>}
-                {t.courier.phone && <><dt>Phone</dt><dd><a className="fh-link" href={`tel:${t.courier.phone}`}>{t.courier.phone}</a></dd></>}
-                {t.courier.vehicle && <><dt>Vehicle</dt><dd>{t.courier.vehicle}</dd></>}
-                {t.courier.etaAt && <><dt>At the store by</dt><dd>{fmtTime(t.courier.etaAt)}</dd></>}
+                <dt>{fr ? "Statut" : "Status"}</dt><dd><strong>🛵 {COURIER[t.courier.status] ?? t.courier.status}</strong></dd>
+                {t.courier.name && <><dt>{fr ? "Nom" : "Name"}</dt><dd>{t.courier.name}</dd></>}
+                {t.courier.phone && <><dt>{fr ? "Téléphone" : "Phone"}</dt><dd><a className="fh-link" href={`tel:${t.courier.phone}`}>{t.courier.phone}</a></dd></>}
+                {t.courier.vehicle && <><dt>{fr ? "Véhicule" : "Vehicle"}</dt><dd>{t.courier.vehicle}</dd></>}
+                {t.courier.etaAt && <><dt>{fr ? "En magasin pour" : "At the store by"}</dt><dd>{fmtTime(t.courier.etaAt)}</dd></>}
               </dl>
             </Section>
           )}
@@ -179,13 +181,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           )}
           <Section title="Details">
             <dl className="fh-kv">
-              <dt>Customer</dt><dd>{order.customerName || '—'}</dd>
-              <dt>Platform order id</dt><dd className="fh-mono">{order.externalOrderId}</dd>
-              <dt>Platform store id</dt><dd className="fh-mono">{order.channelStoreId}</dd>
-              <dt>Clover order</dt><dd className="fh-mono">{order.posOrderId || '—'}</dd>
-              <dt>Clover payment</dt><dd>{t.posPaymentId ? <span className="badge badge-green">Recorded ({MARKET_TENDER[order.channel] ?? order.channel} tender)</span> : t.posPaymentError ? <span className="badge badge-red" title={t.posPaymentError}>Not recorded</span> : '—'}</dd>
-              <dt>Customer ready-by</dt><dd>{order.readyBy ? fmtTime(order.readyBy, true) : '—'}</dd>
-              <dt>Last update</dt><dd>{fmtTime(order.updatedAt, true)}</dd>
+              <dt>{fr ? "Client" : "Customer"}</dt><dd>{order.customerName || '—'}</dd>
+              <dt>{fr ? "Identifiant de commande de la plateforme" : "Platform order id"}</dt><dd className="fh-mono">{order.externalOrderId}</dd>
+              <dt>{fr ? "Identifiant de magasin de la plateforme" : "Platform store id"}</dt><dd className="fh-mono">{order.channelStoreId}</dd>
+              <dt>{fr ? "Commande Clover" : "Clover order"}</dt><dd className="fh-mono">{order.posOrderId || '—'}</dd>
+              <dt>{fr ? "Paiement Clover" : "Clover payment"}</dt><dd>{t.posPaymentId ? <span className="badge badge-green">Recorded ({MARKET_TENDER[order.channel] ?? order.channel} tender)</span> : t.posPaymentError ? <span className="badge badge-red" title={t.posPaymentError}>{fr ? "Non enregistré" : "Not recorded"}</span> : '—'}</dd>
+              <dt>{fr ? "Prêt pour le client à" : "Customer ready-by"}</dt><dd>{order.readyBy ? fmtTime(order.readyBy, true) : '—'}</dd>
+              <dt>{fr ? "Dernière mise à jour" : "Last update"}</dt><dd>{fmtTime(order.updatedAt, true)}</dd>
             </dl>
           </Section>
         </div>
@@ -200,7 +202,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               </span>
             </li>
           ))}
-          {events.length === 0 && <li className="small">No events recorded.</li>}
+          {events.length === 0 && <li className="small">{fr ? "Aucun événement enregistré." : "No events recorded."}</li>}
         </ul>
       </Section>
     </div>
@@ -208,11 +210,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
 }
 
 function MissingDialog({ lines, onSend, onClose }: { lines: Order['lines']; onSend: (m: Array<{ line: number; quantity: number }>) => void; onClose: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [qty, setQty] = useState<Record<number, number>>({});
   const picked = Object.entries(qty).filter(([, q]) => q > 0).map(([line, quantity]) => ({ line: Number(line), quantity }));
   return (
     <Modal title="Report a missing item to SkipTheDishes" onClose={onClose}>
-      <p className="small">Skip removes the item from the order and adjusts what the customer pays. Use it when an item ran out after the order was accepted.</p>
+      <p className="small">{fr ? "Skip retire l’article de la commande et ajuste ce que paie le client. Utilisez-le quand un article manque après l’acceptation de la commande." : "Skip removes the item from the order and adjusts what the customer pays. Use it when an item ran out after the order was accepted."}</p>
       <table>
         <tbody>
           {lines.map((l, i) => (
@@ -228,8 +231,8 @@ function MissingDialog({ lines, onSend, onClose }: { lines: Order['lines']; onSe
         </tbody>
       </table>
       <div className="fh-row" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
-        <button className="btn-light" onClick={onClose}>Cancel</button>
-        <button className="btn-danger" disabled={!picked.length} onClick={() => onSend(picked)}>Send to Skip</button>
+        <button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button>
+        <button className="btn-danger" disabled={!picked.length} onClick={() => onSend(picked)}>{fr ? "Envoyer à Skip" : "Send to Skip"}</button>
       </div>
     </Modal>
   );

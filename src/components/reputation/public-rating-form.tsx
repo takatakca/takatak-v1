@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { submitRatingAction, type RatingFormState } from "@/app/r/[slug]/actions";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const initialState: RatingFormState = { status: "idle" };
 
@@ -19,6 +20,7 @@ export function PublicRatingForm({
   profileName: string;
   recipientName: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, formAction, pending] = useActionState(submitRatingAction, initialState);
   const [rating, setRating] = useState(0);
   const [wantsContact, setWantsContact] = useState(false);
@@ -63,7 +65,7 @@ export function PublicRatingForm({
       <input type="hidden" name="rating" value={rating || ""} />
       <div aria-hidden className="absolute -left-[9999px] h-0 w-0 overflow-hidden">
         <label>
-          Website
+          {fr ? "Site Web" : "Website"}
           <input type="text" name="website" tabIndex={-1} autoComplete="off" />
         </label>
       </div>
@@ -73,7 +75,7 @@ export function PublicRatingForm({
         <h1 className="mt-2 text-xl font-bold text-slate-950">
           {recipientName ? `${recipientName}, comment` : "Comment"} était votre expérience ?
         </h1>
-        <p className="text-xs text-slate-400">How was your experience?</p>
+        <p className="text-xs text-slate-400">{fr ? "Comment s’est passée votre expérience ?" : "How was your experience?"}</p>
       </div>
 
       <fieldset>
@@ -113,7 +115,7 @@ export function PublicRatingForm({
               <span>
                 J’accepte que mon commentaire et mon prénom soient affichés sur le site de l’entreprise.
                 <br />
-                <span className="text-slate-400">I agree my comment and first name may be shown on the business’s website.</span>
+                <span className="text-slate-400">{fr ? "J’accepte que mon commentaire et mon prénom soient affichés sur le site de l’entreprise." : "I agree my comment and first name may be shown on the business’s website."}</span>
               </span>
             </label>
           ) : null}
@@ -129,7 +131,7 @@ export function PublicRatingForm({
             <span>
               J’accepte d’être recontacté au sujet de mon avis.
               <br />
-              <span className="text-slate-400">I agree to be contacted about my feedback.</span>
+              <span className="text-slate-400">{fr ? "J’accepte d’être contacté au sujet de mon commentaire." : "I agree to be contacted about my feedback."}</span>
             </span>
           </label>
 

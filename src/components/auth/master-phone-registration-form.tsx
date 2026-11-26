@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth/registration-validation";
 import { normalizePhone, validatePhone, type PhoneCountry } from "@/lib/auth/otp/phone";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Values = {
   firstName: string;
@@ -27,6 +28,7 @@ const INITIAL: Values = {
 };
 
 export function MasterPhoneRegistrationForm({ nextPath = "/dashboard" }: { nextPath?: string } = {}) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const inFlight = useRef(false);
   const [values, setValues] = useState<Values>(INITIAL);
@@ -113,7 +115,7 @@ export function MasterPhoneRegistrationForm({ nextPath = "/dashboard" }: { nextP
     <form onSubmit={handleSubmit} className="space-y-4" aria-busy={loading}>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="firstName" className="mb-1.5 block text-xs font-semibold text-foreground">First Name</label>
+          <label htmlFor="firstName" className="mb-1.5 block text-xs font-semibold text-foreground">{fr ? "Prénom" : "First Name"}</label>
           <div className="relative">
             <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input id="firstName" autoComplete="given-name" value={values.firstName} disabled={loading} onChange={(event) => update("firstName", event.target.value)} className={inputClass} />
@@ -121,7 +123,7 @@ export function MasterPhoneRegistrationForm({ nextPath = "/dashboard" }: { nextP
           {fieldErrors.firstName ? <p className="mt-1 text-xs text-rose-600">{fieldErrors.firstName}</p> : null}
         </div>
         <div>
-          <label htmlFor="lastName" className="mb-1.5 block text-xs font-semibold text-foreground">Last Name</label>
+          <label htmlFor="lastName" className="mb-1.5 block text-xs font-semibold text-foreground">{fr ? "Nom" : "Last Name"}</label>
           <div className="relative">
             <UserRound className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input id="lastName" autoComplete="family-name" value={values.lastName} disabled={loading} onChange={(event) => update("lastName", event.target.value)} className={inputClass} />
@@ -131,18 +133,18 @@ export function MasterPhoneRegistrationForm({ nextPath = "/dashboard" }: { nextP
       </div>
 
       <p className="text-xs leading-relaxed text-muted-foreground">
-        Your mobile number is the TAKATAK identity. A recovery email can be added after verification, and it works only after you confirm the message sent to that inbox.
+        {fr ? "Votre numéro de cellulaire est votre identité TAKATAK. Un courriel de récupération peut s’ajouter après la vérification ; il ne fonctionne qu’une fois le message reçu confirmé." : "Your mobile number is the TAKATAK identity. A recovery email can be added after verification, and it works only after you confirm the message sent to that inbox."}
       </p>
 
       <div>
-        <label htmlFor="phone" className="mb-1.5 block text-xs font-semibold text-foreground">Mobile number</label>
-        <label htmlFor="registration-phone-country" className="mb-1 block text-xs font-semibold text-foreground">Country calling code</label>
+        <label htmlFor="phone" className="mb-1.5 block text-xs font-semibold text-foreground">{fr ? "Numéro de cellulaire" : "Mobile number"}</label>
+        <label htmlFor="registration-phone-country" className="mb-1 block text-xs font-semibold text-foreground">{fr ? "Indicatif du pays" : "Country calling code"}</label>
         <select id="registration-phone-country" value={phoneCountry} disabled={loading}
           onChange={(event) => { setPhoneCountry(event.target.value as PhoneCountry); setFieldErrors((current) => ({ ...current, phone: "" })); setError(null); }}
           className="mb-2 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground">
-          <option value="CA">Canada / US (+1)</option>
-          <option value="NG">Nigeria (+234)</option>
-          <option value="INTL">Other country (enter +code)</option>
+          <option value="CA">{fr ? "Canada / États-Unis (+1)" : "Canada / US (+1)"}</option>
+          <option value="NG">{fr ? "Nigéria (+234)" : "Nigeria (+234)"}</option>
+          <option value="INTL">{fr ? "Autre pays (entrez +indicatif)" : "Other country (enter +code)"}</option>
         </select>
         <div className="relative">
           <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
@@ -153,7 +155,7 @@ export function MasterPhoneRegistrationForm({ nextPath = "/dashboard" }: { nextP
 
       <label className="flex items-start gap-2.5 text-sm text-muted-foreground">
         <input type="checkbox" checked={values.acceptedTerms} disabled={loading} onChange={(event) => update("acceptedTerms", event.target.checked)} className="mt-1" />
-        <span>I agree to the Terms and Privacy Policy for my TAKATAK identity.</span>
+        <span>{fr ? "J’accepte les conditions et la politique de confidentialité de mon identité TAKATAK." : "I agree to the Terms and Privacy Policy for my TAKATAK identity."}</span>
       </label>
       {fieldErrors.acceptedTerms ? <p className="text-xs text-rose-600">{fieldErrors.acceptedTerms}</p> : null}
 

@@ -89,7 +89,7 @@ export default async function CustomerDetailPage({
             href="/dashboard/customers"
             className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
           >
-            All customers
+            Tous les clients · All customers
           </Link>
         }
       />
@@ -100,7 +100,7 @@ export default async function CustomerDetailPage({
             <p className="text-2xl font-semibold text-slate-900">
               {customer.reservationCount.toLocaleString("en-CA")}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Reservations</p>
+            <p className="mt-1 text-xs text-slate-500">Réservations · Reservations</p>
           </CardBody>
         </Card>
         <Card>
@@ -108,7 +108,7 @@ export default async function CustomerDetailPage({
             <p className="text-2xl font-semibold text-slate-900">
               {customer.interactionCount.toLocaleString("en-CA")}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Matched interactions</p>
+            <p className="mt-1 text-xs text-slate-500">Interactions associées · Matched interactions</p>
           </CardBody>
         </Card>
         <Card>
@@ -116,7 +116,7 @@ export default async function CustomerDetailPage({
             <p className="text-2xl font-semibold text-slate-900">
               {customer.sourceCount.toLocaleString("en-CA")}
             </p>
-            <p className="mt-1 text-xs text-slate-500">Traceable sources</p>
+            <p className="mt-1 text-xs text-slate-500">Sources traçables · Traceable sources</p>
           </CardBody>
         </Card>
       </div>
@@ -129,18 +129,18 @@ export default async function CustomerDetailPage({
           />
           <CardBody className="space-y-3 text-sm">
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Email</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Courriel · Email</p>
               <p className="mt-1 text-slate-800">{customer.email || "—"}</p>
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Phone</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Téléphone · Phone</p>
               <p className="mt-1 text-slate-800">{customer.phone || "—"}</p>
               {phoneHistory && phoneHistory !== customer.phone ? (
                 <p className="mt-1 text-xs text-slate-400">{phoneHistory}</p>
               ) : null}
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Address</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Adresse · Address</p>
               <p className="mt-1 text-slate-800">
                 {[
                   customer.addressLine1,
@@ -158,14 +158,14 @@ export default async function CustomerDetailPage({
               ) : null}
             </div>
             <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Observed period</p>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Période observée · Observed period</p>
               <p className="mt-1 text-slate-800">
                 {customer.firstSeenAt || "—"} → {customer.lastSeenAt || "—"}
               </p>
             </div>
             {activities ? (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Observed activities</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">Activités observées · Observed activities</p>
                 <p className="mt-1 text-slate-800">{activities}</p>
               </div>
             ) : null}
@@ -182,10 +182,7 @@ export default async function CustomerDetailPage({
               {customer.evidenceStatus}
             </Badge>
             <p className="text-sm leading-relaxed text-slate-600">
-              The customer record is a normalized view. Reservation rows, matched
-              messages, and source links below remain separate evidence; the
-              dashboard does not treat a historical export as proof of a current
-              stay or current marketing consent.
+              La fiche client est une vue normalisée. Les réservations, messages associés et liens de source ci-dessous restent des preuves distinctes ; le tableau de bord ne prend pas un ancien export pour la preuve d’un séjour actuel ou d’un consentement marketing actuel. · The customer record is a normalized view. Reservation rows, matched messages, and source links below remain separate evidence; the dashboard does not treat a historical export as proof of a current stay or current marketing consent.
             </p>
           </CardBody>
         </Card>
@@ -200,10 +197,10 @@ export default async function CustomerDetailPage({
           <table className="min-w-full divide-y divide-slate-100 text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">Reservation</th>
-                <th className="px-4 py-3">Unit</th>
-                <th className="px-4 py-3">Stay</th>
-                <th className="px-4 py-3">Guests</th>
+                <th className="px-4 py-3">Réservation · Reservation</th>
+                <th className="px-4 py-3">Unité · Unit</th>
+                <th className="px-4 py-3">Séjour · Stay</th>
+                <th className="px-4 py-3">Invités · Guests</th>
                 <th className="px-4 py-3">Total</th>
                 <th className="px-4 py-3">Source</th>
               </tr>
@@ -251,7 +248,7 @@ export default async function CustomerDetailPage({
                         rel="noreferrer"
                         className="text-indigo-700 hover:text-indigo-500"
                       >
-                        Open source
+                        Ouvrir la source · Open source
                       </a>
                     ) : (
                       <span className="text-slate-400">{reservation.sourceSystem}</span>
@@ -262,7 +259,7 @@ export default async function CustomerDetailPage({
               {!customer.reservations.length ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
-                    No reservation is linked to this customer.
+                    Aucune réservation liée à ce client. · No reservation is linked to this customer.
                   </td>
                 </tr>
               ) : null}
@@ -309,7 +306,7 @@ export default async function CustomerDetailPage({
               </div>
             ))}
             {!customer.interactions.length ? (
-              <p className="text-sm text-slate-500">No message was matched to this customer.</p>
+              <p className="text-sm text-slate-500">Aucun message associé à ce client. · No message was matched to this customer.</p>
             ) : null}
           </CardBody>
         </Card>
@@ -340,14 +337,14 @@ export default async function CustomerDetailPage({
                       rel="noreferrer"
                       className="text-xs font-medium text-indigo-700 hover:text-indigo-500"
                     >
-                      Open source
+                      Ouvrir la source · Open source
                     </a>
                   ) : null}
                 </div>
               </div>
             ))}
             {!customer.evidence.length ? (
-              <p className="text-sm text-slate-500">No source evidence is attached.</p>
+              <p className="text-sm text-slate-500">Aucune preuve de source jointe. · No source evidence is attached.</p>
             ) : null}
           </CardBody>
         </Card>

@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 
 import { createReviewRequestAction, type RequestLinkState } from "@/app/dashboard/growth/reviews/actions";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const initialState: RequestLinkState = { ok: null };
 const inputClass =
@@ -17,6 +18,7 @@ export function RequestLinkForm({
   smsReady?: boolean;
   whatsappReady?: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, formAction, pending] = useActionState(createReviewRequestAction, initialState);
   const [copied, setCopied] = useState(false);
   const [profileId, setProfileId] = useState(profiles[0]?.id ?? "");
@@ -33,7 +35,7 @@ export function RequestLinkForm({
     <div className="space-y-3">
       <form action={formAction} className="grid gap-3 md:grid-cols-4">
         <label className="space-y-1 text-xs font-medium text-slate-700 md:col-span-2">
-          Review page
+          {fr ? "Page d’avis" : "Review page"}
           <select name="profileId" value={profileId} onChange={(e) => setProfileId(e.target.value)} className={inputClass}>
             {profiles.map((p) => (
               <option key={p.id} value={p.id}>
@@ -43,16 +45,16 @@ export function RequestLinkForm({
           </select>
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-700">
-          Customer first name
+          {fr ? "Prénom du client" : "Customer first name"}
           <input name="recipientName" maxLength={40} placeholder="Marie" className={inputClass} />
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-700">
-          Sent by
+          {fr ? "Envoyé par" : "Sent by"}
           <select name="channel" value={channel} onChange={(e) => setChannel(e.target.value)} className={inputClass}>
             <option value="sms">SMS</option>
             <option value="whatsapp">WhatsApp</option>
-            <option value="email">Email</option>
-            <option value="link">Link / other</option>
+            <option value="email">{fr ? "Courriel" : "Email"}</option>
+            <option value="link">{fr ? "Lien / autre" : "Link / other"}</option>
           </select>
         </label>
         {autoReady ? (
@@ -63,11 +65,11 @@ export function RequestLinkForm({
             </label>
             {sendNow ? (
               <label className="space-y-1 text-xs font-medium text-slate-700">
-                Customer mobile
+                {fr ? "Cellulaire du client" : "Customer mobile"}
                 <input name="phone" inputMode="tel" maxLength={24} required placeholder="514 555 0123" className={inputClass} />
               </label>
             ) : null}
-            <span className="text-[11px] text-slate-400">The number is used once to send and is not stored.</span>
+            <span className="text-[11px] text-slate-400">{fr ? "Le numéro sert une seule fois à l’envoi et n’est pas conservé." : "The number is used once to send and is not stored."}</span>
           </div>
         ) : null}
         <div className="md:col-span-4">
@@ -123,10 +125,10 @@ export function RequestLinkForm({
               href={`mailto:?subject=${encodeURIComponent("Votre avis compte · Your feedback")}&body=${encodeURIComponent(message)}`}
               className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-xs font-medium text-emerald-900"
             >
-              Email
+              {fr ? "Courriel" : "Email"}
             </a>
           </div>
-          <p className="text-[11px] text-emerald-800">Each link works once and expires in 30 days. Opens and ratings are tracked below.</p>
+          <p className="text-[11px] text-emerald-800">{fr ? "Chaque lien fonctionne une fois et expire dans 30 jours. Les ouvertures et les notes sont suivies ci-dessous." : "Each link works once and expires in 30 days. Opens and ratings are tracked below."}</p>
         </div>
       ) : null}
     </div>

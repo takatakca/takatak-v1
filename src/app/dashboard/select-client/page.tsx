@@ -74,11 +74,11 @@ export default async function SelectClientPage({
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <section className="w-full max-w-md rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm">
           <h1 className="text-xl font-semibold text-slate-950">
-            Workspaces unavailable
+            Espaces injoignables · Workspaces unavailable
           </h1>
 
           <p className="mt-2 text-sm text-slate-600">
-            The database is temporarily unavailable.
+            La base de données est momentanément injoignable. · The database is temporarily unavailable.
           </p>
         </section>
       </main>
@@ -140,17 +140,17 @@ export default async function SelectClientPage({
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <section className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
         <h1 className="text-xl font-semibold text-slate-950">
-          Choose your working mode
+          Choisissez votre façon de travailler · Choose your working mode
         </h1>
 
         <p className="mt-2 text-sm leading-6 text-slate-500">
-          Select Platform Administration or enter one of your workspaces.
+          Choisissez l’administration de la plateforme ou entrez dans un de vos espaces. · Select Platform Administration or enter one of your workspaces.
         </p>
 
         {canUsePlatformAdministration ? (
           <div className="mt-6">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Platform
+              Plateforme · Platform
             </p>
 
             <form
@@ -168,11 +168,11 @@ export default async function SelectClientPage({
 
                 <div>
                   <p className="text-sm font-semibold text-slate-900">
-                    Platform Administration
+                    Administration de la plateforme · Platform Administration
                   </p>
 
                   <p className="mt-0.5 text-xs text-slate-500">
-                    Manage platform-wide users, clients, jobs, and audit records.
+                    Gérez les utilisateurs, clients, tâches et journaux d’audit de toute la plateforme. · Manage platform-wide users, clients, jobs, and audit records.
                   </p>
                 </div>
               </button>
@@ -182,7 +182,7 @@ export default async function SelectClientPage({
 
         <div className="mt-6">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Workspaces
+            Espaces · Workspaces
           </p>
 
           <div className="space-y-2">
@@ -250,7 +250,7 @@ export default async function SelectClientPage({
 
             {memberships.length === 0 ? (
               <p className="rounded-xl bg-slate-50 px-4 py-4 text-sm text-slate-500">
-                No active workspace memberships were found.
+                Aucune adhésion active à un espace. · No active workspace memberships were found.
               </p>
             ) : null}
           </div>

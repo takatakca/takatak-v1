@@ -4,6 +4,7 @@ import { useActionState } from "react";
 
 import { pageSpeedAction, type PageSpeedState } from "@/app/dashboard/seo/actions";
 import type { Grade } from "@/lib/seo/pagespeed-parse";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const initialState: PageSpeedState = { ok: null };
 const GRADE: Record<Grade, { dot: string; label: string }> = {
@@ -13,13 +14,14 @@ const GRADE: Record<Grade, { dot: string; label: string }> = {
 };
 
 export function PageSpeedForm({ configured }: { configured: boolean }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, formAction, pending] = useActionState(pageSpeedAction, initialState);
   const report = state.ok === true ? state.report : null;
   return (
     <div className="space-y-4">
       <form action={formAction} className="flex flex-col gap-2 sm:flex-row">
         <label htmlFor="psi-url" className="sr-only">
-          Website address
+          {fr ? "Adresse du site" : "Website address"}
         </label>
         <input
           id="psi-url"
@@ -31,7 +33,7 @@ export function PageSpeedForm({ configured }: { configured: boolean }) {
         />
         <select name="strategy" disabled={!configured} className="rounded-xl border border-slate-300 px-3 py-2 text-sm">
           <option value="mobile">Mobile</option>
-          <option value="desktop">Desktop</option>
+          <option value="desktop">{fr ? "Ordinateur" : "Desktop"}</option>
         </select>
         <button type="submit" disabled={!configured || pending} className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
           {pending ? "Testing… (up to a minute)" : "Test speed"}
@@ -56,8 +58,8 @@ export function PageSpeedForm({ configured }: { configured: boolean }) {
             </div>
             <div className="text-xs text-slate-600">
               <p className="font-medium text-slate-900">{report.url}</p>
-              <p>Lighthouse performance score (lab test by Google).</p>
-              {report.fieldCategory ? <p>Real-user experience (Chrome UX Report): {report.fieldCategory.toLowerCase()}</p> : <p>Not enough real-user data from Chrome yet.</p>}
+              <p>{fr ? "Score de performance Lighthouse (test en laboratoire de Google)." : "Lighthouse performance score (lab test by Google)."}</p>
+              {report.fieldCategory ? <p>Real-user experience (Chrome UX Report): {report.fieldCategory.toLowerCase()}</p> : <p>{fr ? "Pas encore assez de données d’utilisateurs réels de Chrome." : "Not enough real-user data from Chrome yet."}</p>}
             </div>
           </div>
           <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">

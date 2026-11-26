@@ -8,6 +8,7 @@ import {
   SocialPlatformIcon,
   type SocialPlatformKey,
 } from "@/components/social/navigation/social-platform-icon";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PLATFORM_KEYS: SocialPlatformKey[] = [
   "facebook",
@@ -43,6 +44,7 @@ export function AccountApiView({
   billingHref: string;
   connectedPlatforms: string[];
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const platforms = connectedPlatforms.slice(0, 4);
 
   return (
@@ -68,7 +70,7 @@ export function AccountApiView({
             <span className="inline-flex h-4 w-4 items-center justify-center rounded-[3px] bg-[#dfff32] text-[#1d1d1f]">
               <Gem className="h-2.5 w-2.5" />
             </span>
-            Upgrade your plan
+            {fr ? "Voir les forfaits" : "Upgrade your plan"}
           </Link>
         ) : null}
       </section>
@@ -79,11 +81,10 @@ export function AccountApiView({
             <SquareArrowOutUpRight className="h-4 w-4" />
           </span>
           <h3 className="pr-12 text-lg font-semibold text-[#1d1d1f]">
-            Export your data
+            {fr ? "Exporter vos données" : "Export your data"}
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            The networks connected to this workspace. To export their analytics
-            to Power BI, Tableau or Looker Studio, ask the TAKATAK team.
+            {fr ? "Les réseaux branchés à cet espace. Pour exporter leurs statistiques vers Power BI, Tableau ou Looker Studio, écrivez à l’équipe TAKATAK." : "The networks connected to this workspace. To export their analytics to Power BI, Tableau or Looker Studio, ask the TAKATAK team."}
           </p>
           <div className="mt-8 flex flex-1 items-center justify-center">
             {platforms.length > 0 ? (
@@ -105,7 +106,7 @@ export function AccountApiView({
               </ul>
             ) : (
               <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 ring-1 ring-slate-200">
-                No connected networks to export yet
+                {fr ? "Aucun réseau branché à exporter pour l’instant" : "No connected networks to export yet"}
               </p>
             )}
           </div>
@@ -116,19 +117,18 @@ export function AccountApiView({
             <Zap className="h-4 w-4" />
           </span>
           <h3 className="pr-12 text-lg font-semibold text-[#1d1d1f]">
-            Automate your workflow
+            {fr ? "Automatisez votre travail" : "Automate your workflow"}
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Trigger actions from social activity through the TAKATAK API.
-            Zapier, Make, and similar connectors are not available yet.
+            {fr ? "Déclenchez des actions à partir de l’activité sociale par l’API TAKATAK. Zapier, Make et les connecteurs semblables arrivent plus tard." : "Trigger actions from social activity through the TAKATAK API. Zapier, Make, and similar connectors are not available yet."}
           </p>
           <div className="mt-8 flex flex-1 items-center justify-center">
             <div className="w-full max-w-[220px] space-y-2">
               <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 ring-1 ring-slate-200">
-                Tokens not issued
+                {fr ? "Jetons non émis" : "Tokens not issued"}
               </div>
               <div className="rounded-lg bg-white px-3 py-2 text-xs text-slate-500 ring-1 ring-slate-200">
-                Dashboard APIs stay internal
+                {fr ? "Les API du tableau de bord restent internes" : "Dashboard APIs stay internal"}
               </div>
             </div>
           </div>
@@ -139,11 +139,10 @@ export function AccountApiView({
             <BarChart3 className="h-4 w-4" />
           </span>
           <h3 className="pr-12 text-lg font-semibold text-[#1d1d1f]">
-            Build custom reports
+            {fr ? "Créer des rapports sur mesure" : "Build custom reports"}
           </h3>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Custom report builders and API exports are planned. This page does
-            not invent dashboard totals or third-party report tools.
+            {fr ? "Les créateurs de rapports sur mesure et les exports par API sont prévus. Cette page n’invente ni totaux ni outils de rapport tiers." : "Custom report builders and API exports are planned. This page does not invent dashboard totals or third-party report tools."}
           </p>
           <div className="mt-8 flex flex-1 items-end justify-center gap-2 pb-2">
             <span className="h-8 w-6 rounded-t-sm bg-slate-200" />

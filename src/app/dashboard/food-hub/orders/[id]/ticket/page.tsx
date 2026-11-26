@@ -2,6 +2,7 @@
 
 import { use, useEffect, useRef, useState } from 'react';
 import { api, MK_LABEL, money, useCatalog } from '../../../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Order = {
   id: string; channel: string; externalOrderId: string; displayId?: string; brandName?: string; locationCode?: string; customerName?: string;
@@ -12,6 +13,7 @@ type Order = {
 
 // 80 mm kitchen / bag ticket. Opens the print dialog automatically; works with any receipt printer the browser can see.
 export default function TicketPage({ params }: { params: Promise<{ id: string }> }) {
+  const fr = useDashboardLanguage() === "fr";
   const { id } = use(params);
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState('');
@@ -32,8 +34,8 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
   return (
     <div className="ticket-wrap">
       <div className="no-print fh-row" style={{ marginBottom: 12 }}>
-        <button onClick={() => window.print()}>Print</button>
-        <button className="btn-light" onClick={() => window.close()}>Close</button>
+        <button onClick={() => window.print()}>{fr ? "Imprimer" : "Print"}</button>
+        <button className="btn-light" onClick={() => window.close()}>{fr ? "Fermer" : "Close"}</button>
       </div>
       <div className="ticket">
         <div className="t-center t-big">{MK_LABEL[order.channel] ?? order.channel}</div>
@@ -42,8 +44,8 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
         <div className="t-center small">{order.locationCode ? locName(order.locationCode) : ''}</div>
         <div className="t-rule" />
         <div className="t-row"><span>{order.fulfillment.toUpperCase()}</span><span>{time(order.placedAt || order.createdAt)}</span></div>
-        {order.timeline?.readyTarget && <div className="t-row"><span>READY BY</span><strong>{time(order.timeline.readyTarget)}</strong></div>}
-        {order.customerName && <div className="t-row"><span>Customer</span><span>{order.customerName}</span></div>}
+        {order.timeline?.readyTarget && <div className="t-row"><span>{fr ? "PRÊT POUR" : "READY BY"}</span><strong>{time(order.timeline.readyTarget)}</strong></div>}
+        {order.customerName && <div className="t-row"><span>{fr ? "Client" : "Customer"}</span><span>{order.customerName}</span></div>}
         {order.status === 'cancelled' && <div className="t-center t-big">*** CANCELLED ***</div>}
         <div className="t-rule" />
         {order.lines.map((l, i) => (
@@ -55,11 +57,11 @@ export default function TicketPage({ params }: { params: Promise<{ id: string }>
         ))}
         {order.notes && <><div className="t-rule" /><div><strong>NOTE:</strong> {order.notes}</div></>}
         <div className="t-rule" />
-        <div className="t-row"><span>Subtotal</span><span>{money(order.subtotal)}</span></div>
-        {order.discount ? <div className="t-row"><span>Discount</span><span>−{money(order.discount)}</span></div> : null}
-        <div className="t-row"><span>Tax</span><span>{money(order.tax)}</span></div>
-        {order.deliveryFee ? <div className="t-row"><span>Delivery</span><span>{money(order.deliveryFee)}</span></div> : null}
-        {order.tip ? <div className="t-row"><span>Tip</span><span>{money(order.tip)}</span></div> : null}
+        <div className="t-row"><span>{fr ? "Sous-total" : "Subtotal"}</span><span>{money(order.subtotal)}</span></div>
+        {order.discount ? <div className="t-row"><span>{fr ? "Rabais" : "Discount"}</span><span>−{money(order.discount)}</span></div> : null}
+        <div className="t-row"><span>{fr ? "Taxe" : "Tax"}</span><span>{money(order.tax)}</span></div>
+        {order.deliveryFee ? <div className="t-row"><span>{fr ? "Livraison" : "Delivery"}</span><span>{money(order.deliveryFee)}</span></div> : null}
+        {order.tip ? <div className="t-row"><span>{fr ? "Pourboire" : "Tip"}</span><span>{money(order.tip)}</span></div> : null}
         <div className="t-row t-big"><strong>TOTAL</strong><strong>{money(order.total)}</strong></div>
         <div className="t-rule" />
         <div className="t-center small">{order.posOrderId ? `Clover ${order.posOrderId}` : 'Not in Clover'} · TAKATAK Food Hub</div>

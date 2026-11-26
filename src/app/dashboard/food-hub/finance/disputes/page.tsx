@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatTile } from '@/app/dashboard/food-hub/charts';
 import { api, downloadCsv, Modal, useCatalog, useMe } from '@/app/dashboard/food-hub/ui';
 import { CASE_STATUS_LABEL, CaseBadge, CH_NAME, FinanceError, FinanceHead, RECOVERABLE, cad, day, type CaseStatus } from '../finance-ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Case = {
   id: string; type: string; channel: string; ref: string; orderId: string | null; brandName: string | null; locationCode: string | null; orderDate: string | null;
@@ -24,6 +25,7 @@ const HOW: Array<[string, string]> = [
 ];
 
 export default function DisputesPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { can } = useMe();
   const { locName } = useCatalog();
   const [cases, setCases] = useState<Case[]>([]);
@@ -64,16 +66,16 @@ export default function DisputesPage() {
           {TABS.map(([k, l, st]) => <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l} ({cases.filter((c) => !st.length || st.includes(c.status)).length})</button>)}
         </div>
         <select value={channel} onChange={(e) => setChannel(e.target.value)} aria-label="Platform">
-          <option value="">All platforms</option>
+          <option value="">{fr ? "Toutes les plateformes" : "All platforms"}</option>
           {Object.entries(CH_NAME).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
         </select>
-        <button className="btn-sm btn-light" onClick={exportCsv} disabled={!rows.length}>Download CSV</button>
+        <button className="btn-sm btn-light" onClick={exportCsv} disabled={!rows.length}>{fr ? "Télécharger le CSV" : "Download CSV"}</button>
       </div>
 
       <section className="card" style={{ marginBottom: 16 }}>
         <div className="fh-table-wrap">
           <table className="fin-table">
-            <thead><tr><th>Opened</th><th>Platform</th><th>Problem</th><th>Order</th><th>Brand · location</th><th className="num">Amount</th><th>Status</th><th>Platform case</th><th></th></tr></thead>
+            <thead><tr><th>{fr ? "Ouvert" : "Opened"}</th><th>{fr ? "Plateforme" : "Platform"}</th><th>{fr ? "Problème" : "Problem"}</th><th>{fr ? "Commande" : "Order"}</th><th>Brand · location</th><th className="num">{fr ? "Montant" : "Amount"}</th><th>{fr ? "Statut" : "Status"}</th><th>{fr ? "Dossier plateforme" : "Platform case"}</th><th></th></tr></thead>
             <tbody>
               {rows.map((c) => (
                 <tr key={c.id}>
@@ -95,7 +97,7 @@ export default function DisputesPage() {
       </section>
 
       <section className="card">
-        <h2 style={{ marginTop: 0, fontSize: 17 }}>How to dispute</h2>
+        <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Comment contester" : "How to dispute"}</h2>
         <div className="fin-help">{HOW.map(([t, d]) => <div key={t}><h3>{t}</h3>{d}</div>)}</div>
         <p className="small">Dispute quickly — platforms only accept disputes for a limited time after the order. Write the platform’s case number here so anyone can follow up.</p>
       </section>
@@ -106,6 +108,7 @@ export default function DisputesPage() {
 }
 
 function CaseDialog({ c, canEdit, onClose, onSaved }: { c: Case; canEdit: boolean; onClose: () => void; onSaved: (msg: string) => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [status, setStatus] = useState<CaseStatus>(c.status);
   const [platformCaseId, setPlatformCaseId] = useState(c.platformCaseId ?? '');
   const [recovered, setRecovered] = useState(c.recoveredAmount !== undefined ? String(c.recoveredAmount) : '');
@@ -125,19 +128,19 @@ function CaseDialog({ c, canEdit, onClose, onSaved }: { c: Case; canEdit: boolea
       {c.type === 'unknown_order' && <div className="fh-banner info">Not money lost: the platform paid an order Food Hub never received — a missed webhook or a store that is not mapped. Check Food Hub → Stores, then set this case to “Ignored”.</div>}
       {canEdit && (
         <div style={{ display: 'grid', gap: 10, marginBottom: 12 }}>
-          <label className="small">Status<br />
+          <label className="small">{fr ? "Statut" : "Status"}<br />
             <select value={status} onChange={(e) => setStatus(e.target.value as CaseStatus)} style={{ width: '100%' }}>
               {(Object.keys(CASE_STATUS_LABEL) as CaseStatus[]).filter((s) => s !== 'resolved' || c.status === 'resolved').map((s) => <option key={s} value={s}>{CASE_STATUS_LABEL[s]}</option>)}
             </select>
           </label>
-          <label className="small">Platform case / ticket number<br /><input value={platformCaseId} onChange={(e) => setPlatformCaseId(e.target.value)} style={{ width: '100%' }} maxLength={80} /></label>
+          <label className="small">{fr ? "Numéro de dossier ou de billet de la plateforme" : "Platform case / ticket number"}<br /><input value={platformCaseId} onChange={(e) => setPlatformCaseId(e.target.value)} style={{ width: '100%' }} maxLength={80} /></label>
           {status === 'recovered' && <label className="small">Amount recovered ($)<br /><input type="number" step="0.01" min="0" value={recovered} onChange={(e) => setRecovered(e.target.value)} placeholder={c.amount.toFixed(2)} /></label>}
           <label className="small">Note<br /><textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} style={{ width: '100%' }} maxLength={500} placeholder="What you sent, who you spoke to…" /></label>
           {err && <div className="fh-banner warn">{err}</div>}
-          <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>Cancel</button><button disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></div>
+          <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button><button disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button></div>
         </div>
       )}
-      <strong className="small">History</strong>
+      <strong className="small">{fr ? "Historique" : "History"}</strong>
       <ul className="small" style={{ paddingLeft: 18, marginTop: 4 }}>
         {[...c.notes].reverse().map((n, i) => <li key={i}><span className="fh-mono">{new Date(n.at).toLocaleString('en-CA')}</span> · {n.by} — {n.text}</li>)}
       </ul>

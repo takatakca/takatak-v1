@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PLACE_ID_PATTERN = /^[A-Za-z0-9_-]{10,200}$/;
 
@@ -26,6 +27,7 @@ function CopyButton({ value, label = "Copy" }: { value: string; label?: string }
 }
 
 export function ReviewRequestBuilder() {
+  const fr = useDashboardLanguage() === "fr";
   const [business, setBusiness] = useState("");
   const [placeId, setPlaceId] = useState("");
   const [customer, setCustomer] = useState("");
@@ -55,15 +57,15 @@ export function ReviewRequestBuilder() {
     <div className="space-y-4">
       <div className="grid gap-3 md:grid-cols-3">
         <label className="space-y-1 text-xs font-medium text-slate-700">
-          Business name
+          {fr ? "Nom de l’entreprise" : "Business name"}
           <input className={inputClass} value={business} onChange={(e) => setBusiness(e.target.value)} placeholder="Garage Verdun" maxLength={80} />
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-700">
-          Google Place ID
+          {fr ? "Identifiant Google Place" : "Google Place ID"}
           <input className={inputClass} value={placeId} onChange={(e) => setPlaceId(e.target.value)} placeholder="ChIJ…" maxLength={200} />
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-700">
-          Customer first name (optional)
+          {fr ? "Prénom du client (facultatif)" : "Customer first name (optional)"}
           <input className={inputClass} value={customer} onChange={(e) => setCustomer(e.target.value)} placeholder="Marie" maxLength={40} />
         </label>
       </div>
@@ -113,7 +115,7 @@ export function ReviewRequestBuilder() {
                 rel="noreferrer noopener"
                 className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
               >
-                Send
+                {fr ? "Envoyer" : "Send"}
               </a>
             </div>
           </div>
@@ -121,14 +123,14 @@ export function ReviewRequestBuilder() {
         </div>
         <div className="rounded-xl border border-slate-200 p-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs font-semibold text-slate-800">Email</p>
+            <p className="text-xs font-semibold text-slate-800">{fr ? "Courriel" : "Email"}</p>
             <div className="flex gap-2">
               <CopyButton value={`${templates.emailSubject}\n\n${templates.emailBody}`} />
               <a
                 href={`mailto:?subject=${encodeURIComponent(templates.emailSubject)}&body=${encodeURIComponent(templates.emailBody)}`}
                 className="rounded-lg bg-indigo-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-indigo-700"
               >
-                Open
+                {fr ? "Ouvrir" : "Open"}
               </a>
             </div>
           </div>
