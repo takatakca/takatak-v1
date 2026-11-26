@@ -259,6 +259,17 @@ export function DomainsManager({
               ]}
               addLabel="Add Domain"
               addHref="/checkout"
+              exportName="takatak-domaines"
+              exportRows={filtered.map((domain) => ({
+                Domaine: domain.domainName,
+                Marque: domain.brandName ?? "",
+                Registraire: domain.registrar ?? "",
+                Statut: displayDomainStatus(domain.status).label,
+                DNS: domain.dnsStatus,
+                SSL: domain.sslStatus,
+                Renouvellement: domain.autoRenew ? "auto" : "manuel",
+                Expiration: domain.expiresAt ?? "",
+              }))}
             />
           </div>
           {rows.length ? (
@@ -327,10 +338,28 @@ export function DomainsManager({
                         </td>
                         <td className="px-3 py-3">
                           <div className="flex items-center gap-1 text-slate-400">
-                            <button type="button" className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700" aria-label="View">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedId(domain.id);
+                                setTab("Overview");
+                              }}
+                              className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700"
+                              aria-label="Voir · View"
+                            >
                               <Eye className="h-4 w-4" />
                             </button>
-                            <button type="button" className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700" aria-label="Edit">
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setSelectedId(domain.id);
+                                setTab("DNS Records");
+                              }}
+                              className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700"
+                              aria-label="Modifier le DNS · Edit DNS"
+                            >
                               <Pencil className="h-4 w-4" />
                             </button>
                             <span className="rounded-md p-1">
@@ -466,6 +495,7 @@ export function DomainsManager({
           tabs={DOMAIN_TABS}
           activeTab={tab}
           onTab={setTab}
+          requestHref="/dashboard/support?demande=domain-settings"
         >
           {tab === "Overview" ? (
             <div className="space-y-3 text-sm text-slate-600">

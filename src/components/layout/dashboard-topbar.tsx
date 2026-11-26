@@ -212,12 +212,12 @@ export function DashboardTopbar({
         <UserProfileMenu session={session} />
 
         {pathname === "/dashboard/hosting" || pathname.startsWith("/dashboard/hosting/") ? (
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white"
+          <Link
+            href="/hosting"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
-            + Add Hosting
-          </button>
+            {language === "fr" ? "+ Ajouter un hébergement" : "+ Add hosting"}
+          </Link>
         ) : null}
       </div>
     </header>

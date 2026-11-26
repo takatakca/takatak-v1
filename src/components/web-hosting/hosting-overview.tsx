@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
 import {
   Activity,
@@ -33,7 +34,7 @@ import type {
   ProvisioningStepSummary,
 } from "@/lib/web-hosting/types";
 import { pricing } from "@/lib/website/pricing";
-import { RECOMMENDED_HOSTING_PLAN } from "@/lib/website/domain-hosting-selection";
+import { RECOMMENDED_HOSTING_PLAN, writeSelection } from "@/lib/website/domain-hosting-selection";
 
 const TABS = ["Overview", "Edit Details", "Resources", "Billing", "Security"];
 
@@ -170,6 +171,14 @@ export function HostingOverview({
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState(TABS[1]);
+  const router = useRouter();
+
+  // Same path as the public pricing page: the plan is kept for the checkout,
+  // which asks for the domain and payment and sends the real order.
+  const choosePlan = (planKey: string) => {
+    writeSelection({ hostingPlan: planKey });
+    router.push("/checkout");
+  };
 
   const currentPlanKeys = useMemo(() => {
     const keys = new Set<string>();
@@ -370,16 +379,22 @@ export function HostingOverview({
                     </li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  className={`mt-5 w-full rounded-lg py-2.5 text-sm font-medium ${
-                    current
-                      ? "bg-blue-600 text-white"
-                      : "border border-slate-200 bg-white text-slate-700"
-                  }`}
-                >
-                  {current ? "Current Plan" : "Choose Plan"}
-                </button>
+                {current ? (
+                  <Link
+                    href="/dashboard/billing"
+                    className="mt-5 block w-full rounded-lg bg-blue-600 py-2.5 text-center text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    Forfait actuel · Current plan
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => choosePlan(plan.key)}
+                    className="mt-5 w-full rounded-lg border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 hover:border-blue-300 hover:text-blue-700"
+                  >
+                    Choisir ce forfait · Choose plan
+                  </button>
+                )}
               </article>
             );
           })}
@@ -507,7 +522,16 @@ export function HostingOverview({
                     </td>
                     <td className="px-3 py-3">
                       <div className="flex items-center gap-1 text-slate-400">
-                        <button type="button" className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700" aria-label="View">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setSelectedId(service.id);
+                            setTab("Overview");
+                          }}
+                          className="-m-1 rounded-md p-2 hover:bg-white hover:text-slate-700"
+                          aria-label="Voir · View"
+                        >
                           <Eye className="h-4 w-4" />
                         </button>
                         <span className="rounded-md p-1">
@@ -687,24 +711,39 @@ export function HostingOverview({
                   <br />
                   <span className="font-medium text-slate-800">{formatDateLabel(selected.renewalDate)}</span>
                 </p>
-                <button
-                  type="button"
-                  className="mt-4 w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white"
+                <Link
+                  href="/dashboard/billing"
+                  className="mt-4 block w-full rounded-lg bg-blue-600 px-3 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
                 >
-                  Manage Subscription
-                </button>
+                  Gérer l’abonnement · Manage subscription
+                </Link>
               </aside>
             </div>
           ) : null}
 
           {tab === "Resources" ? (
-            <p className="text-sm text-slate-400">CPU, RAM, and disk appear when hosting telemetry is connected.</p>
+            <div className="space-y-3 text-sm text-slate-600">
+              <p>Disponibilité et temps de réponse mesurés en continu · Uptime and response time, measured continuously.</p>
+              <Link href="/dashboard/web-hosting/monitoring" className="inline-flex font-semibold text-blue-700 hover:underline">
+                Ouvrir la surveillance · Open monitoring →
+              </Link>
+            </div>
           ) : null}
           {tab === "Billing" ? (
-            <p className="text-sm text-slate-400">Billing appears after the hosting provider is connected.</p>
+            <div className="space-y-3 text-sm text-slate-600">
+              <p>Factures, moyen de paiement et renouvellements de votre compte · Invoices, payment method and renewals.</p>
+              <Link href="/dashboard/billing" className="inline-flex font-semibold text-blue-700 hover:underline">
+                Ouvrir la facturation · Open billing →
+              </Link>
+            </div>
           ) : null}
           {tab === "Security" ? (
-            <p className="text-sm text-slate-400">Security controls appear after hosting is provisioned.</p>
+            <div className="space-y-3 text-sm text-slate-600">
+              <p>Vérifiez HTTPS, la redirection, les en-têtes de sécurité et le certificat du site · Check HTTPS, redirect, security headers and certificate.</p>
+              <Link href="/dashboard/web-hosting/security" className="inline-flex font-semibold text-blue-700 hover:underline">
+                Lancer la vérification · Run the check →
+              </Link>
+            </div>
           ) : null}
         </HostingDrawer>
       ) : null}
@@ -762,9 +801,12 @@ function HostingDrawer({
         <button type="button" onClick={onClose} className="px-3 py-2 text-sm font-medium text-slate-500">
           Cancel
         </button>
-        <button type="button" className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white">
-          Save Changes
-        </button>
+        <Link
+          href="/dashboard/support?demande=hosting-settings"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          Demander ces changements · Request these changes
+        </Link>
       </div>
     </aside>
   );
