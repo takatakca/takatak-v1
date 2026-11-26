@@ -6,7 +6,7 @@ import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Reporting",
+  title: "Rapports · Reporting",
   robots: { index: false, follow: false },
 };
 
@@ -17,16 +17,6 @@ export default async function SocialReportsPage() {
   );
   const billing = await getSocialShellBilling(access.activeClientId);
   const reportsUnlocked = billing?.reports ?? false;
-  const advancedUnlocked = Boolean(
-    billing?.entitlements.apiAccess ||
-      billing?.entitlements.advancedAnalytics,
-  );
 
-  return (
-    <SocialReportingView
-      reportsUnlocked={reportsUnlocked}
-      advancedUnlocked={advancedUnlocked}
-      billingHref={SOCIAL_BILLING_HREF}
-    />
-  );
+  return <SocialReportingView reportsUnlocked={reportsUnlocked} billingHref={SOCIAL_BILLING_HREF} />;
 }
