@@ -33,6 +33,7 @@ import {
 } from "@/components/social/analytics/social-summary-tokens";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { toClientSocialImageUrl } from "@/lib/social/media/remote-image";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type TikTokTab = "community" | "posts";
 type GrowthMetric = "followers" | "posts";
@@ -372,6 +373,7 @@ export function TikTokSubscribedDashboard({
   activeBrandId: string | null;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<TikTokTab>("community");
   const [rangeDays, setRangeDays] = useState<number>(30);
@@ -767,7 +769,7 @@ export function TikTokSubscribedDashboard({
 
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-[11px] text-[#8B939C]">
-            Main period
+            {fr ? "Période principale" : "Main period"}
             <span className="relative flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] font-medium text-[#30343A] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
               <CalendarDays className="h-4 w-4 text-[#98A2AB]" />
               <span>
@@ -792,7 +794,7 @@ export function TikTokSubscribedDashboard({
           </label>
 
           <div className="flex flex-col gap-1 text-[11px] text-[#8B939C]">
-            Comparison period
+            {fr ? "Période de comparaison" : "Comparison period"}
             <button
               type="button"
               onClick={() => setCompareEnabled((current) => !current)}
@@ -814,7 +816,7 @@ export function TikTokSubscribedDashboard({
       {responseMatches && analytics?.reauthorizationRequired ? (
         <div className="flex flex-col gap-3 rounded-[12px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            Reconnect TikTok to grant follower statistics and the video list.
+            {fr ? "Reconnectez TikTok pour accorder les statistiques d’abonnés et la liste des vidéos." : "Reconnect TikTok to grant follower statistics and the video list."}
             This page only shows numbers TikTok returns for this account.
           </p>
           <button
@@ -842,7 +844,7 @@ export function TikTokSubscribedDashboard({
             onClick={() => void loadAnalytics()}
             className="inline-flex h-10 items-center justify-center rounded-[9px] border border-rose-300 bg-white px-4 font-medium"
           >
-            Retry
+            {fr ? "Réessayer" : "Retry"}
           </button>
         </div>
       ) : null}
@@ -862,10 +864,10 @@ export function TikTokSubscribedDashboard({
         </div>
         <div className="flex items-center justify-between gap-4 pt-2">
             <h1 className="flex items-center gap-3 text-[20px] font-medium text-[#20242A]">
-              Community
+              {fr ? "Communauté" : "Community"}
               {loading && !responseMatches ? (
                 <span className="text-[12px] font-normal text-[#9AA1A9]">
-                  Loading
+                  {fr ? "Chargement" : "Loading"}
                 </span>
               ) : null}
             </h1>
@@ -924,7 +926,7 @@ export function TikTokSubscribedDashboard({
 
       <section id="tiktok-posts" className="scroll-mt-[84px] space-y-4 pt-2">
           <p className="pt-2 text-[20px] font-medium leading-7 text-[#20242A]">
-            Posts published in period
+            {fr ? "Publications de la période" : "Posts published in period"}
           </p>
 
           <ChartBlock
@@ -984,11 +986,11 @@ export function TikTokSubscribedDashboard({
             />
 
           <section className="border-t border-[#F0F2F4] pt-6">
-            <h2 className="text-[18px] font-medium text-[#20242A]">List of posts</h2>
+            <h2 className="text-[18px] font-medium text-[#20242A]">{fr ? "Liste des publications" : "List of posts"}</h2>
 
             <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center">
               <label className="relative min-w-0 flex-1">
-                <span className="sr-only">Search posts</span>
+                <span className="sr-only">{fr ? "Rechercher des publications" : "Search posts"}</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B939C]" />
                 <input
                   value={query}
@@ -1006,7 +1008,7 @@ export function TikTokSubscribedDashboard({
                     className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E1E4E8] bg-white px-3 text-[13px] text-[#30343A]"
                   >
                     <Columns3 className="h-4 w-4 text-[#6B7280]" />
-                    Columns
+                    {fr ? "Colonnes" : "Columns"}
                   </button>
                   {columnsOpen ? (
                     <div className="absolute right-0 z-20 mt-2 w-44 rounded-[10px] border border-[#E5E7EB] bg-white p-2 shadow-lg">
@@ -1033,13 +1035,13 @@ export function TikTokSubscribedDashboard({
                   className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#F7FBE3] px-3 text-[13px] text-[#30343A]"
                 >
                   <Download className="h-4 w-4" />
-                  Download CSV
+                  {fr ? "Télécharger le CSV" : "Download CSV"}
                   <PremiumDiamond />
                 </button>
 
                 <div className="relative">
                   <span className="absolute -right-1 -top-3 rounded-full bg-[#D9F6EA] px-2 py-0.5 text-[10px] font-medium text-[#3E8F6E]">
-                    New
+                    {fr ? "Nouveau" : "New"}
                   </span>
                   <PinToDashboardButton
                     className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#F7FBE3] px-3 text-[13px] text-[#30343A]"

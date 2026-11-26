@@ -22,6 +22,7 @@ import {
 } from "@/components/social/analytics/social-summary-chart";
 import { metricValue } from "@/components/social/analytics/social-summary-tokens";
 import { toClientSocialImageUrl } from "@/lib/social/media/remote-image";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const RANGES = [7, 30, 90, 180, 365] as const;
 const SECTIONS = [
@@ -269,6 +270,7 @@ const INTERACTION_COLORS: Record<InteractionMetric, string> = {
 };
 
 function EmptyPostSearch() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex flex-col items-center px-6 py-16 text-center">
       <svg viewBox="0 0 220 120" className="h-[120px] w-[220px]" aria-hidden="true">
@@ -280,7 +282,7 @@ function EmptyPostSearch() {
         <path d="M148 80 168 100" stroke="#20242A" strokeWidth="8" strokeLinecap="round" />
       </svg>
       <p className="mt-2 text-[18px] font-medium text-[#30343A]">
-        Oops! Nothing found, try another search
+        {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </p>
       <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-[#9AA3AB]">
         You can use the filter tools to narrow down your search. Check if the current date range
@@ -305,6 +307,7 @@ function PublishedPosts({
   onSummary: (metric: SummaryMetric) => void;
   onInteraction: (metric: InteractionMetric) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [query, setQuery] = useState("");
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [showDate, setShowDate] = useState(true);
@@ -481,7 +484,7 @@ function PublishedPosts({
               className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
             >
               <Columns3 className="h-4 w-4" />
-              Columns
+              {fr ? "Colonnes" : "Columns"}
             </button>
             {columnsOpen ? (
               <div className="absolute right-0 z-20 mt-1 w-40 rounded-[8px] border border-[#E6E8EC] bg-white p-2 text-[13px] shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
@@ -513,14 +516,14 @@ function PublishedPosts({
             className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
           >
             <Download className="h-4 w-4" />
-            Download CSV
+            {fr ? "Télécharger le CSV" : "Download CSV"}
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
               <Check className="h-2.5 w-2.5" strokeWidth={3} />
             </span>
           </button>
           <div className="relative">
             <span className="absolute -right-1 -top-3 rounded-full bg-[#DDF8ED] px-2 py-0.5 text-[10px] font-medium text-[#4E7B68]">
-              New
+              {fr ? "Nouveau" : "New"}
             </span>
             <PinToDashboardButton
               className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#FAFDE8] px-3 text-[13px] text-[#30343A]"
@@ -535,12 +538,12 @@ function PublishedPosts({
             <table className="w-full text-left text-[13px] text-[#30343A]">
               <thead>
                 <tr className="border-b border-[#EEF0F2] text-[#8B939C]">
-                  {showPost ? <th className="py-3 pr-4 font-medium">Post</th> : null}
-                  {showDate ? <th className="py-3 pr-4 font-medium">Date</th> : null}
-                  {showLikes ? <th className="py-3 pr-4 font-medium">Likes</th> : null}
-                  {showReplies ? <th className="py-3 pr-4 font-medium">Replies</th> : null}
-                  {showReposts ? <th className="py-3 pr-4 font-medium">Reposts</th> : null}
-                  {showQuotes ? <th className="py-3 font-medium">Quotes</th> : null}
+                  {showPost ? <th className="py-3 pr-4 font-medium">{fr ? "Publication" : "Post"}</th> : null}
+                  {showDate ? <th className="py-3 pr-4 font-medium">{fr ? "Date" : "Date"}</th> : null}
+                  {showLikes ? <th className="py-3 pr-4 font-medium">{fr ? "J’aime" : "Likes"}</th> : null}
+                  {showReplies ? <th className="py-3 pr-4 font-medium">{fr ? "Réponses" : "Replies"}</th> : null}
+                  {showReposts ? <th className="py-3 pr-4 font-medium">{fr ? "Republications" : "Reposts"}</th> : null}
+                  {showQuotes ? <th className="py-3 font-medium">{fr ? "Citations" : "Quotes"}</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -573,6 +576,7 @@ export function BlueskySubscribedDashboard({
   /** May add and remove competitors (manage_social_accounts). */
   canManage?: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [rangeDays, setRangeDays] = useState<number>(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
   const [section, setSection] = useState<BlueskySection>("community");
@@ -686,7 +690,7 @@ export function BlueskySubscribedDashboard({
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-[11px] text-[#8B939C]">
-            Main period
+            {fr ? "Période principale" : "Main period"}
             <span className="relative flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] font-medium text-[#30343A]">
               <CalendarDays className="h-4 w-4 text-[#98A2AB]" />
               <span>
@@ -710,7 +714,7 @@ export function BlueskySubscribedDashboard({
             </span>
           </label>
           <div className="flex flex-col gap-1 text-[11px] text-[#8B939C]">
-            Comparison period
+            {fr ? "Période de comparaison" : "Comparison period"}
             <button
               type="button"
               aria-pressed={compareEnabled}
@@ -751,7 +755,7 @@ export function BlueskySubscribedDashboard({
 
       <section id="bsky-community" className="scroll-mt-[150px] space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-[20px] font-medium">Community</h1>
+          <h1 className="text-[20px] font-medium">{fr ? "Communauté" : "Community"}</h1>
           <BlueskyAccountChip
             handle={handle}
             imageUrl={
@@ -862,7 +866,7 @@ export function BlueskySubscribedDashboard({
         />
 
         <section className="rounded-[14px] border border-[#E6E8EC] bg-white px-5 py-5 sm:px-6">
-          <h2 className="text-[18px] font-medium">Acquisition</h2>
+          <h2 className="text-[18px] font-medium">{fr ? "Acquisition" : "Acquisition"}</h2>
           <div className="mt-4 flex gap-6 border-b border-[#EEF0F2]">
             {(["acquired", "lost"] as const).map((key) => (
               <button
@@ -882,14 +886,14 @@ export function BlueskySubscribedDashboard({
           <table className="mt-4 w-full text-left text-[13px] text-[#30343A]">
             <thead>
               <tr className="text-[#8B939C]">
-                <th className="py-2 font-medium">Name</th>
-                <th className="py-2 text-right font-medium">Followers</th>
+                <th className="py-2 font-medium">{fr ? "Nom" : "Name"}</th>
+                <th className="py-2 text-right font-medium">{fr ? "Abonnés" : "Followers"}</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td colSpan={2} className="py-16 text-center text-[#8B939C]">
-                  No data available
+                  {fr ? "Aucune donnée" : "No data available"}
                 </td>
               </tr>
             </tbody>
@@ -898,7 +902,7 @@ export function BlueskySubscribedDashboard({
       </section>
 
       <section id="bsky-posts" className="scroll-mt-[150px] space-y-4">
-        <h2 className="text-[20px] font-medium">Posts published in period</h2>
+        <h2 className="text-[20px] font-medium">{fr ? "Publications de la période" : "Posts published in period"}</h2>
         <PublishedPosts
           analytics={analytics}
           dates={enumerateDates(display.start, display.end)}
@@ -910,7 +914,7 @@ export function BlueskySubscribedDashboard({
       </section>
       <section id="bsky-competitors" className="scroll-mt-[150px]">
         <div className="space-y-4">
-          <h2 className="text-[22px] font-medium text-[#20242A]">Competitors</h2>
+          <h2 className="text-[22px] font-medium text-[#20242A]">{fr ? "Concurrents" : "Competitors"}</h2>
           <InstagramCompetitorsPanel network="bluesky" canTrack canManage={canManage} start={display.start} end={display.end} />
         </div>
       </section>

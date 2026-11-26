@@ -20,6 +20,7 @@ import {
 import { metricValue } from "@/components/social/analytics/social-summary-tokens";
 import { MetaCampaignBenchmarkPanel } from "@/components/social/platforms/meta-campaign-benchmark-panel";
 import { MetaAdCreativeReportPanel } from "@/components/social/platforms/meta-ad-creative-report-panel";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type DailyPoint = {
   date: string;
@@ -150,6 +151,7 @@ function campaignCell(row: CampaignRow, column: CampaignColumn): string {
 }
 
 function EmptyCampaignSearch() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex flex-col items-center px-6 py-16 text-center">
       <svg viewBox="0 0 220 120" className="h-[120px] w-[220px]" aria-hidden="true">
@@ -161,7 +163,7 @@ function EmptyCampaignSearch() {
         <path d="M148 80 168 100" stroke="#20242A" strokeWidth="8" strokeLinecap="round" />
       </svg>
       <p className="mt-2 text-[18px] font-medium text-[#30343A]">
-        Oops! Nothing found, try another search
+        {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </p>
       <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-[#9AA3AB]">
         You can use the filter tools to narrow down your search. Check if the
@@ -180,6 +182,7 @@ function CampaignList({
   confirmed: boolean;
   loading: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [query, setQuery] = useState("");
   const [columnsOpen, setColumnsOpen] = useState(false);
   const [visible, setVisible] = useState<CampaignColumn[]>(
@@ -225,7 +228,7 @@ function CampaignList({
 
   return (
     <section className="rounded-[14px] border border-[#E6E8EC] bg-white px-5 py-5 sm:px-6">
-      <h3 className="text-[16px] font-medium text-[#20242A]">List of campaigns</h3>
+      <h3 className="text-[16px] font-medium text-[#20242A]">{fr ? "Liste des campagnes" : "List of campaigns"}</h3>
       <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center">
         <label className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9AA1A9]" />
@@ -246,7 +249,7 @@ function CampaignList({
               className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
             >
               <Columns3 className="h-4 w-4" />
-              Columns
+              {fr ? "Colonnes" : "Columns"}
             </button>
             {columnsOpen ? (
               <div className="absolute right-0 z-20 mt-1 w-44 rounded-[8px] border border-[#E6E8EC] bg-white p-2 text-[13px] shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
@@ -269,14 +272,14 @@ function CampaignList({
             className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
           >
             <Download className="h-4 w-4" />
-            Download CSV
+            {fr ? "Télécharger le CSV" : "Download CSV"}
             <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
               <Check className="h-2.5 w-2.5" strokeWidth={3} />
             </span>
           </button>
           <div className="relative">
             <span className="absolute -right-1 -top-3 rounded-full bg-[#D9F6EA] px-2 py-0.5 text-[10px] font-medium text-[#3E8F6E]">
-              New
+              {fr ? "Nouveau" : "New"}
             </span>
             <PinToDashboardButton
               className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
@@ -289,10 +292,10 @@ function CampaignList({
         </div>
       </div>
       {loading ? (
-        <p className="px-2 py-16 text-center text-[14px] text-[#9AA1A9]">Loading</p>
+        <p className="px-2 py-16 text-center text-[14px] text-[#9AA1A9]">{fr ? "Chargement" : "Loading"}</p>
       ) : !confirmed ? (
         <p className="px-2 py-16 text-center text-[14px] text-[#8B939C]">
-          Meta Ads did not return campaigns.
+          {fr ? "Meta Ads n’a renvoyé aucune campagne." : "Meta Ads did not return campaigns."}
         </p>
       ) : filtered.length === 0 ? (
         <EmptyCampaignSearch />
@@ -301,7 +304,7 @@ function CampaignList({
           <table className="w-full text-left text-[13px] text-[#30343A]">
             <thead>
               <tr className="border-b border-[#EEF0F2] text-[#8B939C]">
-                <th className="py-2 pr-4 font-medium">Campaign</th>
+                <th className="py-2 pr-4 font-medium">{fr ? "Campagne" : "Campaign"}</th>
                 {visible.map((column) => (
                   <th key={column} className="py-2 pr-4 font-medium">
                     {CAMPAIGN_COLUMNS.find((item) => item.key === column)?.label}
@@ -431,6 +434,7 @@ export function MetaAdsSubscribedDashboard({
 }: {
   connectedLabel: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [section, setSection] = useState<MetaSection>("account");
   const [creativeLocale, setCreativeLocale] = useState<"fr" | "en">("fr");
   const [creativeIntelligenceEnabled, setCreativeIntelligenceEnabled] = useState(false);
@@ -654,7 +658,7 @@ export function MetaAdsSubscribedDashboard({
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1 text-[11px] text-[#8B939C]">
-            Main period
+            {fr ? "Période principale" : "Main period"}
             <span className="relative flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] font-medium text-[#30343A]">
               <CalendarDays className="h-4 w-4 text-[#98A2AB]" />
               <span>
@@ -678,7 +682,7 @@ export function MetaAdsSubscribedDashboard({
             </span>
           </label>
           <div className="flex flex-col gap-1 text-[11px] text-[#8B939C]">
-            Comparison period
+            {fr ? "Période de comparaison" : "Comparison period"}
             <button
               type="button"
               aria-pressed={compareEnabled}
@@ -703,7 +707,7 @@ export function MetaAdsSubscribedDashboard({
             onClick={() => setReloadKey((current) => current + 1)}
             className="inline-flex h-10 items-center justify-center rounded-[9px] border border-rose-300 bg-white px-4 font-medium"
           >
-            Retry
+            {fr ? "Réessayer" : "Retry"}
           </button>
         </div>
       ) : null}
@@ -714,9 +718,9 @@ export function MetaAdsSubscribedDashboard({
       <section id="meta-ads-account" className="scroll-mt-[84px] space-y-4">
         <div className="flex items-center justify-between gap-4 pt-2">
           <h1 className="flex items-center gap-3 text-[20px] font-medium">
-            Account
+            {fr ? "Compte" : "Account"}
             {loading && !ready ? (
-              <span className="text-[12px] font-normal text-[#9AA1A9]">Loading</span>
+              <span className="text-[12px] font-normal text-[#9AA1A9]">{fr ? "Chargement" : "Loading"}</span>
             ) : null}
           </h1>
           <span className="flex min-w-0 items-center gap-2 text-[15px] font-medium">
@@ -824,7 +828,7 @@ export function MetaAdsSubscribedDashboard({
       </section>
 
       <section id="meta-ads-campaigns" className="scroll-mt-[84px] space-y-4 pt-2">
-        <h2 className="text-[20px] font-medium">Campaigns</h2>
+        <h2 className="text-[20px] font-medium">{fr ? "Campagnes" : "Campaigns"}</h2>
         <CampaignList
           rows={campaigns}
           confirmed={campaignsConfirmed}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDown, ChevronDown, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, Columns3, Download, ExternalLink, ListVideo, Plus, Search, Star, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import type { YoutubeCompetitorRow, YoutubeCompetitorVideo } from "@/lib/social/providers/youtube-competitors";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Response = {
   ok?: boolean;
@@ -64,6 +65,7 @@ export function YoutubeCompetitorsSection({
   billingHref: string;
   range: { start: string; end: string };
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Response | null>(null);
   const [search, setSearch] = useState("");
@@ -168,25 +170,25 @@ export function YoutubeCompetitorsSection({
 
   return (
     <section id="competitors" className="scroll-mt-36 space-y-4" aria-labelledby="youtube-competitors-heading">
-      <h2 id="youtube-competitors-heading" className="text-2xl font-semibold text-slate-950">Competitors</h2>
+      <h2 id="youtube-competitors-heading" className="text-2xl font-semibold text-slate-950">{fr ? "Concurrents" : "Competitors"}</h2>
       {locked && !exempt ? (
         <div className="flex flex-col items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-[#F6F9FF] p-6 sm:flex-row sm:items-center">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900">Upgrade to explore your competitors</h3>
-            <p className="mt-1 text-sm text-slate-600">Choose a TAKATAK Social plan to compare authorized public YouTube channel information.</p>
+            <h3 className="text-lg font-semibold text-slate-900">{fr ? "Passez à un forfait supérieur pour explorer vos concurrents" : "Upgrade to explore your competitors"}</h3>
+            <p className="mt-1 text-sm text-slate-600">{fr ? "Choisissez un forfait TAKATAK Social pour comparer les chaînes YouTube publiques autorisées." : "Choose a TAKATAK Social plan to compare authorized public YouTube channel information."}</p>
           </div>
-          <Link href={billingHref} className="rounded-lg bg-[#1565D8] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0E4BA7]">View TAKATAK plans</Link>
+          <Link href={billingHref} className="rounded-lg bg-[#1565D8] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0E4BA7]">{fr ? "Voir les forfaits TAKATAK" : "View TAKATAK plans"}</Link>
         </div>
       ) : null}
       <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-lg font-medium">List of competitors</h3>
+          <h3 className="text-lg font-medium">{fr ? "Liste des concurrents" : "List of competitors"}</h3>
           <span title="Public YouTube channel metrics and bounded recent-video samples.">ⓘ</span>
           {!locked && data?.ok ? <span className="ml-auto text-xs text-slate-500">{allRows.length} / {data.limit ?? "—"} allowed</span> : null}
         </div>
         <div className="flex flex-col gap-2 xl:flex-row xl:items-center">
           <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Search competitors</span>
+            <span className="sr-only">{fr ? "Rechercher des concurrents" : "Search competitors"}</span>
             <Search aria-hidden="true" size={18} className="pointer-events-none absolute left-3 top-3 text-slate-500" />
             <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }}
               placeholder="Search" disabled={locked}
@@ -203,9 +205,9 @@ export function YoutubeCompetitorsSection({
             {filterOpen ? <div className="absolute right-0 top-full z-20 mt-2 w-[min(360px,90vw)] rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-3">
                 <button type="button" onClick={() => setDraftRefs([])}
-                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">Clear</button>
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-sm hover:bg-slate-50">{fr ? "Effacer" : "Clear"}</button>
                 <button type="button" onClick={() => { setSelectedRefs(draftRefs.length === allRows.length ? null : draftRefs); setFilterOpen(false); setPage(1); }}
-                  className="rounded-lg bg-[#1565D8] px-3 py-2 text-sm font-semibold text-white">Apply</button>
+                  className="rounded-lg bg-[#1565D8] px-3 py-2 text-sm font-semibold text-white">{fr ? "Appliquer" : "Apply"}</button>
               </div>
               <input placeholder="Search competitors" aria-label="Search competitor filter"
                 value={filterSearch} onChange={(event) => setFilterSearch(event.target.value)}
@@ -273,7 +275,7 @@ export function YoutubeCompetitorsSection({
               <thead className="text-xs text-slate-600">
                 <tr>
                   <th scope="col" className="px-3 py-2">
-                    <button type="button" onClick={() => setSort("name")} className="hover:text-[#1565D8]">Name</button>
+                    <button type="button" onClick={() => setSort("name")} className="hover:text-[#1565D8]">{fr ? "Nom" : "Name"}</button>
                   </th>
                   {COLUMNS.filter((column) => visibleColumns.includes(column.key)).map((column) =>
                     <th scope="col" key={column.key} className="px-3 py-2 text-right" title={column.title}>
@@ -281,7 +283,7 @@ export function YoutubeCompetitorsSection({
                         {column.label}{column.key === "subscribers" ? <ArrowDown size={14} /> : null}
                       </button>
                     </th>)}
-                  <th scope="col" className="px-3 py-2 text-right">Actions</th>
+                  <th scope="col" className="px-3 py-2 text-right">{fr ? "Actions" : "Actions"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -312,9 +314,9 @@ export function YoutubeCompetitorsSection({
                         {confirmRemove === row.ref ? (
                           <div className="flex items-center gap-1">
                             <button type="button" disabled={busy} onClick={() => void performWrite("DELETE", null, row.ref)}
-                              className="rounded-lg bg-rose-700 px-2 py-1 text-xs text-white">Confirm</button>
+                              className="rounded-lg bg-rose-700 px-2 py-1 text-xs text-white">{fr ? "Confirmer" : "Confirm"}</button>
                             <button type="button" onClick={() => setConfirmRemove(null)}
-                              className="rounded-lg px-2 py-1 text-xs text-slate-700">Cancel</button>
+                              className="rounded-lg px-2 py-1 text-xs text-slate-700">{fr ? "Annuler" : "Cancel"}</button>
                           </div>
                         ) : (
                           <button type="button" disabled={!canManage || busy} title={"Remove " + row.name}
@@ -330,7 +332,7 @@ export function YoutubeCompetitorsSection({
               </tbody>
             </table>
           </div>
-          {!rows.length ? <p className="py-12 text-center text-sm text-slate-500">No competitors match the selected filters. Add a channel or update the filters.</p> : null}
+          {!rows.length ? <p className="py-12 text-center text-sm text-slate-500">{fr ? "Aucun concurrent ne correspond aux filtres. Ajoutez une chaîne ou modifiez les filtres." : "No competitors match the selected filters. Add a channel or update the filters."}</p> : null}
           <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-4 text-sm text-slate-700">
             <label className="inline-flex items-center gap-2">
               Items per page:
@@ -349,17 +351,17 @@ export function YoutubeCompetitorsSection({
             <button type="button" onClick={() => setPage(totalPages)} disabled={activePage >= totalPages} aria-label="Last page" className="rounded-full bg-slate-100 p-2 disabled:opacity-40"><ChevronLast size={19} /></button>
           </div>
           <p className="text-xs leading-relaxed text-slate-500">
-            Public video views, subscribers and video totals are current lifetime channel figures, not historical period-specific totals.
+            {fr ? "Les vues publiques, les abonnés et le total de vidéos sont les chiffres actuels de la chaîne, pas des totaux de la période." : "Public video views, subscribers and video totals are current lifetime channel figures, not historical period-specific totals."}
             Likes and average comments are calculated only for up to 20 recent publicly available videos per sampled channel published in the chosen period.
             For quota protection, up to {data.sampledChannels ?? 0} channels are sampled per request; other values are shown as unavailable.
             Competitor dislikes are private on YouTube.
           </p>
           {videoList ? <div className="rounded-xl border border-slate-200 p-4">
-            <h4 className="mb-3 text-base font-semibold">Recent public videos from selected competitors</h4>
+            <h4 className="mb-3 text-base font-semibold">{fr ? "Vidéos publiques récentes des concurrents choisis" : "Recent public videos from selected competitors"}</h4>
             {videoRows.length ? <div className="max-h-96 overflow-auto">
               <table className="w-full min-w-[540px] text-sm">
                 <thead><tr className="border-b border-slate-200 text-left text-slate-600">
-                  <th className="px-3 py-2">Video</th><th className="px-3 py-2">Channel</th><th className="px-3 py-2">Published</th><th className="px-3 py-2 text-right">Views</th>
+                  <th className="px-3 py-2">{fr ? "Vidéo" : "Video"}</th><th className="px-3 py-2">{fr ? "Chaîne" : "Channel"}</th><th className="px-3 py-2">{fr ? "Publié" : "Published"}</th><th className="px-3 py-2 text-right">{fr ? "Vues" : "Views"}</th>
                 </tr></thead>
                 <tbody>{videoRows.map((video) =>
                   <tr key={video.url} className="border-b border-slate-100">
@@ -369,7 +371,7 @@ export function YoutubeCompetitorsSection({
                     <td className="px-3 py-2 text-right">{fmt(video.views)}</td>
                   </tr>)}</tbody>
               </table>
-            </div> : <p className="py-4 text-sm text-slate-500">No public video samples are available for these channels and dates.</p>}
+            </div> : <p className="py-4 text-sm text-slate-500">{fr ? "Aucune vidéo publique pour ces chaînes et ces dates." : "No public video samples are available for these channels and dates."}</p>}
           </div> : null}
         </> : null}
       </div>
