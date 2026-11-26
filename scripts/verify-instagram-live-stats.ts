@@ -6,7 +6,10 @@ import { readFileSync } from "node:fs";
 
 import {
   communityFromLive,
+  competitorRow,
   csvCell,
+  normalizeInstagramUsername,
+  parseBusinessDiscovery,
   dailyInteractions,
   hashtagsFromMedia,
   mediaInRange,
@@ -206,6 +209,49 @@ check("the dashboard uses the live numbers and every table button works", () => 
   assert.doesNotMatch(dashboard, /aria-label="Choose reels table columns"/);
   const page = readFileSync("src/app/dashboard/social/[platform]/page.tsx", "utf8");
   assert.match(page, /loadInstagramLiveStats\(\{\s*clientId: access\.activeClientId,/);
+});
+
+
+check("competitor usernames are validated before they reach the Graph field", () => {
+  assert.equal(normalizeInstagramUsername("@Resto.Montreal"), "resto.montreal");
+  assert.equal(normalizeInstagramUsername("https://www.instagram.com/cafe_ndg/"), "cafe_ndg");
+  assert.equal(normalizeInstagramUsername("a){id}"), null);
+  assert.equal(normalizeInstagramUsername("bad..name"), null);
+  assert.equal(normalizeInstagramUsername(".lead"), null);
+  assert.equal(normalizeInstagramUsername("x".repeat(31)), null);
+});
+
+check("business discovery is parsed and a competitor's period is summed", () => {
+  const found = parseBusinessDiscovery({
+    business_discovery: {
+      id: "178",
+      username: "cafe_ndg",
+      name: "Café NDG",
+      followers_count: 2000,
+      media_count: 300,
+      media: { data: [
+        { id: "a", caption: "Latte", media_type: "IMAGE", timestamp: "2026-11-20T10:00:00+0000", like_count: 90, comments_count: 10 },
+        { id: "b", caption: "Old", media_type: "IMAGE", timestamp: "2026-01-20T10:00:00+0000", like_count: 5, comments_count: 0 },
+      ] },
+    },
+  });
+  assert.ok(found);
+  assert.equal(found.followers, 2000);
+  const row = competitorRow("igc_x", found, "2026-10-28", "2026-11-26");
+  assert.equal(row.postsInPeriod, 1);
+  assert.equal(row.interactions, 100);
+  assert.equal(row.engagementRate, 5);
+  assert.equal(parseBusinessDiscovery({}), null);
+});
+
+check("competitor routes check permissions and keep Instagram ids server-side", () => {
+  const route = readFileSync("src/app/api/social/instagram/competitors/route.ts", "utf8");
+  assert.match(route, /requireWorkspaceApiPermission\("view_social"\)/);
+  assert.equal((route.match(/requireWorkspaceApiPermission\("manage_social_accounts"\)/g) ?? []).length, 2);
+  assert.doesNotMatch(route, /externalPageId|account\.id\b|id: row\.account\.id/);
+  const lib = readFileSync("src/lib/social/providers/instagram-competitors.ts", "utf8");
+  assert.match(lib, /normalizeInstagramUsername\(options\.username\)/);
+  assert.match(lib, /platform: "instagram"/);
 });
 
 console.log(`${passed} Instagram live checks passed`);

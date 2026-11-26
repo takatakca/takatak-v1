@@ -20,6 +20,7 @@ import {
   InstagramLiveMediaSection,
   InstagramLiveNote,
 } from "@/components/social/platforms/instagram-live-panels";
+import { InstagramCompetitorsPanel } from "@/components/social/platforms/instagram-competitors-panel";
 import { communityFromLive, type InstagramLiveStats } from "@/lib/social/instagram-live-stats";
 
 type InstagramTab =
@@ -2078,11 +2079,14 @@ export function InstagramSubscribedDashboard({
   profileImageUrl = null,
   isConnected,
   live = null,
+  canManage = false,
 }: {
   data?: InstagramCommunityData;
   accountName: string;
   profileImageUrl?: string | null;
   isConnected: boolean;
+  /** May add and remove competitors (manage_social_accounts). */
+  canManage?: boolean;
   /** The account's numbers read live from Instagram, when the connection allows it. */
   live?: InstagramLiveStats | null;
 }) {
@@ -2475,7 +2479,14 @@ export function InstagramSubscribedDashboard({
           Instagram Competitors analytics
         </h2>
 
-        <InstagramCompetitorsSection />
+        {live ? (
+          <div className="space-y-1">
+            <h2 className="pb-5 text-[23px] font-medium text-[#20242A]">Competitors</h2>
+            <InstagramCompetitorsPanel canTrack={Boolean(live.canTrackCompetitors)} canManage={canManage} start={start} end={end} />
+          </div>
+        ) : (
+          <InstagramCompetitorsSection />
+        )}
       </section>
 
     </div>

@@ -37,11 +37,12 @@ const INSIGHT_SCOPES = new Set(["instagram_business_manage_insights", "instagram
 
 const cache = new Map<string, { at: number; value: InstagramLiveStats }>();
 
-type Credential = { host: string; igUserId: string; accessToken: string; insights: boolean };
+export type InstagramCredential = { host: string; igUserId: string; accessToken: string; insights: boolean };
+type Credential = InstagramCredential;
 
-type GraphResult = { ok: true; body: unknown } | { ok: false; status: number };
+export type GraphResult = { ok: true; body: unknown } | { ok: false; status: number; code: number | null };
 
-async function graphGet(credential: Credential, path: string, params: Record<string, string>): Promise<GraphResult> {
+export async function graphGet(credential: Credential, path: string, params: Record<string, string>): Promise<GraphResult> {
   const url = new URL(`${credential.host}/${getMetaGraphApiVersion()}/${path.replace(/^\//, "")}`);
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, value);
   const controller = new AbortController();
@@ -52,17 +53,20 @@ async function graphGet(credential: Credential, path: string, params: Record<str
       signal: controller.signal,
       cache: "no-store",
     });
-    if (!response.ok) return { ok: false, status: response.status };
+    if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as { error?: { code?: unknown } } | null;
+      return { ok: false, status: response.status, code: typeof body?.error?.code === "number" ? body.error.code : null };
+    }
     return { ok: true, body: await response.json() };
   } catch {
-    return { ok: false, status: 0 };
+    return { ok: false, status: 0, code: null };
   } finally {
     clearTimeout(timer);
   }
 }
 
 /** Loads the token of the dashboard's Instagram account, scoped to the workspace. */
-async function loadCredential(options: { clientId: string; socialAccountId: string }): Promise<Credential | null> {
+export async function loadInstagramCredential(options: { clientId: string; socialAccountId: string }): Promise<Credential | null> {
   const prisma = getPrisma();
   if (!prisma) return null;
   const account = await prisma.socialAccount.findFirst({
@@ -208,7 +212,7 @@ export async function loadInstagramLiveStats(options: { clientId: string; social
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value;
 
-  const credential = await loadCredential(options);
+  const credential = await loadInstagramCredential(options);
   if (!credential) return null;
 
   const missing: string[] = [];
@@ -228,6 +232,8 @@ export async function loadInstagramLiveStats(options: { clientId: string; social
     mediaCount: num(body.media_count),
     media,
     account,
+    // Business Discovery (other public accounts) needs the Facebook Page connection.
+    canTrackCompetitors: credential.host === "https://graph.facebook.com",
     missing: [...new Set(missing)],
   };
   if (!profile.ok && !media.length && !account) {

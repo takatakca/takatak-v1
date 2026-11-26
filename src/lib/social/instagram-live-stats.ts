@@ -52,6 +52,8 @@ export interface InstagramLiveStats {
   mediaCount: number | null;
   media: InstagramLiveMedia[];
   account: InstagramLiveAccount | null;
+  /** True when the account is linked through a Facebook Page (needed to read other accounts). */
+  canTrackCompetitors?: boolean;
   /** Parts Instagram did not answer (permission, limit, outage), for an honest note. */
   missing: string[];
 }
@@ -330,4 +332,67 @@ export function csvCell(value: string | number | null): string {
 
 export function toCsv(header: string[], rows: Array<Array<string | number | null>>): string {
   return [header.map(csvCell).join(","), ...rows.map((row) => row.map(csvCell).join(","))].join("\n") + "\n";
+}
+
+/** A public professional account read through Business Discovery. */
+export interface InstagramPublicAccount {
+  id: string;
+  username: string;
+  name: string | null;
+  followers: number | null;
+  mediaCount: number | null;
+  media: InstagramLiveMedia[];
+}
+
+/** Parses GET /{ig-user-id}?fields=business_discovery.username(x){...}. */
+export function parseBusinessDiscovery(body: unknown): InstagramPublicAccount | null {
+  const found = asRecord(asRecord(body).business_discovery);
+  const id = typeof found.id === "string" ? found.id : "";
+  const username = typeof found.username === "string" ? found.username : "";
+  if (!id || !username) return null;
+  return {
+    id,
+    username,
+    name: typeof found.name === "string" && found.name.trim() ? found.name.slice(0, 120) : null,
+    followers: asNumber(found.followers_count),
+    mediaCount: asNumber(found.media_count),
+    media: parseInstagramMedia(found.media),
+  };
+}
+
+/** Instagram usernames: letters, digits, dots and underscores, 30 at most. */
+export function normalizeInstagramUsername(value: string): string | null {
+  const clean = value.trim().replace(/^@+/, "").replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/\/.*$/, "").toLowerCase();
+  return /^[a-z0-9._]{1,30}$/.test(clean) && !/^\.|\.$|\.\./.test(clean) ? clean : null;
+}
+
+export interface CompetitorRow {
+  ref: string;
+  username: string;
+  name: string | null;
+  followers: number | null;
+  mediaCount: number | null;
+  postsInPeriod: number;
+  interactions: number;
+  interactionsPerPost: number | null;
+  /** Interactions per post divided by followers, in percent. */
+  engagementRate: number | null;
+}
+
+/** One competitor's numbers for the period, from its recent public posts. */
+export function competitorRow(ref: string, account: InstagramPublicAccount, start: string, end: string): CompetitorRow {
+  const posts = mediaInRange(account.media, start, end);
+  const interactions = posts.reduce((total, item) => total + (item.likes ?? 0) + (item.comments ?? 0), 0);
+  const perPost = posts.length ? round(interactions / posts.length, 1) : null;
+  return {
+    ref,
+    username: account.username,
+    name: account.name,
+    followers: account.followers,
+    mediaCount: account.mediaCount,
+    postsInPeriod: posts.length,
+    interactions,
+    interactionsPerPost: perPost,
+    engagementRate: perPost !== null && account.followers ? round((perPost / account.followers) * 100, 2) : null,
+  };
 }

@@ -404,6 +404,7 @@ function DirectLoginConnectPage({
             profileImageUrl={profileImageUrl}
             isConnected={isConnected}
             live={liveStats}
+            canManage={canManage}
           />
         ) : (
           <div data-connected-via={connectedVia ?? undefined}>
