@@ -102,6 +102,8 @@ export function WorkspaceToolbar({
   extraOptions,
   addLabel,
   addHref,
+  exportRows,
+  exportName = "takatak-export",
 }: {
   search: string;
   onSearch: (value: string) => void;
@@ -115,7 +117,32 @@ export function WorkspaceToolbar({
   extraOptions?: { value: string; label: string }[];
   addLabel?: string;
   addHref?: string;
+  /** Rows currently shown (after filters), exported as CSV. */
+  exportRows?: Array<Record<string, string>>;
+  exportName?: string;
 }) {
+  function resetFilters() {
+    onSearch("");
+    if (statusOptions[0]) onStatus(statusOptions[0].value);
+    if (onExtraFilter && extraOptions?.[0]) onExtraFilter(extraOptions[0].value);
+  }
+
+  function exportCsv() {
+    const rows = exportRows ?? [];
+    const headers = rows.length ? Object.keys(rows[0]) : ["Info"];
+    const escape = (value: string) => (/[",\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value);
+    const lines = [headers.map(escape).join(",")].concat(
+      rows.length ? rows.map((row) => headers.map((h) => escape(row[h] ?? "")).join(",")) : [escape("Aucune ligne · No rows")],
+    );
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `${exportName}-${new Date().toISOString().slice(0, 10)}.csv`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <label className="relative min-w-[180px] flex-1">
@@ -154,19 +181,21 @@ export function WorkspaceToolbar({
       ) : null}
       <button
         type="button"
-        disabled
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-400"
+        onClick={resetFilters}
+        title="Réinitialiser les filtres · Reset filters"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
       >
         <Filter className="h-4 w-4" />
-        Filters
+        Réinitialiser · Reset
       </button>
       <button
         type="button"
-        disabled
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-400"
+        onClick={exportCsv}
+        title="Exporter les lignes affichées (CSV) · Export the rows shown (CSV)"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
       >
         <Download className="h-4 w-4" />
-        Export
+        Exporter · Export
       </button>
       {addLabel && addHref ? (
         <Link
@@ -176,16 +205,6 @@ export function WorkspaceToolbar({
           <Plus className="h-4 w-4" />
           {addLabel}
         </Link>
-      ) : addLabel ? (
-        <button
-          type="button"
-          disabled
-          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white opacity-60"
-          title="Available after the domain provider is connected"
-        >
-          <Plus className="h-4 w-4" />
-          {addLabel}
-        </button>
       ) : null}
     </div>
   );
@@ -274,6 +293,7 @@ export function SideDrawer({
   onTab,
   children,
   wide = false,
+  requestHref = "/dashboard/support",
 }: {
   title: string;
   subtitle?: string;
@@ -284,6 +304,8 @@ export function SideDrawer({
   onTab: (tab: string) => void;
   children: ReactNode;
   wide?: boolean;
+  /** Changes are made by the TAKATAK team: the save button opens a ready-made request. */
+  requestHref?: string;
 }) {
   return (
     <aside
@@ -333,14 +355,12 @@ export function SideDrawer({
         >
           Cancel
         </button>
-        <button
-          type="button"
-          disabled
-          title="Saving requires the domain provider to be connected"
-          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white opacity-60"
+        <Link
+          href={requestHref}
+          className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
         >
-          Save Changes
-        </button>
+          Demander ces changements · Request these changes
+        </Link>
       </div>
     </aside>
   );

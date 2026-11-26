@@ -12,6 +12,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { InstagramSubscribedDashboard } from "@/components/social/platforms/instagram-subscribed-dashboard";
+import type { InstagramLiveStats } from "@/lib/social/instagram-live-stats";
 import { ThreadsSubscribedDashboard } from "@/components/social/platforms/threads-subscribed-dashboard";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 
@@ -92,6 +93,7 @@ export function InstagramConnectPage({
   facebookConnectionId = null,
   facebookPageSelected = false,
   facebookNeedsPage = false,
+  liveStats = null,
 }: {
   activeBrandId: string | null;
   canManage: boolean;
@@ -104,10 +106,12 @@ export function InstagramConnectPage({
   facebookConnectionId?: string | null;
   facebookPageSelected?: boolean;
   facebookNeedsPage?: boolean;
+  liveStats?: InstagramLiveStats | null;
 }) {
   return (
     <DirectLoginConnectPage
       network="instagram"
+      liveStats={liveStats}
       activeBrandId={activeBrandId}
       canManage={canManage}
       isConnected={isConnected}
@@ -184,6 +188,7 @@ function DirectLoginConnectPage({
   facebookPageSelected = false,
   facebookNeedsPage = false,
   instagramLinkedViaFacebook = false,
+  liveStats = null,
 }: {
   network: "instagram" | "threads";
   activeBrandId: string | null;
@@ -198,6 +203,7 @@ function DirectLoginConnectPage({
   facebookPageSelected?: boolean;
   facebookNeedsPage?: boolean;
   instagramLinkedViaFacebook?: boolean;
+  liveStats?: InstagramLiveStats | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -385,7 +391,7 @@ function DirectLoginConnectPage({
           </section>
         ) : null}
 
-        {isConnected ? (
+        {isConnected && !(network === "instagram" && liveStats) ? (
           <p className="rounded-[14px] border border-slate-200 bg-white px-5 py-4 text-sm leading-6 text-slate-600">
             This {label} account is connected to the brand. TAKATAK does not
             import {label} statistics yet, so the figures below stay empty.
@@ -397,6 +403,8 @@ function DirectLoginConnectPage({
             accountName={connectedLabel ?? "Instagram account"}
             profileImageUrl={profileImageUrl}
             isConnected={isConnected}
+            live={liveStats}
+            canManage={canManage}
           />
         ) : (
           <div data-connected-via={connectedVia ?? undefined}>

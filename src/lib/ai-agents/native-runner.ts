@@ -16,6 +16,9 @@ import "server-only";
 // - SEO Watchdog: re-checks the client's websites (the same SSRF-guarded check
 //   as the SEO screen, saved to the score history), flags what newly fails,
 //   and writes a prioritized fix list.
+// - Ads Optimizer: reads the real TAKATAK ADS campaigns and event totals and
+//   writes budget-shift proposals and a fresh ad copy set. It never spends:
+//   it always needs approval and the approved proposal stays in the library.
 // Agents that need connectors TAKATAK does not have here (SMS, ads accounts)
 // are left for the gateway; they are never marked done without acting.
 import { Prisma } from "@prisma/client";
@@ -24,6 +27,7 @@ import { reportAgentRun } from "@/lib/ai-agents/service";
 import { cleanMessage, postAiReply } from "@/lib/chat/service";
 import { getPrisma } from "@/lib/db/prisma";
 import { AI_AGENTS } from "@/lib/growth/ai-engine";
+import { getAdsWorkspaceSnapshot } from "@/lib/ads/management-service";
 import { getGrowthReport } from "@/lib/growth/report";
 import { auditKey, latestByUrl } from "@/lib/seo/score-history";
 import { listSeoScores, recordSeoScore } from "@/lib/seo/score-store";
@@ -32,6 +36,7 @@ import { runTakbot } from "@/lib/takbot/server";
 
 import {
   buildAgentPrompt,
+  adsFactLines,
   compareSiteCheck,
   externalGatewayConfigured,
   NATIVE_AGENT_KEYS,
@@ -177,6 +182,15 @@ async function gatherFacts(run: ClaimedNativeRun): Promise<Facts> {
       extra: { sites: sites.map((site) => ({ url: site.url, score: site.score, previousScore: site.previousScore, regressions: site.regressions.length })) },
     };
   }
+  if (run.agentKey === "ads_optimizer") {
+    const snapshot = await getAdsWorkspaceSnapshot(run.clientId);
+    if (!snapshot.campaigns.length) return { ok: false, error: "no_ad_campaign" };
+    return {
+      ok: true,
+      lines: adsFactLines({ campaigns: snapshot.campaigns, totals: snapshot.totals }),
+      extra: { campaigns: snapshot.campaigns.length },
+    };
+  }
   return { ok: true, lines: [], extra: {} };
 }
 
@@ -242,7 +256,7 @@ async function execute(run: ClaimedNativeRun): Promise<string> {
     });
     return posted ? "posted" : "failed:conversation_closed";
   }
-  // Social Autopilot, Report Writer, SEO Watchdog: the approved draft is the
+  // Social Autopilot, Report Writer, SEO Watchdog, Ads Optimizer: the approved draft is the
   // deliverable; it is in the workspace library (AI Studio → Saved outputs).
   // Nothing is published here.
   await reportAgentRun(run.runId, {

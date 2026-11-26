@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { CsvColumnsControls } from "@/components/social/platforms/csv-columns-controls";
 import { SocialSummaryChart } from "@/components/social/analytics/social-summary-chart";
 import {
   dateKey,
@@ -928,26 +929,6 @@ function PostsChartPanel({
   );
 }
 
-function downloadEmptyXCsv(
-  filename: string,
-  columns: string[],
-) {
-  const csv = `${columns.join(",")}\n`;
-  const blob = new Blob([csv], {
-    type: "text/csv;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-
-  URL.revokeObjectURL(url);
-}
-
 function PostsToolbar({
   search,
   onSearchChange,
@@ -980,41 +961,12 @@ function PostsToolbar({
       </label>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          aria-label={`Choose ${type} table columns`}
-          className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-        >
-          <PostsActionIcon kind="columns" />
-          Columns
-        </button>
-
-        <button
-          type="button"
-          onClick={() =>
-            downloadEmptyXCsv(
-              `x-${type}.csv`,
-              type === "posts"
-                ? [
-                    "post",
-                    "published_at",
-                    "likes",
-                    "comments",
-                    "views",
-                  ]
-                : [
-                    "hashtag",
-                    "posts",
-                    "interactions",
-                  ],
-            )
-          }
-          className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-        >
-          <PostsActionIcon kind="download" />
-          Download CSV
-          <PremiumDiamond />
-        </button>
+        <CsvColumnsControls
+          filename={`x-${type}.csv`}
+          columns={type === "posts" ? ["post", "published_at", "likes", "comments", "views"] : ["hashtag", "posts", "interactions"]}
+          icon={<PostsActionIcon kind="download" />}
+          badge={<PremiumDiamond />}
+        />
 
         {type === "posts" ? (
           <div className="relative">
@@ -1448,36 +1400,12 @@ function XRepliesSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose replies table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyXCsv(
-                    "x-replies.csv",
-                    [
-                      "reel",
-                      "published_at",
-                      "likes",
-                      "comments",
-                      "views",
-                      "shares",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"x-replies.csv"}
+                columns={["reel", "published_at", "likes", "comments", "views", "shares"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
@@ -1640,34 +1568,12 @@ function XMentionsSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose mentions table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyXCsv(
-                    "x-mentions.csv",
-                    [
-                      "story",
-                      "published_at",
-                      "impressions",
-                      "reach",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"x-mentions.csv"}
+                columns={["story", "published_at", "impressions", "reach"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
@@ -1850,38 +1756,12 @@ function XEngagementSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose Engagement table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyXCsv(
-                    "x-engagement.csv",
-                    [
-                      "collab",
-                      "published_at",
-                      "views",
-                      "likes",
-                      "comments",
-                      "reposts",
-                      "saved",
-                      "shares",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"x-engagement.csv"}
+                columns={["collab", "published_at", "views", "likes", "comments", "reposts", "saved", "shares"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
             </div>
           </div>
 
@@ -2049,35 +1929,12 @@ function XCompetitorsSection() {
               </svg>
             </button>
 
-            <button
-              type="button"
-              aria-label="Choose competitors table columns"
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-            >
-              <PostsActionIcon kind="columns" />
-              Columns
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                downloadEmptyXCsv(
-                  "x-competitors.csv",
-                  [
-                    "competitor",
-                    "followers",
-                    "posts",
-                    "interactions",
-                    "engagement",
-                  ],
-                )
-              }
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-            >
-              <PostsActionIcon kind="download" />
-              Download CSV
-              <PremiumDiamond />
-            </button>
+            <CsvColumnsControls
+              filename={"x-competitors.csv"}
+              columns={["competitor", "followers", "posts", "interactions", "engagement"]}
+              icon={<PostsActionIcon kind="download" />}
+              badge={<PremiumDiamond />}
+            />
 
             <button
               type="button"

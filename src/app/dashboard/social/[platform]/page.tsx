@@ -42,6 +42,8 @@ import { getSelectedFacebookPageSyncSnapshot } from "@/lib/social/sync/facebook-
 import { hasSocialHistory } from "@/lib/social/social-history";
 import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
 import { SOCIAL_BILLING_HREF } from "@/lib/billing/social/billing-banner-policy";
+import type { InstagramLiveStats } from "@/lib/social/instagram-live-stats";
+import { loadInstagramLiveStats } from "@/lib/social/providers/instagram-live-fetch";
 
 const SOCIAL_PLATFORMS = {
   instagram: {
@@ -183,6 +185,7 @@ export default async function SocialPlatformPage({
     let facebookConnectionId: string | null = null;
     let facebookPageSelected = false;
     let facebookNeedsPage = false;
+    let liveStats: InstagramLiveStats | null = null;
 
     try {
       const facebook = await resolveCanonicalFacebookDashboard({
@@ -222,6 +225,14 @@ export default async function SocialPlatformPage({
         connectedLabel = instagram.accountName;
         profileImageUrl = toAccountPictureSrc(instagram.socialAccountId);
         connectedVia = instagram.source;
+        try {
+          liveStats = await loadInstagramLiveStats({
+            clientId: access.activeClientId,
+            socialAccountId: instagram.socialAccountId,
+          });
+        } catch {
+          console.error("[social-instagram] Live Instagram numbers could not be read");
+        }
       }
     } catch (error) {
       console.error(
@@ -246,6 +257,7 @@ export default async function SocialPlatformPage({
         facebookConnectionId={facebookConnectionId}
         facebookPageSelected={facebookPageSelected}
         facebookNeedsPage={facebookNeedsPage}
+        liveStats={liveStats}
       />
     );
   }

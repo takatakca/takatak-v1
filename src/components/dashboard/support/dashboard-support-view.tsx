@@ -15,7 +15,7 @@ const LINKS = [
   { href: "/dashboard/invoices", icon: FileText, fr: "Mes factures", en: "My invoices" },
 ] as const;
 
-export function DashboardSupportView({ email }: { email: string | null }) {
+export function DashboardSupportView({ email, defaultMessage }: { email: string | null; defaultMessage?: string }) {
   return (
     <WebsiteProviders isAuthenticated email={email} initialLanguage="fr">
       <div className="space-y-6">
@@ -38,7 +38,12 @@ export function DashboardSupportView({ email }: { email: string | null }) {
 
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <ContactForm defaultTopic="support" topics={["support", "billing", "other"]} context="Tableau de bord · Soutien" />
+            <ContactForm
+              defaultTopic="support"
+              topics={["support", "billing", "other"]}
+              context="Tableau de bord · Soutien"
+              defaultMessage={defaultMessage}
+            />
           </section>
 
           <aside className="space-y-3">

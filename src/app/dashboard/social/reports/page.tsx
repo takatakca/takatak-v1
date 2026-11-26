@@ -2,6 +2,7 @@ import { SocialReportingView } from "@/components/social/reports/social-reportin
 import { getSocialShellBilling } from "@/lib/billing/social/billing-banner";
 import { SOCIAL_BILLING_HREF } from "@/lib/billing/social/billing-banner-policy";
 import { requireWorkspacePermission } from "@/lib/security/workspace-guard";
+import { creditsFor, TAKBOT_MODES } from "@/lib/takbot/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -18,5 +19,13 @@ export default async function SocialReportsPage() {
   const billing = await getSocialShellBilling(access.activeClientId);
   const reportsUnlocked = billing?.reports ?? false;
 
-  return <SocialReportingView reportsUnlocked={reportsUnlocked} billingHref={SOCIAL_BILLING_HREF} />;
+  const research = TAKBOT_MODES.find((mode) => mode.key === "research");
+
+  return (
+    <SocialReportingView
+      reportsUnlocked={reportsUnlocked}
+      billingHref={SOCIAL_BILLING_HREF}
+      researchCredits={research ? creditsFor(research) : 2}
+    />
+  );
 }

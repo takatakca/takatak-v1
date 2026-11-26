@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { CsvColumnsControls } from "@/components/social/platforms/csv-columns-controls";
 import { SocialSummaryChart } from "@/components/social/analytics/social-summary-chart";
 import {
   dateKey,
@@ -13,6 +14,14 @@ import {
   enumerateDates,
   metricValue,
 } from "@/components/social/analytics/social-summary-tokens";
+import {
+  ColumnsMenu,
+  InstagramLiveAccountSection,
+  InstagramLiveMediaSection,
+  InstagramLiveNote,
+} from "@/components/social/platforms/instagram-live-panels";
+import { InstagramCompetitorsPanel } from "@/components/social/platforms/instagram-competitors-panel";
+import { communityFromLive, type InstagramLiveStats } from "@/lib/social/instagram-live-stats";
 
 type InstagramTab =
   | "community"
@@ -963,6 +972,12 @@ function downloadEmptyInstagramCsv(
   URL.revokeObjectURL(url);
 }
 
+const TOOLBAR_COLUMNS: Record<"posts" | "hashtags" | "reels", string[]> = {
+  posts: ["post", "published_at", "likes", "comments", "views"],
+  hashtags: ["hashtag", "posts", "interactions"],
+  reels: ["reel", "published_at", "likes", "comments", "views", "shares"],
+};
+
 function PostsToolbar({
   search,
   onSearchChange,
@@ -972,6 +987,14 @@ function PostsToolbar({
   onSearchChange: (value: string) => void;
   type: "posts" | "hashtags";
 }) {
+  const [columns, setColumns] = useState<Set<string>>(() => new Set(TOOLBAR_COLUMNS[type]));
+  const toggleColumn = (key: string) =>
+    setColumns((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
   return (
     <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
       <label className="relative min-w-0 flex-1">
@@ -995,33 +1018,19 @@ function PostsToolbar({
       </label>
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          aria-label={`Choose ${type} table columns`}
-          className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-        >
-          <PostsActionIcon kind="columns" />
-          Columns
-        </button>
+        <ColumnsMenu
+          label="Columns"
+          columns={TOOLBAR_COLUMNS[type].map((key, index) => ({ key, label: key.replace("_", " "), required: index === 0 }))}
+          visible={columns}
+          onToggle={toggleColumn}
+        />
 
         <button
           type="button"
           onClick={() =>
             downloadEmptyInstagramCsv(
               `instagram-${type}.csv`,
-              type === "posts"
-                ? [
-                    "post",
-                    "published_at",
-                    "likes",
-                    "comments",
-                    "views",
-                  ]
-                : [
-                    "hashtag",
-                    "posts",
-                    "interactions",
-                  ],
+              TOOLBAR_COLUMNS[type].filter((key) => columns.has(key)),
             )
           }
           className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
@@ -1344,6 +1353,14 @@ function InstagramReelsSection({
   end: string;
 }) {
   const [reelSearch, setReelSearch] = useState("");
+  const [reelColumns, setReelColumns] = useState<Set<string>>(() => new Set(TOOLBAR_COLUMNS.reels));
+  const toggleReelColumn = (key: string) =>
+    setReelColumns((current) => {
+      const next = new Set(current);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   /*
    * A confirmed empty Instagram account supports a real zero.
@@ -1463,28 +1480,19 @@ function InstagramReelsSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose reels table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
+              <ColumnsMenu
+                label="Columns"
+                columns={TOOLBAR_COLUMNS.reels.map((key, index) => ({ key, label: key.replace("_", " "), required: index === 0 }))}
+                visible={reelColumns}
+                onToggle={toggleReelColumn}
+              />
 
               <button
                 type="button"
                 onClick={() =>
                   downloadEmptyInstagramCsv(
                     "instagram-reels.csv",
-                    [
-                      "reel",
-                      "published_at",
-                      "likes",
-                      "comments",
-                      "views",
-                      "shares",
-                    ],
+                    TOOLBAR_COLUMNS.reels.filter((key) => reelColumns.has(key)),
                   )
                 }
                 className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
@@ -1655,34 +1663,12 @@ function InstagramStoriesSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose stories table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyInstagramCsv(
-                    "instagram-stories.csv",
-                    [
-                      "story",
-                      "published_at",
-                      "impressions",
-                      "reach",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"instagram-stories.csv"}
+                columns={["story", "published_at", "impressions", "reach"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
@@ -1865,38 +1851,12 @@ function InstagramCollabsSection({
             </label>
 
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                aria-label="Choose Collabs table columns"
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-              >
-                <PostsActionIcon kind="columns" />
-                Columns
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  downloadEmptyInstagramCsv(
-                    "instagram-collabs.csv",
-                    [
-                      "collab",
-                      "published_at",
-                      "views",
-                      "likes",
-                      "comments",
-                      "reposts",
-                      "saved",
-                      "shares",
-                    ],
-                  )
-                }
-                className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-              >
-                <PostsActionIcon kind="download" />
-                Download CSV
-                <PremiumDiamond />
-              </button>
+              <CsvColumnsControls
+                filename={"instagram-collabs.csv"}
+                columns={["collab", "published_at", "views", "likes", "comments", "reposts", "saved", "shares"]}
+                icon={<PostsActionIcon kind="download" />}
+                badge={<PremiumDiamond />}
+              />
             </div>
           </div>
 
@@ -2064,35 +2024,12 @@ function InstagramCompetitorsSection() {
               </svg>
             </button>
 
-            <button
-              type="button"
-              aria-label="Choose competitors table columns"
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
-            >
-              <PostsActionIcon kind="columns" />
-              Columns
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                downloadEmptyInstagramCsv(
-                  "instagram-competitors.csv",
-                  [
-                    "competitor",
-                    "followers",
-                    "posts",
-                    "interactions",
-                    "engagement",
-                  ],
-                )
-              }
-              className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-            >
-              <PostsActionIcon kind="download" />
-              Download CSV
-              <PremiumDiamond />
-            </button>
+            <CsvColumnsControls
+              filename={"instagram-competitors.csv"}
+              columns={["competitor", "followers", "posts", "interactions", "engagement"]}
+              icon={<PostsActionIcon kind="download" />}
+              badge={<PremiumDiamond />}
+            />
 
             <button
               type="button"
@@ -2137,15 +2074,21 @@ function InstagramCompetitorsSection() {
 }
 
 export function InstagramSubscribedDashboard({
-  data = EMPTY_DATA,
+  data: storedData = EMPTY_DATA,
   accountName,
   profileImageUrl = null,
   isConnected,
+  live = null,
+  canManage = false,
 }: {
   data?: InstagramCommunityData;
   accountName: string;
   profileImageUrl?: string | null;
   isConnected: boolean;
+  /** May add and remove competitors (manage_social_accounts). */
+  canManage?: boolean;
+  /** The account's numbers read live from Instagram, when the connection allows it. */
+  live?: InstagramLiveStats | null;
 }) {
   const [tab, setTab] = useState<InstagramTab>("community");
   const [range, setRange] = useState<number>(30);
@@ -2224,6 +2167,12 @@ export function InstagramSubscribedDashboard({
       end: dateKey(endDate),
     };
   }, [range]);
+
+  // Live Instagram numbers win over stored ones; without them the stored data stays.
+  const data = useMemo<InstagramCommunityData>(
+    () => (live ? communityFromLive(live, start, end) : storedData),
+    [live, start, end, storedData],
+  );
 
   const hasConfirmedData =
     [
@@ -2400,11 +2349,15 @@ export function InstagramSubscribedDashboard({
           Instagram Community analytics
         </h2>
 
-        <div className="rounded-[10px] border border-[#A8B4FF] bg-[#F0F1FF] px-4 py-3 text-[13px] leading-5 text-[#46516A]">
-          Followers and Stories metrics are available from the day the
-          Instagram account is connected. TAKATAK preserves confirmed
-          historical data for this account.
-        </div>
+        {live ? (
+          <InstagramLiveNote stats={live} />
+        ) : (
+          <div className="rounded-[10px] border border-[#A8B4FF] bg-[#F0F1FF] px-4 py-3 text-[13px] leading-5 text-[#46516A]">
+            Followers and Stories metrics are available from the day the
+            Instagram account is connected. TAKATAK preserves confirmed
+            historical data for this account.
+          </div>
+        )}
 
         <CommunitySection
           data={data}
@@ -2427,7 +2380,7 @@ export function InstagramSubscribedDashboard({
           Instagram Account analytics
         </h2>
 
-        <AccountSection data={data} />
+        {live ? <InstagramLiveAccountSection stats={live} /> : <AccountSection data={data} />}
       </section>
 
       <section
@@ -2442,11 +2395,15 @@ export function InstagramSubscribedDashboard({
           Instagram Posts analytics
         </h2>
 
-        <InstagramPostsSection
-          data={data}
-          start={start}
-          end={end}
-        />
+        {live ? (
+          <InstagramLiveMediaSection stats={live} kind="post" start={start} end={end} />
+        ) : (
+          <InstagramPostsSection
+            data={data}
+            start={start}
+            end={end}
+          />
+        )}
       </section>
 
       <section
@@ -2461,11 +2418,15 @@ export function InstagramSubscribedDashboard({
           Instagram Reels analytics
         </h2>
 
-        <InstagramReelsSection
-          data={data}
-          start={start}
-          end={end}
-        />
+        {live ? (
+          <InstagramLiveMediaSection stats={live} kind="reel" start={start} end={end} />
+        ) : (
+          <InstagramReelsSection
+            data={data}
+            start={start}
+            end={end}
+          />
+        )}
       </section>
 
       <section
@@ -2518,7 +2479,14 @@ export function InstagramSubscribedDashboard({
           Instagram Competitors analytics
         </h2>
 
-        <InstagramCompetitorsSection />
+        {live ? (
+          <div className="space-y-1">
+            <h2 className="pb-5 text-[23px] font-medium text-[#20242A]">Competitors</h2>
+            <InstagramCompetitorsPanel canTrack={Boolean(live.canTrackCompetitors)} canManage={canManage} start={start} end={end} />
+          </div>
+        ) : (
+          <InstagramCompetitorsSection />
+        )}
       </section>
 
     </div>

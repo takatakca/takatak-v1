@@ -13,6 +13,15 @@ import type { HostingServiceSummary, SslCertificateSummary } from "@/lib/web-hos
 import { pricing } from "@/lib/website/pricing";
 import { SSL_STATUS_LABELS } from "@/lib/web-hosting/status";
 
+const HOSTING_ACTIONS = [
+  { label: "Sauvegardes · Backups", href: "/dashboard/web-hosting/backups" },
+  { label: "Certificats SSL · SSL certificates", href: "/dashboard/web-hosting/ssl" },
+  { label: "Zone DNS · DNS zone", href: "/dashboard/web-hosting/dns" },
+  { label: "Surveillance · Monitoring", href: "/dashboard/web-hosting/monitoring" },
+  { label: "Vérification de sécurité · Security check", href: "/dashboard/web-hosting/security" },
+  { label: "Diagnostic par l’équipe · Team diagnostic", href: "/dashboard/support?demande=diagnostics" },
+];
+
 function catalogName(planName: string): string {
   const lower = planName.toLowerCase();
   return (
@@ -65,6 +74,7 @@ export function HostingEnvironmentsView({
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(services[0]?.id ?? null);
+  const [assistantOpen, setAssistantOpen] = useState(true);
 
   const plans = useMemo(
     () => Array.from(new Set(services.map((service) => catalogName(service.planName)))),
@@ -109,15 +119,24 @@ export function HostingEnvironmentsView({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-800">
-            Run Health Check
-          </button>
-          <button type="button" className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white">
-            Add Hosting
-          </button>
-          <button type="button" className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-800">
-            Actions <ChevronDown className="h-4 w-4" />
-          </button>
+          <Link href="/dashboard/web-hosting/security" className="rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 hover:border-blue-300">
+            Vérifier la santé · Run health check
+          </Link>
+          <Link href="/hosting" className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            Ajouter un hébergement · Add hosting
+          </Link>
+          <details className="relative">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-800 hover:border-blue-300 [&::-webkit-details-marker]:hidden">
+              Actions <ChevronDown className="h-4 w-4" />
+            </summary>
+            <div className="absolute right-0 z-20 mt-1 w-64 rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+              {HOSTING_ACTIONS.map((action) => (
+                <Link key={action.href} href={action.href} className="block rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                  {action.label}
+                </Link>
+              ))}
+            </div>
+          </details>
         </div>
       </div>
 
@@ -321,9 +340,12 @@ export function HostingEnvironmentsView({
                 >
                   Open Environment
                 </Link>
-                <button type="button" className="rounded-lg border border-slate-200 py-2 text-sm font-medium text-slate-400">
-                  View Logs
-                </button>
+                <Link
+                  href="/dashboard/web-hosting/monitoring"
+                  className="rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700 hover:border-blue-300"
+                >
+                  Journaux · View logs
+                </Link>
               </div>
             </>
           ) : (
@@ -348,14 +370,15 @@ export function HostingEnvironmentsView({
             <li className="flex justify-between"><span>Deployments</span><span className="text-slate-400">Not connected</span></li>
           </ul>
           <div className="mt-4 flex gap-2">
-            <button type="button" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600">
-              Open Operations
-            </button>
-            <button type="button" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600">
-              Restore Tests
-            </button>
+            <Link href="/dashboard/web-hosting/monitoring" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-blue-300">
+              Opérations · Open operations
+            </Link>
+            <Link href="/dashboard/web-hosting/backups" className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 hover:border-blue-300">
+              Sauvegardes · Restore tests
+            </Link>
           </div>
         </article>
+        {assistantOpen ? (
         <article className="rounded-2xl bg-violet-50 p-5">
           <h3 className="text-sm font-semibold text-violet-950">TakaTak AI Hosting Assistant</h3>
           <p className="mt-2 text-sm text-violet-800">
@@ -367,17 +390,18 @@ export function HostingEnvironmentsView({
             </p>
           ) : null}
           <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" className="rounded-lg bg-violet-700 px-3 py-1.5 text-xs font-medium text-white">
-              Review Actions
-            </button>
-            <button type="button" className="rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-xs font-medium text-violet-800">
-              Run Diagnostics
-            </button>
-            <button type="button" className="rounded-lg px-3 py-1.5 text-xs font-medium text-violet-700">
-              Dismiss
+            <Link href="/dashboard/web-hosting/security" className="rounded-lg bg-violet-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-800">
+              Correctifs à faire · Review actions
+            </Link>
+            <Link href="/dashboard/support?demande=diagnostics" className="rounded-lg border border-violet-200 bg-white px-3 py-1.5 text-xs font-medium text-violet-800 hover:border-violet-400">
+              Diagnostic complet · Run diagnostics
+            </Link>
+            <button type="button" onClick={() => setAssistantOpen(false)} className="rounded-lg px-3 py-1.5 text-xs font-medium text-violet-700 hover:bg-violet-100">
+              Masquer · Dismiss
             </button>
           </div>
         </article>
+        ) : null}
       </section>
       <p className="text-[11px] text-slate-400">{sourceLabel}</p>
     </div>
