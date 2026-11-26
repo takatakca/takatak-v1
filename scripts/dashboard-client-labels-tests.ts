@@ -120,6 +120,22 @@ assert.match(switchAction, /where: \{ id: profileDetails\.id \}/, "the switch ch
 assert.match(readFileSync(join(ROOT, "src/components/layout/dashboard-topbar.tsx"), "utf8"), /<LanguageSwitch \/>/);
 assert.equal(homeText("Total Reach", "en"), "Total Reach");
 
+// No sample records on Services, Jobs or Integrations: staff open the real
+// admin screens, a client sees its own services (scoped to its workspace).
+const servicesLoader = readFileSync(join(ROOT, "src/lib/services/client-services.ts"), "utf8");
+assert.match(servicesLoader, /where: \{ clientId, status: \{ not: "cancelled" \} \}/, "services are read for the one workspace only");
+for (const [route, target] of [
+  ["services", "/dashboard/admin/services"],
+  ["jobs", "/dashboard/admin/jobs"],
+  ["integrations", "/dashboard/admin/integrations"],
+] as const) {
+  const source = readFileSync(join(ROOT, `src/app/dashboard/${route}/page.tsx`), "utf8");
+  assert.ok(source.includes(`redirect("${target}")`), `${route}: platform staff go to ${target}`);
+  assert.doesNotMatch(source, /mock-data|FoundationNotice|DisabledActionButton/, `${route}: no sample records or dead buttons`);
+}
+assert.ok(!STAFF_ONLY_ROUTES.has("/dashboard/services"), "Services is a real client screen now");
+assert.match(readFileSync(join(ROOT, "src/app/dashboard/services/page.tsx"), "utf8"), /listClientServices\(access\.activeClientId\)/);
+
 console.log(
   `dashboard client labels: ok (${clientPages.length} client screens and ${sharedComponents.length} shared components scanned, ${STAFF_ONLY_ROUTES.size} staff-only)`,
 );

@@ -1,50 +1,27 @@
+import { redirect } from "next/navigation";
+
 import { ModulePlaceholder } from "@/components/dashboard/module-placeholder";
 import { getServerAccessContext } from "@/lib/security/access-context";
-import { PlugZap } from "lucide-react";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { DisabledActionButton } from "@/components/saas/disabled-action-button";
-import { FoundationNotice } from "@/components/saas/foundation-notice";
-import { IntegrationStatusRow } from "@/components/saas/integration-status-row";
-import { ModuleHeader } from "@/components/saas/module-header";
-import { INTEGRATIONS } from "@/lib/data/mock-data";
 
-// Integrations — provider registry. Real adapters begin in Phase 6.
-function IntegrationsPageDemo() {
-  return (
-    <div className="space-y-5">
-      <ModuleHeader
-        title="Integrations"
-        description="Every external engine behind TAKATAK, with honest connection states. No provider is connected."
-        statuses={["not_connected", "mock_data"]}
-        actions={<DisabledActionButton label="Connect Provider" reason="Adapters in Phase 6+" icon={PlugZap} />}
-      />
-      <FoundationNotice
-        mock="Provider records below are a typed registry — statuses, requirements, and env var names (never values)."
-        future="Test-connection and credential flows arrive with each adapter phase: Supabase (Phase 3), Metricool (Phase 6), Upmind (Phase 8), TryHolo (Phase 10), QMAPS/FLEXS (post-MVP)."
-        notConnected="Everything. A provider only shows Connected after a real credentialed API call succeeds."
-      />
-      <Card>
-        <CardHeader title="Provider registry" subtitle="Statuses are honest by design — see docs §25/§28." />
-        <CardBody className="divide-y divide-slate-100 p-0">
-          {INTEGRATIONS.map((i) => (
-            <IntegrationStatusRow key={i.id} integration={i} />
-          ))}
-        </CardBody>
-      </Card>
-    </div>
-  );
-}
+export const dynamic = "force-dynamic";
 
-// Demo-data screen: TAKATAK platform staff only. Clients see the
-// "done by the TAKATAK team" page instead of mock records.
+/**
+ * Integrations. Platform staff open the real integrations screen; a client
+ * workspace goes to its live connectors list (Growth › Connectors). Nobody
+ * sees sample records.
+ */
 export default async function IntegrationsPage() {
   const { access } = await getServerAccessContext();
-  if (access.mode !== "platform_admin") {
-    return (
-      <ModulePlaceholder
-        def={{ title: "Integrations", purpose: "Connections between your account and outside tools.", status: "foundation", functions: [] }}
-      />
-    );
-  }
-  return <IntegrationsPageDemo />;
+  if (access.mode === "platform_admin") redirect("/dashboard/admin/integrations");
+  if (access.mode === "client_scoped") redirect("/dashboard/growth/connectors");
+  return (
+    <ModulePlaceholder
+      def={{
+        title: "Intégrations · Integrations",
+        purpose: "Les connexions entre votre compte et vos outils · Connections between your account and outside tools.",
+        status: "foundation",
+        functions: [],
+      }}
+    />
+  );
 }
