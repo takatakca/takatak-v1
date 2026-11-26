@@ -364,6 +364,7 @@ function LockIcon() {
 }
 
 function EmptyAccountChart() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex min-h-[390px] flex-col items-center justify-center px-5 py-10 text-center">
       <span className="flex h-[142px] w-[142px] items-center justify-center rounded-full bg-[#F1F5FD] text-white">
@@ -387,18 +388,18 @@ function EmptyAccountChart() {
       </span>
 
       <h3 className="mt-5 text-[22px] font-medium text-[#30343A]">
-        No data available
+        {fr ? "Aucune donnée" : "No data available"}
       </h3>
 
       <p className="mt-3 text-[15px] text-[#93A0AD]">
-        Start publishing content to see how your results evolve
+        {fr ? "Publiez du contenu pour voir l’évolution de vos résultats" : "Start publishing content to see how your results evolve"}
       </p>
 
       <Link
         href="/dashboard/social/calendar"
         className="mt-5 inline-flex h-11 items-center justify-center rounded-[9px] border border-[#493546] bg-white px-6 text-sm font-medium text-[#30242E] transition hover:bg-[#F8F8F8]"
       >
-        Go to calendar
+        {fr ? "Ouvrir le calendrier" : "Go to calendar"}
       </Link>
     </div>
   );
@@ -469,6 +470,7 @@ function AdvancedAccountContent({
 }: {
   view: Exclude<ThreadsAccountView, "general">;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const content = ADVANCED_ACCOUNT_CONTENT[view];
 
   return (
@@ -476,7 +478,7 @@ function AdvancedAccountContent({
       <div className="mt-8 flex flex-col gap-5 sm:flex-row">
         <label className="block w-full max-w-[325px] text-sm text-[#81909D]">
           <span className="mb-2 block">
-            Metric
+            {fr ? "Mesure" : "Metric"}
           </span>
 
           <select
@@ -493,7 +495,7 @@ function AdvancedAccountContent({
 
         <label className="block w-full max-w-[325px] text-sm text-[#81909D]">
           <span className="mb-2 block">
-            Divide by
+            {fr ? "Répartir par" : "Divide by"}
           </span>
 
           <select
@@ -535,14 +537,14 @@ function AdvancedAccountContent({
         </h3>
 
         <p className="mt-4 text-[16px] text-[#91A0AC]">
-          This data starts being collected when you activate Advanced
+          {fr ? "Ces données se recueillent une fois le compte branché avec l’accès aux statistiques" : "This data starts being collected when you activate Advanced"}
         </p>
 
         <Link
           href="/dashboard/billing"
           className="mt-6 inline-flex h-[53px] items-center justify-center rounded-[9px] bg-[#2C1929] px-7 text-[15px] font-semibold text-[#DDFF35] transition hover:bg-[#3B2237]"
         >
-          Upgrade your plan
+          {fr ? "Voir les forfaits" : "Upgrade your plan"}
         </Link>
       </div>
     </>
@@ -554,6 +556,7 @@ function AccountSection({
 }: {
   data: ThreadsCommunityData;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [accountView, setAccountView] =
     useState<ThreadsAccountView>("general");
 
@@ -564,7 +567,7 @@ function AccountSection({
   return (
     <div className="space-y-7">
       <h1 className="text-[23px] font-medium text-[#20242A]">
-        Account
+        {fr ? "Compte" : "Account"}
       </h1>
 
       <section className="overflow-hidden rounded-[14px] border border-[#E8EAED] bg-white px-5 pb-2 pt-6 shadow-[0_2px_12px_rgba(31,41,55,0.04)] sm:px-7">
@@ -607,7 +610,7 @@ function AccountSection({
             <>
               <label className="mt-8 block max-w-[260px] text-sm text-[#8B97A2]">
                 <span className="mb-2 block">
-                  Metric
+                  {fr ? "Mesure" : "Metric"}
                 </span>
 
                 <select
@@ -860,6 +863,7 @@ function PostsChartPanel({
 }: {
   title: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   /*
    * This state belongs to this individual panel instance.
    * Types and Views therefore toggle independently.
@@ -903,12 +907,12 @@ function PostsChartPanel({
                 <path d="M12 3a9 9 0 1 0 9 9h-9V3Z" />
                 <path d="M15 3.6A9 9 0 0 1 20.4 9H15V3.6Z" />
               </svg>
-              View chart
+              {fr ? "Voir le graphique" : "View chart"}
             </>
           ) : (
             <>
               <PostsActionIcon kind="table" />
-              View table
+              {fr ? "Voir le tableau" : "View table"}
             </>
           )}
         </button>
@@ -933,13 +937,13 @@ function PostsChartPanel({
               ].join(" ")}
             >
               <span role="columnheader" className="font-normal">
-                Group
+                {fr ? "Groupe" : "Group"}
               </span>
               <span
                 role="columnheader"
                 className="min-w-16 text-right font-normal"
               >
-                Count
+                {fr ? "Nombre" : "Count"}
               </span>
             </div>
 
@@ -948,7 +952,7 @@ function PostsChartPanel({
               className="flex min-h-14 items-center justify-center px-5 py-4"
             >
               <span role="cell" className="text-[#393D43]">
-                No data available
+                {fr ? "Aucune donnée" : "No data available"}
               </span>
             </div>
           </div>
@@ -972,6 +976,7 @@ function PostsToolbar({
   onSearchChange: (value: string) => void;
   type: "posts" | "hashtags";
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
       <label className="relative min-w-0 flex-1">
@@ -1005,7 +1010,7 @@ function PostsToolbar({
         {type === "posts" ? (
           <div className="relative">
             <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
-              New
+              {fr ? "Nouveau" : "New"}
             </span>
 
             <PinToDashboardButton
@@ -1027,6 +1032,7 @@ function EmptyPostsTable({
   type: "posts" | "hashtags";
   search: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const hasSearch = search.trim().length > 0;
 
   return (
@@ -1034,7 +1040,7 @@ function EmptyPostsTable({
       <EmptySearchIllustration />
 
       <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-        Oops! Nothing found, try another search
+        {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </h3>
 
       <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1145,6 +1151,7 @@ function ThreadsPostsSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [postSearch, setPostSearch] = useState("");
   const [hashtagSearch, setHashtagSearch] = useState("");
 
@@ -1214,7 +1221,7 @@ function ThreadsPostsSection({
   return (
     <div className="space-y-5">
       <h1 className="text-[23px] font-medium text-[#20242A]">
-        Posts published in period
+        {fr ? "Publications de la période" : "Posts published in period"}
       </h1>
 
       <div className="overflow-hidden rounded-[14px] border border-[#E8EAED] bg-white shadow-[0_2px_12px_rgba(31,41,55,0.04)]">
@@ -1266,7 +1273,7 @@ function ThreadsPostsSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-0 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            List of posts
+            {fr ? "Liste des publications" : "List of posts"}
           </h2>
 
           <PostsToolbar
@@ -1283,7 +1290,7 @@ function ThreadsPostsSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-0 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            List of hashtags
+            {fr ? "Liste des mots-clics" : "List of hashtags"}
           </h2>
 
           <PostsToolbar
@@ -1311,6 +1318,7 @@ function ThreadsReelsSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [reelSearch, setReelSearch] = useState("");
 
   /*
@@ -1384,7 +1392,7 @@ function ThreadsReelsSection({
   return (
     <div className="space-y-5">
       <h1 className="text-[23px] font-medium text-[#20242A]">
-        Reels published in period
+        {fr ? "Reels publiés dans la période" : "Reels published in period"}
       </h1>
 
       <div className="overflow-hidden rounded-[14px] border border-[#E8EAED] bg-white shadow-[0_2px_12px_rgba(31,41,55,0.04)]">
@@ -1406,7 +1414,7 @@ function ThreadsReelsSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-0 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            List of reels
+            {fr ? "Liste des reels" : "List of reels"}
           </h2>
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
@@ -1440,7 +1448,7 @@ function ThreadsReelsSection({
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
-                  New
+                  {fr ? "Nouveau" : "New"}
                 </span>
 
                 <PinToDashboardButton
@@ -1456,7 +1464,7 @@ function ThreadsReelsSection({
             <EmptySearchIllustration />
 
             <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-              Oops! Nothing found, try another search
+              {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
             </h3>
 
             <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1484,6 +1492,7 @@ function ThreadsStoriesEvolution({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const emptyPoints = useMemo(
     () =>
       enumerateDates(start, end).map((date) => ({
@@ -1497,7 +1506,7 @@ function ThreadsStoriesEvolution({
     <section className="px-5 py-7 sm:px-7">
       <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <h3 className="pt-2 text-[18px] font-medium text-[#20242A]">
-          Evolution
+          {fr ? "Évolution" : "Evolution"}
         </h3>
 
         <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-3 xl:max-w-[610px]">
@@ -1542,6 +1551,7 @@ function ThreadsStoriesSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [storySearch, setStorySearch] = useState("");
 
   /*
@@ -1557,7 +1567,7 @@ function ThreadsStoriesSection({
   return (
     <div className="space-y-5">
       <h1 className="text-[23px] font-medium text-[#20242A]">
-        Stories published in period
+        {fr ? "Stories publiées dans la période" : "Stories published in period"}
       </h1>
 
       <div className="overflow-hidden rounded-[14px] border border-[#E8EAED] bg-white shadow-[0_2px_12px_rgba(31,41,55,0.04)]">
@@ -1571,7 +1581,7 @@ function ThreadsStoriesSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-0 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            List of stories
+            {fr ? "Liste des stories" : "List of stories"}
           </h2>
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
@@ -1605,7 +1615,7 @@ function ThreadsStoriesSection({
 
               <div className="relative">
                 <span className="absolute -right-2 -top-4 rounded-full bg-[#DDF8ED] px-2.5 py-1 text-[10px] font-medium text-[#4E7B68]">
-                  New
+                  {fr ? "Nouveau" : "New"}
                 </span>
 
                 <PinToDashboardButton
@@ -1621,7 +1631,7 @@ function ThreadsStoriesSection({
             <EmptySearchIllustration />
 
             <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-              Oops! Nothing found, try another search
+              {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
             </h3>
 
             <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1645,6 +1655,7 @@ function ThreadsCollabsEvolution({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const emptyPoints = useMemo(
     () =>
       enumerateDates(start, end).map((date) => ({
@@ -1688,7 +1699,7 @@ function ThreadsCollabsEvolution({
   return (
     <section className="px-5 py-7 sm:px-7">
       <h3 className="text-[18px] font-medium text-[#20242A]">
-        Evolution
+        {fr ? "Évolution" : "Evolution"}
       </h3>
 
       <div className="mt-5 grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
@@ -1723,6 +1734,7 @@ function ThreadsCollabsSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [collabSearch, setCollabSearch] = useState("");
 
   /*
@@ -1739,11 +1751,11 @@ function ThreadsCollabsSection({
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-[23px] font-medium text-[#20242A]">
-          Collabs published in period
+          {fr ? "Collabs publiées dans la période" : "Collabs published in period"}
         </h1>
 
         <span className="rounded-full bg-[#DDF8ED] px-3 py-1 text-[11px] font-medium text-[#4E7B68]">
-          New
+          {fr ? "Nouveau" : "New"}
         </span>
       </div>
 
@@ -1756,7 +1768,7 @@ function ThreadsCollabsSection({
 
         <section className="border-t border-[#E8EAED] px-5 pb-0 pt-8 sm:px-7">
           <h2 className="mb-5 text-[20px] font-medium text-[#20242A]">
-            List of Collabs
+            {fr ? "Liste des collabs" : "List of Collabs"}
           </h2>
 
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
@@ -1794,7 +1806,7 @@ function ThreadsCollabsSection({
             <EmptySearchIllustration />
 
             <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-              Oops! Nothing found, try another search
+              {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
             </h3>
 
             <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
@@ -1861,6 +1873,7 @@ function CompetitorsPostListIcon() {
 }
 
 function ThreadsCompetitorsSection() {
+  const fr = useDashboardLanguage() === "fr";
   const [competitorSearch, setCompetitorSearch] = useState("");
 
   const hasSearch =
@@ -1869,7 +1882,7 @@ function ThreadsCompetitorsSection() {
   return (
     <div className="space-y-1">
       <h2 className="pb-5 text-[23px] font-medium text-[#20242A]">
-        Competitors
+        {fr ? "Concurrents" : "Competitors"}
       </h2>
 
       <section className="rounded-[14px] border border-[#E8EAED] bg-white px-6 py-6 shadow-[0_2px_12px_rgba(31,41,55,0.04)] sm:px-7">
@@ -1881,24 +1894,22 @@ function ThreadsCompetitorsSection() {
 
             <div className="min-w-0">
               <h3 className="text-[22px] font-semibold text-[#20242A]">
-                Do you need a higher plan?
+                {fr ? "Suivi des concurrents" : "Competitor tracking"}
               </h3>
 
               <p className="mt-1 text-[15px] leading-6 text-[#68717A]">
-                Upgrade your plan and add up to{" "}
-                <strong className="font-semibold text-[#46505A]">
-                  100 competitors
-                </strong>{" "}
-                which you can modify and/or delete at any time
+                {fr
+                  ? "Threads ne laisse lire les autres profils qu’avec son autorisation « profile discovery ». En attendant, suivez vos concurrents en direct sur Instagram et Bluesky."
+                  : "Threads lets apps read other profiles only with its profile discovery permission. Meanwhile, follow your competitors live on Instagram and Bluesky."}
               </p>
             </div>
           </div>
 
           <Link
-            href="/dashboard/billing"
+            href="/dashboard/social/instagram#instagram-competitors"
             className="inline-flex h-[38px] shrink-0 items-center justify-center self-start rounded-[9px] bg-[#2B1725] px-5 text-sm font-semibold text-[#DFFF38] transition hover:bg-[#3A2133] lg:self-auto"
           >
-            Upgrade your plan
+            {fr ? "Concurrents Instagram" : "Instagram competitors"}
           </Link>
         </div>
       </section>
@@ -1906,7 +1917,7 @@ function ThreadsCompetitorsSection() {
       <section className="min-h-[610px] rounded-[14px] border border-[#E8EAED] bg-white px-6 py-7 shadow-[0_2px_12px_rgba(31,41,55,0.04)] sm:px-7">
         <div className="flex items-center gap-2">
           <h3 className="text-[20px] font-medium text-[#20242A]">
-            List of competitors
+            {fr ? "Liste des concurrents" : "List of competitors"}
           </h3>
 
           <CompetitorsHelpIcon />
@@ -1940,7 +1951,7 @@ function ThreadsCompetitorsSection() {
               aria-label="Filter competitors"
               className="inline-flex h-[42px] min-w-[158px] cursor-not-allowed items-center justify-between gap-4 rounded-[9px] border border-[#E4E7EA] bg-white px-3 text-xs font-medium text-[#C1C6CA]"
             >
-              All competitors
+              {fr ? "Tous les concurrents" : "All competitors"}
 
               <svg
                 aria-hidden="true"
@@ -1967,7 +1978,7 @@ function ThreadsCompetitorsSection() {
               className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] border border-[#D7DBE0] bg-white px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F8F9FA]"
             >
               <CompetitorsPostListIcon />
-              Post List (All)
+              {fr ? "Liste des publications (toutes)" : "Post List (All)"}
             </button>
 
             <Link
@@ -1980,7 +1991,7 @@ function ThreadsCompetitorsSection() {
               >
                 +
               </span>
-              Add
+              {fr ? "Ajouter" : "Add"}
             </Link>
           </div>
         </div>
@@ -1989,7 +2000,7 @@ function ThreadsCompetitorsSection() {
           <EmptySearchIllustration />
 
           <h3 className="mt-2 text-[23px] font-normal text-[#292D34]">
-            Oops! Nothing found, try another search
+            {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
           </h3>
 
           <p className="mt-4 max-w-[760px] text-[14px] leading-6 text-[#91A0AC]">
