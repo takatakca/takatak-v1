@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/auth/supabase-server";
 import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
 import { createAhmvExperienceLaunch } from "@/lib/billing/hockey/experience-access";
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
+import { originFromRequest } from "@/lib/config/app-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export async function GET(request: Request) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.redirect(
-      new URL("/login?next=%2Fapi%2Fexperiences%2Fahmv%2Flaunch", request.url),
+      new URL("/login?next=%2Fapi%2Fexperiences%2Fahmv%2Flaunch", originFromRequest(request)),
     );
   }
 

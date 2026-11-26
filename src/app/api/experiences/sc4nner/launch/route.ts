@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth/supabase-server";
 import { ensureProfileForSupabaseUser } from "@/lib/auth/profile-sync";
 import { sc4nnerAuthorizeDecision } from "@/lib/experiences/sc4nner-experience-access";
 import { jsonResponse } from "@/lib/security/api-response";
+import { originFromRequest } from "@/lib/config/app-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,14 +21,14 @@ export async function GET(request: Request) {
   const user=await getSessionUser();
   if(!user){
     const next="/api/experiences/sc4nner/launch?state="+encodeURIComponent(state);
-    return NextResponse.redirect(new URL("/login?next="+encodeURIComponent(next),request.url));
+    return NextResponse.redirect(new URL("/login?next="+encodeURIComponent(next),originFromRequest(request)));
   }
   const sync=await ensureProfileForSupabaseUser(user,{createPersonalWorkspace:false});
   const decision=sc4nnerAuthorizeDecision({hasUser:true,syncOutcome:sync.outcome});
   if(decision==="denied")return jsonResponse({ok:false,message:"SC4NNER access denied."},403);
   if(decision==="unavailable")
     return jsonResponse({ok:false,message:"TAKATAK identity temporarily unavailable."},503);
-  const authorize=new URL("/experiences/sc4nner/authorize",request.url);
+  const authorize=new URL("/experiences/sc4nner/authorize",originFromRequest(request));
   authorize.searchParams.set("state",state);
   const response=NextResponse.redirect(authorize,303);
   response.headers.set("Cache-Control","no-store");
