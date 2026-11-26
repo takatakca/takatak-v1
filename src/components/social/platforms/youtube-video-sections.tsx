@@ -9,6 +9,7 @@ import type {
   YoutubeVideoRow,
   YoutubeVideoSection,
 } from "@/lib/social/providers/youtube-video-performance";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const METRICS = [
   { key: "views", label: "Video views" },
@@ -143,6 +144,7 @@ function VideoList({
   limited: boolean;
   showDashboardAction: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [search, setSearch] = useState("");
   const [columns, setColumns] = useState<TableColumn[]>(TABLE_COLUMNS.map((column) => column.key));
   const [columnsOpen, setColumnsOpen] = useState(false);
@@ -155,11 +157,11 @@ function VideoList({
   }
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-      <h3 className="text-lg font-medium text-slate-950">List of videos</h3>
+      <h3 className="text-lg font-medium text-slate-950">{fr ? "Liste des vidéos" : "List of videos"}</h3>
       <div className="mt-5 flex flex-col gap-2 lg:flex-row lg:items-center">
         <label className="relative flex min-w-0 flex-1 items-center">
           <Search aria-hidden="true" className="pointer-events-none absolute left-3 h-5 w-5 text-slate-500" />
-          <span className="sr-only">Search videos</span>
+          <span className="sr-only">{fr ? "Rechercher des vidéos" : "Search videos"}</span>
           <input aria-label={"Search " + kind + " videos"} value={search} onChange={(event) => setSearch(event.target.value)}
             disabled={!loaded}
             placeholder="Search videos"
@@ -172,7 +174,7 @@ function VideoList({
             <SlidersHorizontal aria-hidden="true" size={16} /> Columns <ChevronDown aria-hidden="true" size={15} />
           </button>
           {columnsOpen && <fieldset className="absolute right-0 z-10 mt-2 w-44 rounded-xl border border-slate-200 bg-white p-3 shadow-lg">
-            <legend className="sr-only">Visible columns</legend>
+            <legend className="sr-only">{fr ? "Colonnes visibles" : "Visible columns"}</legend>
             {TABLE_COLUMNS.map((column) => (
               <label key={column.key} className="flex cursor-pointer items-center gap-2 py-1.5 text-xs text-slate-800">
                 <input type="checkbox" checked={columns.includes(column.key)} onChange={() => changeColumn(column.key)}
@@ -211,7 +213,7 @@ function VideoList({
         <div className="mt-5 overflow-x-auto">
           <table className="min-w-[640px] w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <tr><th scope="col" className="px-3 py-3">Video</th>
+              <tr><th scope="col" className="px-3 py-3">{fr ? "Vidéo" : "Video"}</th>
                 {TABLE_COLUMNS.filter((column) => columns.includes(column.key)).map((column) =>
                   <th scope="col" key={column.key} className="whitespace-nowrap px-3 py-3 text-right">{column.label}</th>)}
               </tr>

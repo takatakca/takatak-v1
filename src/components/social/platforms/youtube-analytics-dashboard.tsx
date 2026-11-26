@@ -7,6 +7,7 @@ import type { YoutubeCommunitySnapshot, YoutubeGrowthDay } from "@/lib/social/pr
 import { YoutubeVideoSectionView } from "@/components/social/platforms/youtube-video-sections";
 import { YoutubeCompetitorsSection } from "@/components/social/platforms/youtube-competitors-section";
 import type { YoutubeVideoPerformance } from "@/lib/social/providers/youtube-video-performance";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type ReportResponse = {
   ok?: boolean;
@@ -79,12 +80,13 @@ function dailySeries(metric: Metric, points: YoutubeGrowthDay[]): Array<{ label:
 }
 
 function TrendGraph({ series, metric }: { series: Array<{ label: string; value: number | null }>; metric: Metric | "gained" | "lost" | "uploads" }) {
+  const fr = useDashboardLanguage() === "fr";
   const known = series.filter((point): point is { label: string; value: number } => point.value !== null);
   if (metric === "videos") {
     return <p className="flex min-h-[230px] items-center justify-center text-center text-sm text-slate-500">Channel video count is a current total; a daily upload history is not available in this report.</p>;
   }
   if (!known.length) {
-    return <p className="flex min-h-[230px] items-center justify-center text-center text-sm text-slate-500">No verified YouTube data is available for this metric and period.</p>;
+    return <p className="flex min-h-[230px] items-center justify-center text-center text-sm text-slate-500">{fr ? "Aucune donnée YouTube vérifiée pour cette mesure et cette période." : "No verified YouTube data is available for this metric and period."}</p>;
   }
   const width = 1000;
   const height = 250;
@@ -188,6 +190,7 @@ export function YoutubeAnalyticsDashboard({
   profileImageUrl: string | null;
   connectedLabel: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [range, setRange] = useState(() => recentRange(30));
   const [draftStart, setDraftStart] = useState(() => recentRange(30).start);
   const [draftEnd, setDraftEnd] = useState(() => recentRange(30).end);
@@ -267,7 +270,7 @@ export function YoutubeAnalyticsDashboard({
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div className="relative flex flex-col gap-1 text-xs font-medium text-slate-600">
-            <span>Main period</span>
+            <span>{fr ? "Période principale" : "Main period"}</span>
             <button type="button" onClick={() => {
                 setDraftStart(range.start);
                 setDraftEnd(range.end);
@@ -282,7 +285,7 @@ export function YoutubeAnalyticsDashboard({
               <ChevronDown aria-hidden="true" size={16} />
             </button>
             {periodOpen ? <div className="absolute right-0 top-full z-30 mt-2 w-[min(340px,90vw)] rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
-              <p className="mb-3 text-sm font-semibold text-slate-950">Choose reporting period</p>
+              <p className="mb-3 text-sm font-semibold text-slate-950">{fr ? "Choisir la période" : "Choose reporting period"}</p>
               <div className="mb-4 grid grid-cols-2 gap-2">
                 {DURATION_OPTIONS.map((option) => (
                   <button type="button" key={option.days}
@@ -311,7 +314,7 @@ export function YoutubeAnalyticsDashboard({
               </div>
               {periodError ? <p role="alert" className="mt-2 text-xs text-rose-700">{periodError}</p> : null}
               <div className="mt-3 flex items-center justify-end gap-2">
-                <button type="button" onClick={() => setPeriodOpen(false)} className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">Cancel</button>
+                <button type="button" onClick={() => setPeriodOpen(false)} className="rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">{fr ? "Annuler" : "Cancel"}</button>
                 <button type="button" onClick={() => {
                   const startMs = Date.parse(draftStart + "T00:00:00Z");
                   const endMs = Date.parse(draftEnd + "T00:00:00Z");
@@ -326,19 +329,19 @@ export function YoutubeAnalyticsDashboard({
                   setRange({ start: draftStart, end: draftEnd });
                   setPeriodError(null);
                   setPeriodOpen(false);
-                }} className="rounded-lg bg-[#1565D8] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0E4BA7]">Apply</button>
+                }} className="rounded-lg bg-[#1565D8] px-3 py-2 text-sm font-semibold text-white hover:bg-[#0E4BA7]">{fr ? "Appliquer" : "Apply"}</button>
               </div>
             </div> : null}
           </div>
           <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-            Comparison period
+            {fr ? "Période de comparaison" : "Comparison period"}
             <span className="relative inline-flex items-center">
               <select value={compare ? "previous" : "none"} onChange={(event) => setCompare(event.target.value === "previous")}
                 disabled={!canCompare || isLocked}
                 title={!canCompare ? "Comparison is unavailable on this subscription plan" : undefined}
                 className="h-10 appearance-none rounded-lg border border-slate-300 bg-white px-3 pr-8 text-sm text-slate-900">
-                <option value="none">No comparison</option>
-                {canCompare ? <option value="previous">Previous period</option> : null}
+                <option value="none">{fr ? "Aucune comparaison" : "No comparison"}</option>
+                {canCompare ? <option value="previous">{fr ? "Période précédente" : "Previous period"}</option> : null}
               </select>
               <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-2 h-4 w-4" />
             </span>
@@ -349,8 +352,8 @@ export function YoutubeAnalyticsDashboard({
       {isLocked && !billingExempt ? (
         <div className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-[#F6F9FF] p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-semibold">Activate YouTube Analytics</h2>
-            <p className="mt-1 text-sm text-slate-600">Choose a TAKATAK Social subscription to view channel performance and growth.</p>
+            <h2 className="text-lg font-semibold">{fr ? "Activer les statistiques YouTube" : "Activate YouTube Analytics"}</h2>
+            <p className="mt-1 text-sm text-slate-600">{fr ? "Choisissez un abonnement TAKATAK Social pour voir la performance et la croissance de la chaîne." : "Choose a TAKATAK Social subscription to view channel performance and growth."}</p>
           </div>
           <Link href={billingHref} className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-[#1565D8] px-4 py-3 text-sm font-semibold text-white hover:bg-[#0e4ba7]">
             View subscriptions <ArrowUpRight size={16} />
@@ -375,7 +378,7 @@ export function YoutubeAnalyticsDashboard({
 
       <section id="community" aria-labelledby="youtube-community-heading" className="scroll-mt-36 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 id="youtube-community-heading" className="text-2xl font-semibold">Community</h2>
+          <h2 id="youtube-community-heading" className="text-2xl font-semibold">{fr ? "Communauté" : "Community"}</h2>
           <div className="flex items-center gap-3 text-sm">
             <span className="inline-flex items-center gap-2 text-slate-600">
               {profileImageUrl ? (
@@ -392,7 +395,7 @@ export function YoutubeAnalyticsDashboard({
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h3 className="text-lg font-medium">Growth</h3>
+              <h3 className="text-lg font-medium">{fr ? "Croissance" : "Growth"}</h3>
               <p className="mt-1 text-xs text-slate-500">
                 {metric === "subscribers" ? "Daily net subscriber change" : metric === "views" ? "Daily video views" : metric === "revenue" ? "Estimated daily revenue (CAD)" : "Current channel video count"}
               </p>
@@ -400,7 +403,7 @@ export function YoutubeAnalyticsDashboard({
             {current ? <MetricCards snapshot={current} selected={metric} onSelect={setMetric} /> : null}
           </div>
           {isLocked ? (
-            <div className="flex min-h-[230px] items-center justify-center text-center text-sm text-slate-500">Sign up for TAKATAK Social to unlock real YouTube Analytics.</div>
+            <div className="flex min-h-[230px] items-center justify-center text-center text-sm text-slate-500">{fr ? "Abonnez-vous à TAKATAK Social pour débloquer les vraies statistiques YouTube." : "Sign up for TAKATAK Social to unlock real YouTube Analytics."}</div>
           ) : busy && !current ? (
             <div aria-live="polite" className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">Loading verified YouTube Analytics…</div>
           ) : data?.ok && current ? (
@@ -418,7 +421,7 @@ export function YoutubeAnalyticsDashboard({
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <h3 className="text-lg font-medium">Balance of Subscribers</h3>
+            <h3 className="text-lg font-medium">{fr ? "Bilan des abonnés" : "Balance of Subscribers"}</h3>
             {current ? (
               <div className="grid grid-cols-3 gap-2">
                 {([
@@ -439,7 +442,7 @@ export function YoutubeAnalyticsDashboard({
             ) : null}
           </div>
           {isLocked ? (
-            <p className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">A TAKATAK Social subscription is required for subscriber analytics.</p>
+            <p className="flex min-h-[230px] items-center justify-center text-sm text-slate-500">{fr ? "Un abonnement TAKATAK Social est requis pour les statistiques d’abonnés." : "A TAKATAK Social subscription is required for subscriber analytics."}</p>
           ) : current ? (
             <TrendGraph series={subscriberBalanceSeries} metric={balanceMetric} />
           ) : (
