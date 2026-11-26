@@ -238,7 +238,6 @@ export const NAV_ITEMS: NavItem[] = NAV_SECTIONS.flatMap((s) => flattenNavItems(
  * same pull request that makes its page real.
  */
 export const STAFF_ONLY_ROUTES: ReadonlySet<string> = new Set([
-  "/dashboard/services",
   "/dashboard/clients",
   "/dashboard/integrations",
   "/dashboard/jobs",

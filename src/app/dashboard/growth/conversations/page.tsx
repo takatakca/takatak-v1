@@ -13,12 +13,12 @@ import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 export const dynamic = "force-dynamic";
 
 const FEATURES = [
-  { name: "Website chat bubble", detail: "Pop-up chat on every client site, routed to staff or the AI concierge." },
-  { name: "WhatsApp Business", detail: "Two-way WhatsApp from the dashboard with templates for reminders and reviews." },
-  { name: "Messenger", detail: "Facebook page messages in the same inbox." },
-  { name: "Two-way SMS", detail: "Text customers from the business number." },
-  { name: "AI first reply", detail: "Answers FAQs instantly, captures name and phone, and books the lead." },
-  { name: "Lead hand-off", detail: "Every conversation that becomes a lead lands in the Leads pipeline." },
+  { name: "Bulle de clavardage · Website chat", detail: "Une fenêtre de clavardage sur votre site, dirigée vers votre équipe ou le concierge IA · Routed to your team or the AI concierge." },
+  { name: "WhatsApp Business", detail: "WhatsApp dans les deux sens depuis le tableau de bord, avec modèles de rappels et d’avis · Two-way WhatsApp with templates." },
+  { name: "Messenger", detail: "Les messages de votre page Facebook dans la même boîte · Facebook page messages in the same inbox." },
+  { name: "Texto dans les deux sens · Two-way SMS", detail: "Écrivez aux clients depuis le numéro de l’entreprise · Text customers from the business number." },
+  { name: "Première réponse IA · AI first reply", detail: "Répond aux questions fréquentes, recueille le nom et le téléphone, et crée le prospect · Answers FAQs and captures the lead." },
+  { name: "Transfert en prospect · Lead hand-off", detail: "Chaque conversation qui devient un prospect arrive dans le pipeline · Every new lead lands in the pipeline." },
 ];
 
 export default async function ConversationsPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
@@ -42,11 +42,11 @@ export default async function ConversationsPage({ searchParams }: { searchParams
     <div className="space-y-6">
       <GrowthHeader
         title="Conversations"
-        description="Every customer message (website chat, WhatsApp, Messenger and SMS) in one inbox, with AI answering first."
-        badges={[{ label: inbox ? "Web chat live" : "WhatsApp button live", tone: "success" }]}
+        description="Tous les messages des clients (clavardage du site, WhatsApp, Messenger, texto) dans une seule boîte, l’IA répondant en premier · Every customer message in one inbox, with AI answering first."
+        badges={[{ label: inbox ? "Clavardage en marche · Web chat live" : "Bouton WhatsApp en marche · WhatsApp button live", tone: "success" }]}
         actions={
           <Link href="/dashboard/social/inbox" className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-indigo-300">
-            Social inbox →
+            Boîte sociale · Social inbox →
           </Link>
         }
       />
@@ -56,20 +56,23 @@ export default async function ConversationsPage({ searchParams }: { searchParams
       ) : (
         <HonestyNote>
           {unavailable
-            ? "The conversations database is not reachable right now, so the inbox is hidden."
-            : "Select a client workspace to install its website chat and answer conversations."}
+            ? "La base des conversations est injoignable pour le moment : la boîte est masquée plutôt qu’incomplète · The conversations database is not reachable right now, so the inbox is hidden."
+            : "Choisissez un espace client pour installer son clavardage et répondre aux conversations · Select a client workspace to install its website chat and answer conversations."}
         </HonestyNote>
       )}
 
       <Card>
-        <CardHeader title="WhatsApp chat button" subtitle="Works today without any API: a floating button that opens WhatsApp with the business." />
+        <CardHeader
+          title="Bouton WhatsApp · WhatsApp chat button"
+          subtitle="Fonctionne dès aujourd’hui, sans API : un bouton flottant qui ouvre WhatsApp avec l’entreprise · Works today without any API."
+        />
         <CardBody>
           <WhatsAppButtonBuilder />
         </CardBody>
       </Card>
 
       <Card>
-        <CardHeader title="Unified inbox" />
+        <CardHeader title="Boîte unifiée · Unified inbox" />
         <CardBody className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <div key={f.name} className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
@@ -81,11 +84,12 @@ export default async function ConversationsPage({ searchParams }: { searchParams
       </Card>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-slate-900">Messaging channels</h2>
+        <h2 className="text-sm font-semibold text-slate-900">Canaux de messagerie · Messaging channels</h2>
         <ConnectorGrid connectors={connectors} showSetupDetails={showSetupDetails} />
         <HonestyNote>
-          Social comments and DMs stay in the Social module&apos;s inbox. This page adds the non-social channels alongside it. No message is sent
-          or received until a channel is connected and verified.
+          Les commentaires et messages privés des réseaux sociaux restent dans la boîte du module Social ; cette page ajoute les autres canaux. Aucun
+          message n’est envoyé ni reçu avant qu’un canal soit branché et vérifié · Social comments and DMs stay in the Social inbox; no message is
+          sent or received until a channel is connected and verified.
         </HonestyNote>
       </section>
     </div>

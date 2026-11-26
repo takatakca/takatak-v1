@@ -77,7 +77,7 @@ async function resolveAdminDataGate(
       return { kind: "mock" };
     }
     if (access.mode === "platform_admin") {
-      return { kind: "db", allowMockFallback: false };
+      return dbGateOrUnavailable();
     }
     return {
       kind: "unavailable",
@@ -103,10 +103,13 @@ async function resolveAdminDataGate(
     };
   }
 
-  return {
-    kind: "db",
-    allowMockFallback: false,
-  };
+  return dbGateOrUnavailable();
+}
+
+/** Real admin data, or "unavailable" when the database is missing: never sample rows. */
+function dbGateOrUnavailable(): AdminGate {
+  if (!getPrisma()) return { kind: "unavailable", label: "Data is temporarily unavailable." };
+  return { kind: "db", allowMockFallback: false };
 }
 
 function logDbError(scope: string, error: unknown) {

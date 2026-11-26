@@ -35,9 +35,13 @@ export async function resolveDataScope(access?: TenantAccess): Promise<DataScope
       return getPrisma()
         ? { kind: "db", clientIds: null, label: "Database — local foundation demo (no tenant isolation active).", allowMockFallback: true }
         : { kind: "mock", label: "Mock foundation data — database not connected yet." };
+    // A real workspace never falls back to sample rows: without a database it
+    // is "unavailable", so no data layer can reach its mock return.
     case "platform_admin":
+      if (!getPrisma()) return { kind: "unavailable", label: DENIED_LABELS.database_unavailable, reason: "database_unavailable" };
       return { kind: "db", clientIds: null, label: "Global platform view — all clients (owner/admin).", allowMockFallback: false };
     case "client_scoped":
+      if (!getPrisma()) return { kind: "unavailable", label: DENIED_LABELS.database_unavailable, reason: "database_unavailable" };
       return { kind: "db", clientIds: [resolved.activeClientId], label: "Client-scoped view — your assigned client only.", allowMockFallback: false };
     case "selection_required":
       return { kind: "unavailable", label: DENIED_LABELS.selection_required, reason: "selection_required" };

@@ -20,13 +20,13 @@ export default async function SocialPostsPage() {
   return (
     <div className="space-y-5">
       <SocialHeader
-        title="Posts"
-        subtitle="Post drafts, approvals and publication receipts. Approved Facebook Page posts can be published now or scheduled; every publication is verified with the provider post id."
-        badges={[{ label: "Facebook Pages live" }]}
+        title="Publications · Posts"
+        subtitle="Brouillons, approbations et reçus de publication. Une publication approuvée sur une page Facebook peut partir tout de suite ou à l’heure choisie ; chacune est vérifiée auprès de Facebook · Drafts, approvals and publication receipts."
+        badges={[{ label: "Pages Facebook en marche · Facebook Pages live" }]}
       />
       <SourceBanner source={data.source} label={data.sourceLabel} />
       {data.posts.length ? <PostList posts={data.posts} canPublish={canPublish} /> : (
-        <SocialEmptyState title="No posts yet" description="Post drafts appear here." />
+        <SocialEmptyState title="Aucune publication pour l’instant · No posts yet" description="Les brouillons paraissent ici · Post drafts appear here." />
       )}
       <PostStatusBoard pipeline={overview.pipeline} />
     </div>

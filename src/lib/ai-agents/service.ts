@@ -16,6 +16,7 @@ import { AI_AGENTS } from "@/lib/growth/ai-engine";
 import { reviewRequiresHumanApproval } from "@/lib/reputation/review-target-model";
 
 import { latestDueSlot, type AgentSchedule, type ScheduleKind } from "./schedule";
+import { agentRunsHere, externalGatewayConfigured } from "./native-prompts";
 
 const STALE_CLAIM_MS = 30 * 60_000;
 const MAX_OUTPUT_BYTES = 64_000;
@@ -97,7 +98,7 @@ export async function saveAgentSetting(
 
 export type RequestRunResult =
   | { ok: true; runId: string }
-  | { ok: false; error: "unknown_agent" | "agent_disabled" | "already_pending" | "plan_required" };
+  | { ok: false; error: "unknown_agent" | "agent_disabled" | "already_pending" | "plan_required" | "needs_connection" };
 
 export async function requestAgentRun(
   clientId: string,
@@ -112,6 +113,8 @@ export async function requestAgentRun(
   if (!setting?.enabled) return { ok: false, error: "agent_disabled" };
   // Every path (manual, schedule, event trigger) respects the AI Autopilot plan when enforcement is on.
   if (!(await clientHasGrowthFeature(clientId, "ai_autopilot"))) return { ok: false, error: "plan_required" };
+  // Never queue a run nothing will work on (it would sit "queued" forever).
+  if (!agentRunsHere(agentKey, externalGatewayConfigured(), input.context)) return { ok: false, error: "needs_connection" };
   if (agentKey === "review_responder" && input.context?.reviewWorkflowVersion === 2) {
     const { enqueueCanonicalReviewRun } = await import("@/lib/reputation/review-run-queue");
     const payload = { ...(input.brief?.trim() ? { brief: input.brief.trim().slice(0, 2000) } : {}), ...(input.context ?? {}) };
@@ -153,7 +156,9 @@ export interface RunView {
 
 function outputText(output: Prisma.JsonValue | null, key: "summary" | "preview"): string | null {
   if (!output || typeof output !== "object" || Array.isArray(output)) return null;
-  const value = (output as Record<string, unknown>)[key];
+  const record = output as Record<string, unknown>;
+  // Native runs keep their text as `draft`: the approval card shows it, so nobody approves blind.
+  const value = record[key] ?? (key === "preview" ? record.draft : undefined);
   return typeof value === "string" ? value.slice(0, key === "summary" ? 500 : 4000) : null;
 }
 

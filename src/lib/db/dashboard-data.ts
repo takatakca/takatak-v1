@@ -145,8 +145,9 @@ export async function getDashboardOverviewData(access?: TenantAccess): Promise<D
       source: "database",
       sourceLabel: LIVE_DATA_LABEL,
       kpis: { clients, businessBrands, activeServices, pendingJobs, reportsReady },
-      integrations: integrations.length ? integrations : mockFallback().integrations,
-      recentActivity: recentActivity.length ? recentActivity : mockFallback().recentActivity,
+      // Sample rows only in the local foundation demo; a real workspace sees its own (possibly empty) lists.
+      integrations: integrations.length || !scope.allowMockFallback ? integrations : mockFallback().integrations,
+      recentActivity: recentActivity.length || !scope.allowMockFallback ? recentActivity : mockFallback().recentActivity,
     };
   } catch (error) {
     // Safe fallback: log message only (no connection strings), serve mock.

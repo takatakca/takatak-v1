@@ -29,36 +29,36 @@ export default async function ConversationPage({ params }: { params: Promise<{ c
   return (
     <div className="space-y-5">
       <Link href="/dashboard/growth/conversations" className="text-xs font-medium text-indigo-600 hover:text-indigo-800">
-        ← Inbox
+        ← Boîte de réception · Inbox
       </Link>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-slate-950">{thread.visitorName ?? "Website visitor"}</h1>
+          <h1 className="text-xl font-bold text-slate-950">{thread.visitorName ?? "Visiteur du site · Website visitor"}</h1>
           <p className="text-xs text-slate-500">
-            {thread.widgetName} · started {thread.createdAt.toLocaleString("en-CA")}
-            {thread.pageUrl ? ` · from ${thread.pageUrl}` : ""}
+            {thread.widgetName} · commencée le {thread.createdAt.toLocaleString("fr-CA", { dateStyle: "medium", timeStyle: "short" })}
+            {thread.pageUrl ? ` · depuis ${thread.pageUrl}` : ""}
           </p>
-          <p className="text-xs text-slate-600">{[thread.visitorEmail, thread.visitorPhone].filter(Boolean).join(" · ") || "No contact details shared"}</p>
+          <p className="text-xs text-slate-600">{[thread.visitorEmail, thread.visitorPhone].filter(Boolean).join(" · ") || "Aucune coordonnée partagée · No contact details shared"}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={thread.status === "open" ? "success" : "muted"}>{thread.status}</Badge>
+          <Badge tone={thread.status === "open" ? "success" : "muted"}>{thread.status === "open" ? "Ouverte · Open" : "Fermée · Closed"}</Badge>
           {canManage ? (
             <>
               {thread.leadId ? (
                 <Link href="/dashboard/leads" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-800">
-                  In Leads pipeline →
+                  Dans le pipeline · In Leads pipeline →
                 </Link>
               ) : (
                 <form action={convertToLeadAction}>
                   <input type="hidden" name="conversationId" value={thread.id} />
-                  <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-300">Convert to lead</button>
+                  <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-300">Créer le prospect · Convert to lead</button>
                 </form>
               )}
               <form action={setConversationStatusAction}>
                 <input type="hidden" name="conversationId" value={thread.id} />
                 <input type="hidden" name="status" value={thread.status === "open" ? "closed" : "open"} />
                 <button className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-700 hover:border-indigo-300">
-                  {thread.status === "open" ? "Close" : "Reopen"}
+                  {thread.status === "open" ? "Fermer · Close" : "Rouvrir · Reopen"}
                 </button>
               </form>
             </>
@@ -72,7 +72,7 @@ export default async function ConversationPage({ params }: { params: Promise<{ c
           {thread.messages.map((m) => (
             <div key={m.id} className={`max-w-[80%] whitespace-pre-wrap break-words rounded-xl px-3 py-2 text-sm ${SENDER_STYLE[m.sender]}`}>
               {m.body}
-              <div className="mt-1 text-[10px] opacity-60">{m.createdAt.toLocaleTimeString("en-CA", { hour: "2-digit", minute: "2-digit" })}</div>
+              <div className="mt-1 text-[10px] opacity-60">{m.createdAt.toLocaleTimeString("fr-CA", { hour: "2-digit", minute: "2-digit" })}</div>
             </div>
           ))}
         </CardBody>

@@ -3,10 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import type { ConnectorState, ConnectorStatus } from "@/lib/growth/types";
 
 const STATE_LABEL: Record<ConnectorState, string> = {
-  built_in: "Built in",
-  configured_untested: "Credentials set — untested",
-  not_configured: "Not connected",
-  planned: "Planned",
+  built_in: "Intégré · Built in",
+  configured_untested: "Clé posée · Key set",
+  not_configured: "Non branché · Not connected",
+  planned: "Prévu · Planned",
 };
 
 const STATE_TONE: Record<ConnectorState, "success" | "accent" | "warning" | "muted"> = {
@@ -36,18 +36,18 @@ export function ConnectorCard({
       <p className="mt-1.5 flex-1 text-xs leading-5 text-slate-600">{connector.purpose}</p>
       {showSetupDetails && connector.missing.length > 0 ? (
         <p className="mt-2 break-words font-mono text-[10px] leading-4 text-slate-400">
-          Needs: {connector.missing.join(", ")}
+          Requis · Needs : {connector.missing.join(", ")}
         </p>
       ) : null}
       <div className="mt-3 flex flex-wrap gap-3 text-xs font-medium">
         {connector.managedIn ? (
           <Link href={connector.managedIn} className="inline-flex min-h-10 items-center text-indigo-600 hover:text-indigo-800">
-            Open module →
+            Ouvrir · Open →
           </Link>
         ) : null}
         {showSetupDetails && connector.docsUrl ? (
           <a href={connector.docsUrl} target="_blank" rel="noreferrer noopener" className="inline-flex min-h-10 items-center text-slate-500 hover:text-slate-800">
-            API docs ↗
+            Doc API · API docs ↗
           </a>
         ) : null}
       </div>

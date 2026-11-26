@@ -8,6 +8,7 @@ import { providerEntry } from "@/lib/ai-providers/catalog";
 import { resolveProviderKey } from "@/lib/ai-providers/store";
 import { aiCreditsCheckoutEnabled } from "@/lib/billing/ai-credits/stripe";
 import { getPrisma } from "@/lib/db/prisma";
+import { AI_CREDIT_ACTIONS } from "@/lib/growth/ai-engine";
 
 import { TAKBOT_ENGINES, routeTakbotRequest, takbotEngine } from "./catalog";
 import { relayPrompt, type RelayResult, type RelayUsage } from "./relay";
@@ -179,7 +180,15 @@ export async function runTakbot(input: {
   requestId: string;
   /** False when the caller keeps the answer itself (AI Studio saves its own draft). */
   persist?: boolean;
+  /**
+   * Published credit action to bill instead of the mode's default (text modes
+   * only), so the receipt names the task: e.g. the Report Writer bills
+   * "monthly_report_summary". Unknown keys are refused, never billed.
+   */
+  actionKey?: string;
 }): Promise<TakbotRunResult> {
+  const action = input.actionKey === undefined ? null : AI_CREDIT_ACTIONS.find((a) => a.key === input.actionKey) ?? null;
+  if (input.actionKey !== undefined && !action) return { ok: false, status: 400, code: "unknown_action" };
   const connected = await connectedEngines();
   const route = routeForWorkspace({ premiumUnlocked: await premiumUnlocked(input.clientId), config: readTrialConfig(), connected });
   if (route.kind === "unavailable") return { ok: false, status: 503, code: "no_engine_connected" };
@@ -190,8 +199,9 @@ export async function runTakbot(input: {
   const apiKey = await keyFor(decision.engine.key);
   if (!apiKey) return { ok: false, status: 503, code: "no_engine_connected" };
 
+  const credits = action ? action.credits : decision.credits;
   const idempotencyKey = `takbot:${input.requestId}`;
-  const debit = await debitCredits({ clientId: input.clientId, actionKey: decision.mode.actionKey, idempotencyKey });
+  const debit = await debitCredits({ clientId: input.clientId, actionKey: action ? action.key : decision.mode.actionKey, idempotencyKey });
   if (!debit.ok) {
     const status = debit.code === "insufficient_credits" ? 402 : debit.code === "idempotency_conflict" ? 409 : 400;
     return { ok: false, status, code: debit.code, balance: debit.balance };
@@ -209,14 +219,14 @@ export async function runTakbot(input: {
     const refund = await refundDebit({ clientId: input.clientId, debitIdempotencyKey: idempotencyKey, note: `TAK-TAK ${relayed.code}` });
     return { ok: false, status: RELAY_STATUS[relayed.code], code: relayed.code, balance: refund.ok ? refund.balance : debit.balance };
   }
-  const savedId = input.persist === false ? null : await saveOutput({ clientId: input.clientId, mode: decision.mode.key, prompt: input.prompt, text: relayed.text, engine: decision.engine.key, trial, requestId: input.requestId, model: relayed.model, usage: relayed.usage, retailCredits: decision.credits });
+  const savedId = input.persist === false ? null : await saveOutput({ clientId: input.clientId, mode: decision.mode.key, prompt: input.prompt, text: relayed.text, engine: decision.engine.key, trial, requestId: input.requestId, model: relayed.model, usage: relayed.usage, retailCredits: credits });
   return {
     ok: true,
     text: relayed.text,
     engine: decision.engine.key,
     engineName: decision.engine.name,
     auto: decision.auto,
-    credits: decision.credits,
+    credits,
     balance: debit.balance,
     trial,
     savedId,
