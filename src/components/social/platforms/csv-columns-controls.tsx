@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import { ColumnsMenu, downloadCsv } from "@/components/social/platforms/instagram-live-panels";
 import { toCsv } from "@/lib/social/instagram-live-stats";
 
@@ -23,6 +24,7 @@ export function CsvColumnsControls({
   icon?: ReactNode;
   badge?: ReactNode;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [visible, setVisible] = useState<Set<string>>(() => new Set(columns));
   const toggle = (key: string) =>
     setVisible((current) => {
@@ -35,7 +37,7 @@ export function CsvColumnsControls({
   return (
     <>
       <ColumnsMenu
-        label="Columns"
+        label={fr ? "Colonnes" : "Columns"}
         columns={columns.map((key, index) => ({ key, label: key.replace(/_/g, " "), required: index === 0 }))}
         visible={visible}
         onToggle={toggle}
@@ -54,7 +56,7 @@ export function CsvColumnsControls({
         className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
       >
         {icon}
-        Download CSV
+        {fr ? "Télécharger le CSV" : "Download CSV"}
         {badge}
       </button>
     </>
