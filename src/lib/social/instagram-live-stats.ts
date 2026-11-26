@@ -440,3 +440,54 @@ export function withThreadsInsights(item: InstagramLiveMedia, body: unknown): In
     shares: shared.length ? shared.reduce((total, value) => total + value, 0) : null,
   };
 }
+
+/** Bluesky handles are domain names; a bare name means name.bsky.social. */
+export function normalizeBlueskyHandle(value: string): string | null {
+  let clean = value.trim().replace(/^@+/, "").replace(/^https?:\/\/(www\.)?bsky\.app\/profile\//i, "").replace(/\/.*$/, "").toLowerCase();
+  if (/^[a-z0-9-]{1,63}$/.test(clean)) clean = `${clean}.bsky.social`;
+  return clean.length <= 253 && /^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(clean) ? clean : null;
+}
+
+/** Parses app.bsky.actor.getProfile + app.bsky.feed.getAuthorFeed into the shared competitor shape. */
+export function parseBlueskyPublicAccount(profile: unknown, feed: unknown): InstagramPublicAccount | null {
+  const p = asRecord(profile);
+  const did = typeof p.did === "string" ? p.did : "";
+  const handle = typeof p.handle === "string" ? p.handle : "";
+  if (!did.startsWith("did:") || !handle) return null;
+  const rows = asRecord(feed).feed;
+  const media: InstagramLiveMedia[] = [];
+  for (const raw of Array.isArray(rows) ? rows : []) {
+    const row = asRecord(raw);
+    if (String(asRecord(row.reason).$type ?? "").includes("reasonRepost")) continue;
+    const post = asRecord(row.post);
+    const record = asRecord(post.record);
+    const createdAt = typeof record.createdAt === "string" ? record.createdAt : "";
+    const uri = typeof post.uri === "string" ? post.uri : "";
+    if (!uri || !createdAt || Number.isNaN(Date.parse(createdAt))) continue;
+    const rkey = uri.split("/").at(-1) ?? "";
+    const reposts = asNumber(post.repostCount);
+    const quotes = asNumber(post.quoteCount);
+    media.push({
+      id: uri,
+      caption: asText(record.text, 300),
+      mediaType: "TEXT_POST",
+      kind: "post",
+      publishedAt: new Date(createdAt).toISOString(),
+      permalink: /^[a-z0-9]+$/i.test(rkey) ? `https://bsky.app/profile/${handle}/post/${rkey}` : null,
+      likes: asNumber(post.likeCount),
+      comments: asNumber(post.replyCount),
+      views: null,
+      reach: null,
+      saved: null,
+      shares: reposts === null && quotes === null ? null : (reposts ?? 0) + (quotes ?? 0),
+    });
+  }
+  return {
+    id: did,
+    username: handle,
+    name: typeof p.displayName === "string" && p.displayName.trim() ? p.displayName.slice(0, 120) : null,
+    followers: asNumber(p.followersCount),
+    mediaCount: asNumber(p.postsCount),
+    media,
+  };
+}

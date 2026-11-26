@@ -965,7 +965,11 @@ export default async function SocialPlatformPage({
 
     if (handle) {
       return (
-        <BlueskySubscribedDashboard handle={handle} imageUrl={profileImageUrl} />
+        <BlueskySubscribedDashboard
+          handle={handle}
+          imageUrl={profileImageUrl}
+          canManage={hasEffectivePermission(access, "manage_social_accounts")}
+        />
       );
     }
   }

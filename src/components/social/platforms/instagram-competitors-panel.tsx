@@ -31,13 +31,19 @@ export function InstagramCompetitorsPanel({
   canManage,
   start,
   end,
+  network = "instagram",
 }: {
   canTrack: boolean;
   canManage: boolean;
   start: string;
   end: string;
+  network?: "instagram" | "bluesky";
 }) {
   const fr = useDashboardLanguage() === "fr";
+  const bluesky = network === "bluesky";
+  const name = bluesky ? "Bluesky" : "Instagram";
+  const apiPath = `/api/social/${network}/competitors`;
+  const profileUrl = (username: string) => (bluesky ? `https://bsky.app/profile/${username}` : `https://www.instagram.com/${username}/`);
   const [competitors, setCompetitors] = useState<ApiCompetitor[] | null>(null);
   const [username, setUsername] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,13 +54,13 @@ export function InstagramCompetitorsPanel({
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch("/api/social/instagram/competitors", { cache: "no-store" });
+      const response = await fetch(apiPath, { cache: "no-store" });
       const body = (await response.json().catch(() => ({}))) as { ok?: boolean; competitors?: ApiCompetitor[] };
       setCompetitors(response.ok && body.ok ? (body.competitors ?? []) : []);
     } catch {
       setCompetitors([]);
     }
-  }, []);
+  }, [apiPath]);
 
   useEffect(() => {
     if (canTrack) void load();
@@ -66,7 +72,7 @@ export function InstagramCompetitorsPanel({
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/social/instagram/competitors", {
+      const response = await fetch(apiPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
@@ -78,14 +84,16 @@ export function InstagramCompetitorsPanel({
       } else {
         const text =
           response.status === 404
-            ? fr ? "Instagram ne trouve aucun compte professionnel à ce nom (les comptes personnels ne peuvent pas être suivis)." : "Instagram found no professional account with that username (personal accounts cannot be followed)."
+            ? bluesky
+              ? fr ? "Bluesky ne trouve aucun compte à ce nom." : "Bluesky found no account with that handle."
+              : fr ? "Instagram ne trouve aucun compte professionnel à ce nom (les comptes personnels ne peuvent pas être suivis)." : "Instagram found no professional account with that username (personal accounts cannot be followed)."
             : response.status === 409
               ? fr ? "Ce concurrent est déjà dans la liste." : "That competitor is already on the list."
               : response.status === 401 || response.status === 403
                 ? fr ? "Reconnectez Instagram par votre Page Facebook pour ajouter des concurrents." : "Reconnect Instagram through your Facebook Page to add competitors."
                 : response.status === 400
                   ? fr ? "Vérifiez le nom d’utilisateur (par exemple @restaurant) ou la limite de 50 concurrents." : "Check the username (for example @restaurant) or the 50-competitor limit."
-                  : fr ? "Instagram n’a pas répondu ; réessayez dans un instant." : "Instagram did not answer; try again in a moment.";
+                  : fr ? `${name} n’a pas répondu ; réessayez dans un instant.` : `${name} did not answer; try again in a moment.`;
         setMessage({ text, tone: "error" });
       }
     } catch {
@@ -98,7 +106,7 @@ export function InstagramCompetitorsPanel({
   async function remove(ref: string) {
     setBusy(true);
     try {
-      const response = await fetch(`/api/social/instagram/competitors?ref=${encodeURIComponent(ref)}`, { method: "DELETE" });
+      const response = await fetch(`${apiPath}?ref=${encodeURIComponent(ref)}`, { method: "DELETE" });
       if (response.ok) await load();
       else setMessage({ text: fr ? "Ce concurrent n’a pas pu être retiré." : "That competitor could not be removed.", tone: "error" });
     } finally {
@@ -137,14 +145,14 @@ export function InstagramCompetitorsPanel({
   const exportCsv = () =>
     showPosts
       ? downloadCsv(
-          `instagram-concurrents-publications-${start}-${end}.csv`,
+          `${network}-concurrents-publications-${start}-${end}.csv`,
           toCsv(
             [fr ? "Compte" : "Account", "Date", fr ? "Légende" : "Caption", fr ? "J’aime" : "Likes", fr ? "Commentaires" : "Comments", fr ? "Lien" : "Link"],
             posts.map((item) => [item.owner, item.publishedAt.slice(0, 10), item.caption.replace(/\s+/g, " ").trim(), item.likes, item.comments, item.permalink]),
           ),
         )
       : downloadCsv(
-          `instagram-concurrents-${start}-${end}.csv`,
+          `${network}-concurrents-${start}-${end}.csv`,
           toCsv(
             [fr ? "Compte" : "Account", fr ? "Abonnés" : "Followers", fr ? "Publications (total)" : "Posts (total)", fr ? "Publications de la période" : "Posts in period", "Interactions", fr ? "Interactions par publication" : "Interactions per post", fr ? "Engagement (%)" : "Engagement (%)"],
             visibleRows.map((row) => [row.username, row.followers, row.mediaCount, row.postsInPeriod, row.interactions, row.interactionsPerPost, row.engagementRate]),
@@ -159,8 +167,8 @@ export function InstagramCompetitorsPanel({
             value={username}
             onChange={(event) => setUsername(event.target.value)}
             maxLength={80}
-            placeholder={fr ? "@compte_concurrent" : "@competitor_account"}
-            aria-label={fr ? "Nom d’utilisateur Instagram du concurrent" : "Competitor's Instagram username"}
+            placeholder={bluesky ? "@compte.bsky.social" : fr ? "@compte_concurrent" : "@competitor_account"}
+            aria-label={fr ? `Nom d’utilisateur ${name} du concurrent` : `Competitor's ${name} username`}
             className="h-[42px] w-64 rounded-[9px] border border-[#9EAFBC] bg-white px-4 text-sm text-[#30343A] outline-none focus:border-[#6F7E89]"
           />
           <button
@@ -170,7 +178,11 @@ export function InstagramCompetitorsPanel({
           >
             {busy ? "…" : fr ? "+ Ajouter" : "+ Add"}
           </button>
-          <span className="text-xs text-[#81909D]">{fr ? "Jusqu’à 50 comptes professionnels publics." : "Up to 50 public professional accounts."}</span>
+          <span className="text-xs text-[#81909D]">
+            {bluesky
+              ? fr ? "Jusqu’à 50 comptes publics." : "Up to 50 public accounts."
+              : fr ? "Jusqu’à 50 comptes professionnels publics." : "Up to 50 public professional accounts."}
+          </span>
         </form>
       ) : null}
       {message ? (
@@ -222,7 +234,7 @@ export function InstagramCompetitorsPanel({
 
       <div className="mt-4 overflow-x-auto">
         {competitors === null ? (
-          <p className="py-8 text-center text-sm text-[#5F6770]">{fr ? "Lecture des comptes sur Instagram…" : "Reading the accounts on Instagram…"}</p>
+          <p className="py-8 text-center text-sm text-[#5F6770]">{fr ? `Lecture des comptes sur ${name}…` : `Reading the accounts on ${name}…`}</p>
         ) : showPosts ? (
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="bg-[#FAFAFA] text-xs text-[#5F6770]">
@@ -280,7 +292,7 @@ export function InstagramCompetitorsPanel({
                 visibleRows.map((row) => (
                   <tr key={row.ref} className="border-t border-[#EEF0F2]">
                     <td className="px-3 py-3">
-                      <a href={`https://www.instagram.com/${row.username}/`} target="_blank" rel="noreferrer" className="font-medium text-[#30343A] hover:underline">
+                      <a href={profileUrl(row.username)} target="_blank" rel="noreferrer" className="font-medium text-[#30343A] hover:underline">
                         @{row.username}
                       </a>
                       {row.name ? <span className="block text-xs text-[#81909D]">{row.name}</span> : null}
@@ -302,7 +314,7 @@ export function InstagramCompetitorsPanel({
               ) : (
                 <tr className="border-t border-[#EEF0F2]">
                   <td colSpan={canManage ? 7 : 6} className="px-3 py-8 text-center text-[#5F6770]">
-                    {fr ? "Aucun concurrent suivi. Ajoutez un compte professionnel public par son nom d’utilisateur." : "No competitor followed yet. Add a public professional account by its username."}
+                    {fr ? "Aucun concurrent suivi. Ajoutez un compte public par son nom d’utilisateur." : "No competitor followed yet. Add a public account by its username."}
                   </td>
                 </tr>
               )}
@@ -311,7 +323,7 @@ export function InstagramCompetitorsPanel({
         )}
         {unavailable.length ? (
           <p className="mt-3 text-xs text-amber-800">
-            {fr ? "Instagram n’a pas répondu pour : " : "Instagram did not answer for: "}
+            {fr ? `${name} n’a pas répondu pour : ` : `${name} did not answer for: `}
             {unavailable.map((c) => `@${c.username}`).join(", ")}
             {canManage
               ? unavailable.map((c) => (

@@ -12,7 +12,7 @@ import {
   Search,
   X,
 } from "lucide-react";
-import Link from "next/link";
+import { InstagramCompetitorsPanel } from "@/components/social/platforms/instagram-competitors-panel";
 import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
 import { SiBluesky } from "react-icons/si";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -563,168 +563,15 @@ function PublishedPosts({
   );
 }
 
-function CompetitorsSection() {
-  const [query, setQuery] = useState("");
-  const [columnsOpen, setColumnsOpen] = useState(false);
-  const [showHandle, setShowHandle] = useState(true);
-  const [showFollowers, setShowFollowers] = useState(true);
-  const [showPosts, setShowPosts] = useState(true);
-
-  function downloadCsv() {
-    const headers = ["Name", ...(showHandle ? ["Handle"] : []), ...(showFollowers ? ["Followers"] : []), ...(showPosts ? ["Posts"] : [])];
-    const csv = headers
-      .map((cell) => (/[",\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell))
-      .join(",");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "bluesky-competitors.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
-  }
-
-  return (
-    <div className="space-y-4">
-      <h2 className="text-[20px] font-medium">Competitors</h2>
-      <section className="rounded-[14px] border border-[#E6E8EC] bg-white px-5 py-5 sm:px-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#E5FF3F] text-[#59656D]">
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="h-7 w-7"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 8.5 7.2 4h9.6L21 8.5 12 20 3 8.5Z" />
-                <path d="m7.2 4 2.6 4.5L12 4l2.2 4.5L16.8 4" />
-                <path d="M3 8.5h18" />
-                <path d="m9.8 8.5 2.2 11 2.2-11" />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-[18px] font-semibold">Do you need a higher plan?</h3>
-              <p className="mt-1 text-[14px] leading-6 text-[#68717A]">
-                Upgrade your plan and add up to{" "}
-                <strong className="font-semibold text-[#46505A]">100 competitors</strong> which you
-                can modify and/or delete at any time
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/billing"
-            className="inline-flex h-9 shrink-0 items-center justify-center self-start rounded-[8px] bg-[#2B1725] px-4 text-[13px] font-semibold text-[#DFFF38] lg:self-auto"
-          >
-            Upgrade your plan
-          </Link>
-        </div>
-      </section>
-
-      <section className="rounded-[14px] border border-[#E6E8EC] bg-white px-5 py-5 sm:px-6">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[18px] font-medium">List of competitors</h3>
-          <span
-            aria-hidden="true"
-            className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full border border-[#777D84] text-[11px] font-medium text-[#777D84]"
-          >
-            ?
-          </span>
-        </div>
-        <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center">
-          <label className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9AA1A9]" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search"
-              aria-label="Search competitors"
-              className="h-10 w-full rounded-[8px] border border-[#E3E6EA] bg-white pl-9 pr-3 text-[14px] text-[#30343A] outline-none"
-            />
-          </label>
-          <button
-            type="button"
-            disabled
-            className="inline-flex h-10 min-w-[150px] items-center justify-between gap-3 rounded-[8px] border border-[#E4E7EA] bg-white px-3 text-[13px] text-[#C1C6CA]"
-          >
-            All competitors
-            <ChevronDown className="h-4 w-4" />
-          </button>
-          <div className="relative">
-            <button
-              type="button"
-              aria-expanded={columnsOpen}
-              onClick={() => setColumnsOpen((current) => !current)}
-              className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
-            >
-              <Columns3 className="h-4 w-4" />
-              Columns
-            </button>
-            {columnsOpen ? (
-              <div className="absolute right-0 z-20 mt-1 w-40 rounded-[8px] border border-[#E6E8EC] bg-white p-2 text-[13px] shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
-                {(
-                  [
-                    ["Handle", showHandle, setShowHandle],
-                    ["Followers", showFollowers, setShowFollowers],
-                    ["Posts", showPosts, setShowPosts],
-                  ] as const
-                ).map(([label, checked, setChecked]) => (
-                  <label key={label} className="flex items-center gap-2 px-2 py-1.5">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(event) => setChecked(event.target.checked)}
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={downloadCsv}
-            className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
-          >
-            <Download className="h-4 w-4" />
-            Download CSV
-            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
-              <Check className="h-2.5 w-2.5" strokeWidth={3} />
-            </span>
-          </button>
-          <button
-            type="button"
-            className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
-          >
-            <LayoutDashboard className="h-4 w-4" />
-            Post List (All)
-          </button>
-          <Link
-            href="/dashboard/billing"
-            className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#2B1725] px-4 text-[13px] font-semibold text-[#DFFF38]"
-          >
-            <span aria-hidden="true" className="text-[18px] font-light leading-none">
-              +
-            </span>
-            Add
-          </Link>
-        </div>
-        <EmptyPostSearch />
-      </section>
-    </div>
-  );
-}
-
 export function BlueskySubscribedDashboard({
   handle,
   imageUrl = null,
+  canManage = false,
 }: {
   handle: string;
   imageUrl?: string | null;
+  /** May add and remove competitors (manage_social_accounts). */
+  canManage?: boolean;
 }) {
   const [rangeDays, setRangeDays] = useState<number>(30);
   const [compareEnabled, setCompareEnabled] = useState(false);
@@ -1062,7 +909,10 @@ export function BlueskySubscribedDashboard({
         />
       </section>
       <section id="bsky-competitors" className="scroll-mt-[150px]">
-        <CompetitorsSection />
+        <div className="space-y-4">
+          <h2 className="text-[22px] font-medium text-[#20242A]">Competitors</h2>
+          <InstagramCompetitorsPanel network="bluesky" canTrack canManage={canManage} start={display.start} end={display.end} />
+        </div>
       </section>
     </div>
   );
