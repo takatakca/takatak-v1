@@ -1812,7 +1812,8 @@ export function ManageConnectionsModal({
               // className="grid gap-x-5 gap-y-8 md:grid-cols-2 xl:grid-cols-3"
               className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
             >
-              {CONNECTION_CARDS.map((card) => {
+              {/* Only networks that can really be connected are shown (no "planned" cards). */}
+              {CONNECTION_CARDS.filter((card) => !card.planned).map((card) => {
                 const provider = card.provider
                   ? (providers.find(
                       (item) => item.provider === card.provider,
