@@ -1038,7 +1038,7 @@ function RolesPanel({
           onClose={() => setDetailRole(null)}
         >
           <p className="text-sm text-slate-500">
-            Built-in workspace role. Custom role editing is not available yet.
+            Rôle intégré de l’espace : ses permissions ci-dessous sont fixes · Built-in workspace role with the fixed permissions below.
           </p>
           <ul className="mt-4 space-y-1.5">
             {ROLE_PERMISSIONS[detailRole].map((permission) => (
