@@ -15,7 +15,7 @@ import {
   LayoutDashboard,
   Search,
 } from "lucide-react";
-import Link from "next/link";
+import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
 import { useSearchParams } from "next/navigation";
 import {
   useCallback,
@@ -1041,14 +1041,11 @@ export function TikTokSubscribedDashboard({
                   <span className="absolute -right-1 -top-3 rounded-full bg-[#D9F6EA] px-2 py-0.5 text-[10px] font-medium text-[#3E8F6E]">
                     New
                   </span>
-                  <Link
-                    href="/dashboard/billing"
+                  <PinToDashboardButton
                     className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#F7FBE3] px-3 text-[13px] text-[#30343A]"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    Add to dashboard
-                    <PremiumDiamond />
-                  </Link>
+                    icon={<LayoutDashboard className="h-4 w-4" />}
+                    badge={<PremiumDiamond />}
+                  />
                 </div>
               </div>
             </div>

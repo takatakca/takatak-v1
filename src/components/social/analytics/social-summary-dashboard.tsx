@@ -1,6 +1,7 @@
 "use client";
 
 import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+import { PinnedSocialSections } from "@/components/social/pins/pin-to-dashboard";
 import {
   BarChart3,
   CalendarDays,
@@ -469,6 +470,7 @@ export function SocialSummaryDashboard({
       className="space-y-6 px-5 pb-24 pt-0 sm:px-7"
       style={{ backgroundColor: SUMMARY_PAGE_BG }}
     >
+      <PinnedSocialSections />
       {!newUser ? (
         <div
           className="sticky top-[66px] z-20 -mx-5 mb-2 flex items-end justify-between gap-4 border-b border-[#E1E4E7] bg-[#FCFCFC] px-5 pt-4 sm:-mx-7 sm:px-7"

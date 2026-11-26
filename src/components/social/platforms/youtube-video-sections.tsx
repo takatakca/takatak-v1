@@ -2,6 +2,7 @@
 
 import { ChevronDown, Download, LayoutDashboard, Search, SearchX, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
+import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
 import type {
   YoutubeVideoDay,
   YoutubeVideoMetrics,
@@ -187,10 +188,10 @@ function VideoList({
           <Download aria-hidden="true" size={16} /> Download CSV
         </button>
         {showDashboardAction ? (
-          <button type="button" disabled title="Dashboard pinning is not yet configured."
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-100 px-3 text-sm text-slate-500" >
-            <LayoutDashboard aria-hidden="true" size={16} /> Add to dashboard
-          </button>
+          <PinToDashboardButton
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-300 px-3 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            icon={<LayoutDashboard aria-hidden="true" size={16} />}
+          />
         ) : null}
       </div>
       {loaded && limited ? <p className="mt-3 text-xs text-amber-800">This list is limited to the first 200 videos returned by YouTube. Searches and CSV exports apply only to the displayed rows.</p> : null}

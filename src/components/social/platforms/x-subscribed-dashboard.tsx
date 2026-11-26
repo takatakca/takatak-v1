@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
 import { CsvColumnsControls } from "@/components/social/platforms/csv-columns-controls";
 import { SocialSummaryChart } from "@/components/social/analytics/social-summary-chart";
 import {
@@ -974,14 +975,11 @@ function PostsToolbar({
               New
             </span>
 
-            <Link
-              href="/dashboard/billing"
+            <PinToDashboardButton
               className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-            >
-              <PostsActionIcon kind="dashboard" />
-              Add to dashboard
-              <PremiumDiamond />
-            </Link>
+              icon={<PostsActionIcon kind="dashboard" />}
+              badge={<PremiumDiamond />}
+            />
           </div>
         ) : null}
       </div>
@@ -1412,14 +1410,11 @@ function XRepliesSection({
                   New
                 </span>
 
-                <Link
-                  href="/dashboard/billing"
+                <PinToDashboardButton
                   className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-                >
-                  <PostsActionIcon kind="dashboard" />
-                  Add to dashboard
-                  <PremiumDiamond />
-                </Link>
+                  icon={<PostsActionIcon kind="dashboard" />}
+                  badge={<PremiumDiamond />}
+                />
               </div>
             </div>
           </div>
@@ -1580,14 +1575,11 @@ function XMentionsSection({
                   New
                 </span>
 
-                <Link
-                  href="/dashboard/billing"
+                <PinToDashboardButton
                   className="inline-flex h-[42px] items-center justify-center gap-2 rounded-[9px] bg-[#FAFDE8] px-3 text-xs font-medium text-[#30343A] transition hover:bg-[#F3F9D5]"
-                >
-                  <PostsActionIcon kind="dashboard" />
-                  Add to dashboard
-                  <PremiumDiamond />
-                </Link>
+                  icon={<PostsActionIcon kind="dashboard" />}
+                  badge={<PremiumDiamond />}
+                />
               </div>
             </div>
           </div>

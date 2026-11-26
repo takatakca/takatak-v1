@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
+import { PinToDashboardButton } from "@/components/social/pins/pin-to-dashboard";
 import { SiBluesky } from "react-icons/si";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
@@ -521,13 +522,10 @@ function PublishedPosts({
             <span className="absolute -right-1 -top-3 rounded-full bg-[#DDF8ED] px-2 py-0.5 text-[10px] font-medium text-[#4E7B68]">
               New
             </span>
-            <Link
-              href="/dashboard/billing"
+            <PinToDashboardButton
               className="inline-flex h-10 items-center gap-2 rounded-[8px] bg-[#FAFDE8] px-3 text-[13px] text-[#30343A]"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Add to dashboard
-            </Link>
+              icon={<LayoutDashboard className="h-4 w-4" />}
+            />
           </div>
         </div>
         {filtered.length === 0 ? (
