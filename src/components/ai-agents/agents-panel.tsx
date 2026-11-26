@@ -42,11 +42,6 @@ const AGENT_ELSEWHERE: Record<string, { text: string; href: string; cta: string 
     href: "/dashboard/growth/reviews",
     cta: "Ouvrir les avis · Open Reviews",
   },
-  ads_optimizer: {
-    text: "Démarre quand un compte publicitaire est branché · Starts once an ad account is connected.",
-    href: "/dashboard/growth/ads-manager",
-    cta: "Gestion des annonces · Ads manager",
-  },
 };
 
 /** Plain words for the error codes a run can end with. */
@@ -56,6 +51,7 @@ const RUN_ERRORS: Record<string, string> = {
   no_website_on_file: "Ajoutez l’adresse de votre site dans Marques · Add your website in Brands",
   site_unreachable: "Site injoignable pendant la vérification · Website unreachable during the check",
   report_unavailable: "Chiffres du mois indisponibles · Month numbers unavailable",
+  no_ad_campaign: "Créez d’abord une campagne TAKATAK ADS · Create a TAKATAK ADS campaign first",
   conversation_closed: "Conversation fermée · Conversation closed",
   empty_draft: "Brouillon vide · Empty draft",
   runner_error: "Erreur du moteur ; relancez · Engine error; run again",
