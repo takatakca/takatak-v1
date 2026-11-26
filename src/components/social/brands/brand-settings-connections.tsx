@@ -500,7 +500,8 @@ export function BrandSettingsConnections({
       ) : null}
 
       <div className="grid grid-cols-1 gap-x-12 gap-y-8 md:grid-cols-2 xl:grid-cols-3">
-        {CONNECTION_CARDS.map((card) => {
+        {/* Only networks that can really be connected are shown (no "planned" cards). */}
+        {CONNECTION_CARDS.filter((card) => !card.planned).map((card) => {
           const account = accountFor(card);
           const meta = providerMeta(card.provider);
           const shell = shellFor(card.provider);

@@ -1,5 +1,7 @@
 'use client';
 
+import { setDashboardLanguageAction } from '@/app/dashboard/language-actions';
+import { useDashboardLanguage } from '@/components/layout/dashboard-language';
 import {
   ArrowLeft,
   BarChart3,
@@ -13,8 +15,6 @@ import {
   FileBarChart2,
   Gem,
   Globe2,
-  Handshake,
-  Hash,
   Inbox,
   Link2,
   Loader2,
@@ -833,46 +833,15 @@ function DrawerRow({
   );
 }
 
+// The two languages the dashboard really offers (saved on the account, the
+// same setting as the FR / EN switch in the top bar).
 const SOCIAL_LANGUAGES = [
-  {
-    label: 'English',
-    code: 'EN',
-  },
-  {
-    label: 'Español',
-    code: 'ES',
-  },
-  {
-    label: 'Français',
-    code: 'FR',
-  },
-  {
-    label: 'Português (Portugal)',
-    code: 'PT',
-  },
-  {
-    label: 'Português (Brasil)',
-    code: 'BR',
-  },
-  {
-    label: 'Deutsch',
-    code: 'DE',
-  },
-  {
-    label: 'Italiano',
-    code: 'IT',
-  },
-  {
-    label: 'Dansk',
-    code: 'DA',
-  },
-  {
-    label: 'Nederlands',
-    code: 'NL',
-  },
+  { label: 'Français', code: 'fr' },
+  { label: 'English', code: 'en' },
 ] as const;
 
 function LanguageFlyout() {
+  const current = useDashboardLanguage();
   const anchorRef = useRef<HTMLButtonElement | null>(null);
 
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -996,7 +965,7 @@ function LanguageFlyout() {
           <Globe2 className="h-[18px] w-[18px]" strokeWidth={1.9} />
         </span>
 
-        <span className="min-w-0 flex-1 truncate">Language</span>
+        <span className="min-w-0 flex-1 truncate">{current === 'fr' ? 'Langue' : 'Language'}</span>
 
         <span className="inline-flex h-6 min-w-8 items-center justify-center rounded bg-[#d8e7ec] px-1.5 text-[11px] font-medium text-[#26343d]">
           EN
@@ -1014,7 +983,7 @@ function LanguageFlyout() {
         ? createPortal(
             <div
               role="menu"
-              aria-label="Select language"
+              aria-label={current === 'fr' ? 'Choisir la langue' : 'Select language'}
               onMouseEnter={cancelClose}
               onMouseLeave={scheduleClose}
               style={{
@@ -1025,33 +994,31 @@ function LanguageFlyout() {
             >
               <div className="max-h-[calc(100vh-24px)] overflow-y-auto py-2">
                 {SOCIAL_LANGUAGES.map((language) => {
-                  const selected = language.code === 'EN';
+                  const selected = language.code === current;
 
                   return (
-                    <button
-                      key={language.code}
-                      type="button"
-                      role="menuitem"
-                      disabled={!selected}
-                      title={
-                        selected
-                          ? 'Current language'
-                          : `${language.label} translation is not enabled yet.`
-                      }
-                      className={`flex min-h-[48px] w-full items-center gap-3 px-5 text-left text-[15px] transition ${
-                        selected
-                          ? 'bg-[#e4e9ed] font-semibold text-slate-950'
-                          : 'cursor-not-allowed bg-white text-slate-700'
-                      }`}
-                    >
-                      <span className="min-w-0 flex-1">
-                        {language.label} - {language.code}
-                      </span>
+                    <form key={language.code} action={setDashboardLanguageAction}>
+                      <input type="hidden" name="language" value={language.code} />
+                      <button
+                        type="submit"
+                        role="menuitem"
+                        disabled={selected}
+                        title={selected ? (current === 'fr' ? 'Langue actuelle' : 'Current language') : language.label}
+                        className={`flex min-h-[48px] w-full items-center gap-3 px-5 text-left text-[15px] transition ${
+                          selected
+                            ? 'bg-[#e4e9ed] font-semibold text-slate-950'
+                            : 'bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <span className="min-w-0 flex-1">
+                          {language.label} - {language.code.toUpperCase()}
+                        </span>
 
-                      {selected ? (
-                        <Check className="h-5 w-5 shrink-0 text-[#5368ff]" />
-                      ) : null}
-                    </button>
+                        {selected ? (
+                          <Check className="h-5 w-5 shrink-0 text-[#5368ff]" />
+                        ) : null}
+                      </button>
+                    </form>
                   );
                 })}
               </div>
@@ -1072,6 +1039,7 @@ function ModuleDrawer({
   data: SocialShellData;
   onClose: () => void;
 }) {
+  const fr = useDashboardLanguage() === 'fr';
   const pathname = usePathname();
 
   const searchParams = useSearchParams();
@@ -1098,7 +1066,7 @@ function ModuleDrawer({
     <div className="fixed inset-0 z-[90]">
       <button
         type="button"
-        aria-label="Close account menu"
+        aria-label={fr ? 'Fermer le menu du compte' : 'Close account menu'}
         onClick={onClose}
         className="absolute inset-0 bg-slate-950/20"
       />
@@ -1108,7 +1076,7 @@ function ModuleDrawer({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close account menu"
+            aria-label={fr ? 'Fermer le menu du compte' : 'Close account menu'}
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/20 text-white transition hover:bg-white/15"
           >
             <X className="h-6 w-6" strokeWidth={1.8} />
@@ -1190,7 +1158,7 @@ function ModuleDrawer({
 
           <section className="border-b border-[#e5edef] py-1">
             <DrawerRow
-              label="Add brand"
+              label={fr ? "Ajouter une marque" : "Add brand"}
               href={withSocialPreview(
                 '/dashboard/social?addBrand=1',
                 searchParams,
@@ -1202,7 +1170,7 @@ function ModuleDrawer({
             />
 
             <DrawerRow
-              label="Connections"
+              label={fr ? "Connexions" : "Connections"}
               href={withSocialPreview(
                 '/dashboard/social/brands/settings?tab=connections',
                 searchParams,
@@ -1213,7 +1181,7 @@ function ModuleDrawer({
             />
 
             <DrawerRow
-              label="AI Configuration"
+              label={fr ? "Configuration IA" : "AI Configuration"}
               href={withSocialPreview(
                 '/dashboard/social/brands/settings?tab=ai',
                 searchParams,
@@ -1224,7 +1192,7 @@ function ModuleDrawer({
             />
 
             <DrawerRow
-              label="Brand settings"
+              label={fr ? "Réglages de la marque" : "Brand settings"}
               href={withSocialPreview(
                 '/dashboard/social/brands/settings',
                 searchParams,
@@ -1237,7 +1205,7 @@ function ModuleDrawer({
 
           <section className="border-b border-[#e5edef] py-1">
             <DrawerRow
-              label="User management"
+              label={fr ? "Gestion des utilisateurs" : "User management"}
               href={withSocialPreview('/dashboard/social/users', searchParams)}
               icon={ShieldCheck}
               premiumLocked={premiumLocked}
@@ -1249,7 +1217,7 @@ function ModuleDrawer({
             />
 
             <DrawerRow
-              label="Plans and billing"
+              label={fr ? "Forfaits et facturation" : "Plans and billing"}
               href={withSocialPreview(
                 '/dashboard/social/settings?tab=billing',
                 searchParams,
@@ -1264,7 +1232,7 @@ function ModuleDrawer({
             />
 
             <DrawerRow
-              label="My tasks"
+              label={fr ? "Mes tâches" : "My tasks"}
               href={withSocialPreview(
                 '/dashboard/social/approvals',
                 searchParams,
@@ -1278,7 +1246,7 @@ function ModuleDrawer({
             <LanguageFlyout />
 
             <DrawerRow
-              label="Account settings"
+              label={fr ? "Paramètres du compte" : "Account settings"}
               href={withSocialPreview(
                 '/dashboard/social/settings',
                 searchParams,
@@ -1296,7 +1264,7 @@ function ModuleDrawer({
 
           <section className="py-1">
             <DrawerRow
-              label="Help center"
+              label={fr ? "Centre d’aide" : "Help center"}
               href="/dashboard/support"
               icon={CircleHelp}
               active={pathname.startsWith('/dashboard/support')}
@@ -1304,20 +1272,13 @@ function ModuleDrawer({
             />
 
             <DrawerRow
-              label="What's new"
+              label="Notifications"
               href="/dashboard/notifications"
               icon={Megaphone}
               active={pathname.startsWith('/dashboard/notifications')}
               onClose={onClose}
             />
 
-            <DrawerRow
-              label="Affiliation program"
-              href="/marketplace"
-              icon={Handshake}
-              active={pathname.startsWith('/marketplace')}
-              onClose={onClose}
-            />
           </section>
         </div>
 
@@ -1545,6 +1506,7 @@ function SocialSidebarContent({
   onToggleCollapsed?: () => void;
   mobile?: boolean;
 }) {
+  const fr = useDashboardLanguage() === 'fr';
   const pathname = usePathname();
   const router = useRouter();
 
@@ -1569,7 +1531,7 @@ function SocialSidebarContent({
         <Link
           href={withSocialPreview('/dashboard/social', searchParams)}
           onClick={onNavigate}
-          title={collapsed ? 'Summary' : undefined}
+          title={collapsed ? (fr ? 'Résumé' : 'Summary') : undefined}
           className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
             summaryActive
               ? 'bg-[#2a1728] text-white'
@@ -1578,7 +1540,7 @@ function SocialSidebarContent({
         >
           <ClipboardList className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? <span>Summary</span> : null}
+          {!collapsed ? <span>{fr ? 'Résumé' : 'Summary'}</span> : null}
         </Link>
 
         <div className="mt-2 space-y-1">
@@ -1639,7 +1601,7 @@ function SocialSidebarContent({
               );
             });
           }}
-          title={collapsed ? 'More connections' : undefined}
+          title={collapsed ? (fr ? 'Autres connexions' : 'More connections') : undefined}
           className={`mt-3 flex items-center justify-center gap-2 rounded-xl border border-slate-900 text-sm font-medium text-slate-900 transition hover:bg-slate-100 disabled:cursor-wait disabled:opacity-70 ${
             collapsed ? 'h-11 w-11 px-0' : 'px-3 py-2.5'
           }`}
@@ -1652,53 +1614,27 @@ function SocialSidebarContent({
 
           {!collapsed ? (
             <span>
-              {isOpeningConnections ? 'Opening...' : 'More connections'}
+              {isOpeningConnections ? (fr ? 'Ouverture…' : 'Opening...') : fr ? 'Autres connexions' : 'More connections'}
             </span>
           ) : null}
         </button>
       </div>
 
       <div className="shrink-0 border-t border-slate-200 px-3 py-3">
-        <button
-          type="button"
-          disabled
-          title="Reporting will be enabled with its real backend."
-          className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 opacity-70"
-        >
-          <BarChart3 className="h-5 w-5 shrink-0" />
-
-          {!collapsed ? (
-            <>
-              <span>Reporting</span>
-
-              <span className="ml-auto rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-medium text-emerald-700">
-                New
-              </span>
-            </>
-          ) : null}
-        </button>
-
-        <button
-          type="button"
-          disabled
-          title="Reports will be enabled with its real backend."
-          className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 opacity-70"
+        <Link
+          href={withSocialPreview('/dashboard/social/reports', searchParams)}
+          onClick={onNavigate}
+          title={collapsed ? (fr ? 'Rapports' : 'Reports') : undefined}
+          className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
+            pathname.startsWith('/dashboard/social/reports')
+              ? 'bg-[#2a1728] text-white'
+              : 'text-slate-700 hover:bg-slate-100'
+          }`}
         >
           <FileBarChart2 className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? <span>Reports</span> : null}
-        </button>
-
-        <button
-          type="button"
-          disabled
-          title="Hashtag Tracker will be enabled with its provider backend."
-          className="flex w-full cursor-not-allowed items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 opacity-70"
-        >
-          <Hash className="h-5 w-5 shrink-0" />
-
-          {!collapsed ? <span>Hashtag Tracker</span> : null}
-        </button>
+          {!collapsed ? <span>{fr ? 'Rapports' : 'Reports'}</span> : null}
+        </Link>
 
         <Link
           href={withSocialPreview(
@@ -1706,7 +1642,7 @@ function SocialSidebarContent({
             searchParams,
           )}
           onClick={onNavigate}
-          title={collapsed ? 'Brand settings' : undefined}
+          title={collapsed ? (fr ? 'Réglages de la marque' : 'Brand settings') : undefined}
           className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${
             brandSettingsActive
               ? 'bg-[#2a1728] text-white'
@@ -1715,7 +1651,7 @@ function SocialSidebarContent({
         >
           <Settings2 className="h-5 w-5 shrink-0" />
 
-          {!collapsed ? <span>Brand settings</span> : null}
+          {!collapsed ? <span>{fr ? 'Réglages de la marque' : 'Brand settings'}</span> : null}
         </Link>
       </div>
 
@@ -1725,20 +1661,20 @@ function SocialSidebarContent({
             <Link
               href="/dashboard"
               onClick={onNavigate}
-              title={collapsed ? 'Back to TAKATAK' : undefined}
+              title={collapsed ? (fr ? 'Retour à TAKATAK' : 'Back to TAKATAK') : undefined}
               className={`flex items-center rounded-xl py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 ${
                 collapsed ? 'justify-center px-0' : 'gap-3 px-3'
               }`}
             >
               <ArrowLeft className="h-5 w-5 shrink-0" />
 
-              {!collapsed ? <span>Back to TAKATAK</span> : null}
+              {!collapsed ? <span>{fr ? 'Retour à TAKATAK' : 'Back to TAKATAK'}</span> : null}
             </Link>
 
             <button
               type="button"
               onClick={onToggleCollapsed}
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              title={collapsed ? (fr ? 'Agrandir la barre' : 'Expand sidebar') : fr ? 'Réduire la barre' : 'Collapse sidebar'}
               className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-300 text-slate-600 transition hover:bg-slate-100"
             >
               {collapsed ? (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import {
   BarChart3,
   CalendarDays,
@@ -86,6 +87,7 @@ function EducationCard({
 }
 
 function NewUserView() {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
 
   return (
@@ -93,12 +95,13 @@ function NewUserView() {
       <section className="flex flex-col gap-6 rounded-[18px] border border-[#a8b4ff] bg-[#ebeaff] px-7 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
         <div>
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            Understand what works and make data-driven decisions
+            {fr ? "Comprenez ce qui fonctionne et décidez à partir des données" : "Understand what works and make data-driven decisions"}
           </h2>
 
           <p className="mt-2 text-[15px] leading-6 text-[#505761]">
-            Analyze your community, the reach of your posts and your ad campaigns
-            from a single dashboard.
+            {fr
+              ? "Analysez votre communauté, la portée de vos publications et vos campagnes publicitaires sur un seul tableau de bord."
+              : "Analyze your community, the reach of your posts and your ad campaigns from a single dashboard."}
           </p>
         </div>
 
@@ -109,33 +112,33 @@ function NewUserView() {
           )}
           className="inline-flex h-[50px] shrink-0 items-center justify-center rounded-[10px] bg-[#2c1929] px-7 text-[15px] font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
         >
-          Connect social networks
+          {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
         </Link>
       </section>
 
       <section className="overflow-hidden rounded-[18px] border border-[#e1e4e7] bg-white">
         <div className="grid lg:grid-cols-3 lg:divide-x lg:divide-[#e1e4e7]">
           <EducationCard
-            title="How your community grows"
-            description="Track the evolution of your followers across all your networks from one place."
+            title={fr ? "Comment votre communauté grandit" : "How your community grows"}
+            description={fr ? "Suivez l’évolution de vos abonnés sur tous vos réseaux, au même endroit." : "Track the evolution of your followers across all your networks from one place."}
             image="/social/summary/community-growth.webp"
-            imageAlt="Community growth analytics"
+            imageAlt={fr ? "Statistiques de croissance de la communauté" : "Community growth analytics"}
             icon={UsersRound}
           />
 
           <EducationCard
-            title="The real reach of your posts"
-            description="Discover the reach of your posts on each network and which content performs best."
+            title={fr ? "La vraie portée de vos publications" : "The real reach of your posts"}
+            description={fr ? "Découvrez la portée de vos publications sur chaque réseau et les contenus qui fonctionnent le mieux." : "Discover the reach of your posts on each network and which content performs best."}
             image="/social/summary/post-reach-bg.webp"
-            imageAlt="Post reach analytics"
+            imageAlt={fr ? "Statistiques de portée des publications" : "Post reach analytics"}
             icon={Eye}
           />
 
           <EducationCard
-            title="Your ad campaigns, at a glance"
-            description="Analyze the performance of your ads across all platforms without switching screens."
+            title={fr ? "Vos campagnes publicitaires, d’un coup d’œil" : "Your ad campaigns, at a glance"}
+            description={fr ? "Analysez la performance de vos annonces sur toutes les plateformes sans changer d’écran." : "Analyze the performance of your ads across all platforms without switching screens."}
             image="/social/summary/ad-campaigns.webp"
-            imageAlt="Advertising campaign analytics"
+            imageAlt={fr ? "Statistiques des campagnes publicitaires" : "Advertising campaign analytics"}
             icon={Target}
           />
         </div>
@@ -202,6 +205,7 @@ function AccountSection({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const accountRows = data.accountDaily.filter(
     (row) => row.date >= start && row.date <= end,
   );
@@ -314,11 +318,11 @@ function AccountSection({
       id="summary-account"
       className="scroll-mt-[150px] rounded-[14px] bg-white px-6 py-7 shadow-[0_1px_2px_rgba(15,23,42,0.04)] sm:px-8 sm:py-8"
     >
-      <h2 className="mb-5 text-[22px] font-semibold text-[#20242A]">Account</h2>
+      <h2 className="mb-5 text-[22px] font-semibold text-[#20242A]">{fr ? "Compte" : "Account"}</h2>
 
       <div className="space-y-10">
         <MetricSection
-          title="Followers"
+          title={fr ? "Abonnés" : "Followers"}
           total={followerTotal}
           accent="linear-gradient(180deg,#F06A6A 0%,#566DF1 55%,#E4A934 100%)"
           cards={followerPlatforms.map((platform) => ({
@@ -330,7 +334,7 @@ function AccountSection({
           points={(platformKey) =>
             dailyMetric("followers", platformKey as SocialPlatformKey | null)
           }
-          seriesLabel="Followers"
+          seriesLabel={fr ? "Abonnés" : "Followers"}
           showMarkers
         />
 
@@ -396,6 +400,7 @@ export function SocialSummaryDashboard({
 }: {
   data: SocialSummaryData;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [range, setRange] = useState<number>(30);
   const [activeSection, setActiveSection] = useState<
@@ -470,23 +475,23 @@ export function SocialSummaryDashboard({
           style={{ backgroundColor: SUMMARY_PAGE_BG }}
         >
           <nav
-            aria-label="Summary sections"
+            aria-label={fr ? "Sections du résumé" : "Summary sections"}
             className="hidden min-w-0 flex-1 gap-1 overflow-x-auto lg:flex"
           >
             {[
               {
                 key: "account" as const,
-                label: "ACCOUNT",
+                label: fr ? "COMPTE" : "ACCOUNT",
                 href: "summary-account",
               },
               {
                 key: "posts" as const,
-                label: "POSTS",
+                label: fr ? "PUBLICATIONS" : "POSTS",
                 href: "summary-posts",
               },
               {
                 key: "ads" as const,
-                label: "AD ACCOUNTS",
+                label: fr ? "COMPTES PUBLICITAIRES" : "AD ACCOUNTS",
                 href: "summary-ad-accounts",
               },
             ].map((item) => {
@@ -514,7 +519,7 @@ export function SocialSummaryDashboard({
           </nav>
 
           <label className="mb-2 ml-auto flex flex-col gap-1.5 text-xs font-medium text-[#6B7280] lg:items-end">
-            <span>Main period</span>
+            <span>{fr ? "Période principale" : "Main period"}</span>
             <span className="flex h-11 w-full items-center gap-2 rounded-[10px] border border-[#D7DBE0] bg-white px-3 text-sm text-[#30343A] shadow-sm sm:w-auto">
               <span className="font-medium text-[#20242A]">
                 {displayDate(start)} - {displayDate(end)}
@@ -523,12 +528,12 @@ export function SocialSummaryDashboard({
               <select
                 value={range}
                 onChange={(event) => setRange(Number(event.target.value))}
-                aria-label="Select summary date range"
+                aria-label={fr ? "Choisir la période du résumé" : "Select summary date range"}
                 className="max-w-[140px] bg-transparent text-[#505761] outline-none"
               >
                 {RANGES.map((days) => (
                   <option key={days} value={days}>
-                    {days === 365 ? "Last 12 months" : `Last ${days} days`}
+                    {days === 365 ? (fr ? "12 derniers mois" : "Last 12 months") : fr ? `${days} derniers jours` : `Last ${days} days`}
                   </option>
                 ))}
               </select>

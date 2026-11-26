@@ -1,5 +1,6 @@
 "use client";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -36,6 +37,14 @@ const COLUMN_LABELS: Record<AdColumn, string> = {
   spend: "Spend",
 };
 
+const COLUMN_LABELS_FR: Record<AdColumn, string> = {
+  platform: "Plateforme",
+  account: "Compte",
+  impressions: "Impressions",
+  clicks: "Clics",
+  spend: "Dépense",
+};
+
 function ratioMetric(
   numerator: number,
   denominator: number,
@@ -56,6 +65,8 @@ export function SocialSummaryAdsTab({
   start: string;
   end: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
+  const LABELS = fr ? COLUMN_LABELS_FR : COLUMN_LABELS;
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [columnsOpen, setColumnsOpen] = useState(false);
@@ -202,7 +213,7 @@ export function SocialSummaryAdsTab({
   }
 
   function downloadCsv() {
-    const headers = visibleColumns.map((column) => COLUMN_LABELS[column]);
+    const headers = visibleColumns.map((column) => LABELS[column]);
     const rows = filteredAccounts.map((row) =>
       visibleColumns.map((column) => {
         switch (column) {
@@ -247,7 +258,7 @@ export function SocialSummaryAdsTab({
     <div className="space-y-10">
       <div>
         <h2 className="mb-5 text-[22px] font-semibold text-[#20242A]">
-          Ad accounts
+          {fr ? "Comptes publicitaires" : "Ad accounts"}
         </h2>
 
         <div className="space-y-10">
@@ -260,11 +271,11 @@ export function SocialSummaryAdsTab({
           />
 
           <AdMetricSection
-            title="Clicks"
+            title={fr ? "Clics" : "Clicks"}
             total={clicksTotal}
             cards={platformCards("clicks")}
             points={dailySeries("clicks")}
-            seriesLabel="Clicks"
+            seriesLabel={fr ? "Clics" : "Clicks"}
           />
 
           <AdMetricSection
@@ -310,11 +321,11 @@ export function SocialSummaryAdsTab({
           />
 
           <AdMetricSection
-            title="Spent"
+            title={fr ? "Dépensé" : "Spent"}
             total={spendTotal}
             cards={platformCards("spendMinor", 0.01)}
             points={dailySeries("spendMinor", 0.01)}
-            seriesLabel="Spent"
+            seriesLabel={fr ? "Dépensé" : "Spent"}
             formatValue={(value) => money(value, currency)}
           />
         </div>
@@ -323,12 +334,12 @@ export function SocialSummaryAdsTab({
       <section className="space-y-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <label className="relative min-w-0 flex-1">
-            <span className="sr-only">Search ad accounts</span>
+            <span className="sr-only">{fr ? "Chercher des comptes publicitaires" : "Search ad accounts"}</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9aa1a9]" />
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search"
+              placeholder={fr ? "Chercher" : "Search"}
               className="h-11 w-full rounded-[10px] border border-[#d7dbe0] bg-white pl-10 pr-3 text-sm text-[#30343a] outline-none transition focus:border-[#8996F6] focus:ring-2 focus:ring-[#EEF0FF]"
             />
           </label>
@@ -341,7 +352,7 @@ export function SocialSummaryAdsTab({
               className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d7dbe0] bg-white px-3.5 text-sm font-medium text-[#30343a] transition hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#566DF1]"
             >
               <Columns3 className="h-4 w-4" />
-              Columns
+              {fr ? "Colonnes" : "Columns"}
             </button>
 
             <button
@@ -350,7 +361,7 @@ export function SocialSummaryAdsTab({
               className="inline-flex h-11 items-center gap-2 rounded-[10px] border border-[#d7dbe0] bg-white px-3.5 text-sm font-medium text-[#30343a] transition hover:bg-[#f8f9fa] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#566DF1]"
             >
               <Download className="h-4 w-4" />
-              Download CSV
+              {fr ? "Télécharger le CSV" : "Download CSV"}
             </button>
 
             {columnsOpen ? (
@@ -369,7 +380,7 @@ export function SocialSummaryAdsTab({
                       onChange={() => toggleColumn(column)}
                       className="rounded border-[#c5cad1]"
                     />
-                    {COLUMN_LABELS[column]}
+                    {LABELS[column]}
                   </label>
                 ))}
               </div>
@@ -380,11 +391,22 @@ export function SocialSummaryAdsTab({
         {emptyAccounts || emptySearch ? (
           <div className="rounded-[12px] border border-[#e8eaed] bg-[#fafbfc] px-6 py-16 text-center">
             <p className="text-[16px] font-semibold text-[#30343a]">
-              Oops! Nothing found, try another search
+              {emptyAccounts
+                ? fr
+                  ? "Aucun compte publicitaire branché"
+                  : "No ad account connected yet"
+                : fr
+                  ? "Aucun résultat ; essayez une autre recherche"
+                  : "Oops! Nothing found, try another search"}
             </p>
             <p className="mt-2 text-sm text-[#6b7280]">
-              You can use the filter tools to narrow down your search. Check if
-              the current date range suits your needs.
+              {emptyAccounts
+                ? fr
+                  ? "Branchez un compte publicitaire pour voir ici ses impressions, clics et dépenses."
+                  : "Connect an ad account to see its impressions, clicks and spend here."
+                : fr
+                  ? "Utilisez les filtres pour préciser votre recherche, et vérifiez que la période choisie vous convient."
+                  : "You can use the filter tools to narrow down your search. Check if the current date range suits your needs."}
             </p>
             {!hasAdAccounts ? (
               <Link
@@ -394,7 +416,7 @@ export function SocialSummaryAdsTab({
                 )}
                 className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#2c1929] px-5 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
               >
-                Manage connections
+                {fr ? "Gérer les connexions" : "Manage connections"}
               </Link>
             ) : null}
           </div>
@@ -405,7 +427,7 @@ export function SocialSummaryAdsTab({
                 <tr>
                   {visibleColumns.map((column) => (
                     <th key={column} className="px-4 py-3 font-semibold">
-                      {COLUMN_LABELS[column]}
+                      {LABELS[column]}
                     </th>
                   ))}
                 </tr>
