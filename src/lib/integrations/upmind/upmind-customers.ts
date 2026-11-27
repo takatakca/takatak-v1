@@ -130,12 +130,9 @@ async function findClientIdByEmail(email: string): Promise<string | null> {
     return rowEmail === normalized && typeof row.id === "string";
   });
 
-  if (exact && typeof exact.id === "string") {
-    return exact.id;
-  }
-
-  const first = rows.find((row) => typeof row.id === "string");
-  return first && typeof first.id === "string" ? first.id : null;
+  // Only an exact email match: linking "the first search result" could attach
+  // another person's billing record to this account.
+  return exact && typeof exact.id === "string" ? exact.id : null;
 }
 
 async function createClient(lookup: UpmindCustomerLookup): Promise<string | null> {
