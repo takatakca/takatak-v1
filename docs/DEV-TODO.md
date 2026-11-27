@@ -11,6 +11,28 @@ Before starting anything, follow `AGENTS.md` (work log rule and brand rule):
 
 Backlog ids (TK-…) refer to knowledgeAI `docs/11-DEV-BACKLOG.md`.
 
+## Status check — 2026-11-27 (verified against `main` 06c22e3f and the live site)
+
+The tables below are from 2026-10-09. Several lines are now done in code. This list shows only what was checked, with the evidence. Lines not listed here are unchanged.
+
+| Line | Status | Evidence |
+|---|---|---|
+| 1.2 | Done another way | Coolify deploys `main` on each merge; the live build answers `x-takatak-release` on `/api/health/ready`. Production served `1bda2602` on 2026-11-27 at 03:48 UTC. |
+| 1.3 | Partly done | The GUARDIAN public smoke runs daily (`guardian-public-smoke.yml`). A real-browser check of 16 public pages in French and English runs daily (`public-browser-smoke.yml`, #402); its first run loaded all 32 views. Sign-in, dashboard contents and payments are still not verified: there is no test account. |
+| 1.4 | Done | GUARDIAN fails when website request intake is off; its daily runs passed on 2026-11-25 and 2026-11-26. |
+| 1.7 | Done in code | No source file refers to `public/img/imgtak/` any more. The logo component uses `/icons/icon-192.png`. The old image files are still in `public/img/imgtak/`. |
+| TK-013 | Done | Promo codes are priced on the server: `src/lib/promotions/catalog.ts` (`quotePromo`), used by `src/lib/website-leads/package-pricing.ts`. |
+| TK-014 | Partly done | Orders and gig pages read active CAD prices from `ProductPrice` (`src/lib/website/load-public-catalog.ts`). `src/lib/website/marketplace-packages.ts` remains as the fallback when no package is published. |
+| TK-022 | Done | Score history and re-audits: `src/lib/seo/score-history.ts`, `src/app/dashboard/seo/actions.ts`. |
+| TK-026 | Done | Report builder, export and schedules under `/dashboard/reports` (builder, export, schedules, templates). |
+| TK-065 | Done (signature scan) | `src/lib/website-leads/malware-scan.ts` blocks executables and the EICAR test file; clean files stay quarantined and download-only. It is a signature check, not a full antivirus engine. |
+| TK-004 / TK-025 | Done | Admin screen `/dashboard/admin/qmaps` links a QMAPS listing to a client workspace. |
+| TK-054 | Done | `strict-transport-security: max-age=31536000` is served on `takatak.ca` and `www.takatak.ca`. |
+
+Still waiting on the owner: 1.1, 1.5, 2.1, 2.2, TK-019, TK-021, TK-030/TK-031, TK-040, TK-050, the Facturations approvals in section 5, and the open decisions in `WORKLOG.md` (X_PAID_API_ENABLED, SmartLinks migration, per-brand member access, Stripe hockey price and webhook).
+
+— signé : Claude (cloud session upbeat-einstein) @ Claude Code cloud · 2026-11-27 04:20
+
 ## 1. Go live (highest priority)
 
 | # | Who | Task | Done when |
