@@ -50,6 +50,7 @@
     "qa:website-security": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-security.ts",
     "qa:native-agents": "tsx scripts/verify-native-agents.ts",
     "qa:instagram-live": "tsx scripts/verify-instagram-live-stats.ts",
+    "qa:admin-fr": "tsx --require ./scripts/register-server-only.cjs scripts/verify-admin-fr.ts",
     "qa:mobile-api": "tsx scripts/mobile-api-tests.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
     "qa:routes": "tsx scripts/list-routes.ts",

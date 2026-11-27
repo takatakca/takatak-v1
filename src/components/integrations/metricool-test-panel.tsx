@@ -3,7 +3,9 @@
 // Small client island: calls the test API route and renders the honest result.
 import { useState } from "react";
 import { Loader2, PlugZap } from "lucide-react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import { Badge } from "@/components/ui/badge";
+import { adminFr } from "@/lib/admin/admin-fr";
 import { METRICOOL_STATE_LABELS, metricoolToneForState } from "@/lib/integrations/metricool/status";
 import type { MetricoolConnectionState } from "@/lib/integrations/metricool/types";
 
@@ -15,6 +17,7 @@ interface TestResponse {
 }
 
 export function MetricoolTestPanel() {
+  const fr = useDashboardLanguage() === "fr";
   const [result, setResult] = useState<TestResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -40,22 +43,24 @@ export function MetricoolTestPanel() {
         className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
-        {loading ? "Testing…" : "Run test connection"}
+        {loading ? (fr ? "Test en cours…" : "Testing…") : fr ? "Lancer le test de connexion" : "Run test connection"}
       </button>
       <p className="text-[11px] text-slate-400">
-        A successful test requires real Metricool credentials and a confirmed documented endpoint.
+        {fr
+          ? "Un test réussi demande de vrais identifiants Metricool et un point d’accès documenté et confirmé."
+          : "A successful test requires real Metricool credentials and a confirmed documented endpoint."}
       </p>
-      {failed ? <p className="text-xs text-rose-600">Test request could not be sent. Try again.</p> : null}
+      {failed ? <p className="text-xs text-rose-600">{fr ? "La demande de test n’a pas pu être envoyée. Réessayez." : "Test request could not be sent. Try again."}</p> : null}
       {result ? (
         <div className="rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2">
           <div className="flex items-center gap-2">
-            <Badge tone={metricoolToneForState(result.state)}>{METRICOOL_STATE_LABELS[result.state]}</Badge>
+            <Badge tone={metricoolToneForState(result.state)}>{adminFr(METRICOOL_STATE_LABELS[result.state], fr)}</Badge>
             {typeof result.httpStatus === "number" ? (
               <span className="text-[11px] text-slate-400">HTTP {result.httpStatus}</span>
             ) : null}
-            {result.dbUpdated ? <span className="text-[11px] text-slate-400">· DB status updated</span> : null}
+            {result.dbUpdated ? <span className="text-[11px] text-slate-400">· {fr ? "État mis à jour dans la base" : "DB status updated"}</span> : null}
           </div>
-          <p className="mt-1 text-xs text-slate-600">{result.message}</p>
+          <p className="mt-1 text-xs text-slate-600">{adminFr(result.message, fr)}</p>
         </div>
       ) : null}
     </div>

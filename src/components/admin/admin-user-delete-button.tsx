@@ -10,6 +10,7 @@ import {
   Loader2,
   Trash2,
 } from "lucide-react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import { ConfirmationDialog } from "@/components/team/confirmation-dialog";
 
 type DeleteUserResponse = {
@@ -30,6 +31,7 @@ export function AdminUserDeleteButton({
   email,
   blockedReason = null,
 }: AdminUserDeleteButtonProps) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const requestInProgress =
     useRef(false);
@@ -132,7 +134,7 @@ export function AdminUserDeleteButton({
           (await response.json()) as DeleteUserResponse;
       } catch {
         setErrorMessage(
-          "The account service returned an invalid response.",
+          fr ? "Le service des comptes a donné une réponse invalide." : "The account service returned an invalid response.",
         );
 
         return;
@@ -141,7 +143,7 @@ export function AdminUserDeleteButton({
       if (!response.ok || !result.ok) {
         setErrorMessage(
           result.message ??
-            "The user account could not be deleted.",
+            (fr ? "Le compte de l’utilisateur n’a pas pu être supprimé." : "The user account could not be deleted."),
         );
 
         return;
@@ -151,7 +153,7 @@ export function AdminUserDeleteButton({
       router.refresh();
     } catch {
       setErrorMessage(
-        "A network error occurred. Check your connection and try again.",
+        fr ? "Erreur réseau. Vérifiez votre connexion et réessayez." : "A network error occurred. Check your connection and try again.",
       );
     } finally {
       setLoading(false);
@@ -170,7 +172,7 @@ export function AdminUserDeleteButton({
         }
         title={
           blockedReason ??
-          "Permanently delete this user"
+          (fr ? "Supprimer cet utilisateur pour de bon" : "Permanently delete this user")
         }
         className="inline-flex items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700 transition hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-50 disabled:text-slate-400"
       >
@@ -187,8 +189,8 @@ export function AdminUserDeleteButton({
         )}
 
         {loading
-          ? "Deleting…"
-          : "Delete account"}
+          ? fr ? "Suppression…" : "Deleting…"
+          : fr ? "Supprimer le compte" : "Delete account"}
       </button>
 
       {blockedReason ? (
@@ -208,10 +210,14 @@ export function AdminUserDeleteButton({
 
       <ConfirmationDialog
         open={dialogOpen}
-        title="Permanently delete user?"
-        description={`You are about to permanently delete ${displayName ?? "this TAKATAK identity"}${email ? ` (${email})` : ""}. Their Supabase login, application profile, and all workspace memberships will be removed. This action cannot be undone.`}
+        title={fr ? "Supprimer cet utilisateur pour de bon ?" : "Permanently delete user?"}
+        description={
+          fr
+            ? `Vous allez supprimer pour de bon ${displayName ?? "cette identité TAKATAK"}${email ? ` (${email})` : ""}. Sa connexion Supabase, son profil dans l’application et toutes ses appartenances aux espaces seront retirés. Cette action est irréversible.`
+            : `You are about to permanently delete ${displayName ?? "this TAKATAK identity"}${email ? ` (${email})` : ""}. Their Supabase login, application profile, and all workspace memberships will be removed. This action cannot be undone.`
+        }
         loading={loading}
-        proceedLabel="Permanently delete user"
+        proceedLabel={fr ? "Supprimer pour de bon" : "Permanently delete user"}
         onCancel={cancelConfirmation}
         onProceed={deleteUser}
       />

@@ -14,7 +14,9 @@ import {
   ADMIN_ROLE_LABELS,
   adminToneForStatus,
 } from "@/lib/admin/status";
+import { adminFr } from "@/lib/admin/admin-fr";
 import type { AdminUserSummary } from "@/lib/admin/types";
+import { getDashboardLanguage } from "@/lib/dashboard/language";
 import { requireAdminAccess } from "@/lib/security/guard";
 
 export const dynamic = "force-dynamic";
@@ -22,14 +24,16 @@ export const dynamic = "force-dynamic";
 function createColumns({
   canDeleteUsers,
   currentProfileId,
+  fr,
 }: {
   canDeleteUsers: boolean;
   currentProfileId: string | null;
+  fr: boolean;
 }): AdminColumn<AdminUserSummary>[] {
   const columns: AdminColumn<AdminUserSummary>[] = [
     {
       key: "user",
-      header: "User",
+      header: fr ? "Utilisateur" : "User",
       render: (user) => (
         <div className="min-w-44">
           <p className="text-xs font-medium text-slate-800">
@@ -45,36 +49,34 @@ function createColumns({
     },
     {
       key: "platformRole",
-      header: "Platform role",
+      header: fr ? "Rôle sur la plateforme" : "Platform role",
       render: (user) => (
         <Badge tone="accent">
-          {ADMIN_ROLE_LABELS[
-            user.platformRole
-          ] ?? user.platformRole}
+          {adminFr(ADMIN_ROLE_LABELS[user.platformRole] ?? user.platformRole, fr)}
         </Badge>
       ),
     },
     {
       key: "profileStatus",
-      header: "Account",
+      header: fr ? "Compte" : "Account",
       render: (user) => (
         <Badge
           tone={adminToneForStatus(
             user.profileStatus,
           )}
         >
-          {user.profileStatus}
+          {adminFr(user.profileStatus, fr)}
         </Badge>
       ),
     },
     {
       key: "workspaces",
-      header: "Workspace memberships",
+      header: fr ? "Espaces clients" : "Workspace memberships",
       render: (user) => (
         <div className="min-w-56 space-y-1.5">
           {user.memberships.length === 0 ? (
             <span className="text-xs text-slate-400">
-              No workspace memberships
+              {fr ? "Aucun espace client" : "No workspace memberships"}
             </span>
           ) : (
             user.memberships.map(
@@ -88,11 +90,11 @@ function createColumns({
                   </span>
 
                   <span className="text-[11px] capitalize text-slate-400">
-                    {membership.role}
+                    {adminFr(membership.role, fr)}
                   </span>
 
                   <span className="text-[11px] capitalize text-slate-400">
-                    · {membership.status}
+                    · {adminFr(membership.status, fr)}
                   </span>
                 </div>
               ),
@@ -103,7 +105,7 @@ function createColumns({
     },
     {
       key: "identity",
-      header: "Identity check (call)",
+      header: fr ? "Vérification d’identité (appel)" : "Identity check (call)",
       render: (user) => (
         <SupportIdentityCheck
           profileId={user.id}
@@ -113,7 +115,7 @@ function createColumns({
     },
     {
       key: "joined",
-      header: "Account created",
+      header: fr ? "Compte créé le" : "Account created",
       render: (user) => (
         <span className="text-xs text-slate-400">
           {user.createdAt}
@@ -134,13 +136,15 @@ function createColumns({
         if (
           user.id === currentProfileId
         ) {
-          blockedReason =
-            "You cannot delete your own account.";
+          blockedReason = fr
+            ? "Vous ne pouvez pas supprimer votre propre compte."
+            : "You cannot delete your own account.";
         } else if (
           user.ownerWorkspaceCount > 0
         ) {
-          blockedReason =
-            "Transfer ownership of every workspace before deleting this account.";
+          blockedReason = fr
+            ? "Transférez la propriété de chaque espace avant de supprimer ce compte."
+            : "Transfer ownership of every workspace before deleting this account.";
         }
 
         return (
@@ -170,6 +174,8 @@ export default async function AdminUsersPage() {
   const currentProfileId =
     adminAccess.profileId;
 
+  const fr = (await getDashboardLanguage(adminAccess.profileId)) === "fr";
+
   const canDeleteUsers =
     adminAccess.enforced &&
     adminAccess.role === "owner";
@@ -180,17 +186,22 @@ export default async function AdminUsersPage() {
   const columns = createColumns({
     canDeleteUsers,
     currentProfileId,
+    fr,
   });
 
   return (
     <div className="space-y-5">
       <AdminHeader
-        title="Users"
-        subtitle="Platform-wide directory of authenticated accounts and workspace memberships."
+        title={fr ? "Utilisateurs" : "Users"}
+        subtitle={
+          fr
+            ? "Annuaire de toute la plateforme : comptes connectés et leurs espaces clients."
+            : "Platform-wide directory of authenticated accounts and workspace memberships."
+        }
         badges={[
           canDeleteUsers
-            ? "Owner controls"
-            : "Live directory",
+            ? fr ? "Contrôles du propriétaire" : "Owner controls"
+            : fr ? "Annuaire en direct" : "Live directory",
         ]}
       />
 
@@ -209,12 +220,16 @@ export default async function AdminUsersPage() {
           columns={columns}
           rows={data.users}
           rowKey={(user) => user.id}
-          caption="Platform accounts and workspace memberships"
+          caption={fr ? "Comptes de la plateforme et leurs espaces clients" : "Platform accounts and workspace memberships"}
         />
       ) : (
         <AdminEmptyState
-          title="No users found"
-          description="Authenticated platform accounts will appear here after registration or invitation acceptance."
+          title={fr ? "Aucun utilisateur trouvé" : "No users found"}
+          description={
+            fr
+              ? "Les comptes de la plateforme apparaîtront ici après une inscription ou une invitation acceptée."
+              : "Authenticated platform accounts will appear here after registration or invitation acceptance."
+          }
         />
       )}
     </div>

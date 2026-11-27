@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock, Headset, Loader2, ShieldAlert } from "lucide-react";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+
 /**
  * Admin › Users: an agent on a call checks that the person is really the
  * account holder. The person's signed-in devices show « Êtes-vous en contact
@@ -30,24 +32,13 @@ const T = {
   failed: { fr: "La vérification n’a pas pu démarrer.", en: "The check could not start." },
 } as const;
 
-function readLang(): Lang {
-  try {
-    const stored = window.localStorage.getItem("takatak.lang");
-    if (stored === "fr" || stored === "en") return stored;
-  } catch {
-    /* ignore */
-  }
-  return document.documentElement.lang.startsWith("en") ? "en" : "fr";
-}
-
 export function SupportIdentityCheck({ profileId, disabled }: { profileId: string; disabled?: boolean }) {
-  const [lang, setLang] = useState<Lang>("fr");
+  const lang: Lang = useDashboardLanguage() === "fr" ? "fr" : "en";
   const [state, setState] = useState<State>({ phase: "idle" });
   const timer = useRef<number | undefined>(undefined);
   const t = <K extends keyof typeof T>(key: K) => T[key][lang];
 
   useEffect(() => {
-    setLang(readLang());
     return () => window.clearInterval(timer.current);
   }, []);
 

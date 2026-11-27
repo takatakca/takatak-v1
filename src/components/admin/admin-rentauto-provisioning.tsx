@@ -9,7 +9,9 @@ import {
   PlusCircle,
 } from "lucide-react";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 import { Badge } from "@/components/ui/badge";
+import { adminFr } from "@/lib/admin/admin-fr";
 
 export interface RentautoProvisioningRow {
   clientId: string;
@@ -39,14 +41,14 @@ function statusTone(
   return "neutral";
 }
 
-function actionFor(row: RentautoProvisioningRow): {
+function actionFor(row: RentautoProvisioningRow, fr: boolean): {
   label: string;
   status: ManagedStatus;
   icon: typeof PlusCircle;
 } {
   if (!row.serviceStatus) {
     return {
-      label: "Provision",
+      label: fr ? "Activer le service" : "Provision",
       status: "pending_setup",
       icon: PlusCircle,
     };
@@ -54,7 +56,7 @@ function actionFor(row: RentautoProvisioningRow): {
 
   if (row.serviceStatus === "active") {
     return {
-      label: "Pause",
+      label: fr ? "Mettre en pause" : "Pause",
       status: "paused",
       icon: CirclePause,
     };
@@ -63,8 +65,8 @@ function actionFor(row: RentautoProvisioningRow): {
   return {
     label:
       row.serviceStatus === "paused"
-        ? "Reactivate"
-        : "Activate",
+        ? fr ? "Réactiver" : "Reactivate"
+        : fr ? "Activer" : "Activate",
     status: "active",
     icon: CirclePlay,
   };
@@ -77,6 +79,7 @@ export function AdminRentautoProvisioning({
   rows: RentautoProvisioningRow[];
   enabled: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const inFlight = useRef<Set<string>>(new Set());
   const [busyClientId, setBusyClientId] =
@@ -124,20 +127,20 @@ export function AdminRentautoProvisioning({
 
       if (!response.ok || !result.ok) {
         setError(
-          result.message ??
-            "RENTAUTO.CA access could not be updated.",
+          adminFr(result.message ?? "RENTAUTO.CA access could not be updated.", fr),
         );
         return;
       }
 
       setMessage(
-        result.message ??
-          "RENTAUTO.CA access updated.",
+        adminFr(result.message ?? "RENTAUTO.CA access updated.", fr),
       );
       router.refresh();
     } catch {
       setError(
-        "A network error occurred while updating RENTAUTO.CA access.",
+        fr
+          ? "Erreur réseau pendant la mise à jour de l’accès RENTAUTO.CA."
+          : "A network error occurred while updating RENTAUTO.CA access.",
       );
     } finally {
       inFlight.current.delete(row.clientId);
@@ -151,18 +154,18 @@ export function AdminRentautoProvisioning({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-sm font-semibold text-slate-950">
-              RENTAUTO.CA provisioning
+              {fr ? "Activation de RENTAUTO.CA" : "RENTAUTO.CA provisioning"}
             </p>
             <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-500">
-              A workspace sees the Rentauto dashboard only while its Rentauto
-              service is pending setup or active. Vehicle, booking and payment
-              operations remain inside RENTAUTO.CA.
+              {fr
+                ? "Un espace voit le tableau de bord Rentauto seulement quand son service Rentauto est en configuration ou actif. Les véhicules, réservations et paiements restent dans RENTAUTO.CA."
+                : "A workspace sees the Rentauto dashboard only while its Rentauto service is pending setup or active. Vehicle, booking and payment operations remain inside RENTAUTO.CA."}
             </p>
           </div>
           <Badge tone={enabled ? "success" : "neutral"}>
             {enabled
-              ? "Platform write controls"
-              : "Foundation preview"}
+              ? fr ? "Contrôles d’écriture de la plateforme" : "Platform write controls"
+              : fr ? "Aperçu fondation" : "Foundation preview"}
           </Badge>
         </div>
 
@@ -185,11 +188,11 @@ export function AdminRentautoProvisioning({
       <div className="divide-y divide-slate-100">
         {rows.length === 0 ? (
           <p className="px-5 py-6 text-sm text-slate-500">
-            No client workspaces are available for provisioning.
+            {fr ? "Aucun espace client n’est disponible pour l’activation." : "No client workspaces are available for provisioning."}
           </p>
         ) : (
           rows.map((row) => {
-            const action = actionFor(row);
+            const action = actionFor(row, fr);
             const ActionIcon = action.icon;
             const busy =
               busyClientId === row.clientId;
@@ -211,23 +214,34 @@ export function AdminRentautoProvisioning({
                         row.serviceStatus,
                       )}
                     >
-                      {row.serviceStatus ??
-                        "not provisioned"}
+                      {row.serviceStatus
+                        ? adminFr(row.serviceStatus, fr)
+                        : fr
+                          ? "non activé"
+                          : "not provisioned"}
                     </Badge>
                     {row.clientStatus !== "active" ? (
                       <Badge tone="warning">
-                        Workspace {row.clientStatus}
+                        {fr ? `Espace ${adminFr(row.clientStatus, true)}` : `Workspace ${row.clientStatus}`}
                       </Badge>
                     ) : null}
                   </div>
                   <p className="mt-1 text-xs text-slate-500">
                     {conflict
-                      ? `Configuration conflict: ${row.duplicateCount + 1} Rentauto service records exist.`
+                      ? fr
+                        ? `Conflit de configuration : ${row.duplicateCount + 1} fiches de service Rentauto existent.`
+                        : `Configuration conflict: ${row.duplicateCount + 1} Rentauto service records exist.`
                       : row.serviceStatus === "active"
-                        ? "Rentauto module is visible to this workspace."
+                        ? fr
+                          ? "Le module Rentauto est visible pour cet espace."
+                          : "Rentauto module is visible to this workspace."
                         : row.serviceStatus === "pending_setup"
-                          ? "Module is visible while onboarding is completed."
-                          : "Rentauto module is hidden from this workspace."}
+                          ? fr
+                            ? "Le module est visible pendant la mise en route."
+                            : "Module is visible while onboarding is completed."
+                          : fr
+                            ? "Le module Rentauto est caché pour cet espace."
+                            : "Rentauto module is hidden from this workspace."}
                   </p>
                 </div>
 
@@ -252,7 +266,7 @@ export function AdminRentautoProvisioning({
                     <ActionIcon className="h-4 w-4" />
                   )}
                   {busy
-                    ? "Updating…"
+                    ? fr ? "Mise à jour…" : "Updating…"
                     : action.label}
                 </button>
               </div>

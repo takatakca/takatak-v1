@@ -2,6 +2,8 @@
 
 import { AlertTriangle, Loader2, X } from "lucide-react";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+
 type ConfirmationDialogProps = {
   open: boolean;
   title: string;
@@ -17,10 +19,11 @@ export function ConfirmationDialog({
   title,
   description,
   loading = false,
-  proceedLabel = "Proceed",
+  proceedLabel,
   onCancel,
   onProceed,
 }: ConfirmationDialogProps) {
+  const fr = useDashboardLanguage() === "fr";
   if (!open) {
     return null;
   }
@@ -75,7 +78,7 @@ export function ConfirmationDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            aria-label="Close confirmation"
+            aria-label={fr ? "Fermer la confirmation" : "Close confirmation"}
             className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <X
@@ -92,7 +95,7 @@ export function ConfirmationDialog({
             disabled={loading}
             className="rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Cancel
+            {fr ? "Annuler" : "Cancel"}
           </button>
 
           <button
@@ -108,7 +111,7 @@ export function ConfirmationDialog({
               />
             ) : null}
 
-            {loading ? "Processing…" : proceedLabel}
+            {loading ? (fr ? "Traitement…" : "Processing…") : (proceedLabel ?? (fr ? "Continuer" : "Proceed"))}
           </button>
         </footer>
       </section>

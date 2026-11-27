@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Link2, Loader2, Send, XCircle } from "lucide-react";
 
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+
 type ActionResponse = {
   ok: boolean;
   message?: string;
@@ -28,6 +30,7 @@ export function InvoiceRequestActions({
   canReconcile: boolean;
   isOwner: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [pending, setPending] = useState<Action | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -40,13 +43,13 @@ export function InvoiceRequestActions({
 
     if (
       action === "cancel" &&
-      !window.confirm("Cancel this invoice request? This cannot be undone.")
+      !window.confirm(fr ? "Annuler cette demande de facture ? C’est irréversible." : "Cancel this invoice request? This cannot be undone.")
     ) {
       return;
     }
 
     if (action === "reconcile" && !UUID_PATTERN.test(draftId.trim())) {
-      setMessage("Paste the draft id (UUID) shown in Facturations.");
+      setMessage(fr ? "Collez l’identifiant du brouillon (UUID) affiché dans Facturations." : "Paste the draft id (UUID) shown in Facturations.");
       return;
     }
 
@@ -70,11 +73,13 @@ export function InvoiceRequestActions({
         setMessage(
           body.message
             ? `${body.message}${body.code ? ` (${body.code})` : ""}`
-            : "The action failed.",
+            : fr
+              ? "L’action a échoué."
+              : "The action failed.",
         );
       }
     } catch {
-      setMessage("Network error. It is safe to retry.");
+      setMessage(fr ? "Erreur réseau. Vous pouvez réessayer sans risque." : "Network error. It is safe to retry.");
     } finally {
       setPending(null);
       router.refresh();
@@ -101,7 +106,7 @@ export function InvoiceRequestActions({
             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
           >
             {pending === "submit" ? spinner : <Send className="h-3.5 w-3.5" aria-hidden />}
-            Create draft
+            {fr ? "Créer le brouillon" : "Create draft"}
           </button>
         ) : null}
         {canCancel ? (
@@ -112,15 +117,15 @@ export function InvoiceRequestActions({
             className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-50 disabled:opacity-50"
           >
             {pending === "cancel" ? spinner : <XCircle className="h-3.5 w-3.5" aria-hidden />}
-            Cancel
+            {fr ? "Annuler" : "Cancel"}
           </button>
         ) : null}
       </div>
       {showReconcile ? (
         <div className="flex items-center gap-1.5">
           <input
-            aria-label="Facturations draft id"
-            placeholder="Facturations draft id"
+            aria-label={fr ? "Identifiant du brouillon Facturations" : "Facturations draft id"}
+            placeholder={fr ? "Identifiant du brouillon Facturations" : "Facturations draft id"}
             value={draftId}
             onChange={(event) => setDraftId(event.target.value)}
             className="w-56 rounded-lg border border-slate-200 px-2 py-1 font-mono text-xs"
@@ -132,7 +137,7 @@ export function InvoiceRequestActions({
             className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
           >
             {pending === "reconcile" ? spinner : <Link2 className="h-3.5 w-3.5" aria-hidden />}
-            Link draft
+            {fr ? "Lier le brouillon" : "Link draft"}
           </button>
         </div>
       ) : null}
