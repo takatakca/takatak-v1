@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import {
+  HOCKEY_MEMBER_PRICE_ENV,
   resolveHockeyCheckoutLive,
   resolveHockeyMembershipAccess,
+  resolveHockeyStripePriceId,
   validateHockeyCheckoutInput,
 } from "../src/lib/billing/hockey/membership-policy";
 import {
@@ -55,6 +57,50 @@ assert.equal(
   }),
   true,
 );
+
+// AHMV Member price: the owner's server variable wins over the catalog's Stripe price.
+assert.equal(HOCKEY_MEMBER_PRICE_ENV, "STRIPE_PRICE_HOCKEY_MEMBER_WEEKLY_10");
+const member = { planCode: "parent_essential", legacyCode: "hockey_member_weekly_10", catalogProvider: "stripe" };
+assert.equal(
+  resolveHockeyStripePriceId({ ...member, catalogPriceId: "price_catalogTest01", memberPriceId: "price_liveMember01" }),
+  "price_liveMember01",
+);
+assert.equal(
+  resolveHockeyStripePriceId({ ...member, catalogPriceId: "price_catalogTest01", memberPriceId: "" }),
+  "price_catalogTest01",
+);
+assert.equal(
+  resolveHockeyStripePriceId({ ...member, catalogPriceId: null, memberPriceId: "price_liveMember01" }),
+  "price_liveMember01",
+);
+assert.equal(
+  resolveHockeyStripePriceId({ ...member, catalogPriceId: "price_catalogTest01", memberPriceId: "not-a-price" }),
+  null,
+  "a malformed server variable fails closed",
+);
+assert.equal(
+  resolveHockeyStripePriceId({ planCode: "hockey_member_weekly_10", legacyCode: null, catalogProvider: null, catalogPriceId: null, memberPriceId: " price_liveMember01 " }),
+  "price_liveMember01",
+);
+assert.equal(
+  resolveHockeyStripePriceId({ ...member, catalogProvider: "manual", catalogPriceId: "price_catalogTest01", memberPriceId: "" }),
+  null,
+  "only a Stripe catalog price is used",
+);
+// AHMV VIP (CAD 30/week) is planned and not for sale: never a price, even if one is configured.
+for (const vip of [
+  { planCode: "parent_premium", legacyCode: "hockey_vip_weekly_30" },
+  { planCode: "hockey_vip_weekly_30", legacyCode: null },
+]) {
+  assert.equal(
+    resolveHockeyStripePriceId({ ...vip, catalogProvider: "stripe", catalogPriceId: "price_vipCatalog01", memberPriceId: "price_liveMember01" }),
+    null,
+  );
+}
+// Checkout and the webhook price map both read the server variable.
+const catalogService = readFileSync("src/lib/billing/hockey/product-catalog-service.ts", "utf8");
+assert.match(catalogService, /getHockeyMemberPriceId\(\)/);
+assert.match(readFileSync("src/lib/billing/hockey/stripe-service.ts", "utf8"), /line_items: \[\{ price: plan\.stripePriceId, quantity: 1 \}\]/);
 
 assert.equal(mapHockeyStripeStatus("active"), "active");
 assert.equal(mapHockeyStripeStatus("past_due"), "past_due");

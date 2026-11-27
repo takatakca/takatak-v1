@@ -2,6 +2,9 @@ import "server-only";
 
 import { getPrisma } from "@/lib/db/prisma";
 
+import { resolveHockeyStripePriceId } from "./membership-policy";
+import { getHockeyMemberPriceId } from "./stripe-env";
+
 export const AHMV_PRODUCT_CODE = "ahmv" as const;
 export const AHMV_ACCESS_ENTITLEMENT = "ahmv_access" as const;
 
@@ -61,16 +64,18 @@ export async function getAhmvCatalogPlan(planCode: string | null | undefined) {
 
 export async function getAhmvSelfServePlan(planCode: string) {
   const plan = await getAhmvCatalogPlan(planCode);
-  if (
-    !plan ||
-    plan.status !== "active" ||
-    !plan.selfServeEligible ||
-    !plan.price ||
-    !plan.price.providerPriceId
-  ) {
+  if (!plan || plan.status !== "active" || !plan.selfServeEligible || !plan.price) {
     return null;
   }
-  return plan;
+  const stripePriceId = resolveHockeyStripePriceId({
+    planCode: plan.code,
+    legacyCode: plan.legacyCode,
+    catalogProvider: plan.price.provider,
+    catalogPriceId: plan.price.providerPriceId,
+    memberPriceId: getHockeyMemberPriceId(),
+  });
+  if (!stripePriceId) return null;
+  return { ...plan, stripePriceId };
 }
 
 export function hasAhmvEntitlement(
@@ -114,6 +119,20 @@ export async function getAhmvStripePriceMap(): Promise<
         planName: price.plan.name,
       };
     }
+  }
+
+  // The owner's live AHMV Member price (server variable) maps to the Member plan,
+  // so its subscriptions are recognized even when the catalog row holds another ID.
+  const member = await getAhmvCatalogPlan("hockey_member_weekly_10");
+  if (member) {
+    const memberPriceId = resolveHockeyStripePriceId({
+      planCode: member.code,
+      legacyCode: member.legacyCode,
+      catalogProvider: null,
+      catalogPriceId: null,
+      memberPriceId: getHockeyMemberPriceId(),
+    });
+    if (memberPriceId) result[memberPriceId] = { planCode: member.code, planName: member.name };
   }
   return result;
 }

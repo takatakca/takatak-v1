@@ -52,6 +52,14 @@ STRIPE_HOCKEY_WEBHOOK_SECRET=whsec_...
 STRIPE_PRICE_HOCKEY_MEMBER_WEEKLY_10=price_...
 ```
 
+Which Stripe Price is used (2026-11-27, owner's decision):
+
+- AHMV Member: `STRIPE_PRICE_HOCKEY_MEMBER_WEEKLY_10` when it is set, otherwise the Product Catalog's Stripe price for the plan. A value that is set but is not a `price_…` ID fails closed.
+- The webhook recognizes that same Price as the AHMV Member plan, even when the catalog row holds another ID.
+- AHMV VIP never gets a Price, even if one is configured.
+- The amount, currency and cadence always come from the Product Catalog. No price is hard-coded.
+- TAKATAK code creates nothing in Stripe: the owner creates the live Price and the hockey webhook.
+
 The configured Stripe Price is verified by the backend before Checkout:
 
 - currency = CAD

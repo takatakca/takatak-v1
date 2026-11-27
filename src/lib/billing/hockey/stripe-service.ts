@@ -153,7 +153,7 @@ export async function startHockeyMembershipCheckout(input: {
   }
 
   const plan = await getAhmvSelfServePlan(input.planCode);
-  if (!plan || !plan.price?.providerPriceId || plan.price.provider !== "stripe") {
+  if (!plan || !plan.price || !plan.stripePriceId) {
     throw new ServiceError(
       "not_found",
       "This AHMV plan is not available for self-serve checkout.",
@@ -161,7 +161,7 @@ export async function startHockeyMembershipCheckout(input: {
   }
 
   await verifyCatalogStripePrice({
-    priceId: plan.price.providerPriceId,
+    priceId: plan.stripePriceId,
     currency: plan.price.currency,
     unitAmountMinor: plan.price.unitAmountMinor,
     billingInterval: plan.price.billingInterval,
@@ -233,7 +233,7 @@ export async function startHockeyMembershipCheckout(input: {
     mode: "subscription",
     customer: customerId,
     client_reference_id: identity.id,
-    line_items: [{ price: plan.price.providerPriceId, quantity: 1 }],
+    line_items: [{ price: plan.stripePriceId, quantity: 1 }],
     success_url: urls.success,
     cancel_url: urls.cancel,
     metadata,
