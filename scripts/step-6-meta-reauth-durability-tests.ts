@@ -6,7 +6,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { getPrisma } from "../src/lib/db/prisma";
 
 type Status = "PASS" | "FAIL" | "BLOCKED";
 type Result = { id: number | string; name: string; status: Status; evidence: string };
@@ -77,7 +77,14 @@ async function main() {
     process.exit(1);
   }
 
-  const prisma = new PrismaClient();
+  // Same client as the app (Prisma 6 "client" engine needs the pg adapter).
+  const maybePrisma = getPrisma();
+  if (!maybePrisma) {
+    record(0, "database", "BLOCKED", "database client could not start");
+    printSummary();
+    process.exit(1);
+  }
+  const prisma = maybePrisma;
   const stamp = Date.now().toString(36);
   let clientId = "";
   let brandId = "";
@@ -593,7 +600,7 @@ async function main() {
       assert(dash.includes("Reconnect Facebook"), "dashboard reconnect");
       assert(layout.includes("lastErrorCode"), "layout passes lastErrorCode");
       assert(
-        layout.includes('connection.status === "failed"'),
+        /connection\.status\s*===\s*(["'`])failed\1/.test(layout),
         "layout keeps attention pages",
       );
       record(

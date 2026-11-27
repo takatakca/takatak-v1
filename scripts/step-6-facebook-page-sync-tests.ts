@@ -6,7 +6,7 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { getPrisma } from "../src/lib/db/prisma";
 
 type Status = "PASS" | "FAIL" | "BLOCKED";
 type Result = { id: number; name: string; status: Status; evidence: string };
@@ -95,7 +95,12 @@ function hex(bytes = 16): string {
 
 async function main() {
   installLogCapture();
-  const prisma = new PrismaClient();
+  // Same client as the app (Prisma 6 "client" engine needs the pg adapter).
+  const maybePrisma = getPrisma();
+  if (!maybePrisma) {
+    throw new Error("database client could not start");
+  }
+  const prisma = maybePrisma;
 
   const {
     claimFacebookPageSync,
@@ -154,8 +159,9 @@ async function main() {
 
   try {
     // Ensure encryption key exists for local tests.
-    if (!process.env.SOCIAL_TOKEN_ENCRYPTION_KEY) {
-      process.env.SOCIAL_TOKEN_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString(
+    // The app reads versioned keys (SOCIAL_TOKEN_ENCRYPTION_KEY_V1).
+    if (!process.env.SOCIAL_TOKEN_ENCRYPTION_KEY_V1) {
+      process.env.SOCIAL_TOKEN_ENCRYPTION_KEY_V1 = Buffer.alloc(32, 7).toString(
         "base64",
       );
     }

@@ -37,6 +37,20 @@ function readSource(relative: string): string {
   return readFileSync(resolve(process.cwd(), relative), "utf8");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Matches `key: "value"`, `key: 'value'` or `key: \`value\`` so a source
+ * check does not depend on the file's quote style.
+ */
+function quotedProperty(key: string, value: string): RegExp {
+  return new RegExp(
+    escapeRegExp(key) + ":\\s*([\"'`])" + escapeRegExp(value) + "\\1",
+  );
+}
+
 check("OAuth start requests channel identity scopes with PKCE", () => {
   assert(TWITCH_OAUTH_START_SCOPES.includes("user:read:email"), "email");
   assert(
@@ -127,8 +141,8 @@ check("Twitch card starts independent OAuth 2.0", () => {
   const modal = readSource(
     "src/components/social/connections/manage-connections-modal.tsx",
   );
-  assert(modal.includes('key: "twitch"'), "twitch card");
-  assert(modal.includes('provider: "twitch"'), "twitch provider");
+  assert(quotedProperty("key", "twitch").test(modal), "twitch card");
+  assert(quotedProperty("provider", "twitch").test(modal), "twitch provider");
   assert(modal.includes("pickSelectedTwitchAccount"), "strict picker");
   const registry = readSource("src/lib/social/providers/registry.ts");
   const twitchBlock = registry.slice(registry.indexOf("twitch:"));
@@ -169,7 +183,7 @@ check("Twitch page starts independent OAuth", () => {
   const page = readSource(
     "src/components/social/platforms/twitch-connect-page.tsx",
   );
-  assert(page.includes('provider: "twitch"'), "independent start");
+  assert(quotedProperty("provider", "twitch").test(page), "independent start");
   assert(page.includes("Connect Twitch"), "connect CTA");
   const start = readSource(
     "src/lib/social/connections/social-connection-service.ts",

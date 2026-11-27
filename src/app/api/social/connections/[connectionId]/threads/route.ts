@@ -11,8 +11,8 @@ import {
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import {
   clearSelectedThreadsAccount,
+  startLinkedThreadsAuthorization,
 } from "@/lib/social/connections/social-threads-account-service";
-import { toAccountPictureSrc } from "@/lib/social/media/remote-image";
 import { isUuid } from "@/lib/validation/common";
 
 export const runtime = "nodejs";
@@ -47,20 +47,28 @@ export async function POST(
   }
 
   try {
-    const { buildThreadsAuthorizationUrl } = await import(
-      "@/lib/social/providers/threads-oauth"
-    );
-
-    const authorizationUrl = await buildThreadsAuthorizationUrl({
-      state: connectionId,
+    // Threads linked to Facebook: check the Page + Instagram prerequisites,
+    // then start the real Threads authorization with a stored OAuth state.
+    // (A raw connection id as `state` is rejected by the Threads callback.)
+    const authorization = await startLinkedThreadsAuthorization({
+      clientId: gate.access.activeClientId,
+      profileId: gate.access.profileId,
+      connectionId,
+      returnPath: "/dashboard/social?connections=open&platform=threads",
     });
+
+    revalidatePath("/dashboard/social");
+    revalidatePath("/dashboard/social/accounts");
 
     return jsonResponse(
       {
         ok: true,
         message: "Continue to Threads to authorize this brand.",
         authorization: {
-          authorizationUrl,
+          authorizationUrl: authorization.authorizationUrl,
+          expiresAt: authorization.expiresAt,
+          provider: authorization.provider,
+          connectionId: authorization.connectionId,
         },
       },
       200,
