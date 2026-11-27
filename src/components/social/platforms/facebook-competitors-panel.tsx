@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 function formatMetric(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
@@ -72,6 +73,7 @@ const METRIC_TOOLTIPS: Record<string, string> = {
 };
 
 export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
+  const fr = useDashboardLanguage() === "fr";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [capability, setCapability] = useState<Capability | null>(null);
@@ -225,11 +227,10 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
   if (!liveMode) {
     return (
       <div id="fb-competitors" className="scroll-mt-[220px] space-y-4">
-        <h2 className="text-[22px] font-semibold text-[#20242A]">Competitors</h2>
+        <h2 className="text-[22px] font-semibold text-[#20242A]">{fr ? "Concurrents" : "Competitors"}</h2>
         <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
           <p className="text-sm text-[#6b7280]">
-            Connect a Facebook Page to track competitors through Meta’s Graph API
-            only. Takatak never scrapes Facebook pages.
+            {fr ? "Branchez une page Facebook pour suivre des concurrents par l’API Graph de Meta seulement. TAKATAK n’extrait jamais les pages Facebook." : "Connect a Facebook Page to track competitors through Meta’s Graph API only. Takatak never scrapes Facebook pages."}
           </p>
         </section>
       </div>
@@ -238,7 +239,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
 
   return (
     <div id="fb-competitors" className="scroll-mt-[220px] space-y-4">
-      <h2 className="text-[22px] font-semibold text-[#20242A]">Competitors</h2>
+      <h2 className="text-[22px] font-semibold text-[#20242A]">{fr ? "Concurrents" : "Competitors"}</h2>
 
       {loading ? (
         <p className="text-sm text-[#6b7280]" aria-live="polite">
@@ -267,16 +268,15 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
       {unavailable ? (
         <section className="rounded-[14px] border border-[#f0d48a] bg-[#fff8e6] px-5 py-6">
           <h3 className="text-[18px] font-semibold text-[#20242A]">
-            Competitor tracking unavailable
+            {fr ? "Suivi des concurrents impossible pour l’instant" : "Competitor tracking unavailable"}
           </h3>
           <p className="mt-2 text-sm leading-6 text-[#6b5400]">
             {capability?.reason}
           </p>
           <ul className="mt-4 list-disc space-y-1 pl-5 text-sm text-[#6b5400]">
-            <li>No browser scraping or unofficial collection.</li>
+            <li>{fr ? "Aucune extraction par navigateur ni collecte non officielle." : "No browser scraping or unofficial collection."}</li>
             <li>
-              Competitor reach, impressions, demographics, and clicks stay
-              unsupported.
+              {fr ? "La portée, les impressions, la démographie et les clics des concurrents ne sont pas disponibles chez Meta." : "Competitor reach, impressions, demographics, and clicks stay unsupported."}
             </li>
             <li>
               Status: {capability?.status} · pages/search:{" "}
@@ -290,18 +290,15 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
       {capabilityReady ? (
         <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
           <h3 className="text-[18px] font-semibold text-[#20242A]">
-            How competitor tracking works
+            {fr ? "Comment fonctionne le suivi des concurrents" : "How competitor tracking works"}
           </h3>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-[#6b7280]">
-            Add a public Facebook Page URL or username. Takatak resolves it
-            through Meta Graph API endpoints only, stores dated public
-            snapshots, and compares equivalent confirmed metrics. Private Page
-            insights are never claimed for competitors.
+            {fr ? "Ajoutez l’adresse ou le nom d’utilisateur d’une page Facebook publique. TAKATAK la lit seulement par l’API Graph de Meta, garde des instantanés publics datés et compare des mesures confirmées équivalentes. Les statistiques privées d’une page concurrente ne sont jamais prétendues." : "Add a public Facebook Page URL or username. Takatak resolves it through Meta Graph API endpoints only, stores dated public snapshots, and compares equivalent confirmed metrics. Private Page insights are never claimed for competitors."}
           </p>
 
           <form onSubmit={onAdd} className="mt-5 grid gap-3 lg:grid-cols-[1fr_220px_auto]">
             <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-              <span>Facebook Page URL or username</span>
+              <span>{fr ? "Adresse ou nom d’utilisateur de la page Facebook" : "Facebook Page URL or username"}</span>
               <input
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
@@ -311,7 +308,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
               />
             </label>
             <label className="flex flex-col gap-1.5 text-xs font-medium text-[#6B7280]">
-              <span>Local display label (optional)</span>
+              <span>{fr ? "Nom affiché localement (facultatif)" : "Local display label (optional)"}</span>
               <input
                 value={displayLabel}
                 onChange={(event) => setDisplayLabel(event.target.value)}
@@ -335,12 +332,10 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
       {!loading && capabilityReady && competitors.length === 0 ? (
         <section className="rounded-[14px] border border-dashed border-[#e1e4e7] bg-[#fafbfc] px-5 py-10 text-center">
           <p className="text-[16px] font-semibold text-[#30343a]">
-            No competitors tracked yet
+            {fr ? "Aucun concurrent suivi pour l’instant" : "No competitors tracked yet"}
           </p>
           <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-[#6b7280]">
-            Add a public Facebook Page to start dated public snapshots. If
-            Meta later revokes access, prior confirmed snapshots stay visible
-            as stale.
+            {fr ? "Ajoutez une page Facebook publique pour commencer les instantanés publics datés. Si Meta retire l’accès plus tard, les instantanés déjà confirmés restent visibles, marqués comme anciens." : "Add a public Facebook Page to start dated public snapshots. If Meta later revokes access, prior confirmed snapshots stay visible as stale."}
           </p>
         </section>
       ) : null}
@@ -350,12 +345,12 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-[#fafbfc] text-xs uppercase tracking-wide text-[#6b7280]">
                   <tr>
-                    <th className="px-4 py-3 font-semibold">Competitor</th>
+                    <th className="px-4 py-3 font-semibold">{fr ? "Concurrent" : "Competitor"}</th>
                     <th
                       className="px-4 py-3 font-semibold"
                       title={METRIC_TOOLTIPS.followers}
                     >
-                      Followers
+                      {fr ? "Abonnés" : "Followers"}
                     </th>
                     <th
                       className="px-4 py-3 font-semibold"
@@ -363,8 +358,8 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                     >
                       Δ followers
                     </th>
-                    <th className="px-4 py-3 font-semibold">Snapshot</th>
-                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">{fr ? "Instantané" : "Snapshot"}</th>
+                    <th className="px-4 py-3 font-semibold">{fr ? "Statut" : "Status"}</th>
                     <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
@@ -427,7 +422,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                               onClick={() => void onRefresh(row.publicRef)}
                               className="text-xs font-semibold text-[#566DF1] disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                              Refresh
+                              {fr ? "Actualiser" : "Refresh"}
                             </button>
                             <button
                               type="button"
@@ -442,34 +437,32 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                               }}
                               className="text-xs font-semibold text-[#566DF1]"
                             >
-                              Rename
+                              {fr ? "Renommer" : "Rename"}
                             </button>
                             <button
                               type="button"
                               onClick={() => setConfirmRemove(row.publicRef)}
                               className="text-xs font-semibold text-[#b42318]"
                             >
-                              Remove
+                              {fr ? "Retirer" : "Remove"}
                             </button>
                           </div>
                           {confirmRemove === row.publicRef ? (
                             <div className="mt-2 rounded-[8px] border border-[#f3d1d1] bg-[#fff5f5] p-2 text-xs text-[#7a1f1f]">
-                              Remove this competitor track? Historical snapshots
-                              remain stored for audit, but it leaves the active
-                              list.
+                              {fr ? "Retirer ce concurrent ? Les instantanés passés restent conservés pour l’audit, mais il quitte la liste active." : "Remove this competitor track? Historical snapshots remain stored for audit, but it leaves the active list."}
                               <div className="mt-2 flex gap-2">
                                 <button
                                   type="button"
                                   onClick={() => void onRemove(row.publicRef)}
                                   className="font-semibold"
                                 >
-                                  Confirm remove
+                                  {fr ? "Confirmer le retrait" : "Confirm remove"}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setConfirmRemove(null)}
                                 >
-                                  Cancel
+                                  {fr ? "Annuler" : "Cancel"}
                                 </button>
                               </div>
                             </div>
@@ -486,7 +479,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
           {benchmark && competitors.length > 0 ? (
             <section className="rounded-[14px] border border-[#e8eaed] bg-white px-5 py-6">
               <h3 className="text-[18px] font-semibold text-[#20242A]">
-                Equivalent public follower comparison
+                {fr ? "Comparaison d’abonnés publics équivalente" : "Equivalent public follower comparison"}
               </h3>
               <p className="mt-1 text-sm text-[#6b7280]">
                 Selected Page vs competitors — confirmed public follower counts
@@ -502,7 +495,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                 <div className="flex items-center justify-between rounded-[10px] bg-[#f5f8ff] px-4 py-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-[#566DF1]">
-                      Selected Page
+                      {fr ? "Page choisie" : "Selected Page"}
                     </p>
                     <p className="font-semibold text-[#20242A]">
                       {benchmark.selectedPage.label}
@@ -556,8 +549,7 @@ export function FacebookCompetitorsPanel({ liveMode }: { liveMode: boolean }) {
                         </div>
                       ) : (
                         <p className="text-xs text-[#9aa1a9]">
-                          Chart omitted — non-equivalent or missing confirmed
-                          values.
+                          {fr ? "Graphique omis : valeurs confirmées manquantes ou non équivalentes." : "Chart omitted — non-equivalent or missing confirmed values."}
                         </p>
                       )}
                     </div>

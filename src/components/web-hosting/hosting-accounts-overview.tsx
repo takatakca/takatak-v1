@@ -30,6 +30,7 @@ import {
 } from "@/lib/web-hosting/display";
 import type { DomainSummary, HostingServiceSummary } from "@/lib/web-hosting/types";
 import { pricing } from "@/lib/website/pricing";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const RANGES = ["7D", "30D", "3M", "6M", "1Y"] as const;
 
@@ -72,6 +73,7 @@ export function HostingAccountsOverview({
   domains: DomainSummary[];
   sourceLabel: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [planFilter, setPlanFilter] = useState("all");
@@ -149,7 +151,7 @@ export function HostingAccountsOverview({
           <Kpi icon={Server} iconClass="bg-blue-100 text-blue-600" label="Total Hosting Accounts" value={String(services.length)} />
           <Kpi icon={Globe} iconClass="bg-blue-100 text-blue-600" label="Active Websites" value={String(activeWebsites)} />
           <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <p className="text-sm text-slate-500">Disk Usage</p>
+            <p className="text-sm text-slate-500">{fr ? "Utilisation du disque" : "Disk Usage"}</p>
             <p className="mt-1 text-lg font-semibold text-slate-900">
               {diskRollup
                 ? `${formatCompactNumber(diskRollup.used)} / ${formatCompactNumber(diskRollup.total)}`
@@ -165,7 +167,7 @@ export function HostingAccountsOverview({
             </div>
           </article>
           <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <p className="text-sm text-slate-500">Bandwidth Usage</p>
+            <p className="text-sm text-slate-500">{fr ? "Utilisation de la bande passante" : "Bandwidth Usage"}</p>
             <p className="mt-1 text-lg font-semibold text-slate-900">
               {bandwidthRollup
                 ? `${formatCompactNumber(bandwidthRollup.used)} / ${formatCompactNumber(bandwidthRollup.total)}`
@@ -185,14 +187,14 @@ export function HostingAccountsOverview({
           <Kpi icon={Activity} iconClass="bg-emerald-100 text-emerald-600" label="Avg. Uptime" value="—" hint="Not connected" />
           <article className="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
             <div className="flex items-start justify-between">
-              <p className="text-sm text-slate-500">Support Tickets</p>
+              <p className="text-sm text-slate-500">{fr ? "Demandes au soutien" : "Support Tickets"}</p>
               <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
                 <Headphones className="h-4 w-4" />
               </span>
             </div>
             <p className="mt-1 text-2xl font-semibold text-slate-900">—</p>
             <Link href="/dashboard/support" className="mt-1 inline-flex min-h-8 items-center text-xs font-medium text-blue-600">
-              View All Tickets
+              {fr ? "Voir toutes les demandes" : "View All Tickets"}
             </Link>
           </article>
         </section>
@@ -200,7 +202,7 @@ export function HostingAccountsOverview({
         <section className="grid gap-4 xl:grid-cols-[1.45fr_0.85fr]">
           <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold text-slate-900">Hosting Performance</h3>
+              <h3 className="text-sm font-semibold text-slate-900">{fr ? "Performance de l’hébergement" : "Hosting Performance"}</h3>
               <div className="flex rounded-lg bg-slate-100 p-0.5 text-xs font-medium">
                 {RANGES.map((item) => (
                   <button
@@ -222,7 +224,7 @@ export function HostingAccountsOverview({
               </svg>
             ) : (
               <p className="mt-8 text-sm text-slate-400">
-                CPU, memory, and disk I/O trends appear when hosting telemetry is connected.
+                {fr ? "Les tendances processeur, mémoire et disque apparaissent une fois la télémétrie de l’hébergement branchée." : "CPU, memory, and disk I/O trends appear when hosting telemetry is connected."}
               </p>
             )}
             <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-500">
@@ -232,7 +234,7 @@ export function HostingAccountsOverview({
             </div>
           </article>
           <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h3 className="text-sm font-semibold text-slate-900">Resource Usage</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Utilisation des ressources" : "Resource Usage"}</h3>
             <div className="mt-4 flex items-center gap-4">
               <DonutChart
                 caption="Total Used"
@@ -250,9 +252,9 @@ export function HostingAccountsOverview({
               />
               <ul className="space-y-2 text-sm text-slate-600">
                 <li className="flex justify-between gap-4"><span>CPU</span>{cpu != null ? `${cpu}%` : "—"}</li>
-                <li className="flex justify-between gap-4"><span>Memory</span>{memory != null ? `${memory}%` : "—"}</li>
-                <li className="flex justify-between gap-4"><span>Disk</span>{diskPct != null ? `${diskPct}%` : "—"}</li>
-                <li className="flex justify-between gap-4"><span>Bandwidth</span>{bandwidthPct != null ? `${bandwidthPct}%` : "—"}</li>
+                <li className="flex justify-between gap-4"><span>{fr ? "Mémoire" : "Memory"}</span>{memory != null ? `${memory}%` : "—"}</li>
+                <li className="flex justify-between gap-4"><span>{fr ? "Disque" : "Disk"}</span>{diskPct != null ? `${diskPct}%` : "—"}</li>
+                <li className="flex justify-between gap-4"><span>{fr ? "Bande passante" : "Bandwidth"}</span>{bandwidthPct != null ? `${bandwidthPct}%` : "—"}</li>
               </ul>
             </div>
             <Link href="/dashboard/web-hosting/environments" className="mt-4 inline-flex min-h-10 items-center gap-1 text-sm font-medium text-blue-600">
@@ -263,7 +265,7 @@ export function HostingAccountsOverview({
 
         <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-            <h3 className="text-sm font-semibold text-slate-900">My Hosting Accounts</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Mes comptes d’hébergement" : "My Hosting Accounts"}</h3>
             <div className="flex flex-wrap gap-2">
               <input
                 value={search}
@@ -282,10 +284,10 @@ export function HostingAccountsOverview({
                 }}
                 className="h-9 rounded-lg border border-slate-200 px-3 text-sm"
               >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="pending setup">Pending setup</option>
-                <option value="planned">Planned</option>
+                <option value="all">{fr ? "Tous les statuts" : "All Status"}</option>
+                <option value="active">{fr ? "Actif" : "Active"}</option>
+                <option value="pending setup">{fr ? "Configuration en attente" : "Pending setup"}</option>
+                <option value="planned">{fr ? "Prévu" : "Planned"}</option>
               </select>
               <select
                 value={planFilter}
@@ -295,7 +297,7 @@ export function HostingAccountsOverview({
                 }}
                 className="h-9 rounded-lg border border-slate-200 px-3 text-sm"
               >
-                <option value="all">All Plans</option>
+                <option value="all">{fr ? "Tous les forfaits" : "All Plans"}</option>
                 {plans.map((plan) => (
                   <option key={plan} value={plan}>{plan}</option>
                 ))}
@@ -306,13 +308,13 @@ export function HostingAccountsOverview({
             <table className="w-full min-w-[960px] text-left text-sm">
               <thead>
                 <tr className="border-y border-slate-100 text-xs text-slate-400">
-                  <th className="px-5 py-3 font-medium">Hosting Account</th>
-                  <th className="px-3 py-3 font-medium">Plan</th>
-                  <th className="px-3 py-3 font-medium">Websites</th>
-                  <th className="px-3 py-3 font-medium">Disk Usage</th>
-                  <th className="px-3 py-3 font-medium">Bandwidth</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3 font-medium">Renewal Date</th>
+                  <th className="px-5 py-3 font-medium">{fr ? "Compte d’hébergement" : "Hosting Account"}</th>
+                  <th className="px-3 py-3 font-medium">{fr ? "Forfait" : "Plan"}</th>
+                  <th className="px-3 py-3 font-medium">{fr ? "Sites Web" : "Websites"}</th>
+                  <th className="px-3 py-3 font-medium">{fr ? "Utilisation du disque" : "Disk Usage"}</th>
+                  <th className="px-3 py-3 font-medium">{fr ? "Bande passante" : "Bandwidth"}</th>
+                  <th className="px-3 py-3 font-medium">{fr ? "Statut" : "Status"}</th>
+                  <th className="px-3 py-3 font-medium">{fr ? "Date de renouvellement" : "Renewal Date"}</th>
                   <th className="px-3 py-3 font-medium">Actions</th>
                 </tr>
               </thead>
@@ -401,7 +403,7 @@ export function HostingAccountsOverview({
       <div className="space-y-5 xl:sticky xl:top-[88px] xl:self-start">
         <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900">Hosting Account Details</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Détails du compte d’hébergement" : "Hosting Account Details"}</h3>
             {selectedStatus ? (
               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${selectedStatus.className}`}>
                 {selectedStatus.label}
@@ -470,7 +472,7 @@ export function HostingAccountsOverview({
                   href="/dashboard/web-hosting/environments"
                   className="rounded-lg border border-slate-200 py-2 text-center text-sm font-medium text-slate-700"
                 >
-                  Manage Plan
+                  {fr ? "Gérer le forfait" : "Manage Plan"}
                 </Link>
                 <Link
                   href="/dashboard/web-hosting/hosting"
@@ -483,15 +485,15 @@ export function HostingAccountsOverview({
                 href="/dashboard/web-hosting/environments"
                 className="mt-2 block rounded-lg bg-slate-900 py-2 text-center text-sm font-medium text-white"
               >
-                Open Environment
+                {fr ? "Ouvrir l’environnement" : "Open Environment"}
               </Link>
             </>
           ) : (
-            <p className="mt-4 text-sm text-slate-400">Hosting accounts appear here when they are tracked.</p>
+            <p className="mt-4 text-sm text-slate-400">{fr ? "Les comptes d’hébergement apparaissent ici dès qu’ils sont suivis." : "Hosting accounts appear here when they are tracked."}</p>
           )}
         </article>
         <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Quick Actions</h3>
+          <h3 className="text-sm font-semibold text-slate-900">{fr ? "Actions rapides" : "Quick Actions"}</h3>
           <ul className="mt-2">
             {[
               { label: "Domain Provider Portal", href: "/dashboard/web-hosting/domain-portal", icon: Monitor },
@@ -507,7 +509,7 @@ export function HostingAccountsOverview({
                   <li key={action.label} className="flex items-center gap-2 px-2 py-2 text-sm text-slate-400">
                     <Icon className="h-4 w-4" />
                     <span className="flex-1">{action.label}</span>
-                    <span className="text-[11px]">Not connected</span>
+                    <span className="text-[11px]">{fr ? "Non branché" : "Not connected"}</span>
                   </li>
                 );
               }

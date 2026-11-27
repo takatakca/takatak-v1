@@ -13,6 +13,7 @@ import { useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { XSubscribedDashboard } from "@/components/social/platforms/x-subscribed-dashboard";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -92,6 +93,7 @@ export function XConnectPage({
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,8 +153,7 @@ export function XConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple X selections need attention. Open Manage connections and
-        confirm a single X account for this brand.
+        {fr ? "Plusieurs comptes X sont choisis. Ouvrez Gérer les connexions et confirmez un seul compte X pour cette marque." : "Multiple X selections need attention. Open Manage connections and confirm a single X account for this brand."}
       </div>
     );
   }
@@ -164,11 +165,10 @@ export function XConnectPage({
           <section className="flex flex-col gap-4 rounded-[14px] border border-slate-200 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-[17px] font-semibold text-slate-950">
-                No X account connected
+                {fr ? "Aucun compte X branché" : "No X account connected"}
               </h2>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Your saved X history remains stored. Reconnect the same
-                account to restore only that account&apos;s analytics.
+                {fr ? "Votre historique X reste enregistré. Reconnectez le même compte pour retrouver les statistiques de ce compte seulement." : "Your saved X history remains stored. Reconnect the same account to restore only that account's analytics."}
               </p>
             </div>
             <Link
@@ -178,15 +178,14 @@ export function XConnectPage({
               )}
               className="inline-flex h-11 shrink-0 items-center justify-center rounded-[10px] bg-[#2c1929] px-6 text-sm font-semibold text-[#ddff35] transition hover:bg-[#3b2237]"
             >
-              Reconnect X
+              {fr ? "Reconnecter X" : "Reconnect X"}
             </Link>
           </section>
         ) : null}
 
         {isConnected ? (
           <p className="rounded-[14px] border border-slate-200 bg-white px-5 py-4 text-sm leading-6 text-slate-600">
-            This X account is connected to the brand. TAKATAK does not import
-            X statistics yet, so the figures below stay empty.
+            {fr ? "Ce compte X est branché à la marque. TAKATAK n’importe pas encore les statistiques X (API payante) : les chiffres ci-dessous restent vides." : "This X account is connected to the brand. TAKATAK does not import X statistics yet, so the figures below stay empty."}
           </p>
         ) : null}
 
@@ -213,11 +212,10 @@ export function XConnectPage({
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-              Connect your X account
+              {fr ? "Branchez votre compte X" : "Connect your X account"}
             </h2>
             <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-              Sign in with X to import this brand’s account. X is a paid add-on
-              and needs an available slot.
+              {fr ? "Connectez-vous avec X pour importer le compte de cette marque. X est un module payant et demande une place libre." : "Sign in with X to import this brand’s account. X is a paid add-on and needs an available slot."}
             </p>
             {error ? (
               <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -270,11 +268,10 @@ export function XConnectPage({
       <section className="relative min-h-[245px] overflow-hidden rounded-[18px] border border-[#e1e4e7] bg-white px-8 py-9">
         <div className="relative z-10 max-w-2xl">
           <h2 className="text-[21px] font-medium leading-7 text-[#30343a]">
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(
@@ -283,7 +280,7 @@ export function XConnectPage({
             )}
             className="mt-5 inline-flex h-12 items-center justify-center rounded-[10px] border border-[#493546] bg-white px-5 text-[15px] font-medium text-[#342431] transition hover:bg-[#f8f8f8]"
           >
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </Link>
         </div>
       </section>

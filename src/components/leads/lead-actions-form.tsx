@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Loader2, Save } from "lucide-react";
 
 import { LEAD_PRIORITY_LABELS, LEAD_STATUS_LABELS } from "@/lib/leads/status";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export function LeadActionsForm({
   leadId,
@@ -17,6 +18,7 @@ export function LeadActionsForm({
   priority: string;
   followUpOn: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [nextStatus, setNextStatus] = useState(status);
   const [nextPriority, setNextPriority] = useState(priority);
@@ -65,7 +67,7 @@ export function LeadActionsForm({
     <form onSubmit={save} className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-3">
         <label className="space-y-1 text-xs font-medium text-slate-600">
-          Status
+          {fr ? "Statut" : "Status"}
           <select value={nextStatus} onChange={(e) => setNextStatus(e.target.value)} className={field}>
             {Object.entries(LEAD_STATUS_LABELS).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
@@ -73,7 +75,7 @@ export function LeadActionsForm({
           </select>
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-600">
-          Priority
+          {fr ? "Priorité" : "Priority"}
           <select value={nextPriority} onChange={(e) => setNextPriority(e.target.value)} className={field}>
             {Object.entries(LEAD_PRIORITY_LABELS).map(([value, label]) => (
               <option key={value} value={value}>{label}</option>
@@ -81,12 +83,12 @@ export function LeadActionsForm({
           </select>
         </label>
         <label className="space-y-1 text-xs font-medium text-slate-600">
-          Follow up on
+          {fr ? "Faire un suivi le" : "Follow up on"}
           <input type="date" value={nextFollowUp} onChange={(e) => setNextFollowUp(e.target.value)} className={field} />
         </label>
       </div>
       <label className="block space-y-1 text-xs font-medium text-slate-600">
-        Add a note
+        {fr ? "Ajouter une note" : "Add a note"}
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}

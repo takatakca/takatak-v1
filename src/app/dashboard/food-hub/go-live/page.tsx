@@ -69,13 +69,13 @@ export default async function GoLivePage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Go-Live Checklist</h1>
+          <h1>Liste de mise en ligne · Go-Live Checklist</h1>
           <div className="small">Computed from your real configuration. {doneRequired}/{totalRequired} required steps done.</div>
         </div>
         <Link className="button" href="/dashboard/food-hub/channels">Open Channels &amp; Setup</Link>
       </div>
       <table>
-        <thead><tr><th></th><th>Step</th><th>How / status</th></tr></thead>
+        <thead><tr><th></th><th>Étape · Step</th><th>Comment / statut · How / status</th></tr></thead>
         <tbody>
           {gates.map((g, i) => (
             <tr key={g.label}>

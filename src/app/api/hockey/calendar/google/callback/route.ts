@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getSessionUser } from "@/lib/auth/supabase-server";
 import { completeHockeyGoogleCalendarOAuth } from "@/lib/hockey/calendar/google-oauth-service";
+import { originFromRequest } from "@/lib/config/app-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,5 +18,5 @@ export async function GET(request: NextRequest) {
     error: url.searchParams.get("error"),
   });
 
-  return NextResponse.redirect(new URL(result.returnPath, request.url), 303);
+  return NextResponse.redirect(new URL(result.returnPath, originFromRequest(request)), 303);
 }

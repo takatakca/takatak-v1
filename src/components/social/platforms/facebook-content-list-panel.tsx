@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { displayDate } from "@/components/social/analytics/social-summary-tokens";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export type FacebookContentRow = {
   id: string;
@@ -69,6 +70,7 @@ export function FacebookContentListPanel({
   compareEnabled?: boolean;
   liveMode: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [sort, setSort] = useState<
     "publishedAt_desc" | "publishedAt_asc" | "engagement_desc"
   >("publishedAt_desc");
@@ -168,7 +170,7 @@ export function FacebookContentListPanel({
           </p>
         </div>
         <label className="flex flex-col gap-1 text-xs font-medium text-[#6B7280]">
-          <span>Sort</span>
+          <span>{fr ? "Trier" : "Sort"}</span>
           <select
             value={sort}
             onChange={(event) =>
@@ -181,9 +183,9 @@ export function FacebookContentListPanel({
             }
             className="h-10 rounded-[10px] border border-[#d7dbe0] bg-white px-3 text-sm text-[#30343a]"
           >
-            <option value="publishedAt_desc">Newest first</option>
-            <option value="publishedAt_asc">Oldest first</option>
-            <option value="engagement_desc">Highest engagement</option>
+            <option value="publishedAt_desc">{fr ? "Plus récents d’abord" : "Newest first"}</option>
+            <option value="publishedAt_asc">{fr ? "Plus anciens d’abord" : "Oldest first"}</option>
+            <option value="engagement_desc">{fr ? "Meilleur engagement" : "Highest engagement"}</option>
           </select>
         </label>
       </div>
@@ -271,7 +273,7 @@ export function FacebookContentListPanel({
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[11px] text-[#9aa1a9]">
-                      No media
+                      {fr ? "Aucun média" : "No media"}
                     </div>
                   )}
                 </div>
@@ -321,7 +323,7 @@ export function FacebookContentListPanel({
                       rel="noreferrer"
                       className="mt-2 inline-block text-xs font-semibold text-[#566DF1]"
                     >
-                      Open on Facebook
+                      {fr ? "Ouvrir sur Facebook" : "Open on Facebook"}
                     </a>
                   ) : null}
                 </div>

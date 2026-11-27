@@ -2,6 +2,7 @@
 
 import { useId, useRef, useSyncExternalStore } from "react";
 import { Columns3, Inbox, LayoutGrid, List, Menu } from "lucide-react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const STORAGE_KEY = "takatak.review.layout.v1";
 const CHANGE_EVENT = "revew:layout-change";
@@ -86,6 +87,7 @@ export function ReviewLayoutPicker({
   layout: ReviewLayout;
   onChange: (layout: ReviewLayout) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const groupId = useId();
   const disclosure = useRef<HTMLDetailsElement>(null);
   const selected = REVIEW_LAYOUTS.find((option) => option.id === layout)!;
@@ -136,8 +138,7 @@ export function ReviewLayoutPicker({
           </label>
         ))}
         <p className="px-2 pt-2 text-[11px] leading-5 text-slate-500">
-          The layout changes the presentation. Your filters, source records and
-          permissions stay the same.
+          {fr ? "La mise en page change la présentation. Vos filtres, vos fiches et vos autorisations restent les mêmes." : "The layout changes the presentation. Your filters, source records and permissions stay the same."}
         </p>
       </fieldset>
     </details>

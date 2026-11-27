@@ -40,6 +40,7 @@ import {
 } from "@/lib/reputation/workspace-navigation";
 import { navigateReviewWorkspace } from "./review-workspace-navigation";
 import type { ReviewApprovalRun } from "./review-approval-center";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 function ReviewSelection({
   review,
@@ -112,17 +113,17 @@ function ReviewResults({
   layout: ReviewLayout;
   onSelect: (key: string) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   if (layout === "platforms") {
     const sources = Array.from(new Set(reviews.map((review) => review.source)));
     return (
       <Card className="min-w-0 overflow-hidden">
         <div className="border-b border-slate-100 px-4 py-3">
           <h2 className="text-sm font-semibold text-slate-900">
-            Reviews by platform
+            {fr ? "Avis par plateforme" : "Reviews by platform"}
           </h2>
           <p className="mt-1 text-xs text-slate-600">
-            Source columns show this page of the filtered feed. Select any
-            review to work on it below.
+            {fr ? "Les colonnes de source montrent cette page du fil filtré. Choisissez un avis pour le traiter ci-dessous." : "Source columns show this page of the filtered feed. Select any review to work on it below."}
           </p>
         </div>
         <div
@@ -176,7 +177,7 @@ function ReviewResults({
     return (
       <section aria-label="Review grid">
         <h2 className="mb-3 text-sm font-semibold text-slate-900">
-          Review grid
+          {fr ? "Grille de révision" : "Review grid"}
         </h2>
         <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {reviews.map((review) => (
@@ -201,7 +202,7 @@ function ReviewResults({
           {layout === "list" ? "Review list" : "Review inbox"}
         </h2>
         <p className="mt-1 text-xs text-slate-600">
-          Select a customer story to review and respond
+          {fr ? "Choisissez un commentaire client à lire et à traiter" : "Select a customer story to review and respond"}
           {layout === "list" ? " below" : ""}.
         </p>
       </div>
@@ -235,6 +236,7 @@ export function ReviewCockpit({
   googleDrafts?: Record<string, { status: string; text: string }>;
   approvalRuns?: ReviewApprovalRun[];
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [layout, setLayout] = useReviewLayout();
   const [source, setSource] = useState("all"),
     [query, setQuery] = useState(""),
@@ -317,11 +319,10 @@ export function ReviewCockpit({
               GROUPE TAKATAK · REVIEW
             </p>
             <h2 className="mt-4 text-balance text-2xl font-extrabold leading-[1.05] tracking-[-0.025em] sm:text-3xl">
-              Every experience. One reputation.
+              {fr ? "Chaque expérience. Une seule réputation." : "Every experience. One reputation."}
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
-              Your existing TAKATAK feedback, Google reviews and linked QMAPS
-              records, together in the same workspace.
+              {fr ? "Vos commentaires TAKATAK, vos avis Google et vos fiches QMAPS liées, réunis dans le même espace." : "Your existing TAKATAK feedback, Google reviews and linked QMAPS records, together in the same workspace."}
             </p>
           </div>
           <Link
@@ -337,14 +338,12 @@ export function ReviewCockpit({
           </Link>
         </div>
         <p className="relative mt-5 border-t border-slate-700 pt-4 text-xs text-[#B8C4D3]">
-          Digital Solutions. Real Results. Manage customer feedback across your
-          connected TAKATAK businesses.
+          {fr ? "Solutions numériques. Résultats réels. Gérez les commentaires clients de toutes vos entreprises TAKATAK branchées." : "Digital Solutions. Real Results. Manage customer feedback across your connected TAKATAK businesses."}
         </p>
       </div>
       {!snapshot ? (
         <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
-          Select an authorized client workspace to load its review cockpit. No
-          sample records are mixed into this feed.
+          {fr ? "Choisissez un espace client autorisé pour charger son centre des avis. Aucun exemple n’est mêlé à ce fil." : "Select an authorized client workspace to load its review cockpit. No sample records are mixed into this feed."}
         </div>
       ) : (
         <>
@@ -402,7 +401,7 @@ export function ReviewCockpit({
           <Card className="p-4">
             <div className="flex flex-wrap items-center gap-3">
               <label className="relative min-w-48 flex-1">
-                <span className="sr-only">Search reviews</span>
+                <span className="sr-only">{fr ? "Rechercher des avis" : "Search reviews"}</span>
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
                 <input
                   className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-xs"
@@ -412,13 +411,13 @@ export function ReviewCockpit({
                 />
               </label>
               <label>
-                <span className="sr-only">Review source</span>
+                <span className="sr-only">{fr ? "Source de l’avis" : "Review source"}</span>
                 <select
                   className="rounded-lg border border-slate-300 p-2 text-xs"
                   value={source}
                   onChange={(e) => reset(() => setSource(e.target.value))}
                 >
-                  <option value="all">All sources</option>
+                  <option value="all">{fr ? "Toutes les sources" : "All sources"}</option>
                   {REVIEW_SOURCES.filter((s) => s.kind !== "social").map(
                     (s) => (
                       <option key={s.id} value={s.id}>
@@ -426,11 +425,11 @@ export function ReviewCockpit({
                       </option>
                     ),
                   )}
-                  <option value="other">Other / unclassified</option>
+                  <option value="other">{fr ? "Autre / non classé" : "Other / unclassified"}</option>
                 </select>
               </label>
               <label>
-                <span className="sr-only">Business location</span>
+                <span className="sr-only">{fr ? "Emplacement de l’entreprise" : "Business location"}</span>
                 <select
                   value={location}
                   onChange={(event) =>
@@ -438,7 +437,7 @@ export function ReviewCockpit({
                   }
                   className="max-w-full rounded-lg border border-slate-300 p-2 text-xs"
                 >
-                  <option value="all">All locations</option>
+                  <option value="all">{fr ? "Tous les emplacements" : "All locations"}</option>
                   {locations.map((group) => (
                     <option key={group.key} value={group.key}>
                       {group.label}
@@ -447,40 +446,40 @@ export function ReviewCockpit({
                 </select>
               </label>
               <label>
-                <span className="sr-only">Review order</span>
+                <span className="sr-only">{fr ? "Revoir la commande" : "Review order"}</span>
                 <select
                   value={sort}
                   onChange={(event) => reset(() => setSort(event.target.value))}
                   className="rounded-lg border border-slate-300 p-2 text-xs"
                 >
-                  <option value="newest">Newest first</option>
-                  <option value="oldest">Oldest first</option>
-                  <option value="pending">Awaiting reply first</option>
+                  <option value="newest">{fr ? "Plus récents d’abord" : "Newest first"}</option>
+                  <option value="oldest">{fr ? "Plus anciens d’abord" : "Oldest first"}</option>
+                  <option value="pending">{fr ? "En attente de réponse d’abord" : "Awaiting reply first"}</option>
                 </select>
               </label>
               <label>
-                <span className="sr-only">Review state</span>
+                <span className="sr-only">{fr ? "État de l’avis" : "Review state"}</span>
                 <select
                   className="rounded-lg border border-slate-300 p-2 text-xs"
                   value={state}
                   onChange={(e) => reset(() => setState(e.target.value))}
                 >
-                  <option value="all">All statuses</option>
-                  <option value="needs_reply">Needs a reply</option>
-                  <option value="answered">Confirmed reply</option>
-                  <option value="follow_up">Feedback to follow up</option>
-                  <option value="resolved">Resolved feedback</option>
-                  <option value="tracked">Tracked only</option>
+                  <option value="all">{fr ? "Tous les statuts" : "All statuses"}</option>
+                  <option value="needs_reply">{fr ? "Réponse à faire" : "Needs a reply"}</option>
+                  <option value="answered">{fr ? "Réponse confirmée" : "Confirmed reply"}</option>
+                  <option value="follow_up">{fr ? "Commentaires à suivre" : "Feedback to follow up"}</option>
+                  <option value="resolved">{fr ? "Commentaires réglés" : "Resolved feedback"}</option>
+                  <option value="tracked">{fr ? "Suivi seulement" : "Tracked only"}</option>
                 </select>
               </label>
               <label>
-                <span className="sr-only">Star rating</span>
+                <span className="sr-only">{fr ? "Note en étoiles" : "Star rating"}</span>
                 <select
                   className="rounded-lg border border-slate-300 p-2 text-xs"
                   value={rating}
                   onChange={(e) => reset(() => setRating(e.target.value))}
                 >
-                  <option value="all">All ratings</option>
+                  <option value="all">{fr ? "Toutes les notes" : "All ratings"}</option>
                   {[5, 4, 3, 2, 1].map((r) => (
                     <option key={r} value={r}>
                       {r} stars
@@ -489,15 +488,15 @@ export function ReviewCockpit({
                 </select>
               </label>
               <label>
-                <span className="sr-only">Review time period</span>
+                <span className="sr-only">{fr ? "Période des avis" : "Review time period"}</span>
                 <select
                   className="rounded-lg border border-slate-300 p-2 text-xs"
                   value={days}
                   onChange={(e) => reset(() => setDays(e.target.value))}
                 >
-                  <option value="all">Loaded history</option>
-                  <option value="30">Last 30 days</option>
-                  <option value="90">Last 90 days</option>
+                  <option value="all">{fr ? "Historique chargé" : "Loaded history"}</option>
+                  <option value="30">{fr ? "30 derniers jours" : "Last 30 days"}</option>
+                  <option value="90">{fr ? "90 derniers jours" : "Last 90 days"}</option>
                 </select>
               </label>
               <a
@@ -563,7 +562,7 @@ export function ReviewCockpit({
                             {"☆".repeat(5 - r.rating)}
                           </span>
                         ) : (
-                          <Badge>Not star-rated</Badge>
+                          <Badge>{fr ? "Sans note" : "Not star-rated"}</Badge>
                         )}
                         <Badge
                           tone={
@@ -579,7 +578,7 @@ export function ReviewCockpit({
                         {r.ingestion ? (
                           <Badge>Imported · {r.ingestion}</Badge>
                         ) : !r.recommended ? (
-                          <Badge>Excluded by source</Badge>
+                          <Badge>{fr ? "Exclu par la source" : "Excluded by source"}</Badge>
                         ) : null}
                       </div>
                     </div>
@@ -631,15 +630,14 @@ export function ReviewCockpit({
                             {googleDrafts[r.id].text}
                           </p>
                           <p className="mt-2 text-[11px] text-slate-600">
-                            Review the wording before publishing. A generated
-                            draft is not a public response.
+                            {fr ? "Relisez le texte avant de publier. Un brouillon généré n’est pas une réponse publique." : "Review the wording before publishing. A generated draft is not a public response."}
                           </p>
                         </div>
                       )}
                     {r.response && (
                       <div className="mt-4 rounded-xl border-l-2 border-blue-500 bg-blue-50 p-4">
                         <p className="text-xs font-semibold text-blue-900">
-                          Confirmed source response
+                          {fr ? "Réponse confirmée par la source" : "Confirmed source response"}
                         </p>
                         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700">
                           {r.response}
@@ -703,7 +701,7 @@ export function ReviewCockpit({
                           href="#first-party-feedback"
                           className="text-xs font-semibold text-[#1565D8]"
                         >
-                          Follow up / convert to lead
+                          {fr ? "Faire un suivi / convertir en prospect" : "Follow up / convert to lead"}
                         </Link>
                       )}
                       {r.canDraft &&
@@ -754,7 +752,7 @@ export function ReviewCockpit({
                           }
                           className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 disabled:opacity-40"
                         >
-                          Previous review
+                          {fr ? "Révision précédente" : "Previous review"}
                         </button>
                         <button
                           type="button"
@@ -767,7 +765,7 @@ export function ReviewCockpit({
                           }
                           className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 disabled:opacity-40"
                         >
-                          Next review
+                          {fr ? "Prochaine révision" : "Next review"}
                         </button>
                       </div>
                     </div>
@@ -785,8 +783,7 @@ export function ReviewCockpit({
                   : "Your next customer story starts here"}
               </h3>
               <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate-600">
-                Create a first-party review page or use an approved source
-                connection. Unsupported provider actions stay unavailable.
+                {fr ? "Créez une page d’avis TAKATAK ou utilisez une source approuvée. Les actions qu’un fournisseur ne permet pas restent impossibles." : "Create a first-party review page or use an approved source connection. Unsupported provider actions stay unavailable."}
               </p>
             </div>
           )}
@@ -800,7 +797,7 @@ export function ReviewCockpit({
                 }}
                 className="rounded-lg border px-3 py-2 disabled:opacity-40"
               >
-                Previous
+                {fr ? "Précédent" : "Previous"}
               </button>
               <span>
                 Page {pagination.page} of {pagination.totalPages}
@@ -813,7 +810,7 @@ export function ReviewCockpit({
                 }}
                 className="rounded-lg border px-3 py-2 disabled:opacity-40"
               >
-                Next
+                {fr ? "Suivant" : "Next"}
               </button>
             </div>
           )}

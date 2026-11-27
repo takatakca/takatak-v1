@@ -16,6 +16,7 @@ import {
   type ProfileUpdateFieldErrors,
   validateProfileUpdate,
 } from "@/lib/auth/profile-validation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type ProfileUpdateResponse = {
   ok: boolean;
@@ -34,6 +35,7 @@ export function ProfileForm({
   initialFirstName,
   initialLastName,
 }: ProfileFormProps) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const formReference = useRef<HTMLFormElement>(null);
   const submissionInProgress = useRef(false);
@@ -213,7 +215,7 @@ export function ProfileForm({
           htmlFor="profile-email"
           className="mb-1.5 block text-xs font-semibold text-slate-700"
         >
-          Email address
+          {fr ? "Adresse courriel" : "Email address"}
         </label>
 
         <div className="relative">
@@ -233,7 +235,7 @@ export function ProfileForm({
         </div>
 
         <p className="mt-1.5 text-xs text-slate-500">
-          Email changes require a separate verification process.
+          {fr ? "Un changement de courriel demande une vérification à part." : "Email changes require a separate verification process."}
         </p>
       </div>
 
@@ -243,7 +245,7 @@ export function ProfileForm({
             htmlFor="firstName"
             className="mb-1.5 block text-xs font-semibold text-slate-700"
           >
-            First name
+            {fr ? "Prénom" : "First name"}
           </label>
 
           <div className="relative">
@@ -293,7 +295,7 @@ export function ProfileForm({
             htmlFor="lastName"
             className="mb-1.5 block text-xs font-semibold text-slate-700"
           >
-            Last name
+            {fr ? "Nom" : "Last name"}
           </label>
 
           <div className="relative">

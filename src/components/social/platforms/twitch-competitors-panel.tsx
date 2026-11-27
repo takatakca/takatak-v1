@@ -4,6 +4,7 @@ import { Check, Columns3, Download, Plus, Search, Video } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { toClientSocialImageUrl } from "@/lib/social/media/remote-image";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type CompetitorVideo = {
   title: string;
@@ -50,6 +51,7 @@ function periodLabel(value: string) {
 }
 
 function EmptySearch() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="flex flex-col items-center px-6 py-16 text-center">
       <svg viewBox="0 0 220 120" className="h-[120px] w-[220px]" aria-hidden="true">
@@ -61,11 +63,10 @@ function EmptySearch() {
         <path d="M148 80 168 100" stroke="#20242A" strokeWidth="8" strokeLinecap="round" />
       </svg>
       <p className="mt-2 text-[18px] font-medium text-[#30343A]">
-        Oops! Nothing found, try another search
+        {fr ? "Rien trouvé : essayez une autre recherche" : "Oops! Nothing found, try another search"}
       </p>
       <p className="mt-2 max-w-[460px] text-[14px] leading-6 text-[#9AA3AB]">
-        You can use the filter tools to narrow down your search. Check if the
-        current date range suits your needs.
+        {fr ? "Utilisez les filtres pour affiner votre recherche. Vérifiez que la période choisie vous convient." : "You can use the filter tools to narrow down your search. Check if the current date range suits your needs."}
       </p>
     </div>
   );
@@ -80,6 +81,7 @@ export function TwitchCompetitorsPanel({
   end: string;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [rows, setRows] = useState<CompetitorRow[]>([]);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState("all");
@@ -214,7 +216,7 @@ export function TwitchCompetitorsPanel({
 
   return (
     <section className="rounded-[14px] border border-[#E6E8EC] bg-white px-5 py-5 sm:px-6">
-      <h3 className="text-[16px] font-medium text-[#20242A]">List of competitors</h3>
+      <h3 className="text-[16px] font-medium text-[#20242A]">{fr ? "Liste des concurrents" : "List of competitors"}</h3>
       <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center">
         <label className="relative min-w-0 flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9AA1A9]" />
@@ -232,7 +234,7 @@ export function TwitchCompetitorsPanel({
           onChange={(event) => setFilter(event.target.value)}
           className="h-10 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
         >
-          <option value="all">All competitors</option>
+          <option value="all">{fr ? "Tous les concurrents" : "All competitors"}</option>
           {rows.map((row) => (
             <option key={row.ref} value={row.ref}>
               {row.login || row.name}
@@ -247,7 +249,7 @@ export function TwitchCompetitorsPanel({
             className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
           >
             <Columns3 className="h-4 w-4" />
-            Columns
+            {fr ? "Colonnes" : "Columns"}
           </button>
           {columnsOpen ? (
             <div className="absolute right-0 z-20 mt-1 w-40 rounded-[8px] border border-[#E6E8EC] bg-white p-2 text-[13px] shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
@@ -276,7 +278,7 @@ export function TwitchCompetitorsPanel({
           className="inline-flex h-10 items-center gap-2 rounded-[8px] border border-[#E3E6EA] bg-white px-3 text-[13px] text-[#505761]"
         >
           <Download className="h-4 w-4" />
-          Download CSV
+          {fr ? "Télécharger le CSV" : "Download CSV"}
           <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#C6E86A] text-[#3D4A12]">
             <Check className="h-2.5 w-2.5" strokeWidth={3} />
           </span>
@@ -292,7 +294,7 @@ export function TwitchCompetitorsPanel({
           }`}
         >
           <Video className="h-4 w-4" />
-          Video List (All)
+          {fr ? "Liste des vidéos (toutes)" : "Video List (All)"}
         </button>
         <button
           type="button"
@@ -301,7 +303,7 @@ export function TwitchCompetitorsPanel({
           className="inline-flex h-10 items-center gap-1.5 rounded-[8px] bg-[#111111] px-3 text-[13px] font-medium text-white disabled:opacity-50"
         >
           <Plus className="h-4 w-4" />
-          Add
+          {fr ? "Ajouter" : "Add"}
         </button>
       </div>
 
@@ -344,11 +346,11 @@ export function TwitchCompetitorsPanel({
             <table className="w-full text-left text-[13px] text-[#30343A]">
               <thead>
                 <tr className="border-b border-[#EEF0F2] text-[#8B939C]">
-                  <th className="py-2 pr-4 font-medium">Channel</th>
-                  <th className="py-2 pr-4 font-medium">Title</th>
+                  <th className="py-2 pr-4 font-medium">{fr ? "Canal" : "Channel"}</th>
+                  <th className="py-2 pr-4 font-medium">{fr ? "Titre" : "Title"}</th>
                   <th className="py-2 pr-4 font-medium">Date</th>
-                  <th className="py-2 pr-4 font-medium">Views</th>
-                  <th className="py-2 font-medium">Duration</th>
+                  <th className="py-2 pr-4 font-medium">{fr ? "Vues" : "Views"}</th>
+                  <th className="py-2 font-medium">{fr ? "Durée" : "Duration"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -380,10 +382,10 @@ export function TwitchCompetitorsPanel({
           <table className="w-full text-left text-[13px] text-[#30343A]">
             <thead>
               <tr className="border-b border-[#EEF0F2] text-[#8B939C]">
-                <th className="py-2 pr-4 font-medium">Channel</th>
-                {showVideos ? <th className="py-2 pr-4 font-medium">Videos</th> : null}
-                {showViews ? <th className="py-2 pr-4 font-medium">Views</th> : null}
-                {showDuration ? <th className="py-2 pr-4 font-medium">Duration</th> : null}
+                <th className="py-2 pr-4 font-medium">{fr ? "Canal" : "Channel"}</th>
+                {showVideos ? <th className="py-2 pr-4 font-medium">{fr ? "Vidéos" : "Videos"}</th> : null}
+                {showViews ? <th className="py-2 pr-4 font-medium">{fr ? "Vues" : "Views"}</th> : null}
+                {showDuration ? <th className="py-2 pr-4 font-medium">{fr ? "Durée" : "Duration"}</th> : null}
                 <th className="py-2 font-medium" />
               </tr>
             </thead>
@@ -420,7 +422,7 @@ export function TwitchCompetitorsPanel({
                       onClick={() => void removeCompetitor(row.ref)}
                       className="text-[13px] text-[#8B939C] hover:text-[#20242A] disabled:opacity-40"
                     >
-                      Remove
+                      {fr ? "Retirer" : "Remove"}
                     </button>
                   </td>
                 </tr>

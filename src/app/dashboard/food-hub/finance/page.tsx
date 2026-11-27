@@ -7,8 +7,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChartCard, HBars, StatTile, fmtInt } from '@/app/dashboard/food-hub/charts';
 import { api, useCatalog, useFilters, useMe } from '@/app/dashboard/food-hub/ui';
 import { CaseBadge, CH_NAME, FinanceError, FinanceFilters, FinanceHead, PROBLEM, RECON_LABEL, RECOVERABLE, ReconBadge, cad, day, signed, toRecover, type Recon, type ReconStatus } from './finance-ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export default function FinanceOverview() {
+  const fr = useDashboardLanguage() === "fr";
   const { filters, set, query } = useFilters('30d');
   const { activeLocations, locName } = useCatalog();
   const { can } = useMe();
@@ -54,7 +56,7 @@ export default function FinanceOverview() {
         title="Payouts & Reconciliation"
         intro="Where is my money? Every order Uber Eats, DoorDash, SkipTheDishes and Too Good To Go sent you is checked against your commission plan and against what their statements actually paid. Missing orders, short payments, error charges and refunds become dispute cases automatically. Nothing is ever posted or approved for you."
         right={<>
-          <Link className="button btn-sm btn-light" href="/dashboard/food-hub/finance/imports">Import a statement</Link>
+          <Link className="button btn-sm btn-light" href="/dashboard/food-hub/finance/imports">{fr ? "Importer un relevé" : "Import a statement"}</Link>
           {can('finance:edit') && <button className="btn-sm" disabled={busy} onClick={recheck}>{busy ? 'Checking…' : 'Re-check now'}</button>}
         </>}
       />
@@ -66,7 +68,7 @@ export default function FinanceOverview() {
         <div className="fh-banner info">No payout statement imported yet — expected payouts are calculated, but nothing can be marked missing or short-paid until you <Link href="/dashboard/food-hub/finance/imports">import a statement</Link> (Uber Eats can also send its report automatically).</div>
       )}
       {unconfirmed.length > 0 && (
-        <div className="fh-banner warn">Commission plan not confirmed for {unconfirmed.map((c) => c.label).join(', ')} — expected payouts use the published rate card. <Link href="/dashboard/food-hub/finance/fees">Check your plans</Link> so differences are real.</div>
+        <div className="fh-banner warn">Commission plan not confirmed for {unconfirmed.map((c) => c.label).join(', ')} — expected payouts use the published rate card. <Link href="/dashboard/food-hub/finance/fees">{fr ? "Voir vos forfaits" : "Check your plans"}</Link> so differences are real.</div>
       )}
 
       {data && (
@@ -81,10 +83,10 @@ export default function FinanceOverview() {
           </div>
 
           <section className="card" style={{ marginBottom: 16 }}>
-            <div className="fh-head" style={{ marginBottom: 10 }}><h2 style={{ margin: 0, fontSize: 17 }}>By platform</h2><span className="small">Checked {new Date(data.generatedAt).toLocaleString('en-CA')}</span></div>
+            <div className="fh-head" style={{ marginBottom: 10 }}><h2 style={{ margin: 0, fontSize: 17 }}>{fr ? "Par plateforme" : "By platform"}</h2><span className="small">Checked {new Date(data.generatedAt).toLocaleString('en-CA')}</span></div>
             <div className="fh-table-wrap">
               <table className="fin-table">
-                <thead><tr><th>Platform</th><th className="num">Orders</th><th className="num">Sales</th><th className="num">Expected</th><th className="num">Paid</th><th className="num">Diff.</th><th className="num">To recover</th><th>Problems</th><th>Statements to</th><th>Plan</th></tr></thead>
+                <thead><tr><th>{fr ? "Plateforme" : "Platform"}</th><th className="num">{fr ? "Commandes" : "Orders"}</th><th className="num">{fr ? "Ventes" : "Sales"}</th><th className="num">{fr ? "Attendu" : "Expected"}</th><th className="num">{fr ? "Payé" : "Paid"}</th><th className="num">{fr ? "Écart" : "Diff."}</th><th className="num">{fr ? "À récupérer" : "To recover"}</th><th>{fr ? "Problèmes" : "Problems"}</th><th>{fr ? "Relevés à" : "Statements to"}</th><th>{fr ? "Forfait" : "Plan"}</th></tr></thead>
                 <tbody>
                   {data.channels.map((c) => {
                     const prob = PROBLEM.reduce((s, k) => s + (c.counts[k] ?? 0), 0);
@@ -119,13 +121,13 @@ export default function FinanceOverview() {
 
           <section className="card" style={{ marginBottom: 16 }}>
             <div className="fh-head" style={{ marginBottom: 10 }}>
-              <h2 style={{ margin: 0, fontSize: 17 }}>Biggest problems</h2>
+              <h2 style={{ margin: 0, fontSize: 17 }}>{fr ? "Problèmes principaux" : "Biggest problems"}</h2>
               <div className="fh-row"><Link href="/dashboard/food-hub/finance/reconciliation?view=problems">All orders vs payouts →</Link><Link href="/dashboard/food-hub/finance/disputes">Disputes{openCases ? ` (${openCases.count} open · ${cad(openCases.amount)})` : ''} →</Link></div>
             </div>
             {problems.length === 0 ? <p className="small">No missing or short-paid order in this period{data.imports ? '' : ' (import statements to check payouts)'}.</p> : (
               <div className="fh-table-wrap">
                 <table className="fin-table">
-                  <thead><tr><th>Date</th><th>Platform</th><th>Order</th><th>Brand · location</th><th className="num">Expected</th><th className="num">Paid</th><th className="num">To recover</th><th>Status</th><th>Dispute</th></tr></thead>
+                  <thead><tr><th>Date</th><th>{fr ? "Plateforme" : "Platform"}</th><th>{fr ? "Commande" : "Order"}</th><th>Brand · location</th><th className="num">{fr ? "Attendu" : "Expected"}</th><th className="num">{fr ? "Payé" : "Paid"}</th><th className="num">{fr ? "À récupérer" : "To recover"}</th><th>{fr ? "Statut" : "Status"}</th><th>{fr ? "Contestation" : "Dispute"}</th></tr></thead>
                   <tbody>
                     {problems.slice(0, 10).map((o) => (
                       <tr key={o.orderId}>
@@ -148,7 +150,7 @@ export default function FinanceOverview() {
 
           {(data.unmatched.length > 0 || data.other.length > 0) && (
             <section className="card" style={{ marginBottom: 16 }}>
-              <h2 style={{ marginTop: 0, fontSize: 17 }}>On the statements but not in Food Hub</h2>
+              <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Sur les relevés mais pas dans Food Hub" : "On the statements but not in Food Hub"}</h2>
               <p className="small">{data.unmatched.length} paid order line(s) with an order number Food Hub never received, and {data.other.length} line(s) without an order (ads, tablet fees, adjustments). <Link href="/dashboard/food-hub/finance/reconciliation?view=statement">Review them →</Link></p>
             </section>
           )}

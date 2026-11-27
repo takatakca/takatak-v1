@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, useCatalog, useMe } from '@/app/dashboard/food-hub/ui';
 import { CH_NAME, FinanceError, FinanceHead } from '../finance-ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Plan = { plan: string; deliveryPct: number; pickupPct: number; fixedFee: number; taxOnFeesPct: number; payoutLagDays: number };
 type Fees = { channels: Record<string, Plan>; stores: Record<string, Partial<Plan>>; confirmed: Record<string, boolean>; tolerance: number; updatedAt?: string };
@@ -11,6 +12,7 @@ type Preset = { plan: string; deliveryPct: number; pickupPct: number; note?: str
 type Store = { id: string; channel: string; brandName: string; locationCode: string; channelStoreId: string };
 
 export default function FeesPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { can } = useMe();
   const { locName } = useCatalog();
   const edit = can('finance:edit');
@@ -63,24 +65,24 @@ export default function FeesPage() {
                 setPlan(ch, pr ? { plan: pr.plan, deliveryPct: pr.deliveryPct, pickupPct: pr.pickupPct } : { plan: 'Custom' });
               }}>
                 {(presets[ch] ?? []).map((x) => <option key={x.plan} value={x.plan}>{x.plan} — {x.deliveryPct}% / {x.pickupPct}%</option>)}
-                <option value="__custom">Custom (my contract)</option>
+                <option value="__custom">{fr ? "Sur mesure (mon contrat)" : "Custom (my contract)"}</option>
               </select>
             </label>
             <label>Delivery commission %<input type="number" min={0} max={100} step={0.1} value={p.deliveryPct} disabled={!edit} onChange={(e) => setPlan(ch, { deliveryPct: num(e.target.value) })} /></label>
             <label>Pickup commission %<input type="number" min={0} max={100} step={0.1} value={p.pickupPct} disabled={!edit} onChange={(e) => setPlan(ch, { pickupPct: num(e.target.value) })} /></label>
             <label>Fixed fee per order ($)<input type="number" min={0} step={0.01} value={p.fixedFee} disabled={!edit} onChange={(e) => setPlan(ch, { fixedFee: num(e.target.value) })} /></label>
             <label>Tax charged on fees %<input type="number" min={0} max={30} step={0.001} value={p.taxOnFeesPct} disabled={!edit} onChange={(e) => setPlan(ch, { taxOnFeesPct: num(e.target.value) })} /></label>
-            <label>Flag missing after (days)<input type="number" min={1} max={200} step={1} value={p.payoutLagDays} disabled={!edit} onChange={(e) => setPlan(ch, { payoutLagDays: num(e.target.value) })} /></label>
+            <label>{fr ? "Signaler comme manquant après (jours)" : "Flag missing after (days)"}<input type="number" min={1} max={200} step={1} value={p.payoutLagDays} disabled={!edit} onChange={(e) => setPlan(ch, { payoutLagDays: num(e.target.value) })} /></label>
           </div>
           <p className="small" style={{ marginBottom: 0 }}>{notes[ch]}{presets[ch]?.find((x) => x.plan === p.plan)?.note ? ` ${presets[ch]!.find((x) => x.plan === p.plan)!.note}.` : ''} Tax on fees in Quebec is GST 5% + QST 9.975% = 14.975%, recoverable as input tax credits.</p>
         </section>
       ))}
 
       <section className="card" style={{ marginBottom: 14 }}>
-        <div className="fh-head" style={{ marginBottom: 8 }}><h2 style={{ margin: 0, fontSize: 17 }}>Stores with a different rate</h2></div>
-        <p className="small">Some brands or locations can be on another plan (a promotion period, a different contract). Rates here replace the platform plan for that store only.</p>
+        <div className="fh-head" style={{ marginBottom: 8 }}><h2 style={{ margin: 0, fontSize: 17 }}>{fr ? "Magasins avec un autre taux" : "Stores with a different rate"}</h2></div>
+        <p className="small">{fr ? "Certaines marques ou certains emplacements peuvent avoir un autre forfait (période promotionnelle, contrat différent). Les taux saisis ici remplacent le forfait de la plateforme pour ce magasin seulement." : "Some brands or locations can be on another plan (a promotion period, a different contract). Rates here replace the platform plan for that store only."}</p>
         <table className="fin-table">
-          <thead><tr><th>Store</th><th>Plan name</th><th>Delivery %</th><th>Pickup %</th><th></th></tr></thead>
+          <thead><tr><th>{fr ? "Magasin" : "Store"}</th><th>{fr ? "Nom du forfait" : "Plan name"}</th><th>Delivery %</th><th>Pickup %</th><th></th></tr></thead>
           <tbody>
             {Object.entries(fees.stores).map(([id, o]) => (
               <tr key={id}>
@@ -88,10 +90,10 @@ export default function FeesPage() {
                 <td><input value={o.plan ?? ''} disabled={!edit} onChange={(e) => setStore(id, { plan: e.target.value })} placeholder="e.g. Plus" style={{ width: 120 }} /></td>
                 <td><input type="number" min={0} max={100} step={0.1} value={o.deliveryPct ?? ''} disabled={!edit} onChange={(e) => setStore(id, { deliveryPct: e.target.value === '' ? undefined : Number(e.target.value) })} /></td>
                 <td><input type="number" min={0} max={100} step={0.1} value={o.pickupPct ?? ''} disabled={!edit} onChange={(e) => setStore(id, { pickupPct: e.target.value === '' ? undefined : Number(e.target.value) })} /></td>
-                <td>{edit && <button className="btn-sm btn-light" onClick={() => setStore(id, null)}>Remove</button>}</td>
+                <td>{edit && <button className="btn-sm btn-light" onClick={() => setStore(id, null)}>{fr ? "Retirer" : "Remove"}</button>}</td>
               </tr>
             ))}
-            {Object.keys(fees.stores).length === 0 && <tr><td colSpan={5} className="small">Every store uses its platform plan.</td></tr>}
+            {Object.keys(fees.stores).length === 0 && <tr><td colSpan={5} className="small">{fr ? "Chaque magasin suit le forfait de sa plateforme." : "Every store uses its platform plan."}</td></tr>}
           </tbody>
         </table>
         {edit && (
@@ -100,13 +102,13 @@ export default function FeesPage() {
               <option value="">Add a store…</option>
               {stores.filter((s) => !fees.stores[s.id]).sort((a, b) => storeName(a.id).localeCompare(storeName(b.id))).map((s) => <option key={s.id} value={s.id}>{storeName(s.id)}</option>)}
             </select>
-            <button className="btn-sm btn-light" disabled={!addFor} onClick={() => { const ch = stores.find((s) => s.id === addFor)?.channel ?? ''; const base = fees.channels[ch]; setStore(addFor, { plan: base?.plan, deliveryPct: base?.deliveryPct, pickupPct: base?.pickupPct }); setAddFor(''); }}>Add</button>
+            <button className="btn-sm btn-light" disabled={!addFor} onClick={() => { const ch = stores.find((s) => s.id === addFor)?.channel ?? ''; const base = fees.channels[ch]; setStore(addFor, { plan: base?.plan, deliveryPct: base?.deliveryPct, pickupPct: base?.pickupPct }); setAddFor(''); }}>{fr ? "Ajouter" : "Add"}</button>
           </div>
         )}
       </section>
 
       <section className="card">
-        <h2 style={{ marginTop: 0, fontSize: 17 }}>Matching tolerance</h2>
+        <h2 style={{ marginTop: 0, fontSize: 17 }}>{fr ? "Tolérance d’association" : "Matching tolerance"}</h2>
         <label className="fh-row small">A payout within <input type="number" min={0} max={5} step={0.01} value={fees.tolerance} disabled={!edit} onChange={(e) => setFees({ ...fees, tolerance: num(e.target.value) })} /> $ of the expected amount counts as “paid as expected” (rounding of taxes and fees).</label>
         <p className="small" style={{ marginBottom: 0 }}>Dispute cases are only opened for $1.00 or more.{fees.updatedAt ? ` Last saved ${new Date(fees.updatedAt).toLocaleString('en-CA')}.` : ''}</p>
       </section>

@@ -6,6 +6,7 @@
 // hover + keyboard tooltips that never gate (every chart has a table view), text in ink colors only.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { downloadCsv } from './ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export const VIZ = {
   surface: '#fcfcfb', ink: '#0b0b0b', ink2: '#52514e', muted: '#898781', grid: '#e1e0d9', base: '#c3c2b7',
@@ -70,6 +71,7 @@ export function ChartCard({ title, subtitle, legend, table, children, loading }:
   table: { columns: string[]; rows: Array<Array<string | number>>; filename: string };
   children: ReactNode;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [view, setView] = useState<'chart' | 'table'>('chart');
   return (
     <section className={`card viz-card ${loading ? 'viz-loading' : ''}`}>
@@ -81,8 +83,8 @@ export function ChartCard({ title, subtitle, legend, table, children, loading }:
         <div className="fh-row">
           {legend}
           <div className="viz-switch" role="group" aria-label="View">
-            <button className={view === 'chart' ? 'on' : ''} aria-pressed={view === 'chart'} onClick={() => setView('chart')}>Chart</button>
-            <button className={view === 'table' ? 'on' : ''} aria-pressed={view === 'table'} onClick={() => setView('table')}>Table</button>
+            <button className={view === 'chart' ? 'on' : ''} aria-pressed={view === 'chart'} onClick={() => setView('chart')}>{fr ? "Graphique" : "Chart"}</button>
+            <button className={view === 'table' ? 'on' : ''} aria-pressed={view === 'table'} onClick={() => setView('table')}>{fr ? "Tableau" : "Table"}</button>
           </div>
         </div>
       </div>
@@ -93,11 +95,11 @@ export function ChartCard({ title, subtitle, legend, table, children, loading }:
               <thead><tr>{table.columns.map((c) => <th key={c}>{c}</th>)}</tr></thead>
               <tbody>
                 {table.rows.map((r, i) => <tr key={i}>{r.map((v, j) => <td key={j} className={typeof v === 'number' ? 'num' : ''}>{typeof v === 'number' ? fmtInt(v) : v}</td>)}</tr>)}
-                {table.rows.length === 0 && <tr><td colSpan={table.columns.length} className="small">No data.</td></tr>}
+                {table.rows.length === 0 && <tr><td colSpan={table.columns.length} className="small">{fr ? "Aucune donnée." : "No data."}</td></tr>}
               </tbody>
             </table>
           </div>
-          <button className="btn-sm btn-light" style={{ marginTop: 8 }} onClick={() => downloadCsv(table.filename, table.columns, table.rows)}>Download CSV</button>
+          <button className="btn-sm btn-light" style={{ marginTop: 8 }} onClick={() => downloadCsv(table.filename, table.columns, table.rows)}>{fr ? "Télécharger le CSV" : "Download CSV"}</button>
         </div>
       )}
     </section>

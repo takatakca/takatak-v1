@@ -15,12 +15,12 @@ export const dynamic = "force-dynamic";
 const cad = new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" });
 
 function PlanAction({ planKey, active, canBuy }: { planKey: string; active: string[]; canBuy: boolean }) {
-  if (active.includes(planKey)) return <Badge tone="success">Active</Badge>;
+  if (active.includes(planKey)) return <Badge tone="success">Actif · Active</Badge>;
   if (!canBuy) return null;
   return (
     <form action={subscribePlanAction}>
       <input type="hidden" name="planKey" value={planKey} />
-      <button className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">Subscribe</button>
+      <button className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700">S’abonner · Subscribe</button>
     </form>
   );
 }
@@ -60,7 +60,7 @@ export default async function GrowthPricingPage({ searchParams }: { searchParams
         actions={
           canBuy && active.length ? (
             <form action={openBillingPortalAction}>
-              <button className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-indigo-300">Manage billing</button>
+              <button className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium text-slate-700 hover:border-indigo-300">Gérer la facturation · Manage billing</button>
             </form>
           ) : undefined
         }
@@ -76,7 +76,7 @@ export default async function GrowthPricingPage({ searchParams }: { searchParams
       ) : null}
 
       <div className="rounded-2xl border border-indigo-200 bg-indigo-50 px-5 py-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">All-in bundle</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Forfait tout-en-un · All-in bundle</p>
         <div className="mt-1 flex flex-wrap items-baseline gap-3">
           <p className="text-xl font-bold text-indigo-950">{ALL_IN_BUNDLE.name}</p>
           <p className="text-lg font-semibold text-indigo-900">{cad.format(ALL_IN_BUNDLE.monthlyCad)}/mo</p>

@@ -11,6 +11,7 @@ import {
 } from "@/lib/reputation/import-model";
 import { reviewSource } from "@/lib/reputation/sources";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type ImportLocations = Array<{
   id: string;
@@ -26,6 +27,7 @@ function CommitImport({
 }: {
   preview: Extract<ReviewImportResult, { ok: true }>;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, action, pending] = useActionState(importReviewedReviewsAction, {
     ok: null,
   });
@@ -52,8 +54,7 @@ function CommitImport({
           disabled={pending || state.ok === true}
           className="mt-1"
         />
-        I am authorized to store these reviews for this business. I checked the
-        source and removed unrelated personal information.
+        {fr ? "Je suis autorisé à conserver ces avis pour cette entreprise. J’ai vérifié la source et retiré les renseignements personnels sans rapport." : "I am authorized to store these reviews for this business. I checked the source and removed unrelated personal information."}
       </label>
       <button
         type="submit"
@@ -87,6 +88,7 @@ export function ReviewImportWorkspace({
 }: {
   locations: ImportLocations;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const fileReadVersion = useRef(0);
   const [mode, setMode] = useState<"manual" | "email" | "csv">("manual");
   const [preview, setPreview] = useState<ReviewImportResult | null>(null);
@@ -169,9 +171,7 @@ export function ReviewImportWorkspace({
           </p>
           {!locations.length ? (
             <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              Create an active business listing in Local Listings before
-              importing reviews. Demo, planned and archived listings cannot
-              receive imports.
+              {fr ? "Créez une fiche d’entreprise active dans Fiches locales avant d’importer des avis. Les fiches de démonstration, prévues ou archivées ne reçoivent pas d’importation." : "Create an active business listing in Local Listings before importing reviews. Demo, planned and archived listings cannot receive imports."}
             </p>
           ) : (
             <>
@@ -181,7 +181,7 @@ export function ReviewImportWorkspace({
                 className="mt-4 space-y-4"
               >
                 <label className="block text-xs font-medium text-slate-700">
-                  Destination business listing
+                  {fr ? "Fiche d’entreprise de destination" : "Destination business listing"}
                   <select name="listingId" required className={inputClass}>
                     <option value="">Choose a listing…</option>
                     {locations.map((listing) => (
@@ -196,7 +196,7 @@ export function ReviewImportWorkspace({
                 {mode === "csv" ? (
                   <div className="space-y-3">
                     <label className="block text-xs font-medium text-slate-700">
-                      CSV file (up to 50 reviews, 128 KB)
+                      {fr ? "Fichier CSV (jusqu’à 50 avis, 128 Ko)" : "CSV file (up to 50 reviews, 128 KB)"}
                       <input
                         type="file"
                         accept=".csv,text/csv"
@@ -224,17 +224,14 @@ export function ReviewImportWorkspace({
                       />
                     </label>
                     <p className="break-words text-xs leading-6 text-slate-500">
-                      Required columns: source, externalId, text, reviewedAt
-                      (ISO date/time). Optional: author, rating, url. Quoted
-                      commas and multiline comments are supported. Reuse source
-                      IDs to prevent duplicates.
+                      {fr ? "Colonnes requises : source, externalId, text, reviewedAt (date et heure ISO). Facultatives : author, rating, url. Les virgules entre guillemets et les commentaires sur plusieurs lignes sont acceptés. Réutilisez les identifiants de source pour éviter les doublons." : "Required columns: source, externalId, text, reviewedAt (ISO date/time). Optional: author, rating, url. Quoted commas and multiline comments are supported. Reuse source IDs to prevent duplicates."}
                     </p>
                     <a
                       href="data:text/csv;charset=utf-8,source%2CexternalId%2Cauthor%2Ctext%2Crating%2CreviewedAt%2Curl%0A"
                       download="takatak-review-import-template.csv"
                       className="text-xs font-semibold text-[#1565D8]"
                     >
-                      Download blank CSV template
+                      {fr ? "Télécharger le modèle CSV vide" : "Download blank CSV template"}
                     </a>
                     {fileError && (
                       <p role="alert" className="text-xs text-rose-700">
@@ -246,7 +243,7 @@ export function ReviewImportWorkspace({
                   <>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <label className="text-xs font-medium text-slate-700">
-                        Review platform
+                        {fr ? "Plateforme d’avis" : "Review platform"}
                         <select
                           name="source"
                           value={source}
@@ -261,7 +258,7 @@ export function ReviewImportWorkspace({
                         </select>
                       </label>
                       <label className="text-xs font-medium text-slate-700">
-                        Source review ID
+                        {fr ? "Identifiant de l’avis à la source" : "Source review ID"}
                         <input
                           name="externalId"
                           required
@@ -271,7 +268,7 @@ export function ReviewImportWorkspace({
                         />
                       </label>
                       <label className="text-xs font-medium text-slate-700">
-                        Reviewer display name
+                        {fr ? "Nom affiché de l’auteur" : "Reviewer display name"}
                         <input
                           name="author"
                           maxLength={120}
@@ -279,7 +276,7 @@ export function ReviewImportWorkspace({
                         />
                       </label>
                       <label className="text-xs font-medium text-slate-700">
-                        Review date
+                        {fr ? "Date de l’avis" : "Review date"}
                         <input
                           name="reviewedAt"
                           type="date"
@@ -288,7 +285,7 @@ export function ReviewImportWorkspace({
                         />
                       </label>
                       <label className="text-xs font-medium text-slate-700">
-                        Star rating
+                        {fr ? "Note en étoiles" : "Star rating"}
                         <select
                           name="rating"
                           disabled={
@@ -296,7 +293,7 @@ export function ReviewImportWorkspace({
                           }
                           className={inputClass}
                         >
-                          <option value="">Not star-rated</option>
+                          <option value="">{fr ? "Sans note" : "Not star-rated"}</option>
                           {[5, 4, 3, 2, 1].map((rating) => (
                             <option key={rating} value={rating}>
                               {rating} stars
@@ -305,7 +302,7 @@ export function ReviewImportWorkspace({
                         </select>
                       </label>
                       <label className="text-xs font-medium text-slate-700">
-                        Source review link (optional)
+                        {fr ? "Lien de l’avis à la source (facultatif)" : "Source review link (optional)"}
                         <input
                           name="url"
                           type="url"
@@ -316,7 +313,7 @@ export function ReviewImportWorkspace({
                       </label>
                     </div>
                     <label className="block text-xs font-medium text-slate-700">
-                      Review text
+                      {fr ? "Texte de l’avis" : "Review text"}
                       <textarea
                         name="text"
                         required
@@ -332,7 +329,7 @@ export function ReviewImportWorkspace({
                   disabled={mode === "csv" && (!csv || !!fileError)}
                   className="rounded-lg border border-[#1565D8] px-4 py-2 text-sm font-semibold text-[#1565D8] disabled:opacity-50"
                 >
-                  Preview import
+                  {fr ? "Aperçu de l’importation" : "Preview import"}
                 </button>
               </form>
               {preview && !preview.ok && (

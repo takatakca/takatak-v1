@@ -33,11 +33,11 @@ export default async function SeoKeywordsPage() {
               <table className="w-full text-left text-xs">
                 <thead className="bg-slate-50 text-slate-500">
                   <tr>
-                    <th className="px-4 py-2 font-medium">Query</th>
-                    <th className="px-4 py-2 text-right font-medium">Clicks</th>
+                    <th className="px-4 py-2 font-medium">Requête · Query</th>
+                    <th className="px-4 py-2 text-right font-medium">Clics · Clicks</th>
                     <th className="px-4 py-2 text-right font-medium">Impressions</th>
                     <th className="px-4 py-2 text-right font-medium">CTR</th>
-                    <th className="px-4 py-2 text-right font-medium">Avg. position</th>
+                    <th className="px-4 py-2 text-right font-medium">Position moyenne · Avg. position</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

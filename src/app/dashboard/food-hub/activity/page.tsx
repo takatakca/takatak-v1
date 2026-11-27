@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { api, downloadCsv, MK_LABEL, MultiPick, presetRange, RANGE_LABELS, useCatalog, type RangePreset } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Entry = { id?: string; at: string; actor: string; source: string; kind: string; action: string; status: 'success' | 'failed' | 'queued' | 'info'; summary: string; channel?: string | null; brandName?: string | null; locationCode?: string | null };
 
@@ -14,6 +15,7 @@ const STATUS_CLS: Record<string, string> = { success: 'badge-green', failed: 'ba
 
 // Activity log (Atlas "Store Action Report"): who did what, when, where and whether it worked.
 export default function ActivityPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { activeLocations, locName } = useCatalog();
   const [preset, setPreset] = useState<RangePreset>('7d');
   const [range, setRange] = useState(presetRange('7d'));
@@ -44,12 +46,12 @@ export default function ActivityPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Activity log</h1>
+          <h1>{fr ? "Journal d’activité" : "Activity log"}</h1>
           <div className="small">Every pause, resume, 86, menu publish, hours change, order action and sign-in — by whom, from where, and whether the platform accepted it.</div>
         </div>
         <div className="fh-row">
           <button className="btn-light" onClick={() => downloadCsv('takatak-activity', ['When', 'Who', 'From', 'Type', 'Action', 'Result', 'Platform', 'Brand', 'Location', 'Details'],
-            shown.map((e) => [new Date(e.at).toLocaleString('fr-CA'), e.actor, SOURCE[e.source] ?? e.source, e.kind, e.action, e.status, e.channel ? MK_LABEL[e.channel] ?? e.channel : '', e.brandName ?? '', e.locationCode ? locName(e.locationCode) : '', e.summary]))}>Export CSV</button>
+            shown.map((e) => [new Date(e.at).toLocaleString('fr-CA'), e.actor, SOURCE[e.source] ?? e.source, e.kind, e.action, e.status, e.channel ? MK_LABEL[e.channel] ?? e.channel : '', e.brandName ?? '', e.locationCode ? locName(e.locationCode) : '', e.summary]))}>{fr ? "Exporter en CSV" : "Export CSV"}</button>
         </div>
       </div>
       <div className="fh-filters">
@@ -66,7 +68,7 @@ export default function ActivityPage() {
       {error && <div className="fh-banner warn">{error}</div>}
       <div className="fh-table-wrap">
         <table>
-          <thead><tr><th>When</th><th>Who</th><th>Type</th><th>What happened</th><th>Where</th><th>Result</th></tr></thead>
+          <thead><tr><th>{fr ? "Quand" : "When"}</th><th>{fr ? "Qui" : "Who"}</th><th>Type</th><th>{fr ? "Ce qui s’est passé" : "What happened"}</th><th>{fr ? "Où" : "Where"}</th><th>{fr ? "Résultat" : "Result"}</th></tr></thead>
           <tbody>
             {shown.map((e, i) => (
               <tr key={e.id ?? i}>
@@ -78,7 +80,7 @@ export default function ActivityPage() {
                 <td><span className={`badge ${STATUS_CLS[e.status] ?? 'badge-blue'}`}>{e.status}</span></td>
               </tr>
             ))}
-            {!loading && shown.length === 0 && <tr><td colSpan={6} className="small">Nothing recorded for these filters.</td></tr>}
+            {!loading && shown.length === 0 && <tr><td colSpan={6} className="small">{fr ? "Rien d’enregistré pour ces filtres." : "Nothing recorded for these filters."}</td></tr>}
           </tbody>
         </table>
       </div>

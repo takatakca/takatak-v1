@@ -79,7 +79,7 @@ export function HostingEnvironmentView({
         <div>
           <p className="flex items-center gap-1 text-xs text-slate-400">
             <Link href="/dashboard/web-hosting/environments" className="hover:text-slate-600">
-              Hosting
+              Hébergement · Hosting
             </Link>
             <ChevronRight className="h-3 w-3" />
             <span>{domain}</span>
@@ -95,8 +95,7 @@ export function HostingEnvironmentView({
             </span>
           </div>
           <p className="mt-2 max-w-2xl text-sm text-slate-500">
-            Operate one environment safely: deployments, runtime, data, backups, logs, domains, SSL, workers, CDN and
-            incidents.
+            Gérez un environnement en toute sécurité : déploiements, exécution, données, sauvegardes, journaux, domaines, SSL, tâches, CDN et incidents. · Operate one environment safely: deployments, runtime, data, backups, logs, domains, SSL, workers, CDN and incidents.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -164,7 +163,7 @@ export function HostingEnvironmentView({
 
       <section className="grid gap-4 xl:grid-cols-2">
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Environment Health</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Santé de l’environnement · Environment Health</h3>
           <ul className="mt-3 divide-y divide-slate-100 text-sm">
             {[
               { label: "Public website", detail: domain, ok: service.serverStatus === "healthy" },
@@ -194,9 +193,9 @@ export function HostingEnvironmentView({
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Resource Utilization</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Utilisation des ressources · Resource Utilization</h3>
           <p className="mt-8 text-sm text-slate-400">
-            CPU, memory, and storage charts appear when hosting telemetry is connected.
+            Les graphiques de processeur, de mémoire et de stockage apparaissent une fois la télémétrie de l’hébergement branchée. · CPU, memory, and storage charts appear when hosting telemetry is connected.
           </p>
         </article>
       </section>
@@ -204,44 +203,44 @@ export function HostingEnvironmentView({
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900">Latest Deployment</h3>
+            <h3 className="text-sm font-semibold text-slate-900">Dernier déploiement · Latest Deployment</h3>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-              Not connected
+              Non branché · Not connected
             </span>
           </div>
-          <p className="mt-3 text-sm text-slate-400">Deploy history appears after a provider is connected.</p>
+          <p className="mt-3 text-sm text-slate-400">L’historique des déploiements apparaît une fois un fournisseur branché. · Deploy history appears after a provider is connected.</p>
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900">Database</h3>
+            <h3 className="text-sm font-semibold text-slate-900">Base de données · Database</h3>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-              Not connected
+              Non branché · Not connected
             </span>
           </div>
-          <p className="mt-3 text-sm text-slate-400">Database metrics are unavailable until hosting telemetry syncs.</p>
+          <p className="mt-3 text-sm text-slate-400">Les mesures de la base de données arrivent après la synchronisation de la télémétrie de l’hébergement. · Database metrics are unavailable until hosting telemetry syncs.</p>
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900">Backups & Recovery</h3>
+            <h3 className="text-sm font-semibold text-slate-900">Sauvegardes et récupération · Backups & Recovery</h3>
             <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-500">
-              Not connected
+              Non branché · Not connected
             </span>
           </div>
-          <p className="mt-3 text-sm text-slate-400">Backup schedule appears after backups are enabled.</p>
+          <p className="mt-3 text-sm text-slate-400">L’horaire des sauvegardes apparaît une fois les sauvegardes activées. · Backup schedule appears after backups are enabled.</p>
           <Link href="/dashboard/web-hosting/backups" className="mt-4 inline-block text-sm font-medium text-violet-600">
-            Manage Backups
+            Gérer les sauvegardes · Manage Backups
           </Link>
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Runtime & Workers</h3>
-          <p className="mt-3 text-sm text-slate-400">Instance list appears when runtime telemetry is connected.</p>
+          <h3 className="text-sm font-semibold text-slate-900">Exécution et tâches · Runtime & Workers</h3>
+          <p className="mt-3 text-sm text-slate-400">La liste des instances apparaît une fois la télémétrie d’exécution branchée. · Instance list appears when runtime telemetry is connected.</p>
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Domains, SSL & CDN</h3>
+          <h3 className="text-sm font-semibold text-slate-900">Domaines, SSL et CDN · Domains, SSL & CDN</h3>
           <div className="mt-3 space-y-2 text-sm">
             <div className="flex items-center justify-between">
               <span className="font-medium text-slate-800">{domain}</span>
@@ -253,9 +252,9 @@ export function HostingEnvironmentView({
         </article>
 
         <article className="rounded-2xl bg-violet-50 p-5">
-          <h3 className="text-sm font-semibold text-violet-900">TakaTak AI Environment Assistant</h3>
+          <h3 className="text-sm font-semibold text-violet-900">Assistant IA d’environnement TakaTak · TakaTak AI Environment Assistant</h3>
           <p className="mt-2 text-sm text-violet-800">
-            Live analysis appears after hosting telemetry is connected. Nothing is inferred from placeholder records.
+            L’analyse en direct apparaît une fois la télémétrie de l’hébergement branchée. Rien n’est déduit de fiches fictives. · Live analysis appears after hosting telemetry is connected. Nothing is inferred from placeholder records.
           </p>
         </article>
       </section>
@@ -269,8 +268,8 @@ export function HostingServicePicker({ services }: { services: HostingServiceSum
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-2xl font-semibold text-slate-900">Hosting</h2>
-        <p className="mt-1 text-sm text-slate-500">Choose an environment to operate.</p>
+        <h2 className="text-2xl font-semibold text-slate-900">Hébergement · Hosting</h2>
+        <p className="mt-1 text-sm text-slate-500">Choisissez un environnement à gérer. · Choose an environment to operate.</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {services.map((service) => (

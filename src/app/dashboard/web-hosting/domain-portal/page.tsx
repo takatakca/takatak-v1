@@ -24,11 +24,10 @@ export default async function DomainProviderPortalPage() {
   return (
     <main className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
       <header className="space-y-2">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1565D8]">TAKATAK / Existing domain provider</p>
-        <h1 className="text-2xl font-bold text-slate-900">Domain & Provider Portal</h1>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1565D8]">TAKATAK / fournisseur de domaine actuel · TAKATAK / Existing domain provider</p>
+        <h1 className="text-2xl font-bold text-slate-900">Portail des domaines et fournisseurs · Domain & Provider Portal</h1>
         <p className="max-w-3xl text-sm leading-6 text-slate-600">
-          Manage your website through TAKATAK and keep access to your current domain provider during transfer.
-          Your MochaHost login remains with MochaHost. TAKATAK does not ask for or store that password.
+          Gérez votre site par TAKATAK et gardez l’accès à votre fournisseur de domaine actuel pendant le transfert. Votre connexion MochaHost reste chez MochaHost. TAKATAK ne demande ni ne conserve ce mot de passe. · Manage your website through TAKATAK and keep access to your current domain provider during transfer. Your MochaHost login remains with MochaHost. TAKATAK does not ask for or store that password.
         </p>
       </header>
 
@@ -36,11 +35,10 @@ export default async function DomainProviderPortalPage() {
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 text-slate-800">
             <Globe2 className="h-5 w-5 text-[#1565D8]" aria-hidden="true" />
-            <h2 className="font-semibold">Current domain provider</h2>
+            <h2 className="font-semibold">Fournisseur actuel du domaine · Current domain provider</h2>
           </div>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            If your domain is still with MochaHost, open its official client area to manage the
-            services available on your existing account. Sign in there using your own provider credentials.
+            Si votre domaine est encore chez MochaHost, ouvrez son espace client officiel pour gérer les services de votre compte actuel. Connectez-vous-y avec vos propres identifiants du fournisseur. · If your domain is still with MochaHost, open its official client area to manage the services available on your existing account. Sign in there using your own provider credentials.
           </p>
           <a
             href={MOCHAHOST_CLIENT_AREA_URL}
@@ -51,18 +49,16 @@ export default async function DomainProviderPortalPage() {
             Open MochaHost Client Area <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </a>
           <p className="mt-2 text-xs text-slate-500">
-            Opens the real provider site in a new tab. This is not single sign-on or a TAKATAK-hosted MochaHost login.
+            Ouvre le vrai site du fournisseur dans un nouvel onglet. Ce n’est pas une connexion unique ni une connexion MochaHost hébergée par TAKATAK. · Opens the real provider site in a new tab. This is not single sign-on or a TAKATAK-hosted MochaHost login.
           </p>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center gap-2 text-slate-800">
             <LockKeyhole className="h-5 w-5 text-[#1565D8]" aria-hidden="true" />
-            <h2 className="font-semibold">DNS stays where it is managed</h2>
+            <h2 className="font-semibold">Le DNS reste là où il est géré · DNS stays where it is managed</h2>
           </div>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            A website can move to TAKATAK without transferring its domain registration. DNS changes must be
-            made at the authoritative DNS provider, which can differ from the registrar or cPanel.
-            We will not change your nameservers, MX, email or other DNS records automatically.
+            Un site peut passer chez TAKATAK sans transférer l’enregistrement de son domaine. Les changements DNS se font chez le fournisseur DNS principal, qui peut être différent du registraire ou du cPanel. Nous ne modifions jamais automatiquement vos serveurs de noms, MX, courriels ou autres enregistrements DNS. · A website can move to TAKATAK without transferring its domain registration. DNS changes must be made at the authoritative DNS provider, which can differ from the registrar or cPanel. We will not change your nameservers, MX, email or other DNS records automatically.
           </p>
           <Link
             href="/dashboard/web-hosting/domains"
@@ -76,7 +72,7 @@ export default async function DomainProviderPortalPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-[#1565D8]" aria-hidden="true" />
-          <h2 className="font-semibold text-slate-900">Domains linked to this TAKATAK workspace</h2>
+          <h2 className="font-semibold text-slate-900">Domaines liés à cet espace TAKATAK · Domains linked to this TAKATAK workspace</h2>
         </div>
         <p className="mt-2 text-xs text-slate-500">
           {domainData.sourceLabel} Legacy MochaHost domains only appear once correctly linked to your account.
@@ -104,15 +100,14 @@ export default async function DomainProviderPortalPage() {
                     Provider login <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                   </a>
                 ) : (
-                  <span className="text-xs text-slate-500">No verified provider login link</span>
+                  <span className="text-xs text-slate-500">Aucun lien de connexion vérifié au fournisseur · No verified provider login link</span>
                 )}
               </div>
             );
           })}
           {domains.length === 0 ? (
             <p className="py-4 text-sm text-slate-500">
-              No verified or linked domains are available in this workspace yet. You can still sign in at your
-              existing MochaHost account above; your TAKATAK team can link the legacy record after verification.
+              Aucun domaine vérifié ou lié dans cet espace pour l’instant. Vous pouvez toujours vous connecter à votre compte MochaHost ci-dessus ; votre équipe TAKATAK peut lier l’ancienne fiche après vérification. · No verified or linked domains are available in this workspace yet. You can still sign in at your existing MochaHost account above; your TAKATAK team can link the legacy record after verification.
             </p>
           ) : null}
         </div>
@@ -125,15 +120,12 @@ export default async function DomainProviderPortalPage() {
         <div className="flex items-start gap-3">
           <FileUp className="mt-1 h-5 w-5 shrink-0 text-[#1565D8]" aria-hidden="true" />
           <div>
-            <h2 className="font-semibold text-slate-900">Website files and editing</h2>
+            <h2 className="font-semibold text-slate-900">Fichiers et modification du site · Website files and editing</h2>
             <p className="mt-1 text-sm leading-6 text-slate-600">
-              While your website is still on MochaHost, use its existing authenticated cPanel File Manager
-              where your hosting account provides that access. Once your website is hosted on TAKATAK,
-              file editing and uploading must use an explicitly authorized site-scoped adapter.
-              TAKATAK does not currently offer a connected server file editor on this page.
+              Tant que votre site est chez MochaHost, utilisez son gestionnaire de fichiers cPanel si votre compte d’hébergement le permet. Une fois le site hébergé chez TAKATAK, la modification et le téléversement de fichiers passent par un accès autorisé propre au site ; cette page n’offre pas d’éditeur de fichiers serveur. · While your website is still on MochaHost, use its existing authenticated cPanel File Manager where your hosting account provides that access. Once your website is hosted on TAKATAK, file editing and uploading must use an explicitly authorized site-scoped adapter. TAKATAK does not currently offer a connected server file editor on this page.
             </p>
             <Link href="/dashboard/web-hosting/websites" className="mt-3 inline-flex text-sm font-semibold text-[#1565D8] hover:underline">
-              View my websites
+              Voir mes sites · View my websites
             </Link>
           </div>
         </div>

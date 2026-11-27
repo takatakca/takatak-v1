@@ -20,6 +20,7 @@ import type {
   WorkspaceBrandSummary,
   WorkspaceMemberSummary,
 } from "@/lib/team/team-data";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PLATFORM_KEYS: SocialPlatformKey[] = [
   "facebook",
@@ -121,6 +122,7 @@ export function MemberAccessModal({
   billingHref: string;
   onClose: () => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const onCloseRef = useRef(onClose);
   const [query, setQuery] = useState("");
@@ -286,7 +288,7 @@ export function MemberAccessModal({
 
             <div className="flex flex-col gap-3 px-6 py-4 lg:flex-row lg:items-center">
               <label className="relative min-w-0 flex-1">
-                <span className="sr-only">Search brands</span>
+                <span className="sr-only">{fr ? "Rechercher des marques" : "Search brands"}</span>
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="search"
@@ -304,9 +306,9 @@ export function MemberAccessModal({
                 disabled={filtersLocked}
                 onChange={setStateFilter}
               >
-                <option value="any">States</option>
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
+                <option value="any">{fr ? "États" : "States"}</option>
+                <option value="active">{fr ? "Actif" : "Active"}</option>
+                <option value="suspended">{fr ? "Suspendu" : "Suspended"}</option>
               </FilterSelect>
               <FilterSelect
                 label="Brand"
@@ -315,7 +317,7 @@ export function MemberAccessModal({
                 disabled={filtersLocked}
                 onChange={setBrandFilter}
               >
-                <option value="any">Any brand</option>
+                <option value="any">{fr ? "Toutes les marques" : "Any brand"}</option>
                 {brands.map((brand) => (
                   <option key={brand.id} value={brand.id}>
                     {brand.name}
@@ -329,7 +331,7 @@ export function MemberAccessModal({
                 disabled={filtersLocked}
                 onChange={setRoleFilter}
               >
-                <option value="any">Any role</option>
+                <option value="any">{fr ? "Tous les rôles" : "Any role"}</option>
                 {(Object.keys(ROLE_LABELS) as RoleKey[]).map((role) => (
                   <option key={role} value={role}>
                     {ROLE_LABELS[role]}
@@ -341,9 +343,9 @@ export function MemberAccessModal({
             <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-4">
               <div className="grid grid-cols-[auto_minmax(0,1.1fr)_minmax(140px,0.8fr)_minmax(0,1.2fr)] items-center gap-3 border-b border-slate-100 px-1 py-2 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
                 <span className="w-10" />
-                <p>Brand</p>
-                <p>Role</p>
-                <p>Connections</p>
+                <p>{fr ? "Marque" : "Brand"}</p>
+                <p>{fr ? "Rôle" : "Role"}</p>
+                <p>{fr ? "Connexions" : "Connections"}</p>
               </div>
 
               {filteredBrands.length === 0 ? (
@@ -421,7 +423,7 @@ export function MemberAccessModal({
 
                       <span className="flex flex-wrap items-center gap-1.5">
                         {brand.connectedPlatforms.length === 0 ? (
-                          <span className="text-xs text-slate-400">None</span>
+                          <span className="text-xs text-slate-400">{fr ? "Aucun" : "None"}</span>
                         ) : (
                           brand.connectedPlatforms.map((platform) => (
                             <PlatformMark key={platform} platform={platform} />
@@ -444,7 +446,7 @@ export function MemberAccessModal({
                   <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#dfff32] text-[#1d1d1f]">
                     <Gem className="h-2.5 w-2.5" />
                   </span>
-                  Upgrade your plan
+                  {fr ? "Voir les forfaits" : "Upgrade your plan"}
                 </Link>
               </div>
             ) : null}

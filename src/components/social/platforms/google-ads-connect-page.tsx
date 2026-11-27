@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Choice = {
   id: string;
@@ -61,6 +62,7 @@ export function GoogleAdsConnectPage({
   currency?: string | null;
   choices?: Choice[];
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
@@ -186,8 +188,7 @@ export function GoogleAdsConnectPage({
   if (state === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        More than one Google Ads account is selected for this brand. Open
-        Manage connections and keep a single ad account.
+        {fr ? "Plus d’un compte Google Ads est choisi pour cette marque. Ouvrez Gérer les connexions et gardez un seul compte publicitaire." : "More than one Google Ads account is selected for this brand. Open Manage connections and keep a single ad account."}
       </div>
     );
   }
@@ -204,7 +205,7 @@ export function GoogleAdsConnectPage({
         <section className="flex flex-col gap-5 rounded-[18px] border border-[#e1e4e7] bg-white px-7 py-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-              Ad account
+              {fr ? "Compte publicitaire" : "Ad account"}
             </p>
             <h2 className="mt-1 truncate text-[18px] font-semibold text-[#20242A]">
               {connectedLabel ?? "Google Ads account"}
@@ -221,14 +222,13 @@ export function GoogleAdsConnectPage({
       {state === "choose" ? (
         <section className="rounded-[18px] border border-[#c9dcff] bg-[#f3f7ff] px-7 py-6">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            Choose a Google Ads account
+            {fr ? "Choisir un compte Google Ads" : "Choose a Google Ads account"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            This Google login can access more than one ad account. Connect one
-            account to this brand.
+            {fr ? "Ce compte Google a accès à plus d’un compte publicitaire. Branchez un seul compte à cette marque." : "This Google login can access more than one ad account. Connect one account to this brand."}
           </p>
           <fieldset className="mt-5 space-y-2">
-            <legend className="sr-only">Google Ads accounts</legend>
+            <legend className="sr-only">{fr ? "Comptes Google Ads" : "Google Ads accounts"}</legend>
             {choices.map((choice) => (
               <label
                 key={choice.id}
@@ -272,7 +272,7 @@ export function GoogleAdsConnectPage({
               }}
               className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[#c5ced6] bg-white px-5 text-sm font-semibold text-[#30343a] disabled:opacity-60"
             >
-              Use a different Google account
+              {fr ? "Utiliser un autre compte Google" : "Use a different Google account"}
             </button>
           </div>
         </section>
@@ -281,12 +281,10 @@ export function GoogleAdsConnectPage({
       {state === "empty" ? (
         <section className="rounded-[18px] border border-[#c9dcff] bg-[#f3f7ff] px-7 py-6">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            No ad account was available
+            {fr ? "Aucun compte publicitaire disponible" : "No ad account was available"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            This Google login does not have a Google Ads account we can read.
-            Create one in Google Ads, or sign in with a Google user that can
-            access an ad account.
+            {fr ? "Ce compte Google n’a aucun compte Google Ads lisible. Créez-en un dans Google Ads, ou connectez-vous avec un utilisateur Google qui a accès à un compte publicitaire." : "This Google login does not have a Google Ads account we can read. Create one in Google Ads, or sign in with a Google user that can access an ad account."}
           </p>
           <button
             type="button"
@@ -310,12 +308,10 @@ export function GoogleAdsConnectPage({
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-                Connect a Google Ads account
+                {fr ? "Brancher un compte Google Ads" : "Connect a Google Ads account"}
               </h2>
               <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-                Sign in with Google to choose an ad account for this brand.
-                TAKATAK requests read access to Google Ads. YouTube and
-                Business Profile stay on their own connections.
+                {fr ? "Connectez-vous avec Google pour choisir un compte publicitaire pour cette marque. TAKATAK demande un accès en lecture à Google Ads. YouTube et Business Profile gardent leurs propres branchements." : "Sign in with Google to choose an ad account for this brand. TAKATAK requests read access to Google Ads. YouTube and Business Profile stay on their own connections."}
               </p>
             </div>
             <button

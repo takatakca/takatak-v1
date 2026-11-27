@@ -8,10 +8,12 @@ import { normalizePhone, type PhoneCountry } from "@/lib/auth/otp/phone";
 import { normalizeEmail, validateEmail } from "@/lib/auth/registration-validation";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { formatAuthErrorMessage, parseAuthResponse } from "@/lib/auth/parse-auth-response";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Mode = "phone" | "email";
 
 export function MasterPhoneLoginForm() {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const searchParams = useSearchParams();
   const inFlight = useRef(false);
@@ -112,20 +114,20 @@ export function MasterPhoneLoginForm() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2">
         <button type="button" onClick={() => { setMode("phone"); setError(null); }} className={`rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-inset ${mode === "phone" ? "bg-primary text-primary-foreground ring-primary" : "bg-background text-foreground ring-border"}`}>SMS</button>
-        <button type="button" onClick={() => { setMode("email"); setError(null); }} className={`rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-inset ${mode === "email" ? "bg-primary text-primary-foreground ring-primary" : "bg-background text-foreground ring-border"}`}>Email</button>
+        <button type="button" onClick={() => { setMode("email"); setError(null); }} className={`rounded-lg px-3 py-2 text-sm font-semibold ring-1 ring-inset ${mode === "email" ? "bg-primary text-primary-foreground ring-primary" : "bg-background text-foreground ring-border"}`}>{fr ? "Courriel" : "Email"}</button>
       </div>
 
       {mode === "phone" ? (
         <form onSubmit={handlePhone} className="space-y-4">
           <div>
-            <label htmlFor="login-phone" className="mb-1.5 block text-xs font-semibold text-foreground">TAKATAK mobile number</label>
-            <label htmlFor="login-phone-country" className="mb-1 block text-xs font-semibold text-foreground">Country calling code</label>
+            <label htmlFor="login-phone" className="mb-1.5 block text-xs font-semibold text-foreground">{fr ? "Numéro de cellulaire TAKATAK" : "TAKATAK mobile number"}</label>
+            <label htmlFor="login-phone-country" className="mb-1 block text-xs font-semibold text-foreground">{fr ? "Indicatif du pays" : "Country calling code"}</label>
             <select id="login-phone-country" value={phoneCountry} disabled={loading}
               onChange={(event) => { setPhoneCountry(event.target.value as PhoneCountry); setError(null); }}
               className="mb-2 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground">
-              <option value="CA">Canada / US (+1)</option>
-              <option value="NG">Nigeria (+234)</option>
-              <option value="INTL">Other country (enter +code)</option>
+              <option value="CA">{fr ? "Canada / États-Unis (+1)" : "Canada / US (+1)"}</option>
+              <option value="NG">{fr ? "Nigéria (+234)" : "Nigeria (+234)"}</option>
+              <option value="INTL">{fr ? "Autre pays (entrez +indicatif)" : "Other country (enter +code)"}</option>
             </select>
             <div className="relative">
               <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
@@ -140,7 +142,7 @@ export function MasterPhoneLoginForm() {
       ) : (
         <form onSubmit={handleEmail} className="space-y-4">
           <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold text-foreground">Email</label>
+            <label htmlFor="login-email" className="mb-1.5 block text-xs font-semibold text-foreground">{fr ? "Courriel" : "Email"}</label>
             <div className="relative">
               <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input id="login-email" type="email" autoComplete="email" inputMode="email" value={email} disabled={loading} onChange={(event) => { setEmail(event.target.value); setError(null); }} className={inputClass} placeholder="you@company.com" />
@@ -157,7 +159,7 @@ export function MasterPhoneLoginForm() {
 
       <p className="text-center text-xs text-muted-foreground">
         New to TAKATAK?{" "}
-        <Link href="/register" className="font-semibold text-primary">Create your identity</Link>
+        <Link href="/register" className="font-semibold text-primary">{fr ? "Créer votre identité" : "Create your identity"}</Link>
       </p>
     </div>
   );

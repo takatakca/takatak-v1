@@ -15,6 +15,7 @@ import {
 } from "react";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { ROLE_LABELS } from "@/lib/security/roles";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 function getInitials(session: SessionSnapshot): string {
   const firstInitial =
@@ -53,6 +54,7 @@ export function UserProfileMenu({
 }: {
   session: SessionSnapshot;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const menuReference = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -195,7 +197,7 @@ export function UserProfileMenu({
                 className="h-4 w-4 text-slate-400"
               />
 
-              View and edit profile
+              {fr ? "Voir et modifier le profil" : "View and edit profile"}
             </Link>
 
             <Link
@@ -209,7 +211,7 @@ export function UserProfileMenu({
                 className="h-4 w-4 text-slate-400"
               />
 
-              Account settings
+              {fr ? "Réglages du compte" : "Account settings"}
             </Link>
 
             <Link
@@ -224,7 +226,7 @@ export function UserProfileMenu({
                 className="h-4 w-4 text-slate-400"
               />
 
-              Switch workspace
+              {fr ? "Changer d’espace" : "Switch workspace"}
             </Link>
           </div>
 
@@ -243,7 +245,7 @@ export function UserProfileMenu({
                   className="h-4 w-4"
                 />
 
-                Sign out
+                {fr ? "Se déconnecter" : "Sign out"}
               </button>
             </form>
           </div>

@@ -15,6 +15,7 @@ import { InstagramSubscribedDashboard } from "@/components/social/platforms/inst
 import type { InstagramLiveStats } from "@/lib/social/instagram-live-stats";
 import { ThreadsSubscribedDashboard } from "@/components/social/platforms/threads-subscribed-dashboard";
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -208,6 +209,7 @@ function DirectLoginConnectPage({
   instagramLinkedViaFacebook?: boolean;
   liveStats?: InstagramLiveStats | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState<"oauth" | "facebook" | null>(null);
@@ -574,8 +576,7 @@ function DirectLoginConnectPage({
             Connect social networks
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(

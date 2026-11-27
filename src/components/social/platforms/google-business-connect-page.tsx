@@ -10,6 +10,7 @@ import { useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { GoogleBusinessLocationDashboard } from "@/components/social/platforms/google-business-location-dashboard";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -44,6 +45,7 @@ export function GoogleBusinessConnectPage({
   profileImageUrl?: string | null;
   resolutionIssue?: "ambiguous" | "missing" | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(
@@ -121,9 +123,7 @@ export function GoogleBusinessConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm leading-6 text-amber-950">
-        Multiple Google Business locations are assigned to this
-        brand. Open Manage connections and keep one selected
-        location for this analytics page.
+        {fr ? "Plusieurs emplacements Google Business sont attribués à cette marque. Ouvrez Gérer les connexions et gardez un seul emplacement pour cette page de statistiques." : "Multiple Google Business locations are assigned to this brand. Open Manage connections and keep one selected location for this analytics page."}
       </div>
     );
   }
@@ -153,9 +153,7 @@ export function GoogleBusinessConnectPage({
             Connect a Google Business Profile
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            Sign in with Google to connect this brand’s business
-            location. This authorization is independent from
-            YouTube.
+            {fr ? "Connectez-vous avec Google pour brancher l’emplacement de cette marque. Cette autorisation est indépendante de YouTube." : "Sign in with Google to connect this brand’s business location. This authorization is independent from YouTube."}
           </p>
 
           {error ? (

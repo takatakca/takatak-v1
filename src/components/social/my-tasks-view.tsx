@@ -12,6 +12,7 @@ import type {
   MyTasksPageData,
   MyTasksTab,
 } from "@/lib/social/my-tasks-data";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const TABS: Array<{ id: MyTasksTab; label: string }> = [
   { id: "open", label: "Open" },
@@ -55,6 +56,7 @@ export function MyTasksView({
   data: MyTasksPageData;
   tab: MyTasksTab;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
 
   function tabHref(next: MyTasksTab) {
@@ -68,7 +70,7 @@ export function MyTasksView({
   if (data.source === "unavailable") {
     return (
       <section className="px-5 py-10 text-center sm:px-6">
-        <h1 className="text-2xl font-semibold text-slate-900">My tasks</h1>
+        <h1 className="text-2xl font-semibold text-slate-900">{fr ? "Mes tâches" : "My tasks"}</h1>
         <p className="mt-2 text-sm text-slate-500">{data.message}</p>
       </section>
     );
@@ -83,7 +85,7 @@ export function MyTasksView({
     <div className="bg-white pb-16">
       <div className="bg-[#f5fafd] px-5 pt-5 sm:px-6">
         <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
-          My tasks
+          {fr ? "Mes tâches" : "My tasks"}
         </h1>
 
         {!data.approvalsEnabled ? (
@@ -94,7 +96,7 @@ export function MyTasksView({
               </span>
               <div>
                 <p className="text-sm font-semibold text-[#1d1d1f]">
-                  Do you need a higher plan?
+                  {fr ? "Besoin d’un forfait supérieur ?" : "Do you need a higher plan?"}
                 </p>
                 <p className="mt-0.5 text-sm text-slate-500">
                   Post approvals are included on Advanced plans. This workspace
@@ -109,7 +111,7 @@ export function MyTasksView({
               )}
               className="inline-flex h-10 shrink-0 items-center justify-center rounded-md bg-[#2a1728] px-4 text-sm font-semibold text-[#dfff32]"
             >
-              Upgrade your plan
+              {fr ? "Voir les forfaits" : "Upgrade your plan"}
             </Link>
           </aside>
         ) : null}

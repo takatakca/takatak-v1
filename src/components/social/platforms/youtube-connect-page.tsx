@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 
 import { withSocialPreview } from "@/components/social/preview/social-preview-query";
 import { YoutubeAnalyticsDashboard } from "@/components/social/platforms/youtube-analytics-dashboard";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type StartAuthorizationResponse = {
   ok?: boolean;
@@ -114,6 +115,7 @@ export function YoutubeConnectPage({
   canCompare: boolean;
   billingHref: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const searchParams = useSearchParams();
   const [busy, setBusy] = useState(false);
@@ -251,8 +253,7 @@ export function YoutubeConnectPage({
   if (resolutionIssue === "ambiguous") {
     return (
       <div className="rounded-[14px] border border-amber-200 bg-amber-50 px-5 py-6 text-sm text-amber-950">
-        Multiple YouTube channel selections need attention. Open Manage
-        connections and confirm a single channel for this brand.
+        {fr ? "Plusieurs chaînes YouTube sont choisies. Ouvrez Gérer les connexions et confirmez une seule chaîne pour cette marque." : "Multiple YouTube channel selections need attention. Open Manage connections and confirm a single channel for this brand."}
       </div>
     );
   }
@@ -295,9 +296,9 @@ export function YoutubeConnectPage({
               </div>
             </header>
             <section className="rounded-[18px] border border-slate-200 bg-white px-7 py-6">
-              <h2 className="text-[18px] font-semibold text-slate-950">No YouTube account connected</h2>
+              <h2 className="text-[18px] font-semibold text-slate-950">{fr ? "Aucun compte YouTube branché" : "No YouTube account connected"}</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Your saved YouTube history remains stored. Reconnect the same account to restore only that account’s analytics.
+                {fr ? "Votre historique YouTube reste enregistré. Reconnectez le même compte pour retrouver les statistiques de ce compte seulement." : "Your saved YouTube history remains stored. Reconnect the same account to restore only that account’s analytics."}
               </p>
               <Link
                 href={withSocialPreview(
@@ -306,7 +307,7 @@ export function YoutubeConnectPage({
                 )}
                 className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] bg-[#1565D8] px-6 text-sm font-semibold text-white transition hover:bg-blue-800"
               >
-                Reconnect YouTube
+                {fr ? "Reconnecter YouTube" : "Reconnect YouTube"}
               </Link>
             </section>
           </>
@@ -326,10 +327,10 @@ export function YoutubeConnectPage({
 
         <section className="rounded-[18px] border border-[#a8b4ff] bg-[#ebeaff] px-7 py-6">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            Choose a YouTube channel
+            {fr ? "Choisir une chaîne YouTube" : "Choose a YouTube channel"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            Google is authorized. Select the channel this brand should use.
+            {fr ? "Google est autorisé. Choisissez la chaîne que cette marque doit utiliser." : "Google is authorized. Select the channel this brand should use."}
           </p>
           {error ? (
             <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -342,7 +343,7 @@ export function YoutubeConnectPage({
               <p className="text-sm text-slate-600">Loading channels…</p>
             ) : channels.length === 0 ? (
               <p className="text-sm text-slate-600">
-                No YouTube channel was found on this Google account.
+                {fr ? "Aucune chaîne YouTube trouvée sur ce compte Google." : "No YouTube channel was found on this Google account."}
               </p>
             ) : (
               channels.map((channel) => (
@@ -398,11 +399,10 @@ export function YoutubeConnectPage({
       <section className="flex flex-col gap-6 rounded-[18px] border border-[#a8b4ff] bg-[#ebeaff] px-7 py-6 sm:flex-row sm:items-center sm:justify-between lg:px-8">
         <div className="min-w-0">
           <h2 className="text-[21px] font-semibold leading-7 text-[#292d34]">
-            Connect your YouTube channel
+            {fr ? "Branchez votre chaîne YouTube" : "Connect your YouTube channel"}
           </h2>
           <p className="mt-2 max-w-xl text-[15px] leading-6 text-[#505761]">
-            Sign in with Google, then TAKATAK uses the YouTube channel on that
-            account. Google Business Profile is not part of this step.
+            {fr ? "Connectez-vous avec Google : TAKATAK utilise ensuite la chaîne YouTube de ce compte. Google Business Profile ne fait pas partie de cette étape." : "Sign in with Google, then TAKATAK uses the YouTube channel on that account. Google Business Profile is not part of this step."}
           </p>
           {error ? (
             <p className="mt-3 text-sm text-rose-700" role="alert">
@@ -452,11 +452,10 @@ export function YoutubeConnectPage({
       <section className="relative min-h-[245px] overflow-hidden rounded-[18px] border border-[#e1e4e7] bg-white px-8 py-9">
         <div className="relative z-10 max-w-2xl">
           <h2 className="text-[21px] font-medium leading-7 text-[#30343a]">
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </h2>
           <p className="mt-4 text-[15px] leading-6 text-[#68717a]">
-            Connect your accounts once. TAKATAK shows only real data received
-            from each network&apos;s official API.
+            {fr ? "Branchez vos comptes une seule fois. TAKATAK affiche seulement les vraies données reçues de l’API officielle de chaque réseau." : "Connect your accounts once. TAKATAK shows only real data received from each network's official API."}
           </p>
           <Link
             href={withSocialPreview(
@@ -465,7 +464,7 @@ export function YoutubeConnectPage({
             )}
             className="mt-5 inline-flex h-12 items-center justify-center rounded-[10px] border border-[#493546] bg-white px-7 text-[15px] font-medium text-[#342431] transition hover:bg-[#f8f8f8]"
           >
-            Connect social networks
+            {fr ? "Brancher les réseaux sociaux" : "Connect social networks"}
           </Link>
         </div>
       </section>

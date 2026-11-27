@@ -3,12 +3,14 @@
 import { useActionState } from "react";
 
 import { grantCreditsAction, type GrantState } from "@/app/dashboard/growth/ai-engine/actions";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const initialState: GrantState = { ok: null };
 const inputClass =
   "w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100";
 
 export function GrantCreditsForm({ clients, nonce }: { clients: Array<{ id: string; name: string; balance: number }>; nonce: string }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, formAction, pending] = useActionState(grantCreditsAction, initialState);
   return (
     <form action={formAction} className="grid gap-3 md:grid-cols-5">
@@ -27,14 +29,14 @@ export function GrantCreditsForm({ clients, nonce }: { clients: Array<{ id: stri
         </select>
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
-        Credits
+        {fr ? "Crédits" : "Credits"}
         <input name="credits" type="number" step={1} required placeholder="500" className={inputClass} />
       </label>
       <label className="space-y-1 text-xs font-medium text-slate-700">
         Type
         <select name="reason" defaultValue="grant" className={inputClass}>
-          <option value="grant">Grant (free)</option>
-          <option value="purchase">Purchase (paid)</option>
+          <option value="grant">{fr ? "Accorder (gratuit)" : "Grant (free)"}</option>
+          <option value="purchase">{fr ? "Achat (payé)" : "Purchase (paid)"}</option>
           <option value="adjustment">Adjustment (+/−)</option>
         </select>
       </label>

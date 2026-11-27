@@ -6,6 +6,7 @@ import { ArrowUpRight, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { REVIEW_SOURCES, type ReviewSource } from "@/lib/reputation/sources";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const CATEGORIES = [
   { id: "all", label: "All sources" },
@@ -23,6 +24,7 @@ const DELIVERY_LABELS: Record<ReviewSource["delivery"], string> = {
 
 /** Capability directory, never a claim that a tenant has connected an account. */
 export function ReviewSourceDirectory() {
+  const fr = useDashboardLanguage() === "fr";
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
   const sources = REVIEW_SOURCES.filter(
@@ -42,7 +44,7 @@ export function ReviewSourceDirectory() {
         <CardBody>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="relative w-full sm:max-w-sm">
-              <span className="sr-only">Find a review platform</span>
+              <span className="sr-only">{fr ? "Trouver une plateforme d’avis" : "Find a review platform"}</span>
               <Search
                 aria-hidden
                 className="absolute left-3 top-3 h-4 w-4 text-slate-500"
@@ -76,8 +78,7 @@ export function ReviewSourceDirectory() {
             ))}
           </div>
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            These are platform capabilities. Account connections and permissions
-            are checked separately in each workspace.
+            {fr ? "Ce sont les capacités de la plateforme. Les branchements et autorisations des comptes se vérifient à part dans chaque espace." : "These are platform capabilities. Account connections and permissions are checked separately in each workspace."}
           </p>
         </CardBody>
         <div className="grid gap-px border-t border-slate-100 bg-slate-100 md:grid-cols-2 xl:grid-cols-3">
@@ -94,7 +95,7 @@ export function ReviewSourceDirectory() {
               </p>
               <details className="mt-3 text-xs leading-6 text-slate-600">
                 <summary className="cursor-pointer rounded font-medium text-[#1565D8] focus-visible:outline-2 focus-visible:outline-blue-600">
-                  Response and publishing details
+                  {fr ? "Détails de la réponse et de la publication" : "Response and publishing details"}
                 </summary>
                 <p className="mt-2">{source.reply}</p>
                 <p className="mt-2">{source.publication}</p>
@@ -122,10 +123,10 @@ export function ReviewSourceDirectory() {
         {!sources.length && (
           <div className="px-5 py-10 text-center">
             <p className="text-sm font-semibold text-slate-900">
-              No matching platforms
+              {fr ? "Aucune plateforme correspondante" : "No matching platforms"}
             </p>
             <p className="mt-2 text-xs text-slate-500">
-              Try another name or reset the source filters.
+              {fr ? "Essayez un autre nom ou réinitialisez les filtres de source." : "Try another name or reset the source filters."}
             </p>
             <button
               type="button"
@@ -135,7 +136,7 @@ export function ReviewSourceDirectory() {
               }}
               className="mt-4 rounded-lg bg-[#1565D8] px-4 py-2 text-xs font-semibold text-white"
             >
-              Reset source filters
+              {fr ? "Réinitialiser les filtres de source" : "Reset source filters"}
             </button>
           </div>
         )}

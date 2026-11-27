@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { api, ModeBanner, Section, StatusBadge } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Channel = {
   channel: string; label: string; configured: boolean; canSend: boolean; missing: string[]; note: string; webhookUrl: string;
@@ -20,13 +21,14 @@ function Copy({ text }: { text: string }) {
 }
 
 export default function ChannelsPage() {
+  const fr = useDashboardLanguage() === "fr";
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState('');
   const [revealed, setRevealed] = useState(false);
   const load = useCallback((reveal = false) => api<Data>(`/api/food-hub/channels${reveal ? '?reveal=1' : ''}`).then((d) => { setData(d); setRevealed(reveal); }).catch((e) => setError(e.message)), []);
   useEffect(() => { load(); }, [load]);
 
-  if (!data) return <div><h1>Channels</h1>{error ? <div className="fh-banner warn">{error}</div> : <p className="small">Loading…</p>}</div>;
+  if (!data) return <div><h1>{fr ? "Canaux" : "Channels"}</h1>{error ? <div className="fh-banner warn">{error}</div> : <p className="small">Loading…</p>}</div>;
 
   return (
     <div>
@@ -37,13 +39,13 @@ export default function ChannelsPage() {
         </div>
         <div className="fh-row">
           <button className="btn-light" onClick={() => load(!revealed)}>{revealed ? 'Hide secrets' : 'Show secrets to give platforms'}</button>
-          <button className="btn-light" onClick={() => load(revealed)}>Refresh</button>
+          <button className="btn-light" onClick={() => load(revealed)}>{fr ? "Actualiser" : "Refresh"}</button>
         </div>
       </div>
       <ModeBanner mode={data.mode} />
       {!data.liveEnabled && <div className="fh-banner warn">Live connectors are OFF (LIVE_CONNECTORS_GLOBAL_ENABLED). Orders are still received, but nothing is sent to platforms until you switch it on.</div>}
 
-      <Section title="Clover POS (order injection + menu import)" right={data.clover.configured ? <span className="badge badge-green">Connected</span> : <span className="badge badge-yellow">Not configured</span>}>
+      <Section title="Clover POS (order injection + menu import)" right={data.clover.configured ? <span className="badge badge-green">{fr ? "Branché" : "Connected"}</span> : <span className="badge badge-yellow">{fr ? "Non configuré" : "Not configured"}</span>}>
         <p className="small" style={{ margin: 0 }}>{data.clover.note}{!data.clover.injectionEnabled && ' Injection is turned OFF (FOODHUB_POS_INJECTION=off).'}</p>
         <ul className="small" style={{ margin: '8px 0 0' }}>
           <li>Delivery orders recorded as <strong>paid</strong> with a tender per platform (Uber Eats, DoorDash, SkipTheDishes, Too Good To Go) when they leave the kitchen; orders cancelled before that are removed from the register: {data.clover.recordPayments ? 'on' : 'off (FOODHUB_CLOVER_RECORD_PAYMENT=off)'}</li>
@@ -51,10 +53,10 @@ export default function ChannelsPage() {
           <li>Out of stock in Clover → 86 on every platform, Clover price changes flagged: {data.clover.inventorySync ? 'on (checked every sync; instant with webhooks below)' : 'off (FOODHUB_CLOVER_INVENTORY_SYNC=off)'}</li>
         </ul>
         <dl className="fh-kv" style={{ marginTop: 10 }}>
-          <dt>Clover webhook URL</dt><dd className="fh-mono">{data.clover.webhookUrl}</dd>
-          <dt>Events to subscribe</dt><dd>Inventory</dd>
-          <dt>Verification code</dt><dd>{data.clover.verification ? <><span className="fh-mono">{data.clover.verification.code}</span> <span className="small">— paste it in the Clover developer dashboard (received {new Date(data.clover.verification.at).toLocaleString('fr-CA')})</span></> : <span className="small">Appears here after you save the URL in Clover.</span>}</dd>
-          <dt>X-Clover-Auth code</dt><dd>{data.clover.webhookAuthSet ? <span className="badge badge-green">set</span> : <span className="small">Copy the auth code Clover shows into CLOVER_WEBHOOK_AUTH (npm run food-hub:setup).</span>}</dd>
+          <dt>{fr ? "Adresse du webhook Clover" : "Clover webhook URL"}</dt><dd className="fh-mono">{data.clover.webhookUrl}</dd>
+          <dt>{fr ? "Événements à suivre" : "Events to subscribe"}</dt><dd>{fr ? "Inventaire" : "Inventory"}</dd>
+          <dt>{fr ? "Code de vérification" : "Verification code"}</dt><dd>{data.clover.verification ? <><span className="fh-mono">{data.clover.verification.code}</span> <span className="small">— paste it in the Clover developer dashboard (received {new Date(data.clover.verification.at).toLocaleString('fr-CA')})</span></> : <span className="small">{fr ? "Apparaît ici après l’enregistrement de l’adresse dans Clover." : "Appears here after you save the URL in Clover."}</span>}</dd>
+          <dt>{fr ? "Code X-Clover-Auth" : "X-Clover-Auth code"}</dt><dd>{data.clover.webhookAuthSet ? <span className="badge badge-green">set</span> : <span className="small">Copy the auth code Clover shows into CLOVER_WEBHOOK_AUTH (npm run food-hub:setup).</span>}</dd>
         </dl>
       </Section>
 
@@ -64,8 +66,8 @@ export default function ChannelsPage() {
             <div className="fh-head" style={{ marginBottom: 8 }}>
               <strong>{c.label}</strong>
               {c.channel === 'tgtg'
-                ? (c.configured ? <span className="badge badge-blue">Inbound only</span> : <span className="badge badge-yellow">Optional</span>)
-                : c.canSend ? <span className="badge badge-green">Live</span> : c.configured ? <span className="badge badge-yellow">Ready, not live</span> : <span className="badge badge-red">Needs setup</span>}
+                ? (c.configured ? <span className="badge badge-blue">{fr ? "Entrant seulement" : "Inbound only"}</span> : <span className="badge badge-yellow">{fr ? "Facultatif" : "Optional"}</span>)
+                : c.canSend ? <span className="badge badge-green">{fr ? "En direct" : "Live"}</span> : c.configured ? <span className="badge badge-yellow">{fr ? "Prêt, pas en ligne" : "Ready, not live"}</span> : <span className="badge badge-red">{fr ? "À configurer" : "Needs setup"}</span>}
             </div>
             <p className="small">{c.note}</p>
             <div className="small">{c.extraWebhooks.length ? 'Order webhook URL' : 'Webhook URL'}</div>
@@ -89,9 +91,9 @@ export default function ChannelsPage() {
       </div>
 
       <Section title="Recent channel jobs">
-        {data.jobs.length === 0 ? <p className="small">No menu, item or store actions yet.</p> : (
+        {data.jobs.length === 0 ? <p className="small">{fr ? "Aucune action sur le menu, les articles ou les magasins pour l’instant." : "No menu, item or store actions yet."}</p> : (
           <table>
-            <thead><tr><th>When</th><th>Kind</th><th>Channel</th><th>Status</th><th>Detail</th></tr></thead>
+            <thead><tr><th>{fr ? "Quand" : "When"}</th><th>{fr ? "Type" : "Kind"}</th><th>{fr ? "Canal" : "Channel"}</th><th>{fr ? "Statut" : "Status"}</th><th>{fr ? "Détail" : "Detail"}</th></tr></thead>
             <tbody>{data.jobs.map((j) => (
               <tr key={j.id}><td className="small">{new Date(j.createdAt).toLocaleString('fr-CA', { dateStyle: 'short', timeStyle: 'short' })}</td><td>{j.kind}</td><td>{j.channel}</td><td><StatusBadge status={j.status === 'error' ? 'error' : j.status} /></td><td className="small">{j.result?.message || ''}{j.reference ? ` · ref ${j.reference}` : ''}</td></tr>
             ))}</tbody>

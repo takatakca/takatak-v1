@@ -22,6 +22,7 @@ import {
   BRAND_STATUSES,
   type BrandStatusValue,
 } from "@/lib/brands/brand-validation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export interface BrandFormValues {
   name: string;
@@ -66,6 +67,7 @@ export function BrandForm({
   brandId?: string;
   initialValues: BrandFormValues;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
 
   const formRef =
@@ -322,7 +324,7 @@ export function BrandForm({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-emerald-900">
-                Brand created successfully
+                {fr ? "Marque créée" : "Brand created successfully"}
               </p>
 
               <p className="mt-1 text-sm text-emerald-700">
@@ -342,7 +344,7 @@ export function BrandForm({
                 }
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-600"
               >
-                Go to brand
+                {fr ? "Ouvrir la marque" : "Go to brand"}
 
                 <ArrowRight className="h-4 w-4" />
               </button>
@@ -545,7 +547,7 @@ export function BrandForm({
           disabled={loading}
           className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Cancel
+          {fr ? "Annuler" : "Cancel"}
         </button>
 
         <button

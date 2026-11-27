@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatTile, fmtInt } from '@/app/dashboard/food-hub/charts';
 import { api, downloadCsv, Modal, useCatalog, useFilters, useMe } from '@/app/dashboard/food-hub/ui';
 import { CH_NAME, FinanceError, FinanceFilters, FinanceHead, cad, day, signed } from '../finance-ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Batch = {
   key: string; channel: string; payoutRef: string | null; payoutDate: string | null; lines: number; orders: number; sales: number; tax: number; commission: number; commissionTax: number;
@@ -12,6 +13,7 @@ type Batch = {
 };
 
 export default function PayoutsPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { filters, set, query } = useFilters('last_month');
   const { activeLocations } = useCatalog();
   const { can } = useMe();
@@ -42,7 +44,7 @@ export default function PayoutsPage() {
       <FinanceHead title="Payouts & deposits" intro="Each payout as the platform's statement describes it — sales, commission, tax on fees, promotions, refunds — and the amount that actually reached your bank account. Enter the deposit from your bank statement to close the loop." />
       <FinanceError message={err} />
       {msg && <div className="fh-banner info" role="status">{msg}</div>}
-      <FinanceFilters filters={filters} set={set} locations={activeLocations} showLocations={false} extra={<button className="btn-sm btn-light" onClick={exportCsv} disabled={!rows.length}>Download CSV</button>} />
+      <FinanceFilters filters={filters} set={set} locations={activeLocations} showLocations={false} extra={<button className="btn-sm btn-light" onClick={exportCsv} disabled={!rows.length}>{fr ? "Télécharger le CSV" : "Download CSV"}</button>} />
       <div className="viz-stats">
         <StatTile hero label="Paid out (statements)" value={cad(t.net)} note={`${fmtInt(rows.length)} payout(s)`} />
         <StatTile label="Reached the bank" value={cad(t.deposited)} note={`${t.waiting} payout(s) without a deposit entered`} />
@@ -53,7 +55,7 @@ export default function PayoutsPage() {
       <section className="card">
         <div className="fh-table-wrap">
           <table className="fin-table">
-            <thead><tr><th>Payout</th><th>Platform</th><th className="num">Orders</th><th className="num">Food sales</th><th className="num">Tax collected</th><th className="num">Commission + tax</th><th className="num">Everything else</th><th className="num">Net paid</th><th className="num">Bank deposit</th></tr></thead>
+            <thead><tr><th>{fr ? "Versement" : "Payout"}</th><th>{fr ? "Plateforme" : "Platform"}</th><th className="num">{fr ? "Commandes" : "Orders"}</th><th className="num">{fr ? "Ventes de nourriture" : "Food sales"}</th><th className="num">{fr ? "Taxes perçues" : "Tax collected"}</th><th className="num">{fr ? "Commission + taxes" : "Commission + tax"}</th><th className="num">{fr ? "Tout le reste" : "Everything else"}</th><th className="num">{fr ? "Net payé" : "Net paid"}</th><th className="num">{fr ? "Dépôt bancaire" : "Bank deposit"}</th></tr></thead>
             <tbody>
               {rows.map((b) => {
                 const fees = b.commission + b.commissionTax;
@@ -89,6 +91,7 @@ export default function PayoutsPage() {
 }
 
 function DepositDialog({ b, onClose, onSaved }: { b: Batch; onClose: () => void; onSaved: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [amount, setAmount] = useState(b.deposit ? String(b.deposit.amount) : b.net.toFixed(2));
   const [date, setDate] = useState(b.deposit?.date ?? b.payoutDate ?? new Date().toISOString().slice(0, 10));
   const [note, setNote] = useState(b.deposit?.note ?? '');
@@ -105,11 +108,11 @@ function DepositDialog({ b, onClose, onSaved }: { b: Batch; onClose: () => void;
       <p className="small">The statement says <strong>{cad(b.net)}</strong>. Enter what your bank statement shows for this payout.</p>
       <div style={{ display: 'grid', gap: 10 }}>
         <label className="small">Amount received ($)<br /><input type="number" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></label>
-        <label className="small">Deposit date<br /><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
+        <label className="small">{fr ? "Date du dépôt" : "Deposit date"}<br /><input type="date" value={date} onChange={(e) => setDate(e.target.value)} /></label>
         <label className="small">Note<br /><input value={note} onChange={(e) => setNote(e.target.value)} style={{ width: '100%' }} maxLength={200} placeholder="Bank reference…" /></label>
         {Number.isFinite(gap) && Math.abs(gap) >= 0.01 && <div className="fh-banner warn">Differs from the statement by {signed(gap)} — the ledger entry will show a warning.</div>}
         {err && <div className="fh-banner warn">{err}</div>}
-        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>Cancel</button><button disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save deposit'}</button></div>
+        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button><button disabled={busy} onClick={save}>{busy ? 'Saving…' : 'Save deposit'}</button></div>
       </div>
     </Modal>
   );

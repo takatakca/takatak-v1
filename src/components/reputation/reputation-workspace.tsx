@@ -86,7 +86,7 @@ export function ReputationWorkspace({
         <CardHeader title="Feedback inbox" subtitle="Every rating customers leave, newest first. Low ratings stay open until resolved." />
         <CardBody className="p-0">
           {data.responses.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-slate-500">No ratings yet. Send a request link or share a review page to start collecting.</p>
+            <p className="px-5 py-6 text-sm text-slate-500">Aucune note pour l’instant. Envoyez un lien de demande ou partagez une page d’avis pour commencer. · No ratings yet. Send a request link or share a review page to start collecting.</p>
           ) : (
             <ul className="divide-y divide-slate-100">
               {data.responses.map((r) => (
@@ -95,9 +95,9 @@ export function ReputationWorkspace({
                     <Stars rating={r.rating} />
                     <span className="font-medium text-slate-800">{r.profileName}</span>
                     <Badge tone={STATUS_TONE[r.status]}>{r.status}</Badge>
-                    {r.publicLinkClicked ? <Badge tone="success">Went to public review</Badge> : null}
-                    {r.viaRequest ? <Badge tone="neutral">Via request</Badge> : <Badge tone="muted">Shared link</Badge>}
-                    {r.leadId ? <Badge tone="success">Lead created</Badge> : null}
+                    {r.publicLinkClicked ? <Badge tone="success">Parti vers l’avis public · Went to public review</Badge> : null}
+                    {r.viaRequest ? <Badge tone="neutral">Sur demande · Via request</Badge> : <Badge tone="muted">Lien partagé · Shared link</Badge>}
+                    {r.leadId ? <Badge tone="success">Prospect créé · Lead created</Badge> : null}
                     {r.publishConsent && r.rating >= 4 ? (
                       <Badge tone={r.hiddenFromShowcase ? "muted" : "accent"}>{r.hiddenFromShowcase ? "Hidden from website" : "On website showcase"}</Badge>
                     ) : null}
@@ -128,7 +128,7 @@ export function ReputationWorkspace({
                     <form action={convertReviewToLeadAction}>
                       <input type="hidden" name="responseId" value={r.id} />
                       <button className="rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-800 hover:border-emerald-400">
-                        Create lead for follow-up
+                        Créer un prospect à suivre · Create lead for follow-up
                       </button>
                     </form>
                   ) : null}
@@ -138,13 +138,13 @@ export function ReputationWorkspace({
                         <form action={updateFeedbackStatusAction}>
                           <input type="hidden" name="responseId" value={r.id} />
                           <input type="hidden" name="status" value="acknowledged" />
-                          <button className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-indigo-300">Acknowledge</button>
+                          <button className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-indigo-300">Prendre acte · Acknowledge</button>
                         </form>
                       ) : null}
                       <form action={updateFeedbackStatusAction}>
                         <input type="hidden" name="responseId" value={r.id} />
                         <input type="hidden" name="status" value="resolved" />
-                        <button className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-emerald-300">Mark resolved</button>
+                        <button className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-medium text-slate-700 hover:border-emerald-300">Marquer comme réglé · Mark resolved</button>
                       </form>
                     </div>
                   ) : null}
@@ -158,7 +158,7 @@ export function ReputationWorkspace({
       <Card>
         <CardHeader title="Review pages" subtitle="Share the link or print it as a QR code at the counter. Anyone can rate; tracked requests add open and rating tracking." />
         <CardBody className="space-y-4">
-          {data.profiles.length === 0 ? <p className="text-sm text-slate-500">No review page yet.</p> : null}
+          {data.profiles.length === 0 ? <p className="text-sm text-slate-500">Aucune page d’avis pour l’instant. · No review page yet.</p> : null}
           {data.profiles.map((p) => (
             <div key={p.id} className="space-y-2 rounded-xl border border-slate-200 px-3 py-2">
               <div className="flex flex-wrap items-center gap-3">
@@ -194,7 +194,7 @@ export function ReputationWorkspace({
           ))}
           {canManage ? (
             <div className="rounded-xl border border-dashed border-slate-300 p-4">
-              <p className="mb-3 text-sm font-semibold text-slate-900">New review page</p>
+              <p className="mb-3 text-sm font-semibold text-slate-900">Nouvelle page d’avis · New review page</p>
               <CreateProfileForm brands={data.brands} />
             </div>
           ) : null}

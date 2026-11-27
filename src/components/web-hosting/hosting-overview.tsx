@@ -35,6 +35,7 @@ import type {
 } from "@/lib/web-hosting/types";
 import { pricing } from "@/lib/website/pricing";
 import { RECOMMENDED_HOSTING_PLAN, writeSelection } from "@/lib/website/domain-hosting-selection";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const TABS = ["Overview", "Edit Details", "Resources", "Billing", "Security"];
 
@@ -167,6 +168,7 @@ export function HostingOverview({
   activity: ProvisioningStepSummary[];
   sourceLabel: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -310,13 +312,13 @@ export function HostingOverview({
           className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm"
         >
           <Plus className="h-4 w-4" />
-          Add Subscription
+          {fr ? "Ajouter un abonnement" : "Add Subscription"}
         </Link>
         <Link
           href="/checkout"
           className="rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm"
         >
-          Upgrade Hosting
+          {fr ? "Améliorer l’hébergement" : "Upgrade Hosting"}
         </Link>
       </div>
 
@@ -344,7 +346,7 @@ export function HostingOverview({
       </section>
 
       <section>
-        <h3 className="mb-3 text-sm font-semibold text-slate-900">TAKATAK Hosting Packages</h3>
+        <h3 className="mb-3 text-sm font-semibold text-slate-900">{fr ? "Forfaits d’hébergement TAKATAK" : "TAKATAK Hosting Packages"}</h3>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {pricing.hosting.map((plan) => {
             const current = currentPlanKeys.has(plan.key);
@@ -358,12 +360,12 @@ export function HostingOverview({
               >
                 {current ? (
                   <span className="absolute right-4 top-4 rounded bg-blue-600 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                    Current plan
+                    {fr ? "Forfait actuel" : "Current plan"}
                   </span>
                 ) : null}
                 {recommended ? (
                   <span className="absolute right-4 top-4 rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                    Recommended
+                    {fr ? "Recommandé" : "Recommended"}
                   </span>
                 ) : null}
                 <p className="pr-24 text-sm font-semibold text-slate-900">{plan.name} Hosting</p>
@@ -403,10 +405,10 @@ export function HostingOverview({
 
       <article className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <h3 className="text-sm font-semibold text-slate-900">Hosted Websites & Servers</h3>
+          <h3 className="text-sm font-semibold text-slate-900">{fr ? "Sites et serveurs hébergés" : "Hosted Websites & Servers"}</h3>
           <div className="flex flex-wrap items-center gap-2">
             <label className="relative">
-              <span className="sr-only">Search websites</span>
+              <span className="sr-only">{fr ? "Rechercher des sites" : "Search websites"}</span>
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -419,10 +421,10 @@ export function HostingOverview({
               onChange={(event) => setStatusFilter(event.target.value)}
               className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="warning">Warning</option>
-              <option value="not connected">Not Connected</option>
+              <option value="all">{fr ? "Tous les statuts" : "All Status"}</option>
+              <option value="active">{fr ? "Actif" : "Active"}</option>
+              <option value="warning">{fr ? "Avertissement" : "Warning"}</option>
+              <option value="not connected">{fr ? "Non branché" : "Not Connected"}</option>
             </select>
           </div>
         </div>
@@ -430,12 +432,12 @@ export function HostingOverview({
           <table className="w-full min-w-[920px] text-left text-sm">
             <thead>
               <tr className="border-y border-slate-100 text-xs font-medium text-slate-400">
-                <th className="px-5 py-3">Website</th>
-                <th className="px-3 py-3">Hosting Plan</th>
-                <th className="px-3 py-3">Server Location</th>
-                <th className="px-3 py-3">Resource Usage</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Renewal Date</th>
+                <th className="px-5 py-3">{fr ? "Site Web" : "Website"}</th>
+                <th className="px-3 py-3">{fr ? "Forfait d’hébergement" : "Hosting Plan"}</th>
+                <th className="px-3 py-3">{fr ? "Emplacement du serveur" : "Server Location"}</th>
+                <th className="px-3 py-3">{fr ? "Utilisation des ressources" : "Resource Usage"}</th>
+                <th className="px-3 py-3">{fr ? "Statut" : "Status"}</th>
+                <th className="px-3 py-3">{fr ? "Date de renouvellement" : "Renewal Date"}</th>
                 <th className="px-3 py-3">Actions</th>
               </tr>
             </thead>
@@ -545,7 +547,7 @@ export function HostingOverview({
               {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-5 py-8 text-sm text-slate-400">
-                    No hosted websites yet.
+                    {fr ? "Aucun site hébergé pour l’instant." : "No hosted websites yet."}
                   </td>
                 </tr>
               ) : null}
@@ -556,7 +558,7 @@ export function HostingOverview({
 
       <section className="grid gap-4 xl:grid-cols-3">
         <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Resource Usage Overview</h3>
+          <h3 className="text-sm font-semibold text-slate-900">{fr ? "Vue d’ensemble des ressources" : "Resource Usage Overview"}</h3>
           <div className="mt-4 flex items-center gap-4">
             <DonutChart
               caption="Total Usage"
@@ -594,7 +596,7 @@ export function HostingOverview({
         </article>
 
         <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Server Health (Uptime)</h3>
+          <h3 className="text-sm font-semibold text-slate-900">{fr ? "Santé du serveur (disponibilité)" : "Server Health (Uptime)"}</h3>
           <p className="mt-1 text-xs text-slate-400">Overall Uptime —</p>
           <svg viewBox="0 0 320 140" className="mt-3 h-36 w-full" aria-hidden="true">
             <path d="M8 110 H312" fill="none" stroke="#eef0f3" strokeWidth="1" />
@@ -605,7 +607,7 @@ export function HostingOverview({
         </article>
 
         <article className="rounded-2xl border border-slate-100 bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-          <h3 className="text-sm font-semibold text-slate-900">Recent Hosting Activity</h3>
+          <h3 className="text-sm font-semibold text-slate-900">{fr ? "Activité récente de l’hébergement" : "Recent Hosting Activity"}</h3>
           {activity.length ? (
             <ul className="mt-4 space-y-3">
               {activity.slice(0, 6).map((step) => (
@@ -623,7 +625,7 @@ export function HostingOverview({
               ))}
             </ul>
           ) : (
-            <p className="mt-4 text-sm text-slate-400">No recent hosting activity.</p>
+            <p className="mt-4 text-sm text-slate-400">{fr ? "Aucune activité récente d’hébergement." : "No recent hosting activity."}</p>
           )}
         </article>
       </section>
@@ -641,17 +643,17 @@ export function HostingOverview({
           {tab === "Overview" ? (
             <div className="space-y-4 text-sm text-slate-600">
               <p>
-                <span className="text-xs text-slate-400">Brand</span>
+                <span className="text-xs text-slate-400">{fr ? "Marque" : "Brand"}</span>
                 <br />
                 {selected.brandName ?? "Unassigned"}
               </p>
               <p>
-                <span className="text-xs text-slate-400">Plan</span>
+                <span className="text-xs text-slate-400">{fr ? "Forfait" : "Plan"}</span>
                 <br />
                 {selected.planName}
               </p>
               <p>
-                <span className="text-xs text-slate-400">Renewal</span>
+                <span className="text-xs text-slate-400">{fr ? "Renouvellement" : "Renewal"}</span>
                 <br />
                 {formatDateLabel(selected.renewalDate)}
               </p>
@@ -696,7 +698,7 @@ export function HostingOverview({
                 </label>
               </div>
               <aside className="h-fit rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs font-medium text-slate-500">Current Plan</p>
+                <p className="text-xs font-medium text-slate-500">{fr ? "Forfait actuel" : "Current Plan"}</p>
                 <p className="mt-1 text-sm font-semibold text-slate-900">
                   {selectedCatalogPlan ? `${selectedCatalogPlan.name} Hosting` : selected.planName}
                 </p>
@@ -707,7 +709,7 @@ export function HostingOverview({
                   <StatusPill className={selectedStatus.className} label={selectedStatus.label} />
                 </div>
                 <p className="mt-3 text-xs text-slate-500">
-                  Next renewal
+                  {fr ? "Prochain renouvellement" : "Next renewal"}
                   <br />
                   <span className="font-medium text-slate-800">{formatDateLabel(selected.renewalDate)}</span>
                 </p>
@@ -766,6 +768,7 @@ function HostingDrawer({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <aside className="fixed inset-y-0 right-0 z-40 flex w-full max-w-[640px] flex-col border-l border-slate-200 bg-white shadow-2xl lg:top-[72px]">
       <div className="flex items-center justify-between gap-3 px-5 py-4">
@@ -799,7 +802,7 @@ function HostingDrawer({
       <div className="flex-1 overflow-y-auto px-5 py-5">{children}</div>
       <div className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4">
         <button type="button" onClick={onClose} className="px-3 py-2 text-sm font-medium text-slate-500">
-          Cancel
+          {fr ? "Annuler" : "Cancel"}
         </button>
         <Link
           href="/dashboard/support?demande=hosting-settings"

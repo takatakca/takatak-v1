@@ -3,6 +3,7 @@
 import { Check, Gem, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const PRIMARY_FEATURES = [
   "Add roles: owner, admin, manager, editor, staff, or viewer.",
@@ -63,6 +64,7 @@ export function UserManagementPremiumModal({
   billingHref: string;
   onClose: () => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const onCloseRef = useRef(onClose);
 
   useLayoutEffect(() => {
@@ -127,18 +129,15 @@ export function UserManagementPremiumModal({
                   id="user-management-premium-title"
                   className="text-[22px] font-bold tracking-tight text-[#1d1d1f]"
                 >
-                  User Management
+                  {fr ? "Gestion des utilisateurs" : "User Management"}
                 </h2>
               </div>
 
               <h3 className="mt-6 max-w-[380px] text-[18px] font-semibold leading-7 text-[#1d1d1f]">
-                Unity is strength, manage content with your team.
+                {fr ? "L’union fait la force : gérez le contenu avec votre équipe." : "Unity is strength, manage content with your team."}
               </h3>
               <p className="mt-3 max-w-[380px] text-[15px] leading-6 text-[#5b5b5b]">
-                Give agencies and companies that manage several brands a shared
-                workspace. Invite the people who write, approve, and publish —
-                each with a role that matches what they can actually do in
-                TAKATAK.
+                {fr ? "Donnez un espace commun aux agences et entreprises qui gèrent plusieurs marques. Invitez les personnes qui rédigent, approuvent et publient, chacune avec un rôle qui correspond à ce qu’elle fait vraiment dans TAKATAK." : "Give agencies and companies that manage several brands a shared workspace. Invite the people who write, approve, and publish — each with a role that matches what they can actually do in TAKATAK."}
               </p>
 
               <ul className="mt-6 max-w-[400px] space-y-2.5">
@@ -162,7 +161,7 @@ export function UserManagementPremiumModal({
                   onClick={onClose}
                   className="inline-flex h-10 min-w-[118px] items-center justify-center rounded-md border border-[#d0d0d0] bg-white px-4 text-[14px] font-medium text-[#1d1d1f] transition hover:bg-slate-50"
                 >
-                  Maybe later
+                  {fr ? "Plus tard" : "Maybe later"}
                 </button>
                 <Link
                   href={billingHref}
@@ -170,7 +169,7 @@ export function UserManagementPremiumModal({
                   className="inline-flex h-10 min-w-[148px] items-center justify-center gap-2 rounded-md bg-[#2a1728] px-4 text-[14px] font-semibold text-[#dfff32] transition hover:bg-[#3b2438]"
                 >
                   <GemCircle size="sm" />
-                  Upgrade plan
+                  {fr ? "Changer de forfait" : "Upgrade plan"}
                 </Link>
               </div>
             </div>

@@ -121,7 +121,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               {lead.message ? (
                 <p className="whitespace-pre-wrap break-words text-sm leading-6 text-slate-700">{lead.message}</p>
               ) : (
-                <p className="text-sm text-slate-500">No message.</p>
+                <p className="text-sm text-slate-500">Aucun message. · No message.</p>
               )}
             </CardBody>
           </Card>
@@ -154,7 +154,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   ))}
                 </ol>
               ) : (
-                <p className="text-sm text-slate-500">No activity yet.</p>
+                <p className="text-sm text-slate-500">Aucune activité pour l’instant. · No activity yet.</p>
               )}
             </CardBody>
           </Card>
@@ -205,7 +205,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   </div>
                 ))
               ) : (
-                <p className="text-slate-500">No contact details.</p>
+                <p className="text-slate-500">Aucune coordonnée. · No contact details.</p>
               )}
               {lead.website?.sourcePage ? (
                 <p className="pt-1 text-xs text-slate-400">
@@ -246,7 +246,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   ),
                 )
               ) : (
-                <p className="text-sm text-slate-500">No files.</p>
+                <p className="text-sm text-slate-500">Aucun fichier. · No files.</p>
               )}
               {lead.attachments.length ? (
                 <p className="text-[11px] text-slate-400">

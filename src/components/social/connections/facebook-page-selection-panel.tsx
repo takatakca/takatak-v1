@@ -2,6 +2,7 @@
 
 import { Loader2, RefreshCw, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export type FacebookPageOption = {
   /** Internal Takatak account row id — used for selection validation, never a Facebook Page ID. */
@@ -160,6 +161,7 @@ export function FacebookPageSelectionPanel({
   onClose: () => void;
   onConnected: (selection: FacebookPageConnectedSelection) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [state, setState] = useState<PanelState>("loading");
   const [message, setMessage] = useState(
     "Loading Facebook Pages…",
@@ -363,7 +365,7 @@ export function FacebookPageSelectionPanel({
               id="facebook-page-selection-title"
               className="text-base font-semibold text-slate-950"
             >
-              Select Facebook Page
+              {fr ? "Choisir la page Facebook" : "Select Facebook Page"}
             </h2>
             <p className="mt-1 text-sm text-slate-600">
               {message}
@@ -435,20 +437,20 @@ export function FacebookPageSelectionPanel({
                         ) : null}
                         {page.isCurrentSelection ? (
                           <span className="mt-1 block text-xs text-emerald-700">
-                            Currently connected to this brand
+                            {fr ? "Actuellement branché à cette marque" : "Currently connected to this brand"}
                           </span>
                         ) : null}
                         {page.unavailableReason ===
                         "already_connected" &&
                         !page.isCurrentSelection ? (
                           <span className="mt-1 block text-xs text-amber-700">
-                            Already connected in this workspace
+                            {fr ? "Déjà branché dans cet espace" : "Already connected in this workspace"}
                           </span>
                         ) : null}
                         {page.unavailableReason ===
                         "insufficient_access" ? (
                           <span className="mt-1 block text-xs text-amber-700">
-                            Insufficient Page access
+                            {fr ? "Accès à la page insuffisant" : "Insufficient Page access"}
                           </span>
                         ) : null}
                         {page.selectable &&
@@ -460,7 +462,7 @@ export function FacebookPageSelectionPanel({
                         {page.selectable &&
                         page.fullyManageable ? (
                           <span className="mt-1 block text-xs text-emerald-700">
-                            Full Page management access
+                            {fr ? "Accès complet à la gestion de la page" : "Full Page management access"}
                           </span>
                         ) : null}
                       </span>
@@ -473,7 +475,7 @@ export function FacebookPageSelectionPanel({
 
           {!showList && state !== "loading" ? (
             <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-              No Pages to show yet. Use Retry to load them again.
+              {fr ? "Aucune page à afficher pour l’instant. Touchez Réessayer pour les recharger." : "No Pages to show yet. Use Retry to load them again."}
             </div>
           ) : null}
         </div>
@@ -488,7 +490,7 @@ export function FacebookPageSelectionPanel({
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                Retry
+                {fr ? "Réessayer" : "Retry"}
               </button>
             ) : null}
           </div>
@@ -500,7 +502,7 @@ export function FacebookPageSelectionPanel({
               onClick={onClose}
               className="rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
             >
-              Cancel
+              {fr ? "Annuler" : "Cancel"}
             </button>
 
             <button

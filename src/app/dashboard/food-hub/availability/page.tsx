@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ResultsTable, useCatalog, useMe } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Menu = {
   brandName: string;
@@ -22,6 +23,7 @@ function minutesUntilEndOfDay() {
 
 // 86 Board (Atlas "Item & modifier availability"): sold out at one location → off on every platform there.
 export default function AvailabilityPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { activeLocations } = useCatalog();
   const { me } = useMe();
   const [brands, setBrands] = useState<string[]>([]);
@@ -92,7 +94,7 @@ export default function AvailabilityPage() {
         <div className="fh-row">
           <select value={brand} onChange={(e) => setBrand(e.target.value)} aria-label="Brand">{brands.map((b) => <option key={b}>{b}</option>)}</select>
           <select value={location} onChange={(e) => setLocation(e.target.value)} aria-label="Location">
-            {allowAll && <option value="*">All locations</option>}
+            {allowAll && <option value="*">{fr ? "Tous les emplacements" : "All locations"}</option>}
             {myLocations.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
           </select>
           <select value={duration} onChange={(e) => setDuration(Number(e.target.value))} aria-label="For how long">{DURATIONS.map(([l, v]) => <option key={l} value={v}>{l}</option>)}</select>
@@ -111,7 +113,7 @@ export default function AvailabilityPage() {
         {picked.length > 0 && <>
           <span className="small">{picked.length} selected</span>
           <button className="btn-sm btn-danger" disabled={!!busy} onClick={() => toggle(picked, false)}>86 selected</button>
-          <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => toggle(picked, true)}>Back on</button>
+          <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => toggle(picked, true)}>{fr ? "De retour le" : "Back on"}</button>
         </>}
       </div>
 
@@ -127,7 +129,7 @@ export default function AvailabilityPage() {
                   <td style={{ width: 30 }}><input type="checkbox" checked={picked.includes(r.ref)} onChange={(e) => setPicked(e.target.checked ? [...picked, r.ref] : picked.filter((x) => x !== r.ref))} aria-label={`Select ${r.name}`} /></td>
                   <td>{r.name}<div className="small">{r.group}</div></td>
                   <td>
-                    {off.length ? <span className="badge badge-red">86’d{location === '*' ? ` at ${off.length}` : ''}</span> : <span className="badge badge-green">Available</span>}
+                    {off.length ? <span className="badge badge-red">86’d{location === '*' ? ` at ${off.length}` : ''}</span> : <span className="badge badge-green">{fr ? "Disponible" : "Available"}</span>}
                     {until && <span className="small"> back at {time(until)}</span>}
                   </td>
                   <td style={{ textAlign: 'right' }}>
@@ -141,7 +143,7 @@ export default function AvailabilityPage() {
           </tbody>
         </table>
       </div>
-      <p className="small">Options (sauces, sizes, extras) are switched off with the platforms’ modifier APIs: DoorDash item options, Uber Eats modifier items, and SkipTheDishes item availability.</p>
+      <p className="small">{fr ? "Les options (sauces, formats, extras) se désactivent par les API d’options des plateformes : options d’article DoorDash, articles modificateurs Uber Eats et disponibilité des articles SkipTheDishes." : "Options (sauces, sizes, extras) are switched off with the platforms’ modifier APIs: DoorDash item options, Uber Eats modifier items, and SkipTheDishes item availability."}</p>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
 } from "@/lib/experiences/sc4nner-experience-access";
 import { provisionSc4nnerAccount } from "@/lib/experiences/sc4nner-provisioning";
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
+import { originFromRequest } from "@/lib/config/app-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     const next = "/api/experiences/sc4nner/launch?state=" + encodeURIComponent(state);
     // 303: the browser must load /login with a GET — the default 307
     // would replay this confirmation POST (and its form) at /login.
-    return NextResponse.redirect(new URL("/login?next=" + encodeURIComponent(next), request.url), 303);
+    return NextResponse.redirect(new URL("/login?next=" + encodeURIComponent(next), originFromRequest(request)), 303);
   }
   // The confirmation is bound to the account the authorize page showed:
   // if the session changed after the page was rendered (e.g. another tab
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
   const shownAccount = form?.get("account");
   if (typeof shownAccount !== "string" || shownAccount !== user.id) {
     const response = NextResponse.redirect(
-      new URL("/experiences/sc4nner/authorize?state=" + encodeURIComponent(state), request.url),
+      new URL("/experiences/sc4nner/authorize?state=" + encodeURIComponent(state), originFromRequest(request)),
       303,
     );
     response.headers.set("Cache-Control", "no-store");

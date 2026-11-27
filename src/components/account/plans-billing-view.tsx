@@ -20,6 +20,7 @@ import {
   starterPlanHighlights,
   type SocialPlanCode,
 } from '@/lib/billing/social';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const COUNTRIES = [
   'Canada',
@@ -53,11 +54,12 @@ export function PlansBillingView({
   data: PlansBillingPageData;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   if (data.source === 'unavailable') {
     return (
       <section className="mt-8 rounded-xl border border-slate-200 bg-white px-6 py-10 text-center">
         <h2 className="text-lg font-semibold text-slate-900">
-          Plans and billing
+          {fr ? "Forfaits et facturation" : "Plans and billing"}
         </h2>
         <p className="mt-2 text-sm text-slate-500">{data.message}</p>
       </section>
@@ -71,7 +73,7 @@ export function PlansBillingView({
       <BrandFreezePanel data={data} canManage={canManage} />
       {!data.billingExempt ? <AddOnsRow data={data} canManage={canManage} /> : null}
       {!data.billingExempt ? <section className="rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Website Monitoring add-on</h2>
+        <h2 className="text-lg font-semibold text-slate-900">{fr ? "Module Surveillance du site" : "Website Monitoring add-on"}</h2>
         <p className="mt-2 text-sm text-slate-600">Availability checks, confirmed alerts and monthly reports. $5 CAD per website / month plus applicable taxes, billed separately through your TAKATAK account.</p>
         <Link href="/dashboard/web-hosting/monitoring" className="mt-4 inline-block font-semibold text-[#1565D8]">Manage monitoring &amp; subscription →</Link>
       </section> : null}
@@ -83,14 +85,14 @@ export function PlansBillingView({
 }
 
 function CheckoutReturnNotice() {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const checkout = searchParams.get('checkout');
 
   if (checkout === 'success') {
     return (
       <p className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950">
-        Stripe is confirming this payment. This page does not unlock the plan.
-        Refresh in a few seconds after the webhook arrives.
+        {fr ? "Stripe confirme ce paiement. Cette page ne débloque pas le forfait. Actualisez dans quelques secondes, après l’arrivée du webhook." : "Stripe is confirming this payment. This page does not unlock the plan. Refresh in a few seconds after the webhook arrives."}
       </p>
     );
   }
@@ -98,7 +100,7 @@ function CheckoutReturnNotice() {
   if (checkout === 'canceled') {
     return (
       <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-        Checkout was canceled. This workspace is still on its current plan.
+        {fr ? "Le paiement a été annulé. Cet espace reste sur son forfait actuel." : "Checkout was canceled. This workspace is still on its current plan."}
       </p>
     );
   }
@@ -217,6 +219,7 @@ function CurrentPlanCard({
   data: Extract<PlansBillingPageData, { source: 'database' }>;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const periodEnd = data.currentPeriodEnd
     ? new Date(data.currentPeriodEnd).toLocaleDateString('en-CA')
     : null;
@@ -225,7 +228,7 @@ function CurrentPlanCard({
     <section className="rounded-xl border border-slate-200 bg-white p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm text-slate-400">Current plan</p>
+          <p className="text-sm text-slate-400">{fr ? "Forfait actuel" : "Current plan"}</p>
           <h2 className="mt-1 text-3xl font-semibold text-[#1d1d1f]">
             {data.planName}
           </h2>
@@ -241,7 +244,7 @@ function CurrentPlanCard({
             href="#plan-catalog"
             className="inline-flex h-10 items-center justify-center rounded-md bg-[#2a1728] px-4 text-sm font-semibold text-white"
           >
-            View plans
+            {fr ? "Voir les forfaits" : "View plans"}
           </a> : null}
           {data.subscriptionAccess === 'paid' && !data.billingExempt ? (
             <CancelSubscriptionButton
@@ -254,15 +257,14 @@ function CurrentPlanCard({
       </div>
       {data.subscriptionAccess === 'blocked' ? (
         <p className="mt-4 rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-600">
-          Social access is locked for this workspace until billing is restored.
+          {fr ? "L’accès Social est bloqué pour cet espace jusqu’au rétablissement de la facturation." : "Social access is locked for this workspace until billing is restored."}
         </p>
       ) : null}
       {(data.subscriptionStatus === 'past_due' ||
         data.subscriptionStatus === 'grace_period') &&
       data.subscriptionAccess === 'paid' ? (
         <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-          Payment failed. Access stays on until retries finish. Update the
-          payment method to keep this plan.
+          {fr ? "Le paiement a échoué. L’accès reste ouvert pendant les nouvelles tentatives. Mettez à jour le moyen de paiement pour garder ce forfait." : "Payment failed. Access stays on until retries finish. Update the payment method to keep this plan."}
         </p>
       ) : null}
       <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-2 text-sm text-slate-500">
@@ -280,11 +282,10 @@ function CurrentPlanCard({
         <div>{postsLabel(data.entitlements.monthlyPostAllowance)}</div>
       </dl>
       {data.billingExempt ? (
-        <p className="mt-4 text-xs text-slate-600">No TAKATAK Social subscription payment is required for this workspace.</p>
+        <p className="mt-4 text-xs text-slate-600">{fr ? "Aucun paiement d’abonnement TAKATAK Social n’est requis pour cet espace." : "No TAKATAK Social subscription payment is required for this workspace."}</p>
       ) : !data.checkoutLive ? (
         <p className="mt-4 text-xs text-slate-400">
-          Checkout is not live yet. Add Stripe keys and Price IDs to enable
-          Upgrade. Viewing plans does not charge this workspace.
+          {fr ? "Le paiement en ligne n’est pas encore actif : ajoutez les clés Stripe et les identifiants de prix pour activer le changement de forfait. Consulter les forfaits ne facture rien à cet espace." : "Checkout is not live yet. Add Stripe keys and Price IDs to enable Upgrade. Viewing plans does not charge this workspace."}
         </p>
       ) : null}
     </section>
@@ -298,6 +299,7 @@ function BrandFreezePanel({
   data: Extract<PlansBillingPageData, { source: 'database' }>;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const freeze = data.brandFreeze;
   const selectable = freeze.brands.filter(
@@ -354,7 +356,7 @@ function BrandFreezePanel({
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-lg font-semibold text-[#1d1d1f]">Active brands</h2>
+      <h2 className="text-lg font-semibold text-[#1d1d1f]">{fr ? "Marques actives" : "Active brands"}</h2>
       {freeze.overAllowance ? (
         <p className="mt-2 text-sm text-slate-500">
           This plan allows {freeze.allowance} active brand
@@ -363,8 +365,7 @@ function BrandFreezePanel({
         </p>
       ) : freeze.canAutoRestore ? (
         <p className="mt-2 text-sm text-slate-500">
-          This plan has spare brand slots. Restore frozen brands up to the
-          allowance. Scheduled posts stay paused until you review them.
+          {fr ? "Ce forfait a des places de marque libres. Rétablissez des marques gelées jusqu’à la limite. Les publications planifiées restent en pause jusqu’à votre révision." : "This plan has spare brand slots. Restore frozen brands up to the allowance. Scheduled posts stay paused until you review them."}
         </p>
       ) : (
         <p className="mt-2 text-sm text-slate-500">
@@ -443,6 +444,7 @@ function AddOnsRow({
   data: Extract<PlansBillingPageData, { source: 'database' }>;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [busy, setBusy] = useState<'x_account' | 'advanced_analytics' | null>(
     null,
@@ -485,11 +487,9 @@ function AddOnsRow({
 
   return (
     <section>
-      <h2 className="text-lg font-semibold text-[#1d1d1f]">Add-ons</h2>
+      <h2 className="text-lg font-semibold text-[#1d1d1f]">{fr ? "Modules complémentaires" : "Add-ons"}</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Add-ons bill with the Social plan. Adding charges now. Removing waits
-        until the period ends. This page does not unlock them — the Stripe
-        webhook does.
+        {fr ? "Les modules se facturent avec le forfait Social. Un ajout est facturé tout de suite ; un retrait attend la fin de la période. Cette page ne les débloque pas : c’est le webhook Stripe qui le fait." : "Add-ons bill with the Social plan. Adding charges now. Removing waits until the period ends. This page does not unlock them — the Stripe webhook does."}
       </p>
       {message ? (
         <p className="mt-3 text-sm text-slate-600">{message}</p>
@@ -507,7 +507,7 @@ function AddOnsRow({
                   : 'Not contracted'}
               </span>
               <h3 className="mt-2 text-sm font-semibold text-[#1d1d1f]">
-                Advanced Analytics Add-on
+                {fr ? "Module Statistiques avancées" : "Advanced Analytics Add-on"}
               </h3>
               <p className="mt-1 text-sm text-slate-500">
                 Longer analytics history and campaign dashboards.{' '}
@@ -539,7 +539,7 @@ function AddOnsRow({
                   : 'Not contracted'}
               </span>
               <h3 className="mt-2 text-sm font-semibold text-[#1d1d1f]">
-                X add-on
+                {fr ? "Module X" : "X add-on"}
               </h3>
               <p className="mt-1 text-sm text-slate-500">
                 One paid slot per connected X account.{' '}
@@ -570,7 +570,7 @@ function AddOnsRow({
               {busy === 'x_account' ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Please wait...
+                  {fr ? "Veuillez patienter…" : "Please wait..."}
                 </>
               ) : (
                 'Add 1 slot'
@@ -587,7 +587,7 @@ function AddOnsRow({
                 {busy === 'x_account' ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Please wait...
+                    {fr ? "Veuillez patienter…" : "Please wait..."}
                   </>
                 ) : (
                   'Remove 1 slot at period end'
@@ -608,6 +608,7 @@ function PlanCatalog({
   data: Extract<PlansBillingPageData, { source: 'database' }>;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [cycle, setCycle] = useState<'monthly' | 'annual'>('annual');
   const savings = annualSavingsPercent();
   const currentFamily = planFamily(data.planCode);
@@ -681,7 +682,7 @@ function PlanCatalog({
   return (
     <section id="plan-catalog">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-[#1d1d1f]">Plans</h2>
+        <h2 className="text-lg font-semibold text-[#1d1d1f]">{fr ? "Forfaits" : "Plans"}</h2>
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex rounded-lg border border-slate-300 bg-white p-0.5 text-sm">
             <span className="rounded-md bg-[#2a1728] px-3 py-1.5 font-medium text-white">
@@ -710,7 +711,7 @@ function PlanCatalog({
                   : 'text-slate-600'
               }`}
             >
-              Monthly
+              {fr ? "Mensuel" : "Monthly"}
             </button>
             <button
               type="button"
@@ -829,9 +830,9 @@ function PlanCatalog({
         />
 
         <article className="flex flex-col rounded-xl border border-slate-200 bg-white p-5">
-          <h3 className="text-lg font-semibold text-[#1d1d1f]">Custom</h3>
+          <h3 className="text-lg font-semibold text-[#1d1d1f]">{fr ? "Sur mesure" : "Custom"}</h3>
           <p className="mt-2 text-sm text-slate-500">
-            Talk to us. Contact us for pricing.
+            {fr ? "Parlez-nous. Écrivez-nous pour les prix." : "Talk to us. Contact us for pricing."}
           </p>
           <ul className="mt-4 space-y-1.5 text-sm text-slate-600">
             {customPlanHighlights().map((feature) => (
@@ -840,14 +841,14 @@ function PlanCatalog({
           </ul>
           <label className="mt-5 flex items-center gap-2 text-sm text-slate-700">
             <input type="radio" checked readOnly className="accent-[#2a1728]" />
-            More than 50 brands: Talk to us
+            {fr ? "Plus de 50 marques : parlez-nous" : "More than 50 brands: Talk to us"}
           </label>
           <div className="mt-auto pt-6">
             <a
               href="/dashboard/support"
               className="inline-flex h-10 w-full items-center justify-center rounded-md bg-slate-200 text-sm font-semibold text-slate-700"
             >
-              Talk to us
+              {fr ? "Parlez-nous" : "Talk to us"}
             </a>
           </div>
         </article>
@@ -900,6 +901,7 @@ function PlanCard({
   loading: boolean;
   onCheckout: () => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <article
       className={`flex flex-col rounded-xl border bg-white p-5 ${
@@ -910,12 +912,12 @@ function PlanCard({
         <h3 className="text-lg font-semibold text-[#1d1d1f]">{title}</h3>
         {recommended ? (
           <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700">
-            Recommended
+            {fr ? "Recommandé" : "Recommended"}
           </span>
         ) : null}
         {current ? (
           <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-            Current
+            {fr ? "Actuel" : "Current"}
           </span>
         ) : null}
       </div>
@@ -991,17 +993,18 @@ function PlanCard({
 }
 
 function PaymentsHistory() {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6">
-      <h2 className="text-lg font-semibold text-[#1d1d1f]">Payments history</h2>
+      <h2 className="text-lg font-semibold text-[#1d1d1f]">{fr ? "Historique des paiements" : "Payments history"}</h2>
       <div className="mt-4 overflow-x-auto">
         <table className="min-w-full text-left text-sm">
           <thead className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             <tr>
               <th className="pb-3 pr-4">Date</th>
               <th className="pb-3 pr-4">Description</th>
-              <th className="pb-3 pr-4">Billing period</th>
-              <th className="pb-3 pr-4">Amount</th>
+              <th className="pb-3 pr-4">{fr ? "Période de facturation" : "Billing period"}</th>
+              <th className="pb-3 pr-4">{fr ? "Montant" : "Amount"}</th>
               <th className="pb-3">Document</th>
             </tr>
           </thead>
@@ -1009,8 +1012,7 @@ function PaymentsHistory() {
       </div>
       <p className="mt-2 flex items-center gap-2 border-t border-slate-100 pt-6 text-sm text-slate-500">
         <FileText className="h-4 w-4 text-slate-400" />
-        No payments yet. Invoices appear here when Stripe billing is connected.
-        The screenshot amounts are not copied into this workspace.
+        {fr ? "Aucun paiement pour l’instant. Les factures apparaissent ici une fois la facturation Stripe branchée. Les montants de la capture d’écran ne sont pas copiés dans cet espace." : "No payments yet. Invoices appear here when Stripe billing is connected. The screenshot amounts are not copied into this workspace."}
       </p>
     </section>
   );
@@ -1023,6 +1025,7 @@ function BillingInformationForm({
   data: Extract<PlansBillingPageData, { source: 'database' }>;
   canManage: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
   const [companyName, setCompanyName] = useState(data.companyName);
   const [vatTaxId, setVatTaxId] = useState(data.vatTaxId);
@@ -1118,7 +1121,7 @@ function BillingInformationForm({
       noValidate
     >
       <h2 className="text-lg font-semibold text-[#1d1d1f]">
-        Billing information
+        {fr ? "Informations de facturation" : "Billing information"}
       </h2>
       <p className="mt-1 text-sm text-slate-500">
         Company, VAT / tax ID, and address come from {data.workspaceName}. Empty
@@ -1153,7 +1156,7 @@ function BillingInformationForm({
           ) : null}
         </label>
         <label className="block text-sm font-medium text-slate-600">
-          VAT/Tax Id Number
+          {fr ? "Numéro de TPS/TVQ" : "VAT/Tax Id Number"}
           <input
             value={vatTaxId}
             onChange={(event) => setVatTaxId(event.target.value)}
@@ -1163,7 +1166,7 @@ function BillingInformationForm({
           />
         </label>
         <label className="block text-sm font-medium text-slate-600 sm:col-span-2">
-          Full address
+          {fr ? "Adresse complète" : "Full address"}
           <input
             value={billingAddress}
             onChange={(event) => setBillingAddress(event.target.value)}
@@ -1171,7 +1174,7 @@ function BillingInformationForm({
             className={inputClassName}
           />
           <span className="mt-1.5 block text-xs font-normal text-slate-500">
-            Enter your street, zip code and city
+            {fr ? "Entrez votre rue, votre code postal et votre ville" : "Enter your street, zip code and city"}
           </span>
         </label>
         <label className="block text-sm font-medium text-slate-600">
@@ -1193,7 +1196,7 @@ function BillingInformationForm({
 
       <fieldset className="mt-5">
         <legend className="text-sm font-medium text-slate-600">
-          E-mails to receive invoices
+          {fr ? "Courriels qui reçoivent les factures" : "E-mails to receive invoices"}
         </legend>
         <div className="mt-2 flex flex-wrap gap-2 rounded-lg border border-slate-300 px-3 py-2">
           {invoiceEmails.map((email) => (
@@ -1258,8 +1261,7 @@ function BillingInformationForm({
         </div>
       ) : (
         <p className="mt-6 text-sm text-slate-500">
-          You can view billing information, but you need permission to change
-          it.
+          {fr ? "Vous pouvez voir la facturation, mais il faut une autorisation pour la modifier." : "You can view billing information, but you need permission to change it."}
         </p>
       )}
     </form>

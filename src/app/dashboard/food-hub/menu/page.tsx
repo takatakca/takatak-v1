@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, fullWeekUi, Marketplace, Modal, ResultsTable, Section, StatusBadge, useCatalog, useMe, WeekEditor, weekProblems, type Week } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Item = {
   ref: string; name: string; description?: string; nameFr?: string; descriptionFr?: string; tags?: string[]; allergens?: string[]; calories?: number; price: number; imageUrl?: string;
@@ -25,6 +26,7 @@ const slug = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,
 const uid = (p: string) => `${p}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 export default function MenuPage() {
+  const fr = useDashboardLanguage() === "fr";
   const { locName } = useCatalog();
   const { can } = useMe();
   const [brands, setBrands] = useState<string[]>([]);
@@ -127,7 +129,7 @@ export default function MenuPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Menu Manager</h1>
+          <h1>{fr ? "Gestion du menu" : "Menu Manager"}</h1>
           <div className="small">One master menu per brand → checked, then published to Uber Eats, DoorDash and SkipTheDishes with its store hours, holidays and category schedules.</div>
         </div>
         <div className="fh-row">
@@ -147,7 +149,7 @@ export default function MenuPage() {
           {priceChanges.map((c) => (
             <div key={c.ref} className="fh-row" style={{ marginTop: 6 }}>
               <span>{c.name}: Food Hub {c.foodhubPrice.toFixed(2)} $ → Clover <strong>{c.cloverPrice.toFixed(2)} $</strong></span>
-              {editable && <><button className="btn-sm" disabled={!!busy} onClick={() => resolvePrice(c, true)}>Use Clover price</button><button className="btn-sm btn-light" disabled={!!busy} onClick={() => resolvePrice(c, false)}>Keep {c.foodhubPrice.toFixed(2)} $</button></>}
+              {editable && <><button className="btn-sm" disabled={!!busy} onClick={() => resolvePrice(c, true)}>{fr ? "Utiliser le prix Clover" : "Use Clover price"}</button><button className="btn-sm btn-light" disabled={!!busy} onClick={() => resolvePrice(c, false)}>Keep {c.foodhubPrice.toFixed(2)} $</button></>}
             </div>
           ))}
         </div>
@@ -155,7 +157,7 @@ export default function MenuPage() {
       {languages && (
         <div className="small fh-row" style={{ marginBottom: 10 }}>
           Menu language — Uber Eats: <strong>{LANG_LABEL[languages.uber_eats]}</strong> · DoorDash: <strong>{LANG_LABEL[languages.doordash]}</strong> · Skip: <strong>{LANG_LABEL[languages.skip]}</strong>
-          {editable && <button className="btn-sm btn-light" onClick={() => setLangOpen(true)}>Change</button>}
+          {editable && <button className="btn-sm btn-light" onClick={() => setLangOpen(true)}>{fr ? "Modifier" : "Change"}</button>}
         </div>
       )}
       {langOpen && languages && <LanguageDialog value={languages} onClose={() => setLangOpen(false)} onSaved={(l) => { setLanguages(l); setLangOpen(false); setMsg('Menu languages saved — publish to apply them.'); loadStatus(brand); }} />}
@@ -169,9 +171,9 @@ export default function MenuPage() {
         </span>}>
           {check.errors.length === 0 && check.warnings.length === 0 && <p className="small">✓ Ready to publish.</p>}
           <ul className="fh-issues">
-            {check.errors.map((x, i) => <li key={`e${i}`} className="err"><span aria-hidden>✕</span> {x.message} {x.ref && menu?.items.some((it) => it.ref === x.ref) && <button className="fh-link" onClick={() => setEditItem(x.ref!)}>Fix</button>}</li>)}
-            {check.warnings.map((x, i) => <li key={`w${i}`} className="warn"><span aria-hidden>!</span> {x.message} {x.ref && menu?.items.some((it) => it.ref === x.ref) && <button className="fh-link" onClick={() => setEditItem(x.ref!)}>Edit</button>}</li>)}
-            {showTips && check.tips.map((x, i) => <li key={`t${i}`} className="tip"><span aria-hidden>i</span> {x.message} {x.ref && menu?.items.some((it) => it.ref === x.ref) && <button className="fh-link" onClick={() => setEditItem(x.ref!)}>Edit</button>}</li>)}
+            {check.errors.map((x, i) => <li key={`e${i}`} className="err"><span aria-hidden>✕</span> {x.message} {x.ref && menu?.items.some((it) => it.ref === x.ref) && <button className="fh-link" onClick={() => setEditItem(x.ref!)}>{fr ? "Corriger" : "Fix"}</button>}</li>)}
+            {check.warnings.map((x, i) => <li key={`w${i}`} className="warn"><span aria-hidden>!</span> {x.message} {x.ref && menu?.items.some((it) => it.ref === x.ref) && <button className="fh-link" onClick={() => setEditItem(x.ref!)}>{fr ? "Modifier" : "Edit"}</button>}</li>)}
+            {showTips && check.tips.map((x, i) => <li key={`t${i}`} className="tip"><span aria-hidden>i</span> {x.message} {x.ref && menu?.items.some((it) => it.ref === x.ref) && <button className="fh-link" onClick={() => setEditItem(x.ref!)}>{fr ? "Modifier" : "Edit"}</button>}</li>)}
           </ul>
           <p className="small">Errors block publishing. Checks run on the saved menu{dirty ? ' — save to re-check' : ''}.</p>
         </Section>
@@ -179,9 +181,9 @@ export default function MenuPage() {
 
       {menu && (
         <>
-          <Section title={`Categories (${menu.categories.length})`} right={editable ? <div className="fh-row"><input placeholder="New category" value={newCat} onChange={(e) => setNewCat(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCategory()} /><button className="btn-sm" onClick={addCategory}>Add</button></div> : undefined}>
+          <Section title={`Categories (${menu.categories.length})`} right={editable ? <div className="fh-row"><input placeholder="New category" value={newCat} onChange={(e) => setNewCat(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addCategory()} /><button className="btn-sm" onClick={addCategory}>{fr ? "Ajouter" : "Add"}</button></div> : undefined}>
             <table>
-              <thead><tr><th>Order</th><th>Category</th><th>Items</th><th>Schedule</th><th></th></tr></thead>
+              <thead><tr><th>{fr ? "Commande" : "Order"}</th><th>{fr ? "Catégorie" : "Category"}</th><th>{fr ? "Articles" : "Items"}</th><th>{fr ? "Horaire" : "Schedule"}</th><th></th></tr></thead>
               <tbody>
                 {cats.map((c, idx) => {
                   const n = menu.items.filter((i) => i.categoryRef === c.ref).length;
@@ -193,24 +195,24 @@ export default function MenuPage() {
                         <input value={c.nameFr ?? ''} placeholder="Nom en français" disabled={!editable} onChange={(e) => update((m) => ({ ...m, categories: m.categories.map((x) => (x.ref === c.ref ? { ...x, nameFr: e.target.value || undefined } : x)) }))} aria-label="Category name (French)" style={{ marginLeft: 6 }} />
                       </td>
                       <td>{n}</td>
-                      <td>{c.hours && Object.values(c.hours).some((d) => d.length) ? <span className="badge badge-blue">Custom schedule</span> : <span className="small">Same as store hours</span>} {editable && <button className="btn-sm btn-light" onClick={() => setEditHours(c.ref)}>Edit</button>}</td>
-                      <td>{editable && <button className="btn-sm btn-light" disabled={n > 0} title={n ? 'Move or remove its items first' : ''} onClick={() => update((m) => ({ ...m, categories: m.categories.filter((x) => x.ref !== c.ref) }))}>Remove</button>}</td>
+                      <td>{c.hours && Object.values(c.hours).some((d) => d.length) ? <span className="badge badge-blue">{fr ? "Horaire sur mesure" : "Custom schedule"}</span> : <span className="small">{fr ? "Comme les heures du magasin" : "Same as store hours"}</span>} {editable && <button className="btn-sm btn-light" onClick={() => setEditHours(c.ref)}>{fr ? "Modifier" : "Edit"}</button>}</td>
+                      <td>{editable && <button className="btn-sm btn-light" disabled={n > 0} title={n ? 'Move or remove its items first' : ''} onClick={() => update((m) => ({ ...m, categories: m.categories.filter((x) => x.ref !== c.ref) }))}>{fr ? "Retirer" : "Remove"}</button>}</td>
                     </tr>
                   );
                 })}
-                {menu.categories.length === 0 && <tr><td colSpan={5} className="small">No categories yet. Import from Clover or add one.</td></tr>}
+                {menu.categories.length === 0 && <tr><td colSpan={5} className="small">{fr ? "Aucune catégorie pour l’instant. Importez-les de Clover ou ajoutez-en une." : "No categories yet. Import from Clover or add one."}</td></tr>}
               </tbody>
             </table>
           </Section>
 
-          <Section title={`Items (${menu.items.length})`} right={<div className="fh-row"><input type="search" placeholder="Search items" value={search} onChange={(e) => setSearch(e.target.value)} />{editable && <button className="btn-sm" onClick={addItem}>Add item</button>}</div>}>
+          <Section title={`Items (${menu.items.length})`} right={<div className="fh-row"><input type="search" placeholder="Search items" value={search} onChange={(e) => setSearch(e.target.value)} />{editable && <button className="btn-sm" onClick={addItem}>{fr ? "Ajouter un article" : "Add item"}</button>}</div>}>
             <div style={{ overflowX: 'auto' }}>
               <table>
                 <thead>
                   <tr>
-                    <th>Item</th><th>Category</th><th>Base price</th>
+                    <th>{fr ? "Article" : "Item"}</th><th>{fr ? "Catégorie" : "Category"}</th><th>{fr ? "Prix de base" : "Base price"}</th>
                     {PRICE_CHANNELS.map(([, l]) => <th key={l}>{l} price</th>)}
-                    <th>Details</th><th>On sale</th><th></th>
+                    <th>{fr ? "Détails" : "Details"}</th><th>{fr ? "En vente" : "On sale"}</th><th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -247,7 +249,7 @@ export default function MenuPage() {
                           {' '}<button className="fh-link" onClick={() => setEditItem(i.ref)}>{editable ? 'Edit' : 'View'}</button>
                         </td>
                         <td><input type="checkbox" checked={i.available} disabled={!editable} onChange={(e) => updateItem(i.ref, { available: e.target.checked })} aria-label="On sale everywhere" /></td>
-                        <td>{editable && <button className="btn-sm btn-light" onClick={() => { if (window.confirm(`Remove ${i.name}?`)) update((m) => ({ ...m, items: m.items.filter((x) => x.ref !== i.ref) })); }}>Remove</button>}</td>
+                        <td>{editable && <button className="btn-sm btn-light" onClick={() => { if (window.confirm(`Remove ${i.name}?`)) update((m) => ({ ...m, items: m.items.filter((x) => x.ref !== i.ref) })); }}>{fr ? "Retirer" : "Remove"}</button>}</td>
                       </tr>
                     );
                   })}
@@ -258,7 +260,7 @@ export default function MenuPage() {
             <p className="small">Leave a platform price empty to use the base price. “On sale” turns an item off on every platform at every location; to 86 at one location only, use the 86 Board.</p>
           </Section>
 
-          <Section title={`Modifier groups (${menu.modifierGroups.length})`} right={editable ? <button className="btn-sm" onClick={() => update((m) => ({ ...m, modifierGroups: [...m.modifierGroups, { ref: uid('grp'), name: 'New options', min: 0, max: 1, modifiers: [{ ref: uid('mod'), name: 'Option', price: 0, available: true }] }] }))}>Add group</button> : undefined}>
+          <Section title={`Modifier groups (${menu.modifierGroups.length})`} right={editable ? <button className="btn-sm" onClick={() => update((m) => ({ ...m, modifierGroups: [...m.modifierGroups, { ref: uid('grp'), name: 'New options', min: 0, max: 1, modifiers: [{ ref: uid('mod'), name: 'Option', price: 0, available: true }] }] }))}>{fr ? "Ajouter un groupe" : "Add group"}</button> : undefined}>
             <div className="fh-groups">
               {menu.modifierGroups.map((g) => {
                 const usedBy = menu.items.filter((i) => i.modifierGroupRefs.includes(g.ref)).length;
@@ -283,7 +285,7 @@ export default function MenuPage() {
                     {editable && (
                       <div className="fh-row">
                         <button className="btn-sm btn-light" onClick={() => updateGroup(g.ref, { modifiers: [...g.modifiers, { ref: uid('mod'), name: 'Option', price: 0, available: true }] })}>+ option</button>
-                        <button className="btn-sm btn-light" disabled={usedBy > 0} title={usedBy ? 'Remove it from its items first' : ''} onClick={() => update((m) => ({ ...m, modifierGroups: m.modifierGroups.filter((x) => x.ref !== g.ref) }))}>Remove group</button>
+                        <button className="btn-sm btn-light" disabled={usedBy > 0} title={usedBy ? 'Remove it from its items first' : ''} onClick={() => update((m) => ({ ...m, modifierGroups: m.modifierGroups.filter((x) => x.ref !== g.ref) }))}>{fr ? "Retirer le groupe" : "Remove group"}</button>
                       </div>
                     )}
                   </div>
@@ -294,9 +296,9 @@ export default function MenuPage() {
           </Section>
 
           {editable && (
-            <Section title="Publish status" right={<button className="btn-sm btn-light" onClick={() => loadStatus(brand)}>Refresh</button>}>
+            <Section title="Publish status" right={<button className="btn-sm btn-light" onClick={() => loadStatus(brand)}>{fr ? "Actualiser" : "Refresh"}</button>}>
               <table>
-                <thead><tr><th>Platform</th><th>Location</th><th>Store id</th><th>Last publish</th><th>Result</th></tr></thead>
+                <thead><tr><th>{fr ? "Plateforme" : "Platform"}</th><th>{fr ? "Emplacement" : "Location"}</th><th>{fr ? "Identifiant du magasin" : "Store id"}</th><th>{fr ? "Dernière publication" : "Last publish"}</th><th>{fr ? "Résultat" : "Result"}</th></tr></thead>
                 <tbody>
                   {stores.map((s) => (
                     <tr key={s.storeId}>
@@ -312,9 +314,9 @@ export default function MenuPage() {
               </table>
               {scheduled.length > 0 && (
                 <>
-                  <h3 style={{ fontSize: 15, margin: '16px 0 6px' }}>Scheduled publishes</h3>
+                  <h3 style={{ fontSize: 15, margin: '16px 0 6px' }}>{fr ? "Publications planifiées" : "Scheduled publishes"}</h3>
                   <table>
-                    <thead><tr><th>When</th><th>Stores</th><th>By</th><th>Status</th><th></th></tr></thead>
+                    <thead><tr><th>{fr ? "Quand" : "When"}</th><th>{fr ? "Magasins" : "Stores"}</th><th>By</th><th>{fr ? "Statut" : "Status"}</th><th></th></tr></thead>
                     <tbody>
                       {scheduled.map((s) => (
                         <tr key={s.id}>
@@ -322,7 +324,7 @@ export default function MenuPage() {
                           <td className="small">{s.storeIds?.length ? `${s.storeIds.length} selected` : 'All mapped stores'}</td>
                           <td className="small">{s.createdBy}</td>
                           <td><span className={`badge ${s.status === 'done' ? 'badge-green' : s.status === 'failed' ? 'badge-red' : s.status === 'cancelled' ? 'badge-blue' : 'badge-yellow'}`}>{s.status}</span> <span className="small">{s.result ?? ''}</span></td>
-                          <td>{s.status === 'scheduled' && <button className="btn-sm btn-light" onClick={() => run('cancel', async () => { await api(`/api/food-hub/menu/publish?id=${s.id}`, { method: 'DELETE' }); setMsg('Scheduled publish cancelled.'); loadStatus(brand); })}>Cancel</button>}</td>
+                          <td>{s.status === 'scheduled' && <button className="btn-sm btn-light" onClick={() => run('cancel', async () => { await api(`/api/food-hub/menu/publish?id=${s.id}`, { method: 'DELETE' }); setMsg('Scheduled publish cancelled.'); loadStatus(brand); })}>{fr ? "Annuler" : "Cancel"}</button>}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -355,14 +357,15 @@ export default function MenuPage() {
 }
 
 function ItemDialog({ item, groups, editable, onChange, onClose }: { item: Item; groups: Group[]; editable: boolean; onChange: (p: Partial<Item>) => void; onClose: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [allergens, setAllergens] = useState((item.allergens ?? []).join(', '));
   return (
     <Modal title={item.name || 'Item'} wide onClose={onClose}>
       <div className="grid grid-2">
         <div className="fh-col-form">
-          <label>Name (English)<input style={{ width: '100%' }} value={item.name} disabled={!editable} onChange={(e) => onChange({ name: e.target.value })} /></label>
+          <label>{fr ? "Nom (anglais)" : "Name (English)"}<input style={{ width: '100%' }} value={item.name} disabled={!editable} onChange={(e) => onChange({ name: e.target.value })} /></label>
           <label>Nom (français)<input style={{ width: '100%' }} value={item.nameFr ?? ''} disabled={!editable} onChange={(e) => onChange({ nameFr: e.target.value || undefined })} placeholder="Ex. Poulet grillé" /></label>
-          <label>Description (English)<textarea rows={3} style={{ width: '100%' }} value={item.description ?? ''} disabled={!editable} onChange={(e) => onChange({ description: e.target.value })} /></label>
+          <label>{fr ? "Description (anglais)" : "Description (English)"}<textarea rows={3} style={{ width: '100%' }} value={item.description ?? ''} disabled={!editable} onChange={(e) => onChange({ description: e.target.value })} /></label>
           <label>Description (français)<textarea rows={3} style={{ width: '100%' }} value={item.descriptionFr ?? ''} disabled={!editable} onChange={(e) => onChange({ descriptionFr: e.target.value || undefined })} /></label>
           <label>Photo URL (https, at least 1200×800 recommended)<input style={{ width: '100%' }} value={item.imageUrl ?? ''} disabled={!editable} onChange={(e) => onChange({ imageUrl: e.target.value.trim() || undefined })} placeholder="https://…" /></label>
           {item.imageUrl && <img src={item.imageUrl} alt={item.name} style={{ maxWidth: '100%', maxHeight: 180, borderRadius: 10, objectFit: 'cover' }} />}
@@ -370,30 +373,31 @@ function ItemDialog({ item, groups, editable, onChange, onClose }: { item: Item;
         </div>
         <div className="fh-col-form">
           <div>
-            <div className="small" style={{ marginBottom: 4 }}>Dietary tags</div>
+            <div className="small" style={{ marginBottom: 4 }}>{fr ? "Étiquettes alimentaires" : "Dietary tags"}</div>
             <div className="fh-row">
               {TAGS.map(([k, l]) => (
                 <label key={k} className="fh-row small"><input type="checkbox" disabled={!editable} checked={(item.tags ?? []).includes(k)} onChange={(e) => onChange({ tags: e.target.checked ? [...(item.tags ?? []), k] : (item.tags ?? []).filter((t) => t !== k) })} /> {l}</label>
               ))}
             </div>
           </div>
-          <label>Allergens (comma-separated)<input style={{ width: '100%' }} value={allergens} disabled={!editable} onChange={(e) => setAllergens(e.target.value)} onBlur={() => onChange({ allergens: allergens.split(',').map((a) => a.trim()).filter(Boolean) })} placeholder="peanuts, milk, wheat" /></label>
+          <label>{fr ? "Allergènes (séparés par des virgules)" : "Allergens (comma-separated)"}<input style={{ width: '100%' }} value={allergens} disabled={!editable} onChange={(e) => setAllergens(e.target.value)} onBlur={() => onChange({ allergens: allergens.split(',').map((a) => a.trim()).filter(Boolean) })} placeholder="peanuts, milk, wheat" /></label>
           <label>Calories<input type="number" min={0} value={item.calories ?? ''} disabled={!editable} onChange={(e) => onChange({ calories: e.target.value === '' ? undefined : Number(e.target.value) })} style={{ width: 120 }} /></label>
           <div>
-            <div className="small" style={{ marginBottom: 4 }}>Option groups on this item</div>
-            {groups.length === 0 && <div className="small">No modifier groups in this menu.</div>}
+            <div className="small" style={{ marginBottom: 4 }}>{fr ? "Groupes d’options de cet article" : "Option groups on this item"}</div>
+            {groups.length === 0 && <div className="small">{fr ? "Aucun groupe d’options dans ce menu." : "No modifier groups in this menu."}</div>}
             {groups.map((g) => (
               <label key={g.ref} className="fh-row small"><input type="checkbox" disabled={!editable} checked={item.modifierGroupRefs.includes(g.ref)} onChange={(e) => onChange({ modifierGroupRefs: e.target.checked ? [...item.modifierGroupRefs, g.ref] : item.modifierGroupRefs.filter((r) => r !== g.ref) })} /> {g.name} <span className="small">({g.modifiers.length} options{g.min ? ', required' : ''})</span></label>
             ))}
           </div>
         </div>
       </div>
-      <div className="fh-row" style={{ justifyContent: 'flex-end', marginTop: 12 }}><button onClick={() => { if (editable) onChange({ allergens: allergens.split(',').map((a) => a.trim()).filter(Boolean) }); onClose(); }}>Done</button></div>
+      <div className="fh-row" style={{ justifyContent: 'flex-end', marginTop: 12 }}><button onClick={() => { if (editable) onChange({ allergens: allergens.split(',').map((a) => a.trim()).filter(Boolean) }); onClose(); }}>{fr ? "Terminé" : "Done"}</button></div>
     </Modal>
   );
 }
 
 function CategoryHoursDialog({ category, onSave, onClose }: { category: Category; onSave: (hours: Week | null) => void; onClose: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [week, setWeek] = useState<Week>(() => (category.hours && Object.values(category.hours).some((d) => d.length) ? JSON.parse(JSON.stringify(category.hours)) : fullWeekUi('07:00', '11:00')));
   const problems = weekProblems(week);
   return (
@@ -402,14 +406,15 @@ function CategoryHoursDialog({ category, onSave, onClose }: { category: Category
       <WeekEditor value={week} onChange={setWeek} />
       {problems.length > 0 && <div className="fh-banner warn" style={{ marginTop: 8 }}>{problems.join(' · ')}</div>}
       <div className="fh-row" style={{ justifyContent: 'space-between', marginTop: 12 }}>
-        <button className="btn-light" onClick={() => onSave(null)}>Same as store hours</button>
-        <span className="fh-row"><button className="btn-light" onClick={onClose}>Cancel</button><button disabled={problems.length > 0} onClick={() => onSave(week)}>Use this schedule</button></span>
+        <button className="btn-light" onClick={() => onSave(null)}>{fr ? "Comme les heures du magasin" : "Same as store hours"}</button>
+        <span className="fh-row"><button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button><button disabled={problems.length > 0} onClick={() => onSave(week)}>{fr ? "Utiliser cet horaire" : "Use this schedule"}</button></span>
       </div>
     </Modal>
   );
 }
 
 function PublishDialog({ brand, stores, check, locName, onClose, onDone }: { brand: string; stores: StoreStatus[]; check: Check | null; locName: (c?: string | null) => string; onClose: () => void; onDone: (msg: string, results?: any[]) => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [selected, setSelected] = useState<string[]>(stores.map((s) => s.storeId));
   const [when, setWhen] = useState<'now' | 'later'>('now');
   const [at, setAt] = useState('');
@@ -430,8 +435,8 @@ function PublishDialog({ brand, stores, check, locName, onClose, onDone }: { bra
     <Modal title={`Publish ${brand}`} wide onClose={onClose}>
       {blocked && <div className="fh-banner warn">Fix the {check!.errors.length} error(s) in Menu check first.</div>}
       <div className="fh-row" style={{ marginBottom: 8 }}>
-        <button className="btn-sm btn-light" onClick={() => setSelected(stores.map((s) => s.storeId))}>All</button>
-        <button className="btn-sm btn-light" onClick={() => setSelected([])}>None</button>
+        <button className="btn-sm btn-light" onClick={() => setSelected(stores.map((s) => s.storeId))}>{fr ? "Tous" : "All"}</button>
+        <button className="btn-sm btn-light" onClick={() => setSelected([])}>{fr ? "Aucun" : "None"}</button>
         <span className="small">{selected.length}/{stores.length} store(s)</span>
       </div>
       <div className="fh-table-wrap" style={{ maxHeight: 300, overflowY: 'auto' }}>
@@ -445,7 +450,7 @@ function PublishDialog({ brand, stores, check, locName, onClose, onDone }: { bra
                 <td className="small fh-mono">{s.channelStoreId}</td>
               </tr>
             ))}
-            {stores.length === 0 && <tr><td className="small">No stores mapped for this brand.</td></tr>}
+            {stores.length === 0 && <tr><td className="small">{fr ? "Aucun magasin associé à cette marque." : "No stores mapped for this brand."}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -456,7 +461,7 @@ function PublishDialog({ brand, stores, check, locName, onClose, onDone }: { bra
       </div>
       {err && <div className="fh-banner warn" style={{ marginTop: 8 }}>{err}</div>}
       <div className="fh-row" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
-        <button className="btn-light" onClick={onClose}>Cancel</button>
+        <button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button>
         <button className="btn-ok" disabled={busy || blocked || selected.length === 0 || (when === 'later' && !at)} onClick={go}>{busy ? 'Working…' : when === 'now' ? `Publish to ${selected.length} store(s)` : 'Schedule'}</button>
       </div>
     </Modal>
@@ -464,6 +469,7 @@ function PublishDialog({ brand, stores, check, locName, onClose, onDone }: { bra
 }
 
 function CopyDialog({ brands, target, onCopy, onClose }: { brands: string[]; target: string; onCopy: (m: Menu) => void; onClose: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [src, setSrc] = useState(brands[0] ?? '');
   const [err, setErr] = useState('');
   async function go() {
@@ -479,12 +485,13 @@ function CopyDialog({ brands, target, onCopy, onClose }: { brands: string[]; tar
       <p className="small">Copies categories, items, options, prices, descriptions and schedules. Nothing is saved until you press Save. Clover links are copied too — re-import from Clover afterwards if this brand uses different Clover items.</p>
       <select value={src} onChange={(e) => setSrc(e.target.value)}>{brands.map((b) => <option key={b}>{b}</option>)}</select>
       {err && <div className="fh-banner warn" style={{ marginTop: 8 }}>{err}</div>}
-      <div className="fh-row" style={{ justifyContent: 'flex-end', marginTop: 12 }}><button className="btn-light" onClick={onClose}>Cancel</button><button disabled={!src} onClick={go}>Copy</button></div>
+      <div className="fh-row" style={{ justifyContent: 'flex-end', marginTop: 12 }}><button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button><button disabled={!src} onClick={go}>{fr ? "Copier" : "Copy"}</button></div>
     </Modal>
   );
 }
 
 function LanguageDialog({ value, onSaved, onClose }: { value: Languages; onSaved: (l: Languages) => void; onClose: () => void }) {
+  const fr = useDashboardLanguage() === "fr";
   const [v, setV] = useState<Languages>(value);
   const [err, setErr] = useState('');
   async function save() {
@@ -505,7 +512,7 @@ function LanguageDialog({ value, onSaved, onClose }: { value: Languages; onSaved
         {row('skip', 'SkipTheDishes', 'One language per menu.')}
         <p className="small">“Français / English” shows both, e.g. “Poulet grillé / Grilled chicken”. Items without a French name keep their English name.</p>
         {err && <div className="fh-banner warn">{err}</div>}
-        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>Cancel</button><button onClick={save}>Save</button></div>
+        <div className="fh-row" style={{ justifyContent: 'flex-end' }}><button className="btn-light" onClick={onClose}>{fr ? "Annuler" : "Cancel"}</button><button onClick={save}>{fr ? "Enregistrer" : "Save"}</button></div>
       </div>
     </Modal>
   );

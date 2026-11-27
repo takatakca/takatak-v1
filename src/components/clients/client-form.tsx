@@ -22,6 +22,7 @@ import {
   CLIENT_STATUSES,
   type ClientStatusValue,
 } from "@/lib/clients/client-validation";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 export interface ClientFormValues {
   name: string;
@@ -59,6 +60,7 @@ export function ClientForm({
   clientId?: string;
   initialValues: ClientFormValues;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const router = useRouter();
 
   const formRef =
@@ -256,7 +258,7 @@ export function ClientForm({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-sm font-semibold text-emerald-900">
-                Client workspace created successfully
+                {fr ? "Espace client créé" : "Client workspace created successfully"}
               </p>
 
               <p className="mt-1 text-sm text-emerald-700">
@@ -274,7 +276,7 @@ export function ClientForm({
                 onClick={goToCreatedClient}
                 className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-600"
               >
-                Go to client workspaces
+                {fr ? "Ouvrir les espaces clients" : "Go to client workspaces"}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -416,7 +418,7 @@ export function ClientForm({
           disabled={loading}
           className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          Cancel
+          {fr ? "Annuler" : "Cancel"}
         </button>
 
         <button

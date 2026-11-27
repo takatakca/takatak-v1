@@ -137,7 +137,7 @@ assert.ok(
   "confirm is a same-origin form POST, like the OAuth consent decision",
 );
 assert.ok(
-  confirmRoute.includes('"/login?next=" + encodeURIComponent(next), request.url), 303'),
+  confirmRoute.includes('"/login?next=" + encodeURIComponent(next), originFromRequest(request)), 303'),
   "an expired session restarts at /login with a GET (303), never replays the confirmation POST",
 );
 assert.ok(

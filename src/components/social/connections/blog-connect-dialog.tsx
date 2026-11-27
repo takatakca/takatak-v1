@@ -4,6 +4,7 @@ import { Loader2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { SocialPlatformIcon } from "@/components/social/navigation/social-platform-icon";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type BlogConnectionView = {
   status: "connected";
@@ -38,6 +39,7 @@ export function BlogConnectDialog({
   onClose: () => void;
   onConnected: (host: string) => void;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [website, setWebsite] = useState<{ siteUrl: string; host: string } | null>(
     null,
   );
@@ -137,11 +139,10 @@ export function BlogConnectDialog({
                 id="blog-connect-title"
                 className="text-lg font-semibold text-slate-950"
               >
-                Connect a blog
+                {fr ? "Brancher un blogue" : "Connect a blog"}
               </h2>
               <p className="mt-1 text-sm text-slate-600">
-                TAKATAK creates a blog page for the website already connected to
-                this brand.
+                {fr ? "TAKATAK crée une page de blogue pour le site déjà branché à cette marque." : "TAKATAK creates a blog page for the website already connected to this brand."}
               </p>
             </div>
           </div>
@@ -165,7 +166,7 @@ export function BlogConnectDialog({
         {loading ? (
           <div className="mt-6 flex items-center gap-2 text-sm text-slate-600">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Loading blog connection
+            {fr ? "Chargement du branchement du blogue" : "Loading blog connection"}
           </div>
         ) : connection ? (
           <div className="mt-5 space-y-4">
@@ -187,7 +188,7 @@ export function BlogConnectDialog({
               onClick={() => onConnected(connection.host)}
               className="inline-flex h-10 items-center justify-center rounded-lg bg-[#4934d4] px-4 text-sm font-semibold text-white transition hover:bg-[#3e2bc0]"
             >
-              Done
+              {fr ? "Terminé" : "Done"}
             </button>
           </div>
         ) : website ? (
@@ -208,7 +209,7 @@ export function BlogConnectDialog({
           </div>
         ) : (
           <p className="mt-5 text-sm leading-6 text-slate-700">
-            Connect a web page first. A blog page is created for that website.
+            {fr ? "Branchez d’abord une page Web. Une page de blogue est créée pour ce site." : "Connect a web page first. A blog page is created for that website."}
           </p>
         )}
       </section>

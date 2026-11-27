@@ -40,6 +40,7 @@ import type {
   WorkspaceMemberSummary,
   WorkspaceTeamData,
 } from "@/lib/team/team-data";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const ROLE_ORDER: RoleKey[] = [
   "owner",
@@ -59,6 +60,7 @@ function PremiumMark() {
 }
 
 function SystemRoleShield({ className }: { className: string }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <span className="peer/shield group/shield relative inline-flex shrink-0">
       <span
@@ -72,7 +74,7 @@ function SystemRoleShield({ className }: { className: string }) {
         role="tooltip"
         className="pointer-events-none absolute bottom-[calc(100%+10px)] left-1/2 z-50 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-white px-3 py-1.5 text-[13px] font-medium text-[#1d1d1f] shadow-[0_4px_16px_rgba(15,23,42,0.16)] group-hover/shield:block group-focus-within/shield:block"
       >
-        System role
+        {fr ? "Rôle système" : "System role"}
         <span
           aria-hidden="true"
           className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-t-[6px] border-x-transparent border-t-white"
@@ -117,6 +119,7 @@ function RoleIdentity({
   role: RoleKey;
   shieldClassName: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const granted = ROLE_PERMISSIONS[role];
   const viewOnly = granted.filter((permission) =>
     permission.startsWith("view_"),
@@ -141,7 +144,7 @@ function RoleIdentity({
         {viewOnly.length > 0 ? (
           <div>
             <p className="text-[13px] font-medium text-[#6b7280]">
-              View only permissions
+              {fr ? "Autorisations de lecture seule" : "View only permissions"}
             </p>
             <ul className="mt-2 space-y-1.5">
               {viewOnly.map((permission) => (
@@ -159,7 +162,7 @@ function RoleIdentity({
         {editing.length > 0 ? (
           <div className={viewOnly.length > 0 ? "mt-3.5" : undefined}>
             <p className="text-[13px] font-medium text-[#6b7280]">
-              Editing permissions
+              {fr ? "Modification des autorisations" : "Editing permissions"}
             </p>
             <ul className="mt-2 space-y-1.5">
               {editing.map((permission) => (
@@ -270,6 +273,7 @@ export function UserManagementView({
   basePath: string;
   capabilities: UserManagementCapabilities;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
 
   function tabHref(next: UserManagementTab) {
@@ -282,7 +286,7 @@ export function UserManagementView({
     return (
       <section className="rounded-2xl border border-slate-200 bg-white px-6 py-10 text-center">
         <h1 className="text-2xl font-semibold text-slate-900">
-          User management
+          {fr ? "Gestion des utilisateurs" : "User management"}
         </h1>
         <p className="mt-2 text-sm text-slate-500">{data.message}</p>
       </section>
@@ -293,7 +297,7 @@ export function UserManagementView({
     <div className="bg-white pb-16">
       <div className="bg-[#f5fafd] px-5 pt-5 sm:px-6">
         <h1 className="text-[32px] font-semibold leading-tight tracking-tight text-[#1d1d1f]">
-          User management
+          {fr ? "Gestion des utilisateurs" : "User management"}
         </h1>
       </div>
 
@@ -343,6 +347,7 @@ function UsersPanel({
   data: Extract<WorkspaceTeamData, { source: "database" }>;
   capabilities: UserManagementCapabilities;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [brandId, setBrandId] = useState("any");
@@ -461,7 +466,7 @@ function UsersPanel({
     <>
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <label className="relative min-w-[200px] flex-1">
-          <span className="sr-only">Search users</span>
+          <span className="sr-only">{fr ? "Rechercher des utilisateurs" : "Search users"}</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
@@ -479,9 +484,9 @@ function UsersPanel({
           disabled={!teamUnlocked}
           onChange={setStateFilter}
         >
-          <option value="any">States</option>
-          <option value="active">Active</option>
-          <option value="suspended">Suspended</option>
+          <option value="any">{fr ? "États" : "States"}</option>
+          <option value="active">{fr ? "Actif" : "Active"}</option>
+          <option value="suspended">{fr ? "Suspendu" : "Suspended"}</option>
         </FilterSelect>
 
         <FilterSelect
@@ -492,7 +497,7 @@ function UsersPanel({
           onChange={setBrandId}
           widthClass="lg:w-56"
         >
-          <option value="any">Any brand</option>
+          <option value="any">{fr ? "Toutes les marques" : "Any brand"}</option>
           {data.brands.map((brand) => (
             <option key={brand.id} value={brand.id}>
               {brand.name}
@@ -507,7 +512,7 @@ function UsersPanel({
           disabled={!teamUnlocked}
           onChange={setRoleFilter}
         >
-          <option value="any">Any role</option>
+          <option value="any">{fr ? "Tous les rôles" : "Any role"}</option>
           {ROLE_ORDER.map((role) => (
             <option key={role} value={role}>
               {ROLE_LABELS[role]}
@@ -532,21 +537,20 @@ function UsersPanel({
         >
           {!data.teamManagement ? <PremiumMark /> : null}
           <Plus className="h-4 w-4" />
-          Add user
+          {fr ? "Ajouter un utilisateur" : "Add user"}
         </button>
       </div>
 
       {teamUnlocked && !capabilities.canInvite ? (
         <p className="mt-3 text-sm text-slate-500">
-          You can view this workspace team, but you need permission to invite
-          people.
+          {fr ? "Vous pouvez voir l’équipe de cet espace, mais il faut une autorisation pour inviter des gens." : "You can view this workspace team, but you need permission to invite people."}
         </p>
       ) : null}
 
       <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_auto] gap-4 border-b border-slate-100 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-          <p>Users</p>
-          <p>Brands</p>
+          <p>{fr ? "Utilisateurs" : "Users"}</p>
+          <p>{fr ? "Marques" : "Brands"}</p>
           <p className="w-10" />
         </div>
 
@@ -601,12 +605,12 @@ function UsersPanel({
                       </button>
                       {member.profileId === capabilities.currentProfileId ? (
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                          You
+                          {fr ? "Vous" : "You"}
                         </span>
                       ) : null}
                       {member.status === "suspended" ? (
                         <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-700">
-                          Suspended
+                          {fr ? "Suspendu" : "Suspended"}
                         </span>
                       ) : null}
                     </div>
@@ -672,7 +676,7 @@ function UsersPanel({
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                        Pending
+                        {fr ? "En attente" : "Pending"}
                       </span>
                       <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-800">
                         {ROLE_LABELS[invitation.role]}
@@ -681,7 +685,7 @@ function UsersPanel({
                   </div>
                 </div>
                 <p className="truncate text-sm text-slate-500">
-                  Invitation pending
+                  {fr ? "Invitation en attente" : "Invitation pending"}
                 </p>
                 <button
                   type="button"
@@ -784,6 +788,7 @@ function RolesPanel({
 }: {
   data: Extract<WorkspaceTeamData, { source: "database" }>;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"list" | "grid">("list");
@@ -834,7 +839,7 @@ function RolesPanel({
     <>
       <div className="mt-6 flex flex-wrap items-center gap-3">
         <label className="relative min-w-[200px] flex-1">
-          <span className="sr-only">Search roles</span>
+          <span className="sr-only">{fr ? "Rechercher des rôles" : "Search roles"}</span>
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             type="search"
@@ -886,14 +891,14 @@ function RolesPanel({
           className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium text-[#1d1d1f] transition hover:bg-slate-50"
         >
           <Plus className="h-4 w-4" />
-          Add role
+          {fr ? "Ajouter un rôle" : "Add role"}
           {!canAddRole ? <PremiumMark /> : null}
         </button>
       </div>
 
       {rows.length === 0 ? (
         <p className="mt-10 text-center text-sm text-slate-500">
-          No roles match that search.
+          {fr ? "Aucun rôle ne correspond à cette recherche." : "No roles match that search."}
         </p>
       ) : view === "grid" ? (
         <ul className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -938,7 +943,7 @@ function RolesPanel({
                   <dl className="mt-4 grid grid-cols-3 gap-2 text-xs text-slate-500">
                     <div>
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                        Enabled
+                        {fr ? "Activé" : "Enabled"}
                       </dt>
                       <dd className="mt-1">
                         {countLabel(row.enabled, "assignment", "assignments")}
@@ -946,7 +951,7 @@ function RolesPanel({
                     </div>
                     <div>
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                        Disabled
+                        {fr ? "Désactivé" : "Disabled"}
                       </dt>
                       <dd className="mt-1">
                         {countLabel(row.disabled, "assignment", "assignments")}
@@ -954,7 +959,7 @@ function RolesPanel({
                     </div>
                     <div>
                       <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                        Users
+                        {fr ? "Utilisateurs" : "Users"}
                       </dt>
                       <dd className="mt-1">
                         {countLabel(row.users, "user", "users")}
@@ -970,10 +975,10 @@ function RolesPanel({
         <div className="mt-4 overflow-visible rounded-xl border border-slate-200 bg-white">
           <div className="grid min-w-[720px] grid-cols-[auto_minmax(0,1.3fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.7fr)_auto] items-center gap-3 border-b border-slate-100 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
             <span className="w-5" />
-            <p>Role</p>
-            <p>Enabled assignments</p>
-            <p>Disabled assignments</p>
-            <p>Users</p>
+            <p>{fr ? "Rôle" : "Role"}</p>
+            <p>{fr ? "Attributions activées" : "Enabled assignments"}</p>
+            <p>{fr ? "Attributions désactivées" : "Disabled assignments"}</p>
+            <p>{fr ? "Utilisateurs" : "Users"}</p>
             <span className="w-6" />
           </div>
           <ul>
@@ -1056,8 +1061,7 @@ function RolesPanel({
           onClose={() => setAddNoticeOpen(false)}
         >
           <p className="text-sm leading-6 text-slate-600">
-            This plan includes custom roles. A custom-role editor is not
-            available yet, so the built-in roles still apply.
+            {fr ? "Ce forfait comprend des rôles sur mesure. L’éditeur de rôles sur mesure arrive bientôt ; les rôles intégrés s’appliquent en attendant." : "This plan includes custom roles. A custom-role editor is not available yet, so the built-in roles still apply."}
           </p>
         </SidePanel>
       ) : null}
@@ -1138,6 +1142,7 @@ function MemberDetail({
   isSelf: boolean;
   canShowMemberActions: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="space-y-5">
       {member.email ? (
@@ -1147,25 +1152,25 @@ function MemberDetail({
       <dl className="space-y-3 text-sm">
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Role
+            {fr ? "Rôle" : "Role"}
           </dt>
           <dd className="mt-1 text-slate-800">{ROLE_LABELS[member.role]}</dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Status
+            {fr ? "Statut" : "Status"}
           </dt>
           <dd className="mt-1 capitalize text-slate-800">{member.status}</dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Brands
+            {fr ? "Marques" : "Brands"}
           </dt>
           <dd className="mt-1 text-slate-800">{brandsLabel(brandNames)}</dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Access
+            {fr ? "Accès" : "Access"}
           </dt>
           <dd className="mt-1 text-slate-800">
             {member.role === "owner"
@@ -1177,7 +1182,7 @@ function MemberDetail({
 
       {isSelf ? (
         <p className="text-sm text-slate-500">
-          Your own access cannot be changed here.
+          {fr ? "Votre propre accès ne se modifie pas ici." : "Your own access cannot be changed here."}
         </p>
       ) : canShowMemberActions ? (
         <div className="space-y-4 border-t border-slate-100 pt-5">
@@ -1200,7 +1205,7 @@ function MemberDetail({
 
           {capabilities.canManagePermissions && member.role === "owner" ? (
             <p className="text-xs text-slate-400">
-              Owner permissions are fixed.
+              {fr ? "Les autorisations du propriétaire ne changent pas." : "Owner permissions are fixed."}
             </p>
           ) : null}
 
@@ -1221,8 +1226,7 @@ function MemberDetail({
         </div>
       ) : (
         <p className="text-sm text-slate-500">
-          You can view this member, but you need permission to change their
-          access.
+          {fr ? "Vous pouvez voir ce membre, mais il faut une autorisation pour changer son accès." : "You can view this member, but you need permission to change their access."}
         </p>
       )}
     </div>
@@ -1236,12 +1240,13 @@ function InvitationDetail({
   invitation: WorkspaceInvitationSummary;
   canInvite: boolean;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   return (
     <div className="space-y-5">
       <dl className="space-y-3 text-sm">
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Role
+            {fr ? "Rôle" : "Role"}
           </dt>
           <dd className="mt-1 text-slate-800">
             {ROLE_LABELS[invitation.role]}
@@ -1249,7 +1254,7 @@ function InvitationDetail({
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-            Invited by
+            {fr ? "Invité par" : "Invited by"}
           </dt>
           <dd className="mt-1 text-slate-800">
             {invitation.invitedBy ?? "Unknown"}
@@ -1264,7 +1269,7 @@ function InvitationDetail({
         />
       ) : (
         <p className="text-sm text-slate-500">
-          This invitation is waiting to be accepted.
+          {fr ? "Cette invitation attend d’être acceptée." : "This invitation is waiting to be accepted."}
         </p>
       )}
     </div>

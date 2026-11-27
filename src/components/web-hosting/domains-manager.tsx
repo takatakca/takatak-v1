@@ -45,6 +45,7 @@ import type {
   ProvisioningStepSummary,
   SslCertificateSummary,
 } from "@/lib/web-hosting/types";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 const DOMAIN_TABS = ["Overview", "Edit Details", "DNS Records", "Redirects", "Security"];
 
@@ -74,6 +75,7 @@ export function DomainsManager({
   activity: ProvisioningStepSummary[];
   sourceLabel: string;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [registrarFilter, setRegistrarFilter] = useState("all");
@@ -172,11 +174,10 @@ export function DomainsManager({
           <section aria-label="Upcoming domain renewals" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-slate-900">
             <div className="flex items-center gap-2">
               <CalendarClock className="h-5 w-5 text-amber-700" aria-hidden="true" />
-              <h2 className="text-base font-semibold">Upcoming domain renewals</h2>
+              <h2 className="text-base font-semibold">{fr ? "Renouvellements de domaines à venir" : "Upcoming domain renewals"}</h2>
             </div>
             <p className="mt-2 text-sm text-slate-700">
-              These are dates recorded in your TAKATAK workspace, not live registrar confirmations.
-              Check with your domain provider before making renewal decisions.
+              {fr ? "Ce sont des dates inscrites dans votre espace TAKATAK, pas des confirmations en direct du registraire. Vérifiez auprès de votre fournisseur de domaine avant de décider d’un renouvellement." : "These are dates recorded in your TAKATAK workspace, not live registrar confirmations. Check with your domain provider before making renewal decisions."}
             </p>
             <ul className="mt-3 space-y-2">
               {renewalNotices.slice(0, 5).map((notice) => (
@@ -196,10 +197,10 @@ export function DomainsManager({
               </p>
             ) : null}
             <p className="mt-3 text-xs text-slate-600">
-              No invoice, renewal, transfer, DNS, email or website change is initiated by this notice.
+              {fr ? "Cet avis ne lance aucune facture, aucun renouvellement, transfert ou changement de DNS, de courriel ou de site." : "No invoice, renewal, transfer, DNS, email or website change is initiated by this notice."}
             </p>
             <Link href="/transfert" className="mt-3 inline-flex rounded-lg bg-[#1565D8] px-4 py-2 text-sm font-semibold text-white hover:bg-[#104fab]">
-              Request transfer assistance
+              {fr ? "Demander de l’aide pour le transfert" : "Request transfer assistance"}
             </Link>
           </section>
         ) : null}
@@ -277,12 +278,12 @@ export function DomainsManager({
               <table className="w-full min-w-[960px] text-left text-sm">
                 <thead className="text-xs text-slate-400">
                   <tr>
-                    <th className="px-5 pb-2 font-medium">Domain</th>
-                    <th className="px-3 pb-2 font-medium">Status</th>
-                    <th className="px-3 pb-2 font-medium">Registrar</th>
+                    <th className="px-5 pb-2 font-medium">{fr ? "Domaine" : "Domain"}</th>
+                    <th className="px-3 pb-2 font-medium">{fr ? "Statut" : "Status"}</th>
+                    <th className="px-3 pb-2 font-medium">{fr ? "Registraire" : "Registrar"}</th>
                     <th className="px-3 pb-2 font-medium">DNS</th>
-                    <th className="px-3 pb-2 font-medium">Auto-Renew</th>
-                    <th className="px-3 pb-2 font-medium">Expiry Date</th>
+                    <th className="px-3 pb-2 font-medium">{fr ? "Renouvellement automatique" : "Auto-Renew"}</th>
+                    <th className="px-3 pb-2 font-medium">{fr ? "Date d’expiration" : "Expiry Date"}</th>
                     <th className="px-3 pb-2 font-medium">SSL</th>
                     <th className="px-3 pb-2 font-medium">Actions</th>
                   </tr>
@@ -382,7 +383,7 @@ export function DomainsManager({
                     href="/checkout"
                     className="font-medium text-blue-600 hover:underline"
                   >
-                    Add a domain
+                    {fr ? "Ajouter un domaine" : "Add a domain"}
                   </Link>{" "}
                   to search and register.
                 </>
@@ -406,7 +407,7 @@ export function DomainsManager({
 
         <section className="grid gap-4 xl:grid-cols-3">
           <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h3 className="text-sm font-semibold text-slate-900">Domain Status Distribution</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Répartition des statuts de domaine" : "Domain Status Distribution"}</h3>
             <div className="mt-4 flex items-center gap-4">
               <DonutChart
                 slices={[
@@ -447,15 +448,15 @@ export function DomainsManager({
           </article>
 
           <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h3 className="text-sm font-semibold text-slate-900">DNS Performance</h3>
-            <p className="mt-1 text-xs text-slate-400">Average propagation time</p>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Performance DNS" : "DNS Performance"}</h3>
+            <p className="mt-1 text-xs text-slate-400">{fr ? "Temps de propagation moyen" : "Average propagation time"}</p>
             <div className="mt-3">
               <LineChart values={[]} emptyLabel="DNS monitoring is not connected" />
             </div>
           </article>
 
           <article className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(15,23,42,0.06)]">
-            <h3 className="text-sm font-semibold text-slate-900">Recent Domain Activity</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{fr ? "Activité récente des domaines" : "Recent Domain Activity"}</h3>
             {activity.length ? (
               <ul className="mt-3 space-y-3">
                 {activity.slice(0, 6).map((step) => (
@@ -474,7 +475,7 @@ export function DomainsManager({
                 ))}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-slate-400">No recent domain activity.</p>
+              <p className="mt-3 text-sm text-slate-400">{fr ? "Aucune activité récente sur les domaines." : "No recent domain activity."}</p>
             )}
           </article>
         </section>
@@ -500,32 +501,32 @@ export function DomainsManager({
           {tab === "Overview" ? (
             <div className="space-y-3 text-sm text-slate-600">
               <p>
-                <span className="text-slate-400">Domain</span>
+                <span className="text-slate-400">{fr ? "Domaine" : "Domain"}</span>
                 <br />
                 {selected.domainName}
               </p>
               <p>
-                <span className="text-slate-400">Registrar</span>
+                <span className="text-slate-400">{fr ? "Registraire" : "Registrar"}</span>
                 <br />
                 {registrarLabel(selected.registrar)}
               </p>
               <p>
-                <span className="text-slate-400">Status</span>
+                <span className="text-slate-400">{fr ? "Statut" : "Status"}</span>
                 <br />
                 {selectedStatus.label}
               </p>
               <p>
-                <span className="text-slate-400">Auto-renew</span>
+                <span className="text-slate-400">{fr ? "Renouvellement automatique" : "Auto-renew"}</span>
                 <br />
                 {selected.autoRenew ? "On" : "Off"}
               </p>
               <p>
-                <span className="text-slate-400">Registered</span>
+                <span className="text-slate-400">{fr ? "Enregistré" : "Registered"}</span>
                 <br />
                 {formatExpiry(selected.createdAt)}
               </p>
               <p>
-                <span className="text-slate-400">Expires</span>
+                <span className="text-slate-400">{fr ? "Expire" : "Expires"}</span>
                 <br />
                 {formatExpiry(selected.expiresAt)}
               </p>
@@ -555,13 +556,13 @@ export function DomainsManager({
                 </Field>
               </div>
               <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2">
-                <span className="text-sm text-slate-700">Auto-Renew</span>
+                <span className="text-sm text-slate-700">{fr ? "Renouvellement automatique" : "Auto-Renew"}</span>
                 <ReadOnlySwitch on={selected.autoRenew} />
               </div>
               <div className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2">
                 <div>
-                  <p className="text-sm text-slate-700">Privacy Protection</p>
-                  <p className="text-[11px] text-slate-400">Not tracked yet</p>
+                  <p className="text-sm text-slate-700">{fr ? "Protection de la vie privée" : "Privacy Protection"}</p>
+                  <p className="text-[11px] text-slate-400">{fr ? "Pas encore suivi" : "Not tracked yet"}</p>
                 </div>
                 <ReadOnlySwitch on={false} />
               </div>
@@ -574,14 +575,14 @@ export function DomainsManager({
                 </Field>
               </div>
               <div>
-                <p className="mb-2 text-xs font-medium text-slate-600">DNS Records</p>
+                <p className="mb-2 text-xs font-medium text-slate-600">{fr ? "Enregistrements DNS" : "DNS Records"}</p>
                 {selectedRecords.length ? (
                   <table className="w-full text-left text-xs">
                     <thead className="text-slate-400">
                       <tr>
                         <th className="pb-1 font-medium">Type</th>
-                        <th className="pb-1 font-medium">Host</th>
-                        <th className="pb-1 font-medium">Value</th>
+                        <th className="pb-1 font-medium">{fr ? "Hôte" : "Host"}</th>
+                        <th className="pb-1 font-medium">{fr ? "Valeur" : "Value"}</th>
                         <th className="pb-1 font-medium">TTL</th>
                       </tr>
                     </thead>
@@ -597,13 +598,13 @@ export function DomainsManager({
                     </tbody>
                   </table>
                 ) : (
-                  <p className="text-sm text-slate-400">No DNS records tracked for this domain.</p>
+                  <p className="text-sm text-slate-400">{fr ? "Aucun enregistrement DNS suivi pour ce domaine." : "No DNS records tracked for this domain."}</p>
                 )}
               </div>
               <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-slate-500">SSL Status</p>
+                    <p className="text-xs font-medium text-slate-500">{fr ? "État du SSL" : "SSL Status"}</p>
                     <p className="text-sm font-semibold text-slate-800">
                       {SSL_STATUS_LABELS[selectedSsl?.status ?? selected.sslStatus] ?? selected.sslStatus}
                     </p>
@@ -615,7 +616,7 @@ export function DomainsManager({
                     href="/dashboard/web-hosting/ssl"
                     className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700"
                   >
-                    Manage SSL
+                    {fr ? "Gérer le SSL" : "Manage SSL"}
                   </Link>
                 </div>
               </div>
@@ -646,12 +647,12 @@ export function DomainsManager({
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-slate-400">No DNS records tracked.</p>
+              <p className="text-sm text-slate-400">{fr ? "Aucun enregistrement DNS suivi." : "No DNS records tracked."}</p>
             )
           ) : null}
 
           {tab === "Redirects" ? (
-            <p className="text-sm text-slate-400">Redirects for this domain are set up by the TAKATAK team on request.</p>
+            <p className="text-sm text-slate-400">{fr ? "L’équipe TAKATAK configure les redirections de ce domaine sur demande." : "Redirects for this domain are set up by the TAKATAK team on request."}</p>
           ) : null}
 
           {tab === "Security" ? (

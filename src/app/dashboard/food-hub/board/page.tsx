@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ago, api, Marketplace, ModeBanner, money, NotifyPanel, ReasonDialog, useCatalog, useMe, useNotify } from '../ui';
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
 
 type Order = {
   id: string; channel: string; marketplace: string; externalOrderId: string; displayId?: string; brandName?: string; locationCode?: string;
@@ -28,6 +29,7 @@ const COLUMNS: Array<{ key: string; title: string; statuses: string[]; filter?: 
 const ACTION_LABEL: Record<string, string> = { accept: 'Accept', ready: 'Mark ready', dispatch: 'Courier picked up', complete: 'Done', retry_pos: 'Send to Clover', print: 'Reprint', cancel: 'Cancel…', report_missing: 'Missing item…' };
 
 export default function LiveOrdersPage() {
+  const fr = useDashboardLanguage() === "fr";
   const [orders, setOrders] = useState<Order[]>([]);
   const [mode, setMode] = useState<string>();
   const [error, setError] = useState('');
@@ -104,12 +106,12 @@ export default function LiveOrdersPage() {
     <div>
       <div className="fh-head">
         <div>
-          <h1>Order Board</h1>
+          <h1>{fr ? "Tableau des commandes" : "Order Board"}</h1>
           <div className="small">Uber Eats, DoorDash, SkipTheDishes and Too Good To Go in one place — last 24 hours, refreshes every 5 seconds.</div>
         </div>
         <div className="fh-row">
           <select value={location} onChange={(e) => setLocation(e.target.value)} aria-label="Location">
-            <option value="">All locations</option>
+            <option value="">{fr ? "Tous les emplacements" : "All locations"}</option>
             {activeLocations.map((l) => <option key={l.code} value={l.code}>{l.name}</option>)}
           </select>
           <span className="badge badge-blue">{orders.length} orders · {money(todayTotal)}</span>
@@ -137,7 +139,7 @@ export default function LiveOrdersPage() {
           return (
             <div className="fh-col" key={col.key}>
               <h2>{col.title}<span>{list.length}</span></h2>
-              {list.length === 0 && <div className="small" style={{ padding: 6 }}>Nothing here.</div>}
+              {list.length === 0 && <div className="small" style={{ padding: 6 }}>{fr ? "Rien ici." : "Nothing here."}</div>}
               {list.map((o) => (
                 <div key={o.id} className={`fh-order ${o.status === 'new' ? 'is-new' : ''}`}>
                   <div className="top">
@@ -163,17 +165,17 @@ export default function LiveOrdersPage() {
                   </ul>
                   {o.notes && <div className="small">Note: {o.notes}</div>}
                   <div className="fh-row" style={{ marginTop: 6 }}>
-                    {o.posOrderId ? <span className="badge badge-green">In Clover</span> : o.posError ? <span className="badge badge-red" title={o.posError}>Clover: not sent</span> : o.status === 'cancelled' ? null : <span className="badge badge-yellow">Clover pending</span>}
+                    {o.posOrderId ? <span className="badge badge-green">{fr ? "Dans Clover" : "In Clover"}</span> : o.posError ? <span className="badge badge-red" title={o.posError}>{fr ? "Clover : non envoyé" : "Clover: not sent"}</span> : o.status === 'cancelled' ? null : <span className="badge badge-yellow">{fr ? "Clover en attente" : "Clover pending"}</span>}
                     {o.channelError && <span className="badge badge-yellow" title={o.channelError}>Platform not updated — hover for reason</span>}
                   </div>
                   {can('orders:act') && (
                     <div className="fh-actions">
-                      {o.actions.includes('accept') && <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => act(o, 'accept')}>Accept</button>}
+                      {o.actions.includes('accept') && <button className="btn-sm btn-ok" disabled={!!busy} onClick={() => act(o, 'accept')}>{fr ? "Accepter" : "Accept"}</button>}
                       {o.actions.includes('deny') && <button className="btn-sm btn-danger" disabled={!!busy} onClick={() => act(o, 'deny')}>{o.channel === 'skip' ? 'Send to Skip tablet' : 'Reject'}</button>}
                       {o.actions.filter((a) => a !== 'accept' && a !== 'deny' && a !== 'report_missing').map((a) => (
                         <button key={a} className={`btn-sm ${a === 'ready' || a === 'dispatch' ? '' : 'btn-light'}`} disabled={!!busy} onClick={() => act(o, a)}>{ACTION_LABEL[a] ?? a}</button>
                       ))}
-                      <Link className="btn-sm btn-light button" href={`/dashboard/food-hub/orders/${o.id}/ticket`} target="_blank">Ticket</Link>
+                      <Link className="btn-sm btn-light button" href={`/dashboard/food-hub/orders/${o.id}/ticket`} target="_blank">{fr ? "Billet" : "Ticket"}</Link>
                     </div>
                   )}
                 </div>
