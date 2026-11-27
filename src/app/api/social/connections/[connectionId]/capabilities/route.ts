@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
+import { canAccessSocialConnection } from "@/lib/security/member-brand-access";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { getSocialConnectionsData } from "@/lib/social/connections/social-connection-data";
 import { isUuid } from "@/lib/validation/common";
@@ -22,6 +23,9 @@ export async function GET(
   const { connectionId } = await context.params;
   if (!isUuid(connectionId)) {
     return jsonResponse({ ok: false, message: "The selected social connection identifier is invalid." }, 400);
+  }
+  if (!(await canAccessSocialConnection(gate.access, connectionId))) {
+    return jsonResponse({ ok: false, message: "Connection not found." }, 404);
   }
   try {
     const connections = await getSocialConnectionsData(gate.access.activeClientId);

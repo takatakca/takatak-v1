@@ -52,6 +52,7 @@
     "qa:instagram-live": "tsx scripts/verify-instagram-live-stats.ts",
     "qa:admin-fr": "tsx --require ./scripts/register-server-only.cjs scripts/verify-admin-fr.ts",
     "qa:social-smartlinks": "tsx scripts/verify-social-smartlinks.ts",
+    "qa:member-brand-access": "tsx --require ./scripts/register-server-only.cjs scripts/verify-member-brand-access.ts",
     "qa:mobile-api": "tsx scripts/mobile-api-tests.ts",
     "qa:readiness": "tsx scripts/check-readiness.ts",
     "qa:routes": "tsx scripts/list-routes.ts",

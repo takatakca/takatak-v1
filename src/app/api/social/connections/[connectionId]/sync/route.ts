@@ -7,6 +7,7 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
+import { canAccessSocialConnection } from "@/lib/security/member-brand-access";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { isUuid } from "@/lib/validation/common";
 import {
@@ -120,6 +121,11 @@ export async function GET(
       },
       400,
     );
+  }
+
+  // A member limited to other brands gets the same answer as an unknown connection.
+  if (!(await canAccessSocialConnection(gate.access, connectionId))) {
+    return jsonResponse({ ok: false, message: "This social connection was not found." }, 404);
   }
 
   const coalesceKey = `${gate.access.activeClientId}:${connectionId}:get`;
@@ -253,6 +259,11 @@ export async function POST(
       },
       400,
     );
+  }
+
+  // A member limited to other brands gets the same answer as an unknown connection.
+  if (!(await canAccessSocialConnection(gate.access, connectionId))) {
+    return jsonResponse({ ok: false, message: "This social connection was not found." }, 404);
   }
 
   let resume = false;

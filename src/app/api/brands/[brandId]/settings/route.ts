@@ -7,6 +7,7 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
+import { canAccessBrand } from "@/lib/security/member-brand-access";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { readJsonBody } from "@/lib/security/write-request";
 import { isUuid } from "@/lib/validation/common";
@@ -38,6 +39,11 @@ export async function PATCH(
       },
       400,
     );
+  }
+
+  // A member limited to other brands gets the same answer as an unknown brand.
+  if (!(await canAccessBrand(gate.access, brandId))) {
+    return jsonResponse({ ok: false, message: "This brand was not found." }, 404);
   }
 
   const bodyResult = await readJsonBody(request);

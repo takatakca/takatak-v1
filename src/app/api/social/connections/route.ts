@@ -7,6 +7,8 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
+import { loadBrandRestriction } from "@/lib/security/member-brand-access";
+import { isBrandAllowed } from "@/lib/security/brand-access-policy";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { getSocialConnectionsData } from "@/lib/social/connections/social-connection-data";
 import { toAccountPictureSrc, toClientSocialImageUrl } from "@/lib/social/media/remote-image";
@@ -46,12 +48,19 @@ export async function GET(
     );
   }
 
+  // A member limited to some brands only sees those brands' connections.
+  const restriction = await loadBrandRestriction(gate.access);
+  if (requestedBrandId && !isBrandAllowed(restriction, requestedBrandId)) {
+    return jsonResponse({ ok: false, message: "This brand was not found." }, 404);
+  }
+
   try {
-    const connections =
+    const connections = (
       await getSocialConnectionsData(
         gate.access.activeClientId,
         requestedBrandId || null,
-      );
+      )
+    ).filter((connection) => isBrandAllowed(restriction, connection.brandId));
 
     return jsonResponse(
       {

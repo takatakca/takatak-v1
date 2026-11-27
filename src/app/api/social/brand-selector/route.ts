@@ -6,6 +6,8 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
+import { loadBrandRestriction } from "@/lib/security/member-brand-access";
+import { filterAllowedBrands } from "@/lib/security/brand-access-policy";
 import { loadBrandSelectorSnapshots } from "@/lib/security/brand-context";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
@@ -29,10 +31,11 @@ export async function GET(): Promise<NextResponse> {
 
   try {
     const started = Date.now();
-    const brands = await loadBrandSelectorSnapshots(
-      gate.access.activeClientId,
-      { profileId: gate.access.profileId },
-    );
+    const [allBrands, restriction] = await Promise.all([
+      loadBrandSelectorSnapshots(gate.access.activeClientId, { profileId: gate.access.profileId }),
+      loadBrandRestriction(gate.access),
+    ]);
+    const brands = filterAllowedBrands(allBrands, restriction);
 
     logSocialOAuthEvent("social-brand-selector", {
       stage: "route",

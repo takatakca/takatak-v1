@@ -540,12 +540,33 @@ model ClientMembership {
   profile    Profile              @relation(fields: [profileId], references: [id], onDelete: Cascade)
   client     Client               @relation(fields: [clientId], references: [id], onDelete: Cascade)
   customRole WorkspaceCustomRole? @relation(fields: [customRoleId], references: [id], onDelete: SetNull)
+  brandAccess ClientMembershipBrandAccess[]
 
   @@unique([profileId, clientId])
   @@index([clientId, status])
   @@index([profileId, status])
   @@index([customRoleId])
   @@map("client_memberships")
+}
+
+/// Brands a team member may work on. No row for a membership = every brand of
+/// the workspace (the default). Owners and admins always see every brand.
+/// Server-only table (RLS on, no Data API access).
+model ClientMembershipBrandAccess {
+  id                 String   @id @default(uuid()) @db.Uuid
+  membershipId       String   @db.Uuid
+  clientId           String   @db.Uuid
+  businessBrandId    String   @db.Uuid
+  createdByProfileId String?  @db.Uuid
+  createdAt          DateTime @default(now())
+
+  membership    ClientMembership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand    @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+
+  @@unique([membershipId, businessBrandId])
+  @@index([clientId])
+  @@index([businessBrandId])
+  @@map("client_membership_brand_access")
 }
 
 model UserInvitation {
@@ -653,6 +674,7 @@ model BusinessBrand {
   socialCompetitorTracks    SocialCompetitorTrack[]
   socialCompetitorSnapshots SocialCompetitorSnapshot[]
   approvals                 Approval[]
+  memberBrandAccess         ClientMembershipBrandAccess[]
   socialSmartLinks          SocialSmartLink[]
   socialAnalyticsDaily      SocialAnalyticsDaily[]
   socialAccountSyncStates   SocialAccountSyncState[]

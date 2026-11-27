@@ -771,6 +771,7 @@ function UsersPanel({
         member={accessMember}
         brands={data.brands}
         teamUnlocked={teamUnlocked}
+        brandAccessActivated={data.source === "database" && data.brandAccessActivated}
         capabilities={capabilities}
         billingHref={billingHref}
         onClose={() => setAccessMemberId(null)}

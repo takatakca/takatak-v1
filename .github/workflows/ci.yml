@@ -192,6 +192,9 @@ jobs:
       - name: SmartLinks rules, scoping and no open redirect
         run: npm run qa:social-smartlinks
 
+      - name: Team members limited to their brands
+        run: npm run qa:member-brand-access
+
       - name: Native app API checks tokens and workspaces
         run: npm run qa:mobile-api
 

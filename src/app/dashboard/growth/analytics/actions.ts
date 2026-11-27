@@ -8,6 +8,7 @@ import { createAnalyticsSite, createAudience, deleteAudience, setAnalyticsSiteAc
 import { isValidGa4PropertyId, normalizeSearchConsoleProperty } from "@/lib/integrations/google/parse";
 import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
 import { getServerAccessContext } from "@/lib/security/access-context";
+import { canAccessBrand } from "@/lib/security/member-brand-access";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 const BASE = "/dashboard/growth/analytics";
@@ -25,6 +26,9 @@ export async function createSiteAction(_prev: AnalyticsFormState, formData: Form
   const access = await canManage();
   if (!access) return { ok: false, error: "You do not have permission to add websites." };
   const brand = String(formData.get("businessBrandId") ?? "");
+  if (UUID.test(brand) && !(await canAccessBrand(access, brand))) {
+    return { ok: false, error: "Cette marque est introuvable · This brand was not found." };
+  }
   try {
     const result = await createAnalyticsSite(access.activeClientId, {
       name: String(formData.get("name") ?? ""),

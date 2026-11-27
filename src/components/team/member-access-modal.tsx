@@ -110,6 +110,7 @@ export function MemberAccessModal({
   member,
   brands,
   teamUnlocked,
+  brandAccessActivated = false,
   capabilities,
   billingHref,
   onClose,
@@ -118,6 +119,8 @@ export function MemberAccessModal({
   member: WorkspaceMemberSummary | null;
   brands: WorkspaceBrandSummary[];
   teamUnlocked: boolean;
+  /** False until the per-brand access table exists: switches stay read-only. */
+  brandAccessActivated?: boolean;
   capabilities: UserManagementCapabilities;
   billingHref: string;
   onClose: () => void;
@@ -132,6 +135,11 @@ export function MemberAccessModal({
   const [rolesOpen, setRolesOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
   const [savingRole, setSavingRole] = useState(false);
+  const [selectedBrandIds, setSelectedBrandIds] = useState<Set<string>>(
+    () => new Set(member?.brandAccess ?? brands.map((brand) => brand.id)),
+  );
+  const [savingBrands, setSavingBrands] = useState(false);
+  const [brandMessage, setBrandMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
 
   const rolesOpenRef = useRef(false);
 
@@ -151,7 +159,10 @@ export function MemberAccessModal({
     setRoleFilter("any");
     setRolesOpen(false);
     setRoleMenuOpen(false);
-  }, [open, member?.membershipId]);
+    setBrandMessage(null);
+    // No brand list stored = every brand of the workspace.
+    setSelectedBrandIds(new Set(member?.brandAccess ?? brands.map((brand) => brand.id)));
+  }, [open, member?.membershipId, member?.brandAccess, brands]);
 
   useEffect(() => {
     if (!open) {
@@ -201,6 +212,83 @@ export function MemberAccessModal({
       return brand.name.toLowerCase().includes(needle);
     });
   }, [brands, brandFilter, member, query, roleFilter, stateFilter]);
+
+  const brandsLockedForRole = member ? member.role === "owner" || member.role === "admin" : false;
+  const isSelf = member ? member.profileId === capabilities.currentProfileId : false;
+  const canEditBrands =
+    Boolean(member) &&
+    teamUnlocked &&
+    brandAccessActivated &&
+    capabilities.canManagePermissions &&
+    !brandsLockedForRole &&
+    !isSelf;
+  const initialBrandIds = member?.brandAccess ?? brands.map((brand) => brand.id);
+  const brandsChanged =
+    initialBrandIds.length !== selectedBrandIds.size ||
+    initialBrandIds.some((id) => !selectedBrandIds.has(id));
+
+  function brandSwitchTitle(): string {
+    if (!teamUnlocked) return fr ? "Passez à un forfait supérieur pour choisir les marques d’un membre." : "Upgrade to manage brand access.";
+    if (brandsLockedForRole) {
+      return fr ? "Les propriétaires et les administrateurs voient toujours toutes les marques." : "Owners and admins always see every brand.";
+    }
+    if (isSelf) return fr ? "Vous ne pouvez pas changer vos propres marques." : "You cannot change your own brands.";
+    if (!brandAccessActivated) {
+      return fr
+        ? "L’accès par marque sera activé bientôt ; pour l’instant, ce membre voit toutes les marques."
+        : "Per-brand access is coming soon; for now this member sees every brand.";
+    }
+    if (!capabilities.canManagePermissions) {
+      return fr ? "Vous n’avez pas la permission de gérer les accès." : "You do not have permission to manage access.";
+    }
+    return fr ? "Activer ou retirer l’accès à cette marque." : "Turn access to this brand on or off.";
+  }
+
+  function toggleBrand(brandId: string) {
+    if (!canEditBrands || savingBrands) return;
+    if (selectedBrandIds.has(brandId) && selectedBrandIds.size === 1) {
+      setBrandMessage({
+        tone: "error",
+        text: fr ? "Un membre doit garder au moins une marque." : "A member needs at least one brand.",
+      });
+      return;
+    }
+    setBrandMessage(null);
+    setSelectedBrandIds((current) => {
+      const next = new Set(current);
+      if (next.has(brandId)) next.delete(brandId);
+      else next.add(brandId);
+      return next;
+    });
+  }
+
+  async function saveBrands() {
+    if (!member || !canEditBrands || !brandsChanged) return;
+    setSavingBrands(true);
+    setBrandMessage(null);
+    try {
+      const response = await fetch(`/api/team/members/${encodeURIComponent(member.membershipId)}/brands`, {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ brandIds: [...selectedBrandIds] }),
+      });
+      const result = (await response.json().catch(() => null)) as { ok?: boolean; message?: string } | null;
+      if (!response.ok || !result?.ok) {
+        setBrandMessage({
+          tone: "error",
+          text: result?.message ?? (fr ? "Les marques n’ont pas pu être enregistrées." : "The brands could not be saved."),
+        });
+        return;
+      }
+      setBrandMessage({ tone: "ok", text: fr ? "Marques enregistrées." : "Brands saved." });
+      router.refresh();
+    } catch {
+      setBrandMessage({ tone: "error", text: fr ? "Connexion perdue ; réessayez." : "Connection lost. Try again." });
+    } finally {
+      setSavingBrands(false);
+    }
+  }
 
   async function assignRole(role: RoleKey) {
     if (!member || !teamUnlocked || !capabilities.canManageRoles) {
@@ -294,7 +382,7 @@ export function MemberAccessModal({
                   type="search"
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search"
+                  placeholder={fr ? "Rechercher" : "Search"}
                   disabled={filtersLocked}
                   className="h-11 w-full rounded-full border border-slate-300 bg-white py-2 pl-10 pr-4 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#4b8bf5] focus:ring-2 focus:ring-[#4b8bf5]/20 disabled:cursor-not-allowed disabled:bg-slate-50"
                 />
@@ -351,8 +439,12 @@ export function MemberAccessModal({
               {filteredBrands.length === 0 ? (
                 <p className="px-1 py-10 text-center text-sm text-slate-500">
                   {brands.length === 0
-                    ? "No brands in this workspace yet."
-                    : "No brands match those filters."}
+                    ? fr
+                      ? "Aucune marque dans cet espace pour l’instant."
+                      : "No brands in this workspace yet."
+                    : fr
+                      ? "Aucune marque ne correspond à ces filtres."
+                      : "No brands match those filters."}
                 </p>
               ) : (
                 <ul>
@@ -364,17 +456,20 @@ export function MemberAccessModal({
                       <button
                         type="button"
                         role="switch"
-                        aria-checked
-                        aria-label={`${brand.name} access`}
-                        disabled
-                        title={
-                          teamUnlocked
-                            ? "This member can access every brand in the workspace."
-                            : "Upgrade to manage brand access."
-                        }
-                        className="relative h-5 w-9 shrink-0 rounded-full bg-[#3b82f6] opacity-80"
+                        aria-checked={selectedBrandIds.has(brand.id)}
+                        aria-label={fr ? `Accès à ${brand.name}` : `${brand.name} access`}
+                        disabled={!canEditBrands || savingBrands}
+                        title={brandSwitchTitle()}
+                        onClick={() => toggleBrand(brand.id)}
+                        className={`relative h-5 w-9 shrink-0 rounded-full transition disabled:cursor-not-allowed ${
+                          selectedBrandIds.has(brand.id) ? "bg-[#3b82f6]" : "bg-slate-300"
+                        } ${canEditBrands ? "" : "opacity-80"}`}
                       >
-                        <span className="absolute top-0.5 right-0.5 h-4 w-4 rounded-full bg-white shadow-sm" />
+                        <span
+                          className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-all ${
+                            selectedBrandIds.has(brand.id) ? "right-0.5" : "left-0.5"
+                          }`}
+                        />
                       </button>
 
                       <span className="flex min-w-0 items-center gap-2.5">
@@ -435,6 +530,30 @@ export function MemberAccessModal({
                 </ul>
               )}
             </div>
+
+            {canEditBrands || brandMessage ? (
+              <div className="flex flex-col gap-3 border-t border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <p
+                  role="status"
+                  className={`text-sm ${brandMessage?.tone === "error" ? "text-red-700" : brandMessage ? "text-emerald-700" : "text-slate-500"}`}
+                >
+                  {brandMessage?.text ??
+                    (fr
+                      ? "Choisissez les marques sur lesquelles ce membre peut travailler."
+                      : "Choose the brands this member can work on.")}
+                </p>
+                {canEditBrands ? (
+                  <button
+                    type="button"
+                    onClick={() => void saveBrands()}
+                    disabled={!brandsChanged || savingBrands}
+                    className="inline-flex h-10 items-center justify-center rounded-md bg-[#1d1d1f] px-4 text-sm font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {savingBrands ? (fr ? "Enregistrement…" : "Saving…") : fr ? "Enregistrer les marques" : "Save brands"}
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
 
             {!teamUnlocked ? (
               <div className="flex justify-end border-t border-slate-100 px-6 py-4">

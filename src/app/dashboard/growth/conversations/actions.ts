@@ -12,6 +12,7 @@ import {
 } from "@/lib/chat/service";
 import { clientHasGrowthFeature, FEATURE_UPSELL } from "@/lib/billing/growth/entitlements";
 import { getServerAccessContext } from "@/lib/security/access-context";
+import { canAccessBrand } from "@/lib/security/member-brand-access";
 import { hasEffectivePermission } from "@/lib/security/effective-permissions";
 
 const BASE = "/dashboard/growth/conversations";
@@ -29,6 +30,10 @@ export async function createChatWidgetAction(_prev: WidgetFormState, formData: F
   const access = await canManage();
   if (!access) return { ok: false, error: "Vous n’avez pas la permission de gérer le clavardage de cet espace · You do not have permission to manage chat for this workspace." };
   if (!(await clientHasGrowthFeature(access.activeClientId, "conversations"))) return { ok: false, error: FEATURE_UPSELL.conversations };
+  const brand = formData.get("businessBrandId");
+  if (typeof brand === "string" && UUID.test(brand) && !(await canAccessBrand(access, brand))) {
+    return { ok: false, error: "Cette marque est introuvable · This brand was not found." };
+  }
   try {
     const result = await createChatWidget(access.activeClientId, {
       name: formData.get("name"),
