@@ -74,3 +74,15 @@ Les consoles refusent le sélecteur de fichiers piloté à distance. Les images 
 - Google Play : app native 2.0.0 (code de version 100) signée et téléversée, brouillon de production enregistré, Canada ciblé. Reste : « Sign in details » (accès examinateur fourni par le développeur), « Target audience » (18 ans et plus), enregistrement de la sécurité des données, déclaration sur les images faites par IA dans la fiche, puis envoi en révision avec l'accord du propriétaire.
 - Amazon : l'ancien paquet est en révision ; `TAKATAK-v2-amazon.apk` signé est prêt pour la version suivante.
 - Fichiers signés : dossier `TAKATAK-KIT-V2` sur le PC du propriétaire. La clé de signature reste sur le PC.
+
+## Google Play « Sign in details » : texte prêt (2026-11-27)
+
+État vérifié le 2026-11-27 04:25 UTC : 3 déclarations restent ouvertes (accès, public cible, sécurité des données), toutes bloquées par la première. Fiche enregistrée, paquet 2.0.0 en brouillon, Canada ciblé.
+
+À entrer par le propriétaire (les deux valeurs viennent de son développeur, les mêmes que `TAKATAK_MOBILE_REVIEW_EMAIL` et `TAKATAK_MOBILE_REVIEW_CODE`) :
+- Instruction name : `Reviewer test account`
+- Username : le courriel de test
+- Password : le code de test
+- Any other information : `Open the app, tap "Se connecter", enter the email and the code above. The client dashboard opens. No second factor is required. The account contains sample data only.`
+
+Ensuite Claude termine : public cible 18 ans et plus, enregistrement de la sécurité des données, puis envoi en révision avec l'accord du propriétaire.
