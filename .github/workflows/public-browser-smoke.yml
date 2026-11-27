@@ -1,0 +1,41 @@
+# Opens public takatak.ca pages in a real Chromium (French and English) and
+# fails when a page breaks in the browser: script files that do not load, page
+# errors, or the error screen. Read-only: no deploy, no sign-in, no form sent.
+name: TAKATAK public pages in a real browser
+
+on:
+  pull_request:
+    paths:
+      - scripts/public-browser-smoke.cjs
+      - .github/workflows/public-browser-smoke.yml
+  schedule:
+    - cron: "17 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: takatak-public-browser-smoke
+  cancel-in-progress: false
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.23.2
+      - name: Install Chromium (Playwright) in a temporary folder
+        run: |
+          mkdir -p /tmp/browser-smoke
+          cd /tmp/browser-smoke
+          npm init -y > /dev/null
+          npm install --no-save --no-audit --no-fund playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Open public pages in French and English
+        run: |
+          cp scripts/public-browser-smoke.cjs /tmp/browser-smoke/
+          node /tmp/browser-smoke/public-browser-smoke.cjs https://takatak.ca
