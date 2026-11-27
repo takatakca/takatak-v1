@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from "node:fs";
 
 import { httpsRedirectTarget } from "../src/lib/security/https-redirect";
 import { websiteStructuredData } from "../src/lib/website/structured-data";
-import { HOME_SEO, homeLanguage, homeMetadata } from "../src/lib/website/home-seo";
+import { HOME_SEO, homeLanguage, homeMetadata, requestedHomeLanguage } from "../src/lib/website/home-seo";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LanguageProvider, useLanguage } from "../src/lib/website/use-language";
@@ -200,6 +200,23 @@ check("language URLs have reciprocal alternates, canonical and localized sharing
   }
   assert.equal(homeLanguage(["fr", "en"]), "en");
   assert.equal(homeLanguage("<script>"), "en");
+});
+
+check("only an explicit ?lang= locks the homepage language; otherwise the visitor's language applies", () => {
+  assert.equal(requestedHomeLanguage("fr"), "fr");
+  assert.equal(requestedHomeLanguage("en"), "en");
+  assert.equal(requestedHomeLanguage(null), null);
+  assert.equal(requestedHomeLanguage("FR"), null);
+  assert.equal(requestedHomeLanguage("<script>"), null);
+  const proxy = readFileSync("src/proxy.ts", "utf8");
+  assert.match(proxy, /requestedHomeLanguage\(request\.nextUrl\.searchParams\.get\("lang"\)\)/);
+  assert.match(proxy, /if \(requestedLanguage\) headers\.set\(HOME_LANGUAGE_HEADER, requestedLanguage\)/);
+  // Without a server language the provider starts in English (the HTML crawlers see) and then detects the visitor's.
+  function Probe() {
+    const { lang } = useLanguage();
+    return createElement("p", null, lang);
+  }
+  assert.equal(renderToStaticMarkup(createElement(LanguageProvider, { children: createElement(Probe) })), "<p>en</p>");
 });
 
 check("French and English content render correctly before JavaScript runs", () => {

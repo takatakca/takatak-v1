@@ -7,6 +7,16 @@ export function homeLanguage(value: unknown): HomeLanguage {
   return value === "fr" ? "fr" : "en";
 }
 
+/**
+ * The homepage language the address asks for (?lang=fr or ?lang=en), or null.
+ * Only an explicit choice locks the homepage language; without one, visitors get
+ * their saved or browser language after loading, as on every other page, while
+ * the server-rendered HTML for crawlers stays the English x-default.
+ */
+export function requestedHomeLanguage(value: string | null): HomeLanguage | null {
+  return value === "fr" || value === "en" ? value : null;
+}
+
 export const HOME_SEO = {
   en: {
     title: "TAKATAK — Websites, Hosting & Digital Marketing in Montréal",
