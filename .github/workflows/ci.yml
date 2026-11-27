@@ -173,6 +173,9 @@ jobs:
       - name: Instagram dashboard reads real Instagram numbers safely
         run: npm run qa:instagram-live
 
+      - name: Admin screens have French for every server text
+        run: npm run qa:admin-fr
+
       - name: Native app API checks tokens and workspaces
         run: npm run qa:mobile-api
 

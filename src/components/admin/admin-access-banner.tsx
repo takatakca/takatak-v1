@@ -1,7 +1,11 @@
+"use client";
+
 import {
   ShieldAlert,
   ShieldCheck,
 } from "lucide-react";
+import { useDashboardLanguage } from "@/components/layout/dashboard-language";
+import { adminFr } from "@/lib/admin/admin-fr";
 import { ADMIN_ROLE_LABELS } from "@/lib/admin/status";
 
 export function AdminAccessBanner({
@@ -11,17 +15,20 @@ export function AdminAccessBanner({
   enforced: boolean;
   role: string | null;
 }) {
+  const fr = useDashboardLanguage() === "fr";
   if (enforced && role) {
     return (
       <div className="flex gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
 
         <p className="text-xs leading-relaxed text-emerald-800">
-          Role enforcement active — signed in with role{" "}
+          {fr ? "Contrôle des rôles actif : connecté avec le rôle" : "Role enforcement active — signed in with role"}{" "}
           <strong>
-            {ADMIN_ROLE_LABELS[role] ?? role}
+            {adminFr(ADMIN_ROLE_LABELS[role] ?? role, fr)}
           </strong>
-          . Accounts without platform administration access are redirected before this page renders.
+          {fr
+            ? ". Les comptes sans accès administrateur de la plateforme sont redirigés avant l’affichage de cette page."
+            : ". Accounts without platform administration access are redirected before this page renders."}
         </p>
       </div>
     );
@@ -32,7 +39,9 @@ export function AdminAccessBanner({
       <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
 
       <p className="text-xs leading-relaxed text-amber-800">
-        Foundation mode — Supabase authentication is not configured, so no real platform role check ran for this render. Once authentication is configured, only platform administrators can load this page.
+        {fr
+          ? "Mode fondation : la connexion Supabase n’est pas configurée, donc aucun vrai contrôle de rôle n’a eu lieu pour cet affichage. Une fois la connexion configurée, seuls les administrateurs de la plateforme peuvent ouvrir cette page."
+          : "Foundation mode — Supabase authentication is not configured, so no real platform role check ran for this render. Once authentication is configured, only platform administrators can load this page."}
       </p>
     </div>
   );

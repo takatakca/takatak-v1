@@ -4,16 +4,26 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { AdminSourceBanner } from "@/components/admin/source-banner";
 import { JobStatusCard } from "@/components/admin/job-status-card";
 import { getAdminJobsData } from "@/lib/admin/admin-data";
+import { getDashboardLanguage } from "@/lib/dashboard/language";
 import { requireAdminAccess } from "@/lib/security/guard";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminJobsPage() {
   const access = await requireAdminAccess();
+  const fr = (await getDashboardLanguage(access.profileId)) === "fr";
   const data = await getAdminJobsData();
   return (
     <div className="space-y-5">
-      <AdminHeader title="Jobs Monitor" subtitle="All jobs with logs. Every job is planned — no worker exists, so nothing has ever run, and retry stays disabled." badges={["View only", "Worker not active"]} />
+      <AdminHeader
+        title={fr ? "Suivi des tâches" : "Jobs Monitor"}
+        subtitle={
+          fr
+            ? "Toutes les tâches avec leurs journaux. Chaque tâche est planifiée : aucun exécuteur n’existe, donc rien n’a encore tourné, et relancer reste désactivé."
+            : "All jobs with logs. Every job is planned — no worker exists, so nothing has ever run, and retry stays disabled."
+        }
+        badges={fr ? ["Lecture seule", "Exécuteur inactif"] : ["View only", "Worker not active"]}
+      />
       <AdminAccessBanner enforced={access.enforced} role={access.role} />
       <AdminSourceBanner source={data.source} label={data.sourceLabel} />
       <div className="grid gap-3 sm:grid-cols-2">

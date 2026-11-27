@@ -15,6 +15,7 @@ import { AdminHeader } from "@/components/admin/admin-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { getAhmvAdminProductData } from "@/lib/admin/ahmv-product-data";
+import { adminFr } from "@/lib/admin/admin-fr";
 import { requireAdminAccess } from "@/lib/security/guard";
 
 export const dynamic = "force-dynamic";
@@ -26,15 +27,17 @@ function money(minor: number, currency = "CAD") {
   }).format(minor / 100);
 }
 
+const INTERVAL_FR: Record<string, string> = { day: "jour", week: "semaine", month: "mois", year: "an" };
+
 const SECTIONS = [
-  ["Customers", Users, "Comptes ayant une projection d’abonnement AHMV."],
-  ["Subscriptions", ShieldCheck, "Statuts, plans et accès ahmv_access."],
-  ["Usage", Activity, "Base pour les événements d’usage produit."],
-  ["Revenue", CircleDollarSign, "MRR estimé et contributions distinctes."],
-  ["Automations", Bot, "Auto-Pilot et orchestrations TAKATAK."],
-  ["Connectors", Cable, "Services partagés, jamais des secrets dans AHMV."],
-  ["Support", Headphones, "Support produit et opérations."],
-  ["Analytics", ChartNoAxesCombined, "Performance produit et adoption."],
+  ["Clients", Users, "Comptes ayant une projection d’abonnement AHMV."],
+  ["Abonnements", ShieldCheck, "Statuts, plans et accès ahmv_access."],
+  ["Utilisation", Activity, "Base pour les événements d’usage produit."],
+  ["Revenus", CircleDollarSign, "MRR estimé et contributions distinctes."],
+  ["Automatisations", Bot, "Auto-Pilot et orchestrations TAKATAK."],
+  ["Connecteurs", Cable, "Services partagés, jamais des secrets dans AHMV."],
+  ["Soutien", Headphones, "Support produit et opérations."],
+  ["Statistiques", ChartNoAxesCombined, "Performance produit et adoption."],
 ] as const;
 
 export default async function AhmvAdminProductPage() {
@@ -44,9 +47,9 @@ export default async function AhmvAdminProductPage() {
   return (
     <div className="space-y-6">
       <AdminHeader
-        title="Product • AHMV"
+        title="Produit • AHMV"
         subtitle="Back-office TAKATAK pour le produit AHMV. Cette surface admin est distincte de l’expérience parent."
-        badges={["Admin only", "Product catalog", "Entitlement controlled"]}
+        badges={["Admin seulement", "Catalogue de produits", "Accès contrôlé par droits"]}
       />
 
       {!data.available || !data.product ? (
@@ -61,7 +64,7 @@ export default async function AhmvAdminProductPage() {
           <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Metric label="Clients projetés" value={String(data.counts.customers)} />
             <Metric label="Accès actifs" value={String(data.counts.active)} />
-            <Metric label="Past due" value={String(data.counts.pastDue)} />
+            <Metric label="En retard de paiement" value={String(data.counts.pastDue)} />
             <Metric label="Annulés" value={String(data.counts.canceled)} />
             <Metric label="MRR estimé" value={money(data.estimatedMrrMinor)} />
           </section>
@@ -83,15 +86,15 @@ export default async function AhmvAdminProductPage() {
                         <p className="font-semibold text-slate-950">{plan.name}</p>
                         <p className="mt-1 font-mono text-xs text-slate-500">
                           {plan.code}
-                          {plan.legacyCode ? ` • legacy: ${plan.legacyCode}` : ""}
+                          {plan.legacyCode ? ` • ancien code : ${plan.legacyCode}` : ""}
                         </p>
                       </div>
                       <div className="flex gap-2">
                         <Badge tone={plan.status === "active" ? "success" : "neutral"}>
-                          {plan.status}
+                          {adminFr(plan.status, true)}
                         </Badge>
                         <Badge tone={plan.selfServeEligible ? "success" : "neutral"}>
-                          {plan.selfServeEligible ? "self-serve" : "admin/roadmap"}
+                          {plan.selfServeEligible ? "libre-service" : "admin / à venir"}
                         </Badge>
                       </div>
                     </div>
@@ -109,14 +112,14 @@ export default async function AhmvAdminProductPage() {
                         {plan.price ? (
                           <p className="text-xs text-slate-500">
                             / {plan.price.intervalCount > 1 ? `${plan.price.intervalCount} ` : ""}
-                            {plan.price.billingInterval}
+                            {INTERVAL_FR[plan.price.billingInterval] ?? plan.price.billingInterval}
                           </p>
                         ) : null}
                       </div>
 
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                          Entitlements
+                          Droits d’accès
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {plan.entitlements.map((entitlement) => (
@@ -134,12 +137,12 @@ export default async function AhmvAdminProductPage() {
 
             <Card>
               <CardHeader
-                title="Revenue Center"
+                title="Centre des revenus"
                 subtitle="Abonnements et soutien au développement restent deux flux distincts."
               />
               <CardBody className="space-y-4">
                 <RevenueRow
-                  label="MRR estimé memberships"
+                  label="MRR estimé des abonnements"
                   value={money(data.estimatedMrrMinor)}
                   icon={BadgeDollarSign}
                 />
@@ -149,18 +152,18 @@ export default async function AhmvAdminProductPage() {
                   icon={CircleDollarSign}
                 />
                 <RevenueRow
-                  label="Frais contributions"
+                  label="Frais des contributions"
                   value={money(data.contributions.feesMinor)}
                   icon={MessageSquareText}
                 />
                 <RevenueRow
-                  label="Net contributions"
+                  label="Contributions nettes"
                   value={money(data.contributions.netMinor)}
                   icon={ChartNoAxesCombined}
                 />
                 <p className="rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
                   Le MRR est une projection basée sur les abonnements donnant accès et le prix courant du catalogue.
-                  Les revenus encaissés, remboursements et frais Stripe des memberships nécessitent le registre de transactions
+                  Les revenus encaissés, remboursements et frais Stripe des abonnements nécessitent le registre de transactions
                   avant d’être présentés comme comptabilité réelle.
                 </p>
               </CardBody>

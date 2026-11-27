@@ -28,6 +28,8 @@ import {
   isBillingSourceApp,
 } from "@/lib/billing/invoices/source-apps";
 import type { FacturationsFailureKind } from "@/lib/integrations/facturations/contract";
+import { adminFr } from "@/lib/admin/admin-fr";
+import { getDashboardLanguage } from "@/lib/dashboard/language";
 import { requireAdminAccess } from "@/lib/security/guard";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +38,12 @@ const STATE_LABELS: Record<FacturationsOverview["env"]["state"], string> = {
   disabled: "Disabled",
   not_configured: "Not configured",
   configured_untested: "Configured — connection not yet verified",
+};
+
+const STATE_LABELS_FR: typeof STATE_LABELS = {
+  disabled: "Désactivé",
+  not_configured: "Non configuré",
+  configured_untested: "Configuré : connexion pas encore vérifiée",
 };
 
 const FAILURE_LABELS: Record<FacturationsFailureKind, string> = {
@@ -51,6 +59,21 @@ const FAILURE_LABELS: Record<FacturationsFailureKind, string> = {
   unavailable: "Facturations is unavailable.",
   invalid_response: "Facturations returned an unexpected response.",
   network_error: "Facturations could not be reached.",
+};
+
+const FAILURE_LABELS_FR: typeof FAILURE_LABELS = {
+  disabled: "Intégration désactivée (FACTURATIONS_INTEGRATION_ENABLED n’est pas 1).",
+  not_configured: "Configuration du serveur incomplète.",
+  identity_unavailable: "Votre identité TAKATAK n’a pas de rôle dans Facturations.",
+  auth_rejected: "Facturations a refusé l’identité de service signée.",
+  token_replay: "Facturations a refusé un jeton déjà utilisé. Réessayez.",
+  owner_required: "Facturations exige le rôle OWNER pour cette vue.",
+  not_found: "Le point d’intégration de Facturations n’est pas activé.",
+  invalid_request: "Facturations a refusé la demande.",
+  idempotency_conflict: "Conflit d’idempotence dans Facturations.",
+  unavailable: "Facturations est indisponible.",
+  invalid_response: "Facturations a donné une réponse inattendue.",
+  network_error: "Facturations est injoignable.",
 };
 
 function statusTone(status: InvoiceRequestStatus) {
@@ -70,8 +93,8 @@ function statusTone(status: InvoiceRequestStatus) {
   }
 }
 
-function sourceLabel(sourceApp: string): string {
-  return isBillingSourceApp(sourceApp) ? BILLING_SOURCE_APP_LABELS[sourceApp] : sourceApp;
+function sourceLabel(sourceApp: string, fr: boolean): string {
+  return isBillingSourceApp(sourceApp) ? adminFr(BILLING_SOURCE_APP_LABELS[sourceApp], fr) : sourceApp;
 }
 
 async function loadQueue(): Promise<
@@ -112,6 +135,7 @@ async function loadOverview(access: {
 
 export default async function AdminBillingPage() {
   const access = await requireAdminAccess();
+  const fr = (await getDashboardLanguage(access.profileId)) === "fr";
   const [overview, queue] = await Promise.all([
     loadOverview({ profileId: access.profileId, role: access.role }),
     loadQueue(),
@@ -126,79 +150,97 @@ export default async function AdminBillingPage() {
     overview.dashboard.available &&
     overview.drafts.available;
   const now = new Date();
+  const failure = fr ? FAILURE_LABELS_FR : FAILURE_LABELS;
 
   return (
     <div className="space-y-6">
       <AdminHeader
-        title="GROUPE TAKATAK Billing"
-        subtitle="Central invoice queue for the whole ecosystem. Every TAKATAK app feeds invoice requests here; the platform owner sends them to Facturations, which creates DRAFTS only. Issuance, sending and payment stay in the standalone Facturations workspace with its own owner approvals."
-        badges={["Foundation", "Drafts only", "No issuance"]}
+        title={fr ? "Facturation GROUPE TAKATAK" : "GROUPE TAKATAK Billing"}
+        subtitle={
+          fr
+            ? "File centrale des factures de tout l’écosystème. Chaque app TAKATAK envoie ses demandes de facture ici ; le propriétaire de la plateforme les envoie à Facturations, qui crée seulement des BROUILLONS. L’émission, l’envoi et le paiement restent dans l’espace Facturations autonome, avec ses propres approbations du propriétaire."
+            : "Central invoice queue for the whole ecosystem. Every TAKATAK app feeds invoice requests here; the platform owner sends them to Facturations, which creates DRAFTS only. Issuance, sending and payment stay in the standalone Facturations workspace with its own owner approvals."
+        }
+        badges={fr ? ["Fondation", "Brouillons seulement", "Aucune émission"] : ["Foundation", "Drafts only", "No issuance"]}
       />
       <AdminAccessBanner enforced={access.enforced} role={access.role} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
-          <CardHeader title="Facturations connection" subtitle="Server-to-server, signed 60-second identity." />
+          <CardHeader
+            title={fr ? "Connexion à Facturations" : "Facturations connection"}
+            subtitle={fr ? "De serveur à serveur, identité signée valide 60 secondes." : "Server-to-server, signed 60-second identity."}
+          />
           <CardBody className="space-y-2 text-sm text-slate-600">
             <div className="flex items-center gap-2">
               <Badge tone={connectionVerified ? "success" : "warning"}>
-                {connectionVerified ? "Connected — read-only verified" : STATE_LABELS[overview.env.state]}
+                {connectionVerified
+                  ? fr
+                    ? "Branché : lecture vérifiée"
+                    : "Connected — read-only verified"
+                  : (fr ? STATE_LABELS_FR : STATE_LABELS)[overview.env.state]}
               </Badge>
-              {overview.actorRole ? <Badge tone="accent">You act as {overview.actorRole}</Badge> : null}
+              {overview.actorRole ? <Badge tone="accent">{fr ? "Vous agissez comme" : "You act as"} {overview.actorRole}</Badge> : null}
             </div>
             {overview.env.missing.length && overview.env.enabled ? (
               <p className="text-xs">
-                Missing: <span className="font-mono">{overview.env.missing.join(", ")}</span>
+                {fr ? "Manquant :" : "Missing:"} <span className="font-mono">{overview.env.missing.join(", ")}</span>
               </p>
             ) : null}
             {overview.capabilities.available ? (
               <p className="text-xs">
-                Draft creation{" "}
-                {overview.capabilities.data.capabilities.draftWrite ? "enabled" : "disabled on the Facturations server"}.
+                {fr
+                  ? overview.capabilities.data.capabilities.draftWrite
+                    ? "Création de brouillons activée."
+                    : "Création de brouillons désactivée sur le serveur Facturations."
+                  : `Draft creation ${overview.capabilities.data.capabilities.draftWrite ? "enabled" : "disabled on the Facturations server"}.`}
               </p>
             ) : (
-              <p className="text-xs">{FAILURE_LABELS[overview.capabilities.reason]}</p>
+              <p className="text-xs">{failure[overview.capabilities.reason]}</p>
             )}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader title="Facturations drafts" subtitle="DRAFTS ONLY — not revenue, receivables or payments." />
+          <CardHeader
+            title={fr ? "Brouillons Facturations" : "Facturations drafts"}
+            subtitle={fr ? "BROUILLONS SEULEMENT : ni revenus, ni comptes à recevoir, ni paiements." : "DRAFTS ONLY — not revenue, receivables or payments."}
+          />
           <CardBody className="text-sm text-slate-600">
             {overview.dashboard.available ? (
               <dl className="grid grid-cols-3 gap-2 text-center">
                 <div>
-                  <dt className="text-xs text-slate-400">Drafts</dt>
+                  <dt className="text-xs text-slate-400">{fr ? "Brouillons" : "Drafts"}</dt>
                   <dd className="text-lg font-semibold text-slate-900">{overview.dashboard.data.draftCount}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-400">Draft total</dt>
+                  <dt className="text-xs text-slate-400">{fr ? "Total des brouillons" : "Draft total"}</dt>
                   <dd className="text-lg font-semibold text-slate-900">{formatCad(overview.dashboard.data.draftTotalCents)}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs text-slate-400">Customers</dt>
+                  <dt className="text-xs text-slate-400">{fr ? "Clients" : "Customers"}</dt>
                   <dd className="text-lg font-semibold text-slate-900">{overview.dashboard.data.customerCount}</dd>
                 </div>
               </dl>
             ) : (
-              <p className="text-xs">{FAILURE_LABELS[overview.dashboard.reason]}</p>
+              <p className="text-xs">{failure[overview.dashboard.reason]}</p>
             )}
           </CardBody>
         </Card>
 
         <Card>
-          <CardHeader title="Queue" subtitle="Requests fed by ecosystem apps." />
+          <CardHeader title={fr ? "File" : "Queue"} subtitle={fr ? "Demandes envoyées par les apps de l’écosystème." : "Requests fed by ecosystem apps."} />
           <CardBody>
             {queue.available ? (
               <div className="flex flex-wrap gap-2">
                 {INVOICE_REQUEST_STATUSES.map((status) => (
                   <Badge key={status} tone={statusTone(status)}>
-                    {INVOICE_REQUEST_STATUS_LABELS[status]} ×{queue.counts[status]}
+                    {adminFr(INVOICE_REQUEST_STATUS_LABELS[status], fr)} ×{queue.counts[status]}
                   </Badge>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-500">Billing storage is unavailable.</p>
+              <p className="text-xs text-slate-500">{fr ? "Le stockage de la facturation est indisponible." : "Billing storage is unavailable."}</p>
             )}
           </CardBody>
         </Card>
@@ -206,8 +248,12 @@ export default async function AdminBillingPage() {
 
       <Card>
         <CardHeader
-          title="Invoice requests"
-          subtitle="“Create draft” sends the request to Facturations with a deterministic idempotency key — retries never duplicate a draft."
+          title={fr ? "Demandes de facture" : "Invoice requests"}
+          subtitle={
+            fr
+              ? "« Créer le brouillon » envoie la demande à Facturations avec une clé d’idempotence fixe : réessayer ne crée jamais de brouillon en double."
+              : "“Create draft” sends the request to Facturations with a deterministic idempotency key — retries never duplicate a draft."
+          }
         />
         <CardBody className="overflow-x-auto p-0">
           {queue.available && queue.requests.length ? (
@@ -215,10 +261,10 @@ export default async function AdminBillingPage() {
               <thead className="bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
                 <tr>
                   <th className="px-5 py-2">Source</th>
-                  <th className="px-5 py-2">Customer</th>
+                  <th className="px-5 py-2">{fr ? "Client" : "Customer"}</th>
                   <th className="px-5 py-2">Dates</th>
-                  <th className="px-5 py-2 text-right">Estimate</th>
-                  <th className="px-5 py-2">Status</th>
+                  <th className="px-5 py-2 text-right">{fr ? "Estimation" : "Estimate"}</th>
+                  <th className="px-5 py-2">{fr ? "État" : "Status"}</th>
                   <th className="px-5 py-2" />
                 </tr>
               </thead>
@@ -226,7 +272,7 @@ export default async function AdminBillingPage() {
                 {queue.requests.map((request) => (
                   <tr key={request.id} className="align-top">
                     <td className="px-5 py-3">
-                      <div className="font-medium text-slate-900">{sourceLabel(request.sourceApp)}</div>
+                      <div className="font-medium text-slate-900">{sourceLabel(request.sourceApp, fr)}</div>
                       <div className="max-w-[14rem] truncate font-mono text-xs text-slate-400">{request.sourceReference}</div>
                     </td>
                     <td className="px-5 py-3 text-slate-700">{request.customerName}</td>
@@ -243,7 +289,7 @@ export default async function AdminBillingPage() {
                       ) : null}
                     </td>
                     <td className="px-5 py-3">
-                      <Badge tone={statusTone(request.status)}>{INVOICE_REQUEST_STATUS_LABELS[request.status]}</Badge>
+                      <Badge tone={statusTone(request.status)}>{adminFr(INVOICE_REQUEST_STATUS_LABELS[request.status], fr)}</Badge>
                       {request.lastErrorCode ? (
                         <div className="mt-1 font-mono text-xs text-slate-400">{request.lastErrorCode}</div>
                       ) : null}
@@ -272,7 +318,13 @@ export default async function AdminBillingPage() {
             </table>
           ) : (
             <p className="px-5 py-4 text-sm text-slate-500">
-              {queue.available ? "No invoice requests yet." : "Billing storage is unavailable."}
+              {queue.available
+                ? fr
+                  ? "Aucune demande de facture pour l’instant."
+                  : "No invoice requests yet."
+                : fr
+                  ? "Le stockage de la facturation est indisponible."
+                  : "Billing storage is unavailable."}
             </p>
           )}
         </CardBody>
@@ -280,8 +332,12 @@ export default async function AdminBillingPage() {
 
       <Card>
         <CardHeader
-          title="Manual invoice request"
-          subtitle="For invoices that no ecosystem app feeds automatically. Queues a request only; nothing is sent until the owner creates the draft."
+          title={fr ? "Demande de facture manuelle" : "Manual invoice request"}
+          subtitle={
+            fr
+              ? "Pour les factures qu’aucune app de l’écosystème n’envoie d’elle-même. Ajoute seulement une demande à la file ; rien n’est envoyé avant que le propriétaire crée le brouillon."
+              : "For invoices that no ecosystem app feeds automatically. Queues a request only; nothing is sent until the owner creates the draft."
+          }
         />
         <CardBody>
           <ManualInvoiceRequestForm />
