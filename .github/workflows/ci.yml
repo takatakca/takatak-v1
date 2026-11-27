@@ -222,6 +222,9 @@ jobs:
       - name: Website theme colours registered
         run: npm run qa:website-theme
 
+      - name: Checkout survives blank Upmind build settings
+        run: npm run qa:upmind-config
+
       - name: Website SEO and HTTPS redirect
         run: npm run qa:website-seo
 

@@ -509,6 +509,16 @@ export function OtpForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" aria-busy={loading}>
+      {provider === "supabase-email" ? (
+        // A first-time address can receive Supabase's confirmation link instead
+        // of a code. The link works (/auth/callback), so say so.
+        <p className="rounded-lg bg-sky-50 px-3 py-2.5 text-xs font-medium text-sky-900 ring-1 ring-inset ring-sky-200">
+          {fr
+            ? "Nouveau client ? Si le courriel contient un bouton « Confirm email address » au lieu d’un code, touchez ce bouton pour terminer votre inscription. Vérifiez aussi les pourriels."
+            : "New here? If the email has a “Confirm email address” link instead of a code, tap that link to finish signing up. Check your spam folder too."}
+        </p>
+      ) : null}
+
       {phone ? (
         <p className="flex items-center gap-2 text-sm font-medium text-foreground">
           <Phone className="h-4 w-4 text-primary" aria-hidden="true" />

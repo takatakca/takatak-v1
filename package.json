@@ -125,6 +125,7 @@
     "qa:social-publishing": "tsx --require ./scripts/register-server-only.cjs scripts/verify-social-publishing.ts",
     "qa:lead-actions": "tsx --require ./scripts/register-server-only.cjs scripts/verify-lead-actions.ts",
     "qa:website-theme": "tsx scripts/verify-website-theme.ts",
+    "qa:upmind-config": "tsx scripts/upmind-config-tests.ts",
     "qa:website-seo": "tsx --require ./scripts/register-server-only.cjs scripts/verify-website-seo.ts",
     "qa:seo-free-tools": "tsx scripts/verify-seo-free-tools.ts",
     "qa:seo-history": "tsx --require ./scripts/register-server-only.cjs scripts/verify-seo-history.ts",
