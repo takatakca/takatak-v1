@@ -6,7 +6,7 @@
 import { randomBytes } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { getPrisma } from "../src/lib/db/prisma";
 
 type Status = "PASS" | "FAIL" | "BLOCKED";
 type Result = { id: number; name: string; status: Status; evidence: string };
@@ -197,7 +197,14 @@ async function main() {
     process.exit(1);
   }
 
-  const prisma = new PrismaClient();
+  // Same client as the app (Prisma 6 "client" engine needs the pg adapter).
+  const maybePrisma = getPrisma();
+  if (!maybePrisma) {
+    record(0, "database", "BLOCKED", "database client could not start");
+    printSummary();
+    process.exit(1);
+  }
+  const prisma = maybePrisma;
   const stamp = Date.now().toString(36);
   const connectionIds: string[] = [];
   const clientIds: string[] = [];
@@ -257,11 +264,30 @@ async function main() {
     async function createAuthorized(status: "authorized" | "disconnected" | "pending_authorization" = "authorized") {
       const connectionId = uuid();
       connectionIds.push(connectionId);
+      // One connection per (workspace, brand, provider) is enforced by a
+      // unique index added after this suite was written: give each fixture
+      // connection its own brand when the default brand is already taken.
+      let connectionBrandId = brandId;
+      const taken = await prisma.socialProviderConnection.findFirst({
+        where: { clientId, businessBrandId: brandId, provider: "meta" },
+        select: { id: true },
+      });
+      if (taken) {
+        connectionBrandId = uuid();
+        await prisma.businessBrand.create({
+          data: {
+            id: connectionBrandId,
+            clientId,
+            name: `Fixture Brand ${stamp} ${connectionBrandId.slice(0, 8)}`,
+            status: "active",
+          },
+        });
+      }
       await prisma.socialProviderConnection.create({
         data: {
           id: connectionId,
           clientId,
-          businessBrandId: brandId,
+          businessBrandId: connectionBrandId,
           provider: "meta",
           status,
           scopes: ["pages_show_list", "pages_read_engagement"],

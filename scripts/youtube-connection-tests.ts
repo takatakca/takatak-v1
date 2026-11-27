@@ -42,12 +42,33 @@ function readSource(relative: string): string {
   return readFileSync(resolve(process.cwd(), relative), "utf8");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Matches `key: "value"`, `key: 'value'` or `key: \`value\`` so a source
+ * check does not depend on the file's quote style.
+ */
+function quotedProperty(key: string, value: string): RegExp {
+  return new RegExp(
+    escapeRegExp(key) + ":\\s*([\"'`])" + escapeRegExp(value) + "\\1",
+  );
+}
+
 check("Google provider is implemented for YouTube", () => {
   const google = SOCIAL_PROVIDER_REGISTRY.google;
   assert(google.implemented === true, "implemented");
   assert(google.connectable === true, "connectable");
   assert(google.platforms.includes("youtube"), "youtube platform");
-  assert(google.platforms.includes("google_business"), "gbp platform kept");
+  // Google Business Profile has its own provider (own card, own OAuth
+  // purpose); it is no longer a second platform of the YouTube provider.
+  const googleBusiness = SOCIAL_PROVIDER_REGISTRY.google_business;
+  assert(
+    googleBusiness.platforms.includes("google_business") &&
+      googleBusiness.implemented === true,
+    "gbp platform kept",
+  );
   assert(google.authorizationType === "oauth2_pkce", "pkce");
   return "google ready_for_authorization when env is set";
 });
@@ -108,17 +129,20 @@ check("Start OAuth builds a Google authorization URL", () => {
   return "google start wired";
 });
 
-check("Manage connections keeps GBP planned and YouTube primary", () => {
+check("Manage connections keeps YouTube primary and GBP on its own card", () => {
   const source = readSource(
     "src/components/social/connections/manage-connections-modal.tsx",
   );
-  assert(source.includes('google: "youtube"'), "youtube is primary google card");
+  assert(quotedProperty("google", "youtube").test(source), "youtube is primary google card");
   assert(source.includes("planned: true"), "planned cards exist");
-  assert(
-    /key:\s*"google-business"[\s\S]*planned:\s*true/.test(source),
-    "gbp planned",
-  );
-  return "GBP waits; YouTube connects";
+  // GBP used to be a planned card; it is now connected with its own
+  // google_business provider.
+  const gbpAt = source.search(quotedProperty("key", "google-business"));
+  assert(gbpAt >= 0, "gbp card");
+  const gbpCard = source.slice(gbpAt, source.indexOf("}", gbpAt));
+  assert(quotedProperty("provider", "google_business").test(gbpCard), "gbp provider");
+  assert(!/planned:\s*true/.test(gbpCard), "gbp card is connectable");
+  return "YouTube connects; GBP has its own card";
 });
 
 check("YouTube uniqueness migration exists", () => {

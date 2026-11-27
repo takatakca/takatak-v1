@@ -36,6 +36,20 @@ function readSource(relative: string): string {
   return readFileSync(resolve(process.cwd(), relative), "utf8");
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Matches `key: "value"`, `key: 'value'` or `key: \`value\`` so a source
+ * check does not depend on the file's quote style.
+ */
+function quotedProperty(key: string, value: string): RegExp {
+  return new RegExp(
+    escapeRegExp(key) + ":\\s*([\"'`])" + escapeRegExp(value) + "\\1",
+  );
+}
+
 check("OAuth start requests identity scopes with PKCE refresh", () => {
   assert(X_OAUTH_START_SCOPES.includes("tweet.read"), "tweet.read");
   assert(X_OAUTH_START_SCOPES.includes("users.read"), "users.read");
@@ -98,8 +112,8 @@ check("X card starts independent OAuth 2.0", () => {
   const modal = readSource(
     "src/components/social/connections/manage-connections-modal.tsx",
   );
-  assert(modal.includes('key: "x"'), "x card");
-  assert(modal.includes('provider: "x"'), "x provider");
+  assert(quotedProperty("key", "x").test(modal), "x card");
+  assert(quotedProperty("provider", "x").test(modal), "x provider");
   assert(modal.includes("pickSelectedXAccount"), "strict picker");
   const registry = readSource("src/lib/social/providers/registry.ts");
   const xBlock = registry.slice(registry.indexOf("x:"));
@@ -139,7 +153,7 @@ check("X page starts independent OAuth", () => {
   const page = readSource(
     "src/components/social/platforms/x-connect-page.tsx",
   );
-  assert(page.includes('provider: "x"'), "independent start");
+  assert(quotedProperty("provider", "x").test(page), "independent start");
   assert(page.includes("Connect X"), "connect CTA");
   const start = readSource(
     "src/lib/social/connections/social-connection-service.ts",

@@ -11,6 +11,10 @@ import {
   SOCIAL_DB_TRANSACTION_SELECTION_TIMEOUT_MS,
 } from "@/lib/social/connections/social-db-transaction";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
+import {
+  createSocialOAuthState,
+  type CreatedSocialOAuthState,
+} from "@/lib/social/connections/social-connection-service";
 
 export type ConnectThreadsResult = {
   connectionId: string;
@@ -351,6 +355,109 @@ export async function connectLinkedThreadsAccount(options: {
 
     throw error;
   }
+}
+
+/**
+ * "Use Threads linked to Facebook": Threads posts and insights can only be
+ * read with a Threads token (graph.threads.net), never with the Facebook Page
+ * token. So the linked path checks the Meta prerequisites (connected Meta
+ * connection, one selected Instagram professional account on it) and then
+ * starts the real Threads authorization for the same brand, with a stored,
+ * hashed OAuth state and PKCE verifier that the Threads callback verifies.
+ * The result is a `threads` provider connection with its own credential.
+ */
+export async function startLinkedThreadsAuthorization(options: {
+  clientId: string;
+  profileId: string;
+  connectionId: string;
+  returnPath: string;
+}): Promise<CreatedSocialOAuthState> {
+  const prisma = getPrisma();
+
+  if (!prisma) {
+    throw new ServiceError(
+      "unavailable",
+      "The social connection database is unavailable.",
+    );
+  }
+
+  await assertProfileCanManageSocialAccounts(prisma, {
+    clientId: options.clientId,
+    profileId: options.profileId,
+  });
+
+  const connection = await prisma.socialProviderConnection.findFirst({
+    where: {
+      id: options.connectionId,
+      clientId: options.clientId,
+      provider: "meta",
+    },
+    select: {
+      id: true,
+      businessBrandId: true,
+      status: true,
+    },
+  });
+
+  if (!connection) {
+    throw new ServiceError(
+      "not_found",
+      "The social connection could not be found.",
+    );
+  }
+
+  if (connection.status !== "connected") {
+    throw new ServiceError(
+      "conflict",
+      "Connect a Facebook Page first. Threads is linked through that Meta account.",
+    );
+  }
+
+  const instagramAccounts = await prisma.socialAccount.findMany({
+    where: {
+      clientId: options.clientId,
+      providerConnectionId: connection.id,
+      platform: "instagram",
+      accountType: "instagram_professional",
+    },
+    select: {
+      id: true,
+      platform: true,
+      status: true,
+      accessStatus: true,
+      displayName: true,
+      handle: true,
+      providerConnectionId: true,
+    },
+    take: 20,
+  });
+
+  const selectedInstagram = pickSelectedInstagramAccountStrict(
+    instagramAccounts,
+    connection.id,
+  );
+
+  if (selectedInstagram.kind === "ambiguous") {
+    throw new ServiceError(
+      "conflict",
+      "Multiple Instagram selections need attention. Confirm a single Instagram account first.",
+    );
+  }
+
+  if (selectedInstagram.kind === "missing") {
+    throw new ServiceError(
+      "conflict",
+      "Connect Instagram from Facebook first. Threads is linked through that Instagram professional account.",
+    );
+  }
+
+  return createSocialOAuthState({
+    clientId: options.clientId,
+    profileId: options.profileId,
+    businessBrandId: connection.businessBrandId,
+    provider: "threads",
+    returnPath: options.returnPath,
+  });
 }
 
 export async function clearSelectedThreadsAccount(options: {
