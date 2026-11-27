@@ -423,6 +423,7 @@ model Client {
   socialCompetitorTracks    SocialCompetitorTrack[]
   socialCompetitorSnapshots SocialCompetitorSnapshot[]
   approvals                 Approval[]
+  socialSmartLinks          SocialSmartLink[]
   socialAnalyticsDaily      SocialAnalyticsDaily[]
   socialAdAccounts          SocialAdAccount[]
   socialAdAnalyticsDaily    SocialAdAnalyticsDaily[]
@@ -652,6 +653,7 @@ model BusinessBrand {
   socialCompetitorTracks    SocialCompetitorTrack[]
   socialCompetitorSnapshots SocialCompetitorSnapshot[]
   approvals                 Approval[]
+  socialSmartLinks          SocialSmartLink[]
   socialAnalyticsDaily      SocialAnalyticsDaily[]
   socialAccountSyncStates   SocialAccountSyncState[]
   socialAdAccounts          SocialAdAccount[]
@@ -1722,6 +1724,68 @@ model Approval {
 
 /// Future daily analytics (Metricool/provider sync in Phase 6+).
 /// Nothing here is ever seeded as metricool data before real sync exists.
+/// SmartLinks: one public page per brand (link in bio) at /l/<slug>, with
+/// buttons to the brand's links. Server-only table (RLS on, no Data API access).
+model SocialSmartLink {
+  id                 String    @id @default(uuid()) @db.Uuid
+  clientId           String    @db.Uuid
+  businessBrandId    String    @db.Uuid
+  /// Public address: /l/<slug>. Lower-case letters, digits and dashes.
+  slug               String    @unique
+  title              String
+  bio                String    @default("")
+  /// draft | published. Only published pages are public.
+  status             String    @default("draft")
+  createdByProfileId String?   @db.Uuid
+  publishedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  client        Client                      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  businessBrand BusinessBrand               @relation(fields: [businessBrandId], references: [id], onDelete: Cascade)
+  buttons       SocialSmartLinkButton[]
+  dailyStats    SocialSmartLinkDailyStat[]
+
+  @@index([clientId, businessBrandId, status])
+  @@index([businessBrandId])
+  @@map("social_smartlinks")
+}
+
+/// One button of a SmartLink page. The link is checked (https/http only) on save.
+model SocialSmartLinkButton {
+  id          String   @id @default(uuid()) @db.Uuid
+  smartLinkId String   @db.Uuid
+  clientId    String   @db.Uuid
+  label       String
+  url         String
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  smartLink SocialSmartLink @relation(fields: [smartLinkId], references: [id], onDelete: Cascade)
+
+  @@index([smartLinkId, position])
+  @@index([clientId])
+  @@map("social_smartlink_buttons")
+}
+
+/// Daily counters per page ("page" = views) and per button ("button:<id>" = clicks).
+/// No IP address, cookie or visitor identifier is stored.
+model SocialSmartLinkDailyStat {
+  id          String   @id @default(uuid()) @db.Uuid
+  smartLinkId String   @db.Uuid
+  clientId    String   @db.Uuid
+  statKey     String
+  day         DateTime @db.Date
+  count       Int      @default(0)
+
+  smartLink SocialSmartLink @relation(fields: [smartLinkId], references: [id], onDelete: Cascade)
+
+  @@unique([smartLinkId, statKey, day], map: "ssl_daily_stat_key")
+  @@index([clientId, day])
+  @@map("social_smartlink_daily_stats")
+}
+
 model SocialAnalyticsDaily {
   id              String          @id @default(uuid()) @db.Uuid
   clientId        String          @db.Uuid

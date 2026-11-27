@@ -176,7 +176,7 @@ const TOP_NAVIGATION = [
     label: 'SmartLinks',
     href: '/dashboard/social/smartlinks',
     icon: Link2,
-    enabled: false,
+    enabled: true,
   },
   {
     label: 'Ads',
