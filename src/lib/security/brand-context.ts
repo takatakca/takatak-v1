@@ -6,6 +6,8 @@ import {
   resolveBrandDisplayLabel,
 } from "@/lib/brands/brand-display-image";
 import { getPrisma } from "@/lib/db/prisma";
+import { filterAllowedBrands } from "@/lib/security/brand-access-policy";
+import { loadBrandRestriction } from "@/lib/security/member-brand-access";
 import { brandSelectorCacheKey, staleActiveBrandCookie } from "@/lib/security/authenticated-identity";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
 import { logSocialOAuthEvent } from "@/lib/social/connections/social-oauth-log";
@@ -381,10 +383,12 @@ export async function resolveBrandSessionContext(
   requestedBrandId: string | null = null,
 ): Promise<BrandSessionContext> {
   try {
-    const brands = await loadBrandSelectorSnapshots(
-      access.activeClientId,
-      { profileId: access.profileId },
-    );
+    // Members limited to some brands only ever see (and select) those brands.
+    const [allBrands, restriction] = await Promise.all([
+      loadBrandSelectorSnapshots(access.activeClientId, { profileId: access.profileId }),
+      loadBrandRestriction(access),
+    ]);
+    const brands = filterAllowedBrands(allBrands, restriction);
 
     const selected = requestedBrandId
       ? brands.find((brand) => brand.id === requestedBrandId) ??

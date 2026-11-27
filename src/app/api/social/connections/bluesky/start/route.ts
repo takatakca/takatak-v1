@@ -8,6 +8,7 @@ import {
   handleApiError,
   jsonResponse,
 } from "@/lib/security/api-response";
+import { canAccessBrand } from "@/lib/security/member-brand-access";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { readJsonBody } from "@/lib/security/write-request";
 import { createBlueskyOAuthState } from "@/lib/social/connections/bluesky-oauth-start";
@@ -77,6 +78,11 @@ export async function POST(
       },
       400,
     );
+  }
+
+  // A member limited to other brands gets the same answer as an unknown brand.
+  if (!(await canAccessBrand(gate.access, businessBrandId))) {
+    return jsonResponse({ ok: false, message: "This brand was not found." }, 404);
   }
 
   try {

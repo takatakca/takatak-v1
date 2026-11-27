@@ -1,4 +1,6 @@
 import { getPrisma } from "@/lib/db/prisma";
+import { brandIdFilter, loadBrandRestriction } from "@/lib/security/member-brand-access";
+import { isBrandAllowed } from "@/lib/security/brand-access-policy";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
 
 export interface BrandListItem {
@@ -93,6 +95,8 @@ export async function getBrandDirectoryData(
   }
 
   try {
+    // A member limited to some brands only lists those brands.
+    const restriction = await loadBrandRestriction(access);
     const [workspace, brands] =
       await Promise.all([
         prisma.client.findUnique({
@@ -107,6 +111,7 @@ export async function getBrandDirectoryData(
         prisma.businessBrand.findMany({
           where: {
             clientId: access.activeClientId,
+            ...brandIdFilter(restriction),
           },
           orderBy: [
             {
@@ -209,8 +214,11 @@ export async function getBrandDetailData(
   }
 
   try {
-    const brand =
-      await prisma.businessBrand.findFirst({
+    // A brand this member may not use reads as "not found".
+    const allowed = isBrandAllowed(await loadBrandRestriction(access), brandId);
+    const brand = !allowed
+      ? null
+      : await prisma.businessBrand.findFirst({
         where: {
           id: brandId,
           clientId: access.activeClientId,
@@ -315,9 +323,11 @@ export async function getBrandOptions(
   }
 
   try {
+    const restriction = await loadBrandRestriction(access);
     return await prisma.businessBrand.findMany({
       where: {
         clientId: access.activeClientId,
+        ...brandIdFilter(restriction),
         status: {
           notIn: ["archived", "frozen"],
         },

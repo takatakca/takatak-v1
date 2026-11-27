@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 import { handleApiError, jsonResponse } from "@/lib/security/api-response";
+import { canAccessBrand } from "@/lib/security/member-brand-access";
 import { requireWorkspaceApiPermission } from "@/lib/security/workspace-api";
 import { readJsonBody } from "@/lib/security/write-request";
 import { verifyWebSiteConnection } from "@/lib/social/connections/web-site-connection";
@@ -38,6 +39,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { ok: false, message: "Select a valid brand." },
       400,
     );
+  }
+
+  // A member limited to other brands gets the same answer as an unknown brand.
+  if (!(await canAccessBrand(gate.access, businessBrandId))) {
+    return jsonResponse({ ok: false, message: "This brand was not found." }, 404);
   }
 
   try {

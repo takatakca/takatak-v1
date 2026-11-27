@@ -12,6 +12,7 @@ import {
   parseStoredInstructions,
 } from "@/lib/brands/brand-ai-instructions";
 import { getPrisma } from "@/lib/db/prisma";
+import { brandIdFilter, loadBrandRestriction } from "@/lib/security/member-brand-access";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
 import { toAccountPictureSrc, toClientSocialImageUrl } from "@/lib/social/media/remote-image";
 import { listSocialProviderReadiness } from "@/lib/social/providers/registry";
@@ -147,6 +148,8 @@ export async function getBrandSettingsPageData(
   }
 
   try {
+    // A member limited to some brands only sees and edits those brands.
+    const restriction = await loadBrandRestriction(access);
     const [
       workspace,
       brandRows,
@@ -162,6 +165,7 @@ export async function getBrandSettingsPageData(
       prisma.businessBrand.findMany({
         where: {
           clientId: access.activeClientId,
+          ...brandIdFilter(restriction),
           status: { notIn: ["archived", "frozen"] },
         },
         orderBy: [{ status: "asc" }, { name: "asc" }],

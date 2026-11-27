@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getPrisma } from "@/lib/db/prisma";
 import { getServerAccessContext } from "@/lib/security/access-context";
+import { canAccessBrand } from "@/lib/security/member-brand-access";
 import { ACTIVE_BRAND_COOKIE } from "@/lib/security/brand-context";
 import { sanitizeNextPath } from "@/lib/security/safe-redirect";
 import { isUuid } from "@/lib/validation/common";
@@ -68,7 +69,8 @@ export async function setActiveBrand(
       },
     });
 
-  if (!brand) {
+  // A member limited to some brands cannot switch to another one.
+  if (!brand || !(await canAccessBrand(access, brand.id))) {
     cookieStore.delete(
       ACTIVE_BRAND_COOKIE,
     );

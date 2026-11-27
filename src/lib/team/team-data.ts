@@ -1,6 +1,8 @@
 import { resolveEffectiveSocialEntitlements } from "@/lib/billing/social";
 import { listConnectedPlatformIcons } from "@/lib/brands/brand-display-image";
 import { getPrisma } from "@/lib/db/prisma";
+import { listMemberBrandAssignments } from "@/lib/security/member-brand-access";
+import { UNRESTRICTED_ROLES } from "@/lib/security/brand-access-policy";
 import type { Permission, RoleKey } from "@/lib/security/roles";
 import type { ClientScopedAccess } from "@/lib/security/workspace-guard";
 
@@ -17,6 +19,8 @@ export type WorkspaceMemberSummary = {
   customPermissions: Permission[];
   deniedPermissions: Permission[];
   joinedAt: string;
+  /** Brands this member may use; null = every brand of the workspace. */
+  brandAccess: string[] | null;
 };
 
 export type WorkspaceInvitationSummary = {
@@ -73,6 +77,8 @@ export type WorkspaceTeamData =
       planName: string;
       teamManagement: boolean;
       customRoles: boolean;
+      /** False until the per-brand access table exists. */
+      brandAccessActivated: boolean;
     }
   | {
       source: "unavailable";
@@ -87,6 +93,7 @@ export type WorkspaceTeamData =
       planName: null;
       teamManagement: false;
       customRoles: false;
+      brandAccessActivated: false;
     };
 
 function unavailableTeamData(
@@ -106,6 +113,7 @@ function unavailableTeamData(
     planName: null,
     teamManagement: false,
     customRoles: false,
+    brandAccessActivated: false,
   };
 }
 
@@ -245,6 +253,8 @@ export async function getWorkspaceTeamData(
       );
     }
 
+    const brandAssignments = await listMemberBrandAssignments(client.id);
+
     const { entitlements } = resolveEffectiveSocialEntitlements({
       clientId: client.id,
       status: client.subscription?.status,
@@ -272,6 +282,9 @@ export async function getWorkspaceTeamData(
         deniedPermissions:
           membership.deniedPermissions as Permission[],
         joinedAt: membership.createdAt.toISOString(),
+        brandAccess: UNRESTRICTED_ROLES.has(membership.role)
+          ? null
+          : brandAssignments.byMembership.get(membership.id) ?? null,
       })),
       invitations: client.userInvitations.map((invitation) => ({
         invitationId: invitation.id,
@@ -326,6 +339,7 @@ export async function getWorkspaceTeamData(
       planName: entitlements.planName,
       teamManagement: entitlements.teamManagement,
       customRoles: entitlements.customRoles,
+      brandAccessActivated: brandAssignments.activated,
     };
   } catch (error) {
     console.error(
