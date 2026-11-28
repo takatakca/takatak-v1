@@ -20,3 +20,9 @@ export function sanitizeNextPath(raw: string | null | undefined, fallback: strin
   if (decoded.includes("://")) return fallback;           // embedded scheme
   return decoded;
 }
+
+/** Link between sign-in and sign-up that keeps the (validated) destination. */
+export function authSwitchHref(path: "/login" | "/register", rawNext: string | null | undefined): string {
+  const next = sanitizeNextPath(rawNext);
+  return next === FALLBACK ? path : `${path}?next=${encodeURIComponent(next)}`;
+}

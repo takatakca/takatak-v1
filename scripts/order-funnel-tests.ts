@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 
 import { registerHrefFor } from "../src/lib/website/home-plan";
 import { pricing } from "../src/lib/website/pricing";
+import { authSwitchHref } from "../src/lib/security/safe-redirect";
+import { readFileSync } from "node:fs";
 import {
   ADD_ONS,
   EMPTY_FUNNEL,
@@ -20,6 +22,12 @@ assert.equal(registerHrefFor(["website", "domains", "hosting"]), "/register?plan
 assert.equal(registerHrefFor(["hosting"]), "/register?plan=hosting&next=%2Fcheckout");
 assert.equal(registerHrefFor(["social"]), "/register?plan=social");
 assert.equal(registerHrefFor([]), "/register");
+
+// Switching from sign-in to "Create an account" must keep the destination.
+assert.equal(authSwitchHref("/register", "/checkout"), "/register?next=%2Fcheckout");
+assert.equal(authSwitchHref("/register", undefined), "/register");
+assert.equal(authSwitchHref("/register", "https://evil.example"), "/register");
+assert.match(readFileSync("src/app/(website)/login/page.tsx", "utf8"), /authSwitchHref\("\/register",/);
 
 // Every step sells only catalog prices, and the owner's order of steps holds.
 assert.deepEqual(STEPS, ["website", "hosting", "social", "marketing", "reviews", "phone", "credits"]);
