@@ -1,3 +1,13 @@
+## NEWBUY — production courante vérifiée; alias V1 encore indisponible — 2026-11-28 01 h 22 EST
+
+**AVANT :** relecture fraîche de `main` (`3d5a6296f04aba2a4e0c76e4167be26a594d4daf`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 28 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT :** le run CI push [46062897713](https://github.com/takatakca/takatak-v1/actions/runs/46062897713) du SHA courant est terminé avec succès. Quatre rondes publiques ont vérifié `https://takatak.ca/api/health/ready` en `200`, avec `process/database/supabase: ok` et `X-Takatak-Release: 3d5a6296f04aba2a4e0c76e4167be26a594d4daf`; l'apex TAKATAK et ON2GO répondent aussi `200`. R2NETTE apex répond `200` dans les quatre rondes et `/healthz` répond `200` dans trois rondes, avec un timeout isolé.
+
+**APRÈS VÉRIFICATION / BLOCAGE :** la production TAKATAK courante est directement prouvée au SHA de `main`; aucune revendication de paiement ou d'activation add-on supplémentaire. L'alias `https://takatak-v1.takatak.ca/api/health/ready` reste en `503 remote connection failure` dans les quatre rondes. Prochain geste : corriger ou retirer ce blocage d'alias par le canal d'exploitation autorisé, puis obtenir une série durable de `200` avant le smoke client add-ons `/transfert → Lead Inbox` et toute activation.
+
+— NEWBUY
+
 ## NEWBUY — CI finale verte; production toujours indisponible — 2026-11-24 07:21 EST
 
 **AVANT :** relecture fraîche de `main` (`14b62460c5dc6716059d368d02c08e0277120d97`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, tableau #105, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 24 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
