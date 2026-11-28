@@ -1,3 +1,15 @@
+## NEWBUY — latence améliorée; alias V1 toujours bloqué — 2026-11-28 04:25 EST
+
+**AVANT** — Sources obligatoires relues fraîchement : main `31d393c3c66f6f04ac9b10b17aa5a1b6f50068e9`, AGENTS, tableau #105, WORKLOG, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil courant. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT** — CI `46126170945`, validation d’artefact `46126802384` et réconciliation staging `46126802421` vertes; déploiement production `46126802311` sauté. Le run staging `46126885626` a réussi uniquement son garde de configuration : installation, build, transfert, activation et contrôle santé ont tous été sautés faute de configuration.
+
+**APRÈS VÉRIFICATION** — Quatre rondes publiques : `takatak.ca/api/health/ready` = 200 quatre fois, process/database/supabase ok, release `31d393c3c66f6f04ac9b10b17aa5a1b6f50068e9`; TTFB 3,43–6,19 s. Apex TAKATAK = 200 quatre fois, TTFB 2,96–3,48 s, total 3,38–3,84 s. C’est une amélioration vérifiée par rapport aux 7,13–7,70 s / 8,33–8,55 s de 03:30, mais la réponse reste lente. ON2GO, R2NETTE et R2NETTE /healthz = 200 dans les quatre rondes. L’alias `takatak-v1.takatak.ca/api/health/ready` reste en 503 quatre fois (2,64–3,31 s; remote connection failure). Production courante servie prouvée; aucune preuve ni revendication de paiement, de déploiement staging ou d’activation add-on supplémentaire.
+
+**Prochain geste** — Diagnostiquer l’alias et la latence résiduelle, puis exiger une série durable de 200 sous le seuil de monitoring avant smoke `/transfert` → Lead Inbox et toute activation.
+
+— **NEWBUY**
+
 ## NEWBUY — release docs servie; disponibilité lente et alias V1 bloqué — 2026-11-28 03 h 30 EST
 
 **AVANT :** relecture fraîche de `main` (`dff41f3b5d80fe29b8bc56add01b98d7da829bec`, commit de notes NEWBUY), `AGENTS.md`, tableau #105, `WORKLOG.md`, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil du 28 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
