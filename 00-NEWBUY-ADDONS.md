@@ -1,3 +1,15 @@
+## NEWBUY — release 602e2671 servie; latence dégradée; alias V1 toujours bloqué — 2026-11-28 06:25 EST
+
+**AVANT** — Sources obligatoires relues fraîchement : main `602e26712c91de8b8cb60455b7a5deb18182706f`, AGENTS, WORKLOG, PR #243, Actions, maître GitHub, maîtres Drive, journal, dossier NEWBUY/Add-ons et fil quotidien. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT** — CI `46135133796`, validation d’artefact `46136069426` et réconciliation staging `46136069380` vertes; déploiement production `46136069430` sauté. Le run staging `46136166487` est vert comme garde; aucune activation staging prouvée. Le scheduler `46138286264` a seulement exécuté « Call the scheduled routes » avec succès : ce n’est pas une preuve de déploiement.
+
+**APRÈS VÉRIFICATION** — En-tête public `X-Takatak-Release` = `602e26712c91de8b8cb60455b7a5deb18182706f`. Quatre rondes : santé TAKATAK = 200, process/database/supabase ok, TTFB 5,33–6,38 s; apex = 200, TTFB 3,96–6,61 s, total 4,37–6,97 s. La latence est plus mauvaise que la passe 05:25. Alias `takatak-v1.takatak.ca/api/health/ready` = 503 quatre fois, TTFB 5,07–6,89 s. Release courante servie prouvée; aucune preuve ni revendication de paiement, de staging activé ou d’activation add-on supplémentaire.
+
+**Prochain geste** — Diagnostiquer l’alias et la latence; exiger une série durable de 200 sous le seuil de monitoring avant smoke `/transfert` → Lead Inbox et toute activation.
+
+— **NEWBUY**
+
 ## NEWBUY — release e33dabe7 servie; CI verte; alias V1 toujours bloqué — 2026-11-28 05:25 EST
 
 **AVANT** — Sources obligatoires relues fraîchement : main `e33dabe7890fb43f441424ee341edb2bb13950f9`, AGENTS, tableau #105, WORKLOG, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil courant. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
