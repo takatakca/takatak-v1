@@ -1,3 +1,15 @@
+## NEWBUY — release e33dabe7 servie; CI verte; alias V1 toujours bloqué — 2026-11-28 05:25 EST
+
+**AVANT** — Sources obligatoires relues fraîchement : main `e33dabe7890fb43f441424ee341edb2bb13950f9`, AGENTS, tableau #105, WORKLOG, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil courant. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT** — CI `46130418488`, validation d’artefact `46131345695` et réconciliation staging `46131345714` vertes; déploiement production `46131345634` sauté. Le run staging `46131436828` a uniquement validé le garde de configuration : installation, build, transfert, activation et contrôle santé ont tous été sautés faute de configuration.
+
+**APRÈS VÉRIFICATION** — Quatre rondes publiques plus une lecture JSON : `takatak.ca/api/health/ready` = 200, process/database/supabase ok, release `e33dabe7890fb43f441424ee341edb2bb13950f9`; TTFB 4,44–5,28 s. Apex TAKATAK = 200 quatre fois, TTFB 4,56–5,21 s, total 4,94–5,57 s. ON2GO, R2NETTE et R2NETTE `/healthz` = 200 dans les quatre rondes. L’alias `takatak-v1.takatak.ca/api/health/ready` reste en 503 quatre fois (4,18–4,36 s; remote connection failure). La release courante servie et sa CI sont prouvées; la latence reste élevée. Aucune preuve ni revendication de paiement, de staging déployé ou d’activation add-on supplémentaire.
+
+**Prochain geste** — Diagnostiquer l’alias et la latence résiduelle; exiger une série durable de 200 sous le seuil de monitoring avant smoke `/transfert` → Lead Inbox et toute activation.
+
+— **NEWBUY**
+
 ## NEWBUY — latence améliorée; alias V1 toujours bloqué — 2026-11-28 04:25 EST
 
 **AVANT** — Sources obligatoires relues fraîchement : main `31d393c3c66f6f04ac9b10b17aa5a1b6f50068e9`, AGENTS, tableau #105, WORKLOG, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil courant. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
