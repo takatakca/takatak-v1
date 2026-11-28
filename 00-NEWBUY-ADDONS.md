@@ -1,3 +1,13 @@
+## NEWBUY — release docs servie; disponibilité lente et alias V1 bloqué — 2026-11-28 03 h 30 EST
+
+**AVANT :** relecture fraîche de `main` (`dff41f3b5d80fe29b8bc56add01b98d7da829bec`, commit de notes NEWBUY), `AGENTS.md`, tableau #105, `WORKLOG.md`, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil du 28 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT :** CI [46121306905](https://github.com/takatakca/takatak-v1/actions/runs/46121306905), validation d'artefact [46122090971](https://github.com/takatakca/takatak-v1/actions/runs/46122090971) et réconciliation staging [46122090919](https://github.com/takatakca/takatak-v1/actions/runs/46122090919) vertes sur `dff41f3b`; déploiement production [46122090953](https://github.com/takatakca/takatak-v1/actions/runs/46122090953) sauté. Le run staging [46122187857](https://github.com/takatakca/takatak-v1/actions/runs/46122187857) est vert comme garde, mais build, transfert, activation et santé staging sont tous sautés faute de configuration.
+
+**APRÈS VÉRIFICATION / BLOCAGE :** première série à 10 s : santé TAKATAK, alias V1 et apex R2NETTE expirent `000` quatre fois, tandis que les apex TAKATAK/ON2GO et R2NETTE `/healthz` restent `200`. Série diagnostique à 25 s : santé TAKATAK `200` quatre fois, `process/database/supabase: ok`, release `dff41f3b5d80fe29b8bc56add01b98d7da829bec`, mais TTFB `7,13–7,70 s`; apex TAKATAK `200` quatre fois avec TTFB `7,18–7,38 s` et total `8,33–8,55 s`. Alias V1 reste `503 remote connection failure` quatre fois, en `6,59–7,89 s`. Production servie prouvée; aucune preuve ni revendication de paiement ou d'activation add-on supplémentaire. Prochain geste : diagnostiquer cette latence et l'alias, puis exiger des `200` sous le seuil de monitoring avant le smoke `/transfert → Lead Inbox` et toute activation.
+
+— NEWBUY
+
 ## NEWBUY — nouvelle release courante servie; alias V1 toujours bloqué — 2026-11-28 02 h 27 EST
 
 **AVANT :** relecture fraîche de `main` (`db94f08085549f8613c865cf3bef631cd24b7163`, fusion PR #412 après le correctif checkout PR #411), `AGENTS.md`, tableau #105, `WORKLOG.md`, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 28 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
