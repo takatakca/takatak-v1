@@ -3,14 +3,16 @@ import { TriangleAlert } from "lucide-react";
 import { Link } from "@/lib/website/nav";
 import { EmailGoogleAuthForm } from "@/components/auth/email-google-auth-form";
 import { isSupabaseConfigured } from "@/lib/auth/env";
+import { authSwitchHref } from "@/lib/security/safe-redirect";
 
 export const metadata = {
   title: "Sign in",
   robots: { index: false, follow: false },
 };
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const configured = isSupabaseConfigured();
+  const registerHref = authSwitchHref("/register", (await searchParams).next);
 
   return (
     <div className="mx-auto max-w-md px-4 py-24">
@@ -39,7 +41,7 @@ export default function LoginPage() {
         </div>
         <p className="mt-6 text-center text-sm text-muted-foreground">
           New to TAKATAK?{" "}
-          <Link to="/register" className="text-primary">
+          <Link to={registerHref} className="text-primary">
             Create an account
           </Link>
         </p>
