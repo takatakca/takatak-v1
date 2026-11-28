@@ -1,3 +1,13 @@
+## NEWBUY — nouvelle release courante servie; alias V1 toujours bloqué — 2026-11-28 02 h 27 EST
+
+**AVANT :** relecture fraîche de `main` (`db94f08085549f8613c865cf3bef631cd24b7163`, fusion PR #412 après le correctif checkout PR #411), `AGENTS.md`, tableau #105, `WORKLOG.md`, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 28 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
+
+**PENDANT :** CI push [46118862658](https://github.com/takatakca/takatak-v1/actions/runs/46118862658) verte sur le SHA courant; validation d'artefact [46119450648](https://github.com/takatakca/takatak-v1/actions/runs/46119450648) et réconciliation staging [46119450665](https://github.com/takatakca/takatak-v1/actions/runs/46119450665) vertes. Le run staging [46119552848](https://github.com/takatakca/takatak-v1/actions/runs/46119552848) est vert comme garde, mais build, transfert et activation sont sautés faute de configuration de build. Les échecs ultérieurs [46119683925](https://github.com/takatakca/takatak-v1/actions/runs/46119683925) et [46119683995](https://github.com/takatakca/takatak-v1/actions/runs/46119683995) refusent correctement la release périmée `99a2a3b5` après l'avancement de `main`; ils ne concernent pas l'intégrité de `db94f080`.
+
+**APRÈS VÉRIFICATION / BLOCAGE :** quatre rondes publiques vérifient `takatak.ca/api/health/ready` en `200`, `process/database/supabase: ok` et `X-Takatak-Release: db94f08085549f8613c865cf3bef631cd24b7163`; apex TAKATAK, ON2GO, R2NETTE et R2NETTE `/healthz` répondent `200` dans les quatre rondes. Production courante prouvée; aucune preuve ni revendication de paiement ou d'activation add-on supplémentaire. `takatak-v1.takatak.ca/api/health/ready` reste en `503 remote connection failure` quatre fois. Prochain geste : corriger l'alias, puis série durable de `200` avant smoke client `/transfert → Lead Inbox` et toute activation.
+
+— NEWBUY
+
 ## NEWBUY — production courante vérifiée; alias V1 encore indisponible — 2026-11-28 01 h 22 EST
 
 **AVANT :** relecture fraîche de `main` (`3d5a6296f04aba2a4e0c76e4167be26a594d4daf`), `AGENTS.md`, `WORKLOG.md`, PR #243, Actions, maîtres GitHub/Drive, journal, dossier NEWBUY/Add-ons et fil quotidien du 28 novembre. Aucun claim add-ons concurrent ni demande directe à NEWBUY.
