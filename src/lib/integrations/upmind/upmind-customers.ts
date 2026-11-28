@@ -1,11 +1,8 @@
 import "server-only";
 
-import { randomBytes } from "node:crypto";
-
 import {
   getUpmindApiBaseUrl,
   getUpmindApiKey,
-  getUpmindBrandId,
 } from "./env";
 
 /**
@@ -18,53 +15,15 @@ import {
 
 const TIMEOUT_MS = 15000;
 
-export type UpmindCustomerLookup = {
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  phone: string | null;
-};
-
 function redact(text: string): string {
   const key = getUpmindApiKey();
   return key ? text.split(key).join("[REDACTED_KEY]") : text;
 }
 
-function extractId(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") {
-    return null;
-  }
-
-  const record = payload as {
-    id?: unknown;
-    data?: { id?: unknown } | Array<{ id?: unknown; email?: unknown }>;
-  };
-
-  if (typeof record.id === "string" && record.id.length > 0) {
-    return record.id;
-  }
-
-  if (record.data && typeof record.data === "object" && !Array.isArray(record.data)) {
-    const nestedId = record.data.id;
-    if (typeof nestedId === "string" && nestedId.length > 0) {
-      return nestedId;
-    }
-  }
-
-  if (Array.isArray(record.data)) {
-    const match = record.data.find((row) => typeof row?.id === "string");
-    if (match && typeof match.id === "string") {
-      return match.id;
-    }
-  }
-
-  return null;
-}
-
 async function upmindRequest(
-  method: "GET" | "POST",
+  method: "GET",
   path: string,
-  options?: { query?: Record<string, string>; body?: Record<string, unknown> },
+  options?: { query?: Record<string, string> },
 ): Promise<{ ok: boolean; status: number; payload: unknown }> {
   const base = getUpmindApiBaseUrl();
   const key = getUpmindApiKey();
@@ -87,7 +46,6 @@ async function upmindRequest(
         Accept: "application/json",
         "Content-Type": "application/json",
       },
-      body: options?.body ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
       cache: "no-store",
     });
@@ -135,46 +93,6 @@ async function findClientIdByEmail(email: string): Promise<string | null> {
   return exact && typeof exact.id === "string" ? exact.id : null;
 }
 
-async function createClient(lookup: UpmindCustomerLookup): Promise<string | null> {
-  const brandId = getUpmindBrandId();
-  if (!brandId) {
-    console.error("[upmind-customers] NEXT_PUBLIC_UPMIND_BRAND_ID is missing.");
-    return null;
-  }
-
-  const result = await upmindRequest("POST", "/admin/clients", {
-    body: {
-      brand_id: brandId,
-      email: lookup.email,
-      firstname:
-        lookup.firstName?.trim() ||
-        lookup.email.split("@")[0] ||
-        "TAKATAK",
-      lastname:
-        lookup.lastName?.trim() ||
-        lookup.firstName?.trim() ||
-        lookup.email.split("@")[0] ||
-        "Customer",
-      phone: lookup.phone ?? "",
-      login_enabled: true,
-      // Upmind requires a password on create. TAKATAK remains the login.
-      // This value is never stored, logged, or shown to the user.
-      password: randomBytes(24).toString("base64url"),
-    },
-  });
-
-  if (!result.ok) {
-    console.error(
-      "[upmind-customers] Client create failed:",
-      result.status,
-      redact(JSON.stringify(result.payload ?? "")).slice(0, 200),
-    );
-    return null;
-  }
-
-  return extractId(result.payload);
-}
-
 /**
  * Former TAKATAK backend: GET /admin/clients/{id}/orders
  */
@@ -209,30 +127,24 @@ export async function listUpmindClientOrders(
 }
 
 /**
- * Find the Upmind customer for this TAKATAK person, or create one.
- * Does not log tokens, passwords, or raw provider payloads beyond a redacted error.
+ * Find the billing customer this TAKATAK person already registered.
+ * TAKATAK never creates one (owner and client rule, 2026-11-28): the customer
+ * registers in billing personally, chooses the password and accepts the terms.
+ * Does not log tokens or raw provider payloads beyond a redacted error.
  */
-export async function findOrCreateUpmindCustomer(
-  lookup: UpmindCustomerLookup,
-): Promise<{ clientId: string | null; created: boolean }> {
+export async function findUpmindCustomerId(email: string): Promise<string | null> {
   if (!getUpmindApiKey() || !getUpmindApiBaseUrl()) {
-    return { clientId: null, created: false };
+    return null;
   }
 
   try {
-    const existingId = await findClientIdByEmail(lookup.email);
-    if (existingId) {
-      return { clientId: existingId, created: false };
-    }
-
-    const createdId = await createClient(lookup);
-    return { clientId: createdId, created: Boolean(createdId) };
+    return await findClientIdByEmail(email);
   } catch (error) {
     const raw = error instanceof Error ? error.message : "unknown error";
     console.error(
       "[upmind-customers] Lookup failed:",
       redact(raw).slice(0, 200),
     );
-    return { clientId: null, created: false };
+    return null;
   }
 }

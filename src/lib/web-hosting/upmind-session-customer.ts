@@ -6,7 +6,7 @@ import {
 } from "@/lib/auth/profile-sync";
 import { createAuthErrorId } from "@/lib/auth/auth-error-id";
 import { getPrisma } from "@/lib/db/prisma";
-import { findOrCreateUpmindCustomer } from "@/lib/integrations/upmind/upmind-customers";
+import { findUpmindCustomerId } from "@/lib/integrations/upmind/upmind-customers";
 
 export type UpmindSessionCustomer = {
   authenticated: boolean;
@@ -44,8 +44,8 @@ async function withTimeout<T>(
 }
 
 /**
- * Attach an Upmind billing customer to a TAKATAK profile if one is not
- * stored yet. Safe to call on every request; no-ops when already linked.
+ * Link the billing customer the person registered (same email) to their
+ * TAKATAK profile if none is stored yet. Never creates one. Safe to call on every request; no-ops when already linked.
  * Never throws. Never blocks TAKATAK authentication.
  */
 export async function linkUpmindCustomerForProfile(
@@ -66,8 +66,6 @@ export async function linkUpmindCustomerForProfile(
           select: {
             id: true,
             email: true,
-            firstName: true,
-            lastName: true,
             displayName: true,
             upmindClientId: true,
           },
@@ -91,12 +89,7 @@ export async function linkUpmindCustomerForProfile(
           return profile.upmindClientId;
         }
 
-        const { clientId } = await findOrCreateUpmindCustomer({
-          email: profile.email,
-          firstName: profile.firstName,
-          lastName: profile.lastName,
-          phone: null,
-        });
+        const clientId = await findUpmindCustomerId(profile.email);
 
         if (!clientId) {
           return null;
@@ -145,7 +138,7 @@ export function scheduleUpmindCustomerLink(profileId: string): void {
 
 /**
  * For a signed-in TAKATAK user, return the Upmind customer id that checkout
- * should attach as client-id so Upmind does not ask for a second account.
+ * should attach as client-id, when the person already has a billing account.
  */
 export async function getUpmindSessionCustomer(): Promise<UpmindSessionCustomer> {
   const sync = await ensureProfileForAuthenticatedUser();

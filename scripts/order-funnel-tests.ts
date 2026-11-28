@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 
+import { registerHrefFor } from "../src/lib/website/home-plan";
 import { pricing } from "../src/lib/website/pricing";
 import {
   ADD_ONS,
@@ -13,6 +14,12 @@ import {
   stepOffer,
   type FunnelState,
 } from "../src/lib/website/order-funnel";
+
+// Sign-up from a domain or hosting plan must continue to checkout, not the dashboard.
+assert.equal(registerHrefFor(["website", "domains", "hosting"]), "/register?plan=website,domains,hosting&next=%2Fcheckout");
+assert.equal(registerHrefFor(["hosting"]), "/register?plan=hosting&next=%2Fcheckout");
+assert.equal(registerHrefFor(["social"]), "/register?plan=social");
+assert.equal(registerHrefFor([]), "/register");
 
 // Every step sells only catalog prices, and the owner's order of steps holds.
 assert.deepEqual(STEPS, ["website", "hosting", "social", "marketing", "reviews", "phone", "credits"]);
