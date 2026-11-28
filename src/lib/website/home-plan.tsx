@@ -11,11 +11,16 @@ import { CORE_CATEGORIES, type CategoryKey, type CoreCategory } from "./core-cat
 const KEY = "takatak:home-plan";
 
 
-/** /register carrying the plan (and a live campaign code, when there is one). */
+/**
+ * /register carrying the plan (and a live campaign code, when there is one).
+ * A plan with a domain or hosting continues to the checkout after sign-up;
+ * without `next` the customer would land in the dashboard and lose the order.
+ */
 export function registerHrefFor(keys: readonly string[], promo?: string | null): string {
   const q = new URLSearchParams();
   if (keys.length) q.set("plan", keys.join(","));
   if (promo) q.set("promo", promo);
+  if (keys.includes("domains") || keys.includes("hosting")) q.set("next", "/checkout");
   const query = q.toString().replace(/%2C/g, ",");
   return query ? `/register?${query}` : "/register";
 }

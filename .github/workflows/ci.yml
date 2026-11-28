@@ -225,6 +225,9 @@ jobs:
       - name: Checkout survives blank Upmind build settings
         run: npm run qa:upmind-config
 
+      - name: Homepage plan continues to checkout
+        run: npm run qa:order-funnel
+
       - name: Website SEO and HTTPS redirect
         run: npm run qa:website-seo
 

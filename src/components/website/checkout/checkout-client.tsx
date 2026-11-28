@@ -60,7 +60,7 @@ const COPY = {
   journey: { en: "Checkout: Get Started With Your Domain & Hosting Journey", fr: "Commande : votre domaine et votre hébergement" },
   domainTitle: { en: "Power Your Online Success", fr: "Lancez votre présence en ligne" },
   domainTitle2: { en: "with the Perfect Domain.", fr: "avec le bon domaine." },
-  upmindNote: { en: "Search works. If Upmind asks you to create an account, refresh this page so TAKATAK can attach your customer.", fr: "La recherche fonctionne. Si Upmind vous demande de créer un compte, actualisez cette page pour que TAKATAK relie votre dossier client." },
+  upmindNote: { en: "Billing has its own account. First order: choose “New customer”, use your TAKATAK email and create your password. Already registered: choose “Existing customer” (no password yet? use “Forgotten your password?”).", fr: "La facturation a son propre compte. Première commande : choisissez « New customer », avec votre courriel TAKATAK, et créez votre mot de passe. Déjà inscrit : choisissez « Existing customer » (pas de mot de passe ? « Forgotten your password? »)." },
   hostingTitle: { en: "Pick a plan and", fr: "Choisissez un forfait et" },
   hostingTitle2: { en: " supercharge your WordPress.", fr: " propulsez votre WordPress." },
   hostingLead: { en: "Order your go-to setup, or explore a bold new option. Our TAKATAK WordPress hosting plans are built to match any project — including yours.", fr: "Commandez la configuration qui vous convient, ou essayez une nouvelle option. Les forfaits d’hébergement WordPress TAKATAK s’adaptent à tous les projets, y compris le vôtre." },
@@ -308,11 +308,9 @@ export function CheckoutClient({
         <div className="w-full">
           <DomainSearchDesk clientId={upmindClientId} />
         </div>
-        {!upmindClientId ? (
-          <p className="mt-4 px-6 text-center text-xs text-white/70">
-            {c(COPY.upmindNote)}
-          </p>
-        ) : null}
+        <p className="mt-4 max-w-3xl px-6 text-center text-sm text-white/80">
+          {c(COPY.upmindNote)}
+        </p>
       </section>
 
       <section
